@@ -1,0 +1,25 @@
+@import url('https://cdn.jsdelivr.net/npm/vazirmatn@latest/Vazirmatn.css');
+* {
+    font-family: 'Vazirmatn', sans-serif;
+}
+header h1, header span {
+    font-family: 'Vazirmatn', sans-serif;
+}
+header img {
+    transition: transform 0.3s ease;
+}
+header img:hover {
+    transform: scale(1.05);
+}
+
+
+
+
+#guardian-section[style*="opacity: 0.4"] {
+    filter: grayscale(0.4);
+    transition: all 0.3s ease-in-out;
+}
+
+#guardian-section {
+    transition: all 0.3s ease-in-out;
+}

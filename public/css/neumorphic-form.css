@@ -1,0 +1,55 @@
+.neumorphic-card {
+    background: #ffffff;
+    box-shadow: 9px 9px 16px #d1d9e6, -9px -9px 16px #ffffff;
+    border-radius: 16px;
+    padding: 30px;
+    margin-bottom: 30px;
+    font-family: 'Vazirmatn', sans-serif;
+    direction: rtl;
+    color: #333;
+}
+
+.section-title {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    color: #3aa5dc;
+    border-bottom: 2px solid #3aa5dc;
+    display: inline-block;
+    padding-bottom: 5px;
+}
+
+.neumorphic-input {
+    margin-bottom: 20px;
+}
+
+.neumorphic-input label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #3a3a3a;
+    display: block;
+}
+
+.neumorphic-input .form-control {
+    border: none;
+    outline: none;
+    background: #ffffff;
+    color: #333;
+    box-shadow: inset 6px 6px 10px #d1d9e6, inset -6px -6px 10px #ffffff;
+    border-radius: 12px;
+    padding: 10px 14px;
+    width: 100%;
+    transition: 0.2s ease;
+}
+
+.neumorphic-input .form-control:focus {
+    box-shadow: inset 6px 6px 10px #c8d6e5, inset -6px -6px 10px #ffffff, 0 0 0 2px #3aa5dc;
+}
+
+.neumorphic-checkbox {
+    margin: 25px 0;
+    color: #2d2d2d;
+}
+
+#guardian_relation_box {
+    transition: opacity 0.3s ease;
+}

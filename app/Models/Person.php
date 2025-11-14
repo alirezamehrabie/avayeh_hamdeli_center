@@ -1,0 +1,107 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+
+
+class Person extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'first_name',
+        'last_name',
+        'national_id',
+        'birth_day',
+        'birth_month',
+        'birth_year',
+        'father_name',
+        'father_national_id',
+        'mother_national_id',
+        'gender',
+        'role',
+        'sadaat_status',
+        'sadaat_relation',
+        'social_worker_id',
+        'photo_id_card',
+        'photo_birth_certificate',
+        'has_disability',
+        'disability_type',
+        'disability_description',
+        'person_code',
+        'guardian_role',
+        'skills',
+        'skills_description',
+        'photo_live_capture',
+
+    ];
+
+    protected $casts = [
+        'skills' => 'array',
+    ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            do {
+                $code = str_pad(random_int(0, 9999), 4, '0', STR_PAD_LEFT);
+            } while (Person::where('person_code', $code)->exists());
+
+            $model->person_code = $code;
+        });
+    }
+
+    /**
+     * Accessor for full name.
+     */
+    public function getFullNameAttribute(): string
+    {
+        return "{$this->first_name} {$this->last_name}";
+    }
+
+    // Relationships
+    public function socialWorker()
+    {
+        return $this->belongsTo(SocialWorker::class);
+    }
+
+    public function familyStatus()
+    {
+        return $this->hasOne(FamilyStatus::class);
+    }
+
+    public function guardianInfo()
+    {
+        return $this->hasOne(GuardianInfo::class);
+    }
+
+    public function residenceContact()
+    {
+        return $this->hasOne(ResidenceContact::class);
+    }
+
+    public function bankInfo()
+    {
+        return $this->hasOne(BankInfo::class);
+    }
+
+    public function educationInfo()
+    {
+        return $this->hasOne(EducationInfo::class);
+    }
+
+    public function supportCoverage()
+    {
+        return $this->hasOne(SupportCoverage::class);
+    }
+
+    public function needsLevel()
+    {
+        return $this->hasOne(NeedsLevel::class);
+    }
+}
