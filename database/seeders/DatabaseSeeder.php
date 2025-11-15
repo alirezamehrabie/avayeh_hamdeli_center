@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\ResidenceStatusType;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -15,6 +16,13 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             SocialWorkerSeeder::class,
+            EducationLevelSeeder::class,
+            ResidenceStatusTypeSeeder::class,
+            NeedLevelTypeSeeder::class,
+            DistrictSeeder::class,
+            OccupationSeeder::class,
+            SadaatRelationsSeeder::class,
+            SkillsTableSeeder::class,
         ]);
     }
 }

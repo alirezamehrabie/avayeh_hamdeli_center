@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 // Form Request for Validation
 use App\Http\Requests\StorePersonRequest;
 use App\Models\Person;
+use App\Models\Skill;
 use App\Models\SocialWorker;
 use App\Models\FamilyStatus;
 use App\Models\Guardian;
@@ -13,6 +14,7 @@ use App\Models\BankInfo;
 use App\Models\Education;
 use App\Models\SupportCoverage;
 use App\Models\NeedsLevel;
+use App\Models\SadaatRelation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Exception;
@@ -26,8 +28,25 @@ class PersonController extends Controller
      */
     public function create()
     {
-        $socialWorkers = SocialWorker::all();
-        return view('people.create', compact('socialWorkers'));
+        $socialWorkers    = SocialWorker::all();
+        $skills = Skill::all();
+        $person = new Person();
+        $sadaatRelations  = SadaatRelation::orderBy('sort_order')->get();
+
+        $deciles = [
+            '1'  => 'دهک یک',
+            '2'  => 'دهک دو',
+            '3'  => 'دهک سه',
+            '4'  => 'دهک چهار',
+            '5'  => 'دهک پنج',
+            '6'  => 'دهک شش',
+            '7'  => 'دهک هفت',
+            '8'  => 'دهک هشت',
+            '9'  => 'دهک نه',
+            '10' => 'دهک ده',
+        ];
+
+        return view('people.create', compact('deciles' , 'socialWorkers' , 'sadaatRelations', 'skills', 'person'));
     }
 
     /**
@@ -59,18 +78,18 @@ class PersonController extends Controller
                 'first_name' => $validatedData['first_name'],
                 'last_name' => $validatedData['last_name'],
                 'national_id' => $validatedData['national_id'],
-                'birth_day' => $validatedData['birth_day'],
-                'birth_month' => $validatedData['birth_month'],
-                'birth_year' => $validatedData['birth_year'],
+                'birth_day'    => $validatedData['birth_day'],
+                'birth_month'  => $validatedData['birth_month'],
+                'birth_year'   => $validatedData['birth_year'],
                 'father_name' => $validatedData['father_name'],
                 'father_national_id' => $validatedData['father_national_id'],
                 'mother_national_id' => $validatedData['mother_national_id'],
                 'gender' => $validatedData['gender'],
                 'role' => $validatedData['role'],
                 'sadaat_status' => $validatedData['sadaat_status'],
-                'sadaat_relation' => $validatedData['sadaat_relation'] ?? null,
+                'sadaat_relation_id'   => $validatedData['sadaat_relation_id'] ?? null,
                 'guardian_role' => $validatedData['guardian_role'] ?? null,
-                'skills' => $validatedData['skills'] ?? [],
+//                'skills' => $validatedData['skills'] ?? [],
                 'skills_description' => $validatedData['skills_description'] ?? null,
                 'social_worker_id' => $validatedData['social_worker_id'],
                 'photo_id_card' => $paths['photo_id_card'],
@@ -80,9 +99,11 @@ class PersonController extends Controller
                 'disability_description' => $validatedData['disability_description'] ?? null,
             ]);
 
+
+
             // 2. Create FamilyStatus
             FamilyStatus::create(['person_id' => $person->id] + [
-                    'economic_decile' => $validatedData['economic_decile'] ?? null,
+                    'economic_decile'  => $validated['economic_decile'] ?? null,
                     'living_parents' => $validatedData['living_parents'] ?? null,
                     'deceased_parent' => $validatedData['deceased_parent'] ?? null,
                     'death_year' => $validatedData['death_year'] ?? null,
@@ -97,7 +118,9 @@ class PersonController extends Controller
 
             // 3. Create GuardianInfo
             Guardian::create(['person_id' => $person->id] + $request->only([
-                    'guardian_birth_date', 'occupation', 'job_type',
+                    'occupation_id' => $request->input('occupation_id'),
+                    'guardian_birth_date',
+                    'job_type',
                     'guardian_phone_number', 'children_count', 'children_in_house',
                     'insurance_status', 'other_insurance', 'divorced_child_at_home',
                     'average_income', 'any_family_employed', 'has_vehicle', 'vehicle_type'
@@ -105,9 +128,18 @@ class PersonController extends Controller
 
             // 4. Create ResidenceContact
             Residence::create(['person_id' => $person->id] + $request->only([
-                    'residence_status', 'is_local_to_city', 'deposit_amount', 'monthly_rent',
-                    'residence_duration_years', 'district', 'address', 'personal_phone',
-                    'landline_phone', 'trusted_person_phone', 'messenger_type', 'messenger_number'
+                    'residence_status_id' => $request->residence_status_id,
+                    'district_id'          => $request->district_id,
+                    'is_local_to_city'     => $request->is_local_to_city,
+                    'deposit_amount'       => $request->deposit_amount,
+                    'monthly_rent'         => $request->monthly_rent,
+                    'residence_duration_years' => $request->residence_duration_years,
+                    'address'              => $request->address,
+                    'personal_phone',
+                    'landline_phone',
+                    'trusted_person_phone',
+                    'messenger_type',
+                    'messenger_number'
                 ]));
 
             // 5. Create BankInfo
@@ -118,7 +150,7 @@ class PersonController extends Controller
 
             // 6. Create EducationInfo
             Education::create(['person_id' => $person->id] + $request->only([
-                    'is_studying', 'school_name', 'major', 'education_level', 'drop_reason',
+                    'is_studying', 'school_name', 'major', 'education_level_id', 'drop_reason',
                     'works_alongside_study', 'monthly_income', 'talent_description'
                 ]));
 
@@ -138,6 +170,10 @@ class PersonController extends Controller
 
             // Note: HealthInfo (9) and SkillsInfo (10) are not in the form yet.
 
+
+            $skillIds = $request->input('skills', []);
+            $person->skills()->sync($skillIds);
+
             DB::commit();
 
             return redirect()->route('people.create')->with('success', 'اطلاعات مددجو با موفقیت ثبت شد.');
@@ -149,5 +185,14 @@ class PersonController extends Controller
                 ->with('error', 'خطایی در هنگام ثبت اطلاعات رخ داد. لطفاً دوباره تلاش کنید.')
                 ->withInput();
         }
+
+    }
+
+
+    public function edit(Person $person)
+    {
+//        $socialWorkers = SocialWorker::all();
+//        $skills = Skill::all();
+//        return view('people.edit', compact('person','socialWorkers','skills'));
     }
 }

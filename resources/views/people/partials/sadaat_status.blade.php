@@ -1,38 +1,78 @@
-{{-- Sadaat Status Section --}}
-<div class="sadaat-section neumorphic-card">
-    <h4 class="section-title">نسب سادات / عام</h4>
+{{-- وضعیت سادات --}}
+<div class="form-group">
+    <label class="d-block">وضعیت سادات <span class="text-danger">*</span></label>
+    <label class="radio-inline me-3">
+        <input
+            type="radio"
+            name="sadaat_status"
+            value="عام"
+            {{ old('sadaat_status', 'عام') === 'عام' ? 'checked' : '' }}
+        >
+        عام
+    </label>
+    <label class="radio-inline">
+        <input
+            type="radio"
+            name="sadaat_status"
+            value="سادات"
+            {{ old('sadaat_status') === 'سادات' ? 'checked' : '' }}
+        >
+        سادات
+    </label>
+    @error('sadaat_status')
+    <div class="text-danger small mt-1">{{ $message }}</div>
+    @enderror
+</div>
 
-    <div class="form-group neumorphic-radio">
-        <label>وضعیت مددجو:</label><br>
-        <label>
-            <input type="radio" name="sadaat_status" value="سادات" id="sadaat_option_sadaat">
-            سادات
-        </label>
-        <label style="margin-right:20px;">
-            <input type="radio" name="sadaat_status" value="عام" id="sadaat_option_am">
-            عام
-        </label>
-    </div>
-
-    <div class="form-group neumorphic-input" id="sadaat_relation_box" style="display: none;">
-        <label for="sadaat_relation">انتخاب نسب سادات:</label>
-        <select name="sadaat_relation" id="sadaat_relation" class="form-control">
-            <option value="">انتخاب کنید</option>
-            <option value="موسوی">سادات موسوی</option>
-            <option value="حسنی">سادات حسنی</option>
-            <option value="حسینی">سادات حسینی</option>
-            <option value="طباطبائی">سادات طباطبائی</option>
-            <option value="هاشمی">سادات هاشمی</option>
-        </select>
-    </div>
+{{-- نسب سادات (مخفی/نمایان بر اساس رادیو بالا) --}}
+<div
+    id="sadaat_relation_container"
+    class="form-group"
+    style="display: none;"
+>
+    <label for="sadaat_relation_id">نسب سادات <span class="text-danger">*</span></label>
+    <select
+        name="sadaat_relation_id"
+        id="sadaat_relation_id"
+        class="form-control"
+    >
+        <option value="">— انتخاب کنید —</option>
+        @foreach($sadaatRelations as $rel)
+            <option
+                value="{{ $rel->id }}"
+                {{ old('sadaat_relation_id') == $rel->id ? 'selected' : '' }}
+            >
+                {{ $rel->name }}
+            </option>
+        @endforeach
+    </select>
+    @error('sadaat_relation_id')
+    <div class="text-danger small mt-1">{{ $message }}</div>
+    @enderror
 </div>
 
 <script>
-    // نمایش نسب سادات فقط وقتی "سادات" انتخاب شود
-    const sadaatRadio = document.getElementById('sadaat_option_sadaat');
-    const amRadio = document.getElementById('sadaat_option_am');
-    const sadaatBox = document.getElementById('sadaat_relation_box');
+    document.addEventListener('DOMContentLoaded', function() {
+        const radios = document.querySelectorAll('input[name="sadaat_status"]');
+        const container = document.getElementById('sadaat_relation_container');
 
-    sadaatRadio.addEventListener('change', () => sadaatBox.style.display = 'block');
-    amRadio.addEventListener('change', () => sadaatBox.style.display = 'none');
+        function toggleSadaatRelation() {
+            const selected = document.querySelector('input[name="sadaat_status"]:checked').value;
+            if (selected === 'سادات') {
+                container.style.display = 'block';
+            } else {
+                container.style.display = 'none';
+                // در صورت نیاز مقدار قبلی را پاک می‌کنیم
+                const select = container.querySelector('select');
+                if (select) select.value = '';
+            }
+        }
+
+        radios.forEach(radio => {
+            radio.addEventListener('change', toggleSadaatRelation);
+        });
+
+        // حالت اولیه هنگام بارگذاری صفحه
+        toggleSadaatRelation();
+    });
 </script>

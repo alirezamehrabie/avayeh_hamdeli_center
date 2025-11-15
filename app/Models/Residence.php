@@ -11,12 +11,28 @@ class Residence extends Model
     use HasFactory;
 
     protected $fillable = [
-        'person_id', 'residence_status', 'is_local_to_city', 'deposit_amount', 'monthly_rent',
-        'residence_duration_years', 'address', 'district'
+        'person_id',
+        'residence_status_id',
+        'district_id',            // اضافه شد
+        'is_local_to_city',
+        'deposit_amount',
+        'monthly_rent',
+        'residence_duration_years',
+        'address',
     ];
 
     public function person(): BelongsTo
     {
         return $this->belongsTo(Person::class);
+    }
+
+    public function residenceStatus(): BelongsTo
+    {
+        return $this->belongsTo(ResidenceStatusType::class, 'residence_status_id');
+    }
+
+    public function district(): BelongsTo
+    {
+        return $this->belongsTo(District::class);
     }
 }

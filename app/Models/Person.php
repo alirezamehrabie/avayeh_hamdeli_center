@@ -24,7 +24,7 @@ class Person extends Model
         'gender',
         'role',
         'sadaat_status',
-        'sadaat_relation',
+        'sadaat_relation_id',
         'social_worker_id',
         'photo_id_card',
         'photo_birth_certificate',
@@ -33,7 +33,6 @@ class Person extends Model
         'disability_description',
         'person_code',
         'guardian_role',
-        'skills',
         'skills_description',
         'photo_live_capture',
 
@@ -54,6 +53,17 @@ class Person extends Model
 
             $model->person_code = $code;
         });
+    }
+
+    public function sadaatRelation()
+    {
+        return $this->belongsTo(SadaatRelation::class);
+    }
+
+    // اگر لازم است، اکسسوری برای نام نسب سادات:
+    public function getSadaatRelationNameAttribute(): ?string
+    {
+        return $this->sadaatRelation?->name;
     }
 
     /**
@@ -103,5 +113,15 @@ class Person extends Model
     public function needsLevel()
     {
         return $this->hasOne(NeedsLevel::class);
+    }
+
+    public function skills()
+    {
+        return $this->belongsToMany(
+            Skill::class,
+            'person_skill',      // نام جدول pivot
+            'person_id',         // کلید خارجی مدل جاری
+            'skill_id'           // کلید خارجی مدل مرتبط
+        );
     }
 }

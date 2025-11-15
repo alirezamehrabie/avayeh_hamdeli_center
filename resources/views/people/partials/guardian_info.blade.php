@@ -2,7 +2,22 @@
     <h4 class="border-bottom pb-2 mb-3">۳. اطلاعات سرپرست</h4>
     <div class="row g-3">
         <div class="col-md-3"><label for="guardian_birth_date" class="form-label">تاریخ تولد سرپرست</label><input type="date" class="form-control" name="guardian_birth_date" value="{{ old('guardian_birth_date') }}"></div>
-        <div class="col-md-3"><label for="occupation" class="form-label">شغل سرپرست</label><input type="text" class="form-control" name="occupation" value="{{ old('occupation') }}"></div>
+
+
+        <label for="occupation_id">شغل سرپرست</label>
+        <select name="occupation_id" id="occupation_id" class="form-control">
+            <option value="">— انتخاب کنید —</option>
+            @foreach(\App\Models\Occupation::orderBy('sort_order')->get() as $occ)
+                <option value="{{ $occ->id }}"
+                    {{ old('occupation_id') == $occ->id ? 'selected' : '' }}>
+                    {{ $occ->name }}
+                </option>
+            @endforeach
+        </select>
+        @error('occupation_id')
+        <span class="text-danger">{{ $message }}</span>
+        @enderror
+
         <div class="col-md-3"><label for="job_type" class="form-label">نوع کار</label><input type="text" class="form-control" name="job_type" value="{{ old('job_type') }}" placeholder="کارگر فصلی، روزمزد، ..."></div>
         <div class="col-md-3"><label for="guardian_phone_number" class="form-label">شماره تماس سرپرست</label><input type="text" class="form-control" name="guardian_phone_number" value="{{ old('guardian_phone_number') }}"></div>
         <div class="col-md-3"><label for="children_count" class="form-label">تعداد کل فرزندان</label><input type="number" class="form-control" name="children_count" value="{{ old('children_count') }}"></div>

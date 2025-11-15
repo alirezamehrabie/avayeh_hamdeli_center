@@ -12,7 +12,6 @@ class FamilyStatus extends Model
 
     protected $fillable = [
         'person_id',
-//        'guardian_relation',
         'economic_decile',
         'living_parents',
         'deceased_parent',
@@ -25,6 +24,9 @@ class FamilyStatus extends Model
         'parent_disability_description',
     ];
 
+    protected $casts = [
+        'economic_decile' => 'integer',
+    ];
 
     public function person(): BelongsTo
     {

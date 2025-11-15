@@ -14,13 +14,18 @@ class Education extends Model
         'is_studying',
         'school_name',
         'major',
-        'education_level',
+        'education_level_id',
         'drop_reason',
         'works_alongside_study',
         'monthly_income',
         'talent_description',
     ];
 
+    // ارتباط به جدول lookup
+    public function educationLevel(): BelongsTo
+    {
+        return $this->belongsTo(EducationLevel::class);
+    }
     public function person(): BelongsTo
     {
         return $this->belongsTo(Person::class);

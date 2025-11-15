@@ -27,7 +27,17 @@
         </div>
         <div class="col-md-3"><label for="school_name" class="form-label">نام مدرسه/دانشگاه</label><input type="text" class="form-control" name="school_name" value="{{ old('school_name') }}"></div>
         <div class="col-md-3"><label for="major" class="form-label">رشته تحصیلی</label><input type="text" class="form-control" name="major" value="{{ old('major') }}"></div>
-        <div class="col-md-3"><label for="education_level" class="form-label">مقطع تحصیلی</label><input type="text" class="form-control" name="education_level" value="{{ old('education_level') }}"></div>
+        <p>مقطع تحصیلی</p>
+        <select name="education_level_id" class="form-control">
+            <option value="">— انتخاب کنید —</option>
+            @foreach(\App\Models\EducationLevel::orderBy('sort_order')->get() as $level)
+                <option value="{{ $level->id }}"
+                    {{ old('education_level_id', $education->education_level_id ?? '') == $level->id ? 'selected' : '' }}>
+                    {{ $level->name }}
+                </option>
+            @endforeach
+        </select>
+
         <div class="col-md-12"><label for="drop_reason" class="form-label">دلیل ترک تحصیل</label><textarea class="form-control" name="drop_reason">{{ old('drop_reason') }}</textarea></div>
         <div class="col-md-4">
             <label class="form-label">همزمان با تحصیل کار می‌کند؟ <span class="text-danger">*</span></label>

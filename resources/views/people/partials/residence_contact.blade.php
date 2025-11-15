@@ -3,10 +3,14 @@
     <div class="row g-3">
         <div class="col-md-3">
             <label for="residence_status" class="form-label">وضعیت سکونت <span class="text-danger">*</span></label>
-            <select class="form-select" name="residence_status" required>
-                <option value="شخصی" @if(old('residence_status') == 'شخصی') selected @endif>شخصی</option>
-                <option value="اجاره" @if(old('residence_status') == 'اجاره') selected @endif>اجاره</option>
-                <option value="شراکتی" @if(old('residence_status') == 'شراکتی') selected @endif>شراکتی</option>
+            <select name="residence_status_id" class="form-control" required>
+                <option value="">انتخاب وضعیت سکونت...</option>
+                @foreach(\App\Models\ResidenceStatusType::orderBy('sort_order')->get() as $status)
+                    <option value="{{ $status->id }}"
+                        {{ old('residence_status_id', $residence->residence_status_id ?? '') == $status->id ? 'selected' : '' }}>
+                        {{ $status->name }}
+                    </option>
+                @endforeach
             </select>
         </div>
         <div class="col-md-3">
@@ -19,7 +23,21 @@
         <div class="col-md-3"><label for="deposit_amount" class="form-label">میزان ودیعه (تومان)</label><input type="number" class="form-control" name="deposit_amount" value="{{ old('deposit_amount') }}"></div>
         <div class="col-md-3"><label for="monthly_rent" class="form-label">اجاره ماهانه (تومان)</label><input type="number" class="form-control" name="monthly_rent" value="{{ old('monthly_rent') }}"></div>
         <div class="col-md-6"><label for="residence_duration_years" class="form-label">مدت اقامت فعلی (سال)</label><input type="number" class="form-control" name="residence_duration_years" value="{{ old('residence_duration_years') }}"></div>
-        <div class="col-md-6"><label for="district" class="form-label">محله / ناحیه</label><input type="text" class="form-control" name="district" value="{{ old('district') }}"></div>
+        <div class="form-group">
+            <label for="district_id">ناحیه / محل</label>
+            <select name="district_id" id="district_id" class="form-control">
+                <option value="">— انتخاب کنید —</option>
+                @foreach(\App\Models\District::orderBy('sort_order')->get() as $d)
+                    <option value="{{ $d->id }}"
+                        {{ old('residence_status_id', $residence->district_id ?? '') == $d->id ? 'selected' : '' }}>
+                        {{ $d->name }}
+                    </option>
+                @endforeach
+            </select>
+            @error('district_id')
+            <span class="text-danger">{{ $message }}</span>
+            @enderror
+        </div>
         <div class="col-md-12"><label for="address" class="form-label">نشانی کامل <span class="text-danger">*</span></label><textarea class="form-control" name="address" required>{{ old('address') }}</textarea></div>
         <div class="col-md-3"><label for="personal_phone" class="form-label">شماره تماس شخصی</label><input type="text" class="form-control" name="personal_phone" value="{{ old('personal_phone') }}"></div>
         <div class="col-md-3"><label for="landline_phone" class="form-label">تلفن ثابت</label><input type="text" class="form-control" name="landline_phone" value="{{ old('landline_phone') }}"></div>

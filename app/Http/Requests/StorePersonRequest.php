@@ -28,21 +28,21 @@ class StorePersonRequest extends FormRequest
             'last_name' => 'required|string|max:255',
             'national_id' => 'required|string|digits:10|unique:people,national_id',
             'birth_day' => 'required|integer|min:1|max:31',
-            'birth_month' => ['required', Rule::in([
-                'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
-                'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند',
-            ])],
+            'birth_month' => [
+                'required',
+                Rule::in([
+                    'فروردین','اردیبهشت','خرداد','تیر',
+                    'مرداد','شهریور','مهر','آبان',
+                    'آذر','دی','بهمن','اسفند',
+                ]),
+            ],
             'birth_year' => 'required|integer|min:1300|max:1500',
             'father_name' => 'nullable|string|max:255',
             'father_national_id' => 'nullable|string|digits:10',
             'mother_national_id' => 'nullable|string|digits:10',
             'gender' => ['required', Rule::in(['مرد', 'زن'])],
-            'sadaat_status' => ['required', Rule::in(['سادات', 'عام'])],
-            'sadaat_relation' => [
-                'nullable',
-                Rule::in(['موسوی', 'حسنی', 'حسینی', 'طباطبائی', 'هاشمی']),
-                'required_if:sadaat_status,سادات',
-            ],
+            'sadaat_status'      => ['required', Rule::in(['سادات','عام'])],
+            'sadaat_relation_id' => ['nullable','exists:sadaat_relations,id','required_if:sadaat_status,سادات'],
 
             'role' => ['required', Rule::in(['فرزند', 'سرپرست'])],
             'social_worker_id' => 'required|exists:social_workers,id',
@@ -53,10 +53,7 @@ class StorePersonRequest extends FormRequest
             'disability_description' => 'nullable|string',
             'guardian_role' => ['nullable', Rule::in(['پدر خانواده', 'مادر خانواده', 'سایر', 'پدر', 'مادر'])],
             'skills' => 'nullable|array',
-            'skills.*' => ['nullable', Rule::in([
-                'استعداد ورزشی', 'هنری', 'فرهنگی و مذهبی',
-                'علمی و تحصیلی', 'فنی و حرفه‌ای', 'رسانه‌ای و دیجیتال'
-            ])],
+            'skills.*' => ['integer', 'exists:skills,id',],
             'skills_description' => 'nullable|string|max:1000',
             'photo_live_capture' => 'nullable|string', // base64 image string
 
@@ -70,8 +67,10 @@ class StorePersonRequest extends FormRequest
             'children_from_previous_marriage' => 'nullable|integer|min:0',
             'has_parent_disability' => 'nullable|boolean',
             'parent_disability_description' => 'nullable|required_if:has_parent_disability,1|string|max:1000',
-            'economic_decile' => ['nullable', Rule::in(['1','2','3','4','5','6','7','8','9','10'])],
-
+            'economic_decile' => [
+                'nullable',
+                Rule::in(['1','2','3','4','5','6','7','8','9','10']),
+            ],
             'living_parents' => ['nullable', Rule::in(['پدر', 'مادر', 'هر دو (پدر و مادر)'])],
             'deceased_parent' => ['nullable', Rule::in(['پدر', 'مادر', 'هر دو (پدر و مادر)'])],
             'divorced_parent' => ['nullable', Rule::in(['پدر', 'مادر', 'هر دو (پدر و مادر)'])],
@@ -79,7 +78,7 @@ class StorePersonRequest extends FormRequest
 
             // Section 3: Guardian Info
             'guardian_birth_date' => 'nullable|date',
-            'occupation' => 'nullable|string|max:255',
+            'occupation_id' => 'required|exists:occupations,id',
             'job_type' => 'nullable|string|max:255',
             'guardian_phone_number' => 'nullable|string|max:20',
             'children_count' => 'nullable|integer|min:0',
@@ -93,13 +92,13 @@ class StorePersonRequest extends FormRequest
             'vehicle_type' => 'nullable|string|max:255',
 
             // Section 4: Residence & Contact
-            'residence_status' => 'required|string',
+            'residence_status_id' => 'required|exists:residence_status_types,id',
             'is_local_to_city' => 'required|boolean',
             'deposit_amount' => 'nullable|numeric|min:0',
             'monthly_rent' => 'nullable|numeric|min:0',
             'residence_duration_years' => 'nullable|integer|min:0',
-            'district' => 'nullable|string|max:255',
-            'address' => 'required|string',
+            'address'      => 'required|string',
+            'district_id'  => 'nullable|exists:districts,id',
             'personal_phone' => 'nullable|string|max:20',
             'landline_phone' => 'nullable|string|max:20',
             'trusted_person_phone' => 'nullable|string|max:20',
@@ -117,7 +116,7 @@ class StorePersonRequest extends FormRequest
             'is_studying' => 'required|boolean',
             'school_name' => 'nullable|string|max:255',
             'major' => 'nullable|string|max:255',
-            'education_level' => 'nullable|string|max:255',
+            'education_level_id'  => 'nullable|exists:education_levels,id',
             'drop_reason' => 'nullable|string',
             'works_alongside_study' => 'required|boolean',
             'monthly_income' => 'nullable|numeric|min:0',
@@ -128,7 +127,7 @@ class StorePersonRequest extends FormRequest
             'support_card_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
 
             // Section 6: Needs Level
-            'need_level' => ['required', Rule::in(['بحرانی', 'بالا', 'متوسط', 'پایین'])],
+            'need_level_id' => 'required|exists:need_level_types,id',
             'evaluation_date' => 'required|date',
             'reviewer_name' => 'required|string|max:255',
         ];
@@ -136,10 +135,7 @@ class StorePersonRequest extends FormRequest
 
     protected function withValidator($validator)
     {
-        $validator->sometimes('sadaat_relation', [
-            'required',
-            Rule::in(['موسوی', 'حسنی', 'حسینی', 'طباطبائی', 'هاشمی']),
-        ], function ($input) {
+        $validator->sometimes('sadaat_relation_id', ['required'], function ($input) {
             return $input->sadaat_status === 'سادات';
         });
     }

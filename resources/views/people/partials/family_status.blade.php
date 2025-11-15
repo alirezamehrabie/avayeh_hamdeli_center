@@ -16,15 +16,28 @@
 
 
     {{-- economic_decile --}}
-    <div class="form-group neumorphic-input">
-        <label for="economic_decile">دهک معیشتی خانوار:</label>
-        <select name="economic_decile" id="economic_decile" class="form-control">
-            <option value="">انتخاب کنید</option>
-            @for ($i = 1; $i <= 10; $i++)
-                <option value="{{ $i }}">دهک {{ $i }}</option>
-            @endfor
+    <div class="form-group">
+        <label for="economic_decile">دهک معیشتی خانوار <span class="text-danger">*</span></label>
+        <select
+            name="economic_decile"
+            id="economic_decile"
+            class="form-control"
+        >
+            <option value="">— انتخاب کنید —</option>
+            @foreach($deciles as $value => $label)
+                <option
+                    value="{{ $value }}"
+                    {{ old('economic_decile') == $value ? 'selected' : '' }}
+                >
+                    {{ "{$label} | {$value}" }}
+                </option>
+            @endforeach
         </select>
+        @error('economic_decile')
+        <div class="text-danger small mt-1">{{ $message }}</div>
+        @enderror
     </div>
+
 
     {{-- living_parents --}}
     <div class="form-group neumorphic-input">

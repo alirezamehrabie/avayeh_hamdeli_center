@@ -11,11 +11,20 @@ class NeedsLevel extends Model
     use HasFactory;
 
     protected $fillable = [
-        'person_id', 'need_level', 'evaluation_date', 'reviewer_name'
+        'person_id',
+        'need_level_id', // اضافه شد
+        'evaluation_date',
+        'reviewer_name',
     ];
 
     public function person(): BelongsTo
     {
         return $this->belongsTo(Person::class);
+    }
+
+    // ارتباط جدید با lookup جدول NeedLevelType
+    public function levelType(): BelongsTo
+    {
+        return $this->belongsTo(NeedLevelType::class, 'need_level_id');
     }
 }

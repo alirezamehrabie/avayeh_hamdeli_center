@@ -3,13 +3,13 @@
     <div class="row g-3">
         <div class="col-md-4">
             <label for="need_level" class="form-label">سطح نیاز <span class="text-danger">*</span></label>
-            <select class="form-select" name="need_level" required>
-                <option value="" disabled selected>انتخاب کنید...</option>
-                <option value="بحرانی" @if(old('need_level') == 'بحرانی') selected @endif>بحرانی</option>
-                <option value="بالا" @if(old('need_level') == 'بالا') selected @endif>بالا</option>
-                <option value="متوسط" @if(old('need_level') == 'متوسط') selected @endif>متوسط</option>
-                <option value="پایین" @if(old('need_level') == 'پایین') selected @endif>پایین</option>
+            <select name="need_level_id" class="form-control">
+                <option value="">انتخاب سطح نیاز...</option>
+                @foreach(\App\Models\NeedLevelType::orderBy('severity_order')->get() as $level)
+                    <option value="{{ $level->id }}">{{ $level->code }} - {{ $level->title }}</option>
+                @endforeach
             </select>
+
         </div>
         <div class="col-md-4">
             <label for="evaluation_date" class="form-label">تاریخ ارزیابی <span class="text-danger">*</span></label>

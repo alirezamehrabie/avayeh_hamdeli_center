@@ -1,41 +1,68 @@
 {{-- Section 1: Person Info --}}
+@php
+    $months = [
+        'فروردین','اردیبهشت','خرداد','تیر',
+        'مرداد','شهریور','مهر','آبان',
+        'آذر','دی','بهمن','اسفند',
+    ];
+@endphp
+
 <div class="mb-5">
     <h4 class="border-bottom pb-2 mb-3">۱. اطلاعات فردی مددجو</h4>
     <div class="row g-3">
         <div class="col-md-4"><label for="first_name" class="form-label">نام <span class="text-danger">*</span></label><input type="text" class="form-control" name="first_name" value="{{ old('first_name') }}" required></div>
         <div class="col-md-4"><label for="last_name" class="form-label">نام خانوادگی <span class="text-danger">*</span></label><input type="text" class="form-control" name="last_name" value="{{ old('last_name') }}" required></div>
         <div class="col-md-4"><label for="national_id" class="form-label">کد ملی <span class="text-danger">*</span></label><input type="text" class="form-control" name="national_id" value="{{ old('national_id') }}" required></div>
-        <div class="form-group mt-3">
-            <label for="birth_day">تاریخ تولد مددجو</label>
-            <div class="row">
-                <div class="col-md-3">
-                    <label for="birth_day">روز تولد</label>
-                    <input type="number" name="birth_day" id="birth_day" min="1" max="31" class="form-control" required>
-                </div>
-                <div class="col-md-5">
-                    <label for="birth_month">ماه تولد</label>
-                    <select name="birth_month" id="birth_month" class="form-control" required>
-                        <option value="">انتخاب کنید...</option>
-                        <option value="فروردین">فروردین</option>
-                        <option value="اردیبهشت">اردیبهشت</option>
-                        <option value="خرداد">خرداد</option>
-                        <option value="تیر">تیر</option>
-                        <option value="مرداد">مرداد</option>
-                        <option value="شهریور">شهریور</option>
-                        <option value="مهر">مهر</option>
-                        <option value="آبان">آبان</option>
-                        <option value="آذر">آذر</option>
-                        <option value="دی">دی</option>
-                        <option value="بهمن">بهمن</option>
-                        <option value="اسفند">اسفند</option>
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label for="birth_year">سال تولد</label>
-                    <input type="number" name="birth_year" id="birth_year" min="1300" max="1500" class="form-control" required>
-                </div>
+
+        <div class="form-row">
+            <div class="form-group col-md-4">
+                <label for="birth_day">روز تولد</label>
+                <input
+                    type="number"
+                    name="birth_day"
+                    id="birth_day"
+                    class="form-control"
+                    value="{{ old('birth_day') }}"
+                    min="1" max="31"
+                    required
+                >
+                @error('birth_day')
+                <small class="text-danger">{{ $message }}</small>
+                @enderror
+            </div>
+
+            <div class="form-group col-md-4">
+                <label for="birth_month">ماه تولد</label>
+                <select name="birth_month" id="birth_month" class="form-control" required>
+                    <option value="">— انتخاب ماه —</option>
+                    @foreach($months as $month)
+                        <option value="{{ $month }}"
+                            {{ old('birth_month') === $month ? 'selected' : '' }}
+                        >{{ $month }}</option>
+                    @endforeach
+                </select>
+                @error('birth_month')
+                <small class="text-danger">{{ $message }}</small>
+                @enderror
+            </div>
+
+            <div class="form-group col-md-4">
+                <label for="birth_year">سال تولد</label>
+                <input
+                    type="number"
+                    name="birth_year"
+                    id="birth_year"
+                    class="form-control"
+                    value="{{ old('birth_year') }}"
+                    min="1300" max="1500"
+                    required
+                >
+                @error('birth_year')
+                <small class="text-danger">{{ $message }}</small>
+                @enderror
             </div>
         </div>
+
         <div class="col-md-4"><label for="father_name" class="form-label">نام پدر</label><input type="text" class="form-control" name="father_name" value="{{ old('father_name') }}"></div>
         <div class="col-md-4"><label for="father_national_id" class="form-label">کد ملی پدر</label><input type="text" class="form-control" name="father_national_id" value="{{ old('father_national_id') }}"></div>
         <div class="col-md-4"><label for="mother_national_id" class="form-label">کد ملی مادر</label><input type="text" class="form-control" name="mother_national_id" value="{{ old('mother_national_id') }}"></div>
@@ -70,16 +97,7 @@
             </select>
         </div>
 
-
-        <div class="form-group mt-3">
-            <label>استعدادهای شخصی مددجو:</label><br>
-            @foreach(['استعداد ورزشی','هنری','فرهنگی و مذهبی','علمی و تحصیلی','فنی و حرفه‌ای','رسانه‌ای و دیجیتال'] as $skill)
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="checkbox" name="skills[]" value="{{ $skill }}">
-                    <label class="form-check-label">{{ $skill }}</label>
-                </div>
-            @endforeach
-        </div>
+        @include('people.partials.skills')
 
         <div class="form-group mt-2">
             <label for="skills_description">توضیحات استعداد:</label>
