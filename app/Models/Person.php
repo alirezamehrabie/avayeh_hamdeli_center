@@ -14,6 +14,7 @@ class Person extends Model
     protected $fillable = [
         'first_name',
         'last_name',
+        'full_name',
         'national_id',
         'birth_day',
         'birth_month',
@@ -53,6 +54,12 @@ class Person extends Model
 
             $model->person_code = $code;
         });
+
+        // === بخش جدید برای ذخیره خودکار نام کامل ===
+        // رویداد saving هم هنگام create و هم update اجرا می‌شود
+        static::saving(function ($model) {
+            $model->full_name = $model->first_name . ' ' . $model->last_name;
+        });
     }
 
     public function sadaatRelation()
@@ -64,14 +71,6 @@ class Person extends Model
     public function getSadaatRelationNameAttribute(): ?string
     {
         return $this->sadaatRelation?->name;
-    }
-
-    /**
-     * Accessor for full name.
-     */
-    public function getFullNameAttribute(): string
-    {
-        return "{$this->first_name} {$this->last_name}";
     }
 
     // Relationships
