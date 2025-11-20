@@ -28,14 +28,7 @@ class StorePersonRequest extends FormRequest
             'last_name' => 'required|string|max:255',
             'national_id' => 'required|string|digits:10|unique:people,national_id',
             'birth_day' => 'required|integer|min:1|max:31',
-            'birth_month' => [
-                'required',
-                Rule::in([
-                    'فروردین','اردیبهشت','خرداد','تیر',
-                    'مرداد','شهریور','مهر','آبان',
-                    'آذر','دی','بهمن','اسفند',
-                ]),
-            ],
+            'birth_month' => ['required', 'integer', 'min:1', 'max:12'],
             'birth_year' => 'required|integer|min:1300|max:1500',
             'father_name' => 'nullable|string|max:255',
             'father_national_id' => 'nullable|string|digits:10',
@@ -51,7 +44,6 @@ class StorePersonRequest extends FormRequest
             'has_disability' => 'required|boolean',
             'disability_type' => 'required_if:has_disability,1|string|max:255',
             'disability_description' => 'nullable|string',
-            'guardian_role' => ['nullable', Rule::in(['پدر خانواده', 'مادر خانواده', 'سایر', 'پدر', 'مادر'])],
             'skills' => 'nullable|array',
             'skills.*' => ['integer', 'exists:skills,id',],
             'skills_description' => 'nullable|string|max:1000',
@@ -60,13 +52,15 @@ class StorePersonRequest extends FormRequest
 
 
             // Section 2: Family Status
-//            'guardian_relation' => ['nullable', Rule::in(['پدربزرگ', 'مادربزرگ', 'اقوام', 'سایر'])],
             'parents_alive' => 'nullable|string|max:255',
             'death_year' => 'nullable|numeric|digits:4',
             'death_reason' => 'nullable|string',
             'children_from_previous_marriage' => 'nullable|integer|min:0',
             'has_parent_disability' => 'nullable|boolean',
             'parent_disability_description' => 'nullable|required_if:has_parent_disability,1|string|max:1000',
+            // اضافه کردن قانون برای guardian_relation
+            'guardian_relation_type_id' => ['nullable', 'exists:guardian_relation_types,id'],
+
             'economic_decile' => [
                 'nullable',
                 Rule::in(['1','2','3','4','5','6','7','8','9','10']),

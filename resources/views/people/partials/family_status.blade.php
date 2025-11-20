@@ -2,17 +2,31 @@
 <div class="family-status-section neumorphic-card">
     <h4 class="section-title">وضعیت خانوادگی مددجو</h4>
 
-    {{-- guardian_relation --}}
-    <div class="form-group neumorphic-input" id="guardian_relation_box">
-        <label for="guardian_relation">نسب سرپرست (در حالت سایر):</label>
-        <select name="guardian_relation" id="guardian_relation" class="form-control">
-            <option value="">انتخاب کنید</option>
-            <option value="پدربزرگ">پدربزرگ</option>
-            <option value="مادربزرگ">مادربزرگ</option>
-            <option value="اقوام">اقوام</option>
-            <option value="سایر">سایر</option>
+    <!-- فیلد نسبت با سرپرست / نقش در خانواده -->
+    <div class="col-md-4 mb-3">
+        <label for="guardian_relation_type_id" class="form-label">نسبت با سرپرست</label>
+        <select class="form-select @error('guardian_relation_type_id') is-invalid @enderror"
+                id="guardian_relation_type_id"
+                name="guardian_relation_type_id">
+
+            <option value="" disabled selected>انتخاب کنید...</option>
+
+            @foreach($guardianRelationTypes as $type)
+                <option value="{{ $type->id }}"
+                    {{ old('guardian_relation_type_id') == $type->id ? 'selected' : '' }}>
+                    {{ $type->title }}
+                </option>
+            @endforeach
+
         </select>
+
+        @error('guardian_relation_type_id')
+        <div class="invalid-feedback">
+            {{ $message }}
+        </div>
+        @enderror
     </div>
+
 
 
     {{-- economic_decile --}}
@@ -104,11 +118,16 @@
     </div>
 
     {{-- has_parent_disability --}}
-    <div class="form-group neumorphic-checkbox">
-        <label>
-            <input type="checkbox" name="has_parent_disability" id="has_parent_disability">
-            آیا در والدین، معلولیت وجود دارد؟
+    <div class="form-check-reverse">
+
+        <input class="form-check-input" type="checkbox" name="has_parent_disability" id="has_parent_disability" value="1"
+            {{ old('has_parent_disability') ? 'checked' : '' }}>
+
+        <label class="form-check-label" for="has_parent_disability">
+            آیا والدین دارای معلولیت هستند؟
         </label>
+
+
     </div>
 
     {{-- parent_disability_description --}}

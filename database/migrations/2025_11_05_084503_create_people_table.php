@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->string('last_name');
             $table->string('national_id', 10)->unique();
             $table->integer('birth_day');
-            $table->string('birth_month');
+            $table->unsignedTinyInteger('birth_month');
             $table->integer('birth_year')->nullable();
             $table->string('father_name')->nullable();
             $table->string('father_national_id', 10)->nullable();

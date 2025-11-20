@@ -31,18 +31,25 @@
                 @enderror
             </div>
 
-            <div class="form-group col-md-4">
-                <label for="birth_month">ماه تولد</label>
-                <select name="birth_month" id="birth_month" class="form-control" required>
-                    <option value="">— انتخاب ماه —</option>
-                    @foreach($months as $month)
-                        <option value="{{ $month }}"
-                            {{ old('birth_month') === $month ? 'selected' : '' }}
-                        >{{ $month }}</option>
+            <div class="col-md-4 mb-3">
+                <label for="birth_month" class="form-label">ماه تولد</label>
+                <select class="form-select @error('birth_month') is-invalid @enderror"
+                        id="birth_month"
+                        name="birth_month">
+
+                    <option value="" disabled selected>انتخاب کنید...</option>
+
+                    {{-- استفاده از آرایه تعریف شده در مدل --}}
+                    @foreach(\App\Models\Person::$months as $key => $value)
+                        {{-- $key میشود عدد (1) و $value میشود نام (فروردین) --}}
+                        <option value="{{ $key }}" {{ old('birth_month') == $key ? 'selected' : '' }}>
+                            {{ $value }}
+                        </option>
                     @endforeach
+
                 </select>
                 @error('birth_month')
-                <small class="text-danger">{{ $message }}</small>
+                <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>
 
@@ -61,6 +68,7 @@
                 <small class="text-danger">{{ $message }}</small>
                 @enderror
             </div>
+
         </div>
 
         <div class="col-md-4"><label for="father_name" class="form-label">نام پدر</label><input type="text" class="form-control" name="father_name" value="{{ old('father_name') }}"></div>
@@ -87,15 +95,6 @@
             </select>
         </div>
 
-        <div class="form-group neumorphic-input">
-            <label for="guardian_role">نوع سرپرست:</label>
-            <select name="guardian_role" id="guardian_role" class="form-control">
-                <option value="">انتخاب کنید</option>
-                <option value="پدر خانواده">پدر خانواده</option>
-                <option value="مادر خانواده">مادر خانواده</option>
-                <option value="سایر">سایر</option>
-            </select>
-        </div>
 
         @include('people.partials.skills')
 

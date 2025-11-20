@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 // Form Request for Validation
 use App\Http\Requests\StorePersonRequest;
+use App\Models\GuardianRelationType;
 use App\Models\Person;
 use App\Models\Skill;
 use App\Models\SocialWorker;
@@ -32,6 +33,7 @@ class PersonController extends Controller
         $skills = Skill::all();
         $person = new Person();
         $sadaatRelations  = SadaatRelation::orderBy('sort_order')->get();
+        $guardianRelationTypes = GuardianRelationType::all();
 
         $deciles = [
             '1'  => 'دهک یک',
@@ -46,7 +48,14 @@ class PersonController extends Controller
             '10' => 'دهک ده',
         ];
 
-        return view('people.create', compact('deciles' , 'socialWorkers' , 'sadaatRelations', 'skills', 'person'));
+        return view('people.create', compact(
+            'deciles',
+            'socialWorkers',
+            'sadaatRelations',
+            'skills',
+            'person',
+            'guardianRelationTypes' // <--- ارسال به ویو
+        ));
     }
 
     /**
@@ -88,7 +97,6 @@ class PersonController extends Controller
                 'role' => $validatedData['role'],
                 'sadaat_status' => $validatedData['sadaat_status'],
                 'sadaat_relation_id'   => $validatedData['sadaat_relation_id'] ?? null,
-                'guardian_role' => $validatedData['guardian_role'] ?? null,
 //                'skills' => $validatedData['skills'] ?? [],
                 'skills_description' => $validatedData['skills_description'] ?? null,
                 'social_worker_id' => $validatedData['social_worker_id'],
@@ -103,7 +111,8 @@ class PersonController extends Controller
 
             // 2. Create FamilyStatus
             FamilyStatus::create(['person_id' => $person->id] + [
-                    'economic_decile'  => $validated['economic_decile'] ?? null,
+                    'guardian_relation_type_id' => $request->input('guardian_relation_type_id'),
+                    'economic_decile' => $validatedData['economic_decile'] ?? null,
                     'living_parents' => $validatedData['living_parents'] ?? null,
                     'deceased_parent' => $validatedData['deceased_parent'] ?? null,
                     'death_year' => $validatedData['death_year'] ?? null,

@@ -19,6 +19,7 @@
         }
         label, input, select, textarea, button {
             font-family: 'Vazirmatn', sans-serif;
+            text-align: right;
         }
     </style>
 </head>

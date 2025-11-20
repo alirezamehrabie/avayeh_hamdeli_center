@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\GuardianRelationType;
 use App\Models\ResidenceStatusType;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -23,6 +24,7 @@ class DatabaseSeeder extends Seeder
             OccupationSeeder::class,
             SadaatRelationsSeeder::class,
             SkillsTableSeeder::class,
+            GuardianRelationTypeSeeder::class,
         ]);
     }
 }

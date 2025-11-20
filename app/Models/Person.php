@@ -33,7 +33,6 @@ class Person extends Model
         'disability_type',
         'disability_description',
         'person_code',
-        'guardian_role',
         'skills_description',
         'photo_live_capture',
 
@@ -122,5 +121,27 @@ class Person extends Model
             'person_id',         // کلید خارجی مدل جاری
             'skill_id'           // کلید خارجی مدل مرتبط
         );
+    }
+
+    // تعریف لیست ماه‌ها به صورت ثابت
+    public static array $months = [
+        1 => 'فروردین',
+        2 => 'اردیبهشت',
+        3 => 'خرداد',
+        4 => 'تیر',
+        5 => 'مرداد',
+        6 => 'شهریور',
+        7 => 'مهر',
+        8 => 'آبان',
+        9 => 'آذر',
+        10 => 'دی',
+        11 => 'بهمن',
+        12 => 'اسفند',
+    ];
+
+    // یک Accessor برای اینکه وقتی مدل را می‌گیرید، نام ماه را هم داشته باشید
+    public function getBirthMonthNameAttribute(): string
+    {
+        return self::$months[$this->birth_month] ?? 'نامشخص';
     }
 }

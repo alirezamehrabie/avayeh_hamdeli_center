@@ -12,6 +12,7 @@ class FamilyStatus extends Model
 
     protected $fillable = [
         'person_id',
+        'guardian_relation_type_id',
         'economic_decile',
         'living_parents',
         'deceased_parent',
@@ -28,6 +29,11 @@ class FamilyStatus extends Model
         'economic_decile' => 'integer',
     ];
 
+    // تعریف رابطه با جدول Lookup
+    public function guardianRelationType()
+    {
+        return $this->belongsTo(GuardianRelationType::class);
+    }
     public function person(): BelongsTo
     {
         return $this->belongsTo(Person::class);
