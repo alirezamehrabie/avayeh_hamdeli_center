@@ -1,35 +1,36 @@
 {{-- Section 1: Person Info --}}
-@php
-    $months = [
-        'فروردین','اردیبهشت','خرداد','تیر',
-        'مرداد','شهریور','مهر','آبان',
-        'آذر','دی','بهمن','اسفند',
-    ];
-@endphp
 
 <div class="mb-5">
     <h4 class="border-bottom pb-2 mb-3">۱. اطلاعات فردی مددجو</h4>
     <div class="row g-3">
         <div class="col-md-4"><label for="first_name" class="form-label">نام <span class="text-danger">*</span></label><input type="text" class="form-control" name="first_name" value="{{ old('first_name') }}" required></div>
         <div class="col-md-4"><label for="last_name" class="form-label">نام خانوادگی <span class="text-danger">*</span></label><input type="text" class="form-control" name="last_name" value="{{ old('last_name') }}" required></div>
-        <div class="col-md-4"><label for="national_id" class="form-label">کد ملی <span class="text-danger">*</span></label><input type="text" class="form-control" name="national_id" value="{{ old('national_id') }}" required></div>
+        <div class="col-md-4"><label for="national_id" class="form-label">کد ملی <span class="text-danger">*</span></label><input type="text" class="form-control" name="national_id" maxlength="10" value="{{ old('national_id') }}" required></div>
 
-        <div class="form-row">
-            <div class="form-group col-md-4">
-                <label for="birth_day">روز تولد</label>
-                <input
-                    type="number"
-                    name="birth_day"
+        <div class="col-md-4 mb-3">
+            <label for="birth_day" class="form-label">روز تولد</label>
+
+            <!-- کلاس form-select در بوت‌استرپ ظاهر زیبایی به لیست می‌دهد -->
+            <select class="form-select @error('birth_day') is-invalid @enderror"
                     id="birth_day"
-                    class="form-control"
-                    value="{{ old('birth_day') }}"
-                    min="1" max="31"
-                    required
-                >
-                @error('birth_day')
-                <small class="text-danger">{{ $message }}</small>
-                @enderror
-            </div>
+                    name="birth_day">
+
+                <option value="" disabled selected>انتخاب...</option>
+
+                {{-- حلقه برای تولید اعداد 1 تا 31 --}}
+                @for ($i = 1; $i <= 31; $i++)
+                    <option value="{{ $i }}" {{ old('birth_day') == $i ? 'selected' : '' }}>
+                        {{ $i }}
+                    </option>
+                @endfor
+
+            </select>
+
+            @error('birth_day')
+            <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+
 
             <div class="col-md-4 mb-3">
                 <label for="birth_month" class="form-label">ماه تولد</label>
@@ -53,21 +54,27 @@
                 @enderror
             </div>
 
-            <div class="form-group col-md-4">
-                <label for="birth_year">سال تولد</label>
-                <input
-                    type="number"
-                    name="birth_year"
+        <div class="col-md-4 mb-3">
+            <label for="birth_year" class="form-label">سال تولد</label>
+            <select class="form-select @error('birth_year') is-invalid @enderror"
                     id="birth_year"
-                    class="form-control"
-                    value="{{ old('birth_year') }}"
-                    min="1300" max="1500"
-                    required
-                >
-                @error('birth_year')
-                <small class="text-danger">{{ $message }}</small>
-                @enderror
-            </div>
+                    name="birth_year">
+
+                <option value="" disabled selected>انتخاب...</option>
+
+                {{-- حلقه از سال 1404 به پایین تا 1300 --}}
+                {{-- اگر می‌خواهید سال جاری پویا باشد، می‌توانید از jdate('Y') استفاده کنید --}}
+                @for ($i = 1404; $i >= 1300; $i--)
+                    <option value="{{ $i }}" {{ old('birth_year') == $i ? 'selected' : '' }}>
+                        {{ $i }}
+                    </option>
+                @endfor
+
+            </select>
+            @error('birth_year')
+            <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
 
         </div>
 
@@ -91,7 +98,7 @@
             <label for="role" class="form-label">نقش در خانواده <span class="text-danger">*</span></label>
             <select class="form-select" name="role" required>
                 <option value="فرزند" @if(old('role') == 'فرزند') selected @endif>فرزند</option>
-                <option value="سرپرست" @if(old('role') == 'سرپرست') selected @endif>سرپرست</option>
+                <option disabled value="سرپرست" @if(old('role') == 'سرپرست') selected @endif>سرپرست</option>
             </select>
         </div>
 
@@ -106,65 +113,37 @@
 
 
         <!-- بخش معلولیت مددجو -->
-        <div class="form-group mt-3">
-            <label>آیا فرد دارای معلولیت است؟</label><br>
+    <div class="col-md-4 mb-3">
+        <label class="form-label">آیا دارای معلولیت هست؟</label>
+        <div>
+            <input type="radio" id="has_disability_yes" name="has_disability" value="1"
+                {{ old('has_disability') === '1' ? 'checked' : '' }}>
+            <label for="has_disability_yes">بله</label>
 
-            <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="has_disability" id="has_disability_yes" value="1">
-                <label class="form-check-label" for="has_disability_yes">بله</label>
-            </div>
-
-            <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="has_disability" id="has_disability_no" value="0" checked>
-                <label class="form-check-label" for="has_disability_no">خیر</label>
-            </div>
+            <input type="radio" id="has_disability_no" name="has_disability" value="0"
+                {{ old('has_disability', '0') === '0' ? 'checked' : '' }}>
+            <label for="has_disability_no">خیر</label>
         </div>
+    </div>
 
-        <div id="disability_section" style="display:none;">
-            <div class="form-group mt-2">
-                <label for="disability_type">نوع معلولیت</label>
-                <select id="disability_type" name="disability_type" class="form-control" disabled>
-                    <option value="">انتخاب کنید...</option>
-                    <option value="جسمی">جسمی</option>
-                    <option value="ذهنی">ذهنی</option>
-                    <option value="بینایی">بینایی</option>
-                    <option value="شنوایی">شنوایی</option>
-                </select>
-            </div>
+    <div class="col-md-4 mb-3">
+        <label for="disability_type" class="form-label">نوع معلولیت</label>
+        <select class="form-select" id="disability_type" name="disability_type_id" {{ old('has_disability','0') == '1' ? '' : 'disabled' }}>
+            <option value="">انتخاب کنید...</option>
+            @foreach(\App\Models\DisabilityType::all() as $type)
+                <option value="{{ $type->id }}"
+                    {{ old('disability_type_id') == $type->id ? 'selected' : '' }}>
+                    {{ $type->name }}
+                </option>
+            @endforeach
+        </select>
+    </div>
 
-            <div class="form-group mt-2">
-                <label for="disability_description">توضیحات تکمیلی معلولیت مددجو</label>
-                <textarea id="disability_description" name="disability_description" class="form-control" disabled></textarea>
-            </div>
-        </div>
-
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const yesRadio = document.getElementById('has_disability_yes');
-                const noRadio  = document.getElementById('has_disability_no');
-                const disabilitySection = document.getElementById('disability_section');
-                const typeSelect = document.getElementById('disability_type');
-                const descInput  = document.getElementById('disability_description');
-
-                function toggleDisabilityFields() {
-                    if (yesRadio.checked) {
-                        disabilitySection.style.display = 'block';
-                        typeSelect.disabled = false;
-                        descInput.disabled = false;
-                    } else {
-                        disabilitySection.style.display = 'none';
-                        typeSelect.disabled = true;
-                        descInput.disabled = true;
-                        typeSelect.value = '';
-                        descInput.value = '';
-                    }
-                }
-
-                yesRadio.addEventListener('change', toggleDisabilityFields);
-                noRadio.addEventListener('change', toggleDisabilityFields);
-                toggleDisabilityFields(); // initialize
-            });
-        </script>
+    <div class="col-md-4 mb-3">
+        <label for="disability_description" class="form-label">توضیحات معلولیت</label>
+        <textarea class="form-control" id="disability_description" name="disability_description"
+              {{ old('has_disability','0') == '1' ? '' : 'disabled' }}>{{ old('disability_description') }}</textarea>
+    </div>
 
 
 
@@ -190,26 +169,34 @@
             <canvas id="photoCanvas" style="display:none;"></canvas>
         </div>
 
-        <script>
-            const openCameraBtn = document.getElementById('openCameraBtn');
-            const cameraStream = document.getElementById('cameraStream');
-            const photoCanvas = document.getElementById('photoCanvas');
-            const photoInput = document.getElementById('photo_live_capture');
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const radios = document.querySelectorAll('input[name="has_disability"]');
+            const typeSelect = document.getElementById('disability_type');
+            const descTextarea = document.getElementById('disability_description');
 
-            openCameraBtn.addEventListener('click', async () => {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-                cameraStream.srcObject = stream;
-                cameraStream.style.display = 'block';
-                setTimeout(() => {
-                    photoCanvas.width = cameraStream.videoWidth;
-                    photoCanvas.height = cameraStream.videoHeight;
-                    photoCanvas.getContext('2d').drawImage(cameraStream, 0, 0);
-                    photoInput.value = photoCanvas.toDataURL('image/jpeg');
-                    stream.getTracks().forEach(track => track.stop());
-                    cameraStream.style.display = 'none';
-                }, 3000); // بعد از ۳ ثانیه عکس گرفته می‌شود
+            function toggleDisabilityFields() {
+                const selected = document.querySelector('input[name="has_disability"]:checked');
+                if (selected && selected.value === '1') {
+                    typeSelect.disabled = false;
+                    descTextarea.disabled = false;
+                } else {
+                    typeSelect.disabled = true;
+                    descTextarea.disabled = true;
+                    typeSelect.value = '';
+                    descTextarea.value = '';
+                }
+            }
+
+            radios.forEach(radio => {
+                radio.addEventListener('change', toggleDisabilityFields);
             });
-        </script>
+
+            toggleDisabilityFields(); // اجرای اولیه
+        });
+    </script>
+
+
 
     </div>
 </div>

@@ -103,7 +103,7 @@ class PersonController extends Controller
                 'photo_id_card' => $paths['photo_id_card'],
                 'photo_birth_certificate' => $paths['photo_birth_certificate'],
                 'has_disability' => $request->boolean('has_disability'),
-                'disability_type' => $validatedData['disability_type'] ?? null,
+                'disability_type_id' => $validatedData['disability_type_id'] ?? null,
                 'disability_description' => $validatedData['disability_description'] ?? null,
             ]);
 

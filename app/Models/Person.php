@@ -30,7 +30,7 @@ class Person extends Model
         'photo_id_card',
         'photo_birth_certificate',
         'has_disability',
-        'disability_type',
+        'disability_type_id',
         'disability_description',
         'person_code',
         'skills_description',
@@ -59,6 +59,11 @@ class Person extends Model
         static::saving(function ($model) {
             $model->full_name = $model->first_name . ' ' . $model->last_name;
         });
+    }
+
+    public function disabilityType()
+    {
+        return $this->belongsTo(DisabilityType::class);
     }
 
     public function sadaatRelation()

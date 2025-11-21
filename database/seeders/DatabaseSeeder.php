@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             SadaatRelationsSeeder::class,
             SkillsTableSeeder::class,
             GuardianRelationTypeSeeder::class,
+            DisabilityTypeSeeder::class,
         ]);
     }
 }
