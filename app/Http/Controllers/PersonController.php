@@ -34,6 +34,7 @@ class PersonController extends Controller
         $person = new Person();
         $sadaatRelations  = SadaatRelation::orderBy('sort_order')->get();
         $guardianRelationTypes = GuardianRelationType::all();
+        $jobTypes = \App\Models\JobType::all();
 
         $deciles = [
             '1'  => 'دهک یک',
@@ -54,7 +55,8 @@ class PersonController extends Controller
             'sadaatRelations',
             'skills',
             'person',
-            'guardianRelationTypes' // <--- ارسال به ویو
+            'guardianRelationTypes',
+            'jobTypes'// <--- ارسال به ویو
         ));
     }
 
@@ -129,7 +131,7 @@ class PersonController extends Controller
             Guardian::create(['person_id' => $person->id] + $request->only([
                     'occupation_id' => $request->input('occupation_id'),
                     'guardian_birth_date',
-                    'job_type',
+                    'job_type_id' => $request->input('job_type_id'),
                     'guardian_phone_number', 'children_count', 'children_in_house',
                     'insurance_status', 'other_insurance', 'divorced_child_at_home',
                     'average_income', 'any_family_employed', 'has_vehicle', 'vehicle_type'

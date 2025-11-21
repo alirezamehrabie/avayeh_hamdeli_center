@@ -73,7 +73,7 @@ class StorePersonRequest extends FormRequest
             // Section 3: Guardian Info
             'guardian_birth_date' => 'nullable|date',
             'occupation_id' => 'required|exists:occupations,id',
-            'job_type' => 'nullable|string|max:255',
+            'job_type_id' => ['nullable', 'exists:job_types,id'],
             'guardian_phone_number' => 'nullable|string|max:20',
             'children_count' => 'nullable|integer|min:0',
             'children_in_house' => 'nullable|integer|min:0',

@@ -1,5 +1,16 @@
 <div class="mb-5 mt-5">
     <h4 class="border-bottom pb-2 mb-3">۳. اطلاعات سرپرست</h4>
+
+    <!-- START: Dynamic Guardian Alert -->
+    <div id="guardian-dynamic-alert" class="alert alert-info align-items-center d-none" role="alert">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-info-circle-fill flex-shrink-0 me-2 ms-2" viewBox="0 0 16 16">
+            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+        </svg>
+        <div>
+            توجه: سرپرست این مددجو <strong id="guardian-role-text" class="text-decoration-underline mx-1"></strong> می‌باشد.
+        </div>
+    </div>
+    <!-- END: Dynamic Guardian Alert -->
     <div class="row g-3">
         <div class="col-md-3"><label for="guardian_birth_date" class="form-label">تاریخ تولد سرپرست</label><input type="date" class="form-control" name="guardian_birth_date" value="{{ old('guardian_birth_date') }}"></div>
 
@@ -18,7 +29,19 @@
         <span class="text-danger">{{ $message }}</span>
         @enderror
 
-        <div class="col-md-3"><label for="job_type" class="form-label">نوع کار</label><input type="text" class="form-control" name="job_type" value="{{ old('job_type') }}" placeholder="کارگر فصلی، روزمزد، ..."></div>
+        <div class="col-md-3">
+            <label for="job_type_id" class="form-label">نوع قرارداد کاری</label>
+            <select name="job_type_id" id="job_type_id" class="form-control">
+                <option value="">— انتخاب کنید —</option>
+                @foreach($jobTypes as $type)
+                    <option value="{{ $type->id }}"
+                        {{ old('job_type_id') == $type->id ? 'selected' : '' }}>
+                        {{ $type->name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
         <div class="col-md-3"><label for="guardian_phone_number" class="form-label">شماره تماس سرپرست</label><input type="text" class="form-control" name="guardian_phone_number" value="{{ old('guardian_phone_number') }}"></div>
         <div class="col-md-3"><label for="children_count" class="form-label">تعداد کل فرزندان</label><input type="number" class="form-control" name="children_count" value="{{ old('children_count') }}"></div>
         <div class="col-md-3"><label for="children_in_house" class="form-label">فرزندان ساکن در منزل</label><input type="number" class="form-control" name="children_in_house" value="{{ old('children_in_house') }}"></div>

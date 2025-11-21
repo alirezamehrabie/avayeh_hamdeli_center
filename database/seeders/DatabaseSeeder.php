@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             SkillsTableSeeder::class,
             GuardianRelationTypeSeeder::class,
             DisabilityTypeSeeder::class,
+            JobTypeSeeder::class,
         ]);
     }
 }

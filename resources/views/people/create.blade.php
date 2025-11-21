@@ -61,6 +61,12 @@
     </div>
 @endsection
 
+<script>
+    document.getElementById('has_parent_disability').addEventListener('change', function () {
+        document.getElementById('disability_description_box').style.display = this.checked ? 'block' : 'none';
+    });
+</script>
+
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -84,4 +90,50 @@
         guardianRoleSelect.addEventListener('change', toggleRelationVisibility);
     });
 </script>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // 1. گرفتن المان‌ها با استفاده از ID
+        const relationSelect = document.getElementById('guardian_relation_type_id'); // در فایل family_status
+        const alertBox = document.getElementById('guardian-dynamic-alert');          // در فایل guardian_info
+        const roleTextSpan = document.getElementById('guardian-role-text');          // متن داخل alert
+
+        // تابع برای بروزرسانی متن و نمایش باکس
+        function updateGuardianMessage() {
+            // اگر المان‌ها در صفحه نبودند (برای جلوگیری از ارور احتمالی) اجرا نشود
+            if (!relationSelect || !alertBox || !roleTextSpan) return;
+
+            // گرفتن گزینه انتخاب شده
+            const selectedOption = relationSelect.options[relationSelect.selectedIndex];
+            const selectedText = selectedOption.text.trim();
+            const selectedValue = selectedOption.value;
+
+            // بررسی اینکه آیا گزینه‌ای انتخاب شده است یا خیر (خالی نباشد و مقدار پیشفرض نباشد)
+            // معمولا مقدار پیشفرض value="" یا disabled selected است
+            if (selectedValue && selectedValue !== "") {
+                // آپدیت کردن متن
+                roleTextSpan.textContent = `(${selectedText})`;
+                // نمایش باکس (حذف کلاس مخفی کننده بوت استرپ)
+                alertBox.classList.remove('d-none');
+                alertBox.classList.add('d-flex'); // برای تراز شدن آیکون و متن
+            } else {
+                // اگر چیزی انتخاب نشده بود، باکس مخفی شود
+                alertBox.classList.add('d-none');
+                alertBox.classList.remove('d-flex');
+                roleTextSpan.textContent = '';
+            }
+        }
+
+        // 2. گوش دادن به رویداد تغییر (Change Event)
+        if (relationSelect) {
+            relationSelect.addEventListener('change', updateGuardianMessage);
+
+            // 3. اجرای تابع هنگام لود شدن صفحه
+            // (برای حالتی که کاربر فرم را ارسال کرده و با خطا برگشته و مقادیر old() پر شده‌اند)
+            updateGuardianMessage();
+        }
+    });
+</script>
+
 

@@ -139,8 +139,3 @@
     </div>
 </div>
 
-<script>
-    document.getElementById('has_parent_disability').addEventListener('change', function () {
-        document.getElementById('disability_description_box').style.display = this.checked ? 'block' : 'none';
-    });
-</script>
