@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Requests;
-
+use App\Models\AccountOwnerRelation;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -22,6 +22,9 @@ class StorePersonRequest extends FormRequest
      */
     public function rules(): array
     {
+
+        $otherRelationId = AccountOwnerRelation::where('name', 'سایر')->value('id');
+
         return [
             // Section 1: Person Info
             'first_name' => 'required|string|max:255',
@@ -77,13 +80,14 @@ class StorePersonRequest extends FormRequest
             'guardian_phone_number' => 'nullable|string|max:20',
             'children_count' => 'nullable|integer|min:0',
             'children_in_house' => 'nullable|integer|min:0',
-            'insurance_status' => 'nullable|string|max:255',
-            'other_insurance' => 'nullable|string|max:255',
-            'divorced_child_at_home' => 'nullable|string|max:255',
+            'insurance_status' => ['required', 'boolean'],
+            'insurance_type_id' => ['nullable', 'required_if:insurance_status,1', 'exists:insurance_types,id'],
+            'divorced_child_at_home' => ['nullable', Rule::in(['ندارد', 'پسر', 'دختر', 'پسر / دختر'])],
             'average_income' => 'nullable|numeric|min:0',
             'any_family_employed' => 'required|boolean',
             'has_vehicle' => 'required|boolean',
-            'vehicle_type' => 'nullable|string|max:255',
+            'vehicle_type_id' => ['nullable', 'required_if:has_vehicle,1', 'exists:vehicle_types,id'],
+
 
             // Section 4: Residence & Contact
             'residence_status_id' => 'required|exists:residence_status_types,id',
@@ -101,11 +105,20 @@ class StorePersonRequest extends FormRequest
 
             // Section 5: Financial, Education & Support
             'has_own_account' => 'required|boolean',
-            'account_holder_relation' => 'nullable|string|max:255',
-            'bank_name' => 'nullable|string|max:255',
-            'card_number' => 'nullable|string|max:19', // 16 digits + 3 spaces
+            'account_owner_relation_id' => 'nullable|exists:account_owner_relations,id',
+            'other_account_owner_relation' => [
+                'nullable',
+                'string',
+                'max:255',
+                // اگر ID انتخاب شده برابر با ID "سایر" بود، این فیلد اجباری است
+                Rule::requiredIf(function () use ($otherRelationId) {
+                    return request('account_owner_relation_id') == $otherRelationId;
+                }),
+            ],
+            'bank_id' => 'nullable|exists:banks,id',
+            'card_number' => 'nullable|digits:16|numeric', // 16 digits + 3 spaces
             'sheba_number' => 'nullable|string|max:26',
-            'subsidy_card_number' => 'nullable|string|max:19',
+            'subsidy_card_number' => 'nullable|digits:16|numeric',
             'subsidy_sheba_number' => 'nullable|string|max:26',
             'is_studying' => 'required|boolean',
             'school_name' => 'nullable|string|max:255',
@@ -122,8 +135,8 @@ class StorePersonRequest extends FormRequest
 
             // Section 6: Needs Level
             'need_level_id' => 'required|exists:need_level_types,id',
-            'evaluation_date' => 'required|date',
-            'reviewer_name' => 'required|string|max:255',
+//            'evaluation_date' => 'required|date',
+//            'reviewer_name' => 'required|string|max:255',
         ];
     }
 

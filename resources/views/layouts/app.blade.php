@@ -35,6 +35,8 @@
 <main style="padding:24px;">
     @yield('content')
 </main>
+
+
 </body>
 </html>
 

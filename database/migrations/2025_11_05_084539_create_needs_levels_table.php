@@ -12,8 +12,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('person_id')->constrained('people')->onDelete('cascade');
             $table->string('need_level'); // بحرانی، بالا، متوسط، پایین
-            $table->date('evaluation_date');
-            $table->string('reviewer_name');
+            $table->date('evaluation_date')->nullable();
+            $table->string('reviewer_name')->nullable();
             $table->timestamps();
         });
     }

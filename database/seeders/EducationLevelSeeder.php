@@ -12,7 +12,7 @@ class EducationLevelSeeder extends Seeder
         $levels = [
             ['name' => 'پیش دبستانی', 'sort_order' => 1],
             ['name' => 'پایه اول ابتدایی', 'sort_order' => 2],
-            ['name' => 'پایه دو.م ابتدایی', 'sort_order' => 3],
+            ['name' => 'پایه دوم ابتدایی', 'sort_order' => 3],
             ['name' => 'پایه سوم ابتدایی', 'sort_order' => 4],
             ['name' => 'پایه چهارم ابتدایی', 'sort_order' => 5],
             ['name' => 'پایه پنجم ابتدایی', 'sort_order' => 6],

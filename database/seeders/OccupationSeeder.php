@@ -32,5 +32,10 @@ class OccupationSeeder extends Seeder
 
         // Upsert: تکراری‌ها آپدیت شوند، در غیر این‌صورت درج شوند
         Occupation::upsert($data, ['name'], ['sort_order']);
+
+        Occupation::updateOrCreate(
+            ['name' => 'سایر'],
+            ['sort_order' => 999]
+        );
     }
 }

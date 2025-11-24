@@ -137,3 +137,196 @@
 </script>
 
 
+<!-- اسکریپت برای فعال/غیرفعال کردن لیست بیمه -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const insuranceYes = document.getElementById('insurance_yes');
+        const insuranceNo = document.getElementById('insurance_no');
+        const insuranceSelect = document.getElementById('insurance_type_id');
+
+        function toggleInsuranceSelect() {
+            if (insuranceYes.checked) {
+                insuranceSelect.disabled = false;
+            } else {
+                insuranceSelect.disabled = true;
+                insuranceSelect.value = ''; // پاک کردن مقدار اگر غیرفعال شد
+            }
+        }
+
+        // شنونده رویداد
+        insuranceYes.addEventListener('change', toggleInsuranceSelect);
+        insuranceNo.addEventListener('change', toggleInsuranceSelect);
+
+        // اجرای اولیه (برای زمان ادیت یا برگشت از ولیدیشن)
+        toggleInsuranceSelect();
+    });
+</script>
+
+
+<!-- Script to toggle Vehicle Select -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const vehicleYes = document.getElementById('vehicle_yes');
+        const vehicleNo = document.getElementById('vehicle_no');
+        const vehicleSelect = document.getElementById('vehicle_type_id');
+
+        function toggleVehicleSelect() {
+            if (vehicleYes.checked) {
+                vehicleSelect.disabled = false;
+            } else {
+                vehicleSelect.disabled = true;
+                vehicleSelect.value = ''; // پاک کردن انتخاب اگر "خیر" زده شد
+            }
+        }
+
+        // گوش دادن به تغییرات
+        vehicleYes.addEventListener('change', toggleVehicleSelect);
+        vehicleNo.addEventListener('change', toggleVehicleSelect);
+
+        // اجرای اولیه (برای حفظ حالت در زمان ادیت یا خطا)
+        toggleVehicleSelect();
+    });
+</script>
+
+
+{{-- Script for Logic Control --}}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const accYes = document.getElementById('account_yes');
+        const accNo = document.getElementById('account_no');
+        const relationSelect = document.getElementById('account_owner_relation_id');
+        const otherBox = document.getElementById('other_relation_box');
+        const otherInput = document.getElementById('other_account_owner_relation');
+
+        // پیدا کردن آپشن‌های کلیدی
+        let selfOptionElement = null;
+        for (let option of relationSelect.options) {
+            if (option.dataset.isSelf === 'true') selfOptionElement = option;
+        }
+
+        // تابع اصلی مدیریت وضعیت
+        function updateState() {
+            // 1. منطق حساب شخصی (بله/خیر)
+            if (accYes.checked) {
+                // حالت بله: انتخاب خودکار "شخص مددجو" و قفل کردن
+                if (selfOptionElement) {
+                    selfOptionElement.disabled = false;
+                    relationSelect.value = selfOptionElement.value;
+                }
+                relationSelect.style.pointerEvents = 'none';
+                relationSelect.style.backgroundColor = '#e9ecef';
+            } else {
+                // حالت خیر: آزاد کردن لیست
+                relationSelect.style.pointerEvents = 'auto';
+                relationSelect.style.backgroundColor = '';
+
+                if (selfOptionElement) {
+                    selfOptionElement.disabled = true; // غیرفعال کردن گزینه "مددجو"
+                    // اگر روی مددجو مانده بود، پاکش کن
+                    if (relationSelect.value === selfOptionElement.value) {
+                        relationSelect.value = '';
+                    }
+                }
+            }
+
+            // 2. منطق نمایش فیلد "سایر"
+            // بررسی می‌کنیم گزینه انتخاب شده فعلی آیا "سایر" است؟
+            const selectedOption = relationSelect.options[relationSelect.selectedIndex];
+            const isOther = selectedOption && selectedOption.dataset.isOther === 'true';
+
+            if (isOther) {
+                otherBox.style.display = 'block';
+                otherInput.required = true; // در فرانت هم اجباری شود
+            } else {
+                otherBox.style.display = 'none';
+                otherInput.required = false;
+                otherInput.value = ''; // پاک کردن مقدار اگر مخفی شد
+            }
+        }
+
+        // رویدادها
+        accYes.addEventListener('change', updateState);
+        accNo.addEventListener('change', updateState);
+        relationSelect.addEventListener('change', updateState); // تغییر در لیست هم باید چک شود
+
+        // اجرای اولیه
+        updateState();
+    });
+</script>
+
+
+
+{{--Card Number--}}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // المان‌های کارت اصلی
+        const vCard = document.getElementById('visual_card_number');
+        const hCard = document.getElementById('card_number');
+
+        // المان‌های کارت یارانه
+        const vSubsidy = document.getElementById('visual_subsidy_card_number');
+        const hSubsidy = document.getElementById('subsidy_card_number');
+
+        let subsidyManuallyEdited = false;
+
+        // اگر مقداری از قبل وجود دارد (مثلاً بعد از خطای فرم)، آن را در لود اولیه فرمت کن
+        if (hCard.value) vCard.value = formatCardNumber(hCard.value);
+        if (hSubsidy.value) {
+            vSubsidy.value = formatCardNumber(hSubsidy.value);
+            subsidyManuallyEdited = true; // چون مقدار دارد فرض میکنیم دستی پر شده
+        }
+
+        // --- تابع اصلی فرمت‌دهی ---
+        function formatCardNumber(value) {
+            // حذف تمام کاراکترهای غیر عددی
+            const cleanVal = value.replace(/\D/g, '');
+
+            // افزودن خط تیره هر 4 رقم
+            // این regex گروه‌های 4 تایی اعداد را پیدا کرده و بین آنها خط تیره می‌گذارد
+            const formatted = cleanVal.match(/.{1,4}/g)?.join('-') || '';
+
+            return formatted.substring(0, 19); // اطمینان از رعایت طول
+        }
+
+        // --- تابع هندلر ورودی ---
+        function handleInput(visualInput, hiddenInput, isSubsidy = false) {
+            // 1. حذف کاراکترهای غیر مجاز و خط تیره‌ها برای ذخیره در هیدن
+            let rawValue = visualInput.value.replace(/\D/g, '');
+
+            // محدودیت 16 رقم برای مقدار خام
+            if (rawValue.length > 16) rawValue = rawValue.substring(0, 16);
+
+            // آپدیت فیلد مخفی
+            hiddenInput.value = rawValue;
+
+            // 2. فرمت کردن مقدار برای نمایش به کاربر
+            const formattedValue = formatCardNumber(rawValue);
+
+            // فقط اگر مقدار تغییر کرده آپدیت کن (برای جلوگیری از پرش مکان نما در وسط ویرایش)
+            if (visualInput.value !== formattedValue) {
+                visualInput.value = formattedValue;
+            }
+
+            // 3. منطق کپی شدن خودکار (Sync)
+            if (!isSubsidy && !subsidyManuallyEdited) {
+                hSubsidy.value = rawValue;          // کپی مقدار خام
+                vSubsidy.value = formattedValue;    // کپی مقدار فرمت شده
+            }
+
+            // اگر کاربر دارد در فیلد یارانه تایپ می‌کند، فلگ ادیت دستی را روشن کن
+            if (isSubsidy) {
+                subsidyManuallyEdited = (rawValue.length > 0);
+            }
+        }
+
+        // --- اتصال رویدادها ---
+        vCard.addEventListener('input', function() {
+            handleInput(vCard, hCard, false);
+        });
+
+        vSubsidy.addEventListener('input', function() {
+            handleInput(vSubsidy, hSubsidy, true);
+        });
+    });
+</script>
+

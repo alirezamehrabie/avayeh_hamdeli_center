@@ -27,6 +27,10 @@ class DatabaseSeeder extends Seeder
             GuardianRelationTypeSeeder::class,
             DisabilityTypeSeeder::class,
             JobTypeSeeder::class,
+            InsuranceTypeSeeder::class,
+            VehicleTypeSeeder::class,
+            AccountOwnerRelationSeeder::class,
+            BankSeeder::class,
         ]);
     }
 }

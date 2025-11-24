@@ -79,10 +79,27 @@
         </div>
 
         <div class="col-md-4"><label for="father_name" class="form-label">نام پدر</label><input type="text" class="form-control" name="father_name" value="{{ old('father_name') }}"></div>
-        <div class="col-md-4"><label for="father_national_id" class="form-label">کد ملی پدر</label><input type="text" class="form-control" name="father_national_id" value="{{ old('father_national_id') }}"></div>
-        <div class="col-md-4"><label for="mother_national_id" class="form-label">کد ملی مادر</label><input type="text" class="form-control" name="mother_national_id" value="{{ old('mother_national_id') }}"></div>
+    <!-- نمونه اصلاح شده برای کد ملی پدر -->
+    <div class="col-md-3">
+        <label for="father_national_id" class="form-label">کد ملی پدر</label>
+        <input type="text"
+               class="form-control"
+               name="father_national_id"
+               value="{{ old('father_national_id') }}"
+               maxlength="10"> {{-- این قسمت اضافه شد --}}
+    </div>
 
-        @include('people.partials.sadaat_status')
+    <!-- نمونه اصلاح شده برای کد ملی مادر -->
+    <div class="col-md-3">
+        <label for="mother_national_id" class="form-label">کد ملی مادر</label>
+        <input type="text"
+               class="form-control"
+               name="mother_national_id"
+               value="{{ old('mother_national_id') }}"
+               maxlength="10"> {{-- این قسمت اضافه شد --}}
+    </div>
+
+    @include('people.partials.sadaat_status')
 
 
         {{--جنسیت--}}

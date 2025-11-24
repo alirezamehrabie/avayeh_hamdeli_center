@@ -1,19 +1,96 @@
 <div class="mb-5">
     <h4 class="border-bottom pb-2 mb-3">۵. اطلاعات مالی، تحصیلی و حمایتی</h4>
     <div class="row g-3">
-        {{-- Bank Info --}}
+
+        {{-- Bank Info Section --}}
         <div class="col-md-3">
             <label class="form-label">حساب شخصی دارد؟ <span class="text-danger">*</span></label>
             <div>
-                <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="has_own_account" value="1" @if(old('has_own_account') == '1') checked @endif required><label class="form-check-label">بله</label></div>
-                <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="has_own_account" value="0" @if(old('has_own_account', '0') == '0') checked @endif required><label class="form-check-label">خیر</label></div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="has_own_account" id="account_yes" value="1"
+                           {{ old('has_own_account') == '1' ? 'checked' : '' }} required>
+                    <label class="form-check-label" for="account_yes">بله</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="has_own_account" id="account_no" value="0"
+                           {{ old('has_own_account', '0') == '0' ? 'checked' : '' }} required>
+                    <label class="form-check-label" for="account_no">خیر</label>
+                </div>
             </div>
         </div>
-        <div class="col-md-3"><label for="account_holder_relation" class="form-label">نسبت دارنده حساب</label><input type="text" class="form-control" name="account_holder_relation" value="{{ old('account_holder_relation') }}"></div>
-        <div class="col-md-3"><label for="bank_name" class="form-label">نام بانک</label><input type="text" class="form-control" name="bank_name" value="{{ old('bank_name') }}"></div>
-        <div class="col-md-3"><label for="card_number" class="form-label">شماره کارت</label><input type="text" class="form-control" name="card_number" value="{{ old('card_number') }}"></div>
-        <div class="col-md-6"><label for="sheba_number" class="form-label">شماره شبا</label><input type="text" class="form-control" name="sheba_number" value="{{ old('sheba_number') }}" placeholder="IR..." style="text-align:left; direction:ltr;"></div>
-        <div class="col-md-3"><label for="subsidy_card_number" class="form-label">شماره کارت یارانه</label><input type="text" class="form-control" name="subsidy_card_number" value="{{ old('subsidy_card_number') }}"></div>
+
+        <div class="col-md-3">
+            <label for="account_owner_relation_id" class="form-label">نسبت دارنده حساب</label>
+            <select name="account_owner_relation_id" id="account_owner_relation_id" class="form-select">
+                <option value="">— انتخاب کنید —</option>
+                @foreach($accountRelations as $relation)
+                    <option value="{{ $relation->id }}"
+                            data-is-self="{{ $relation->name === 'شخص مددجو' ? 'true' : 'false' }}"
+                            data-is-other="{{ $relation->name === 'سایر' ? 'true' : 'false' }}"
+                        {{ old('account_owner_relation_id') == $relation->id ? 'selected' : '' }}>
+                        {{ $relation->name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
+        {{-- فیلد مخفی برای توضیحات "سایر" --}}
+        <div class="col-md-3" id="other_relation_box" style="display: none;">
+            <label for="other_account_owner_relation" class="form-label">نام نسبت (سایر)</label>
+            <input type="text" class="form-control" name="other_account_owner_relation" id="other_account_owner_relation"
+                   value="{{ old('other_account_owner_relation') }}" placeholder="مثلاً: عمو، همسایه...">
+        </div>
+
+        <div class="col-md-3">
+            <label for="bank_id" class="form-label">نام بانک</label>
+            <select class="form-select" name="bank_id" id="bank_id">
+                <option value="">انتخاب کنید...</option>
+                @foreach($banks as $bank)
+                    <option value="{{ $bank->id }}" {{ old('bank_id') == $bank->id ? 'selected' : '' }}>
+                        {{ $bank->name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
+        {{-- Card Number Section --}}
+        <div class="col-md-3">
+            <label for="visual_card_number" class="form-label">شماره کارت</label>
+
+            {{-- فیلد نمایشی برای کاربر (فرمت شده) --}}
+            <input type="text" class="form-control card-mask"
+                   id="visual_card_number"
+                   maxlength="19"
+                   placeholder="____-____-____-____"
+                   dir="ltr" style="text-align: center; letter-spacing: 1px;">
+
+            {{-- فیلد اصلی که به سرور ارسال می‌شود (مخفی) --}}
+            <input type="hidden" name="card_number" id="card_number" value="{{ old('card_number') }}">
+        </div>
+
+
+        <div class="col-md-3">
+            <label for="visual_subsidy_card_number" class="form-label">شماره کارت یارانه</label>
+
+            {{-- فیلد نمایشی یارانه --}}
+            <input type="text" class="form-control card-mask"
+                   id="visual_subsidy_card_number"
+                   maxlength="19"
+                   placeholder="____-____-____-____"
+                   dir="ltr" style="text-align: center; letter-spacing: 1px;">
+
+            {{-- فیلد اصلی یارانه (مخفی) --}}
+            <input type="hidden" name="subsidy_card_number" id="subsidy_card_number" value="{{ old('subsidy_card_number') }}">
+        </div>
+
+
+
+        <div class="col-md-6">
+            <label for="sheba_number" class="form-label">شماره شبا</label>
+            <input type="text" class="form-control" name="sheba_number" value="{{ old('sheba_number') }}" placeholder="IR..." style="text-align:left; direction:ltr;">
+        </div>
+
+
         <div class="col-md-6"><label for="subsidy_sheba_number" class="form-label">شماره شبا یارانه</label><input type="text" class="form-control" name="subsidy_sheba_number" value="{{ old('subsidy_sheba_number') }}" placeholder="IR..." style="text-align:left; direction:ltr;"></div>
 
         {{-- Education Info --}}

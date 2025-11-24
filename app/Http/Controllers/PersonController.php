@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 // Form Request for Validation
 use App\Http\Requests\StorePersonRequest;
 use App\Models\GuardianRelationType;
+use App\Models\VehicleType;
+use App\Models\Bank;
 use App\Models\Person;
 use App\Models\Skill;
 use App\Models\SocialWorker;
@@ -15,6 +17,7 @@ use App\Models\BankInfo;
 use App\Models\Education;
 use App\Models\SupportCoverage;
 use App\Models\NeedsLevel;
+use App\Models\NeedLevelType;
 use App\Models\SadaatRelation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -35,6 +38,11 @@ class PersonController extends Controller
         $sadaatRelations  = SadaatRelation::orderBy('sort_order')->get();
         $guardianRelationTypes = GuardianRelationType::all();
         $jobTypes = \App\Models\JobType::all();
+        $insuranceTypes = \App\Models\InsuranceType::all();
+        $vehicleTypes = VehicleType::all();
+        $accountRelations = \App\Models\AccountOwnerRelation::all();
+        $needLevelTypes = NeedLevelType::all();
+        $banks = Bank::all();
 
         $deciles = [
             '1'  => 'دهک یک',
@@ -56,7 +64,12 @@ class PersonController extends Controller
             'skills',
             'person',
             'guardianRelationTypes',
-            'jobTypes'// <--- ارسال به ویو
+            'jobTypes',
+            'insuranceTypes',
+            'vehicleTypes',
+            'accountRelations',
+            'banks',
+            'needLevelTypes'
         ));
     }
 
@@ -133,8 +146,13 @@ class PersonController extends Controller
                     'guardian_birth_date',
                     'job_type_id' => $request->input('job_type_id'),
                     'guardian_phone_number', 'children_count', 'children_in_house',
-                    'insurance_status', 'other_insurance', 'divorced_child_at_home',
-                    'average_income', 'any_family_employed', 'has_vehicle', 'vehicle_type'
+                    'insurance_status',
+                    'insurance_type_id',
+                    'divorced_child_at_home',
+                    'average_income',
+                    'any_family_employed',
+                    'has_vehicle',
+                    'vehicle_type'
                 ]));
 
             // 4. Create ResidenceContact
@@ -155,7 +173,7 @@ class PersonController extends Controller
 
             // 5. Create BankInfo
             BankInfo::create(['person_id' => $person->id] + $request->only([
-                    'has_own_account', 'account_holder_relation', 'bank_name', 'card_number',
+                    'has_own_account', 'account_holder_relation', 'bank_id', 'card_number',
                     'sheba_number', 'subsidy_card_number', 'subsidy_sheba_number'
                 ]));
 
@@ -175,8 +193,11 @@ class PersonController extends Controller
             ]);
 
             // 8. Create NeedsLevel
-            NeedsLevel::create(['person_id' => $person->id] + $request->only([
-                    'need_level', 'evaluation_date', 'reviewer_name'
+            NeedsLevel::create([
+                'person_id' => $person->id] + $request->only([
+                    'need_level_id'   => $request->input('need_level_id'), // دریافت شناسه از فرم
+                    'evaluation_date' => now(),
+                    'reviewer_name'   => 'کاربر ارشد',   // ثبت پیش‌فرض نام کاربر
                 ]));
 
             // Note: HealthInfo (9) and SkillsInfo (10) are not in the form yet.
