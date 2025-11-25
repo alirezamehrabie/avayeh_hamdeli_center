@@ -10,8 +10,21 @@ return new class extends Migration
     {
         Schema::create('needs_levels', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('person_id')->constrained('people')->onDelete('cascade');
-            $table->string('need_level'); // بحرانی، بالا، متوسط، پایین
+
+            // ۱. فیلد مرجع به مددجو
+            $table->foreignId('person_id')
+                ->constrained('people')
+                ->cascadeOnUpdate()
+                ->cascadeOnDelete();
+
+            // ۲. فیلد مرجع به سطح نیاز (بدون ->after())
+            $table->foreignId('need_level_id')
+                ->nullable()
+                ->constrained('need_level_types')
+                ->cascadeOnUpdate()
+                ->restrictOnDelete();
+
+            // بقیه ستون‌ها
             $table->date('evaluation_date')->nullable();
             $table->string('reviewer_name')->nullable();
             $table->timestamps();

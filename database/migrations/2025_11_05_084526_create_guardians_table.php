@@ -10,19 +10,48 @@ return new class extends Migration
     {
         Schema::create('guardians', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('person_id')->unique()->constrained('people')->onDelete('cascade');
+            $table->foreignId('person_id')
+                ->unique()
+                ->constrained('people')
+                ->onDelete('cascade');
+
             $table->integer('children_count')->nullable();
             $table->integer('children_in_house')->nullable();
             $table->boolean('any_family_employed')->default(false)->nullable();
             $table->date('birth_date')->nullable();
-            $table->string('occupation')->nullable();
-            $table->string('job_type')->nullable();
-            $table->string('insurance_status')->nullable();
-            $table->string('other_insurance')->nullable();
-            $table->string('divorced_child_at_home')->nullable(); // دختر، پسر، هیچکدام
+
+            $table->foreignId('occupation_id')
+                ->nullable()
+                ->constrained('occupations')
+                ->cascadeOnUpdate()
+                ->nullOnDelete();
+
+            // تبدیل job_type به کلید خارجی
+            $table->foreignId('job_type_id')
+                ->nullable()
+                ->constrained('job_types')
+                ->nullOnDelete();
+
+            $table->boolean('insurance_status')->default(false);
+
+            // کلید خارجی نوع بیمه
+            $table->foreignId('insurance_type_id')
+                ->nullable()
+                ->constrained('insurance_types')
+                ->nullOnDelete();
+
+            $table->string('divorced_child_at_home')->nullable();
             $table->unsignedBigInteger('average_income')->nullable();
+
+            // وضعیت وجود خودرو به صورت بولین
             $table->boolean('has_vehicle')->default(false);
-            $table->string('vehicle_type')->nullable();
+
+            // کلید خارجی نوع خودرو
+            $table->foreignId('vehicle_type_id')
+                ->nullable()
+                ->constrained('vehicle_types')
+                ->nullOnDelete();
+
             $table->string('guardian_phone_number', 11)->nullable();
             $table->timestamps();
         });

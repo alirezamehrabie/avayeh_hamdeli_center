@@ -14,7 +14,11 @@ return new class extends Migration
             $table->boolean('is_studying')->default(true)->nullable();
             $table->string('school_name')->nullable();
             $table->string('major')->nullable();
-            $table->string('education_level')->nullable();
+            // افزودن ستون foreign key مربوط به سطح تحصیلات
+            $table->foreignId('education_level_id')
+                ->nullable()
+                ->constrained('education_levels')
+                ->nullOnDelete();
             $table->text('drop_reason')->nullable();
             $table->boolean('works_alongside_study')->default(false)->nullable();
             $table->unsignedBigInteger('monthly_income')->nullable();

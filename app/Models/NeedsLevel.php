@@ -9,10 +9,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class NeedsLevel extends Model
 {
     use HasFactory;
+    protected $table = 'needs_levels';
 
     protected $fillable = [
         'person_id',
-        'need_level_id', // اضافه شد
+        'need_level_id',
         'evaluation_date',
         'reviewer_name',
     ];

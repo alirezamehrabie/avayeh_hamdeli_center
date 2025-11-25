@@ -81,6 +81,7 @@ class PersonController extends Controller
      */
     public function store(StorePersonRequest $request)
     {
+
         $validatedData = $request->validated();
 
         DB::beginTransaction();
@@ -197,7 +198,7 @@ class PersonController extends Controller
                 'person_id' => $person->id] + $request->only([
                     'need_level_id'   => $request->input('need_level_id'), // دریافت شناسه از فرم
                     'evaluation_date' => now(),
-                    'reviewer_name'   => 'کاربر ارشد',   // ثبت پیش‌فرض نام کاربر
+                    'reviewer_name'   => 'کاربر ارشد',
                 ]));
 
             // Note: HealthInfo (9) and SkillsInfo (10) are not in the form yet.

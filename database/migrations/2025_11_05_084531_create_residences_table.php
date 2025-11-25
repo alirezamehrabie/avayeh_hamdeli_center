@@ -10,14 +10,31 @@ return new class extends Migration
     {
         Schema::create('residences', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('person_id')->unique()->constrained('people')->onDelete('cascade');
-            $table->string('residence_status'); // شخصی، اجاره، شراکتی
+
+            // شناسه فرد با قید یکتا و حذف وابسته
+            $table->foreignId('person_id')
+                ->unique()
+                ->constrained('people')
+                ->onDelete('cascade');
+
+            // تبدیل ستون متنی وضعیت سکونت به کلید خارجی
+            $table->foreignId('residence_status_id')
+                ->nullable()
+                ->constrained('residence_status_types')
+                ->nullOnDelete();
+
             $table->boolean('is_local_to_city')->default(true);
             $table->unsignedBigInteger('deposit_amount')->nullable();
             $table->unsignedBigInteger('monthly_rent')->nullable();
             $table->integer('residence_duration_years')->nullable();
             $table->text('address');
-            $table->string('district')->nullable();
+
+            // تبدیل ستون متنی ناحیه به کلید خارجی
+            $table->foreignId('district_id')
+                ->nullable()
+                ->constrained('districts')
+                ->nullOnDelete();
+
             $table->timestamps();
         });
     }

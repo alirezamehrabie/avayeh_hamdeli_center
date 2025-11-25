@@ -134,7 +134,7 @@ class StorePersonRequest extends FormRequest
             'support_card_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
 
             // Section 6: Needs Level
-            'need_level_id' => 'required|exists:need_level_types,id',
+            'need_level_id'  => 'nullable','exists:need_level_types,id',
 //            'evaluation_date' => 'required|date',
 //            'reviewer_name' => 'required|string|max:255',
         ];
