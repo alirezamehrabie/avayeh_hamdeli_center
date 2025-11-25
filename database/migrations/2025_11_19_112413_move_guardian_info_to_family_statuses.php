@@ -11,11 +11,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // 1. حذف ستون اضافی از جدول people
-        Schema::table('people', function (Blueprint $table) {
-            $table->dropColumn('guardian_role');
-        });
-
         // 2. اطمینان از وجود ستون مناسب در family_statuses
         Schema::table('family_statuses', function (Blueprint $table) {
             // اگر ستون guardian_relation وجود ندارد آن را بسازیم
@@ -28,10 +23,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('people', function (Blueprint $table) {
-            $table->string('guardian_role')->nullable();
-        });
-
         Schema::table('family_statuses', function (Blueprint $table) {
             $table->dropColumn('guardian_relation');
         });

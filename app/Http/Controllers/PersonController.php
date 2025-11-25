@@ -195,11 +195,11 @@ class PersonController extends Controller
 
             // 8. Create NeedsLevel
             NeedsLevel::create([
-                'person_id' => $person->id] + $request->only([
-                    'need_level_id'   => $request->input('need_level_id'), // دریافت شناسه از فرم
-                    'evaluation_date' => now(),
-                    'reviewer_name'   => 'کاربر ارشد',
-                ]));
+                'person_id'       => $person->id,
+                'need_level_id'   => $request->input('need_level_id'),
+                'evaluation_date' => now(),
+                'reviewer_name'   => 'کاربر ارشد',
+            ]);
 
             // Note: HealthInfo (9) and SkillsInfo (10) are not in the form yet.
 
