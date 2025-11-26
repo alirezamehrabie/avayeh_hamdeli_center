@@ -25,6 +25,9 @@ return new class extends Migration {
             ])->nullable()->comment('ماه تولد');
             $table->integer('birth_year')->nullable();
 
+            $table->string('birth_date_full', 10)->nullable()
+                ->comment('تاریخ کامل تولد شمسی - فرمت: YYYY/MM/DD');
+
 
             // اطلاعات والدین
             $table->string('father_name')->nullable();
@@ -78,7 +81,11 @@ return new class extends Migration {
             // ایندکس‌ها
             $table->index(['last_name', 'first_name']);
             $table->index('national_id');
-            $table->index('birth_month');
+            // ایندکس برای فیلترینگ سریع
+            $table->index('birth_year', 'idx_birth_year');
+            $table->index('birth_month', 'idx_birth_month');
+            $table->index('birth_day', 'idx_birth_day');
+            $table->index('birth_date_full', 'idx_birth_date_full');
             $table->index('has_disability');
         });
     }
@@ -86,5 +93,12 @@ return new class extends Migration {
     public function down(): void
     {
         Schema::dropIfExists('people');
+        Schema::table('people', function (Blueprint $table) {
+            $table->dropIndex('idx_birth_year');
+            $table->dropIndex('idx_birth_month');
+            $table->dropIndex('idx_birth_day');
+            $table->dropIndex('idx_birth_date_full');
+            $table->dropColumn('birth_date_full');
+        });
     }
 };

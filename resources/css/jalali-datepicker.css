@@ -1,0 +1,113 @@
+/**
+ * استایل‌های تقویم جلالی
+ */
+
+/* استایل اصلی date picker */
+.datepicker-container {
+    font-family: 'Vazirmatn', 'IRANSans', Tahoma, sans-serif !important;
+    direction: rtl;
+}
+
+/* فیلد ورودی */
+.jalali-datepicker {
+    cursor: pointer;
+    background-color: #fff !important;
+}
+
+.jalali-datepicker:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+}
+
+/* دکمه پاک کردن */
+.clear-date-btn {
+    border-color: #dc3545;
+    color: #dc3545;
+}
+
+.clear-date-btn:hover {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* نمایش بخش‌های تاریخ */
+.date-parts-display {
+    animation: fadeIn 0.5 ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.date-parts-display .badge {
+    border: 1px solid #dee2e6;
+}
+
+.date-parts-display .badge strong {
+    color: #198754;
+}
+
+/* تنظیمات تقویم */
+.datepicker-plot-area {
+    font-size: 14px;
+}
+
+.datepicker-day-view .table-days td.selected span {
+    background-color: #217cc7 !important;
+}
+
+.datepicker-day-view .table-days td.today span {
+    border-radius: 6px;
+}
+
+.datepicker-day-view .table-days td:hover span {
+    background-color: rgba(25, 135, 84, 0.1);
+}
+
+/* هدر تقویم */
+.datepicker-header {
+    background-color: #198754;
+    color: white;
+}
+
+/* دکمه‌های ناوبری */
+.datepicker-header .btn {
+    color: white !important;
+}
+
+.datepicker-header .btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* دکمه امروز */
+.toolbox .btn-today {
+    background-color: #ffc107;
+    color: #000;
+}
+
+/* دکمه تایید */
+.toolbox .btn-submit {
+    background-color: #198754;
+    color: white;
+}
+
+/* RTL fixes */
+.datepicker-container .table-days th,
+.datepicker-container .table-days td {
+    text-align: center;
+}
+
+/* موبایل */
+@media (max-width: 576px) {
+    .datepicker-container {
+        width: 100% !important;
+        left: 0 !important;
+        right: 0 !important;
+    }
+
+    .date-parts-display .badge {
+        display: block;
+        margin-bottom: 5px;
+    }
+}

@@ -30,9 +30,16 @@ class StorePersonRequest extends FormRequest
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'national_id' => 'required|string|digits:10|unique:people,national_id',
+//            'birth_day' => 'required|integer|min:1|max:31',
+//            'birth_month' => ['required', 'integer', 'min:1', 'max:12'],
+//            'birth_year' => 'required|integer|min:1300|max:1500',
+
+            // ✅ قوانین تاریخ تولد
             'birth_day' => 'required|integer|min:1|max:31',
-            'birth_month' => ['required', 'integer', 'min:1', 'max:12'],
-            'birth_year' => 'required|integer|min:1300|max:1500',
+            'birth_month' => 'required|integer|min:1|max:12',
+            'birth_year' => 'required|integer|min:1300|max:1450',
+            'birth_date_full' => 'nullable|string|size:10|regex:/^\d{4}\/\d{2}\/\d{2}$/',
+
             'father_name' => 'nullable|string|max:255',
             'father_national_id' => 'nullable|string|digits:10',
             'mother_national_id' => 'nullable|string|digits:10',
@@ -140,11 +147,61 @@ class StorePersonRequest extends FormRequest
         ];
     }
 
+
+
+
     protected function withValidator($validator)
     {
         $validator->sometimes('sadaat_relation_id', ['required'], function ($input) {
             return $input->sadaat_status === 'سادات';
         });
+
+        $validator->after(function ($validator) {
+            $this->validateJalaliDate($validator);
+        });
+    }
+    protected function validateJalaliDate($validator)
+    {
+        $day = (int)$this->input('birth_day');
+        $month = (int)$this->input('birth_month');
+        $year = (int)$this->input('birth_year');
+
+        // بررسی محدوده سال
+        if ($year < 1300 || $year > 1450) {
+            $validator->errors()->add('birth_year', 'سال وارد شده خارج از محدوده مجاز است.');
+            return;
+        }
+
+        // تعداد روزهای هر ماه در تقویم جلالی
+        $daysInMonth = [
+            1 => 31, 2 => 31, 3 => 31, 4 => 31,
+            5 => 31, 6 => 31, 7 => 30, 8 => 30,
+            9 => 30, 10 => 30, 11 => 30, 12 => 29
+        ];
+
+        // بررسی ماه معتبر
+        if (!isset($daysInMonth[$month])) {
+            $validator->errors()->add('birth_month', 'ماه وارد شده معتبر نیست.');
+            return;
+        }
+
+        // بررسی روز معتبر با در نظر گرفتن سال کبیسه در جلالی
+        $isLeap = $this->isJalaliLeapYear($year);
+        $maxDay = ($month === 12 && $isLeap) ? 30 : $daysInMonth[$month];
+
+        if ($day < 1 || $day > $maxDay) {
+            $validator->errors()->add('birth_day', "روز وارد شده معتبر نیست. برای ماه {$month} حداکثر روز {$maxDay} می‌باشد.");
+        }
     }
 
+    /**
+     * تشخیص سال کبیسه در تقویم جلالی
+     */
+    protected function isJalaliLeapYear(int $year): bool
+    {
+        // الگوریتم کبیسه ساده برای تقویم شمسی
+        $a = $year - (($year >= 0) ? 474 : 473);
+        $b = $a % 2820 + 474;
+        return (($b * 682) % 2816) < 682;
+    }
 }

@@ -9,27 +9,18 @@
         </div>
         <div class="card-body">
 
-            {{-- Display Success/Error Messages --}}
-            @if (session('success'))
-                <div class="alert alert-success" role="alert">
-                    {{ session('success') }}
-                </div>
-            @endif
-            @if (session('error'))
-                <div class="alert alert-danger" role="alert">
-                    {{ session('error') }}
-                </div>
-            @endif
-            @if ($errors->any())
-                <div class="alert alert-danger">
-                    <p><strong>لطفاً خطاهای زیر را برطرف کنید:</strong></p>
-                    <ul>
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
+{{--            --}}{{-- Display Success/Error Messages --}}
+{{--            @if (session('success'))--}}
+{{--                <div class="alert alert-success" role="alert">--}}
+{{--                    {{ session('success') }}--}}
+{{--                </div>--}}
+{{--            @endif--}}
+{{--            @if (session('error'))--}}
+{{--                <div class="alert alert-danger" role="alert">--}}
+{{--                    {{ session('error') }}--}}
+{{--                </div>--}}
+{{--            @endif--}}
+
 
             <form action="{{ route('people.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf

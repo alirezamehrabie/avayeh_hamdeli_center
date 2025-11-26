@@ -11,44 +11,72 @@ return new class extends Migration {
             $table->id();
 
             // ارتباط با جدول people
-            $table->unsignedBigInteger('person_id');
+            // ارتباط با جدول people
+            $table->foreignId('person_id')
+                ->constrained('people')
+                ->onDelete('cascade');
 
-            // نوع سرپرست یا نسبت خانوادگی
-            $table->enum('guardian_relation', ['پدربزرگ', 'مادربزرگ', 'اقوام', 'سایر'])->nullable();
+            // رابطه سرپرست (ارجاع به جدول انواع نسبت)
+            $table->foreignId('guardian_relation_type_id')
+                ->nullable()
+                ->constrained('guardian_relation_types')
+                ->nullOnDelete();
 
-            // 🔹 دهک معیشتی خانوار
+
+            // دهک معیشتی خانوار: 1 تا 10
             $table->enum('economic_decile', [
-                'دهک اول', 'دهک دوم', 'دهک سوم', 'دهک چهارم', 'دهک پنجم',
-                'دهک ششم', 'دهک هفتم', 'دهک هشتم', 'دهک نهم', 'دهک دهم'
+                '1','2','3','4','5',
+                '6','7','8','9','10'
+            ])
+                ->nullable()
+                ->comment('دهک معیشتی خانوار: 1 تا 10');
+            $table->index('economic_decile');
+
+            // والدین در قید حیات
+            $table->enum('living_parents', [
+                'پدر',
+                'مادر',
+                'هر دو (پدر و مادر)'
             ])->nullable();
 
-            // 🔹 والدین در قید حیات
-            $table->enum('living_parents', ['پدر', 'مادر', 'هر دو (پدر و مادر)'])->nullable();
 
-            // 🔹 کدام والد فوت شده
-            $table->enum('deceased_parent', ['پدر', 'مادر', 'هر دو (پدر و مادر)'])->nullable();
+            // کدام والد فوت شده
+            $table->enum('deceased_parent', [
+                'پدر',
+                'مادر',
+                'هر دو (پدر و مادر)'
+            ])->nullable();
 
-            // 🔹 سال و علت فوت
+
+            // سال و علت فوت
             $table->integer('death_year')->nullable();
             $table->string('death_reason')->nullable();
 
-            // 🔹 والد جداشده
-            $table->enum('divorced_parent', ['پدر', 'مادر', 'هر دو (پدر و مادر)'])->nullable();
+            // والد جداشده
+            $table->enum('divorced_parent', [
+                'پدر',
+                'مادر',
+                'هر دو (پدر و مادر)'
+            ])->nullable();
 
-            // 🔹 والد مجدد ازدواج کرده
-            $table->enum('remarried_parent', ['پدر', 'مادر', 'هر دو (پدر و مادر)'])->nullable();
 
-            // 🔹 تعداد فرزندان از ازدواج قبلی سرپرست
+            // والد مجدد ازدواج کرده
+            $table->enum('remarried_parent', [
+                'پدر',
+                'مادر',
+                'هر دو (پدر و مادر)'
+            ])->nullable();
+
+
+            // تعداد فرزندان از ازدواج قبلی سرپرست
             $table->integer('children_from_previous_marriage')->nullable();
 
-            // 🔹 وجود معلولیت در والدین
+
+            // وجود معلولیت در والدین
             $table->boolean('has_parent_disability')->default(false);
             $table->text('parent_disability_description')->nullable();
 
             $table->timestamps();
-
-            // 🔹 کلید خارجی
-            $table->foreign('person_id')->references('id')->on('people')->onDelete('cascade');
         });
     }
 

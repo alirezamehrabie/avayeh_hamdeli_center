@@ -19,6 +19,7 @@ class Person extends Model
         'birth_day',
         'birth_month',
         'birth_year',
+        'birth_date_full',
         'father_name',
         'father_national_id',
         'mother_national_id',
@@ -39,8 +40,105 @@ class Person extends Model
     ];
 
     protected $casts = [
+        'birth_day' => 'integer',
+        'birth_month' => 'integer',
+        'birth_year' => 'integer',
+        'has_disability' => 'boolean',
         'skills' => 'array',
     ];
+
+
+    /**
+     * ✅ Accessor برای دریافت تاریخ تولد کامل
+     */
+    public function getBirthDateAttribute(): ?string
+    {
+        if ($this->birth_year && $this->birth_month && $this->birth_day) {
+            return sprintf(
+                '%04d/%02d/%02d',
+                $this->birth_year,
+                $this->birth_month,
+                $this->birth_day
+            );
+        }
+        return null;
+    }
+
+    /**
+     * ✅ Accessor برای نام ماه فارسی
+     */
+    public function getBirthMonthNameAttribute(): ?string
+    {
+        $months = [
+            1 => 'فروردین', 2 => 'اردیبهشت', 3 => 'خرداد',
+            4 => 'تیر', 5 => 'مرداد', 6 => 'شهریور',
+            7 => 'مهر', 8 => 'آبان', 9 => 'آذر',
+            10 => 'دی', 11 => 'بهمن', 12 => 'اسفند',
+        ];
+
+        return $months[$this->birth_month] ?? null;
+    }
+
+    /**
+     * ✅ Accessor برای سن
+     */
+    public function getAgeAttribute(): ?int
+    {
+        if (!$this->birth_year) {
+            return null;
+        }
+
+        // تاریخ جاری شمسی (می‌توانید از پکیج morilog/jalali استفاده کنید)
+        $currentYear = (int) jdate('Y'); // یا به صورت دستی محاسبه کنید
+
+        return $currentYear - $this->birth_year;
+    }
+
+    /**
+     * ✅ Scope برای فیلتر بر اساس سال تولد
+     */
+    public function scopeBornInYear($query, int $year)
+    {
+        return $query->where('birth_year', $year);
+    }
+
+    /**
+     * ✅ Scope برای فیلتر بر اساس ماه تولد
+     */
+    public function scopeBornInMonth($query, int $month)
+    {
+        return $query->where('birth_month', $month);
+    }
+
+    /**
+     * ✅ Scope برای فیلتر بر اساس بازه سنی
+     */
+    public function scopeAgeRange($query, int $minAge, int $maxAge)
+    {
+        $currentYear = (int) jdate('Y');
+        $maxBirthYear = $currentYear - $minAge;
+        $minBirthYear = $currentYear - $maxAge;
+
+        return $query->whereBetween('birth_year', [$minBirthYear, $maxBirthYear]);
+    }
+
+    /**
+     * ✅ Scope برای فیلتر افرادی که در این ماه متولد شده‌اند
+     */
+    public function scopeBirthdayThisMonth($query)
+    {
+        $currentMonth = (int) jdate('m');
+        return $query->where('birth_month', $currentMonth);
+    }
+
+    /**
+     * ✅ Scope برای جستجو بر اساس تاریخ کامل
+     */
+    public function scopeBornOn($query, string $fullDate)
+    {
+        return $query->where('birth_date_full', $fullDate);
+    }
+
 
     protected static function boot()
     {
@@ -145,8 +243,8 @@ class Person extends Model
     ];
 
     // یک Accessor برای اینکه وقتی مدل را می‌گیرید، نام ماه را هم داشته باشید
-    public function getBirthMonthNameAttribute(): string
-    {
-        return self::$months[$this->birth_month] ?? 'نامشخص';
-    }
+//    public function getBirthMonthNameAttribute(): string
+//    {
+//        return self::$months[$this->birth_month] ?? 'نامشخص';
+//    }
 }

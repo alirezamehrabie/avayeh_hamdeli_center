@@ -57,6 +57,7 @@ class PersonController extends Controller
             '10' => 'دهک ده',
         ];
 
+
         return view('people.create', compact(
             'deciles',
             'socialWorkers',
@@ -82,6 +83,7 @@ class PersonController extends Controller
     public function store(StorePersonRequest $request)
     {
 
+
         $validatedData = $request->validated();
 
         DB::beginTransaction();
@@ -106,6 +108,11 @@ class PersonController extends Controller
                 'birth_day'    => $validatedData['birth_day'],
                 'birth_month'  => $validatedData['birth_month'],
                 'birth_year'   => $validatedData['birth_year'],
+                'birth_date_full' => $validatedData['birth_date_full'] ?? $this->formatBirthDateFull(
+                        $validatedData['birth_year'],
+                        $validatedData['birth_month'],
+                        $validatedData['birth_day']
+                    ),
                 'father_name' => $validatedData['father_name'],
                 'father_national_id' => $validatedData['father_national_id'],
                 'mother_national_id' => $validatedData['mother_national_id'],
