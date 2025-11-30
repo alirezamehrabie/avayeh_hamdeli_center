@@ -4,12 +4,18 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Morilog\Jalali\Jalalian;
 
 class Guardian extends Model
 {
     use HasFactory;
 
+    protected $table = 'guardians';
+
+    /**
+     * فیلدهای قابل پر شدن
+     * ✅ فیلدهای جدید تاریخ تولد شمسی
+     */
     protected $fillable = [
         'person_id',
 
@@ -19,23 +25,24 @@ class Guardian extends Model
         'guardian_birth_year',
         'guardian_birth_date_full',
 
-
+        // سایر فیلدها
         'occupation_id',
         'job_type_id',
+        'guardian_phone_number',
         'children_count',
         'children_in_house',
-        'guardian_phone_number',
-        'any_family_employed',
-        'birth_date',
         'insurance_status',
         'insurance_type_id',
         'divorced_child_at_home',
         'average_income',
+        'any_family_employed',
         'has_vehicle',
         'vehicle_type_id',
-
     ];
 
+    /**
+     * تبدیل نوع داده‌ها
+     */
     protected $casts = [
         'guardian_birth_day' => 'integer',
         'guardian_birth_month' => 'integer',
@@ -48,10 +55,16 @@ class Guardian extends Model
         'average_income' => 'integer',
     ];
 
-    /**
-     * ارتباط به جدول Occupations
-     */
-    public function occupation(): BelongsTo
+    // ═══════════════════════════════════════════════════════════════════
+    // 🔹 روابط (Relationships)
+    // ═══════════════════════════════════════════════════════════════════
+
+    public function person()
+    {
+        return $this->belongsTo(Person::class);
+    }
+
+    public function occupation()
     {
         return $this->belongsTo(Occupation::class);
     }
@@ -70,9 +83,140 @@ class Guardian extends Model
     {
         return $this->belongsTo(VehicleType::class);
     }
-    // ارتباط به Person
-    public function person()
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 🔹 Accessors - محاسبه سن سرپرست
+    // ═══════════════════════════════════════════════════════════════════
+
+    /**
+     * محاسبه سن سرپرست (فقط بر اساس سال)
+     *
+     * @return int|null
+     */
+    public function getGuardianAgeAttribute(): ?int
     {
-        return $this->belongsTo(Person::class);
+        if (!$this->guardian_birth_year) {
+            return null;
+        }
+
+        $currentJalaliYear = (int) Jalalian::now()->getYear();
+        return $currentJalaliYear - $this->guardian_birth_year;
+    }
+
+    /**
+     * محاسبه سن دقیق سرپرست (با در نظر گرفتن روز و ماه)
+     *
+     * @return int|null
+     */
+    public function getGuardianExactAgeAttribute(): ?int
+    {
+        if (!$this->guardian_birth_year || !$this->guardian_birth_month || !$this->guardian_birth_day) {
+            return null;
+        }
+
+        try {
+            $now = Jalalian::now();
+            $currentYear = $now->getYear();
+            $currentMonth = $now->getMonth();
+            $currentDay = $now->getDay();
+
+            $age = $currentYear - $this->guardian_birth_year;
+
+            // اگر هنوز تولدش نرسیده، یک سال کم کن
+            if (
+                $currentMonth < $this->guardian_birth_month ||
+                ($currentMonth == $this->guardian_birth_month && $currentDay < $this->guardian_birth_day)
+            ) {
+                $age--;
+            }
+
+            return max(0, $age);
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * نمایش تاریخ تولد فرمت‌شده
+     *
+     * @return string|null
+     */
+    public function getGuardianFormattedBirthDateAttribute(): ?string
+    {
+        if (!$this->guardian_birth_year || !$this->guardian_birth_month || !$this->guardian_birth_day) {
+            return null;
+        }
+
+        return sprintf(
+            '%04d/%02d/%02d',
+            $this->guardian_birth_year,
+            $this->guardian_birth_month,
+            $this->guardian_birth_day
+        );
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // 🔹 Scopes - برای فیلتر و گزارش‌گیری
+    // ═══════════════════════════════════════════════════════════════════
+
+    /**
+     * سرپرستانی که امروز تولدشان است
+     */
+    public function scopeGuardianBirthdayToday($query)
+    {
+        $today = Jalalian::now();
+        return $query->where('guardian_birth_month', $today->getMonth())
+            ->where('guardian_birth_day', $today->getDay());
+    }
+
+    /**
+     * سرپرستانی که این ماه تولدشان است
+     */
+    public function scopeGuardianBirthdayThisMonth($query)
+    {
+        $currentMonth = Jalalian::now()->getMonth();
+        return $query->where('guardian_birth_month', $currentMonth);
+    }
+
+    /**
+     * سرپرستان متولد یک سال خاص
+     */
+    public function scopeGuardianBornInYear($query, int $year)
+    {
+        return $query->where('guardian_birth_year', $year);
+    }
+
+    /**
+     * سرپرستان در بازه سنی خاص
+     */
+    public function scopeGuardianAgeBetween($query, int $minAge, int $maxAge)
+    {
+        $currentYear = (int) Jalalian::now()->getYear();
+        $minYear = $currentYear - $maxAge;
+        $maxYear = $currentYear - $minAge;
+
+        return $query->whereBetween('guardian_birth_year', [$minYear, $maxYear]);
+    }
+
+    /**
+     * سرپرستان بالای یک سن خاص
+     */
+    public function scopeGuardianOlderThan($query, int $age)
+    {
+        $currentYear = (int) Jalalian::now()->getYear();
+        $maxYear = $currentYear - $age;
+
+        return $query->where('guardian_birth_year', '<=', $maxYear);
+    }
+
+    /**
+     * سرپرستان زیر یک سن خاص
+     */
+    public function scopeGuardianYoungerThan($query, int $age)
+    {
+        $currentYear = (int) Jalalian::now()->getYear();
+        $minYear = $currentYear - $age;
+
+        return $query->where('guardian_birth_year', '>=', $minYear);
     }
 }

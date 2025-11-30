@@ -75,6 +75,24 @@ class PersonController extends Controller
     }
 
     /**
+     * فرمت‌دهی تاریخ تولد کامل
+     *
+     * @param int|null $year
+     * @param int|null $month
+     * @param int|null $day
+     * @return string|null
+     */
+    private function formatBirthDateFull($year, $month, $day): ?string
+    {
+        if (!$year || !$month || !$day) {
+            return null;
+        }
+
+        return sprintf('%04d/%02d/%02d', $year, $month, $day);
+    }
+
+
+    /**
      * Store a newly created person and all related data in storage.
      *
      * @param  \App\Http\Requests\StorePersonRequest  $request
@@ -151,20 +169,31 @@ class PersonController extends Controller
             // 3. Create GuardianInfo
             Guardian::create([
                 'person_id' => $person->id,
-                'occupation_id' => $request->occupation_id,
-                'guardian_birth_date' => $request->guardian_birth_date,
-                'job_type_id' => $request->job_type_id,
-                'guardian_phone_number' => $request->guardian_phone_number,
-                'children_count' => $request->children_count,
-                'children_in_house' => $request->children_in_house,
-                'insurance_status' => $request->insurance_status,
-                'insurance_type_id' => $request->insurance_type_id,
-                'divorced_child_at_home' => $request->divorced_child_at_home,
-                'average_income' => $request->average_income,
-                'any_family_employed' => $request->any_family_employed,
-                'has_vehicle' => $request->has_vehicle,
-                'vehicle_type_id' => $request->vehicle_type_id,
+
+                // تاریخ تولد شمسی سرپرست
+                'guardian_birth_day' => $request->input('guardian_birth_day'),
+                'guardian_birth_month' => $request->input('guardian_birth_month'),
+                'guardian_birth_year' => $request->input('guardian_birth_year'),
+                'guardian_birth_date_full' => $this->formatBirthDateFull(
+                    $request->input('guardian_birth_year'),
+                    $request->input('guardian_birth_month'),
+                    $request->input('guardian_birth_day')
+                ),
+
+                'occupation_id' => $request->input('occupation_id'),
+                'job_type_id' => $request->input('job_type_id'),
+                'guardian_phone_number' => $request->input('guardian_phone_number'),
+                'children_count' => $request->input('children_count'),
+                'children_in_house' => $request->input('children_in_house'),
+                'insurance_status' => $request->boolean('insurance_status'),
+                'insurance_type_id' => $request->input('insurance_type_id'),
+                'divorced_child_at_home' => $request->input('divorced_child_at_home'),
+                'average_income' => $request->input('average_income'),
+                'any_family_employed' => $request->boolean('any_family_employed'),
+                'has_vehicle' => $request->boolean('has_vehicle'),
+                'vehicle_type_id' => $request->boolean('has_vehicle') ? $request->input('vehicle_type_id') : null,
             ]);
+
 
             // 4. Create ResidenceContact
             Residence::create(['person_id' => $person->id] + $request->only([

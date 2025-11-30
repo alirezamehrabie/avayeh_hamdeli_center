@@ -7,76 +7,8 @@
         <div class="col-md-4"><label for="last_name" class="form-label">نام خانوادگی <span class="text-danger">*</span></label><input type="text" class="form-control" name="last_name" value="{{ old('last_name') }}" required></div>
         <div class="col-md-4"><label for="national_id" class="form-label">کد ملی <span class="text-danger">*</span></label><input type="text" class="form-control" name="national_id" maxlength="10" value="{{ old('national_id') }}" required></div>
 
-{{--        <div class="col-md-4 mb-3">--}}
-{{--            <label for="birth_day" class="form-label">روز تولد</label>--}}
 
-{{--            <!-- کلاس form-select در بوت‌استرپ ظاهر زیبایی به لیست می‌دهد -->--}}
-{{--            <select class="form-select @error('birth_day') is-invalid @enderror"--}}
-{{--                    id="birth_day"--}}
-{{--                    name="birth_day">--}}
-
-{{--                <option value="" disabled selected>انتخاب...</option>--}}
-
-{{--                --}}{{-- حلقه برای تولید اعداد 1 تا 31 --}}
-{{--                @for ($i = 1; $i <= 31; $i++)--}}
-{{--                    <option value="{{ $i }}" {{ old('birth_day') == $i ? 'selected' : '' }}>--}}
-{{--                        {{ $i }}--}}
-{{--                    </option>--}}
-{{--                @endfor--}}
-
-{{--            </select>--}}
-
-{{--            @error('birth_day')--}}
-{{--            <div class="invalid-feedback">{{ $message }}</div>--}}
-{{--            @enderror--}}
-{{--        </div>--}}
-{{--        --}}
-{{--        <div class="col-md-4 mb-3">--}}
-{{--                <label for="birth_month" class="form-label">ماه تولد</label>--}}
-{{--                <select class="form-select @error('birth_month') is-invalid @enderror"--}}
-{{--                        id="birth_month"--}}
-{{--                        name="birth_month">--}}
-
-{{--                    <option value="" disabled selected>انتخاب کنید...</option>--}}
-
-{{--                    --}}{{-- استفاده از آرایه تعریف شده در مدل --}}
-{{--                    @foreach(\App\Models\Person::$months as $key => $value)--}}
-{{--                        --}}{{-- $key میشود عدد (1) و $value میشود نام (فروردین) --}}
-{{--                        <option value="{{ $key }}" {{ old('birth_month') == $key ? 'selected' : '' }}>--}}
-{{--                            {{ $value }}--}}
-{{--                        </option>--}}
-{{--                    @endforeach--}}
-
-{{--                </select>--}}
-{{--                @error('birth_month')--}}
-{{--                <div class="invalid-feedback">{{ $message }}</div>--}}
-{{--                @enderror--}}
-{{--            </div>--}}
-
-{{--        <div class="col-md-4 mb-3">--}}
-{{--            <label for="birth_year" class="form-label">سال تولد</label>--}}
-{{--            <select class="form-select @error('birth_year') is-invalid @enderror"--}}
-{{--                    id="birth_year"--}}
-{{--                    name="birth_year">--}}
-
-{{--                <option value="" disabled selected>انتخاب...</option>--}}
-
-{{--                --}}{{-- حلقه از سال 1404 به پایین تا 1300 --}}
-{{--                --}}{{-- اگر می‌خواهید سال جاری پویا باشد، می‌توانید از jdate('Y') استفاده کنید --}}
-{{--                @for ($i = 1404; $i >= 1300; $i--)--}}
-{{--                    <option value="{{ $i }}" {{ old('birth_year') == $i ? 'selected' : '' }}>--}}
-{{--                        {{ $i }}--}}
-{{--                    </option>--}}
-{{--                @endfor--}}
-
-{{--            </select>--}}
-{{--            @error('birth_year')--}}
-{{--            <div class="invalid-feedback">{{ $message }}</div>--}}
-{{--            @enderror--}}
-{{--        </div>--}}
-
-        {{-- ✅ تاریخ تولد با کامپوننت جدید --}}
-        {{-- تاریخ تولد --}}
+        {{-- تاریخ تولد با کامپوننت جدید --}}
         <div class="col-md-4">
             <x-jalali-datepicker
                 name="birth_date"

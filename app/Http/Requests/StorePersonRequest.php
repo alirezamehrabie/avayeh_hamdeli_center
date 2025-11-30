@@ -81,7 +81,10 @@ class StorePersonRequest extends FormRequest
             'remarried_parent' => ['nullable', Rule::in(['پدر', 'مادر', 'هر دو (پدر و مادر)'])],
 
             // Section 3: Guardian Info
-            'guardian_birth_date' => 'nullable|date',
+            'guardian_birth_day' => 'nullable|integer|min:1|max:31',
+            'guardian_birth_month' => 'nullable|integer|min:1|max:12',
+            'guardian_birth_year' => 'nullable|integer|min:1300|max:1450',
+            'guardian_birth_date_full' => 'nullable|string|max:10',
             'occupation_id' => 'required|exists:occupations,id',
             'job_type_id' => ['nullable', 'exists:job_types,id'],
             'guardian_phone_number' => 'nullable|string|max:20',
@@ -203,4 +206,30 @@ class StorePersonRequest extends FormRequest
         $b = $a % 2820 + 474;
         return (($b * 682) % 2816) < 682;
     }
+
+
+    public function messages(): array
+    {
+        return [
+            // ... پیام‌های قبلی
+
+            // پیام‌های تاریخ تولد سرپرست
+            'guardian_birth_day.integer' => 'روز تولد سرپرست باید عدد باشد.',
+            'guardian_birth_day.min' => 'روز تولد سرپرست نمی‌تواند کمتر از ۱ باشد.',
+            'guardian_birth_day.max' => 'روز تولد سرپرست نمی‌تواند بیشتر از ۳۱ باشد.',
+
+            'guardian_birth_month.integer' => 'ماه تولد سرپرست باید عدد باشد.',
+            'guardian_birth_month.min' => 'ماه تولد سرپرست نمی‌تواند کمتر از ۱ باشد.',
+            'guardian_birth_month.max' => 'ماه تولد سرپرست نمی‌تواند بیشتر از ۱۲ باشد.',
+
+            'guardian_birth_year.integer' => 'سال تولد سرپرست باید عدد باشد.',
+            'guardian_birth_year.min' => 'سال تولد سرپرست نمی‌تواند کمتر از ۱۳۰۰ باشد.',
+            'guardian_birth_year.max' => 'سال تولد سرپرست نمی‌تواند بیشتر از ۱۴۵۰ باشد.',
+        ];
+    }
+
 }
+
+
+
+

@@ -10,9 +10,25 @@
             توجه: سرپرست این مددجو <strong id="guardian-role-text" class="text-decoration-underline mx-1"></strong> می‌باشد.
         </div>
     </div>
+
     <!-- END: Dynamic Guardian Alert -->
     <div class="row g-3">
-        <div class="col-md-3"><label for="guardian_birth_date" class="form-label">تاریخ تولد سرپرست</label><input type="date" class="form-control" name="guardian_birth_date" value="{{ old('guardian_birth_date') }}"></div>
+
+        {{-- ✅ تاریخ تولد سرپرست با کامپوننت تقویم شمسی --}}
+        <div class="col-md-4">
+            <x-jalali-datepicker
+                name="guardian_birth_date"
+                label="تاریخ تولد سرپرست"
+                :required="false"
+                day-name="guardian_birth_day"
+                month-name="guardian_birth_month"
+                year-name="guardian_birth_year"
+                full-date-name="guardian_birth_date_full"
+                :day-value="old('guardian_birth_day', $guardian->guardian_birth_day ?? null)"
+                :month-value="old('guardian_birth_month', $guardian->guardian_birth_month ?? null)"
+                :year-value="old('guardian_birth_year', $guardian->guardian_birth_year ?? null)"
+            />
+        </div>
 
 
         <label for="occupation_id">شغل سرپرست</label>
@@ -154,3 +170,56 @@
         </div>
 
 </div>
+</div>
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // ═══════════════════════════════════════════════════════════
+            // محاسبه و نمایش سن سرپرست
+            // ═══════════════════════════════════════════════════════════
+            const guardianYearSelect = document.getElementById('guardian_birth_year');
+            const guardianMonthSelect = document.getElementById('guardian_birth_month');
+            const guardianDaySelect = document.getElementById('guardian_birth_day');
+            const guardianAgeDisplay = document.getElementById('guardian-age-display');
+
+            function calculateGuardianAge() {
+                const year = parseInt(guardianYearSelect.value);
+                const month = parseInt(guardianMonthSelect.value);
+                const day = parseInt(guardianDaySelect.value);
+
+                if (!year) {
+                    guardianAgeDisplay.textContent = '';
+                    return;
+                }
+
+                // سال جاری شمسی
+                const currentYear = 1404;
+                const currentMonth = 9;  // آذر
+                const currentDay = 8;
+
+                let age = currentYear - year;
+
+                // اگر ماه و روز وارد شده، سن دقیق را محاسبه کن
+                if (month && day) {
+                    if (month > currentMonth || (month === currentMonth && day > currentDay)) {
+                        age--;
+                    }
+                }
+
+                if (age >= 0 && age <= 120) {
+                    guardianAgeDisplay.innerHTML = `<i class="bi bi-person-badge"></i> سن سرپرست: <strong>${age}</strong> سال`;
+                } else {
+                    guardianAgeDisplay.textContent = '';
+                }
+            }
+
+            // Event Listeners
+            guardianYearSelect.addEventListener('change', calculateGuardianAge);
+            guardianMonthSelect.addEventListener('change', calculateGuardianAge);
+            guardianDaySelect.addEventListener('change', calculateGuardianAge);
+
+            // محاسبه اولیه (برای حالت old())
+            calculateGuardianAge();
+        });
+    </script>
+@endpush
