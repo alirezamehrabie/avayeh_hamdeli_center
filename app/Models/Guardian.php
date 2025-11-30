@@ -12,6 +12,14 @@ class Guardian extends Model
 
     protected $fillable = [
         'person_id',
+
+        // فیلدهای جدید تاریخ تولد شمسی
+        'guardian_birth_day',
+        'guardian_birth_month',
+        'guardian_birth_year',
+        'guardian_birth_date_full',
+
+
         'occupation_id',
         'job_type_id',
         'children_count',
@@ -26,6 +34,18 @@ class Guardian extends Model
         'has_vehicle',
         'vehicle_type_id',
 
+    ];
+
+    protected $casts = [
+        'guardian_birth_day' => 'integer',
+        'guardian_birth_month' => 'integer',
+        'guardian_birth_year' => 'integer',
+        'children_count' => 'integer',
+        'children_in_house' => 'integer',
+        'insurance_status' => 'boolean',
+        'any_family_employed' => 'boolean',
+        'has_vehicle' => 'boolean',
+        'average_income' => 'integer',
     ];
 
     /**

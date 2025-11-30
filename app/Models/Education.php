@@ -18,16 +18,27 @@ class Education extends Model
         'drop_reason',
         'works_alongside_study',
         'monthly_income',
-        'talent_description',
     ];
 
-    // ارتباط به جدول lookup
-    public function educationLevel(): BelongsTo
-    {
-        return $this->belongsTo(EducationLevel::class);
-    }
-    public function person(): BelongsTo
+    protected $casts = [
+        'is_studying' => 'boolean',
+        'works_alongside_study' => 'boolean',
+        'monthly_income' => 'integer',
+    ];
+
+    /**
+     * رابطه با Person
+     */
+    public function person()
     {
         return $this->belongsTo(Person::class);
+    }
+
+    /**
+     * رابطه با سطح تحصیلات
+     */
+    public function educationLevel()
+    {
+        return $this->belongsTo(EducationLevel::class);
     }
 }

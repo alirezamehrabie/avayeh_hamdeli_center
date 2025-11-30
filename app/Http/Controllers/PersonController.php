@@ -149,19 +149,22 @@ class PersonController extends Controller
 
 
             // 3. Create GuardianInfo
-            Guardian::create(['person_id' => $person->id] + $request->only([
-                    'occupation_id' => $request->input('occupation_id'),
-                    'guardian_birth_date',
-                    'job_type_id' => $request->input('job_type_id'),
-                    'guardian_phone_number', 'children_count', 'children_in_house',
-                    'insurance_status',
-                    'insurance_type_id',
-                    'divorced_child_at_home',
-                    'average_income',
-                    'any_family_employed',
-                    'has_vehicle',
-                    'vehicle_type'
-                ]));
+            Guardian::create([
+                'person_id' => $person->id,
+                'occupation_id' => $request->occupation_id,
+                'guardian_birth_date' => $request->guardian_birth_date,
+                'job_type_id' => $request->job_type_id,
+                'guardian_phone_number' => $request->guardian_phone_number,
+                'children_count' => $request->children_count,
+                'children_in_house' => $request->children_in_house,
+                'insurance_status' => $request->insurance_status,
+                'insurance_type_id' => $request->insurance_type_id,
+                'divorced_child_at_home' => $request->divorced_child_at_home,
+                'average_income' => $request->average_income,
+                'any_family_employed' => $request->any_family_employed,
+                'has_vehicle' => $request->has_vehicle,
+                'vehicle_type_id' => $request->vehicle_type_id,
+            ]);
 
             // 4. Create ResidenceContact
             Residence::create(['person_id' => $person->id] + $request->only([
@@ -186,10 +189,17 @@ class PersonController extends Controller
                 ]));
 
             // 6. Create EducationInfo
-            Education::create(['person_id' => $person->id] + $request->only([
-                    'is_studying', 'school_name', 'major', 'education_level_id', 'drop_reason',
-                    'works_alongside_study', 'monthly_income', 'talent_description'
-                ]));
+            Education::create([
+                'person_id' => $person->id,
+                'is_studying' => $request->boolean('is_studying'),
+                'school_name' => $request->school_name,
+                'major' => $request->major,
+                'education_level_id' => $request->education_level_id,
+                'drop_reason' => $request->drop_reason,
+                'works_alongside_study' => $request->boolean('works_alongside_study'),
+                'monthly_income' => $request->monthly_income,
+                // ✅ talent_description حذف شد - از skills_description در Person استفاده می‌شود
+            ]);
 
             // 7. Create SupportCoverage
             SupportCoverage::create([

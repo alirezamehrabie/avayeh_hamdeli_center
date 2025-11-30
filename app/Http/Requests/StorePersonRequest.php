@@ -134,7 +134,6 @@ class StorePersonRequest extends FormRequest
             'drop_reason' => 'nullable|string',
             'works_alongside_study' => 'required|boolean',
             'monthly_income' => 'nullable|numeric|min:0',
-            'talent_description' => 'nullable|string',
             'organization_type' => 'nullable|string|max:255',
             'organization_name' => 'nullable|string|max:255',
             'coverage_start_date' => 'nullable|date',

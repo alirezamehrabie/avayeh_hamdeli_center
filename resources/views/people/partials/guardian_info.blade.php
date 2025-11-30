@@ -140,9 +140,9 @@
         </div>
 
         <!-- Vehicle Type Select -->
-        <div class="col-md-6">
+        <div class="col-md-6" id="vehicle_type_wrapper">
             <label for="vehicle_type_id" class="form-label">نوع وسیله نقلیه</label>
-            <select name="vehicle_type_id" id="vehicle_type_id" class="form-select" disabled>
+            <select name="vehicle_type_id" id="vehicle_type_id" class="form-select">
                 <option value="">— انتخاب کنید —</option>
                 @foreach($vehicleTypes as $vType)
                     <option value="{{ $vType->id }}"
@@ -151,9 +151,6 @@
                     </option>
                 @endforeach
             </select>
-            @error('vehicle_type_id')
-            <span class="text-danger small">{{ $message }}</span>
-            @enderror
         </div>
-    </div>
+
 </div>

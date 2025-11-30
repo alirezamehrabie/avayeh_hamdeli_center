@@ -156,28 +156,29 @@
 
 <!-- Script to toggle Vehicle Select -->
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const vehicleYes = document.getElementById('vehicle_yes');
-        const vehicleNo = document.getElementById('vehicle_no');
-        const vehicleSelect = document.getElementById('vehicle_type_id');
+    document.addEventListener('DOMContentLoaded', function () {
+        const yes = document.getElementById('vehicle_yes');
+        const no = document.getElementById('vehicle_no');
+        const wrapper = document.getElementById('vehicle_type_wrapper');
+        const select = document.getElementById('vehicle_type_id');
 
-        function toggleVehicleSelect() {
-            if (vehicleYes.checked) {
-                vehicleSelect.disabled = false;
+        function update() {
+            if (yes.checked) {
+                wrapper.style.display = 'block';
+                select.required = true;
             } else {
-                vehicleSelect.disabled = true;
-                vehicleSelect.value = ''; // پاک کردن انتخاب اگر "خیر" زده شد
+                wrapper.style.display = 'none';
+                select.required = false;
+                select.value = '';
             }
         }
 
-        // گوش دادن به تغییرات
-        vehicleYes.addEventListener('change', toggleVehicleSelect);
-        vehicleNo.addEventListener('change', toggleVehicleSelect);
-
-        // اجرای اولیه (برای حفظ حالت در زمان ادیت یا خطا)
-        toggleVehicleSelect();
+        update();
+        yes.addEventListener('change', update);
+        no.addEventListener('change', update);
     });
 </script>
+
 
 
 {{-- Script for Logic Control --}}

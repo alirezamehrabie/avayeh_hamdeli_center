@@ -10,7 +10,7 @@ return new class extends Migration {
         Schema::create('people', function (Blueprint $table) {
             $table->id();
 
-            $table->string('person_code', 4)->unique();
+            $table->string('person_code', 6)->unique();
             $table->string('first_name');
             $table->string('last_name');
             $table->string('full_name')->nullable();
@@ -18,16 +18,12 @@ return new class extends Migration {
 
             // اطلاعات تولد
             $table->integer('birth_day');
-            $table->enum('birth_month', [
-                'فروردین','اردیبهشت','خرداد','تیر',
-                'مرداد','شهریور','مهر','آبان',
-                'آذر','دی','بهمن','اسفند',
-            ])->nullable()->comment('ماه تولد');
+            $table->unsignedTinyInteger('birth_month')->nullable();
             $table->integer('birth_year')->nullable();
 
-            $table->string('birth_date_full', 10)->nullable()
+            $table->string('birth_date_full', 10)
+                ->nullable()
                 ->comment('تاریخ کامل تولد شمسی - فرمت: YYYY/MM/DD');
-
 
             // اطلاعات والدین
             $table->string('father_name')->nullable();
@@ -45,7 +41,6 @@ return new class extends Migration {
                 ->constrained('sadaat_relations')
                 ->nullOnDelete();
 
-
             // کلید خارجی مددکار اجتماعی
             $table->foreignId('social_worker_id')
                 ->nullable()
@@ -57,48 +52,64 @@ return new class extends Migration {
             $table->string('photo_birth_certificate')->nullable();
             $table->text('photo_live_capture')->nullable();
 
-
             // معلولیت
             $table->boolean('has_disability')->default(false);
-
-            $table->unsignedBigInteger('disability_type_id')
-                ->nullable();
+            $table->unsignedBigInteger('disability_type_id')->nullable();
             $table->foreign('disability_type_id')
                 ->references('id')
                 ->on('disability_types')
                 ->nullOnDelete();
-
             $table->text('disability_description')->nullable();
-
 
             // توضیحات مهارت
             $table->text('skills_description')->nullable();
 
-            // زمان بندی
+            // زمان‌بندی
             $table->timestamps();
             $table->softDeletes();
 
             // ایندکس‌ها
-            $table->index(['last_name', 'first_name']);
-            $table->index('national_id');
-            // ایندکس برای فیلترینگ سریع
-            $table->index('birth_year', 'idx_birth_year');
-            $table->index('birth_month', 'idx_birth_month');
-            $table->index('birth_day', 'idx_birth_day');
-            $table->index('birth_date_full', 'idx_birth_date_full');
-            $table->index('has_disability');
+            $table->index(['last_name', 'first_name'], 'idx_people_name');
+            $table->index('national_id', 'idx_people_national_id');
+            $table->index('has_disability', 'idx_people_has_disability');
+
+            // ایندکس تک‌ستونی برای فیلترینگ سریع
+            $table->index('birth_day',   'idx_people_birth_day');
+            $table->index('birth_month', 'idx_people_birth_month');
+            $table->index('birth_year',  'idx_people_birth_year');
+            $table->index('birth_date_full', 'idx_people_birth_date_full');
+
+            // ایندکس ترکیبی
+            // جستجوی تولد امروز (ماه + روز)
+            $table->index(['birth_month', 'birth_day'],
+                'idx_people_birth_month_day');
+            // جستجوی تاریخ کامل تولد (سال + ماه + روز)
+            $table->index(
+                ['birth_year', 'birth_month', 'birth_day'],
+                'idx_people_full_birth_date'
+            );
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('people');
         Schema::table('people', function (Blueprint $table) {
-            $table->dropIndex('idx_birth_year');
-            $table->dropIndex('idx_birth_month');
-            $table->dropIndex('idx_birth_day');
-            $table->dropIndex('idx_birth_date_full');
-            $table->dropColumn('birth_date_full');
+            // حذف ایندکس‌های ترکیبی
+            $table->dropIndex('idx_people_birth_month_day');
+            $table->dropIndex('idx_people_full_birth_date');
+
+            // حذف ایندکس‌های تک‌ستونی
+            $table->dropIndex('idx_people_birth_day');
+            $table->dropIndex('idx_people_birth_month');
+            $table->dropIndex('idx_people_birth_year');
+            $table->dropIndex('idx_people_birth_date_full');
+
+            // سایر ایندکس‌ها
+            $table->dropIndex('idx_people_name');
+            $table->dropIndex('idx_people_national_id');
+            $table->dropIndex('idx_people_has_disability');
         });
+
+        Schema::dropIfExists('people');
     }
 };

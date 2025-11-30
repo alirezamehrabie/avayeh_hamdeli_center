@@ -124,8 +124,6 @@
             </div>
         </div>
         <div class="col-md-4"><label for="monthly_income" class="form-label">درآمد ماهانه (تومان)</label><input type="number" class="form-control" name="monthly_income" value="{{ old('monthly_income') }}"></div>
-        <div class="col-md-12"><label for="talent_description" class="form-label">توضیح استعداد خاص</label><textarea class="form-control" name="talent_description">{{ old('talent_description') }}</textarea></div>
-
         {{-- Support Coverage --}}
         <div class="col-12"><hr class="my-4"></div>
         <div class="col-md-3"><label for="organization_type" class="form-label">نوع سازمان حمایتی</label><input type="text" class="form-control" name="organization_type" value="{{ old('organization_type') }}" placeholder="کمیته امداد، بهزیستی، ..."></div>
