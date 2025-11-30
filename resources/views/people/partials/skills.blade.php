@@ -1,8 +1,4 @@
 @php
-    /**
-     * با استفاده از collect() اطمینان می‌دهیم که اگر
-     * $person->skills برابر null باشد، یک Collection خالی ساخته شود
-     */
     $selectedSkills = old('skills', collect($person->skills)->pluck('id')->toArray());
 @endphp
 

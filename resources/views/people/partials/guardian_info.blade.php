@@ -171,12 +171,12 @@
 
 </div>
 </div>
+
+
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // ═══════════════════════════════════════════════════════════
             // محاسبه و نمایش سن سرپرست
-            // ═══════════════════════════════════════════════════════════
             const guardianYearSelect = document.getElementById('guardian_birth_year');
             const guardianMonthSelect = document.getElementById('guardian_birth_month');
             const guardianDaySelect = document.getElementById('guardian_birth_day');

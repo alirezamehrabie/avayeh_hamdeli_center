@@ -17,6 +17,4 @@
         <div class="text-danger small">{{ $message }}</div>
         @enderror
     </div>
-
-    {{-- فیلدهای تاریخ ارزیابی و نام ارزیاب از اینجا حذف شدند --}}
 </div>

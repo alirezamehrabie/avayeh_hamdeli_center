@@ -77,7 +77,6 @@
 {{-- ✅ Persian Datepicker --}}
 <script src="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
 
-{{-- اسکریپت‌های سفارشی --}}
 @stack('scripts')
 </body>
 </html>
