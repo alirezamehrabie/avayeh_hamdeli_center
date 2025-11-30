@@ -18,6 +18,16 @@ return new class extends Migration
                 ->onDelete('cascade');
 
 
+            // ===== افزودن فیلدهای جدید تاریخ تولد شمسی =====
+            $table->unsignedTinyInteger('guardian_birth_day')
+                ->nullable();
+            $table->unsignedTinyInteger('guardian_birth_month')
+                ->nullable();
+            $table->unsignedSmallInteger('guardian_birth_year')
+                ->nullable();
+            $table->string('guardian_birth_date_full', 10)
+                ->nullable();
+
             $table->integer('children_count')->nullable();
             $table->integer('children_in_house')->nullable();
 
@@ -26,8 +36,6 @@ return new class extends Migration
                 ->default(false)
                 ->nullable();
 
-            // تاریخ تولد سرپرست
-            $table->date('birth_date')->nullable();
 
             // شغل (ارجاع به occupations)
             $table->foreignId('occupation_id')
@@ -42,6 +50,7 @@ return new class extends Migration
                 ->constrained('job_types')
                 ->nullOnDelete();
 
+
             // وضعیت بیمه
             $table->boolean('insurance_status')->default(false);
 
@@ -51,7 +60,7 @@ return new class extends Migration
                 ->constrained('insurance_types')
                 ->nullOnDelete();
 
-            // کودک یا فرزند طلاق‌گرفته در منزل: مقدار پیش‌فرض 'ندارد'
+            // کودک یا فرزند طلاق‌گرفته در منزل
             $table->string('divorced_child_at_home')
                 ->default('ندارد');
 
@@ -71,6 +80,12 @@ return new class extends Migration
             $table->string('guardian_phone_number', 11)->nullable();
 
             $table->timestamps();
+
+            // ===== ایندکس‌ها برای بهینه‌سازی جستجو و گزارش‌گیری =====
+            $table->index('guardian_birth_year', 'idx_guardians_birth_year');
+            $table->index('guardian_birth_month', 'idx_guardians_birth_month');
+            $table->index(['guardian_birth_month', 'guardian_birth_day'], 'idx_guardians_birth_month_day'
+            );
         });
     }
 

@@ -3,24 +3,28 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
-return new class extends Migration {
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
+        // ۱. ایجاد جدول اصلی people
         Schema::create('people', function (Blueprint $table) {
             $table->id();
-
             $table->string('person_code', 6)->unique();
             $table->string('first_name');
             $table->string('last_name');
-            $table->string('full_name')->nullable();
+            // ستون full_name در مرحله بعدی به صورت مجازی اضافه می‌شود
             $table->string('national_id', 10)->unique();
 
             // اطلاعات تولد
             $table->integer('birth_day');
             $table->unsignedTinyInteger('birth_month')->nullable();
             $table->integer('birth_year')->nullable();
-
             $table->string('birth_date_full', 10)
                 ->nullable()
                 ->comment('تاریخ کامل تولد شمسی - فرمت: YYYY/MM/DD');
@@ -41,7 +45,7 @@ return new class extends Migration {
                 ->constrained('sadaat_relations')
                 ->nullOnDelete();
 
-            // کلید خارجی مددکار اجتماعی
+            // مددکار اجتماعی
             $table->foreignId('social_worker_id')
                 ->nullable()
                 ->constrained('social_workers')
@@ -68,48 +72,59 @@ return new class extends Migration {
             $table->timestamps();
             $table->softDeletes();
 
-            // ایندکس‌ها
+            // ایندکس‌های متنی و عددی
             $table->index(['last_name', 'first_name'], 'idx_people_name');
             $table->index('national_id', 'idx_people_national_id');
             $table->index('has_disability', 'idx_people_has_disability');
-
-            // ایندکس تک‌ستونی برای فیلترینگ سریع
             $table->index('birth_day',   'idx_people_birth_day');
             $table->index('birth_month', 'idx_people_birth_month');
             $table->index('birth_year',  'idx_people_birth_year');
             $table->index('birth_date_full', 'idx_people_birth_date_full');
-
-            // ایندکس ترکیبی
-            // جستجوی تولد امروز (ماه + روز)
-            $table->index(['birth_month', 'birth_day'],
-                'idx_people_birth_month_day');
-            // جستجوی تاریخ کامل تولد (سال + ماه + روز)
+            $table->index(
+                ['birth_month', 'birth_day'],
+                'idx_people_birth_month_day'
+            );
             $table->index(
                 ['birth_year', 'birth_month', 'birth_day'],
                 'idx_people_full_birth_date'
             );
         });
+
+        // ۲. تعریف ستون مجازی full_name و ایندکس آن
+        DB::statement("
+            ALTER TABLE people
+            ADD COLUMN full_name VARCHAR(511)
+            GENERATED ALWAYS AS (
+                CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, ''))
+            ) STORED
+            AFTER last_name
+        ");
+
+        Schema::table('people', function (Blueprint $table) {
+            $table->index('full_name', 'idx_people_full_name');
+        });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
+        // حذف ایندکس‌های جدول people (شامل full_name)
         Schema::table('people', function (Blueprint $table) {
-            // حذف ایندکس‌های ترکیبی
             $table->dropIndex('idx_people_birth_month_day');
             $table->dropIndex('idx_people_full_birth_date');
-
-            // حذف ایندکس‌های تک‌ستونی
             $table->dropIndex('idx_people_birth_day');
             $table->dropIndex('idx_people_birth_month');
             $table->dropIndex('idx_people_birth_year');
             $table->dropIndex('idx_people_birth_date_full');
-
-            // سایر ایندکس‌ها
             $table->dropIndex('idx_people_name');
             $table->dropIndex('idx_people_national_id');
             $table->dropIndex('idx_people_has_disability');
+            $table->dropIndex('idx_people_full_name');
         });
 
+        // حذف کل جدول people
         Schema::dropIfExists('people');
     }
 };
