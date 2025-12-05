@@ -1,9 +1,9 @@
 <div class="row mt-3">
     <div class="col-md-12">
-        <h5>۶. سطح نیاز</h5>
+        <h5 class="mb-3">۶. سطح نیاز</h5>
     </div>
 
-    <div class="col-md-4">
+    <div class="col-md-6">
         <label for="need_level_id" class="form-label">سطح نیاز <span class="text-danger">*</span></label>
         <select name="need_level_id" id="need_level_id" class="form-control">
             <option value="">انتخاب سطح نیاز...</option>

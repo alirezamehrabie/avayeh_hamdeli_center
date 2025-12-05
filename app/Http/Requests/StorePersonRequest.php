@@ -138,8 +138,10 @@ class StorePersonRequest extends FormRequest
             'works_alongside_study' => 'required|boolean',
             'monthly_income' => 'nullable|numeric|min:0',
             'organization_type' => 'nullable|string|max:255',
-            'organization_name' => 'nullable|string|max:255',
-            'coverage_start_date' => 'nullable|date',
+            'coverage_start_day' => 'nullable|integer|min:1|max:31',
+            'coverage_start_month' => 'nullable|integer|min:1|max:12',
+            'coverage_start_year' => 'nullable|integer|min:1300|max:1450',
+            'coverage_start_date_full' => 'nullable|string', // برای نمایش
             'support_card_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
 
             // Section 6: Needs Level
@@ -225,6 +227,19 @@ class StorePersonRequest extends FormRequest
             'guardian_birth_year.integer' => 'سال تولد سرپرست باید عدد باشد.',
             'guardian_birth_year.min' => 'سال تولد سرپرست نمی‌تواند کمتر از ۱۳۰۰ باشد.',
             'guardian_birth_year.max' => 'سال تولد سرپرست نمی‌تواند بیشتر از ۱۴۵۰ باشد.',
+
+
+
+            // تاریخ شروع پوشش
+            'coverage_start_day.integer' => 'روز شروع پوشش باید عدد باشد.',
+            'coverage_start_day.min' => 'روز شروع پوشش نمی‌تواند کمتر از 1 باشد.',
+            'coverage_start_day.max' => 'روز شروع پوشش نمی‌تواند بیشتر از 31 باشد.',
+            'coverage_start_month.integer' => 'ماه شروع پوشش باید عدد باشد.',
+            'coverage_start_month.min' => 'ماه شروع پوشش نمی‌تواند کمتر از 1 باشد.',
+            'coverage_start_month.max' => 'ماه شروع پوشش نمی‌تواند بیشتر از 12 باشد.',
+            'coverage_start_year.integer' => 'سال شروع پوشش باید عدد باشد.',
+            'coverage_start_year.min' => 'سال شروع پوشش نمی‌تواند کمتر از 1300 باشد.',
+            'coverage_start_year.max' => 'سال شروع پوشش نمی‌تواند بیشتر از 1450 باشد.',
         ];
     }
 

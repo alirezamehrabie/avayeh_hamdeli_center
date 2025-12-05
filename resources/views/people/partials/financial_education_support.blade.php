@@ -126,9 +126,25 @@
         <div class="col-md-4"><label for="monthly_income" class="form-label">درآمد ماهانه (تومان)</label><input type="number" class="form-control" name="monthly_income" value="{{ old('monthly_income') }}"></div>
 
         <div class="col-12"><hr class="my-4"></div>
-        <div class="col-md-3"><label for="organization_type" class="form-label">نوع سازمان حمایتی</label><input type="text" class="form-control" name="organization_type" value="{{ old('organization_type') }}" placeholder="کمیته امداد، بهزیستی، ..."></div>
-        <div class="col-md-3"><label for="organization_name" class="form-label">نام دقیق سازمان</label><input type="text" class="form-control" name="organization_name" value="{{ old('organization_name') }}"></div>
-        <div class="col-md-3"><label for="coverage_start_date" class="form-label">تاریخ شروع پوشش</label><input type="date" class="form-control" name="coverage_start_date" value="{{ old('coverage_start_date') }}"></div>
-        <div class="col-md-3"><label for="support_card_image" class="form-label">تصویر کارت پوشش</label><input class="form-control" type="file" name="support_card_image"></div>
+
+        <div class="col-md-4"><label for="organization_type" class="form-label">نوع سازمان حمایتی</label><input type="text" class="form-control" name="organization_type" value="{{ old('organization_type') }}" placeholder="کمیته امداد، بهزیستی، ..."></div>
+        <div class="col-md-4">
+            <x-jalali-datepicker
+                name="coverage_start_date"
+                label="تاریخ شروع پوشش حمایتی"
+                :required="false"
+                dayName="coverage_start_day"
+                monthName="coverage_start_month"
+                yearName="coverage_start_year"
+                fullDateName="coverage_start_date_full"
+                dayValue="{{ old('coverage_start_day') }}"
+                monthValue="{{ old('coverage_start_month') }}"
+                yearValue="{{ old('coverage_start_year') }}"
+            />
+        </div>
+        <div class="col-md-4"><label for="support_card_image" class="form-label">تصویر کارت پوشش</label><input class="form-control" type="file" name="support_card_image"></div>
+
+
+
     </div>
 </div>

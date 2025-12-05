@@ -235,9 +235,10 @@ class PersonController extends Controller
             SupportCoverage::create([
                 'person_id' => $person->id,
                 'organization_type' => $validatedData['organization_type'] ?? null,
-                'organization_name' => $validatedData['organization_name'] ?? null,
-                'coverage_start_date' => $validatedData['coverage_start_date'] ?? null,
-                'support_card_image' => $paths['support_card_image']
+                'coverage_start_day' => $validatedData['coverage_start_day'] ?? null,
+                'coverage_start_month' => $validatedData['coverage_start_month'] ?? null,
+                'coverage_start_year' => $validatedData['coverage_start_year'] ?? null,
+                'support_card_image' => $paths['support_card_image'],
             ]);
 
             // 8. Create NeedsLevel

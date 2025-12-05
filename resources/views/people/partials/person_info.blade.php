@@ -24,31 +24,40 @@
             />
         </div>
 
-        </div>
 
         <div class="col-md-4"><label for="father_name" class="form-label">نام پدر</label><input type="text" class="form-control" name="father_name" value="{{ old('father_name') }}"></div>
-    <!-- نمونه اصلاح شده برای کد ملی پدر -->
-    <div class="col-md-3">
+
+
+    <div class="col-md-2">
         <label for="father_national_id" class="form-label">کد ملی پدر</label>
         <input type="text"
                class="form-control"
                name="father_national_id"
                value="{{ old('father_national_id') }}"
-               maxlength="10"> {{-- این قسمت اضافه شد --}}
+               maxlength="10">
     </div>
 
-    <!-- نمونه اصلاح شده برای کد ملی مادر -->
-    <div class="col-md-3">
+
+    <div class="col-md-2">
         <label for="mother_national_id" class="form-label">کد ملی مادر</label>
         <input type="text"
                class="form-control"
                name="mother_national_id"
                value="{{ old('mother_national_id') }}"
-               maxlength="10"> {{-- این قسمت اضافه شد --}}
+               maxlength="10">
     </div>
 
+        {{--جنسیت--}}
+        <div class="col-md-2">
+            <label class="form-label">جنسیت <span class="text-danger">*</span></label>
+            <div>
+                <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="gender" value="مرد" @if(old('gender') == 'مرد') checked @endif required><label class="form-check-label">مرد</label></div>
+                <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="gender" value="زن" @if(old('gender') == 'زن') checked @endif required><label class="form-check-label">زن</label></div>
+            </div>
+        </div>
+
     {{-- وضعیت سادات --}}
-    <div class="form-group">
+    <div class="form-group col-md-2">
         <label class="d-block">وضعیت سادات <span class="text-danger">*</span></label>
         <label class="radio-inline me-3">
             <input
@@ -76,7 +85,7 @@
     {{-- نسب سادات (مخفی/نمایان بر اساس رادیو بالا) --}}
     <div
         id="sadaat_relation_container"
-        class="form-group"
+        class="form-group col-md-3"
         style="display: none;"
     >
         <label for="sadaat_relation_id">نسب سادات <span class="text-danger">*</span></label>
@@ -102,14 +111,7 @@
 
 
 
-        {{--جنسیت--}}
-        <div class="col-md-4">
-            <label class="form-label">جنسیت <span class="text-danger">*</span></label>
-            <div>
-                <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="gender" value="مرد" @if(old('gender') == 'مرد') checked @endif required><label class="form-check-label">مرد</label></div>
-                <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="gender" value="زن" @if(old('gender') == 'زن') checked @endif required><label class="form-check-label">زن</label></div>
-            </div>
-        </div>
+
 
         <div class="col-md-4">
             <label for="role" class="form-label">نقش در خانواده <span class="text-danger">*</span></label>
@@ -130,7 +132,7 @@
 
 
         <!-- بخش معلولیت مددجو -->
-    <div class="col-md-4 mb-3">
+    <div class="col-md-2 mb-3">
         <label class="form-label">آیا دارای معلولیت هست؟</label>
         <div>
             <input type="radio" id="has_disability_yes" name="has_disability" value="1"
@@ -143,7 +145,7 @@
         </div>
     </div>
 
-    <div class="col-md-4 mb-3">
+    <div class="col-md-5 mb-3">
         <label for="disability_type" class="form-label">نوع معلولیت</label>
         <select class="form-select" id="disability_type" name="disability_type_id" {{ old('has_disability','0') == '1' ? '' : 'disabled' }}>
             <option value="">انتخاب کنید...</option>
@@ -156,15 +158,15 @@
         </select>
     </div>
 
-    <div class="col-md-4 mb-3">
+    <div class="col-md-5 mb-3">
         <label for="disability_description" class="form-label">توضیحات معلولیت</label>
-        <textarea class="form-control" id="disability_description" name="disability_description"
+        <textarea class="form-control h-1" id="disability_description" name="disability_description"
               {{ old('has_disability','0') == '1' ? '' : 'disabled' }}>{{ old('disability_description') }}</textarea>
     </div>
 
 
 
-        <div class="col-md-12">
+        <div class="col-md-4">
             <label for="social_worker_id" class="form-label">مددکار مسئول <span class="text-danger">*</span></label>
             <select class="form-select" name="social_worker_id" required>
                 <option value="" disabled selected>یک مددکار را انتخاب کنید...</option>
@@ -175,9 +177,10 @@
                 @endforelse
             </select>
         </div>
-        <div class="col-md-6"><label for="photo_id_card" class="form-label">تصویر کارت ملی</label><input class="form-control" type="file" name="photo_id_card"></div>
-        <div class="col-md-6"><label for="photo_birth_certificate" class="form-label">تصویر شناسنامه</label><input class="form-control" type="file" name="photo_birth_certificate"></div>
-        <div class="form-group mt-3">
+        <div class="col-md-4"><label for="photo_id_card" class="form-label">تصویر کارت ملی</label><input class="form-control" type="file" name="photo_id_card"></div>
+        <div class="col-md-4"><label for="photo_birth_certificate" class="form-label">تصویر شناسنامه</label><input class="form-control" type="file" name="photo_birth_certificate"></div>
+
+        <div class="form-group col-md-4 mt-3">
             <label>آپلود چهره در لحظه:</label>
             <button type="button" id="openCameraBtn" class="btn btn-primary">ثبت چهره</button>
             <input type="hidden" name="photo_live_capture" id="photo_live_capture">
@@ -194,8 +197,8 @@
 {{-- اسکریپت وضعیت سادات --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const radios = document.querySelectorAll('input[name="sadaat_status"]');
             const container = document.getElementById('sadaat_relation_container');
+            const radios = document.querySelectorAll('input[name="sadaat_status"]');
 
             function toggleSadaatRelation() {
                 const selected = document.querySelector('input[name="sadaat_status"]:checked').value;
@@ -203,7 +206,6 @@
                     container.style.display = 'block';
                 } else {
                     container.style.display = 'none';
-                    // در صورت نیاز مقدار قبلی را پاک می‌کنیم
                     const select = container.querySelector('select');
                     if (select) select.value = '';
                 }
@@ -213,7 +215,6 @@
                 radio.addEventListener('change', toggleSadaatRelation);
             });
 
-            // حالت اولیه هنگام بارگذاری صفحه
             toggleSadaatRelation();
         });
     </script>

@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white">
+        <div class="card-header bg-pink-800 text-white">
             <h3 class="mb-0">فرم ثبت‌نام مددجوی جدید</h3>
         </div>
         <div class="card-body">
@@ -30,7 +30,7 @@
 
 
                 {{-- Section 6: Needs Level --}}
-                @include('people.partials.education_info')
+                @include('people.partials.need_level')
 
                 <div class="d-grid mt-4">
                     <button type="submit" class="btn btn-primary btn-lg">ثبت نهایی اطلاعات مددجو</button>
@@ -62,6 +62,7 @@
                 relationSelect.value = ''; // پاک کردن مقدار اگر پنهان شد
             }
         }
+
         // فراخوانی اولیه هنگام بارگذاری فرم
         toggleRelationVisibility();
 
@@ -118,7 +119,7 @@
 
 <!-- اسکریپت برای فعال/غیرفعال کردن لیست بیمه -->
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const insuranceYes = document.getElementById('insurance_yes');
         const insuranceNo = document.getElementById('insurance_no');
         const insuranceSelect = document.getElementById('insurance_type_id');
@@ -168,10 +169,9 @@
 </script>
 
 
-
 {{-- Script for Logic Control --}}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const accYes = document.getElementById('account_yes');
         const accNo = document.getElementById('account_no');
         const relationSelect = document.getElementById('account_owner_relation_id');
@@ -235,10 +235,9 @@
 </script>
 
 
-
 {{--Card Number--}}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         // المان‌های کارت اصلی
         const vCard = document.getElementById('visual_card_number');
         const hCard = document.getElementById('card_number');
@@ -300,11 +299,11 @@
         }
 
         // --- اتصال رویدادها ---
-        vCard.addEventListener('input', function() {
+        vCard.addEventListener('input', function () {
             handleInput(vCard, hCard, false);
         });
 
-        vSubsidy.addEventListener('input', function() {
+        vSubsidy.addEventListener('input', function () {
             handleInput(vSubsidy, hSubsidy, true);
         });
     });
