@@ -1,5 +1,5 @@
 <div class="mb-5">
-    <h4 class="border-bottom pb-2 mb-3">۵. اطلاعات مالی، تحصیلی و حمایتی</h4>
+    <h4 class="border-bottom pb-2 mb-3 font-bold">اطلاعات مالی، تحصیلی و حمایتی</h4>
     <div class="row g-3">
 
         {{-- Bank Info Section --}}

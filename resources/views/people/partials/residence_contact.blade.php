@@ -1,5 +1,5 @@
 <div class="mb-5">
-    <h4 class="border-bottom pb-2 mb-3">۴. اطلاعات سکونت و تماس</h4>
+    <h4 class="border-bottom pb-2 mb-3 font-bold">اطلاعات سکونت و تماس</h4>
     <div class="row g-3">
         <div class="col-md-3">
             <label for="residence_status" class="form-label">وضعیت سکونت <span class="text-danger">*</span></label>

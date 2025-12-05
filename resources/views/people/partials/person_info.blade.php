@@ -1,7 +1,7 @@
 {{-- Section 1: Person Info --}}
 
 <div class="mb-5">
-    <h4 class="border-bottom pb-2 mb-3">۱. اطلاعات فردی مددجو</h4>
+    <h4 class="border-bottom pb-2 mb-3 font-bold">اطلاعات فردی مددجو</h4>
     <div class="row g-3">
         <div class="col-md-4"><label for="first_name" class="form-label">نام <span class="text-danger">*</span></label><input type="text" class="form-control" name="first_name" value="{{ old('first_name') }}" required></div>
         <div class="col-md-4"><label for="last_name" class="form-label">نام خانوادگی <span class="text-danger">*</span></label><input type="text" class="form-control" name="last_name" value="{{ old('last_name') }}" required></div>

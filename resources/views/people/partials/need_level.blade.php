@@ -1,6 +1,6 @@
 <div class="row mt-3">
     <div class="col-md-12">
-        <h5 class="mb-3">۶. سطح نیاز</h5>
+        <h5 class="border-bottom pb-2 mb-3 font-bold">سطح نیاز</h5>
     </div>
 
     <div class="col-md-6">

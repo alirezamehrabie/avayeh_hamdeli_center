@@ -1,5 +1,5 @@
 <div class="mb-5 mt-5">
-    <h4 class="border-bottom pb-2 mb-3">۳. اطلاعات سرپرست</h4>
+    <h4 class="border-bottom pb-2 mb-3 font-bold">اطلاعات سرپرست</h4>
 
     <!-- START: Dynamic Guardian Alert -->
     <div id="guardian-dynamic-alert" class="alert alert-info align-items-center d-none" role="alert">
@@ -30,22 +30,23 @@
             />
         </div>
 
+        <div class="col-md-4">
+            <label for="occupation_id">شغل سرپرست</label>
+            <select name="occupation_id" id="occupation_id" class="form-control">
+                <option value="">— انتخاب کنید —</option>
+                @foreach(\App\Models\Occupation::orderBy('sort_order')->get() as $occ)
+                    <option value="{{ $occ->id }}"
+                        {{ old('occupation_id') == $occ->id ? 'selected' : '' }}>
+                        {{ $occ->name }}
+                    </option>
+                @endforeach
+            </select>
+            @error('occupation_id')
+            <span class="text-danger">{{ $message }}</span>
+            @enderror
+        </div>
 
-        <label for="occupation_id">شغل سرپرست</label>
-        <select name="occupation_id" id="occupation_id" class="form-control">
-            <option value="">— انتخاب کنید —</option>
-            @foreach(\App\Models\Occupation::orderBy('sort_order')->get() as $occ)
-                <option value="{{ $occ->id }}"
-                    {{ old('occupation_id') == $occ->id ? 'selected' : '' }}>
-                    {{ $occ->name }}
-                </option>
-            @endforeach
-        </select>
-        @error('occupation_id')
-        <span class="text-danger">{{ $message }}</span>
-        @enderror
-
-        <div class="col-md-3">
+        <div class="col-md-4">
             <label for="job_type_id" class="form-label">نوع قرارداد کاری</label>
             <select name="job_type_id" id="job_type_id" class="form-control">
                 <option value="">— انتخاب کنید —</option>
@@ -58,12 +59,12 @@
             </select>
         </div>
 
-        <div class="col-md-3"><label for="guardian_phone_number" class="form-label">شماره تماس سرپرست</label><input type="text" class="form-control" name="guardian_phone_number" value="{{ old('guardian_phone_number') }}"></div>
-        <div class="col-md-3"><label for="children_count" class="form-label">تعداد کل فرزندان</label><input type="number" class="form-control" name="children_count" value="{{ old('children_count') }}"></div>
-        <div class="col-md-3"><label for="children_in_house" class="form-label">فرزندان ساکن در منزل</label><input type="number" class="form-control" name="children_in_house" value="{{ old('children_in_house') }}"></div>
+        <div class="col-md-4"><label for="guardian_phone_number" class="form-label">شماره تماس سرپرست</label><input type="text" class="form-control" name="guardian_phone_number" value="{{ old('guardian_phone_number') }}"></div>
+        <div class="col-md-4"><label for="children_count" class="form-label">تعداد کل فرزندان</label><input type="number" class="form-control" name="children_count" value="{{ old('children_count') }}"></div>
+        <div class="col-md-4"><label for="children_in_house" class="form-label">فرزندان ساکن در منزل</label><input type="number" class="form-control" name="children_in_house" value="{{ old('children_in_house') }}"></div>
 
         <!-- Insurance Status Radio -->
-        <div class="col-md-3">
+        <div class="col-md-2">
             <label class="form-label">وضعیت بیمه <span class="text-danger">*</span></label>
             <div>
                 <div class="form-check form-check-inline">
@@ -97,7 +98,7 @@
         </div>
 
         {{-- Divorced Child At Home Select --}}
-        <div class="col-md-3">
+        <div class="col-md-2">
             <label for="divorced_child_at_home" class="form-label">فرزند مطلقه در منزل</label>
             <select name="divorced_child_at_home" id="divorced_child_at_home" class="form-select">
                 @php
@@ -128,7 +129,7 @@
 
 
 
-        <div class="col-md-3"><label for="average_income" class="form-label">درآمد متوسط خانوار (تومان)</label><input type="number" class="form-control" name="average_income" value="{{ old('average_income') }}"></div>
+        <div class="col-md-2"><label for="average_income" class="form-label">درآمد متوسط خانوار (تومان)</label><input type="number" class="form-control" name="average_income" value="{{ old('average_income') }}"></div>
         <div class="col-md-3">
             <label class="form-label">آیا کسی در خانواده شاغل است؟ <span class="text-danger">*</span></label>
             <div>
