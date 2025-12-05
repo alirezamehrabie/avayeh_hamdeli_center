@@ -13,7 +13,7 @@ class Residence extends Model
     protected $fillable = [
         'person_id',
         'residence_status_id',
-        'district_id',            // اضافه شد
+        'district_id',
         'is_local_to_city',
         'deposit_amount',
         'monthly_rent',

@@ -196,20 +196,21 @@ class PersonController extends Controller
 
 
             // 4. Create ResidenceContact
-            Residence::create(['person_id' => $person->id] + $request->only([
-                    'residence_status_id' => $request->residence_status_id,
-                    'district_id'          => $request->district_id,
-                    'is_local_to_city'     => $request->is_local_to_city,
-                    'deposit_amount'       => $request->deposit_amount,
-                    'monthly_rent'         => $request->monthly_rent,
-                    'residence_duration_years' => $request->residence_duration_years,
-                    'address'              => $request->address,
-                    'personal_phone',
-                    'landline_phone',
-                    'trusted_person_phone',
-                    'messenger_type',
-                    'messenger_number'
-                ]));
+            Residence::create([
+                'person_id' => $person->id,
+                'residence_status_id' => $validatedData['residence_status_id'] ?? null,
+                'district_id' => $validatedData['district_id'] ?? null,
+                'is_local_to_city' => $validatedData['is_local_to_city'] ?? null,
+                'deposit_amount' => $validatedData['deposit_amount'] ?? null,
+                'monthly_rent' => $validatedData['monthly_rent'] ?? null,
+                'residence_duration_years' => $validatedData['residence_duration_years'] ?? null,
+                'address' => $validatedData['address'],  // ✅ این فیلد الزامی است
+                'personal_phone' => $validatedData['personal_phone'] ?? null,
+                'landline_phone' => $validatedData['landline_phone'] ?? null,
+                'trusted_person_phone' => $validatedData['trusted_person_phone'] ?? null,
+                'messenger_type' => $validatedData['messenger_type'] ?? null,
+                'messenger_number' => $validatedData['messenger_number'] ?? null,
+            ]);
 
             // 5. Create BankInfo
             BankInfo::create(['person_id' => $person->id] + $request->only([
