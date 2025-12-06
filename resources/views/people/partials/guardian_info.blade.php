@@ -14,21 +14,65 @@
     <!-- END: Dynamic Guardian Alert -->
     <div class="row g-3">
 
-        {{-- ✅ تاریخ تولد سرپرست با کامپوننت تقویم شمسی --}}
+        {{-- تاریخ تولد سرپرست: سه فیلد مجزا --}}
         <div class="col-md-4">
-            <x-jalali-datepicker
-                name="guardian_birth_date"
-                label="تاریخ تولد سرپرست"
-                :required="false"
-                day-name="guardian_birth_day"
-                month-name="guardian_birth_month"
-                year-name="guardian_birth_year"
-                full-date-name="guardian_birth_date_full"
-                :day-value="old('guardian_birth_day', $guardian->guardian_birth_day ?? null)"
-                :month-value="old('guardian_birth_month', $guardian->guardian_birth_month ?? null)"
-                :year-value="old('guardian_birth_year', $guardian->guardian_birth_year ?? null)"
-            />
+            <label class="form-label">تاریخ تولد سرپرست</label>
+            <div class="row g-2 dir-ltr">
+                {{-- روز --}}
+                <div class="col-4">
+                    <select name="guardian_birth_day" id="guardian_birth_day" class="form-select">
+                        <option value="">روز</option>
+                        @foreach(range(1, 31) as $day)
+                            <option value="{{ $day }}"
+                                {{ old('guardian_birth_day', $guardian->guardian_birth_day ?? '') == $day ? 'selected' : '' }}>
+                                {{ $day }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- ماه --}}
+                <div class="col-4">
+                    <select name="guardian_birth_month" id="guardian_birth_month" class="form-select">
+                        <option value="">ماه</option>
+                        @php
+                            $months = [
+                                1 => 'فروردین', 2 => 'اردیبهشت', 3 => 'خرداد',
+                                4 => 'تیر', 5 => 'مرداد', 6 => 'شهریور',
+                                7 => 'مهر', 8 => 'آبان', 9 => 'آذر',
+                                10 => 'دی', 11 => 'بهمن', 12 => 'اسفند'
+                            ];
+                        @endphp
+                        @foreach($months as $key => $month)
+                            <option value="{{ $key }}"
+                                {{ old('guardian_birth_month', $guardian->guardian_birth_month ?? '') == $key ? 'selected' : '' }}>
+                                {{ $month }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- سال --}}
+                <div class="col-4">
+                    <select name="guardian_birth_year" id="guardian_birth_year" class="form-select">
+                        <option value="">سال</option>
+                        @foreach(range(1300, 1420) as $year)
+                            <option value="{{ $year }}"
+                                {{ old('guardian_birth_year', $guardian->guardian_birth_year ?? '') == $year ? 'selected' : '' }}>
+                                {{ $year }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            {{-- نمایش سن محاسبه شده توسط جاوااسکریپت --}}
+            <div id="guardian-age-display" class="text-primary small mt-2 fw-bold"></div>
+
+            @if($errors->hasAny(['guardian_birth_day', 'guardian_birth_month', 'guardian_birth_year']))
+                <div class="text-danger small mt-1">لطفاً تاریخ تولد سرپرست را کامل وارد کنید.</div>
+            @endif
         </div>
+
 
         <div class="col-md-4">
             <label for="occupation_id">شغل سرپرست</label>

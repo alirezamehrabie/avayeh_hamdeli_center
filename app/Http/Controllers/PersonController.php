@@ -126,11 +126,11 @@ class PersonController extends Controller
                 'birth_day'    => $validatedData['birth_day'],
                 'birth_month'  => $validatedData['birth_month'],
                 'birth_year'   => $validatedData['birth_year'],
-                'birth_date_full' => $validatedData['birth_date_full'] ?? $this->formatBirthDateFull(
-                        $validatedData['birth_year'],
-                        $validatedData['birth_month'],
-                        $validatedData['birth_day']
-                    ),
+                'birth_date_full' => $this->formatBirthDateFull(
+                    $validatedData['birth_year'],
+                    $validatedData['birth_month'],
+                    $validatedData['birth_day']
+                ),
                 'father_name' => $validatedData['father_name'],
                 'father_national_id' => $validatedData['father_national_id'],
                 'mother_national_id' => $validatedData['mother_national_id'],
@@ -170,10 +170,12 @@ class PersonController extends Controller
             Guardian::create([
                 'person_id' => $person->id,
 
-                // تاریخ تولد شمسی سرپرست
-                'guardian_birth_day' => $request->input('guardian_birth_day'),
+                // دریافت جداگانه روز، ماه و سال
+                'guardian_birth_day'   => $request->input('guardian_birth_day'),
                 'guardian_birth_month' => $request->input('guardian_birth_month'),
-                'guardian_birth_year' => $request->input('guardian_birth_year'),
+                'guardian_birth_year'  => $request->input('guardian_birth_year'),
+
+                // ساخت دستی رشته تاریخ برای ذخیره در دیتابیس
                 'guardian_birth_date_full' => $this->formatBirthDateFull(
                     $request->input('guardian_birth_year'),
                     $request->input('guardian_birth_month'),
@@ -235,9 +237,17 @@ class PersonController extends Controller
             SupportCoverage::create([
                 'person_id' => $person->id,
                 'organization_type' => $validatedData['organization_type'] ?? null,
-                'coverage_start_day' => $validatedData['coverage_start_day'] ?? null,
+                // ذخیره اجزای تاریخ
+                'coverage_start_day'   => $validatedData['coverage_start_day'] ?? null,
                 'coverage_start_month' => $validatedData['coverage_start_month'] ?? null,
-                'coverage_start_year' => $validatedData['coverage_start_year'] ?? null,
+                'coverage_start_year'  => $validatedData['coverage_start_year'] ?? null,
+
+                // ساخت و ذخیره تاریخ کامل (فرمت: YYYY/MM/DD)
+                'coverage_start_date' => $this->formatBirthDateFull(
+                    $validatedData['coverage_start_year'] ?? null,
+                    $validatedData['coverage_start_month'] ?? null,
+                    $validatedData['coverage_start_day'] ?? null
+                ),
                 'support_card_image' => $paths['support_card_image'],
             ]);
 

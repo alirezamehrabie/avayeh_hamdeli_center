@@ -34,7 +34,6 @@ class Person extends Model
     protected $fillable = [
         'first_name',
         'last_name',
-        // ❌ 'full_name' حذف شد - ستون مجازی قابل نوشتن نیست
         'national_id',
         'birth_day',
         'birth_month',

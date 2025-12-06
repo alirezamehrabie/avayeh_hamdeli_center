@@ -8,21 +8,63 @@
         <div class="col-md-4"><label for="national_id" class="form-label">کد ملی <span class="text-danger">*</span></label><input type="text" class="form-control" name="national_id" maxlength="10" value="{{ old('national_id') }}" required></div>
 
 
-        {{-- تاریخ تولد با کامپوننت جدید --}}
+        {{-- تاریخ تولد: سه فیلد مجزا --}}
         <div class="col-md-4">
-            <x-jalali-datepicker
-                name="birth_date"
-                label="تاریخ تولد"
-                :required="true"
-                day-name="birth_day"
-                month-name="birth_month"
-                year-name="birth_year"
-                full-date-name="birth_date_full"
-                :day-value="old('birth_day', $person->birth_day ?? null)"
-                :month-value="old('birth_month', $person->birth_month ?? null)"
-                :year-value="old('birth_year', $person->birth_year ?? null)"
-            />
+            <label class="form-label">تاریخ تولد <span class="text-danger">*</span></label>
+            <div class="row g-2 dir-ltr">
+                {{-- روز --}}
+                <div class="col-4">
+                    <select name="birth_day" class="form-select" required>
+                        <option value="">روز</option>
+                        @foreach(range(1, 31) as $day)
+                            <option value="{{ $day }}"
+                                {{ old('birth_day', $person->birth_day ?? '') == $day ? 'selected' : '' }}>
+                                {{ $day }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- ماه --}}
+                <div class="col-4">
+                    <select name="birth_month" class="form-select" required>
+                        <option value="">ماه</option>
+                        @php
+                            $months = [
+                                1 => 'فروردین', 2 => 'اردیبهشت', 3 => 'خرداد',
+                                4 => 'تیر', 5 => 'مرداد', 6 => 'شهریور',
+                                7 => 'مهر', 8 => 'آبان', 9 => 'آذر',
+                                10 => 'دی', 11 => 'بهمن', 12 => 'اسفند'
+                            ];
+                        @endphp
+                        @foreach($months as $key => $month)
+                            <option value="{{ $key }}"
+                                {{ old('birth_month', $person->birth_month ?? '') == $key ? 'selected' : '' }}>
+                                {{ $month }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- سال --}}
+                <div class="col-4">
+                    <select name="birth_year" class="form-select" required>
+                        <option value="">سال</option>
+                        @foreach(range(1300, 1420) as $year)
+                            <option value="{{ $year }}"
+                                {{ old('birth_year', $person->birth_year ?? '') == $year ? 'selected' : '' }}>
+                                {{ $year }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            {{-- نمایش خطاهای احتمالی برای هر سه فیلد --}}
+            @if($errors->hasAny(['birth_day', 'birth_month', 'birth_year']))
+                <div class="text-danger small mt-1">لطفاً تاریخ تولد را کامل وارد کنید.</div>
+            @endif
         </div>
+
 
 
         <div class="col-md-4"><label for="father_name" class="form-label">نام پدر</label><input type="text" class="form-control" name="father_name" value="{{ old('father_name') }}"></div>

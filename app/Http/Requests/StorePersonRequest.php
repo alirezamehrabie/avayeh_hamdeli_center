@@ -30,15 +30,10 @@ class StorePersonRequest extends FormRequest
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'national_id' => 'required|string|digits:10|unique:people,national_id',
-//            'birth_day' => 'required|integer|min:1|max:31',
-//            'birth_month' => ['required', 'integer', 'min:1', 'max:12'],
-//            'birth_year' => 'required|integer|min:1300|max:1500',
 
-            // ✅ قوانین تاریخ تولد
-            'birth_day' => 'required|integer|min:1|max:31',
+            'birth_day'   => 'required|integer|min:1|max:31',
             'birth_month' => 'required|integer|min:1|max:12',
-            'birth_year' => 'required|integer|min:1300|max:1450',
-            'birth_date_full' => 'nullable|string|size:10|regex:/^\d{4}\/\d{2}\/\d{2}$/',
+            'birth_year'  => 'required|integer|min:1300|max:1420',
 
             'father_name' => 'nullable|string|max:255',
             'father_national_id' => 'nullable|string|digits:10',
@@ -83,7 +78,7 @@ class StorePersonRequest extends FormRequest
             // Section 3: Guardian Info
             'guardian_birth_day' => 'nullable|integer|min:1|max:31',
             'guardian_birth_month' => 'nullable|integer|min:1|max:12',
-            'guardian_birth_year' => 'nullable|integer|min:1300|max:1450',
+            'guardian_birth_year' => 'nullable|integer|min:1300|max:1420',
             'guardian_birth_date_full' => 'nullable|string|max:10',
             'occupation_id' => 'required|exists:occupations,id',
             'job_type_id' => ['nullable', 'exists:job_types,id'],
@@ -138,9 +133,9 @@ class StorePersonRequest extends FormRequest
             'works_alongside_study' => 'required|boolean',
             'monthly_income' => 'nullable|numeric|min:0',
             'organization_type' => 'nullable|string|max:255',
-            'coverage_start_day' => 'nullable|integer|min:1|max:31',
+            'coverage_start_day'   => 'nullable|integer|min:1|max:31',
             'coverage_start_month' => 'nullable|integer|min:1|max:12',
-            'coverage_start_year' => 'nullable|integer|min:1300|max:1450',
+            'coverage_start_year'  => 'nullable|integer|min:1300|max:1420',
             'coverage_start_date_full' => 'nullable|string', // برای نمایش
             'support_card_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
 

@@ -10,16 +10,35 @@ return new class extends Migration
     {
         Schema::create('support_coverages', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('person_id')->constrained('people')->onDelete('cascade');
+
+            // کلید خارجی به جدول people
+            $table->foreignId('person_id')
+                ->constrained('people')
+                ->onDelete('cascade');
+
             $table->string('organization_type')->nullable();
-            $table->string('organization_name')->nullable();
+
             $table->string('support_card_image')->nullable();
-            $table->date('coverage_start_date')->nullable();
+
+            // افزودن فیلدهای جدید شمسی (روز، ماه، سال)
+            $table->tinyInteger('coverage_start_day')->nullable();
+            $table->tinyInteger('coverage_start_month')->nullable();
+            $table->smallInteger('coverage_start_year')->nullable();
+
+            // افزودن تاریخ کامل شمسی به صورت رشته "YYYY/MM/DD"
+            // جهت جستجو و نمایش
+            $table->string('coverage_start_date', 10)
+                ->nullable()
+                ->comment('فرمت کامل تاریخ شمسی YYYY/MM/DD جهت جستجو و نمایش');
+
             $table->boolean('active_status')->default(true);
             $table->timestamps();
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::dropIfExists('support_coverages');

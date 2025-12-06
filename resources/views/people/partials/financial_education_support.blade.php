@@ -128,20 +128,60 @@
         <div class="col-12"><hr class="my-4"></div>
 
         <div class="col-md-4"><label for="organization_type" class="form-label">نوع سازمان حمایتی</label><input type="text" class="form-control" name="organization_type" value="{{ old('organization_type') }}" placeholder="کمیته امداد، بهزیستی، ..."></div>
+
+        {{-- تاریخ شروع پوشش حمایتی: سه فیلد مجزا --}}
         <div class="col-md-4">
-            <x-jalali-datepicker
-                name="coverage_start_date"
-                label="تاریخ شروع پوشش حمایتی"
-                :required="false"
-                dayName="coverage_start_day"
-                monthName="coverage_start_month"
-                yearName="coverage_start_year"
-                fullDateName="coverage_start_date_full"
-                dayValue="{{ old('coverage_start_day') }}"
-                monthValue="{{ old('coverage_start_month') }}"
-                yearValue="{{ old('coverage_start_year') }}"
-            />
+            <label class="form-label">تاریخ شروع پوشش حمایتی</label>
+            <div class="row g-2 dir-ltr">
+                {{-- روز --}}
+                <div class="col-4">
+                    <select name="coverage_start_day" class="form-select">
+                        <option value="">روز</option>
+                        @foreach(range(1, 31) as $day)
+                            <option value="{{ $day }}" {{ old('coverage_start_day') == $day ? 'selected' : '' }}>
+                                {{ $day }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- ماه --}}
+                <div class="col-4">
+                    <select name="coverage_start_month" class="form-select">
+                        <option value="">ماه</option>
+                        @php
+                            $months = [
+                                1 => 'فروردین', 2 => 'اردیبهشت', 3 => 'خرداد',
+                                4 => 'تیر', 5 => 'مرداد', 6 => 'شهریور',
+                                7 => 'مهر', 8 => 'آبان', 9 => 'آذر',
+                                10 => 'دی', 11 => 'بهمن', 12 => 'اسفند'
+                            ];
+                        @endphp
+                        @foreach($months as $key => $month)
+                            <option value="{{ $key }}" {{ old('coverage_start_month') == $key ? 'selected' : '' }}>
+                                {{ $month }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- سال --}}
+                <div class="col-4">
+                    <select name="coverage_start_year" class="form-select">
+                        <option value="">سال</option>
+                        @foreach(range(1300, 1420) as $year)
+                            <option value="{{ $year }}" {{ old('coverage_start_year') == $year ? 'selected' : '' }}>
+                                {{ $year }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            @if($errors->hasAny(['coverage_start_day', 'coverage_start_month', 'coverage_start_year']))
+                <div class="text-danger small mt-1">لطفاً تاریخ شروع پوشش را به صورت کامل وارد کنید.</div>
+            @endif
         </div>
+
         <div class="col-md-4"><label for="support_card_image" class="form-label">تصویر کارت پوشش</label><input class="form-control" type="file" name="support_card_image"></div>
 
 
