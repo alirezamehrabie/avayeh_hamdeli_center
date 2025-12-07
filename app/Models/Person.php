@@ -32,6 +32,7 @@ class Person extends Model
     ];
 
     protected $fillable = [
+        'guardian_id',
         'first_name',
         'last_name',
         'national_id',
@@ -376,9 +377,9 @@ class Person extends Model
         return $this->hasOne(FamilyStatus::class);
     }
 
-    public function guardianInfo()
+    public function guardian()
     {
-        return $this->hasOne(Guardian::class);
+        return $this->belongsTo(Guardian::class);
     }
 
     public function residenceContact()

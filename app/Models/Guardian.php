@@ -17,7 +17,9 @@ class Guardian extends Model
      * ✅ فیلدهای جدید تاریخ تولد شمسی
      */
     protected $fillable = [
-        'person_id',
+        'national_code',
+        'first_name',
+        'last_name',
 
         // فیلدهای جدید تاریخ تولد شمسی
         'guardian_birth_day',
@@ -59,9 +61,9 @@ class Guardian extends Model
     // 🔹 روابط (Relationships)
     // ═══════════════════════════════════════════════════════════════════
 
-    public function person()
+    public function people()
     {
-        return $this->belongsTo(Person::class);
+        return $this->hasMany(Person::class, 'guardian_id');
     }
 
     public function occupation()
