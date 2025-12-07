@@ -105,15 +105,6 @@ class CreatePerson extends Component
     // --- پراپرتی جدید برای مدیریت منطق کپی از فیلدهای پدر ---
     public $is_programmatic_guardian_lookup = false;
 
-    // خصوصیات برای نمایش داده‌های لوکاپ (lookup data) در فرم
-    public $sadaatRelations;
-    public $allSkills;
-    public $disabilityTypes;
-    public $socialWorkers;
-    public $guardianRelationTypes;
-    public $occupations;
-    public $deciles;
-
     // سایر متغیرهای فرم که در مراحل بعدی استفاده می‌شوند
     public $job_type_id;
     public $guardian_phone_number;
@@ -172,18 +163,50 @@ class CreatePerson extends Component
 
     public $need_level_id;
 
+    public $sadaatRelations;
+    public $allSkills;
+    public $disabilityTypes;
+    public $socialWorkers;
+    public $guardianRelationTypes;
+    public $occupations;
+    public $deciles;
+    public $jobTypes; // <--- این و موارد بعدی باید public تعریف شوند
+    public $insuranceTypes;
+    public $vehicleTypes;
+    public $residenceStatusTypes;
+    public $districts;
+    public $accountRelations;
+    public $banks;
+    public $educationLevels;
+    public $needLevelTypes;
+
+
 
     public function mount()
     {
-        $this->sadaatRelations = SadaatRelation::all();
+        // --- 1. بارگذاری تمام داده‌های lookup (فقط یک بار) ---
+        // این داده‌ها در طول عمر کامپوننت ثابت می‌مانند و نیازی به بارگذاری مجدد در هر رندر نیست.
+        $this->sadaatRelations = SadaatRelation::orderBy('sort_order')->get();
         $this->allSkills = Skill::all();
         $this->disabilityTypes = DisabilityType::all();
         $this->socialWorkers = SocialWorker::all();
         $this->guardianRelationTypes = GuardianRelationType::all();
         $this->occupations = Occupation::all();
+        $this->jobTypes = JobType::all(); // اضافه شده به mount
+        $this->insuranceTypes = InsuranceType::all(); // اضافه شده به mount
+        $this->vehicleTypes = VehicleType::all(); // اضافه شده به mount
+        $this->residenceStatusTypes = ResidenceStatusType::all(); // اضافه شده به mount
+        $this->districts = District::all(); // اضافه شده به mount
+        $this->accountRelations = AccountOwnerRelation::all(); // اضافه شده به mount
+        $this->banks = Bank::all(); // اضافه شده به mount
+        $this->educationLevels = EducationLevel::orderBy('sort_order')->get(); // اضافه شده به mount
+        $this->needLevelTypes = NeedLevelType::all(); // اضافه شده به mount
+
+
+        // آرایه دهک‌ها (داده‌های ثابت)
         $this->deciles = [
-            1 => 'دهک ۱', 2 => 'دهک ۲', 3 => 'دهک ۳', 4 => 'دهک ۴', 5 => 'دهک ۵',
-            6 => 'دهک ۶', 7 => 'دهک ۷', 8 => 'دهک ۸', 9 => 'دهک ۹', 10 => 'دهک ۱۰',
+            '1' => 'دهک ۱', '2' => 'دهک ۲', '3' => 'دهک ۳', '4' => 'دهک ۴', '5' => 'دهک ۵',
+            '6' => 'دهک ۶', '7' => 'دهک ۷', '8' => 'دهک ۸', '9' => 'دهک ۹', '10' => 'دهک ۱۰',
         ];
     }
 
@@ -732,40 +755,7 @@ class CreatePerson extends Component
 
     public function render()
     {
-        // دریافت اطلاعات مورد نیاز برای دراپ‌داون‌ها (از mount منتقل نمی‌شوند زیرا در هر رندر ممکن است نیاز به fetch مجدد باشد یا پراپرتی‌های public کافی هستند)
-        $socialWorkers = SocialWorker::all();
-        $sadaatRelations = SadaatRelation::orderBy('sort_order')->get();
-        $disabilityTypes = DisabilityType::all();
-        $guardianRelationTypes = GuardianRelationType::all();
-        $occupations = Occupation::all();
-        $jobTypes = JobType::all();
-        $insuranceTypes = InsuranceType::all();
-        $vehicleTypes = VehicleType::all();
-        $residenceStatusTypes = ResidenceStatusType::all();
-        $districts = District::all();
-        $accountRelations = AccountOwnerRelation::all();
-        $banks = Bank::all();
-        $educationLevels = EducationLevel::orderBy('sort_order')->get();
-        $needLevelTypes = NeedLevelType::all();
-
-        // آرایه دهک‌ها برای سادگی
-        $deciles = [
-            '1' => 'دهک یک', '2' => 'دهک دو', '3' => 'دهک سه', '4' => 'دهک چهار',
-            '5' => 'دهک پنج', '6' => 'دهک شش', '7' => 'دهک هفت', '8' => 'دهک هشت',
-            '9' => 'دهک نه', '10' => 'دهک ده',
-        ];
-
-        // لیست مهارت‌ها (برای سینک کردن در انتها)
-        $allSkills = \App\Models\Skill::all();
-
-        return view('livewire.people.create-person', compact(
-            'socialWorkers',
-            'sadaatRelations',
-            'disabilityTypes', 'guardianRelationTypes', 'deciles',
-            'occupations', 'jobTypes', 'insuranceTypes', 'vehicleTypes',
-            'residenceStatusTypes', 'districts', 'accountRelations', 'banks', 'educationLevels'
-            , 'needLevelTypes', 'allSkills'
-        ))
+        return view('livewire.people.create-person')
             ->extends('layouts.app')
             ->section('content');
     }
