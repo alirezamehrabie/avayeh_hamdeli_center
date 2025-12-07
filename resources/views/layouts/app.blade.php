@@ -30,6 +30,7 @@
             font-family: 'Vazirmatn', Tahoma, sans-serif;
         }
     </style>
+    @livewireStyles
 </head>
 <body>
 @include('layouts.header')
@@ -78,6 +79,7 @@
 <script src="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
 
 @stack('scripts')
+@livewireScripts
 </body>
 </html>
 
