@@ -7,7 +7,9 @@ use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\DB;
 use App\Models\Person;
 use App\Models\FamilyStatus;
-use App\Models\Guardian; // اطمینان حاصل کنید که این مدل import شده است
+use App\Models\Guardian;
+
+// اطمینان حاصل کنید که این مدل import شده است
 use App\Models\Residence;
 use App\Models\BankInfo;
 use App\Models\Education;
@@ -28,8 +30,12 @@ use App\Models\District;
 use App\Models\AccountOwnerRelation;
 use App\Models\Bank;
 use App\Models\EducationLevel;
-use Illuminate\Validation\Rule; // برای استفاده از Rule::requiredIf
-use Carbon\Carbon; // برای تبدیل تاریخ شمسی به میلادی
+use Illuminate\Validation\Rule;
+
+// برای استفاده از Rule::requiredIf
+use Carbon\Carbon;
+
+// برای تبدیل تاریخ شمسی به میلادی
 
 class CreatePerson extends Component
 {
@@ -96,6 +102,8 @@ class CreatePerson extends Component
     public $occupation_id;
     public $guardian_exists_in_db = false; // وضعیت وجود سرپرست در دیتابیس
     public $current_guardian_id = null; // ID سرپرست موجود در دیتابیس
+    // --- پراپرتی جدید برای مدیریت منطق کپی از فیلدهای پدر ---
+    public $is_programmatic_guardian_lookup = false;
 
     // خصوصیات برای نمایش داده‌های لوکاپ (lookup data) در فرم
     public $sadaatRelations;
@@ -188,6 +196,7 @@ class CreatePerson extends Component
         $this->resetValidation([
             'guardian_first_name',
             'guardian_last_name',
+            'guardian_national_code',
             'guardian_birth_day',
             'guardian_birth_month',
             'guardian_birth_year',
@@ -197,129 +206,112 @@ class CreatePerson extends Component
 
         $national_code = trim($value);
 
-        if (strlen($national_code) === 10) {
-            $guardian = Guardian::where('national_code', $national_code)->first();
+        // سناریو 1: کاربر فیلد را خالی کرده است.
+        if (empty($national_code)) {
+            $this->resetAllGuardianFields(); // تمام فیلدهای سرپرست (از جمله کد ملی) را پاک می‌کند.
+            return; // از ادامه اجرای متد جلوگیری می‌کند.
+        }
 
-            if ($guardian) {
-                $this->guardian_first_name = $guardian->first_name;
-                $this->guardian_last_name = $guardian->last_name;
-                $this->current_guardian_id = $guardian->id;
-                $this->guardian_exists_in_db = true;
+        // سناریو 2: کد ملی وارد شده هنوز کامل نیست (کمتر از 10 رقم است) یا طول آن نامعتبر است.
+        if (strlen($national_code) !== 10) {
+            // در این حالت، کد ملی که کاربر در حال تایپ آن است، نباید پاک شود.
+            // اما فیلدهای وابسته به جستجو در دیتابیس باید پاک شوند.
+            // همچنین اگر programmatic نباشد، نام و نام خانوادگی نیز باید پاک شوند.
 
-                $this->occupation_id = $guardian->occupation_id;
-                $this->guardian_birth_day = $guardian->guardian_birth_day;
-                $this->guardian_birth_month = $guardian->guardian_birth_month;
-                $this->guardian_birth_year = $guardian->guardian_birth_year;
-                $this->guardian_phone_number = $guardian->guardian_phone_number;
-                $this->job_type_id = $guardian->job_type_id;
-                $this->children_count = $guardian->children_count;
-                $this->children_in_house = $guardian->children_in_house;
-                $this->insurance_type_id = $guardian->insurance_type_id;
-                $this->divorced_child_at_home = $guardian->divorced_child_at_home;
-                $this->average_income = $guardian->average_income;
-                $this->vehicle_type_id = $guardian->vehicle_type_id;
+            // ابتدا فیلدهای وابسته (غیراز کد ملی، نام و نام خانوادگی) را پاک می‌کنیم.
+            $this->resetDependentGuardianFields();
 
-                $this->insurance_status = (string)$guardian->insurance_status;
-                $this->any_family_employed = (string)$guardian->any_family_employed;
-                $this->has_vehicle = (string)$guardian->has_vehicle;
-
-            } else {
-                // سرپرست یافت نشد: ریست کردن فیلدهای سرپرست
+            // اگر این یک کپی برنامه‌نویسی از پدر نباشد، نام و نام خانوادگی را هم پاک می‌کنیم.
+            // (اگر programmatic باشد، این مقادیر باید حفظ شوند.)
+            if (!$this->is_programmatic_guardian_lookup) {
                 $this->guardian_first_name = null;
                 $this->guardian_last_name = null;
-                $this->current_guardian_id = null;
-                $this->guardian_exists_in_db = false;
-                $this->guardian_birth_day = null;
-                $this->guardian_birth_month = null;
-                $this->guardian_birth_year = null;
-                $this->occupation_id = null;
-                $this->job_type_id = null;
-                $this->guardian_phone_number = null; // ریست شدن
-                $this->children_count = null;
-                $this->children_in_house = null;
-                $this->insurance_status = '0';
-                $this->insurance_type_id = null;
-                $this->divorced_child_at_home = null;
-                $this->average_income = null;
-                $this->any_family_employed = '0';
-                $this->has_vehicle = '0';
-                $this->vehicle_type_id = null;
-                $this->resetGuardianFields();
             }
-        } else {
-            // کد ملی کمتر از ۱۰ رقم: ریست کردن فیلدها
-            $this->guardian_first_name = null;
-            $this->guardian_last_name = null;
-            $this->current_guardian_id = null;
-            $this->guardian_exists_in_db = false;
-            $this->guardian_birth_day = null;
-            $this->guardian_birth_month = null;
-            $this->guardian_birth_year = null;
-            $this->occupation_id = null;
-            $this->job_type_id = null;
-            $this->guardian_phone_number = null; // ریست شدن
-            $this->children_count = null;
-            $this->children_in_house = null;
-            $this->insurance_status = '0';
-            $this->insurance_type_id = null;
-            $this->divorced_child_at_home = null;
-            $this->average_income = null;
-            $this->any_family_employed = '0';
-            $this->has_vehicle = '0';
-            $this->vehicle_type_id = null;
-            $this->resetGuardianFields();
+            // کد ملی وارد شده توسط کاربر را دست‌نخورده باقی می‌گذاریم.
+            return; // از ادامه اجرای متد جلوگیری می‌کند.
         }
-    }
 
+        // --- اگر به این مرحله رسیدیم، یعنی national_code دقیقاً 10 رقمی و معتبر است. ---
+        // سناریو 3: کد ملی 10 رقمی و کامل است. جستجو در دیتابیس را انجام می‌دهیم.
+        $guardian = Guardian::where('national_code', $national_code)->first();
+
+        if ($guardian) {
+            // سرپرست در دیتابیس یافت شد: تمام اطلاعات را از مدل پر می‌کنیم.
+            $this->_populateGuardianFieldsFromModel($guardian);
+            $this->is_programmatic_guardian_lookup = false; // چون از دیتابیس یافت شده، دیگر programmatic نیست.
+        } else {
+            // سرپرست در دیتابیس یافت نشد.
+            // فیلدهای وابسته را پاک می‌کنیم.
+            $this->resetDependentGuardianFields();
+
+            // اگر این یک کپی برنامه‌نویسی (از اطلاعات پدر) بوده است و سرپرست یافت نشد:
+            // نام و نام خانوادگی (که از پدر/مددجو کپی شده‌اند) حفظ می‌شوند.
+            if ($this->is_programmatic_guardian_lookup) {
+                // نیازی به انجام کاری برای guardian_first_name و guardian_last_name نیست،
+                // زیرا قبلاً در updatedGuardianRelationTypeId تنظیم شده‌اند و نباید پاک شوند.
+            } else {
+                // اگر کاربر دستی کد ملی وارد کرده و یافت نشده است:
+                // نام و نام خانوادگی را پاک می‌کنیم.
+                $this->guardian_first_name = null;
+                $this->guardian_last_name = null;
+            }
+        }
+
+    }
 
 
     public function updatedGuardianRelationTypeId($value)
     {
-        // اطمینان از اینکه مقدار value عددی و معتبر است (ID از دیتابیس)
+        // ریست کردن اعتبارسنجی‌ها برای فیلدهای سرپرست تا ارورهای قدیمی پاک شوند
+        $this->resetValidation([
+            'guardian_national_code',
+            'guardian_first_name',
+            'guardian_last_name'
+        ]);
+
         if (is_numeric($value) && $value > 0) {
-            $relationType = GuardianRelationType::find($value);
+            $relationType = \App\Models\GuardianRelationType::find($value);
 
             if ($relationType && $relationType->title === 'پدر') {
-                // اگر نسبت "پدر" باشد، اطلاعات پدر را کپی می‌کنیم
+                // مرحله 1: کد ملی پدر، نام پدر و نام خانوادگی مددجو را کپی می‌کنیم.
                 $this->guardian_national_code = $this->father_national_id;
-                $this->guardian_first_name = $this->father_name; // نام سرپرست را از نام پدر پر می‌کنیم
+                $this->guardian_first_name = $this->father_name;
+                $this->guardian_last_name = $this->last_name;
 
-                // پس از کپی کردن کد ملی پدر به guardian_national_code،
-                // متد updatedGuardianNationalCode را فراخوانی می‌کنیم
-                // تا منطق جستجوی سرپرست موجود در دیتابیس اجرا شود و بقیه فیلدها پر شوند.
-                $this->updatedGuardianNationalCode($this->father_national_id);
+                // مرحله 2: بررسی می‌کنیم که آیا کد ملی پدر ۱۰ رقمی است تا جستجوی برنامه‌نویسی انجام شود.
+                if (strlen(trim($this->father_national_id)) === 10) {
+                    $this->is_programmatic_guardian_lookup = true;
+                    // مرحله 3: متد updatedGuardianNationalCode را فراخوانی می‌کنیم تا جستجو و پر کردن سایر فیلدهای سرپرست انجام شود.
+                    $this->updatedGuardianNationalCode($this->father_national_id);
+                    $this->is_programmatic_guardian_lookup = false; // بلافاصله پرچم را ریست می‌کنیم.
+                } else {
+                    // اگر کد ملی پدر ۱۰ رقمی نبود، فقط نام‌ها و کد ملی (ناقص/نادرست) کپی می‌شوند.
+                    // بقیه فیلدهای سرپرست باید پاک شوند.
+                    $this->resetDependentGuardianFields();
+                    $this->is_programmatic_guardian_lookup = false; // این یک جستجوی موفق programmatic نیست.
+                }
 
+            } else {
+                // اگر نسبت انتخاب شده "پدر" نیست یا معتبر نیست، تمام فیلدهای سرپرست را ریست می‌کنیم.
+                $this->resetAllGuardianFields();
             }
-            else {
-                // اگر نسبت "پدر" نباشد یا خالی شود، فیلدهای سرپرست را ریست می‌کنیم.
-                $this->resetGuardianFields();
-            }
-        }
-        else {
-            // اگر value معتبر نباشد (مثلا کاربر گزینه "انتخاب کنید" را انتخاب کرده)
-            $this->resetGuardianFields();
+        } else {
+            // اگر value معتبر نباشد (مثلا کاربر گزینه "— انتخاب کنید —" را انتخاب کرده باشد)،
+            // تمام فیلدهای سرپرست را ریست می‌کنیم.
+            $this->resetAllGuardianFields();
         }
     }
 
-
-    /**
-     * متد کمکی برای ریست کردن تمام فیلدهای مربوط به اطلاعات سرپرست.
-     * این کار برای جلوگیری از ماندن اطلاعات قدیمی در فرم هنگام تغییر نسبت سرپرست مفید است.
-     * @return void
-     */
-    protected function resetGuardianFields()
+    protected function resetDependentGuardianFields()
     {
-        $this->guardian_national_code = null;
-        $this->guardian_first_name = null;
-        $this->guardian_last_name = null;
         $this->current_guardian_id = null;
         $this->guardian_exists_in_db = false;
+        $this->guardian_phone_number = null;
         $this->guardian_birth_day = null;
         $this->guardian_birth_month = null;
         $this->guardian_birth_year = null;
         $this->occupation_id = null;
         $this->job_type_id = null;
-        $this->guardian_phone_number = null;
         $this->children_count = null;
         $this->children_in_house = null;
         $this->insurance_status = '0';
@@ -329,6 +321,42 @@ class CreatePerson extends Component
         $this->any_family_employed = '0';
         $this->has_vehicle = '0';
         $this->vehicle_type_id = null;
+    }
+
+    protected function resetAllGuardianFields()
+    {
+        $this->guardian_national_code = null;
+        $this->guardian_first_name = null;
+        $this->guardian_last_name = null;
+        $this->resetDependentGuardianFields(); // پاک کردن فیلدهای وابسته
+        $this->is_programmatic_guardian_lookup = false; // ریست کردن پرچم
+    }
+
+
+    private function _populateGuardianFieldsFromModel(\App\Models\Guardian $guardian)
+    {
+        $this->guardian_first_name = $guardian->first_name;
+        $this->guardian_last_name = $guardian->last_name;
+        $this->current_guardian_id = $guardian->id;
+        $this->guardian_exists_in_db = true;
+
+        $this->guardian_phone_number = $guardian->guardian_phone_number;
+        $this->guardian_birth_day = $guardian->guardian_birth_day;
+        $this->guardian_birth_month = $guardian->guardian_birth_month;
+        $this->guardian_birth_year = $guardian->guardian_birth_year;
+        $this->occupation_id = $guardian->occupation_id;
+        $this->job_type_id = $guardian->job_type_id;
+        $this->children_count = $guardian->children_count;
+        $this->children_in_house = $guardian->children_in_house;
+        $this->insurance_type_id = $guardian->insurance_type_id;
+        $this->divorced_child_at_home = $guardian->divorced_child_at_home;
+        $this->average_income = $guardian->average_income;
+        $this->vehicle_type_id = $guardian->vehicle_type_id;
+
+        // فیلدهای بولی (Boolean) یا فیلدهای مورد استفاده در رادیو باتن باید به رشته تبدیل شوند
+        $this->insurance_status = (string)$guardian->insurance_status;
+        $this->any_family_employed = (string)$guardian->any_family_employed;
+        $this->has_vehicle = (string)$guardian->has_vehicle;
     }
 
     /**
@@ -355,7 +383,6 @@ class CreatePerson extends Component
     }
 
 
-
     public function updatedInsuranceStatus($value)
     {
         if ($value == '0') {
@@ -379,6 +406,7 @@ class CreatePerson extends Component
             $this->parent_disability_description = null;
         }
     }
+
     public function updatedHasVehicle($value)
     {
         if ($value == '0') {
@@ -563,15 +591,15 @@ class CreatePerson extends Component
                     'occupation_id' => $this->occupation_id,
                     'job_type_id' => $this->job_type_id ?: null,
                     'guardian_phone_number' => $this->guardian_phone_number,
-                    'children_count' => (int) $this->children_count,
-                    'children_in_house' => (int) $this->children_in_house,
-                    'insurance_status' => (bool) $this->insurance_status, // تبدیل به boolean
-                    'insurance_type_id' => ((bool) $this->insurance_status) ? $this->insurance_type_id : null,
+                    'children_count' => (int)$this->children_count,
+                    'children_in_house' => (int)$this->children_in_house,
+                    'insurance_status' => (bool)$this->insurance_status, // تبدیل به boolean
+                    'insurance_type_id' => ((bool)$this->insurance_status) ? $this->insurance_type_id : null,
                     'divorced_child_at_home' => $this->divorced_child_at_home ?: 'none',
-                    'average_income' => (int) $this->average_income,
-                    'any_family_employed' => (bool) $this->any_family_employed, // تبدیل به boolean
-                    'has_vehicle' => (bool) $this->has_vehicle, // تبدیل به boolean
-                    'vehicle_type_id' => ((bool) $this->has_vehicle) ? $this->vehicle_type_id : null,
+                    'average_income' => (int)$this->average_income,
+                    'any_family_employed' => (bool)$this->any_family_employed, // تبدیل به boolean
+                    'has_vehicle' => (bool)$this->has_vehicle, // تبدیل به boolean
+                    'vehicle_type_id' => ((bool)$this->has_vehicle) ? $this->vehicle_type_id : null,
                 ]);
             } else {
                 // اگر به هر دلیلی Guardian Instance ایجاد یا بازیابی نشد، خطا صادر می‌کنیم
@@ -601,9 +629,9 @@ class CreatePerson extends Component
                 'social_worker_id' => $this->social_worker_id,
                 'photo_id_card' => $paths['photo_id_card'],
                 'photo_birth_certificate' => $paths['photo_birth_certificate'],
-                'has_disability' => (bool) $this->has_disability, // تبدیل به boolean
-                'disability_type_id' => ((bool) $this->has_disability) ? $this->disability_type_id : null,
-                'disability_description' => ((bool) $this->has_disability) ? $this->disability_description : null,
+                'has_disability' => (bool)$this->has_disability, // تبدیل به boolean
+                'disability_type_id' => ((bool)$this->has_disability) ? $this->disability_type_id : null,
+                'disability_description' => ((bool)$this->has_disability) ? $this->disability_description : null,
                 'guardian_id' => $guardian_id_to_assign, // اختصاص Guardian ID به Person
             ]);
 
@@ -617,9 +645,9 @@ class CreatePerson extends Component
                 'death_reason' => $this->death_reason,
                 'divorced_parent' => $this->divorced_parent,
                 'remarried_parent' => $this->remarried_parent,
-                'children_from_previous_marriage' => (int) $this->children_from_previous_marriage,
-                'has_parent_disability' => (bool) $this->has_parent_disability, // تبدیل به boolean
-                'parent_disability_description' => ((bool) $this->has_parent_disability) ? $this->parent_disability_description : null,
+                'children_from_previous_marriage' => (int)$this->children_from_previous_marriage,
+                'has_parent_disability' => (bool)$this->has_parent_disability, // تبدیل به boolean
+                'parent_disability_description' => ((bool)$this->has_parent_disability) ? $this->parent_disability_description : null,
             ]);
 
             // جدول 3: Residence - اطلاعات سکونت و تماس
@@ -627,10 +655,10 @@ class CreatePerson extends Component
                 'person_id' => $person->id,
                 'residence_status_id' => $this->residence_status_id,
                 'district_id' => $this->district_id ?: null,
-                'is_local_to_city' => (bool) $this->is_local_to_city, // تبدیل به boolean
-                'deposit_amount' => (int) $this->deposit_amount,
-                'monthly_rent' => (int) $this->monthly_rent,
-                'residence_duration_years' => (int) $this->residence_duration_years,
+                'is_local_to_city' => (bool)$this->is_local_to_city, // تبدیل به boolean
+                'deposit_amount' => (int)$this->deposit_amount,
+                'monthly_rent' => (int)$this->monthly_rent,
+                'residence_duration_years' => (int)$this->residence_duration_years,
                 'address' => $this->address,
                 'personal_phone' => $this->personal_phone,
                 'landline_phone' => $this->landline_phone,
@@ -642,7 +670,7 @@ class CreatePerson extends Component
             // جدول 4: BankInfo - اطلاعات بانکی
             BankInfo::create([
                 'person_id' => $person->id,
-                'has_own_account' => (bool) $this->has_own_account, // تبدیل به boolean
+                'has_own_account' => (bool)$this->has_own_account, // تبدیل به boolean
                 'account_owner_relation_id' => $this->account_owner_relation_id ?: null,
                 'bank_id' => $this->bank_id ?: null,
                 'card_number' => $this->card_number,
@@ -654,13 +682,13 @@ class CreatePerson extends Component
             // جدول 5: Education - اطلاعات تحصیلی
             Education::create([
                 'person_id' => $person->id,
-                'is_studying' => (bool) $this->is_studying, // تبدیل به boolean
+                'is_studying' => (bool)$this->is_studying, // تبدیل به boolean
                 'school_name' => $this->school_name,
                 'major' => $this->major,
                 'education_level_id' => $this->education_level_id ?: null,
                 'drop_reason' => $this->drop_reason,
-                'works_alongside_study' => (bool) $this->works_alongside_study, // تبدیل به boolean
-                'monthly_income' => (int) $this->monthly_income,
+                'works_alongside_study' => (bool)$this->works_alongside_study, // تبدیل به boolean
+                'monthly_income' => (int)$this->monthly_income,
             ]);
 
             // جدول 6: SupportCoverage - اطلاعات پوشش حمایتی
@@ -733,7 +761,7 @@ class CreatePerson extends Component
         return view('livewire.people.create-person', compact(
             'socialWorkers',
             'sadaatRelations',
-            'disabilityTypes','guardianRelationTypes', 'deciles',
+            'disabilityTypes', 'guardianRelationTypes', 'deciles',
             'occupations', 'jobTypes', 'insuranceTypes', 'vehicleTypes',
             'residenceStatusTypes', 'districts', 'accountRelations', 'banks', 'educationLevels'
             , 'needLevelTypes', 'allSkills'
