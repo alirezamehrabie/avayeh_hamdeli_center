@@ -13,24 +13,6 @@
             <form action="{{ route('people.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
 
-                {{-- Section 1: Person Info --}}
-                @include('people.partials.person_info')
-
-                {{-- Section 2: Family Status --}}
-                @include('people.partials.family_status')
-
-                {{-- Section 3: Guardian Info --}}
-                @include('people.partials.guardian_info')
-
-                {{-- Section 4: Residence & Contact --}}
-                @include('people.partials.residence_contact')
-
-                {{-- Section 5: Financial, Education & Support --}}
-                @include('people.partials.financial_education_support')
-
-
-                {{-- Section 6: Needs Level --}}
-                @include('people.partials.need_level')
 
                 <div class="d-grid mt-4">
                     <button type="submit" class="btn btn-primary btn-lg">ثبت نهایی اطلاعات مددجو</button>
