@@ -4,10 +4,8 @@
             <h3 class="mb-0">فرم ثبت‌نام مددجوی جدید</h3>
         </div>
         <div class="card-body">
-
             {{-- شروع فرم --}}
             <form wire:submit.prevent="save">
-
                 {{-- پیام‌های فلش برای موفقیت یا خطا --}}
                 @if (session()->has('success'))
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -51,7 +49,12 @@
 
                         <div class="col-md-4">
                             <label class="form-label">کد ملی <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" maxlength="10" wire:model.blur="national_id">
+                            <input type="text" class="form-control" maxlength="10" wire:model.live="national_id">
+                            @if(strlen($national_id) > 0 && strlen($national_id) < 10)
+                                <div class="alert alert-secondary mt-2 p-2">
+                                    کد ملی باید ۱۰ رقم باشد.
+                                </div>
+                            @endif
                             @error('national_id') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
@@ -138,7 +141,7 @@
                                        id="sadaat_status_sadaat"> سادات
                             </label>
                             @error('sadaat_status') <span
-                                    class="text-danger small d-block mt-1">{{ $message }}</span> @enderror
+                                class="text-danger small d-block mt-1">{{ $message }}</span> @enderror
                         </div>
 
                         {{-- نسب سادات: نمایش شرطی با Blade --}}
@@ -152,7 +155,7 @@
                                     @endforeach
                                 </select>
                                 @error('sadaat_relation_id') <span
-                                        class="text-danger small">{{ $message }}</span> @enderror
+                                    class="text-danger small">{{ $message }}</span> @enderror
                             </div>
                         @endif
 
@@ -174,11 +177,11 @@
                                         <div class="col-md-3 col-sm-6 mb-2">
                                             <div class="form-check">
                                                 <input
-                                                        class="form-check-input"
-                                                        type="checkbox"
-                                                        value="{{ $skill->id }}"
-                                                        wire:model.live="skills"
-                                                        id="skill_{{ $skill->id }}"
+                                                    class="form-check-input"
+                                                    type="checkbox"
+                                                    value="{{ $skill->id }}"
+                                                    wire:model.live="skills"
+                                                    id="skill_{{ $skill->id }}"
                                                 >
                                                 <label class="form-check-label" for="skill_{{ $skill->id }}">
                                                     {{ $skill->name }}
@@ -191,7 +194,7 @@
                                 </div>
                             </div>
                             @error('skills') <span
-                                    class="text-danger small d-block mt-1">{{ $message }}</span> @enderror
+                                class="text-danger small d-block mt-1">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="form-group mt-2 col-12">
@@ -230,7 +233,7 @@
                             <textarea class="form-control h-1" wire:model.blur="disability_description"
                                       @if($has_disability != '1') disabled @endif></textarea>
                             @error('disability_description') <span
-                                    class="text-danger small">{{ $message }}</span> @enderror
+                                class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="col-md-4">
@@ -259,7 +262,7 @@
                             <label class="form-label">تصویر شناسنامه</label>
                             <input class="form-control" type="file" wire:model="photo_birth_certificate">
                             @error('photo_birth_certificate') <span
-                                    class="text-danger small">{{ $message }}</span> @enderror
+                                class="text-danger small">{{ $message }}</span> @enderror
                             @if ($photo_birth_certificate)
                                 <img src="{{ $photo_birth_certificate->temporaryUrl() }}" class="img-thumbnail mt-2"
                                      style="max-height: 100px;">
@@ -286,7 +289,7 @@
                                 @endforeach
                             </select>
                             @error('guardian_relation_type_id') <span
-                                    class="text-danger small">{{ $message }}</span> @enderror
+                                class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="col-md-4">
@@ -326,13 +329,13 @@
                                         <input type="number" class="form-control" wire:model.blur="death_year"
                                                placeholder="مثال: 1399">
                                         @error('death_year') <span
-                                                class="text-danger small">{{ $message }}</span> @enderror
+                                            class="text-danger small">{{ $message }}</span> @enderror
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label">علت فوت</label>
                                         <input type="text" class="form-control" wire:model.blur="death_reason">
                                         @error('death_reason') <span
-                                                class="text-danger small">{{ $message }}</span> @enderror
+                                            class="text-danger small">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
                             </div>
@@ -371,7 +374,7 @@
                             <input type="number" class="form-control" wire:model.blur="children_from_previous_marriage"
                                    placeholder="تعداد">
                             @error('children_from_previous_marriage') <span
-                                    class="text-danger small">{{ $message }}</span> @enderror
+                                class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         {{-- معلولیت والدین --}}
@@ -384,7 +387,7 @@
                                 </label>
                             </div>
                             @error('has_parent_disability') <span
-                                    class="text-danger small">{{ $message }}</span> @enderror
+                                class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         @if($has_parent_disability)
@@ -393,7 +396,7 @@
                                 <textarea class="form-control" wire:model.blur="parent_disability_description"
                                           rows="2"></textarea>
                                 @error('parent_disability_description') <span
-                                        class="text-danger small">{{ $message }}</span> @enderror
+                                    class="text-danger small">{{ $message }}</span> @enderror
                             </div>
                         @endif
 
@@ -426,7 +429,7 @@
                             <input type="text" class="form-control" maxlength="10"
                                    wire:model.live.debounce.500ms="guardian_national_code">
                             @error('guardian_national_code') <span
-                                    class="text-danger small">{{ $message }}</span> @enderror
+                                class="text-danger small">{{ $message }}</span> @enderror
 
                             @if($guardian_national_code && strlen($guardian_national_code) === 10)
                                 @if($guardian_exists_in_db)
@@ -452,7 +455,7 @@
                             <input type="text" class="form-control" wire:model.blur="guardian_first_name"
                                    @if($guardian_exists_in_db) disabled @endif>
                             @error('guardian_first_name') <span
-                                    class="text-danger small">{{ $message }}</span> @enderror
+                                class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="col-md-4">
@@ -496,9 +499,9 @@
                                 </div>
                             </div>
                             @error('guardian_birth_year') <span
-                                    class="text-danger small">{{ $message }}</span> @enderror
+                                class="text-danger small">{{ $message }}</span> @enderror
                             @error('guardian_birth_month') <span
-                                    class="text-danger small">{{ $message }}</span> @enderror
+                                class="text-danger small">{{ $message }}</span> @enderror
                             @error('guardian_birth_day') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
@@ -507,7 +510,7 @@
                             <input type="text" class="form-control" wire:model.blur="guardian_phone_number"
                                    maxlength="11">
                             @error('guardian_phone_number') <span
-                                    class="text-danger small">{{ $message }}</span> @enderror
+                                class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="col-md-4">
@@ -578,7 +581,7 @@
                                 <option value="both">پسر و دختر</option>
                             </select>
                             @error('divorced_child_at_home') <span
-                                    class="text-danger small">{{ $message }}</span> @enderror
+                                class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="col-md-4">
@@ -590,7 +593,7 @@
 
                         <div class="col-md-4">
                             <label class="form-label">آیا از اعضای خانواده شاغل هستند؟ <span
-                                        class="text-danger">*</span></label>
+                                    class="text-danger">*</span></label>
                             <div>
                                 <input type="radio" value="1" wire:model.live="any_family_employed" id="employed_yes">
                                 <label for="employed_yes">بله</label>
@@ -598,16 +601,16 @@
                                 <label for="employed_no">خیر</label>
                             </div>
                             @error('any_family_employed') <span
-                                    class="text-danger small">{{ $message }}</span> @enderror
+                                class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="col-md-3">
                             <label class="form-label">آیا وسیله نقلیه دارند؟ <span class="text-danger">*</span></label>
                             <div>
                                 <input type="radio" value="1" wire:model.live="has_vehicle" id="vehicle_yes"> <label
-                                        for="vehicle_yes">بله</label>
+                                    for="vehicle_yes">بله</label>
                                 <input type="radio" value="0" wire:model.live="has_vehicle" id="vehicle_no"> <label
-                                        for="vehicle_no">خیر</label>
+                                    for="vehicle_no">خیر</label>
                             </div>
                             @error('has_vehicle') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
@@ -643,7 +646,7 @@
                                 @endforeach
                             </select>
                             @error('residence_status_id') <span
-                                    class="text-danger small">{{ $message }}</span> @enderror
+                                class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="col-md-4">
@@ -661,9 +664,9 @@
                             <label class="form-label">بومی شهر هستید؟ <span class="text-danger">*</span></label>
                             <div>
                                 <input type="radio" value="1" wire:model.live="is_local_to_city" id="local_yes"> <label
-                                        for="local_yes">بله</label>
+                                    for="local_yes">بله</label>
                                 <input type="radio" value="0" wire:model.live="is_local_to_city" id="local_no"> <label
-                                        for="local_no">خیر</label>
+                                    for="local_no">خیر</label>
                             </div>
                             @error('is_local_to_city') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
@@ -689,7 +692,7 @@
                             <input type="number" class="form-control" wire:model.blur="residence_duration_years"
                                    min="0">
                             @error('residence_duration_years') <span
-                                    class="text-danger small">{{ $message }}</span> @enderror
+                                class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="col-md-12">
@@ -715,7 +718,7 @@
                             <input type="text" class="form-control" wire:model.blur="trusted_person_phone"
                                    maxlength="20">
                             @error('trusted_person_phone') <span
-                                    class="text-danger small">{{ $message }}</span> @enderror
+                                class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="col-md-4">
@@ -762,7 +765,7 @@
                                 @endforeach
                             </select>
                             @error('account_owner_relation_id') <span
-                                    class="text-danger small">{{ $message }}</span> @enderror
+                                class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="col-md-4">
@@ -778,31 +781,32 @@
 
                         <div class="col-md-4">
                             <label class="form-label">شماره کارت</label>
-                            <input type="text" class="form-control" wire:model.blur="card_number" maxlength="16">
+                            <input type="text" class="form-control" wire:model.live.debounce="card_number"
+                                   maxlength="16">
                             @error('card_number') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="col-md-4">
                             <label class="form-label">شماره شبا</label>
-                            <input type="text" class="form-control ltr-input" wire:model.blur="sheba_number"
-                                   placeholder="IRXXXXXXXXXXXXXXXXXXXXXXXX">
+                            <input type="text" class="form-control ltr-input" wire:model.live.debounce="sheba_number"
+                                   placeholder="IRXXXXXXXXXXXXXXXXXXXXXXXX" maxlength="24">
                             @error('sheba_number') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="col-md-4">
                             <label class="form-label">شماره کارت یارانه</label>
-                            <input type="text" class="form-control" wire:model.blur="subsidy_card_number"
+                            <input type="text" class="form-control" wire:model="subsidy_card_number"
                                    maxlength="16">
                             @error('subsidy_card_number') <span
-                                    class="text-danger small">{{ $message }}</span> @enderror
+                                class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="col-md-4">
                             <label class="form-label">شماره شبا یارانه</label>
                             <input type="text" class="form-control ltr-input" wire:model.blur="subsidy_sheba_number"
-                                   placeholder="IRXXXXXXXXXXXXXXXXXXXXXXXX">
+                                   placeholder="IRXXXXXXXXXXXXXXXXXXXXXXXX" maxlength="24">
                             @error('subsidy_sheba_number') <span
-                                    class="text-danger small">{{ $message }}</span> @enderror
+                                class="text-danger small">{{ $message }}</span> @enderror
                         </div>
                     </div>
 
@@ -810,12 +814,12 @@
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label">آیا مددجو در حال تحصیل است؟ <span
-                                        class="text-danger">*</span></label>
+                                    class="text-danger">*</span></label>
                             <div>
                                 <input type="radio" value="1" wire:model.live="is_studying" id="studying_yes"> <label
-                                        for="studying_yes">بله</label>
+                                    for="studying_yes">بله</label>
                                 <input type="radio" value="0" wire:model.live="is_studying" id="studying_no"> <label
-                                        for="studying_no">خیر</label>
+                                    for="studying_no">خیر</label>
                             </div>
                             @error('is_studying') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
@@ -863,7 +867,7 @@
                                 <label for="works_no">خیر</label>
                             </div>
                             @error('works_alongside_study') <span
-                                    class="text-danger small">{{ $message }}</span> @enderror
+                                class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="col-md-4">
@@ -920,9 +924,9 @@
                                 </div>
                             </div>
                             @error('coverage_start_year') <span
-                                    class="text-danger small">{{ $message }}</span> @enderror
+                                class="text-danger small">{{ $message }}</span> @enderror
                             @error('coverage_start_month') <span
-                                    class="text-danger small">{{ $message }}</span> @enderror
+                                class="text-danger small">{{ $message }}</span> @enderror
                             @error('coverage_start_day') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
@@ -949,14 +953,18 @@
                     </div>
                 </div>
 
-                <div class="d-flex justify-content-end mt-4">
-                    <button type="submit" class="btn btn-primary btn-lg shadow-sm">
-                        <span wire:loading.remove wire:target="save">
-                            <i class="bi bi-check-circle me-2"></i>ثبت اطلاعات مددجو
+                {{-- دکمه ذخیره نهایی --}}
+                <div class="d-grid gap-2 mt-5 mb-3">
+                    <button type="submit" wire:loading.attr="disabled" class="btn btn-primary btn-lg py-3 shadow">
+                        {{-- حالت لودینگ --}}
+                        <span wire:loading wire:target="save"> <!-- wire:target به حالت اولیه بازگردانده شد -->
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                        در حال پردازش و ذخیره اطلاعات...
                         </span>
-                        <span wire:loading wire:target="save">
-                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                            در حال ذخیره...
+                        {{-- حالت عادی --}}
+                        <span wire:loading.remove wire:target="save"> <!-- wire:target به حالت اولیه بازگردانده شد -->
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                                        ثبت نهایی اطلاعات مددجو
                         </span>
                     </button>
                 </div>
