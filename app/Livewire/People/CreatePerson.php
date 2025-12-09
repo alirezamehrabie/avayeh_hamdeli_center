@@ -1,14 +1,12 @@
 <?php
 
 namespace App\Livewire\People;
-
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\DB;
 use App\Models\Person;
 use App\Models\FamilyStatus;
 use App\Models\Guardian;
-
 // اطمینان حاصل کنید که این مدل import شده است
 use App\Models\Residence;
 use App\Models\BankInfo;
@@ -65,7 +63,6 @@ class CreatePerson extends Component
     // فایل‌ها
     public $photo_id_card;
     public $photo_birth_certificate;
-
     // معلولیت (پیش‌فرض 0 یا رشته '0' برای رادیو)
     public $has_disability = '0';
     public $disability_type_id;
@@ -112,7 +109,7 @@ class CreatePerson extends Component
     public $children_in_house;
     public $insurance_status = '0';
     public $insurance_type_id;
-    public $divorced_child_at_home;
+    public $divorced_child_at_home = 'none';
     public $average_income;
     public $any_family_employed;
     public $has_vehicle = '0';
@@ -140,10 +137,10 @@ class CreatePerson extends Component
     public $account_owner_relation_id;
     public $other_account_owner_relation; // توضیح نسبت سایر
     public $bank_id;
-    public $card_number;
-    public $sheba_number;
-    public $subsidy_card_number;
-    public $subsidy_sheba_number;
+    public $card_number = '';
+    public $sheba_number = '';
+    public $subsidy_card_number = '';
+    public $subsidy_sheba_number = '';
 
     // تحصیل
     public $is_studying = '0'; // پیش‌فرض خیر
@@ -180,8 +177,6 @@ class CreatePerson extends Component
     public $educationLevels;
     public $needLevelTypes;
 
-
-
     public function mount()
     {
         // --- 1. بارگذاری تمام داده‌های lookup (فقط یک بار) ---
@@ -210,7 +205,20 @@ class CreatePerson extends Component
         ];
     }
 
-    // متد برای بررسی وجود سرپرست در دیتابیس
+    public function updatedCardNumber($value)
+    {
+        $this->subsidy_card_number = $value;
+    }
+    public function updatedShebaNumber($value)
+    {
+        $this->subsidy_sheba_number = $value;
+    }
+    public function updatedNationalId($value){
+        // اعتبارسنجی فقط همین فیلد
+        $this->validateOnly('national_id', [
+            'national_id' => ['nullable', 'digits:10'],
+        ]);
+    }
     public function updatedGuardianNationalCode($value)
     {
         // در اینجا اعتبارسنجی دقیق کد ملی (regex) را انجام نمی‌دهیم تا فقط در زمان ذخیره بررسی شود.
@@ -560,7 +568,8 @@ class CreatePerson extends Component
                 'photo_id_card' => $this->photo_id_card ? $this->photo_id_card->store('uploads/photo_id_card', 'public') : null,
                 'photo_birth_certificate' => $this->photo_birth_certificate ? $this->photo_birth_certificate->store('uploads/photo_birth_certificate', 'public') : null,
                 'support_card_image' => $this->support_card_image ? $this->support_card_image->store('uploads/support_card_image', 'public') : null,
-            ];
+                ];
+
 
             // --- 2. آماده‌سازی تاریخ‌های کامل شمسی ---
             $personBirthDateFull = sprintf('%04d/%02d/%02d', $this->birth_year, $this->birth_month, $this->birth_day);
@@ -742,6 +751,7 @@ class CreatePerson extends Component
 
             session()->flash('success', 'اطلاعات مددجو با موفقیت ثبت و ذخیره شد.');
             $this->reset(); // ریست کردن تمام فیلدهای فرم پس از ذخیره موفق
+
             return redirect()->route('people.create'); // ریدایرکت به همین صفحه برای ثبت مددجوی جدید
 
         } catch (\Exception $e) {

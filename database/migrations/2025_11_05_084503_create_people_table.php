@@ -51,6 +51,12 @@ return new class extends Migration
                 ->constrained('social_workers')
                 ->nullOnDelete();
 
+
+            $table->foreignId('guardian_id')
+                ->nullable()
+                ->constrained('guardians')
+                ->onDelete('set null');
+
             // مستندات تصویری
             $table->string('photo_id_card')->nullable();
             $table->string('photo_birth_certificate')->nullable();
@@ -110,7 +116,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // حذف ایندکس‌های جدول people (شامل full_name)
         Schema::table('people', function (Blueprint $table) {
             $table->dropIndex('idx_people_birth_month_day');
             $table->dropIndex('idx_people_full_birth_date');
