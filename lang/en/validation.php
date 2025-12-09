@@ -43,7 +43,7 @@ return [
     'declined' => 'The :attribute field must be declined.',
     'declined_if' => 'The :attribute field must be declined when :other is :value.',
     'different' => 'The :attribute field and :other must be different.',
-    'digits' => 'The :attribute field must be :digits digits.',
+    'digits' => 'فیلد :attribute باید :digits رقم باشد',
     'digits_between' => 'The :attribute field must be between :min and :max digits.',
     'dimensions' => 'The :attribute field has invalid image dimensions.',
     'distinct' => 'The :attribute field has a duplicate value.',
@@ -136,7 +136,7 @@ return [
     'prohibited_unless' => 'The :attribute field is prohibited unless :other is in :values.',
     'prohibits' => 'The :attribute field prohibits :other from being present.',
     'regex' => 'The :attribute field format is invalid.',
-    'required' => 'The :attribute field is required.',
+    'required' => 'فیلد :attribute ضروری است',
     'required_array_keys' => 'The :attribute field must contain entries for: :values.',
     'required_if' => 'The :attribute field is required when :other is :value.',
     'required_if_accepted' => 'The :attribute field is required when :other is accepted.',
@@ -191,6 +191,31 @@ return [
     |
     */
 
-    'attributes' => [],
+    'attributes' => [
+        'national_id'                   => 'کد ملی',
+        'first_name'                    => 'نام مددجو',
+        'last_name'                     => 'نام خانوادگی مددجو',
+        'birth_day'                     => 'روز تولد مددجو',
+        'birth_month'                   => 'ماه تولد مددجو',
+        'birth_year'                    => 'سال تولد مددجو',
+        'father_name'                   => 'نام پدر مددجو',
+        'gender'                        => 'جنسیت مددجو',
+        'social_worker_id'              => 'شناسه مددکار اجتماعی',
+        'guardian_relation_type_id'     => 'شناسه نوع رابطه سرپرست',
+        'guardian_national_code'        => 'کد ملی سرپرست',
+        'guardian_first_name'           => 'نام سرپرست',
+        'guardian_last_name'            => 'نام خانوادگی سرپرست',
+        'guardian_birth_day'            => 'روز تولد سرپرست',
+        'guardian_birth_month'          => 'ماه تولد سرپرست',
+        'guardian_birth_year'           => 'سال تولد سرپرست',
+        'occupation_id'                 => 'شناسه شغل مددجو',
+        'any_family_employed'           => 'اشتغال یکی از اعضای خانواده',
+        'residence_status_id'           => 'شناسه وضعیت سکونت',
+        'address'                       => 'آدرس',
+        'personal_phone'                => 'تلفن همراه',
+        'account_owner_relation_id'     => 'شناسه نسبت مالک حساب',
+        'need_level_id'                 => 'شناسه سطح نیاز',
+    ],
+
 
 ];

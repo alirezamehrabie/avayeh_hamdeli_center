@@ -39,6 +39,7 @@ class CreatePerson extends Component
 {
     use WithFileUploads;
 
+    public $is_submitted = false;
     // --- 1. تعریف متغیرهای اطلاعات فردی مددجو ---
     public $first_name;
     public $last_name;
@@ -133,7 +134,7 @@ class CreatePerson extends Component
     // --- 5. متغیرهای مالی، تحصیلی و حمایتی ---
 
     // بانک
-    public $has_own_account = '0'; // پیش‌فرض خیر
+    public $has_own_account; // پیش‌فرض بله
     public $account_owner_relation_id;
     public $other_account_owner_relation; // توضیح نسبت سایر
     public $bank_id;
@@ -449,6 +450,7 @@ class CreatePerson extends Component
     // --- متد Save (ذخیره نهایی) ---
     public function save()
     {
+        $this->is_submitted = true;
         // 1. اعتبارسنجی کامل و جامع (Validation)
         // این بخش تضمین می‌کند داده‌های ورودی تمیز و استاندارد هستند
         $this->validate([
@@ -516,7 +518,7 @@ class CreatePerson extends Component
             'insurance_type_id' => 'nullable|required_if:insurance_status,1|exists:insurance_types,id',
             'divorced_child_at_home' => 'nullable|string|in:none,boy,girl,both',
             'average_income' => 'nullable|integer|min:0',
-            'any_family_employed' => 'required|boolean',
+            'any_family_employed' => 'nullable|boolean',
             'has_vehicle' => 'required|boolean',
             'vehicle_type_id' => 'nullable|required_if:has_vehicle,1|exists:vehicle_types,id',
 

@@ -19,7 +19,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 @endif
-                @if ($errors->any())
+                @if ($errors->any() && $is_submitted)
                     <div class="alert alert-danger">
                         <p><strong>لطفاً خطاهای زیر را برطرف کنید:</strong></p>
                         <ul>
@@ -50,12 +50,9 @@
                         <div class="col-md-4">
                             <label class="form-label">کد ملی <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" maxlength="10" wire:model.live="national_id">
-                            @if(strlen($national_id) > 0 && strlen($national_id) < 10)
-                                <div class="alert alert-secondary mt-2 p-2">
-                                    کد ملی باید ۱۰ رقم باشد.
-                                </div>
-                            @endif
-                            @error('national_id') <span class="text-danger small">{{ $message }}</span> @enderror
+                            @error('national_id')
+                                <span class="text-danger small">{{ $message }}</span>
+                            @enderror
                         </div>
 
                         {{-- تاریخ تولد 3 بخشی --}}
@@ -88,9 +85,9 @@
                                     </select>
                                 </div>
                             </div>
-                            @error('birth_year') <span class="text-danger small">{{ $message }}</span> @enderror
-                            @error('birth_month') <span class="text-danger small">{{ $message }}</span> @enderror
-                            @error('birth_day') <span class="text-danger small">{{ $message }}</span> @enderror
+                            @error('birth_day') <span class="text-danger small">{{ $message }}</span> <br> @enderror
+                            @error('birth_month') <span class="text-danger small">{{ $message }}</span> <br> @enderror
+                            @error('birth_year') <span class="text-danger small">{{ $message }}</span> <br> @enderror
                         </div>
 
                         <div class="col-md-4">
@@ -268,6 +265,9 @@
                                      style="max-height: 100px;">
                             @endif
                         </div>
+
+                        <livewire:capture-image />
+
 
                     </div>
                 </div>
@@ -761,7 +761,7 @@
                                     @if($has_own_account == '1') disabled @endif>
                                 <option value="">— انتخاب کنید —</option>
                                 @foreach($accountRelations as $relation)
-                                    <option value="{{ $relation->id }}">{{ $relation->name }}</option>
+                                    <option value="{{ $relation->id }}" @if($loop->first) disabled @endif>{{ $relation->name }}</option>
                                 @endforeach
                             </select>
                             @error('account_owner_relation_id') <span
