@@ -266,8 +266,6 @@
                             @endif
                         </div>
 
-                        <livewire:capture-image />
-
 
                     </div>
                 </div>
