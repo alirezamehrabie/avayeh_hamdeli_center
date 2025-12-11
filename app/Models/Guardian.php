@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Morilog\Jalali\Jalalian;
+use Illuminate\Support\Facades\DB;
 
 class Guardian extends Model
 {
@@ -17,6 +18,7 @@ class Guardian extends Model
      * ✅ فیلدهای جدید تاریخ تولد شمسی
      */
     protected $fillable = [
+        'guardian_code',
         'national_code',
         'first_name',
         'last_name',
@@ -85,6 +87,22 @@ class Guardian extends Model
     {
         return $this->belongsTo(VehicleType::class);
     }
+
+
+    public static function generateNextGuardianCode(): int
+    {
+        return DB::transaction(function () {
+
+            $row = DB::table('guardian_code_counter')->lockForUpdate()->first();
+
+            $next = $row->last_code + 1;
+
+            DB::table('guardian_code_counter')->update(['last_code' => $next]);
+
+            return $next;
+        });
+    }
+
 
     // ═══════════════════════════════════════════════════════════════════
     // 🔹 Accessors - محاسبه سن سرپرست

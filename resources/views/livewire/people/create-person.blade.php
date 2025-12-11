@@ -589,6 +589,7 @@
                             @error('average_income') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
+
                         <div class="col-md-4">
                             <label class="form-label">آیا از اعضای خانواده شاغل هستند؟ <span
                                     class="text-danger">*</span></label>

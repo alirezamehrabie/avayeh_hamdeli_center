@@ -590,10 +590,9 @@ class CreatePerson extends Component
             $guardian_id_to_assign = null;
             $guardianInstance = null; // برای نگهداری مدل Guardian
 
-            if ($this->guardian_exists_in_db) {
+            if ($this->guardian_exists_in_db && $this->current_guardian_id) {
                 // اگر سرپرست در دیتابیس موجود است، آن را بازیابی می‌کنیم
-                $guardian_id_to_assign = $this->current_guardian_id;
-                $guardianInstance = Guardian::find($guardian_id_to_assign);
+                $guardianInstance = Guardian::find($this->current_guardian_id);
                 if (!$guardianInstance) {
                     throw new \Exception("Existing guardian with ID {$this->current_guardian_id} not found.");
                 }
@@ -607,6 +606,7 @@ class CreatePerson extends Component
             } else {
                 // اگر سرپرست جدید است، آن را ایجاد می‌کنیم
                 $guardianInstance = Guardian::create([
+                    'guardian_code' => Guardian::generateNextGuardianCode(),
                     'national_code' => $this->guardian_national_code,
                     'first_name' => $this->guardian_first_name,
                     'last_name' => $this->guardian_last_name,
@@ -615,8 +615,8 @@ class CreatePerson extends Component
                     'guardian_birth_year' => $this->guardian_birth_year,
                     'guardian_birth_date_full' => $guardianBirthDateFull,
                 ]);
-                $guardian_id_to_assign = $guardianInstance->id;
             }
+            $guardian_id_to_assign = $guardianInstance->id;
 
             // اطلاعات معیشت و سایر جزئیات سرپرست را روی Guardian Instance به‌روز می‌کنیم.
             // این بخش برای سرپرست جدید (که تازه ساخته شده) و سرپرست موجود (که از دیتابیس بازیابی شده) مشترک است.

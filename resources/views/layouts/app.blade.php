@@ -25,6 +25,7 @@
 
     <!-- استایل‌های محلی پروژه -->
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+
     <style>
         body {
             font-family: 'Vazirmatn', Tahoma, sans-serif;
