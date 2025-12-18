@@ -14,10 +14,6 @@ class FamilyStatus extends Model
         'person_id',
         'guardian_relation_type_id',
         'economic_decile',
-        'living_parents',
-        'deceased_parent',
-        'death_year',
-        'death_reason',
         'divorced_parent',
         'remarried_parent',
         'children_from_previous_marriage',
@@ -27,6 +23,7 @@ class FamilyStatus extends Model
 
     protected $casts = [
         'economic_decile' => 'integer',
+        'has_parent_disability' => 'boolean',
     ];
 
     // تعریف رابطه با جدول Lookup

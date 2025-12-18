@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
             VehicleTypeSeeder::class,
             AccountOwnerRelationSeeder::class,
             BankSeeder::class,
+            HarmTypeSeeder::class,
         ]);
     }
 }

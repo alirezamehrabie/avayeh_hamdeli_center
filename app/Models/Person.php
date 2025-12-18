@@ -43,6 +43,7 @@ class Person extends Model
         'father_name',
         'father_national_id',
         'mother_national_id',
+        'phone_number',
         'gender',
         'role',
         'sadaat_status',
@@ -415,5 +416,10 @@ class Person extends Model
             'person_id',
             'skill_id'
         );
+    }
+
+    public function harmTypes()
+    {
+        return $this->belongsToMany(HarmType::class, 'harm_type_person');
     }
 }

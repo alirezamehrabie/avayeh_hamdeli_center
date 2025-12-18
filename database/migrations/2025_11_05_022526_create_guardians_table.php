@@ -33,9 +33,9 @@ return new class extends Migration
                 ->nullable();
 
             // تعداد فرزندان
-            $table->integer('children_count')
-                ->nullable();
-            $table->integer('children_in_house')
+            $table->unsignedInteger('children_count')->default(0);
+
+            $table->unsignedInteger('children_in_house')
                 ->nullable();
 
             // آیا خانواده کسی مشغول به کار است؟

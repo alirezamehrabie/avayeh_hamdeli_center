@@ -108,6 +108,13 @@
                             @error('mother_national_id') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
+
+                        <div class="col-md-4">
+                            <label class="form-label">شماره موبایل مددجو</label>
+                            <input type="text" class="form-control" wire:model="phone_number" maxlength="11" placeholder="مثلاً 09121234567">
+                            @error('phone_number') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+
                         {{-- جنسیت --}}
                         <div class="col-md-2">
                             <label class="form-label">جنسیت <span class="text-danger">*</span></label>
@@ -199,6 +206,44 @@
                             <textarea wire:model.blur="skills_description" class="form-control"></textarea>
                             @error('skills_description') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
+
+
+                        {{-- نوع آسیب (چند انتخابی) --}}
+                        <div class="col-12 mb-3 mt-3">
+                            <label class="form-label font-bold">نوع آسیب (قابل انتخاب چندتایی)</label>
+
+                            <div class="card p-3 bg-light">
+                                <div class="row">
+
+                                    @forelse($allHarmTypes as $harm)
+                                        <div class="col-md-3 col-sm-6 mb-2">
+                                            <div class="form-check">
+                                                <input
+                                                    class="form-check-input"
+                                                    type="checkbox"
+                                                    value="{{ $harm->id }}"
+                                                    wire:model="harm_types"
+                                                    id="harm_{{ $harm->id }}"
+                                                >
+                                                <label class="form-check-label" for="harm_{{ $harm->id }}">
+                                                    {{ $harm->title }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                    @empty
+                                        <div class="col-12 text-muted">
+                                            هیچ نوع آسیبی در سیستم ثبت نشده است.
+                                        </div>
+                                    @endforelse
+
+                                </div>
+                            </div>
+
+                            @error('harm_types')
+                            <span class="text-danger small d-block mt-1">{{ $message }}</span>
+                            @enderror
+                        </div>
+
 
                         {{-- معلولیت (با wire:model.live) --}}
                         <div class="col-md-2 mb-3">
@@ -300,44 +345,6 @@
                             </select>
                             @error('economic_decile') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
-
-                        {{-- وضعیت حیات والدین --}}
-                        <div class="col-md-4 mb-3">
-                            <label for="living_parents" class="form-label">وضعیت حیات والدین</label>
-                            <select wire:model.live="living_parents" id="living_parents" class="form-select">
-                                <option value="">انتخاب کنید...</option>
-                                {{-- مقادیر انگلیسی برای دیتابیس - متن فارسی برای کاربر --}}
-                                <option value="both_alive">هر دو در قید حیات</option>
-                                <option value="father_dead">پدر فوت شده</option>
-                                <option value="mother_dead">مادر فوت شده</option>
-                                <option value="both_dead">هر دو فوت شده</option>
-                            </select>
-                            @error('living_parents')
-                            <span class="text-danger small">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        {{-- فیلدهای شرطی فوت --}}
-                        @if(in_array($living_parents, ['father_dead', 'mother_dead', 'both_dead']))
-                            <div class="col-12 bg-light p-3 rounded border">
-                                <h6 class="text-muted mb-3">اطلاعات فوت</h6>
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label">سال فوت</label>
-                                        <input type="number" class="form-control" wire:model.blur="death_year"
-                                               placeholder="مثال: 1399">
-                                        @error('death_year') <span
-                                            class="text-danger small">{{ $message }}</span> @enderror
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">علت فوت</label>
-                                        <input type="text" class="form-control" wire:model.blur="death_reason">
-                                        @error('death_reason') <span
-                                            class="text-danger small">{{ $message }}</span> @enderror
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
 
                         <div class="col-md-4 mb-3">
                             <label for="divorced_parent" class="form-label">وضعیت طلاق والدین</label>
@@ -511,6 +518,7 @@
                                 class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
+
                         <div class="col-md-4">
                             <label class="form-label">شغل سرپرست <span class="text-danger">*</span></label>
                             <select class="form-select" wire:model.blur="occupation_id">
@@ -534,8 +542,10 @@
                         </div>
 
                         <div class="col-md-4">
-                            <label class="form-label">تعداد فرزندان سرپرست</label>
-                            <input type="number" class="form-control" wire:model.blur="children_count" min="0">
+                            <label class="form-label">تعداد فرزندان تحت پوشش مرکز</label>
+                            <span class="badge bg-secondary">
+    {{ $children_count ?? 0 }} نفر تحت پوشش
+</span>
                             @error('children_count') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
@@ -570,7 +580,7 @@
 
                         {{-- فرزندان طلاق در منزل (جدید) --}}
                         <div class="col-md-4">
-                            <label class="form-label">فرزندان طلاق در منزل</label>
+                            <label class="form-label">فرزندان مطلقه در منزل</label>
                             <select class="form-select" wire:model="divorced_child_at_home">
                                 <option value="">انتخاب کنید...</option>
                                 <option value="none">ندارد</option>
@@ -591,17 +601,22 @@
 
 
                         <div class="col-md-4">
-                            <label class="form-label">آیا از اعضای خانواده شاغل هستند؟ <span
-                                    class="text-danger">*</span></label>
+                            <label class="form-label">آیا اعضای خانواده شاغل هستند؟</label>
                             <div>
-                                <input type="radio" value="1" wire:model.live="any_family_employed" id="employed_yes">
-                                <label for="employed_yes">بله</label>
-                                <input type="radio" value="0" wire:model.live="any_family_employed" id="employed_no">
-                                <label for="employed_no">خیر</label>
+                                <input type="radio" wire:model.live="any_family_employed" value="1"> بله
+                                <input type="radio" wire:model.live="any_family_employed" value="0" class="ms-3"> خیر
                             </div>
-                            @error('any_family_employed') <span
-                                class="text-danger small">{{ $message }}</span> @enderror
                         </div>
+
+                        @if($any_family_employed == '1')
+                            <div class="col-md-6">
+                                <label class="form-label">توضیحات اعضای شاغل</label>
+                                <textarea class="form-control" wire:model="any_family_employed_description" rows="2"></textarea>
+                                @error('any_family_employed_description')
+                                <span class="text-danger small">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        @endif
 
                         <div class="col-md-3">
                             <label class="form-label">آیا وسیله نقلیه دارند؟ <span class="text-danger">*</span></label>
@@ -614,7 +629,7 @@
                             @error('has_vehicle') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-5">
+                        <div class="col-md-4">
                             <label class="form-label">نوع وسیله نقلیه</label>
                             <select class="form-select" wire:model.blur="vehicle_type_id"
                                     @if($has_vehicle != '1') disabled @endif>
@@ -625,8 +640,35 @@
                             </select>
                             @error('vehicle_type_id') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
+
+                        @if($has_vehicle == '1')
+                            <div class="col-md-4">
+                                <label class="form-label">مالکیت وسیله نقلیه</label>
+                                <div class="d-flex align-items-center mt-1">
+                                    <label class="me-3">
+                                        <input type="radio" wire:model="vehicle_ownership_type" value="personal">
+                                        <span class="ms-1">شخصی</span>
+                                    </label>
+
+                                    <label class="me-3">
+                                        <input type="radio" wire:model="vehicle_ownership_type" value="company">
+                                        <span class="ms-1">شرکتی</span>
+                                    </label>
+
+                                    <label>
+                                        <input type="radio" wire:model="vehicle_ownership_type" value="rented">
+                                        <span class="ms-1">استیجاری</span>
+                                    </label>
+                                </div>
+                                @error('vehicle_ownership_type')
+                                <span class="text-danger small d-block mt-1">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        @endif
                     </div>
                 </div>
+
+
 
                 {{-- جدا کننده --}}
                 <hr class="my-5 border-2">
@@ -743,28 +785,34 @@
                     <h4 class="border-bottom pb-2 mb-3 font-bold">اطلاعات بانکی و تحصیلی</h4>
 
                     <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label">آیا مددجو حساب بانکی شخصی دارد؟ <span class="text-danger">*</span></label>
+                        <div class="col-md-3">
+                            <label class="form-label">حساب شخصی دارد؟ <span class="text-danger">*</span></label>
                             <div>
-                                <input type="radio" value="1" wire:model.live="has_own_account" id="own_account_yes">
-                                <label for="own_account_yes">بله</label>
-                                <input type="radio" value="0" wire:model.live="has_own_account" id="own_account_no">
-                                <label for="own_account_no">خیر</label>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" value="1" wire:model.live="has_own_account" id="has_own_account_yes">
+                                    <label class="form-check-label" for="has_own_account_yes">بله</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" value="0" wire:model.live="has_own_account" id="has_own_account_no">
+                                    <label class="form-check-label" for="has_own_account_no">خیر</label>
+                                </div>
                             </div>
                             @error('has_own_account') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">نسبت صاحب حساب با مددجو <span class="text-danger">*</span></label>
-                            <select class="form-select" wire:model.blur="account_owner_relation_id"
-                                    @if($has_own_account == '1') disabled @endif>
-                                <option value="">— انتخاب کنید —</option>
-                                @foreach($accountRelations as $relation)
-                                    <option value="{{ $relation->id }}" @if($loop->first) disabled @endif>{{ $relation->name }}</option>
-                                @endforeach
-                            </select>
-                            @error('account_owner_relation_id') <span
-                                class="text-danger small">{{ $message }}</span> @enderror
+                        <div class="col-md-3">
+                            <label class="form-label">نسبت دارنده حساب</label>
+                            {{-- این فیلد اکنون فقط برای نمایش است و مقدار آن توسط منطق Livewire تعیین می‌شود --}}
+                            <input type="text"
+                                   class="form-control"
+                                   value="{{ $accountRelations->find($account_owner_relation_id)?->name ?? 'انتخاب نشده' }}"
+                                   readonly
+                                   disabled
+                                   placeholder="به طور خودکار تعیین می‌شود"
+                            >
+                            {{-- wire:model از روی این input حذف شده است، زیرا مقدار آن توسط کاربر تغییر نمی‌کند.
+                                 Livewire مقدار account_owner_relation_id را از طریق پراپرتی خودش مدیریت می‌کند. --}}
+                            @error('account_owner_relation_id') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="col-md-4">

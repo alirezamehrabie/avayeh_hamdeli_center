@@ -18,6 +18,7 @@ use App\Models\SocialWorker;
 use App\Models\SadaatRelation;
 use App\Models\DisabilityType;
 use App\Models\Skill;
+use App\Models\HarmType;
 use App\Models\GuardianRelationType;
 use App\Models\Occupation;
 use App\Models\JobType;
@@ -53,6 +54,7 @@ class CreatePerson extends Component
     public $father_name;
     public $father_national_id;
     public $mother_national_id;
+    public $phone_number;
     public $gender;
 
     // سادات (پیش‌فرض عام)
@@ -70,17 +72,15 @@ class CreatePerson extends Component
     public $disability_description;
     public $skills_description;
 
+    public $harm_types = [];        // لیست IDهایی که کاربر انتخاب می‌کند
+    public $allHarmTypes;           // جهت نمایش در فرم
+
     // مهارت‌ها
     public $skills = []; // آرایه برای ذخیره شناسه مهارت‌های انتخاب شده (تیک خورده)
 
     // --- 2. تعریف متغیرهای وضعیت خانوادگی ---
     public $guardian_relation_type_id;
     public $economic_decile;
-    public $living_parents;
-    // public $deceased_parent; // این متغیر در فرم استفاده نشده و اضافه است
-
-    public $death_year;
-    public $death_reason;
 
     public $divorced_parent;
     public $remarried_parent;
@@ -97,6 +97,7 @@ class CreatePerson extends Component
     public $guardian_birth_day;
     public $guardian_birth_month;
     public $guardian_birth_year;
+
     public $occupation_id;
     public $guardian_exists_in_db = false; // وضعیت وجود سرپرست در دیتابیس
     public $current_guardian_id = null; // ID سرپرست موجود در دیتابیس
@@ -112,9 +113,11 @@ class CreatePerson extends Component
     public $insurance_type_id;
     public $divorced_child_at_home = 'none';
     public $average_income;
-    public $any_family_employed;
+    public $any_family_employed = '0';
+    public $any_family_employed_description;
     public $has_vehicle = '0';
     public $vehicle_type_id;
+    public $vehicle_ownership_type = 'personal';
 
     // --- 4. تعریف متغیرهای سکونت و تماس ---
     public $residence_status_id;
@@ -197,6 +200,7 @@ class CreatePerson extends Component
         $this->banks = Bank::all(); // اضافه شده به mount
         $this->educationLevels = EducationLevel::orderBy('sort_order')->get(); // اضافه شده به mount
         $this->needLevelTypes = NeedLevelType::all(); // اضافه شده به mount
+        $this->allHarmTypes = HarmType::all();
 
 
         // آرایه دهک‌ها (داده‌های ثابت)
@@ -391,17 +395,25 @@ class CreatePerson extends Component
         $this->has_vehicle = (string)$guardian->has_vehicle;
     }
 
+
+    public function updatedAnyFamilyEmployed($value)
+    {
+        if ($value == '0') {
+            $this->any_family_employed_description = null;
+        }
+    }
+
     /**
      * وقتی وضعیت "حساب شخصی دارد" تغییر می‌کند
      */
     public function updatedHasOwnAccount($value)
     {
         if ($value == '1') {
-            // فرض می‌کنیم در دیتابیس آیدی رابطه 'خود مددجو' برابر 1 است
-            // یا می‌توانید کوئری بزنید: AccountOwnerRelation::where('name', 'مددجو')->first()->id
+            // ✅ حساب شخصی → مالک حساب = شخص مددجو
             $this->account_owner_relation_id = 1;
         } else {
-            $this->account_owner_relation_id = null;
+            // ✅ حساب شخصی ندارد → مالک حساب = سرپرست قانونی
+            $this->account_owner_relation_id = 2;
         }
     }
 
@@ -443,6 +455,7 @@ class CreatePerson extends Component
     {
         if ($value == '0') {
             $this->vehicle_type_id = null;
+            $this->vehicle_ownership_type = null;
         }
     }
 
@@ -450,7 +463,9 @@ class CreatePerson extends Component
     // --- متد Save (ذخیره نهایی) ---
     public function save()
     {
+        $isNewPerson = true;
         $this->is_submitted = true;
+
         // 1. اعتبارسنجی کامل و جامع (Validation)
         // این بخش تضمین می‌کند داده‌های ورودی تمیز و استاندارد هستند
         $this->validate([
@@ -464,6 +479,7 @@ class CreatePerson extends Component
             'father_name' => 'required|string|max:255',
             'father_national_id' => 'nullable|string|digits:10',
             'mother_national_id' => 'nullable|string|digits:10',
+            'phone_number' => 'nullable|string|max:20',
             'gender' => 'required|in:مرد,زن',
             'role' => 'required|in:فرزند,سرپرست', // با توجه به سناریو، معمولا "فرزند" است
             'social_worker_id' => 'required|exists:social_workers,id',
@@ -475,6 +491,9 @@ class CreatePerson extends Component
             'disability_type_id' => 'nullable|required_if:has_disability,1|exists:disability_types,id',
             'disability_description' => 'nullable|string|max:1000',
 
+            'harm_types' => 'nullable|array',
+            'harm_types.*' => 'integer|exists:harm_types,id',
+
             'skills_description' => 'nullable|string|max:1000',
             'skills' => 'nullable|array', // مهارت‌ها یک آرایه از ID ها هستند
 
@@ -485,9 +504,6 @@ class CreatePerson extends Component
             // --- بخش 2: وضعیت خانوادگی ---
             'guardian_relation_type_id' => 'required|exists:guardian_relation_types,id', // نسبت سرپرست با مددجو همیشه باید مشخص باشد
             'economic_decile' => 'nullable|integer|between:1,10',
-            'living_parents' => 'nullable|in:both_alive,father_dead,mother_dead,both_dead',
-            'death_year' => 'nullable|integer|digits:4',
-            'death_reason' => 'nullable|string|max:255',
             'divorced_parent' => 'nullable|in:none,divorced',
             'remarried_parent' => 'nullable|in:none,father,mother,both',
             'children_from_previous_marriage' => 'nullable|integer|min:0',
@@ -512,15 +528,16 @@ class CreatePerson extends Component
             'occupation_id' => 'required|exists:occupations,id',
             'job_type_id' => 'nullable|exists:job_types,id',
             'guardian_phone_number' => 'nullable|string|max:20',
-            'children_count' => 'nullable|integer|min:0',
             'children_in_house' => 'nullable|integer|min:0',
             'insurance_status' => 'required|boolean',
             'insurance_type_id' => 'nullable|required_if:insurance_status,1|exists:insurance_types,id',
             'divorced_child_at_home' => 'nullable|string|in:none,boy,girl,both',
             'average_income' => 'nullable|integer|min:0',
-            'any_family_employed' => 'nullable|boolean',
+            'any_family_employed' => 'required|boolean',
+            'any_family_employed_description' => 'nullable|required_if:any_family_employed,1|string|max:1000',
             'has_vehicle' => 'required|boolean',
             'vehicle_type_id' => 'nullable|required_if:has_vehicle,1|exists:vehicle_types,id',
+            'vehicle_ownership_type' => 'nullable|required_if:has_vehicle,1|in:personal,company,rented',
 
             // --- بخش 4: اطلاعات سکونت و تماس ---
             'residence_status_id' => 'required|exists:residence_status_types,id',
@@ -537,9 +554,9 @@ class CreatePerson extends Component
             'messenger_number' => 'nullable|string|max:50',
 
             // --- بخش 5: مالی و تحصیلی ---
-            'has_own_account' => 'required|boolean',
+            'has_own_account' => ['required', 'in:0,1'],
             // اگر حساب شخصی ندارد، حتماً باید نسبت صاحب حساب مشخص شود
-            'account_owner_relation_id' => Rule::requiredIf($this->has_own_account == '0') . '|nullable|exists:account_owner_relations,id',
+            'account_owner_relation_id' => ['nullable', Rule::in([1, 2])],
             'bank_id' => 'nullable|exists:banks,id',
             'card_number' => 'nullable|string|digits:16',
             'sheba_number' => 'nullable|string|max:26',
@@ -614,6 +631,7 @@ class CreatePerson extends Component
                     'guardian_birth_month' => $this->guardian_birth_month,
                     'guardian_birth_year' => $this->guardian_birth_year,
                     'guardian_birth_date_full' => $guardianBirthDateFull,
+                    'children_count' => 0,
                 ]);
             }
             $guardian_id_to_assign = $guardianInstance->id;
@@ -625,15 +643,16 @@ class CreatePerson extends Component
                     'occupation_id' => $this->occupation_id,
                     'job_type_id' => $this->job_type_id ?: null,
                     'guardian_phone_number' => $this->guardian_phone_number,
-                    'children_count' => (int)$this->children_count,
                     'children_in_house' => (int)$this->children_in_house,
                     'insurance_status' => (bool)$this->insurance_status, // تبدیل به boolean
                     'insurance_type_id' => ((bool)$this->insurance_status) ? $this->insurance_type_id : null,
                     'divorced_child_at_home' => $this->divorced_child_at_home ?: 'none',
                     'average_income' => (int)$this->average_income,
-                    'any_family_employed' => (bool)$this->any_family_employed, // تبدیل به boolean
+                    'any_family_employed' => (bool)$this->any_family_employed,
+                    'any_family_employed_description' => ((bool)$this->any_family_employed) ? $this->any_family_employed_description : null,
                     'has_vehicle' => (bool)$this->has_vehicle, // تبدیل به boolean
                     'vehicle_type_id' => ((bool)$this->has_vehicle) ? $this->vehicle_type_id : null,
+                    'vehicle_ownership_type' => ((bool)$this->has_vehicle) ? $this->vehicle_ownership_type : null,
                 ]);
             } else {
                 // اگر به هر دلیلی Guardian Instance ایجاد یا بازیابی نشد، خطا صادر می‌کنیم
@@ -655,6 +674,7 @@ class CreatePerson extends Component
                 'father_name' => $this->father_name,
                 'father_national_id' => $this->father_national_id,
                 'mother_national_id' => $this->mother_national_id,
+                'phone_number' => $this->phone_number,
                 'gender' => $this->gender,
                 'role' => $this->role,
                 'sadaat_status' => $this->sadaat_status,
@@ -669,14 +689,15 @@ class CreatePerson extends Component
                 'guardian_id' => $guardian_id_to_assign, // اختصاص Guardian ID به Person
             ]);
 
+            if ($isNewPerson) {
+                $guardianInstance->increment('children_count');
+            }
+
             // جدول 2: FamilyStatus - وضعیت خانوادگی مددجو
             FamilyStatus::create([
                 'person_id' => $person->id,
                 'guardian_relation_type_id' => $this->guardian_relation_type_id,
                 'economic_decile' => $this->economic_decile ?: null,
-                'living_parents' => $this->living_parents,
-                'death_year' => $this->death_year,
-                'death_reason' => $this->death_reason,
                 'divorced_parent' => $this->divorced_parent,
                 'remarried_parent' => $this->remarried_parent,
                 'children_from_previous_marriage' => (int)$this->children_from_previous_marriage,
@@ -747,6 +768,11 @@ class CreatePerson extends Component
             // Sync کردن مهارت‌ها (اتصال Person به Skills از طریق جدول واسط)
             if (!empty($this->skills)) {
                 $person->skills()->sync($this->skills);
+            }
+
+            // اتصال نوع آسیب‌ها (Many-to-Many)
+            if (!empty($this->harm_types)) {
+                $person->harmTypes()->sync($this->harm_types);
             }
 
             DB::commit(); // اتمام موفقیت‌آمیز تراکنش
