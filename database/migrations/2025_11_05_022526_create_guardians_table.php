@@ -42,6 +42,9 @@ return new class extends Migration
             $table->boolean('any_family_employed')
                 ->default(false);
 
+            $table->text('any_family_employed_description')
+                ->nullable();
+
 
             // شغل و نوع شغل
             $table->foreignId('occupation_id')
@@ -74,10 +77,14 @@ return new class extends Migration
             // وضعیت داشتن خودرو
             $table->boolean('has_vehicle')
                 ->default(false);
+
             $table->foreignId('vehicle_type_id')
                 ->nullable()
                 ->constrained('vehicle_types')
                 ->nullOnDelete();
+
+            $table->string('vehicle_ownership_type')
+                ->nullable();
 
             // شماره تماس سرپرست
             $table->string('guardian_phone_number', 11)
