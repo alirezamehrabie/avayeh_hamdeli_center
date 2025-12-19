@@ -66,6 +66,9 @@ class CreatePerson extends Component
     // فایل‌ها
     public $photo_id_card;
     public $photo_birth_certificate;
+
+    public $profile_photo;          // برای آپلود فایل (Temporary Uploaded File)
+    public $captured_photo_base64; // برای ذخیره رشته تصویر دوربین (Base64)
     // معلولیت (پیش‌فرض 0 یا رشته '0' برای رادیو)
     public $has_disability = '0';
     public $disability_type_id;
@@ -481,11 +484,11 @@ class CreatePerson extends Component
             'birth_day' => 'required|integer|between:1,31',
             'birth_month' => 'required|integer|between:1,12',
             'birth_year' => 'required|integer|between:1300,1450',
-            'father_name' => 'required|string|max:255',
+            'father_name' => 'nullable|string|max:255',
             'father_national_id' => 'nullable|string|digits:10',
             'mother_national_id' => 'nullable|string|digits:10',
             'phone_number' => 'nullable|string|max:20',
-            'gender' => 'required|in:مرد,زن',
+            'gender' => 'nullable|in:مرد,زن',
             'role' => 'required|in:فرزند,سرپرست', // با توجه به سناریو، معمولا "فرزند" است
             'social_worker_id' => 'required|exists:social_workers,id',
 
@@ -505,6 +508,7 @@ class CreatePerson extends Component
             'photo_id_card' => 'nullable|image|max:2048', // حداکثر 2 مگابایت
             'photo_birth_certificate' => 'nullable|image|max:2048',
             'support_card_image' => 'nullable|image|max:2048',
+            'profile_photo' => 'nullable|image|max:2048', // حداکثر ۲ مگابایت
 
             // --- بخش 2: وضعیت خانوادگی ---
             'guardian_relation_type_id' => 'required|exists:guardian_relation_types,id', // نسبت سرپرست با مددجو همیشه باید مشخص باشد
@@ -530,11 +534,11 @@ class CreatePerson extends Component
             'guardian_birth_month' => Rule::requiredIf($this->guardian_exists_in_db === false) . '|integer|between:1,12',
             'guardian_birth_year' => Rule::requiredIf($this->guardian_exists_in_db === false) . '|integer|between:1300,1450',
 
-            'occupation_id' => 'required|exists:occupations,id',
+            'occupation_id' => 'nullable|exists:occupations,id',
             'job_type_id' => 'nullable|exists:job_types,id',
             'guardian_phone_number' => 'nullable|string|max:20',
             'children_in_house' => 'nullable|integer|min:0',
-            'insurance_status' => 'required|boolean',
+            'insurance_status' => 'nullable|boolean',
             'insurance_type_id' => 'nullable|required_if:insurance_status,1|exists:insurance_types,id',
             'divorced_child_at_home' => 'nullable|string|in:none,boy,girl,both',
             'average_income' => 'nullable|integer|min:0',
@@ -551,8 +555,8 @@ class CreatePerson extends Component
             'deposit_amount' => 'nullable|integer|min:0',
             'monthly_rent' => 'nullable|integer|min:0',
             'residence_duration_years' => 'nullable|integer|min:0',
-            'address' => 'required|string|max:1000',
-            'personal_phone' => 'required|string|max:20',
+            'address' => 'nullable|string|max:1000',
+            'personal_phone' => 'nullable   |string|max:20',
             'landline_phone' => 'nullable|string|max:20',
             'trusted_person_phone' => 'nullable|string|max:20',
             'messenger_type' => 'nullable|string|max:50',
@@ -586,6 +590,24 @@ class CreatePerson extends Component
             'coverage_start_year' => 'nullable|integer|between:1300,1450',
             'need_level_id' => 'required|exists:need_level_types,id',
         ]);
+
+// پردازش تصویر پروفایل
+        $profilePhotoPath = null;
+
+        if ($this->captured_photo_base64) {
+            // اولویت با عکس دوربین: تبدیل Base64 به فایل
+            $image = $this->captured_photo_base64;
+            $image = str_replace('data:image/png;base64,', '', $image);
+            $image = str_replace(' ', '+', $image);
+            $fileName = 'profile_' . uniqid() . '.png';
+            $profilePhotoPath = 'uploads/profile_photos/' . $fileName;
+
+            \Storage::disk('public')->put($profilePhotoPath, base64_decode($image));
+        } elseif ($this->profile_photo) {
+            // حالت دوم: اگر عکسی گرفته نشده، فایل آپلود شده را ذخیره کن
+            $profilePhotoPath = $this->profile_photo->store('uploads/profile_photos', 'public');
+        }
+
 
         DB::beginTransaction(); // شروع تراکنش دیتابیس
 
@@ -691,6 +713,7 @@ class CreatePerson extends Component
                 'social_worker_id' => $this->social_worker_id,
                 'photo_id_card' => $paths['photo_id_card'],
                 'photo_birth_certificate' => $paths['photo_birth_certificate'],
+                'profile_photo' => $profilePhotoPath,
                 'has_disability' => (bool)$this->has_disability, // تبدیل به boolean
                 'disability_type_id' => ((bool)$this->has_disability) ? $this->disability_type_id : null,
                 'disability_description' => ((bool)$this->has_disability) ? $this->disability_description : null,

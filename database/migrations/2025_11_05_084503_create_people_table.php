@@ -60,7 +60,7 @@ return new class extends Migration
             // مستندات تصویری
             $table->string('photo_id_card')->nullable();
             $table->string('photo_birth_certificate')->nullable();
-            $table->text('photo_live_capture')->nullable();
+            $table->string('profile_photo')->nullable();
 
             // معلولیت
             $table->boolean('has_disability')->default(false);

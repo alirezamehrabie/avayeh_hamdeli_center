@@ -56,7 +56,7 @@ class Person extends Model
         'disability_description',
         'person_code',
         'skills_description',
-        'photo_live_capture',
+        'profile_photo'
     ];
 
 

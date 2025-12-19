@@ -312,6 +312,42 @@
                         </div>
 
 
+                        <div class="col-md-12 mb-4">
+                            <label class="form-label fw-bold">تصویر مددجو (ثبت آنلاین یا آپلود)</label>
+
+                            <div class="card p-3" style="background: #f8f9fa;">
+                                <div class="row">
+                                    <!-- ستون دوربین و پیش‌نمایش -->
+                                    <div class="col-md-6 border-start">
+                                        <div id="camera-container" wire:ignore>
+                                            <video id="video" width="100%" height="240" autoplay class="rounded border d-none"></video>
+                                            <canvas id="canvas" width="640" height="480" class="d-none"></canvas>
+
+                                            <div id="photo-preview" class="text-center">
+                                                <img src="{{ asset('assets/images/no-image.png') }}" id="captured-img" class="img-thumbnail" style="max-height: 200px;">
+                                            </div>
+
+                                            <div class="mt-2 text-center">
+                                                <button type="button" id="start-camera" class="btn btn-sm btn-primary">فعالسازی دوربین</button>
+                                                <button type="button" id="capture-btn" class="btn btn-sm btn-success d-none">گرفتن عکس</button>
+                                            </div>
+                                        </div>
+                                        <!-- فیلد مخفی برای ارسال عکس دوربین به لایوایر -->
+                                        <input type="hidden" wire:model="captured_photo_base64" id="captured_photo_base64">
+                                    </div>
+
+                                    <!-- ستون آپلود سنتی -->
+                                    <div class="col-md-6">
+                                        <p class="small text-muted">یا فایل تصویر را انتخاب کنید:</p>
+                                        <input type="file" wire:model="profile_photo" class="form-control" accept="image/*">
+                                        @error('profile_photo') <span class="text-danger small">{{ $message }}</span> @enderror
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+
                     </div>
                 </div>
                 {{-- جدا کننده بخش‌ها --}}
@@ -1036,3 +1072,58 @@
         </div>
     </div>
 </div>
+
+
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const startBtn = document.getElementById('start-camera');
+        const captureBtn = document.getElementById('capture-btn');
+        const capturedImg = document.getElementById('captured-img');
+        const photoPreview = document.getElementById('photo-preview');
+        const base64Input = document.getElementById('captured_photo_base64');
+
+        // ۱. فعالسازی دوربین
+        startBtn.addEventListener('click', async function () {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                video.srcObject = stream;
+                video.classList.remove('d-none');
+                photoPreview.classList.add('d-none');
+                startBtn.classList.add('d-none');
+                captureBtn.classList.remove('d-none');
+            } catch (err) {
+                alert("خطا در دسترسی به دوربین: " + err.message);
+            }
+        });
+
+        // ۲. ثبت عکس (Capture)
+        captureBtn.addEventListener('click', function () {
+            const context = canvas.getContext('2d');
+            // رسم فریم فعلی ویدیو روی کانواس
+            context.drawImage(video, 0, 0, 640, 480);
+
+            // تبدیل کانواس به Base64
+            const data = canvas.toDataURL('image/png');
+
+            // نمایش پیش‌نمایش
+            capturedImg.src = data;
+            video.classList.add('d-none');
+            photoPreview.classList.remove('d-none');
+            captureBtn.classList.add('d-none');
+            startBtn.innerText = "عکس مجدد";
+            startBtn.classList.remove('d-none');
+
+            // ارسال داده به Livewire
+            // استفاده از @this برای دسترسی مستقیم به کامپوننت
+            @this.set('captured_photo_base64', data);
+
+            // متوقف کردن استریم دوربین برای بهینگی مصرف باتری و CPU
+            const stream = video.srcObject;
+            const tracks = stream.getTracks();
+            tracks.forEach(track => track.stop());
+        });
+    });
+
+</script>
