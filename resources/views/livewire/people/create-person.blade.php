@@ -283,7 +283,7 @@
                             <select class="form-select" wire:model.blur="social_worker_id">
                                 <option value="">انتخاب کنید...</option>
                                 @foreach($socialWorkers as $worker)
-                                    <option value="{{ $worker->id }}">{{ $worker->fullName }} ({{ $worker->role }})
+                                    <option value="{{ $worker->id }}">{{ $worker->fullName }}
                                     </option>
                                 @endforeach
                             </select>

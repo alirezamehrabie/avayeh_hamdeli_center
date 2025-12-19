@@ -1,8 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\PersonController;
 use App\Livewire\People\CreatePerson;
+use App\Livewire\People\IndexPeople;
+use App\Livewire\SocialWorkers\CreateSocialWorker;
 
 Route::get('/', function () {
     return view('welcome');
@@ -10,7 +11,9 @@ Route::get('/', function () {
 
 // مسیر نمایش فرم به Livewire تغییر می‌کند
 Route::get('/people/create', CreatePerson::class)->name('people.create');
+Route::get('/people', IndexPeople::class)->name('people.index');
 
 // Route to handle form submission
 Route::post('/people', [PersonController::class, 'store'])->name('people.store');
+Route::get('/social-workers/create', CreateSocialWorker::class)->name('social-workers.create');
 

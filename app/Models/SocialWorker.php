@@ -10,22 +10,87 @@ class SocialWorker extends Model
     use HasFactory;
 
     protected $fillable = [
+        'worker_code',
         'first_name',
         'last_name',
+        'full_name',
+        // 'full_name', // اگر مجازی باشد در fillable نیازی نیست، اما اگر معمولی باشد اضافه شود
+        'birth_day',
+        'birth_month',
+        'birth_year',
+        'birth_date_full',
         'national_id',
-        'role',
+        'id_number',
+        'education',
+        'occupation',
+        'family_members_count',
+        'mobile',
+        'photo_path',
+        'start_day',
+        'start_month',
+        'start_year',
+        'start_date_full',
+        'district_id',
+        'occupation_id',
+        'covered_area',
+        'covered_people_count',
+        'covered_households_count',
+        'covered_children_count',
+        'substitute_first_name',
+        'substitute_last_name',
+        'substitute_mobile',
+    ];
+
+
+    protected $casts = [
+        'worker_code' => 'integer',
+        'birth_day' => 'integer',
+        'birth_month' => 'integer',
+        'birth_year' => 'integer',
+        'start_day' => 'integer',
+        'start_month' => 'integer',
+        'start_year' => 'integer',
+        'family_members_count' => 'integer',
+        'covered_people_count' => 'integer',
+        'covered_households_count' => 'integer',
+        'covered_children_count' => 'integer',
     ];
 
     /**
-     * Accessor for full name.
+     * محاسبه کد بعدی مددکار (شروع از ۱۰)
+     */
+    public static function generateNextWorkerCode(): int
+    {
+        // پیدا کردن بزرگترین کد موجود در دیتابیس
+        $maxCode = self::max('worker_code');
+
+        // اگر کدی وجود داشت، یکی به آن اضافه کن؛ در غیر این صورت از ۱۰ شروع کن
+        return $maxCode ? ($maxCode + 1) : 10;
+    }
+
+
+    /**
+     * دریافت نام کامل (در صورتی که ستون مجازی در دیتابیس ساخته نشده باشد)
      */
     public function getFullNameAttribute(): string
     {
         return "{$this->first_name} {$this->last_name}";
     }
-
-    public function people()
+    /**
+     * مددجویان تحت پوشش این مددکار
+     */
+    public function people(): HasMany
     {
-        return $this->hasMany(Person::class);
+        return $this->hasMany(Person::class, 'social_worker_id');
+    }
+
+    public function district()
+    {
+        return $this->belongsTo(District::class);
+    }
+
+    public function occupation()
+    {
+        return $this->belongsTo(Occupation::class);
     }
 }

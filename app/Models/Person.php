@@ -307,6 +307,39 @@ class Person extends Model
     }
 
 
+    /**
+     * تولید کد یکتا برای مددجو
+     * فرمت: WWNNNN (کد مددکار 2 رقم + شماره ترتیبی 4 رقم)
+     */
+    protected static function generateUniqueCode(?int $socialWorkerId): string
+    {
+        // ۱. پیدا کردن مددکار برای استخراج worker_code
+        $socialWorker = SocialWorker::find($socialWorkerId);
+
+        // اگر مددکار پیدا نشد یا کد نداشت، به عنوان پیش‌فرض از '00' استفاده می‌کنیم
+        // اما طبق منطق شما، worker_code از 10 شروع می‌شود
+        $workerCodePrefix = $socialWorker ? str_pad($socialWorker->worker_code, 2, '0', STR_PAD_LEFT) : '00';
+
+        // ۲. پیدا کردن آخرین مددجوی ثبت شده برای این مددکار خاص
+        // جستجو بر اساس دو رقم اول person_code (که همان worker_code است)
+        $lastPerson = self::where('person_code', 'LIKE', $workerCodePrefix . '%')
+            ->orderByRaw('CAST(SUBSTRING(person_code, 3) AS UNSIGNED) DESC')
+            ->first();
+
+        if ($lastPerson) {
+            // ۳. استخراج ۴ رقم آخر و اضافه کردن یک واحد به آن
+            $lastSeq = (int) substr($lastPerson->person_code, 2);
+            $nextSeq = $lastSeq + 1;
+        } else {
+            // ۴. اگر اولین مددجو برای این مددکار است، از 1000 شروع کن
+            $nextSeq = 1000;
+        }
+
+        // ترکیب کد مددکار (۲ رقم) + شماره ترتیبی (۴ رقم)
+        return $workerCodePrefix . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
+    }
+
+
 
     // 🔹 BOOT - رویدادهای مدل
     protected static function boot()
@@ -320,32 +353,10 @@ class Person extends Model
             }
         });
 
-        // ❌ بخش ذخیره full_name کاملاً حذف شد
-        // ستون مجازی به صورت خودکار توسط دیتابیس محاسبه می‌شود
     }
 
 
-    /**
-     * تولید کد یکتا برای مددجو
-     * فرمت: WWNNNN (کد مددکار 2 رقم + شماره ترتیبی 4 رقم)
-     */
-    protected static function generateUniqueCode(?int $socialWorkerId): string
-    {
-        $workerCode = str_pad($socialWorkerId ?? 0, 2, '0', STR_PAD_LEFT);
 
-        $lastPerson = Person::where('person_code', 'LIKE', $workerCode . '%')
-            ->orderByRaw('CAST(SUBSTRING(person_code, 3) AS UNSIGNED) DESC')
-            ->first();
-
-        if ($lastPerson) {
-            $lastSeq = (int) substr($lastPerson->person_code, 2);
-            $nextSeq = $lastSeq + 1;
-        } else {
-            $nextSeq = 1000;
-        }
-
-        return $workerCode . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
-    }
 
 
 
