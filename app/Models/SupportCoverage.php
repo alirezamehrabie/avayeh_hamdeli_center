@@ -12,7 +12,8 @@ class SupportCoverage extends Model
 
     protected $fillable = [
         'person_id',
-        'organization_type',
+        'support_organization_id', // کلید خارجی جدید
+        'other_organization_name', // فیلد متنی برای "سایر"
         'coverage_start_day',      // ✅ فیلد جدید
         'coverage_start_month',    // ✅ فیلد جدید
         'coverage_start_year',     // ✅ فیلد جدید
@@ -49,6 +50,12 @@ class SupportCoverage extends Model
     public function person()
     {
         return $this->belongsTo(Person::class);
+    }
+
+    // تعریف رابطه معکوس
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(SupportOrganization::class, 'support_organization_id');
     }
 
 

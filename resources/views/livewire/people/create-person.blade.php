@@ -934,12 +934,29 @@
                     <h4 class="border-bottom pb-2 mb-3 font-bold">سطح نیاز و پوشش حمایتی</h4>
 
                     <div class="row g-3">
+                        <!-- انتخاب نهاد -->
                         <div class="col-md-4">
-                            <label class="form-label">نوع نهاد حمایتی</label>
-                            <input type="text" class="form-control" wire:model.blur="organization_type"
-                                   placeholder="مثال: کمیته امداد، بهزیستی">
-                            @error('organization_type') <span class="text-danger small">{{ $message }}</span> @enderror
+                            <label>نوع نهاد حمایتی</label>
+                            <select wire:model.live="support_organization_id" class="form-control">
+                                <option value="">— انتخاب کنید —</option>
+                                @foreach($support_organizations as $org)
+                                    <option value="{{ $org->id }}">{{ $org->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
+
+                        <!-- فیلد شرطی برای "خیریه دیگر" -->
+                        @php
+                            $otherId = $support_organizations->where('slug', 'other')->first()?->id;
+                        @endphp
+
+                        @if($support_organization_id == $otherId)
+                            <div x-transition class="col-md-4">
+                                <label>نام خیریه را وارد کنید</label>
+                                <input type="text" wire:model="other_organization_name" class="form-control" placeholder="مثلاً: خیریه امام علی (ع)">
+                                @error('other_organization_name') <span class="text-red-500">{{ $message }}</span> @enderror
+                            </div>
+                        @endif
 
                         <div class="col-md-4">
                             <label class="form-label">تاریخ شروع پوشش</label>

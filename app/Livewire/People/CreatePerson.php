@@ -157,6 +157,9 @@ class CreatePerson extends Component
 
     // حمایت
     public $organization_type;
+    public $support_organizations; // برای نگه داشتن لیست در listBox
+    public $support_organization_id; // برای ذخیره ID انتخاب شده
+    public $other_organization_name; // برای ذخیره نام خیریه دستی
     public $coverage_start_day;
     public $coverage_start_month;
     public $coverage_start_year;
@@ -201,6 +204,8 @@ class CreatePerson extends Component
         $this->educationLevels = EducationLevel::orderBy('sort_order')->get(); // اضافه شده به mount
         $this->needLevelTypes = NeedLevelType::all(); // اضافه شده به mount
         $this->allHarmTypes = HarmType::all();
+        $this->support_organizations = \App\Models\SupportOrganization::all();
+
 
 
         // آرایه دهک‌ها (داده‌های ثابت)
@@ -572,7 +577,10 @@ class CreatePerson extends Component
             'monthly_income' => 'nullable|integer|min:0',
 
             // --- بخش 6: سطح نیاز و پوشش حمایتی ---
-            'organization_type' => 'nullable|string|max:255',
+            'support_organization_id' => 'nullable|exists:support_organizations,id',
+            'other_organization_name' => 'required_if:support_organization_id,' .
+                ($this->support_organizations->where('slug', 'other')->first()?->id ?? '0') .
+                '|nullable|string|max:255',
             'coverage_start_day' => 'nullable|integer|between:1,31',
             'coverage_start_month' => 'nullable|integer|between:1,12',
             'coverage_start_year' => 'nullable|integer|between:1300,1450',
@@ -749,7 +757,8 @@ class CreatePerson extends Component
             // جدول 6: SupportCoverage - اطلاعات پوشش حمایتی
             SupportCoverage::create([
                 'person_id' => $person->id,
-                'organization_type' => $this->organization_type,
+                'support_organization_id' => $this->support_organization_id,
+                'other_organization_name' => $this->other_organization_name,
                 'coverage_start_day' => $this->coverage_start_day ?: null,
                 'coverage_start_month' => $this->coverage_start_month ?: null,
                 'coverage_start_year' => $this->coverage_start_year ?: null,
