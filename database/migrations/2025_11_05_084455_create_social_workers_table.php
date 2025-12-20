@@ -34,7 +34,6 @@ return new class extends Migration
 
             // اطلاعات شخصی و خانوادگی
             $table->string('education')->nullable();
-            $table->string('occupation')->nullable();
             $table->unsignedTinyInteger('family_members_count')->default(0);
             $table->string('mobile')->nullable();
 
