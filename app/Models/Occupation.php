@@ -15,4 +15,9 @@ class Occupation extends Model
     {
         return $this->hasMany(Guardian::class);
     }
+
+    public function socialWorkers(): HasMany
+    {
+        return $this->hasMany(SocialWorker::class, 'occupation_id');
+    }
 }

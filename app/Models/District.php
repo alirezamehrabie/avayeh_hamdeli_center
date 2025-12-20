@@ -16,4 +16,9 @@ class District extends Model
     {
         return $this->hasMany(Residence::class);
     }
+
+    public function socialWorkers(): HasMany
+    {
+        return $this->hasMany(SocialWorker::class, 'district_id');
+    }
 }
