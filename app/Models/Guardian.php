@@ -42,6 +42,7 @@ class Guardian extends Model
         'any_family_employed',
         'has_vehicle',
         'vehicle_type_id',
+        'vehicle_ownership_type'
     ];
 
     /**
