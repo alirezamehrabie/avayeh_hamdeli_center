@@ -87,9 +87,16 @@
                             @error('mobile') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">تحصیلات</label>
-                            <input type="text" class="form-control" wire:model.blur="education">
+                        <!-- فیلد تحصیلات مددکار -->
+                        <div class="col-md-4 mb-3">
+                            <label for="academic_level_id" class="form-label">تحصیلات</label>
+                            <select wire:model="academic_level_id" id="academic_level_id" class="form-select @error('academic_level_id') is-invalid @enderror">
+                                <option value="">— انتخاب کنید —</option>
+                                @foreach($academicLevels as $level)
+                                    <option value="{{ $level->id }}">{{ $level->title }}</option>
+                                @endforeach
+                            </select>
+                            @error('academic_level_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
 
                         <div class="col-md-4 mb-3">

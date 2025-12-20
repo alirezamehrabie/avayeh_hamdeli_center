@@ -91,6 +91,7 @@ return new class extends Migration
                 ->nullable();
 
             $table->timestamps();
+            $table->softDeletes();
 
             // ===== ایندکس‌ها برای بهینه‌سازی جستجو =====
             $table->index('guardian_birth_year', 'idx_guardians_birth_year');

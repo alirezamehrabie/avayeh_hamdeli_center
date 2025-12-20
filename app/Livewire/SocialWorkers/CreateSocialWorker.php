@@ -7,6 +7,7 @@ use Livewire\WithFileUploads;
 use App\Models\SocialWorker;
 use App\Models\District;
 use App\Models\Occupation;
+use App\Models\AcademicLevel;
 use Illuminate\Support\Facades\DB;
 
 class CreateSocialWorker extends Component
@@ -42,20 +43,14 @@ class CreateSocialWorker extends Component
     public $substitute_first_name;
     public $substitute_last_name;
     public $substitute_mobile;
-
-
     public $district_id;
-    public $allDistricts;
-
     public $occupation_id;    // برای ذخیره انتخاب کاربر
-    public $allOccupations;   // برای نمایش در لیست‌باکس
+    public $academic_level_id; // برای ذخیره ID انتخاب شده
 
 
     public function mount()
     {
-        // ۲. بارگذاری مناطق مشابه فرم مددجویان
-        $this->allDistricts = District::orderBy('sort_order')->get();
-        $this->allOccupations = Occupation::all();
+
     }
 
     /**
@@ -72,6 +67,7 @@ class CreateSocialWorker extends Component
             'start_year' => 'nullable|integer|between:1370,1450',
             'district_id' => 'nullable|exists:districts,id',
             'occupation_id' => 'nullable|exists:occupations,id',
+            'academic_level_id' => 'nullable|exists:academic_levels,id',
             'photo' => 'nullable|image|max:1024', // حداکثر 1 مگابایت
 
         ];
@@ -103,7 +99,7 @@ class CreateSocialWorker extends Component
                 'worker_code' => $nextWorkerCode,
                 'first_name' => $this->first_name,
                 'last_name' => $this->last_name,
-                'full_name'   => $fullName, // ذخیره مستقیم در دیتابیس
+                'full_name' => $fullName, // ذخیره مستقیم در دیتابیس
                 'national_id' => $this->national_id,
                 'id_number' => $this->id_number,
                 'birth_day' => $this->birth_day,
@@ -112,16 +108,14 @@ class CreateSocialWorker extends Component
                 'birth_date_full' => $birthDateFull,
                 'district_id' => $this->district_id,
                 'occupation_id' => $this->occupation_id,
+                'academic_level_id' => $this->academic_level_id,
                 'mobile' => $this->mobile,
-                'education' => $this->education,
-                'occupation' => $this->occupation,
                 'family_members_count' => $this->family_members_count,
                 'photo_path' => $photoPath,
                 'start_day' => $this->start_day,
                 'start_month' => $this->start_month,
                 'start_year' => $this->start_year,
                 'start_date_full' => $startDateFull,
-                'covered_area' => $this->covered_area,
                 'covered_people_count' => $this->covered_people_count,
                 'covered_households_count' => $this->covered_households_count,
                 'covered_children_count' => $this->covered_children_count,
@@ -135,14 +129,7 @@ class CreateSocialWorker extends Component
             session()->flash('success', 'اطلاعات مددکار با موفقیت در سیستم ثبت شد.');
             // ریست کردن تمام فیلدها برای ثبت مجدد (بدون ریدایرکت)
             // ریست کردن تمام فیلدها برای ثبت مجدد (بدون ریدایرکت)
-            $this->reset([
-                'first_name', 'last_name', 'national_id', 'id_number',
-                'birth_day', 'birth_month', 'birth_year', 'mobile',
-                'education', 'occupation', 'family_members_count', 'photo',
-                'start_day', 'start_month', 'start_year', 'covered_area',
-                'covered_people_count', 'covered_households_count', 'covered_children_count',
-                'substitute_first_name', 'substitute_last_name', 'substitute_mobile'
-            ]);
+            $this->reset();
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -152,7 +139,11 @@ class CreateSocialWorker extends Component
 
     public function render()
     {
-        return view('livewire.social-workers.create-social-worker')
+        return view('livewire.social-workers.create-social-worker', [
+            'academicLevels' => AcademicLevel::orderBy('sort_order')->get(),
+            'allDistricts' => District::orderBy('sort_order')->get(),
+            'allOccupations' => Occupation::all(),
+        ])
             ->extends('layouts.app')
             ->section('content');
     }

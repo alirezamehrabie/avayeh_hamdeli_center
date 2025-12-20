@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\HasJalaliBirthDate;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Morilog\Jalali\Jalalian;
 
 class Person extends Model
@@ -31,6 +32,7 @@ class Person extends Model
         12 => 'اسفند',
     ];
 
+    use SoftDeletes;
     protected $fillable = [
         'guardian_id',
         'first_name',

@@ -27,6 +27,7 @@ use App\Models\VehicleType;
 use App\Models\ResidenceStatusType;
 use App\Models\District;
 use App\Models\AccountOwnerRelation;
+use App\Models\SupportOrganization;
 use App\Models\Bank;
 use App\Models\EducationLevel;
 use Illuminate\Validation\Rule;
@@ -43,10 +44,11 @@ class CreatePerson extends Component
     public $is_submitted = false;
     // --- 1. تعریف متغیرهای اطلاعات فردی مددجو ---
     public $first_name;
+
     public $last_name;
     public $national_id;
 
-    // تاریخ تولد (۳ بخش مجزا)
+
     public $birth_day;
     public $birth_month;
     public $birth_year;
@@ -207,7 +209,7 @@ class CreatePerson extends Component
         $this->educationLevels = EducationLevel::orderBy('sort_order')->get(); // اضافه شده به mount
         $this->needLevelTypes = NeedLevelType::all(); // اضافه شده به mount
         $this->allHarmTypes = HarmType::all();
-        $this->support_organizations = \App\Models\SupportOrganization::all();
+        $this->support_organizations = SupportOrganization::all();
 
 
 

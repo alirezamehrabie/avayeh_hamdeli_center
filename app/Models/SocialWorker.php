@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SocialWorker extends Model
 {
     use HasFactory;
+    use SoftDeletes;
 
     protected $fillable = [
         'worker_code',
@@ -21,8 +23,6 @@ class SocialWorker extends Model
         'birth_date_full',
         'national_id',
         'id_number',
-        'education',
-        'occupation',
         'family_members_count',
         'mobile',
         'photo_path',
@@ -32,7 +32,7 @@ class SocialWorker extends Model
         'start_date_full',
         'district_id',
         'occupation_id',
-        'covered_area',
+        'academic_level_id',
         'covered_people_count',
         'covered_households_count',
         'covered_children_count',
@@ -92,5 +92,9 @@ class SocialWorker extends Model
     public function occupation()
     {
         return $this->belongsTo(Occupation::class);
+    }
+
+    public function academicLevel() {
+        return $this->belongsTo(AcademicLevel::class, 'academic_level_id');
     }
 }

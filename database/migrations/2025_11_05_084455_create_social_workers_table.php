@@ -32,8 +32,7 @@ return new class extends Migration
             $table->unsignedSmallInteger('birth_year')->nullable();
             $table->string('birth_date_full')->nullable();
 
-            // اطلاعات شخصی و خانوادگی
-            $table->string('education')->nullable();
+
             $table->unsignedTinyInteger('family_members_count')->default(0);
             $table->string('mobile')->nullable();
 
@@ -49,9 +48,6 @@ return new class extends Migration
             $table->foreignId('occupation_id')->nullable()->constrained('occupations')->nullOnDelete();
 
 
-            // منطقه تحت پوشش
-            $table->string('covered_area')->nullable();
-
             // آمار تحت پوشش
             $table->unsignedInteger('covered_people_count')->default(0);
             $table->unsignedInteger('covered_households_count')->default(0);
@@ -64,6 +60,7 @@ return new class extends Migration
 
             // timestamps برای ثبت زمان ایجاد و به‌روزرسانی
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
