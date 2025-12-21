@@ -137,12 +137,10 @@
                         <div class="form-group col-md-2">
                             <label class="d-block">وضعیت سادات <span class="text-danger">*</span></label>
                             <label class="radio-inline me-3">
-                                <input type="radio" value="عام" wire:model.live="sadaat_status"
-                                       id="sadaat_status_general"> عام
+                                <input type="radio" class="form-check-input" value="عام" wire:model.live="sadaat_status" id="sadaat_status_general"> عام
                             </label>
                             <label class="radio-inline">
-                                <input type="radio" value="سادات" wire:model.live="sadaat_status"
-                                       id="sadaat_status_sadaat"> سادات
+                                <input type="radio" class="form-check-input" value="سادات" wire:model.live="sadaat_status" id="sadaat_status_sadaat"> سادات
                             </label>
                             @error('sadaat_status') <span
                                 class="text-danger small d-block mt-1">{{ $message }}</span> @enderror
@@ -150,7 +148,7 @@
 
                         {{-- نسب سادات: نمایش شرطی با Blade --}}
                         @if($sadaat_status === 'سادات')
-                            <div class="form-group col-md-3">
+                            <div class="form-group col-md-4">
                                 <label>نسب سادات <span class="text-danger">*</span></label>
                                 <select wire:model.blur="sadaat_relation_id" class="form-control">
                                     <option value="">— انتخاب کنید —</option>
@@ -353,6 +351,76 @@
                 {{-- جدا کننده بخش‌ها --}}
 
                 <hr class="my-5 border-2">
+
+                <div class="mb-5">
+                    <h5 class="mt-5 border-bottom pb-2 mb-3 font-bold">وضعیت تحصیلی</h5>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">آیا مددجو در حال تحصیل است؟ <span
+                                    class="text-danger">*</span></label>
+                            <div>
+                                <input type="radio" value="1" wire:model.live="is_studying" id="studying_yes"> <label
+                                    for="studying_yes">بله</label>
+                                <input type="radio" value="0" wire:model.live="is_studying" id="studying_no"> <label
+                                    for="studying_no">خیر</label>
+                            </div>
+                            @error('is_studying') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">نام مدرسه/دانشگاه</label>
+                            <input type="text" class="form-control" wire:model.blur="school_name"
+                                   @if($is_studying != '1') disabled @endif>
+                            @error('school_name') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">رشته تحصیلی</label>
+                            <input type="text" class="form-control" wire:model.blur="major"
+                                   @if($is_studying != '1') disabled @endif>
+                            @error('major') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">مقطع تحصیلی</label>
+                            <select class="form-select" wire:model.blur="education_level_id"
+                                    @if($is_studying != '1') disabled @endif>
+                                <option value="">— انتخاب کنید —</option>
+                                @foreach($educationLevels as $level)
+                                    <option value="{{ $level->id }}">{{ $level->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('education_level_id') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+
+                        @if($is_studying == '0')
+                            <div class="col-md-8">
+                                <label class="form-label">علت ترک تحصیل</label>
+                                <textarea class="form-control" wire:model.blur="drop_reason" rows="1"></textarea>
+                                @error('drop_reason') <span class="text-danger small">{{ $message }}</span> @enderror
+                            </div>
+                        @endif
+
+                        <div class="col-md-4">
+                            <label class="form-label">آیا همزمان با تحصیل کار می‌کند؟ <span class="text-danger">*</span></label>
+                            <div>
+                                <input type="radio" value="1" wire:model.live="works_alongside_study" id="works_yes">
+                                <label for="works_yes">بله</label>
+                                <input type="radio" value="0" wire:model.live="works_alongside_study" id="works_no">
+                                <label for="works_no">خیر</label>
+                            </div>
+                            @error('works_alongside_study') <span
+                                class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">درآمد ماهیانه از کار</label>
+                            <input type="number" class="form-control" wire:model.blur="monthly_income" min="0"
+                                   @if($works_alongside_study != '1') disabled @endif placeholder="به تومان">
+                            @error('monthly_income') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+                    </div>
+                </div>
 
                 {{-- بخش 2: وضعیت خانوادگی --}}
                 <div class="mb-5">
@@ -709,113 +777,6 @@
                 {{-- جدا کننده --}}
                 <hr class="my-5 border-2">
 
-                {{-- بخش 4: وضعیت سکونت و تماس --}}
-                <div class="mb-5">
-                    <h4 class="border-bottom pb-2 mb-3 font-bold">وضعیت سکونت و اطلاعات تماس</h4>
-
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label">وضعیت سکونت <span class="text-danger">*</span></label>
-                            <select class="form-select" wire:model.blur="residence_status_id">
-                                <option value="">— انتخاب کنید —</option>
-                                @foreach($residenceStatusTypes as $status)
-                                    <option value="{{ $status->id }}">{{ $status->name }}</option>
-                                @endforeach
-                            </select>
-                            @error('residence_status_id') <span
-                                class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">منطقه <span class="text-danger">*</span></label>
-                            <select class="form-select" wire:model.blur="district_id">
-                                <option value="">— انتخاب کنید —</option>
-                                @foreach($districts as $district)
-                                    <option value="{{ $district->id }}">{{ $district->name }}</option>
-                                @endforeach
-                            </select>
-                            @error('district_id') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">بومی شهر هستید؟ <span class="text-danger">*</span></label>
-                            <div>
-                                <input type="radio" value="1" wire:model.live="is_local_to_city" id="local_yes"> <label
-                                    for="local_yes">بله</label>
-                                <input type="radio" value="0" wire:model.live="is_local_to_city" id="local_no"> <label
-                                    for="local_no">خیر</label>
-                            </div>
-                            @error('is_local_to_city') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-                        @if($residence_status_id == 2)
-                            {{-- 2 برای "اجاره‌ای" --}}
-                            <div class="col-md-4">
-                                <label class="form-label">مبلغ ودیعه</label>
-                                <input type="number" class="form-control" wire:model.blur="deposit_amount" min="0"
-                                       placeholder="به تومان">
-                                @error('deposit_amount') <span class="text-danger small">{{ $message }}</span> @enderror
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">اجاره ماهیانه</label>
-                                <input type="number" class="form-control" wire:model.blur="monthly_rent" min="0"
-                                       placeholder="به تومان">
-                                @error('monthly_rent') <span class="text-danger small">{{ $message }}</span> @enderror
-                            </div>
-                        @endif
-
-                        <div class="col-md-4">
-                            <label class="form-label">مدت زمان سکونت (سال)</label>
-                            <input type="number" class="form-control" wire:model.blur="residence_duration_years"
-                                   min="0">
-                            @error('residence_duration_years') <span
-                                class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div class="col-md-12">
-                            <label class="form-label">آدرس کامل <span class="text-danger">*</span></label>
-                            <textarea class="form-control" wire:model.blur="address" rows="3"></textarea>
-                            @error('address') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">شماره تلفن شخصی <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" wire:model.blur="personal_phone" maxlength="20">
-                            @error('personal_phone') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">شماره تلفن ثابت</label>
-                            <input type="text" class="form-control" wire:model.blur="landline_phone" maxlength="20">
-                            @error('landline_phone') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">شماره تلفن فرد معتمد</label>
-                            <input type="text" class="form-control" wire:model.blur="trusted_person_phone"
-                                   maxlength="20">
-                            @error('trusted_person_phone') <span
-                                class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">نوع پیام‌رسان</label>
-                            <input type="text" class="form-control" wire:model.blur="messenger_type"
-                                   placeholder="مثال: تلگرام، ایتا، واتساپ">
-                            @error('messenger_type') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">شماره یا آیدی پیام‌رسان</label>
-                            <input type="text" class="form-control" wire:model.blur="messenger_number">
-                            @error('messenger_number') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-                    </div>
-                </div>
-
-                {{-- جدا کننده --}}
-                <hr class="my-5 border-2">
-
                 {{-- بخش 5: اطلاعات بانکی و تحصیلی --}}
                 <div class="mb-5">
                     <h4 class="border-bottom pb-2 mb-3 font-bold">اطلاعات بانکی و تحصیلی</h4>
@@ -892,72 +853,106 @@
                                 class="text-danger small">{{ $message }}</span> @enderror
                         </div>
                     </div>
+                </div>
 
-                    <h5 class="mt-5 border-bottom pb-2 mb-3 font-bold">وضعیت تحصیلی</h5>
+                {{-- جدا کننده --}}
+                <hr class="my-5 border-2">
+
+                {{-- بخش 4: وضعیت سکونت و تماس --}}
+                <div class="mb-5">
+                    <h4 class="border-bottom pb-2 mb-3 font-bold">وضعیت سکونت و اطلاعات تماس</h4>
+
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <label class="form-label">آیا مددجو در حال تحصیل است؟ <span
-                                    class="text-danger">*</span></label>
-                            <div>
-                                <input type="radio" value="1" wire:model.live="is_studying" id="studying_yes"> <label
-                                    for="studying_yes">بله</label>
-                                <input type="radio" value="0" wire:model.live="is_studying" id="studying_no"> <label
-                                    for="studying_no">خیر</label>
-                            </div>
-                            @error('is_studying') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">نام مدرسه/دانشگاه</label>
-                            <input type="text" class="form-control" wire:model.blur="school_name"
-                                   @if($is_studying != '1') disabled @endif>
-                            @error('school_name') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">رشته تحصیلی</label>
-                            <input type="text" class="form-control" wire:model.blur="major"
-                                   @if($is_studying != '1') disabled @endif>
-                            @error('major') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">مقطع تحصیلی</label>
-                            <select class="form-select" wire:model.blur="education_level_id"
-                                    @if($is_studying != '1') disabled @endif>
+                            <label class="form-label">وضعیت سکونت <span class="text-danger">*</span></label>
+                            <select class="form-select" wire:model.blur="residence_status_id">
                                 <option value="">— انتخاب کنید —</option>
-                                @foreach($educationLevels as $level)
-                                    <option value="{{ $level->id }}">{{ $level->name }}</option>
+                                @foreach($residenceStatusTypes as $status)
+                                    <option value="{{ $status->id }}">{{ $status->name }}</option>
                                 @endforeach
                             </select>
-                            @error('education_level_id') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-                        @if($is_studying == '0')
-                            <div class="col-md-8">
-                                <label class="form-label">علت ترک تحصیل</label>
-                                <textarea class="form-control" wire:model.blur="drop_reason" rows="1"></textarea>
-                                @error('drop_reason') <span class="text-danger small">{{ $message }}</span> @enderror
-                            </div>
-                        @endif
-
-                        <div class="col-md-4">
-                            <label class="form-label">آیا همزمان با تحصیل کار می‌کند؟ <span class="text-danger">*</span></label>
-                            <div>
-                                <input type="radio" value="1" wire:model.live="works_alongside_study" id="works_yes">
-                                <label for="works_yes">بله</label>
-                                <input type="radio" value="0" wire:model.live="works_alongside_study" id="works_no">
-                                <label for="works_no">خیر</label>
-                            </div>
-                            @error('works_alongside_study') <span
+                            @error('residence_status_id') <span
                                 class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="col-md-4">
-                            <label class="form-label">درآمد ماهیانه از کار</label>
-                            <input type="number" class="form-control" wire:model.blur="monthly_income" min="0"
-                                   @if($works_alongside_study != '1') disabled @endif placeholder="به تومان">
-                            @error('monthly_income') <span class="text-danger small">{{ $message }}</span> @enderror
+                            <label class="form-label">منطقه <span class="text-danger">*</span></label>
+                            <select class="form-select" wire:model.blur="district_id">
+                                <option value="">— انتخاب کنید —</option>
+                                @foreach($districts as $district)
+                                    <option value="{{ $district->id }}">{{ $district->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('district_id') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">بومی شهر هستید؟ <span class="text-danger">*</span></label>
+                            <div>
+                                <input type="radio" value="1" wire:model.live="is_local_to_city" id="local_yes"> <label
+                                    for="local_yes">بله</label>
+                                <input type="radio" value="0" wire:model.live="is_local_to_city" id="local_no"> <label
+                                    for="local_no">خیر</label>
+                            </div>
+                            @error('is_local_to_city') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+
+                        @if($residence_status_id == 2)
+                            {{-- 2 برای "اجاره‌ای" --}}
+                            <div class="col-md-4">
+                                <label class="form-label">مبلغ ودیعه</label>
+                                <input type="number" class="form-control" wire:model.blur="deposit_amount" min="0"
+                                       placeholder="به تومان">
+                                @error('deposit_amount') <span class="text-danger small">{{ $message }}</span> @enderror
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">اجاره ماهیانه</label>
+                                <input type="number" class="form-control" wire:model.blur="monthly_rent" min="0"
+                                       placeholder="به تومان">
+                                @error('monthly_rent') <span class="text-danger small">{{ $message }}</span> @enderror
+                            </div>
+                        @endif
+
+                        <div class="col-md-4">
+                            <label class="form-label">مدت زمان سکونت (سال)</label>
+                            <input type="number" class="form-control" wire:model.blur="residence_duration_years"
+                                   min="0">
+                            @error('residence_duration_years') <span
+                                class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label">آدرس کامل <span class="text-danger">*</span></label>
+                            <textarea class="form-control" wire:model.blur="address" rows="3"></textarea>
+                            @error('address') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+
+
+                        <div class="col-md-4">
+                            <label class="form-label">شماره تلفن ثابت</label>
+                            <input type="text" class="form-control" wire:model.blur="landline_phone" maxlength="20">
+                            @error('landline_phone') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">شماره تلفن فرد معتمد</label>
+                            <input type="text" class="form-control" wire:model.blur="trusted_person_phone"
+                                   maxlength="20">
+                            @error('trusted_person_phone') <span
+                                class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">نوع پیام‌رسان</label>
+                            <input type="text" class="form-control" wire:model.blur="messenger_type"
+                                   placeholder="مثال: تلگرام، ایتا، واتساپ">
+                            @error('messenger_type') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">شماره یا آیدی پیام‌رسان</label>
+                            <input type="text" class="form-control" wire:model.blur="messenger_number">
+                            @error('messenger_number') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
                     </div>
                 </div>
