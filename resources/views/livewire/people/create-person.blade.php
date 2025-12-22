@@ -713,7 +713,7 @@
                         </div>
 
                         @if($any_family_employed == '1')
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label">توضیحات اعضای شاغل</label>
                                 <textarea class="form-control" wire:model="any_family_employed_description" rows="2"></textarea>
                                 @error('any_family_employed_description')

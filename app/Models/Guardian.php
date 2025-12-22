@@ -40,6 +40,7 @@ class Guardian extends Model
         'divorced_child_at_home',
         'average_income',
         'any_family_employed',
+        'any_family_employed_description',
         'has_vehicle',
         'vehicle_type_id',
         'vehicle_ownership_type'
@@ -59,10 +60,6 @@ class Guardian extends Model
         'has_vehicle' => 'boolean',
         'average_income' => 'integer',
     ];
-
-    // ═══════════════════════════════════════════════════════════════════
-    // 🔹 روابط (Relationships)
-    // ═══════════════════════════════════════════════════════════════════
 
     public function people()
     {
