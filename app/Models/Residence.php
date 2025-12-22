@@ -19,6 +19,7 @@ class Residence extends Model
         'monthly_rent',
         'residence_duration_years',
         'address',
+        'guardian_id'
     ];
 
     public function person(): BelongsTo

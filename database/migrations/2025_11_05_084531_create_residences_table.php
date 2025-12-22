@@ -11,12 +11,6 @@ return new class extends Migration
         Schema::create('residences', function (Blueprint $table) {
             $table->id();
 
-            // شناسه فرد با قید یکتا و حذف وابسته
-            $table->foreignId('person_id')
-                ->unique()
-                ->constrained('people')
-                ->onDelete('cascade');
-
             // تبدیل ستون متنی وضعیت سکونت به کلید خارجی
             $table->foreignId('residence_status_id')
                 ->nullable()

@@ -89,6 +89,16 @@ class Guardian extends Model
         return $this->belongsTo(VehicleType::class);
     }
 
+    public function residence()
+    {
+        return $this->hasOne(Residence::class, 'guardian_id');
+    }
+
+    public function contact()
+    {
+        return $this->hasOne(Contact::class, 'guardian_id');
+    }
+
 
     public static function generateNextGuardianCode(): int
     {

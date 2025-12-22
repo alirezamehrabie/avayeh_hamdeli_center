@@ -11,8 +11,12 @@ class Contact extends Model
     use HasFactory;
 
     protected $fillable = [
-        'person_id', 'personal_phone', 'landline_phone', 'trusted_person_phone',
-        'messenger_type', 'messenger_number'
+        'person_id',
+        'landline_phone',
+        'trusted_person_phone',
+        'messenger_type',
+        'messenger_number',
+        'guardian_id'
     ];
 
     public function person(): BelongsTo

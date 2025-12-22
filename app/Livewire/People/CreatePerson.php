@@ -403,6 +403,27 @@ class CreatePerson extends Component
         $this->insurance_status = (string)$guardian->insurance_status;
         $this->any_family_employed = (string)$guardian->any_family_employed;
         $this->has_vehicle = (string)$guardian->has_vehicle;
+
+        // ۲. واکشی اطلاعات سکونت (Auto-fill)
+        $residence = $guardian->residence; // استفاده از رابطه تعریف شده
+        if ($residence) {
+            $this->residence_status_id = $residence->residence_status_id;
+            $this->district_id = $residence->district_id;
+            $this->is_local_to_city = $residence->is_local_to_city ? '1' : '0';
+            $this->deposit_amount = $residence->deposit_amount;
+            $this->monthly_rent = $residence->monthly_rent;
+            $this->residence_duration_years = $residence->residence_duration_years;
+            $this->address = $residence->address;
+        }
+
+
+        // ۳. واکشی اطلاعات تماس (Auto-fill)
+        $contact = $guardian->contact;
+        if ($contact) {
+            $this->landline_phone = $contact->landline_phone;
+            $this->trusted_person_phone = $contact->trusted_person_phone;
+            $this->personal_phone = $contact->personal_phone; // اگر نیاز است
+        }
     }
 
 
@@ -739,26 +760,36 @@ class CreatePerson extends Component
             ]);
 
             // جدول 3: Residence - اطلاعات سکونت و تماس
-            Residence::create([
-                'person_id' => $person->id,
-                'residence_status_id' => $this->residence_status_id,
-                'district_id' => $this->district_id ?: null,
-                'is_local_to_city' => (bool)$this->is_local_to_city, // تبدیل به boolean
-                'deposit_amount' => (int)$this->deposit_amount,
-                'monthly_rent' => (int)$this->monthly_rent,
-                'residence_duration_years' => (int)$this->residence_duration_years,
-                'address' => $this->address,
-                'personal_phone' => $this->personal_phone,
-                'landline_phone' => $this->landline_phone,
-                'trusted_person_phone' => $this->trusted_person_phone,
-                'messenger_type' => $this->messenger_type,
-                'messenger_number' => $this->messenger_number,
-            ]);
+            \App\Models\Residence::updateOrCreate(
+                ['guardian_id' => $guardianInstance->id], // شرط پیدا کردن رکورد
+                [
+                    'person_id'                => $person->id, // همچنان برای ارجاع سریع نگه می‌داریم
+                    'residence_status_id'      => $this->residence_status_id,
+                    'district_id'              => $this->district_id ?: null,
+                    'is_local_to_city'         => (bool)$this->is_local_to_city,
+                    'deposit_amount'           => (int)$this->deposit_amount,
+                    'monthly_rent'             => (int)$this->monthly_rent,
+                    'residence_duration_years' => (int)$this->residence_duration_years,
+                    'address'                  => $this->address,
+                ]
+            );
+
+            // ۲. مدیریت اطلاعات تماس (متصل به سرپرست)
+            \App\Models\Contact::updateOrCreate(
+                ['guardian_id' => $guardianInstance->id], // شرط پیدا کردن رکورد
+                [
+                    'person_id'            => $person->id,
+                    'landline_phone'       => $this->landline_phone,
+                    'trusted_person_phone' => $this->trusted_person_phone,
+                    'messenger_type'       => $this->messenger_type,
+                    'messenger_number'     => $this->messenger_number,
+                ]
+            );
 
             // جدول 4: BankInfo - اطلاعات بانکی
             BankInfo::create([
                 'person_id' => $person->id,
-                'has_own_account' => (bool)$this->has_own_account, // تبدیل به boolean
+                'has_own_account' => (bool)$this->has_own_account,
                 'account_owner_relation_id' => $this->account_owner_relation_id ?: null,
                 'bank_id' => $this->bank_id ?: null,
                 'card_number' => $this->card_number,
