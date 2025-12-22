@@ -174,11 +174,7 @@ class Person extends Model
      */
     public function getFormattedPersonCodeAttribute(): ?string
     {
-        if (!$this->person_code || strlen($this->person_code) !== 6) {
-            return $this->person_code;
-        }
-
-        return substr($this->person_code, 0, 2) . '-' . substr($this->person_code, 2);
+        return $this->person_code;
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -264,10 +260,7 @@ class Person extends Model
      */
     public function getSocialWorkerCodeAttribute(): ?string
     {
-        if ($this->person_code && strlen($this->person_code) >= 2) {
-            return substr($this->person_code, 0, 2);
-        }
-        return null;
+        return $this->socialWorker ? str_pad($this->socialWorker->worker_code, 2, '0', STR_PAD_LEFT) : null;
     }
 
     /**
@@ -313,32 +306,19 @@ class Person extends Model
      * تولید کد یکتا برای مددجو
      * فرمت: WWNNNN (کد مددکار 2 رقم + شماره ترتیبی 4 رقم)
      */
-    protected static function generateUniqueCode(?int $socialWorkerId): string
+    protected static function generateUniqueCode(): string
     {
-        // ۱. پیدا کردن مددکار برای استخراج worker_code
-        $socialWorker = SocialWorker::find($socialWorkerId);
+        // پیدا کردن آخرین کد ثبت شده که ۵ رقمی است و در بازه جدید قرار دارد
+        $lastPersonCode = self::whereRaw('LENGTH(person_code) = 5')
+            ->where('person_code', '>=', '14000')
+            ->max('person_code');
 
-        // اگر مددکار پیدا نشد یا کد نداشت، به عنوان پیش‌فرض از '00' استفاده می‌کنیم
-        // اما طبق منطق شما، worker_code از 10 شروع می‌شود
-        $workerCodePrefix = $socialWorker ? str_pad($socialWorker->worker_code, 2, '0', STR_PAD_LEFT) : '00';
-
-        // ۲. پیدا کردن آخرین مددجوی ثبت شده برای این مددکار خاص
-        // جستجو بر اساس دو رقم اول person_code (که همان worker_code است)
-        $lastPerson = self::where('person_code', 'LIKE', $workerCodePrefix . '%')
-            ->orderByRaw('CAST(SUBSTRING(person_code, 3) AS UNSIGNED) DESC')
-            ->first();
-
-        if ($lastPerson) {
-            // ۳. استخراج ۴ رقم آخر و اضافه کردن یک واحد به آن
-            $lastSeq = (int) substr($lastPerson->person_code, 2);
-            $nextSeq = $lastSeq + 1;
-        } else {
-            // ۴. اگر اولین مددجو برای این مددکار است، از 1000 شروع کن
-            $nextSeq = 1000;
+        if ($lastPersonCode) {
+            return (string) ($lastPersonCode + 1);
         }
 
-        // ترکیب کد مددکار (۲ رقم) + شماره ترتیبی (۴ رقم)
-        return $workerCodePrefix . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
+        // اگر هیچ مددیار جدیدی نیست، از ۱۴۰۰۰ شروع کن
+        return '14000';
     }
 
 
@@ -349,9 +329,9 @@ class Person extends Model
         parent::boot();
 
         static::creating(function ($model) {
-            // تولید کد مددجو
             if (empty($model->person_code)) {
-                $model->person_code = self::generateUniqueCode($model->social_worker_id);
+                // دیگر نیازی به ارسال social_worker_id نیست
+                $model->person_code = self::generateUniqueCode();
             }
         });
 
