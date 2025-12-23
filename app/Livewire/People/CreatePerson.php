@@ -71,6 +71,9 @@ class CreatePerson extends Component
 
     public $profile_photo;          // برای آپلود فایل (Temporary Uploaded File)
     public $captured_photo_base64; // برای ذخیره رشته تصویر دوربین (Base64)
+
+    public $captured_id_card_base64;          // برای تصویر دوربین کارت ملی
+    public $captured_birth_certificate_base64;
     // معلولیت (پیش‌فرض 0 یا رشته '0' برای رادیو)
     public $has_disability = '0';
     public $disability_type_id;
@@ -511,7 +514,7 @@ class CreatePerson extends Component
             'father_national_id' => 'nullable|string|digits:10',
             'mother_national_id' => 'nullable|string|digits:10',
             'phone_number' => 'nullable|string|max:20',
-            'gender' => 'nullable|in:مرد,زن',
+            'gender' => 'required|in:مرد,زن',
             'role' => 'required|in:فرزند,سرپرست', // با توجه به سناریو، معمولا "فرزند" است
             'social_worker_id' => 'required|exists:social_workers,id',
 
@@ -565,9 +568,9 @@ class CreatePerson extends Component
             'insurance_type_id' => 'nullable|required_if:insurance_status,1|exists:insurance_types,id',
             'divorced_child_at_home' => 'nullable|string|in:none,boy,girl,both',
             'average_income' => 'nullable|integer|min:0',
-            'any_family_employed' => 'required|boolean',
+            'any_family_employed' => 'nullable|boolean',
             'any_family_employed_description' => 'nullable|required_if:any_family_employed,1|string|max:1000',
-            'has_vehicle' => 'required|boolean',
+            'has_vehicle' => 'nullable|boolean',
             'vehicle_type_id' => 'nullable|required_if:has_vehicle,1|exists:vehicle_types,id',
             'vehicle_ownership_type' => 'nullable|required_if:has_vehicle,1|in:personal,company,rented',
 
@@ -614,34 +617,16 @@ class CreatePerson extends Component
             'need_level_id' => 'required|exists:need_level_types,id',
         ]);
 
-// پردازش تصویر پروفایل
-        $profilePhotoPath = null;
-
-        if ($this->captured_photo_base64) {
-            // اولویت با عکس دوربین: تبدیل Base64 به فایل
-            $image = $this->captured_photo_base64;
-            $image = str_replace('data:image/png;base64,', '', $image);
-            $image = str_replace(' ', '+', $image);
-            $fileName = 'profile_' . uniqid() . '.png';
-            $profilePhotoPath = 'uploads/profile_photos/' . $fileName;
-
-            \Storage::disk('public')->put($profilePhotoPath, base64_decode($image));
-        } elseif ($this->profile_photo) {
-            // حالت دوم: اگر عکسی گرفته نشده، فایل آپلود شده را ذخیره کن
-            $profilePhotoPath = $this->profile_photo->store('uploads/profile_photos', 'public');
-        }
 
 
-        DB::beginTransaction(); // شروع تراکنش دیتابیس
-
+        DB::beginTransaction();
         try {
-            // --- 1. مدیریت آپلود فایل‌ها ---
-            $paths = [
-                'photo_id_card' => $this->photo_id_card ? $this->photo_id_card->store('uploads/photo_id_card', 'public') : null,
-                'photo_birth_certificate' => $this->photo_birth_certificate ? $this->photo_birth_certificate->store('uploads/photo_birth_certificate', 'public') : null,
-                'support_card_image' => $this->support_card_image ? $this->support_card_image->store('uploads/support_card_image', 'public') : null,
-                ];
 
+            // ۱. پردازش تمام تصاویر در یک جا (با استفاده از متد هوشمند شما)
+            $profilePhotoPath = $this->processImage($this->profile_photo, $this->captured_photo_base64, 'profile_photos');
+            $idCardPath      = $this->processImage($this->photo_id_card, $this->captured_id_card_base64, 'photo_id_card');
+            $birthCertPath   = $this->processImage($this->photo_birth_certificate, $this->captured_birth_certificate_base64, 'photo_birth_certificate');
+            $supportCardPath = $this->processImage($this->support_card_image, null, 'support_card_image');
 
             // --- 2. آماده‌سازی تاریخ‌های کامل شمسی ---
             $personBirthDateFull = sprintf('%04d/%02d/%02d', $this->birth_year, $this->birth_month, $this->birth_day);
@@ -666,13 +651,6 @@ class CreatePerson extends Component
                 if (!$guardianInstance) {
                     throw new \Exception("Existing guardian with ID {$this->current_guardian_id} not found.");
                 }
-                // اطلاعات شناسایی (نام، کد ملی، تاریخ تولد) برای سرپرست موجود فرض بر ثابت بودن دارد
-                // اگر نیاز به بروزرسانی این فیلدها باشد، باید اینجا اضافه شود:
-                // $guardianInstance->update([
-                //     'first_name' => $this->guardian_first_name,
-                //     'last_name' => $this->guardian_last_name,
-                //     // ...
-                // ]);
             } else {
                 // اگر سرپرست جدید است، آن را ایجاد می‌کنیم
                 $guardianInstance = Guardian::create([
@@ -713,6 +691,7 @@ class CreatePerson extends Component
             }
 
 
+
             // --- 4. ذخیره در جداول دیگر ---
 
             // جدول 1: Person - اطلاعات فردی مددجو
@@ -734,9 +713,9 @@ class CreatePerson extends Component
                 'sadaat_relation_id' => ($this->sadaat_status === 'سادات') ? $this->sadaat_relation_id : null,
                 'skills_description' => $this->skills_description,
                 'social_worker_id' => $this->social_worker_id,
-                'photo_id_card' => $paths['photo_id_card'],
-                'photo_birth_certificate' => $paths['photo_birth_certificate'],
                 'profile_photo' => $profilePhotoPath,
+                'photo_id_card' => $idCardPath,
+                'photo_birth_certificate' => $birthCertPath,
                 'has_disability' => (bool)$this->has_disability, // تبدیل به boolean
                 'disability_type_id' => ((bool)$this->has_disability) ? $this->disability_type_id : null,
                 'disability_description' => ((bool)$this->has_disability) ? $this->disability_description : null,
@@ -819,7 +798,7 @@ class CreatePerson extends Component
                 'coverage_start_month' => $this->coverage_start_month ?: null,
                 'coverage_start_year' => $this->coverage_start_year ?: null,
                 'coverage_start_date' => $coverageDateFull,
-                'support_card_image' => $paths['support_card_image'],
+                'support_card_image' => $supportCardPath,
             ]);
 
             // جدول 7: NeedsLevel - سطح نیاز تشخیص داده شده
@@ -855,6 +834,46 @@ class CreatePerson extends Component
             // throw $e;
         }
     }
+
+    /**
+     * متد کمکی برای مدیریت هوشمند تصاویر (آپلود یا دوربین)
+     */
+    private function processImage($uploadedFile, $base64Data, $subFolder)
+    {
+        // ۱. اولویت با تصویر دوربین (Base64)
+        if (!empty($base64Data)) {
+            try {
+                // استخراج داده‌های اصلی تصویر
+                $image_parts = explode(";base64,", $base64Data);
+                if (count($image_parts) < 2) return null;
+
+                $image_type_aux = explode("image/", $image_parts[0]);
+                $image_type = $image_type_aux[1] ?? 'png';
+                $image_base64 = base64_decode($image_parts[1]);
+
+                // نام‌گذاری فایل و تعیین مسیر (مثال: uploads/profiles/unique_id.png)
+                $fileName = uniqid() . '_' . time() . '.' . $image_type;
+                $finalPath = 'uploads/' . $subFolder . '/' . $fileName;
+
+                // ذخیره فیزیکی در Storage (دیسک public)
+                \Illuminate\Support\Facades\Storage::disk('public')->put($finalPath, $image_base64);
+
+                return $finalPath;
+            } catch (\Exception $e) {
+                \Log::error("خطا در پردازش تصویر دوربین ($subFolder): " . $e->getMessage());
+                return null;
+            }
+        }
+
+        // ۲. اگر دوربین نبود، استفاده از فایل آپلود شده
+        if ($uploadedFile) {
+            // متد store لاراول مسیر را برمی‌گرداند، ما آن را در uploads تنظیم می‌کنیم
+            return $uploadedFile->store('uploads/' . $subFolder, 'public');
+        }
+
+        return null;
+    }
+
 
     public function render()
     {

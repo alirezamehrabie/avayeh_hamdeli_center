@@ -255,7 +255,7 @@
                             @error('has_disability') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-5 mb-3">
+                        <div class="col-md-3 mb-3">
                             <label class="form-label">نوع معلولیت</label>
                             {{-- اگر معلولیت ندارد، فیلد غیرفعال شود --}}
                             <select class="form-select" wire:model.blur="disability_type_id"
@@ -268,7 +268,7 @@
                             @error('disability_type_id') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-5 mb-3">
+                        <div class="col-md-3 mb-3">
                             <label class="form-label">توضیحات معلولیت</label>
                             <textarea class="form-control h-1" wire:model.blur="disability_description"
                                       @if($has_disability != '1') disabled @endif></textarea>
@@ -288,61 +288,99 @@
                             @error('social_worker_id') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">تصویر کارت ملی</label>
-                            <input class="form-control" type="file" wire:model="photo_id_card">
-                            @error('photo_id_card') <span class="text-danger small">{{ $message }}</span> @enderror
-                            @if ($photo_id_card)
-                                <img src="{{ $photo_id_card->temporaryUrl() }}" class="img-thumbnail mt-2"
-                                     style="max-height: 100px;">
-                            @endif
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">تصویر شناسنامه</label>
-                            <input class="form-control" type="file" wire:model="photo_birth_certificate">
-                            @error('photo_birth_certificate') <span
-                                class="text-danger small">{{ $message }}</span> @enderror
-                            @if ($photo_birth_certificate)
-                                <img src="{{ $photo_birth_certificate->temporaryUrl() }}" class="img-thumbnail mt-2"
-                                     style="max-height: 100px;">
-                            @endif
-                        </div>
-
-
-                        <div class="col-md-12 mb-4">
-                            <label class="form-label fw-bold">تصویر مددجو (ثبت آنلاین یا آپلود)</label>
-
+                        <!-- بخش تصویر کارت ملی -->
+                        <div class="col-md-4 mb-4">
+                            <label class="form-label fw-bold">تصویر کارت ملی (ثبت آنلاین یا آپلود)</label>
                             <div class="card p-3" style="background: #f8f9fa;">
                                 <div class="row">
-                                    <!-- ستون دوربین و پیش‌نمایش -->
-                                    <div class="col-md-6 border-start">
-                                        <div id="camera-container" wire:ignore>
-                                            <video id="video" width="100%" height="240" autoplay class="rounded border d-none"></video>
-                                            <canvas id="canvas" width="640" height="480" class="d-none"></canvas>
-
-                                            <div id="photo-preview" class="text-center">
-                                                <img src="{{ asset('assets/images/no-image.png') }}" id="captured-img" class="img-thumbnail" style="max-height: 200px;">
+                                    <div class="col-md-7 border-start">
+                                        <div id="camera-container-id-card" wire:ignore>
+                                            <video id="video-id-card" width="100%" height="200" autoplay class="rounded border d-none"></video>
+                                            <canvas id="canvas-id-card" width="640" height="480" class="d-none"></canvas>
+                                            <div id="photo-preview-id-card" class="text-center">
+                                                @if($photo_id_card)
+                                                    <img src="{{ $photo_id_card->temporaryUrl() }}" class="img-thumbnail" style="max-height: 150px;">
+                                                @else
+                                                    <img src="{{ asset('assets/images/no-image.png') }}" id="captured-img-id-card" class="img-thumbnail" style="max-height: 150px;">
+                                                @endif
                                             </div>
-
                                             <div class="mt-2 text-center">
-                                                <button type="button" id="start-camera" class="btn btn-sm btn-primary">فعالسازی دوربین</button>
-                                                <button type="button" id="capture-btn" class="btn btn-sm btn-success d-none">گرفتن عکس</button>
+                                                <button type="button" class="btn btn-sm btn-primary" onclick="setupCamera('id-card', 'captured_id_card_base64')">فعالسازی دوربین</button>
+                                                <button type="button" id="capture-btn-id-card" class="btn btn-sm btn-success d-none" onclick="takePhoto('id-card', 'captured_id_card_base64')">گرفتن عکس</button>
                                             </div>
                                         </div>
-                                        <!-- فیلد مخفی برای ارسال عکس دوربین به لایوایر -->
-                                        <input type="hidden" wire:model="captured_photo_base64" id="captured_photo_base64">
+                                        <input type="hidden" wire:model="captured_id_card_base64">
                                     </div>
-
-                                    <!-- ستون آپلود سنتی -->
-                                    <div class="col-md-6">
-                                        <p class="small text-muted">یا فایل تصویر را انتخاب کنید:</p>
-                                        <input type="file" wire:model="profile_photo" class="form-control" accept="image/*">
-                                        @error('profile_photo') <span class="text-danger small">{{ $message }}</span> @enderror
+                                    <div class="col-md-5">
+                                        <p class="small text-muted">یا انتخاب فایل:</p>
+                                        <input type="file" wire:model="photo_id_card" class="form-control" accept="image/*">
+                                        @error('photo_id_card') <span class="text-danger small">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- بخش تصویر شناسنامه -->
+                        <div class="col-md-4 mb-4">
+                            <label class="form-label fw-bold">تصویر شناسنامه (ثبت آنلاین یا آپلود)</label>
+                            <div class="card p-3" style="background: #f8f9fa;">
+                                <div class="row">
+                                    <div class="col-md-7 border-start">
+                                        <div id="camera-container-birth-cert" wire:ignore>
+                                            <video id="video-birth-cert" width="100%" height="200" autoplay class="rounded border d-none"></video>
+                                            <canvas id="canvas-birth-cert" width="640" height="480" class="d-none"></canvas>
+                                            <div id="photo-preview-birth-cert" class="text-center">
+                                                @if($photo_birth_certificate)
+                                                    <img src="{{ $photo_birth_certificate->temporaryUrl() }}" class="img-thumbnail" style="max-height: 150px;">
+                                                @else
+                                                    <img src="{{ asset('assets/images/no-image.png') }}" id="captured-img-birth-cert" class="img-thumbnail" style="max-height: 150px;">
+                                                @endif
+                                            </div>
+                                            <div class="mt-2 text-center">
+                                                <button type="button" class="btn btn-sm btn-primary" onclick="setupCamera('birth-cert', 'captured_birth_certificate_base64')">فعالسازی دوربین</button>
+                                                <button type="button" id="capture-btn-birth-cert" class="btn btn-sm btn-success d-none" onclick="takePhoto('birth-cert', 'captured_birth_certificate_base64')">گرفتن عکس</button>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" wire:model="captured_birth_certificate_base64">
+                                    </div>
+                                    <div class="col-md-5">
+                                        <p class="small text-muted">یا انتخاب فایل:</p>
+                                        <input type="file" wire:model="photo_birth_certificate" class="form-control" accept="image/*">
+                                        @error('photo_birth_certificate') <span class="text-danger small">{{ $message }}</span> @enderror
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                        <div class="col-md-4 mb-4">
+                            <label class="form-label fw-bold">تصویر مددجو (ثبت آنلاین یا آپلود)</label>
+                            <div class="card p-3" style="background: #f8f9fa;">
+                                <div class="row">
+                                    <div class="col-md-6 border-start">
+                                        <div id="camera-container-profile" wire:ignore>
+                                            <video id="video-profile" width="100%" height="240" autoplay class="rounded border d-none"></video>
+                                            <canvas id="canvas-profile" width="640" height="480" class="d-none"></canvas>
+                                            <div id="photo-preview-profile" class="text-center">
+                                                <img src="{{ asset('assets/images/no-image.png') }}" id="captured-img-profile" class="img-thumbnail" style="max-height: 200px;">
+                                            </div>
+                                            <div class="mt-2 text-center">
+                                                <button type="button" class="btn btn-sm btn-primary" onclick="setupCamera('profile', 'captured_photo_base64')">فعالسازی دوربین</button>
+                                                <button type="button" id="capture-btn-profile" class="btn btn-sm btn-success d-none" onclick="takePhoto('profile', 'captured_photo_base64')">گرفتن عکس</button>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" wire:model="captured_photo_base64">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p class="small text-muted">یا انتخاب فایل:</p>
+                                        <input type="file" wire:model="profile_photo" class="form-control" accept="image/*">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
 
 
 
@@ -1070,55 +1108,69 @@
 
 
 <script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function () {
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const startBtn = document.getElementById('start-camera');
-        const captureBtn = document.getElementById('capture-btn');
-        const capturedImg = document.getElementById('captured-img');
-        const photoPreview = document.getElementById('photo-preview');
-        const base64Input = document.getElementById('captured_photo_base64');
+    // ذخیره استریم‌های فعال برای بستن دوربین پس از عکاسی
+    let activeStreams = {};
 
-        // ۱. فعالسازی دوربین
-        startBtn.addEventListener('click', async function () {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-                video.srcObject = stream;
-                video.classList.remove('d-none');
-                photoPreview.classList.add('d-none');
-                startBtn.classList.add('d-none');
-                captureBtn.classList.remove('d-none');
-            } catch (err) {
-                alert("خطا در دسترسی به دوربین: " + err.message);
-            }
-        });
+    /**
+     * فعالسازی دوربین برای هر بخش
+     * @param {string} idPrefix - پیشوند ID المان‌ها (مثلا id-card)
+     * @param {string} wireProperty - نام متغیر در لایوایر
+     */
+    async function setupCamera(idPrefix, wireProperty) {
+        const video = document.getElementById(`video-${idPrefix}`);
+        const preview = document.getElementById(`photo-preview-${idPrefix}`);
+        const captureBtn = document.getElementById(`capture-btn-${idPrefix}`);
+        const startBtn = event.target;
 
-        // ۲. ثبت عکس (Capture)
-        captureBtn.addEventListener('click', function () {
-            const context = canvas.getContext('2d');
-            // رسم فریم فعلی ویدیو روی کانواس
-            context.drawImage(video, 0, 0, 640, 480);
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            video.srcObject = stream;
+            activeStreams[idPrefix] = stream;
 
-            // تبدیل کانواس به Base64
-            const data = canvas.toDataURL('image/png');
+            video.classList.remove('d-none');
+            preview.classList.add('d-none');
+            startBtn.classList.add('d-none');
+            captureBtn.classList.remove('d-none');
+        } catch (err) {
+            alert("خطا در دسترسی به دوربین: " + err.message);
+        }
+    }
 
-            // نمایش پیش‌نمایش
-            capturedImg.src = data;
-            video.classList.add('d-none');
-            photoPreview.classList.remove('d-none');
-            captureBtn.classList.add('d-none');
-            startBtn.innerText = "عکس مجدد";
-            startBtn.classList.remove('d-none');
+    /**
+     * ثبت تصویر و ارسال به لایوایر
+     */
+    function takePhoto(idPrefix, wireProperty) {
+        const video = document.getElementById(`video-${idPrefix}`);
+        const canvas = document.getElementById(`canvas-${idPrefix}`);
+        const capturedImg = document.getElementById(`captured-img-${idPrefix}`);
+        const preview = document.getElementById(`photo-preview-${idPrefix}`);
+        const captureBtn = document.getElementById(`capture-btn-${idPrefix}`);
 
-            // ارسال داده به Livewire
-            // استفاده از @this برای دسترسی مستقیم به کامپوننت
-            @this.set('captured_photo_base64', data);
+        // پیدا کردن دکمه فعالسازی (که الان مخفی است) برای بازگرداندن متن
+        const container = document.getElementById(`camera-container-${idPrefix}`);
+        const startBtn = container.querySelector('button.btn-primary');
 
-            // متوقف کردن استریم دوربین برای بهینگی مصرف باتری و CPU
-            const stream = video.srcObject;
-            const tracks = stream.getTracks();
-            tracks.forEach(track => track.stop());
-        });
-    });
+        const context = canvas.getContext('2d');
+        context.drawImage(video, 0, 0, 640, 480);
+        const data = canvas.toDataURL('image/png');
 
+        // نمایش در پیش‌نمایش
+        capturedImg.src = data;
+        video.classList.add('d-none');
+        preview.classList.remove('d-none');
+        captureBtn.classList.add('d-none');
+
+        startBtn.innerText = "عکس مجدد";
+        startBtn.classList.remove('d-none');
+
+        // ارسال به لایوایر
+        @this.set(wireProperty, data);
+
+        // خاموش کردن دوربین
+        if (activeStreams[idPrefix]) {
+            activeStreams[idPrefix].getTracks().forEach(track => track.stop());
+            delete activeStreams[idPrefix];
+        }
+    }
 </script>
+
