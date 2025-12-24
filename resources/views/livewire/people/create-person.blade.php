@@ -831,7 +831,7 @@
 
                 {{-- بخش 5: اطلاعات بانکی و تحصیلی --}}
                 <div class="mb-5">
-                    <h4 class="border-bottom pb-2 mb-3 font-bold">اطلاعات بانکی و تحصیلی</h4>
+                    <h4 class="border-bottom pb-2 mb-3 font-bold">اطلاعات بانکی</h4>
 
                     <div class="row g-3">
                         <div class="col-md-3">
