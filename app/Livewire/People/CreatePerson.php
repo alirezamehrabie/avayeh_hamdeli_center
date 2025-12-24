@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Livewire\People;
+use AllowDynamicProperties;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\DB;
@@ -37,7 +38,7 @@ use Carbon\Carbon;
 
 // برای تبدیل تاریخ شمسی به میلادی
 
-class CreatePerson extends Component
+#[AllowDynamicProperties] class CreatePerson extends Component
 {
     use WithFileUploads;
 
@@ -89,8 +90,6 @@ class CreatePerson extends Component
     // --- 2. تعریف متغیرهای وضعیت خانوادگی ---
     public $guardian_relation_type_id;
     public $economic_decile;
-
-    public $divorced_parent;
     public $remarried_parent;
     public $children_from_previous_marriage;
 
@@ -123,6 +122,7 @@ class CreatePerson extends Component
     public $average_income;
     public $any_family_employed = '0';
     public $any_family_employed_description;
+
     public $has_vehicle = '0';
     public $vehicle_type_id;
     public $vehicle_ownership_type = 'personal';
@@ -179,6 +179,8 @@ class CreatePerson extends Component
     public $allSkills;
     public $disabilityTypes;
     public $socialWorkers;
+
+    public $allow_social_worker_edit = false;
     public $guardianRelationTypes;
     public $occupations;
     public $deciles;
@@ -370,6 +372,7 @@ class CreatePerson extends Component
         $this->any_family_employed = '0';
         $this->has_vehicle = '0';
         $this->vehicle_type_id = null;
+        $this->allow_social_worker_edit = false;
     }
 
     protected function resetAllGuardianFields()
@@ -399,6 +402,7 @@ class CreatePerson extends Component
         $this->children_in_house = $guardian->children_in_house;
         $this->insurance_type_id = $guardian->insurance_type_id;
         $this->divorced_child_at_home = $guardian->divorced_child_at_home;
+        $this->any_family_employed_description = $guardian->any_family_employed_description;
         $this->average_income = $guardian->average_income;
         $this->vehicle_type_id = $guardian->vehicle_type_id;
 
@@ -407,6 +411,7 @@ class CreatePerson extends Component
         $this->any_family_employed = (string)$guardian->any_family_employed;
         $this->has_vehicle = (string)$guardian->has_vehicle;
         $this->social_worker_id = $guardian->social_worker_id;
+        $this->allow_change_social_worker = false; // همیشه بعد از جستجو قفل بماند
 
         // ۲. واکشی اطلاعات سکونت (Auto-fill)
         $residence = $guardian->residence; // استفاده از رابطه تعریف شده
@@ -540,7 +545,6 @@ class CreatePerson extends Component
             'social_worker_id' => 'required|exists:social_workers,id',
             'guardian_relation_type_id' => 'required|exists:guardian_relation_types,id', // نسبت سرپرست با مددجو همیشه باید مشخص باشد
             'economic_decile' => 'nullable|integer|between:1,10',
-            'divorced_parent' => 'nullable|in:none,divorced',
             'remarried_parent' => 'nullable|in:none,father,mother,both',
             'children_from_previous_marriage' => 'nullable|integer|min:0',
             'has_parent_disability' => 'nullable|boolean',
@@ -583,7 +587,7 @@ class CreatePerson extends Component
             'monthly_rent' => 'nullable|integer|min:0',
             'residence_duration_years' => 'nullable|integer|min:0',
             'address' => 'nullable|string|max:1000',
-            'personal_phone' => 'nullable   |string|max:20',
+            'personal_phone' => 'nullable|string|max:20',
             'landline_phone' => 'nullable|string|max:20',
             'trusted_person_phone' => 'nullable|string|max:20',
             'messenger_type' => 'nullable|string|max:50',
@@ -733,7 +737,6 @@ class CreatePerson extends Component
                 'person_id' => $person->id,
                 'guardian_relation_type_id' => $this->guardian_relation_type_id,
                 'economic_decile' => $this->economic_decile ?: null,
-                'divorced_parent' => $this->divorced_parent,
                 'remarried_parent' => $this->remarried_parent,
                 'children_from_previous_marriage' => (int)$this->children_from_previous_marriage,
                 'has_parent_disability' => (bool)$this->has_parent_disability, // تبدیل به boolean

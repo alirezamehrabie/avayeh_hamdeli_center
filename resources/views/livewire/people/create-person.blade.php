@@ -477,20 +477,9 @@
                             @error('economic_decile') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-4 mb-3">
-                            <label for="divorced_parent" class="form-label">وضعیت طلاق والدین</label>
-                            <select wire:model.blur="divorced_parent" id="divorced_parent" class="form-select">
-                                <option value="">انتخاب کنید...</option>
-                                <option value="none">خیر (طلاق نگرفته‌اند)</option>
-                                <option value="divorced">بله (طلاق گرفته‌اند)</option>
-                            </select>
-                            @error('divorced_parent')
-                            <span class="text-danger small">{{ $message }}</span>
-                            @enderror
-                        </div>
 
                         {{-- remarried_parent --}}
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label" for="remarried_parent">ازدواج مجدد والدین</label>
                             <select wire:model.blur="remarried_parent" id="remarried_parent" class="form-select">
                                 <option value="">انتخاب کنید...</option>
@@ -588,16 +577,39 @@
 
 
                         <div class="col-md-4">
-                            <label class="form-label">مددکار مسئول <span class="text-danger">*</span></label>
-                            <select class="form-select" wire:model.blur="social_worker_id">
-                                <option value="">انتخاب کنید...</option>
-                                @foreach($socialWorkers as $worker)
-                                    <option value="{{ $worker->id }}">{{ $worker->fullName }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <label class="form-label d-flex justify-content-between">
+                                <span>مددکار مسئول <span class="text-danger">*</span></span>
+                                @if($guardian_exists_in_db)
+                                    <small class="text-muted">
+                                        {{ $allow_social_worker_edit ? '🔓 در حال ویرایش' : '🔒 قفل شده (از تغییر مددکار اطمینان کامل پیدا کنید)' }}
+                                    </small>
+                                @endif
+                            </label>
+
+                            <div class="input-group">
+                                <select class="form-select @error('social_worker_id') is-invalid @enderror"
+                                        wire:model.blur="social_worker_id"
+                                    {{ ($guardian_exists_in_db && !$allow_social_worker_edit) ? 'disabled' : '' }}>
+                                    <option value="">انتخاب کنید...</option>
+                                    @foreach($socialWorkers as $worker)
+                                        <option value="{{ $worker->id }}">{{ $worker->first_name . ' ' . $worker->last_name }}</option>
+                                    @endforeach
+                                </select>
+
+                                @if($guardian_exists_in_db)
+                                    <button class="btn {{ $allow_social_worker_edit ? 'btn-warning' : 'btn-outline-secondary' }}"
+                                            type="button"
+                                            wire:click="$toggle('allow_social_worker_edit')"
+                                            title="تغییر مددکار خانواده">
+                                        <i class="bi {{ $allow_social_worker_edit ? 'bi-unlock-fill' : 'bi-lock-fill' }}"></i>
+                                        {{ $allow_social_worker_edit ? 'لغو' : 'تغییر' }}
+                                    </button>
+                                @endif
+                            </div>
+
                             @error('social_worker_id') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
+
 
                         <div class="col-md-4">
                             <label class="form-label">نام سرپرست <span class="text-danger">*</span></label>
@@ -796,7 +808,7 @@
 
                                     <label class="me-3">
                                         <input type="radio" wire:model="vehicle_ownership_type" value="company">
-                                        <span class="ms-1">شرکتی</span>
+                                        <span class="ms-1">شراکتی</span>
                                     </label>
 
                                     <label>
@@ -970,14 +982,13 @@
 
                         <div class="col-md-4">
                             <label class="form-label">شماره تلفن ثابت</label>
-                            <input type="text" class="form-control" wire:model.blur="landline_phone" maxlength="20">
+                            <input type="text" class="form-control" wire:model.blur="landline_phone" maxlength="11">
                             @error('landline_phone') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="col-md-4">
                             <label class="form-label">شماره تلفن فرد معتمد</label>
-                            <input type="text" class="form-control" wire:model.blur="trusted_person_phone"
-                                   maxlength="20">
+                            <input type="text" class="form-control" wire:model.blur="trusted_person_phone" maxlength="11">
                             @error('trusted_person_phone') <span
                                 class="text-danger small">{{ $message }}</span> @enderror
                         </div>
@@ -991,7 +1002,7 @@
 
                         <div class="col-md-4">
                             <label class="form-label">شماره یا آیدی پیام‌رسان</label>
-                            <input type="text" class="form-control" wire:model.blur="messenger_number">
+                            <input type="text" class="form-control" wire:model.blur="messenger_number" maxlength="11">
                             @error('messenger_number') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
                     </div>

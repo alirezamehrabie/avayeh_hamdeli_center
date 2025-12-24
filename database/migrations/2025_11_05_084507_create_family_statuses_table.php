@@ -28,13 +28,6 @@ return new class extends Migration {
 
             $table->enum('deceased_parent', ['father', 'mother', 'both'])->nullable();
 
-
-            $table->enum('divorced_parent', [
-                'none',
-                'divorced'
-            ])->nullable()->default('none');
-
-
             // والد مجدد ازدواج کرده
             $table->enum('remarried_parent', ['none', 'father', 'mother', 'both'])
                 ->nullable()

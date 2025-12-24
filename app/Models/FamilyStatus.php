@@ -14,7 +14,6 @@ class FamilyStatus extends Model
         'person_id',
         'guardian_relation_type_id',
         'economic_decile',
-        'divorced_parent',
         'remarried_parent',
         'children_from_previous_marriage',
         'has_parent_disability',
