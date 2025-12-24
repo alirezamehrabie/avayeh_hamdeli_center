@@ -85,6 +85,12 @@ class SocialWorker extends Model
         return $this->hasMany(Person::class, 'social_worker_id');
     }
 
+    public function guardians()
+    {
+        return $this->hasMany(Guardian::class, 'social_worker_id');
+    }
+
+
     public function district()
     {
         return $this->belongsTo(District::class);

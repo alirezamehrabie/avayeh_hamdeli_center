@@ -406,6 +406,7 @@ class CreatePerson extends Component
         $this->insurance_status = (string)$guardian->insurance_status;
         $this->any_family_employed = (string)$guardian->any_family_employed;
         $this->has_vehicle = (string)$guardian->has_vehicle;
+        $this->social_worker_id = $guardian->social_worker_id;
 
         // ۲. واکشی اطلاعات سکونت (Auto-fill)
         $residence = $guardian->residence; // استفاده از رابطه تعریف شده
@@ -516,7 +517,6 @@ class CreatePerson extends Component
             'phone_number' => 'nullable|string|max:20',
             'gender' => 'required|in:مرد,زن',
             'role' => 'required|in:فرزند,سرپرست', // با توجه به سناریو، معمولا "فرزند" است
-            'social_worker_id' => 'required|exists:social_workers,id',
 
             'sadaat_status' => 'required|in:عام,سادات',
             'sadaat_relation_id' => 'nullable|required_if:sadaat_status,سادات|exists:sadaat_relations,id',
@@ -537,6 +537,7 @@ class CreatePerson extends Component
             'profile_photo' => 'nullable|image|max:2048', // حداکثر ۲ مگابایت
 
             // --- بخش 2: وضعیت خانوادگی ---
+            'social_worker_id' => 'required|exists:social_workers,id',
             'guardian_relation_type_id' => 'required|exists:guardian_relation_types,id', // نسبت سرپرست با مددجو همیشه باید مشخص باشد
             'economic_decile' => 'nullable|integer|between:1,10',
             'divorced_parent' => 'nullable|in:none,divorced',
@@ -646,14 +647,15 @@ class CreatePerson extends Component
             $guardianInstance = null; // برای نگهداری مدل Guardian
 
             if ($this->guardian_exists_in_db && $this->current_guardian_id) {
-                // اگر سرپرست در دیتابیس موجود است، آن را بازیابی می‌کنیم
                 $guardianInstance = Guardian::find($this->current_guardian_id);
+
                 if (!$guardianInstance) {
                     throw new \Exception("Existing guardian with ID {$this->current_guardian_id} not found.");
                 }
             } else {
                 // اگر سرپرست جدید است، آن را ایجاد می‌کنیم
                 $guardianInstance = Guardian::create([
+                    'social_worker_id' => $this->social_worker_id,
                     'guardian_code' => Guardian::generateNextGuardianCode(),
                     'national_code' => $this->guardian_national_code,
                     'first_name' => $this->guardian_first_name,
@@ -671,6 +673,7 @@ class CreatePerson extends Component
             // این بخش برای سرپرست جدید (که تازه ساخته شده) و سرپرست موجود (که از دیتابیس بازیابی شده) مشترک است.
             if ($guardianInstance) {
                 $guardianInstance->update([
+                    'social_worker_id' => $this->social_worker_id,
                     'occupation_id' => $this->occupation_id,
                     'job_type_id' => $this->job_type_id ?: null,
                     'guardian_phone_number' => $this->guardian_phone_number,
@@ -712,7 +715,6 @@ class CreatePerson extends Component
                 'sadaat_status' => $this->sadaat_status,
                 'sadaat_relation_id' => ($this->sadaat_status === 'سادات') ? $this->sadaat_relation_id : null,
                 'skills_description' => $this->skills_description,
-                'social_worker_id' => $this->social_worker_id,
                 'profile_photo' => $profilePhotoPath,
                 'photo_id_card' => $idCardPath,
                 'photo_birth_certificate' => $birthCertPath,

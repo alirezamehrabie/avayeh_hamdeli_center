@@ -11,7 +11,7 @@ Route::get('/', function () {
 
 // مسیر نمایش فرم به Livewire تغییر می‌کند
 Route::get('/people/create', CreatePerson::class)->name('people.create');
-Route::get('/people', IndexPeople::class)->name('people.index');
+
 
 // Route to handle form submission
 Route::post('/people', [PersonController::class, 'store'])->name('people.store');

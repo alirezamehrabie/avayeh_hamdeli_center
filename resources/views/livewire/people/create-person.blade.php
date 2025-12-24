@@ -276,17 +276,6 @@
                                 class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">مددکار مسئول <span class="text-danger">*</span></label>
-                            <select class="form-select" wire:model.blur="social_worker_id">
-                                <option value="">انتخاب کنید...</option>
-                                @foreach($socialWorkers as $worker)
-                                    <option value="{{ $worker->id }}">{{ $worker->fullName }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('social_worker_id') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
 
                         <!-- بخش تصویر کارت ملی -->
                         <div class="col-md-4 mb-4">
@@ -595,6 +584,19 @@
                                     کد ملی سرپرست باید ۱۰ رقم باشد.
                                 </div>
                             @endif
+                        </div>
+
+
+                        <div class="col-md-4">
+                            <label class="form-label">مددکار مسئول <span class="text-danger">*</span></label>
+                            <select class="form-select" wire:model.blur="social_worker_id">
+                                <option value="">انتخاب کنید...</option>
+                                @foreach($socialWorkers as $worker)
+                                    <option value="{{ $worker->id }}">{{ $worker->fullName }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('social_worker_id') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="col-md-4">
