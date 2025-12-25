@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Livewire\People;
+
 use AllowDynamicProperties;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -8,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Person;
 use App\Models\FamilyStatus;
 use App\Models\Guardian;
+
 // اطمینان حاصل کنید که این مدل import شده است
 use App\Models\Residence;
 use App\Models\BankInfo;
@@ -227,16 +229,20 @@ use Carbon\Carbon;
     {
         $this->subsidy_card_number = $value;
     }
+
     public function updatedShebaNumber($value)
     {
         $this->subsidy_sheba_number = $value;
     }
-    public function updatedNationalId($value){
+
+    public function updatedNationalId($value)
+    {
         // اعتبارسنجی فقط همین فیلد
         $this->validateOnly('national_id', [
             'national_id' => ['nullable', 'digits:10'],
         ]);
     }
+
     public function updatedGuardianNationalCode($value)
     {
         // در اینجا اعتبارسنجی دقیق کد ملی (regex) را انجام نمی‌دهیم تا فقط در زمان ذخیره بررسی شود.
@@ -282,7 +288,6 @@ use Carbon\Carbon;
 
             $this->updateBankInfoFromGuardian();
         }
-
 
 
         // --- اگر به این مرحله رسیدیم، یعنی national_code دقیقاً 10 رقمی و معتبر است. ---
@@ -354,32 +359,47 @@ use Carbon\Carbon;
         if (is_numeric($value) && $value > 0) {
             $relationType = \App\Models\GuardianRelationType::find($value);
 
-            if ($relationType && $relationType->title === 'پدر') {
-                // مرحله 1: کد ملی پدر، نام پدر و نام خانوادگی مددجو را کپی می‌کنیم.
-                $this->guardian_national_code = $this->father_national_id;
-                $this->guardian_first_name = $this->father_name;
-                $this->guardian_last_name = $this->last_name;
+            if ($relationType) {
+                // منطق برای پدر
+                if ($relationType->title === 'پدر') {
+                    $this->guardian_national_code = $this->father_national_id;
+                    $this->guardian_first_name = $this->father_name;
+                    $this->guardian_last_name = $this->last_name;
 
-                // مرحله 2: بررسی می‌کنیم که آیا کد ملی پدر ۱۰ رقمی است تا جستجوی برنامه‌نویسی انجام شود.
-                if (strlen(trim($this->father_national_id)) === 10) {
-                    $this->is_programmatic_guardian_lookup = true;
-                    // مرحله 3: متد updatedGuardianNationalCode را فراخوانی می‌کنیم تا جستجو و پر کردن سایر فیلدهای سرپرست انجام شود.
-                    $this->updatedGuardianNationalCode($this->father_national_id);
-                    $this->is_programmatic_guardian_lookup = false; // بلافاصله پرچم را ریست می‌کنیم.
-                } else {
-                    // اگر کد ملی پدر ۱۰ رقمی نبود، فقط نام‌ها و کد ملی (ناقص/نادرست) کپی می‌شوند.
-                    // بقیه فیلدهای سرپرست باید پاک شوند.
-                    $this->resetDependentGuardianFields();
-                    $this->is_programmatic_guardian_lookup = false; // این یک جستجوی موفق programmatic نیست.
+                    if (strlen(trim($this->father_national_id)) === 10) {
+                        $this->is_programmatic_guardian_lookup = true;
+                        $this->updatedGuardianNationalCode($this->father_national_id);
+                        $this->is_programmatic_guardian_lookup = false;
+                    } else {
+                        $this->resetDependentGuardianFields();
+                        $this->is_programmatic_guardian_lookup = false;
+                    }
+
                 }
+                // منطق جدید برای مادر
+                elseif ($relationType->title === 'مادر') {
+                    // کد ملی مادر و نام مادر را کپی می‌کنیم
+                    $this->guardian_national_code = $this->mother_national_id;
 
+                    if (strlen(trim($this->mother_national_id)) === 10) {
+                        $this->is_programmatic_guardian_lookup = true;
+                        $this->updatedGuardianNationalCode($this->mother_national_id);
+                        $this->is_programmatic_guardian_lookup = false;
+                    } else {
+                        $this->resetDependentGuardianFields();
+                        $this->is_programmatic_guardian_lookup = false;
+                    }
+                }
+                // برای سایر نسبت‌ها
+                else {
+                    // اگر نسبت انتخاب شده "پدر" یا "مادر" نیست، تمام فیلدهای سرپرست را ریست می‌کنیم
+                    $this->resetAllGuardianFields();
+                }
             } else {
-                // اگر نسبت انتخاب شده "پدر" نیست یا معتبر نیست، تمام فیلدهای سرپرست را ریست می‌کنیم.
                 $this->resetAllGuardianFields();
             }
         } else {
-            // اگر value معتبر نباشد (مثلا کاربر گزینه "— انتخاب کنید —" را انتخاب کرده باشد)،
-            // تمام فیلدهای سرپرست را ریست می‌کنیم.
+            // اگر value معتبر نباشد، تمام فیلدهای سرپرست را ریست می‌کنیم
             $this->resetAllGuardianFields();
         }
     }
@@ -418,7 +438,6 @@ use Carbon\Carbon;
         $this->trusted_person_phone = null;
         $this->messenger_type = null;
         $this->messenger_number = null;
-
 
 
         if ($this->has_own_account == '0') {
@@ -710,8 +729,8 @@ use Carbon\Carbon;
 
             // ۱. پردازش تمام تصاویر در یک جا (با استفاده از متد هوشمند شما)
             $profilePhotoPath = $this->processImage($this->profile_photo, $this->captured_photo_base64, 'profile_photos');
-            $idCardPath      = $this->processImage($this->photo_id_card, $this->captured_id_card_base64, 'photo_id_card');
-            $birthCertPath   = $this->processImage($this->photo_birth_certificate, $this->captured_birth_certificate_base64, 'photo_birth_certificate');
+            $idCardPath = $this->processImage($this->photo_id_card, $this->captured_id_card_base64, 'photo_id_card');
+            $birthCertPath = $this->processImage($this->photo_birth_certificate, $this->captured_birth_certificate_base64, 'photo_birth_certificate');
             $supportCardPath = $this->processImage($this->support_card_image, null, 'support_card_image');
 
             // --- 2. آماده‌سازی تاریخ‌های کامل شمسی ---
@@ -730,7 +749,6 @@ use Carbon\Carbon;
             // --- 3. مدیریت سرپرست (ایجاد یا به‌روزرسانی) ---
             $guardian_id_to_assign = null;
             $guardianInstance = null; // برای نگهداری مدل Guardian
-            $isNewGuardian = !$this->guardian_exists_in_db;
 
             if ($this->guardian_exists_in_db && $this->current_guardian_id) {
                 $guardianInstance = Guardian::find($this->current_guardian_id);
@@ -752,10 +770,6 @@ use Carbon\Carbon;
                     'guardian_birth_date_full' => $guardianBirthDateFull,
                     'children_count' => 0,
                 ]);
-                // افزایش تعداد خانوارهای تحت پوشش مددکار برای سرپرست جدید
-                if ($guardianInstance->socialWorker) {
-                    $guardianInstance->socialWorker->incrementCoveredHouseholdsCount();
-                }
             }
             $guardian_id_to_assign = $guardianInstance->id;
 
@@ -782,7 +796,6 @@ use Carbon\Carbon;
                 // اگر به هر دلیلی Guardian Instance ایجاد یا بازیابی نشد، خطا صادر می‌کنیم
                 throw new \Exception("Failed to retrieve or create guardian instance for ID: " . ($this->current_guardian_id ?? 'new'));
             }
-
 
 
             // --- 4. ذخیره در جداول دیگر ---
@@ -816,11 +829,6 @@ use Carbon\Carbon;
 
             if ($isNewPerson) {
                 $guardianInstance->increment('children_count');
-
-                // افزایش تعداد کودکان تحت پوشش مددکار
-                if ($guardianInstance->socialWorker) {
-                    $guardianInstance->socialWorker->incrementCoveredChildrenCount();
-                }
             }
 
             // جدول 2: FamilyStatus - وضعیت خانوادگی مددجو
@@ -838,14 +846,14 @@ use Carbon\Carbon;
             \App\Models\Residence::updateOrCreate(
                 ['guardian_id' => $guardianInstance->id], // شرط پیدا کردن رکورد
                 [
-                    'person_id'                => $person->id, // همچنان برای ارجاع سریع نگه می‌داریم
-                    'residence_status_id'      => $this->residence_status_id,
-                    'district_id'              => $this->district_id ?: null,
-                    'is_local_to_city'         => (bool)$this->is_local_to_city,
-                    'deposit_amount'           => (int)$this->deposit_amount,
-                    'monthly_rent'             => (int)$this->monthly_rent,
+                    'person_id' => $person->id, // همچنان برای ارجاع سریع نگه می‌داریم
+                    'residence_status_id' => $this->residence_status_id,
+                    'district_id' => $this->district_id ?: null,
+                    'is_local_to_city' => (bool)$this->is_local_to_city,
+                    'deposit_amount' => (int)$this->deposit_amount,
+                    'monthly_rent' => (int)$this->monthly_rent,
                     'residence_duration_years' => (int)$this->residence_duration_years,
-                    'address'                  => $this->address,
+                    'address' => $this->address,
                 ]
             );
 
@@ -853,11 +861,11 @@ use Carbon\Carbon;
             \App\Models\Contact::updateOrCreate(
                 ['guardian_id' => $guardianInstance->id], // شرط پیدا کردن رکورد
                 [
-                    'person_id'            => $person->id,
-                    'landline_phone'       => $this->landline_phone,
+                    'person_id' => $person->id,
+                    'landline_phone' => $this->landline_phone,
                     'trusted_person_phone' => $this->trusted_person_phone,
-                    'messenger_type'       => $this->messenger_type,
-                    'messenger_number'     => $this->messenger_number,
+                    'messenger_type' => $this->messenger_type,
+                    'messenger_number' => $this->messenger_number,
                 ]
             );
 
