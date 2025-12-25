@@ -196,8 +196,7 @@ use Carbon\Carbon;
 
     public function mount()
     {
-        // --- 1. بارگذاری تمام داده‌های lookup (فقط یک بار) ---
-        // این داده‌ها در طول عمر کامپوننت ثابت می‌مانند و نیازی به بارگذاری مجدد در هر رندر نیست.
+        $this->guardian = Guardian::with('bankInfo')->where('national_code', $this->guardian_national_code)->first();
         $this->sadaatRelations = SadaatRelation::orderBy('sort_order')->get();
         $this->allSkills = Skill::all();
         $this->disabilityTypes = DisabilityType::all();
@@ -215,7 +214,6 @@ use Carbon\Carbon;
         $this->needLevelTypes = NeedLevelType::all(); // اضافه شده به mount
         $this->allHarmTypes = HarmType::all();
         $this->support_organizations = SupportOrganization::all();
-
 
 
         // آرایه دهک‌ها (داده‌های ثابت)
@@ -253,6 +251,7 @@ use Carbon\Carbon;
             'guardian_birth_year',
             'guardian_phone_number',
             'occupation_id',
+
         ]);
 
         $national_code = trim($value);
@@ -280,7 +279,11 @@ use Carbon\Carbon;
             }
             // کد ملی وارد شده توسط کاربر را دست‌نخورده باقی می‌گذاریم.
             return; // از ادامه اجرای متد جلوگیری می‌کند.
+
+            $this->updateBankInfoFromGuardian();
         }
+
+
 
         // --- اگر به این مرحله رسیدیم، یعنی national_code دقیقاً 10 رقمی و معتبر است. ---
         // سناریو 3: کد ملی 10 رقمی و کامل است. جستجو در دیتابیس را انجام می‌دهیم.
@@ -308,6 +311,34 @@ use Carbon\Carbon;
             }
         }
 
+    }
+
+    private function updateBankInfoFromGuardian()
+    {
+        // فقط اگر "حساب شخصی ندارد" انتخاب شده باشد
+        if ($this->has_own_account == '0' && !empty($this->guardian_national_code)) {
+            $guardian = Guardian::where('national_code', $this->guardian_national_code)->first();
+
+            if ($guardian && $guardian->bankInfo) {
+                $this->bank_id = $guardian->bankInfo->bank_id;
+                $this->card_number = $guardian->bankInfo->card_number;
+                $this->sheba_number = $guardian->bankInfo->sheba_number;
+                $this->subsidy_card_number = $guardian->bankInfo->subsidy_card_number;
+                $this->subsidy_sheba_number = $guardian->bankInfo->subsidy_sheba_number;
+            } else {
+                // اگر سرپرست جدید است یا اطلاعات بانکی ندارد، فیلدها را خالی کنیم
+                $this->resetBankInfoFields();
+            }
+        }
+    }
+
+    private function resetBankInfoFields()
+    {
+        $this->bank_id = null;
+        $this->card_number = null;
+        $this->sheba_number = null;
+        $this->subsidy_card_number = null;
+        $this->subsidy_sheba_number = null;
     }
 
 
@@ -372,7 +403,12 @@ use Carbon\Carbon;
         $this->any_family_employed = '0';
         $this->has_vehicle = '0';
         $this->vehicle_type_id = null;
+        $this->social_worker_id = null;
         $this->allow_social_worker_edit = false;
+
+        if ($this->has_own_account == '0') {
+            $this->resetBankInfoFields();
+        }
     }
 
     protected function resetAllGuardianFields()
@@ -382,6 +418,10 @@ use Carbon\Carbon;
         $this->guardian_last_name = null;
         $this->resetDependentGuardianFields(); // پاک کردن فیلدهای وابسته
         $this->is_programmatic_guardian_lookup = false; // ریست کردن پرچم
+        // اگر حساب شخصی ندارد، اطلاعات بانکی را هم ریست کنیم
+        if ($this->has_own_account == '0') {
+            $this->resetBankInfoFields();
+        }
     }
 
 
@@ -425,13 +465,22 @@ use Carbon\Carbon;
             $this->address = $residence->address;
         }
 
-
         // ۳. واکشی اطلاعات تماس (Auto-fill)
         $contact = $guardian->contact;
         if ($contact) {
             $this->landline_phone = $contact->landline_phone;
             $this->trusted_person_phone = $contact->trusted_person_phone;
             $this->personal_phone = $contact->personal_phone; // اگر نیاز است
+            $this->messenger_type = $contact->messenger_type;
+            $this->messenger_number = $contact->messenger_number;
+        }
+
+        if ($this->has_own_account == '0' && $guardian->bankInfo) {
+            $this->bank_id = $guardian->bankInfo->bank_id;
+            $this->card_number = $guardian->bankInfo->card_number;
+            $this->sheba_number = $guardian->bankInfo->sheba_number;
+            $this->subsidy_card_number = $guardian->bankInfo->subsidy_card_number;
+            $this->subsidy_sheba_number = $guardian->bankInfo->subsidy_sheba_number;
         }
     }
 
@@ -451,9 +500,30 @@ use Carbon\Carbon;
         if ($value == '1') {
             // ✅ حساب شخصی → مالک حساب = شخص مددجو
             $this->account_owner_relation_id = 1;
+            $this->resetBankInfoFields();
         } else {
             // ✅ حساب شخصی ندارد → مالک حساب = سرپرست قانونی
             $this->account_owner_relation_id = 2;
+            // آپدیت خودکار اطلاعات بانکی از سرپرست فعلی
+            $this->updateBankInfoFromGuardian();
+        }
+
+        if ($value == '0') { // اگر "خیر" انتخاب شود
+            $guardian = Guardian::where('national_code', $this->guardian_national_code)->first();
+
+            if ($guardian && $guardian->bankInfo) {
+                $this->bank_id = $guardian->bankInfo->bank_id;
+                $this->card_number = $guardian->bankInfo->card_number;
+                $this->sheba_number = $guardian->bankInfo->sheba_number;
+                $this->subsidy_card_number = $guardian->bankInfo->subsidy_card_number;
+                $this->subsidy_sheba_number = $guardian->bankInfo->subsidy_sheba_number;
+            }
+        } else { // اگر "بله" انتخاب شود
+            $this->bank_id = null;
+            $this->card_number = null;
+            $this->sheba_number = null;
+            $this->subsidy_card_number = null;
+            $this->subsidy_sheba_number = null;
         }
     }
 
@@ -506,8 +576,6 @@ use Carbon\Carbon;
         $isNewPerson = true;
         $this->is_submitted = true;
 
-        // 1. اعتبارسنجی کامل و جامع (Validation)
-        // این بخش تضمین می‌کند داده‌های ورودی تمیز و استاندارد هستند
         $this->validate([
             // --- بخش 1: اطلاعات فردی مددجو ---
             'first_name' => 'required|string|max:255',
@@ -622,8 +690,6 @@ use Carbon\Carbon;
             'need_level_id' => 'required|exists:need_level_types,id',
         ]);
 
-
-
         DB::beginTransaction();
         try {
 
@@ -649,6 +715,7 @@ use Carbon\Carbon;
             // --- 3. مدیریت سرپرست (ایجاد یا به‌روزرسانی) ---
             $guardian_id_to_assign = null;
             $guardianInstance = null; // برای نگهداری مدل Guardian
+            $isNewGuardian = !$this->guardian_exists_in_db;
 
             if ($this->guardian_exists_in_db && $this->current_guardian_id) {
                 $guardianInstance = Guardian::find($this->current_guardian_id);
@@ -670,6 +737,10 @@ use Carbon\Carbon;
                     'guardian_birth_date_full' => $guardianBirthDateFull,
                     'children_count' => 0,
                 ]);
+                // افزایش تعداد خانوارهای تحت پوشش مددکار برای سرپرست جدید
+                if ($guardianInstance->socialWorker) {
+                    $guardianInstance->socialWorker->incrementCoveredHouseholdsCount();
+                }
             }
             $guardian_id_to_assign = $guardianInstance->id;
 
@@ -730,6 +801,11 @@ use Carbon\Carbon;
 
             if ($isNewPerson) {
                 $guardianInstance->increment('children_count');
+
+                // افزایش تعداد کودکان تحت پوشش مددکار
+                if ($guardianInstance->socialWorker) {
+                    $guardianInstance->socialWorker->incrementCoveredChildrenCount();
+                }
             }
 
             // جدول 2: FamilyStatus - وضعیت خانوادگی مددجو
@@ -771,16 +847,44 @@ use Carbon\Carbon;
             );
 
             // جدول 4: BankInfo - اطلاعات بانکی
-            BankInfo::create([
-                'person_id' => $person->id,
-                'has_own_account' => (bool)$this->has_own_account,
-                'account_owner_relation_id' => $this->account_owner_relation_id ?: null,
-                'bank_id' => $this->bank_id ?: null,
-                'card_number' => $this->card_number,
-                'sheba_number' => $this->sheba_number,
-                'subsidy_card_number' => $this->subsidy_card_number,
-                'subsidy_sheba_number' => $this->subsidy_sheba_number,
-            ]);
+//            BankInfo::create([
+//                'person_id' => $person->id,
+//                'has_own_account' => (bool)$this->has_own_account,
+//                'account_owner_relation_id' => $this->account_owner_relation_id ?: null,
+//                'bank_id' => $this->bank_id ?: null,
+//                'card_number' => $this->card_number,
+//                'sheba_number' => $this->sheba_number,
+//                'subsidy_card_number' => $this->subsidy_card_number,
+//                'subsidy_sheba_number' => $this->subsidy_sheba_number,
+//            ]);
+
+            if ($this->has_own_account == '1') {
+                // ذخیره اطلاعات بانکی برای مددجو
+                BankInfo::create([
+                    'person_id' => $person->id,
+                    'bank_id' => $this->bank_id,
+                    'card_number' => $this->card_number,
+                    'sheba_number' => $this->sheba_number,
+                    'subsidy_card_number' => $this->subsidy_card_number,
+                    'subsidy_sheba_number' => $this->subsidy_sheba_number,
+                    'account_owner_relation_id' => $this->account_owner_relation_id,
+                    'other_account_owner_relation' => $this->other_account_owner_relation,
+                ]);
+            } else {
+                // ذخیره اطلاعات بانکی برای سرپرست
+                BankInfo::updateOrCreate(
+                    ['guardian_id' => $guardianInstance->id],
+                    [
+                        'bank_id' => $this->bank_id,
+                        'card_number' => $this->card_number,
+                        'sheba_number' => $this->sheba_number,
+                        'subsidy_card_number' => $this->subsidy_card_number,
+                        'subsidy_sheba_number' => $this->subsidy_sheba_number,
+                        'account_owner_relation_id' => $this->account_owner_relation_id,
+                        'other_account_owner_relation' => $this->other_account_owner_relation,
+                    ]
+                );
+            }
 
             // جدول 5: Education - اطلاعات تحصیلی
             Education::create([

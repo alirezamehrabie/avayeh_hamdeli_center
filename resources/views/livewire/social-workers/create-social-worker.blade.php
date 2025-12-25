@@ -199,7 +199,7 @@
                         <div class="col-md-4">
                             <div class="p-3 border rounded bg-white text-center shadow-sm">
                                 <label class="small text-muted d-block mb-1">تعداد کودکان تحت پوشش</label>
-                                <input type="number" class="form-control text-center fw-bold text-primary" wire:model.blur="covered_children_count">
+                                    <input type="number" class="form-control text-center fw-bold text-primary" wire:model.blur="covered_children_count">
                             </div>
                         </div>
                     </div>

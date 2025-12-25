@@ -12,6 +12,7 @@ class BankInfo extends Model
 
     protected $fillable = [
         'person_id',
+        'guardian_id',
         'bank_id',
         'has_own_account',
         'account_owner_relation_id',
@@ -33,11 +34,17 @@ class BankInfo extends Model
         return $this->belongsTo(Person::class);
     }
 
+    public function guardian()
+    {
+        return $this->belongsTo(Guardian::class);
+    }
 
     public function bank()
     {
         return $this->belongsTo(Bank::class);
     }
+
+
 
 
 }

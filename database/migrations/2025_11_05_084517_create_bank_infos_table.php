@@ -11,11 +11,8 @@ return new class extends Migration
         Schema::create('bank_infos', function (Blueprint $table) {
             $table->id();
 
-            // ارجاع به فرد (people) با قید unique
-            $table->foreignId('person_id')
-                ->unique()
-                ->constrained('people')
-                ->onDelete('cascade');
+            $table->foreignId('person_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('guardian_id')->nullable()->constrained()->onDelete('cascade');
 
             // آیا فرد حساب بانکی دارد؟
             $table->boolean('has_own_account')

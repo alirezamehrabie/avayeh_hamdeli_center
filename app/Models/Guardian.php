@@ -102,6 +102,11 @@ class Guardian extends Model
         return $this->hasOne(Contact::class, 'guardian_id');
     }
 
+    public function bankInfo()
+    {
+        return $this->hasOne(BankInfo::class);
+    }
+
 
     public static function generateNextGuardianCode(): int
     {

@@ -104,4 +104,31 @@ class SocialWorker extends Model
     public function academicLevel() {
         return $this->belongsTo(AcademicLevel::class, 'academic_level_id');
     }
+
+    public function incrementCoveredChildrenCount()
+    {
+        $this->increment('covered_children_count');
+    }
+
+    public function decrementCoveredChildrenCount()
+    {
+        if ($this->covered_children_count > 0) {
+            $this->decrement('covered_children_count');
+        }
+    }
+
+    public function incrementCoveredHouseholdsCount()
+    {
+        $this->increment('covered_households_count');
+    }
+
+    /**
+     * کاهش تعداد خانوارهای تحت پوشش (برای موارد حذف یا انتقال)
+     */
+    public function decrementCoveredHouseholdsCount()
+    {
+        if ($this->covered_households_count > 0) {
+            $this->decrement('covered_households_count');
+        }
+    }
 }
