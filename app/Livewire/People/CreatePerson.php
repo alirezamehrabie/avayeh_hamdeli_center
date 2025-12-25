@@ -406,6 +406,21 @@ use Carbon\Carbon;
         $this->social_worker_id = null;
         $this->allow_social_worker_edit = false;
 
+        $this->residence_status_id = null;
+        $this->district_id = null;
+        $this->is_local_to_city = null;
+        $this->deposit_amount = null;
+        $this->monthly_rent = null;
+        $this->residence_duration_years = null;
+        $this->address = null;
+
+        $this->landline_phone = null;
+        $this->trusted_person_phone = null;
+        $this->messenger_type = null;
+        $this->messenger_number = null;
+
+
+
         if ($this->has_own_account == '0') {
             $this->resetBankInfoFields();
         }
