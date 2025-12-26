@@ -120,23 +120,45 @@ class SocialWorker extends Model
 
     public function calculateCoveredPeopleCount(): int
     {
-        // ۱. دریافت کدهای ملی مرتبط با مددجویان (خودشان، پدرشان و مادرشان)
-        $peopleNationalIds = $this->people()
-            ->select('national_id', 'father_national_id', 'mother_national_id')
-            ->get()
-            ->flatMap(function ($person) {
-                return [
-                    $person->national_id,
-                    $person->father_national_id,
-                    $person->mother_national_id
-                ];
-            });
+        // ۱. دریافت مددجویان به همراه ID نوع آسیب‌ها با بهینه‌ترین حالت کوئری
+        // فقط ستون‌های مورد نیاز را انتخاب می‌کنیم تا حافظه RAM کمتر اشغال شود
+        $people = $this->people()
+            ->with(['harmTypes' => function($query) {
+                $query->select('harm_types.id'); // فقط ID آسیب‌ها را نیاز داریم
+            }])
+            ->get(['people.id', 'people.national_id', 'people.father_national_id', 'people.mother_national_id']);
 
-        // ۲. دریافت کدهای ملی سرپرستان
+        $activeNationalIds = collect();
+
+        foreach ($people as $person) {
+            // الف) کد ملی خود مددجو
+            if ($person->national_id) {
+                $activeNationalIds->push($person->national_id);
+            }
+
+            // استخراج IDهای آسیب‌های ثبت شده برای این فرد
+            $harmTypeIds = $person->harmTypes->pluck('id')->toArray();
+
+            if (!in_array(1, $harmTypeIds) && !in_array(7, $harmTypeIds)) {
+                if ($person->father_national_id) {
+                    $activeNationalIds->push($person->father_national_id);
+                }
+            }
+
+            // ج) بررسی وضعیت مادر (اگر ID=2 در لیست آسیب‌ها نباشد، مادر زنده فرض شده و شمارش می‌شود)
+            if (!in_array(2, $harmTypeIds)) {
+                if ($person->mother_national_id) {
+                    $activeNationalIds->push($person->mother_national_id);
+                }
+            }
+        }
+
+        // ۲. دریافت کدهای ملی سرپرستان مرتبط با این مددکار
         $guardianNationalIds = $this->guardians()->pluck('national_code');
 
-        // ۳. ترکیب تمام کدهای ملی، حذف مقادیر خالی (Null یا خالی) و حذف تکراری‌ها
-        return $peopleNationalIds
+        // ۳. ترکیب تمام لیست‌ها، حذف مقادیر خالی و حذف تکراری‌ها
+        // استفاده از unique() حیاتی است چون ممکن است چند فرزند، پدر یا مادر یکسانی داشته باشند
+        return $activeNationalIds
             ->concat($guardianNationalIds)
             ->filter()
             ->unique()

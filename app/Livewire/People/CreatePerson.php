@@ -953,6 +953,13 @@ use Carbon\Carbon;
 
             DB::commit(); // اتمام موفقیت‌آمیز تراکنش
 
+            if ($this->social_worker_id) {
+                $socialWorker = \App\Models\SocialWorker::find($this->social_worker_id);
+                if ($socialWorker) {
+                    $socialWorker->refreshStatistics();
+                }
+            }
+
             session()->flash('success', 'اطلاعات مددجو با موفقیت ثبت و ذخیره شد.');
             $this->reset(); // ریست کردن تمام فیلدهای فرم پس از ذخیره موفق
 
