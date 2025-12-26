@@ -120,50 +120,63 @@ class SocialWorker extends Model
 
     public function calculateCoveredPeopleCount(): int
     {
-        // ۱. دریافت مددجویان به همراه ID نوع آسیب‌ها با بهینه‌ترین حالت کوئری
-        // فقط ستون‌های مورد نیاز را انتخاب می‌کنیم تا حافظه RAM کمتر اشغال شود
+        // ۱. بارگذاری مددجویان با فیلتر ستون‌ها و Eager Loading برای جلوگیری از N+1
         $people = $this->people()
-            ->with(['harmTypes' => function($query) {
-                $query->select('harm_types.id'); // فقط ID آسیب‌ها را نیاز داریم
-            }])
+            ->with(['harmTypes' => fn($q) => $q->select('harm_types.id')])
             ->get(['people.id', 'people.national_id', 'people.father_national_id', 'people.mother_national_id']);
 
-        $activeNationalIds = collect();
+        $uniqueNationalIds = collect();
 
         foreach ($people as $person) {
             // الف) کد ملی خود مددجو
             if ($person->national_id) {
-                $activeNationalIds->push($person->national_id);
+                $uniqueNationalIds->push($person->national_id);
             }
 
-            // استخراج IDهای آسیب‌های ثبت شده برای این فرد
             $harmTypeIds = $person->harmTypes->pluck('id')->toArray();
 
+            // ب) بررسی وضعیت پدر (اگر فوت پدر ID=1 یا فرزند طلاق ID=7 نباشد)
             if (!in_array(1, $harmTypeIds) && !in_array(7, $harmTypeIds)) {
                 if ($person->father_national_id) {
-                    $activeNationalIds->push($person->father_national_id);
+                    $uniqueNationalIds->push($person->father_national_id);
                 }
             }
 
-            // ج) بررسی وضعیت مادر (اگر ID=2 در لیست آسیب‌ها نباشد، مادر زنده فرض شده و شمارش می‌شود)
+            // ج) بررسی وضعیت مادر (اگر فوت مادر ID=2 نباشد)
             if (!in_array(2, $harmTypeIds)) {
                 if ($person->mother_national_id) {
-                    $activeNationalIds->push($person->mother_national_id);
+                    $uniqueNationalIds->push($person->mother_national_id);
                 }
             }
         }
 
-        // ۲. دریافت کدهای ملی سرپرستان مرتبط با این مددکار
-        $guardianNationalIds = $this->guardians()->pluck('national_code');
+        // ۲. دریافت اطلاعات سرپرستان (کد ملی + وضعیت فرزندان طلاق در منزل)
+        $guardiansData = $this->guardians()
+            ->get(['national_code', 'divorced_child_at_home']);
 
-        // ۳. ترکیب تمام لیست‌ها، حذف مقادیر خالی و حذف تکراری‌ها
-        // استفاده از unique() حیاتی است چون ممکن است چند فرزند، پدر یا مادر یکسانی داشته باشند
-        return $activeNationalIds
-            ->concat($guardianNationalIds)
-            ->filter()
-            ->unique()
-            ->count();
+        // ۳. افزودن کدهای ملی سرپرستان به لیست یکتا
+        $guardiansData->pluck('national_code')->each(function ($code) use ($uniqueNationalIds) {
+            if ($code) $uniqueNationalIds->push($code);
+        });
+
+        // ۴. محاسبه تعداد افراد یکتا (ثبت شده در دیتابیس)
+        $baseCount = $uniqueNationalIds->filter()->unique()->count();
+
+        // ۵. محاسبه مقدار افزایشی بابت "فرزندان طلاق در منزل سرپرست"
+        // این افراد کد ملی ندارند، پس مستقیماً به عدد نهایی اضافه می‌شوند
+        $extraCount = $guardiansData->sum(function ($guardian) {
+            return match ($guardian->divorced_child_at_home) {
+                'boy'  => 1,
+                'girl' => 1,
+                'both' => 2,
+                default => 0, // شامل 'none' یا null
+            };
+        });
+
+        // حاصل نهایی: افراد دارای کد ملی + افراد اظهار شده در منزل سرپرست
+        return $baseCount + $extraCount;
     }
+
 
     /**
      * متد اختصاصی برای بروزرسانی آمار
