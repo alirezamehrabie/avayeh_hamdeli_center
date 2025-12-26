@@ -80,9 +80,37 @@ class SocialWorker extends Model
     /**
      * مددجویان تحت پوشش این مددکار
      */
-    public function people(): HasMany
+//    public function people(): HasMany
+//    {
+//        return $this->hasMany(Person::class, 'social_worker_id');
+//    }
+
+
+    public function people()
     {
-        return $this->hasMany(Person::class, 'social_worker_id');
+        // استفاده از hasManyThrough برای دسترسی مستقیم به مددجویان از طریق سرپرست
+        return $this->hasManyThrough(
+            Person::class,
+            Guardian::class,
+            'social_worker_id', // کلید خارجی در جدول guardians
+            'guardian_id',      // کلید خارجی در جدول people
+            'id',               // کلید محلی در جدول social_workers
+            'id'                // کلید محلی در جدول guardians
+        );
+    }
+
+    public function updateStatistics()
+    {
+        // تعداد خانوارها
+        $householdsCount = $this->guardians()->count();
+
+        // تعداد مددجویان (با رعایت Soft Delete اگر در مدل Person فعال باشد)
+        $childrenCount = $this->people()->count();
+
+        $this->update([
+            'covered_households_count' => $householdsCount,
+            'covered_children_count' => $childrenCount,
+        ]);
     }
 
     public function guardians()
@@ -103,6 +131,17 @@ class SocialWorker extends Model
 
     public function academicLevel() {
         return $this->belongsTo(AcademicLevel::class, 'academic_level_id');
+    }
+
+    /**
+     * متد اختصاصی برای بروزرسانی آمار
+     */
+    public function refreshStatistics()
+    {
+        $this->update([
+            'covered_households_count' => $this->guardians()->count(),
+            'covered_children_count' => $this->people()->count(),
+        ]);
     }
 
 }
