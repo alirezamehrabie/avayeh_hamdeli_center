@@ -57,34 +57,17 @@ class SocialWorker extends Model
         'covered_children_count' => 'integer',
     ];
 
-    /**
-     * محاسبه کد بعدی مددکار (شروع از ۱۰)
-     */
+
     public static function generateNextWorkerCode(): int
     {
-        // پیدا کردن بزرگترین کد موجود در دیتابیس
         $maxCode = self::max('worker_code');
-
-        // اگر کدی وجود داشت، یکی به آن اضافه کن؛ در غیر این صورت از ۱۰ شروع کن
         return $maxCode ? ($maxCode + 1) : 10;
     }
 
-
-    /**
-     * دریافت نام کامل (در صورتی که ستون مجازی در دیتابیس ساخته نشده باشد)
-     */
-    public function getFullNameAttribute(): string
+    public function getFullNameAttribute()
     {
         return "{$this->first_name} {$this->last_name}";
     }
-    /**
-     * مددجویان تحت پوشش این مددکار
-     */
-//    public function people(): HasMany
-//    {
-//        return $this->hasMany(Person::class, 'social_worker_id');
-//    }
-
 
     public function people()
     {
@@ -108,8 +91,9 @@ class SocialWorker extends Model
         $childrenCount = $this->people()->count();
 
         $this->update([
-            'covered_households_count' => $householdsCount,
-            'covered_children_count' => $childrenCount,
+            'covered_households_count' => $this->guardians()->count(),
+            'covered_children_count'   => $this->people()->count(),
+            'covered_people_count'     => $this->calculateCoveredPeopleCount(),
         ]);
     }
 
@@ -133,15 +117,38 @@ class SocialWorker extends Model
         return $this->belongsTo(AcademicLevel::class, 'academic_level_id');
     }
 
+
+    public function calculateCoveredPeopleCount(): int
+    {
+        // ۱. دریافت کدهای ملی مرتبط با مددجویان (خودشان، پدرشان و مادرشان)
+        $peopleNationalIds = $this->people()
+            ->select('national_id', 'father_national_id', 'mother_national_id')
+            ->get()
+            ->flatMap(function ($person) {
+                return [
+                    $person->national_id,
+                    $person->father_national_id,
+                    $person->mother_national_id
+                ];
+            });
+
+        // ۲. دریافت کدهای ملی سرپرستان
+        $guardianNationalIds = $this->guardians()->pluck('national_code');
+
+        // ۳. ترکیب تمام کدهای ملی، حذف مقادیر خالی (Null یا خالی) و حذف تکراری‌ها
+        return $peopleNationalIds
+            ->concat($guardianNationalIds)
+            ->filter()
+            ->unique()
+            ->count();
+    }
+
     /**
      * متد اختصاصی برای بروزرسانی آمار
      */
-    public function refreshStatistics()
+    public function refreshStatistics(): void
     {
-        $this->update([
-            'covered_households_count' => $this->guardians()->count(),
-            'covered_children_count' => $this->people()->count(),
-        ]);
+        $this->updateStatistics();
     }
 
 }
