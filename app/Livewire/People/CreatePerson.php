@@ -868,19 +868,6 @@ use Carbon\Carbon;
                     'messenger_number' => $this->messenger_number,
                 ]
             );
-
-            // جدول 4: BankInfo - اطلاعات بانکی
-//            BankInfo::create([
-//                'person_id' => $person->id,
-//                'has_own_account' => (bool)$this->has_own_account,
-//                'account_owner_relation_id' => $this->account_owner_relation_id ?: null,
-//                'bank_id' => $this->bank_id ?: null,
-//                'card_number' => $this->card_number,
-//                'sheba_number' => $this->sheba_number,
-//                'subsidy_card_number' => $this->subsidy_card_number,
-//                'subsidy_sheba_number' => $this->subsidy_sheba_number,
-//            ]);
-
             if ($this->has_own_account == '1') {
                 // ذخیره اطلاعات بانکی برای مددجو
                 BankInfo::create([
