@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Livewire\People\CreatePerson;
-use App\Livewire\People\IndexPeople;
 use App\Livewire\SocialWorkers\CreateSocialWorker;
 
 Route::get('/', function () {
