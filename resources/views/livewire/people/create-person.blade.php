@@ -441,9 +441,9 @@
                         </div>
 
                         <div class="col-md-4">
-                            <label class="form-label">درآمد ماهیانه از کار</label>
+                            <label class="form-label">درآمد ماهیانه از کار (ریال)</label>
                             <input type="number" class="form-control" wire:model.blur="monthly_income" min="0"
-                                   @if($works_alongside_study != '1') disabled @endif placeholder="به تومان">
+                                   @if($works_alongside_study != '1') disabled @endif placeholder="به ریال">
                             @error('monthly_income') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
                     </div>
@@ -495,7 +495,7 @@
                         </div>
 
                         <div class="col-md-3">
-                            <label class="form-label">فرزندان از ازدواج دیگر</label>
+                            <label class="form-label">فرزندان از ازدواج قبلی</label>
                             <input type="number" class="form-control" wire:model.blur="children_from_previous_marriage"
                                    placeholder="تعداد">
                             @error('children_from_previous_marriage') <span
@@ -952,15 +952,15 @@
                         @if($residence_status_id == 2)
                             {{-- 2 برای "اجاره‌ای" --}}
                             <div class="col-md-4">
-                                <label class="form-label">مبلغ ودیعه</label>
+                                <label class="form-label">مبلغ ودیعه (ریال)</label>
                                 <input type="number" class="form-control" wire:model.blur="deposit_amount" min="0"
-                                       placeholder="به تومان">
+                                       placeholder="به ریال">
                                 @error('deposit_amount') <span class="text-danger small">{{ $message }}</span> @enderror
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">اجاره ماهیانه</label>
+                                <label class="form-label">اجاره ماهیانه (ریال)</label>
                                 <input type="number" class="form-control" wire:model.blur="monthly_rent" min="0"
-                                       placeholder="به تومان">
+                                       placeholder="به ریال">
                                 @error('monthly_rent') <span class="text-danger small">{{ $message }}</span> @enderror
                             </div>
                         @endif
@@ -993,11 +993,32 @@
                                 class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">نوع پیام‌رسان</label>
-                            <input type="text" class="form-control" wire:model.blur="messenger_type"
-                                   placeholder="مثال: تلگرام، ایتا، واتساپ">
-                            @error('messenger_type') <span class="text-danger small">{{ $message }}</span> @enderror
+                        <!-- بخش نوع پیام‌رسان -->
+                        <div class="col-md-4 mb-3">
+                            <label for="messenger_type" class="form-label">نوع پیام‌رسان (انتخابی یا تایپی)</label>
+
+                            <input wire:model="messenger_type"
+                                   type="text"
+                                   class="form-control @error('messenger_type') is-invalid @enderror"
+                                   id="messenger_type"
+                                   list="messenger_list"
+                                   placeholder="انتخاب کنید یا بنویسید...">
+
+                            <!-- لیست پیشنهادی که در زمان کلیک یا تایپ ظاهر می‌شود -->
+                            <datalist id="messenger_list">
+                                <option value="ایتا">
+                                <option value="بله">
+                                <option value="پیامک">
+                                <option value="روبیکا">
+                                <option value="سروش">
+                                <option value="شاد">
+                                <option value="تلگرام">
+                                <option value="واتس‌اپ">
+                            </datalist>
+
+                            @error('messenger_type')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         <div class="col-md-4">

@@ -375,8 +375,7 @@ use Carbon\Carbon;
                         $this->is_programmatic_guardian_lookup = false;
                     }
 
-                }
-                // منطق جدید برای مادر
+                } // منطق جدید برای مادر
                 elseif ($relationType->title === 'مادر') {
                     // کد ملی مادر و نام مادر را کپی می‌کنیم
                     $this->guardian_national_code = $this->mother_national_id;
@@ -389,8 +388,7 @@ use Carbon\Carbon;
                         $this->resetDependentGuardianFields();
                         $this->is_programmatic_guardian_lookup = false;
                     }
-                }
-                // برای سایر نسبت‌ها
+                } // برای سایر نسبت‌ها
                 else {
                     // اگر نسبت انتخاب شده "پدر" یا "مادر" نیست، تمام فیلدهای سرپرست را ریست می‌کنیم
                     $this->resetAllGuardianFields();
@@ -619,6 +617,10 @@ use Carbon\Carbon;
             }],
             'birth_month' => 'required|integer|between:1,12',
             'birth_year' => 'required|integer|between:1300,1450',
+            'father_name' => 'required|string|max:100',
+            'father_national_id' => 'nullable|digits:10',
+            'mother_national_id' => 'nullable|digits:10',
+            'phone_number' => 'nullable|string|max:11',
             'gender' => 'required|in:مرد,زن',
             'role' => 'required|in:فرزند,سرپرست',
 
@@ -626,30 +628,93 @@ use Carbon\Carbon;
             'sadaat_status' => 'required|in:عام,سادات',
             'sadaat_relation_id' => 'required_if:sadaat_status,سادات|nullable|exists:sadaat_relations,id',
 
-            // معلولیت
-            'has_disability' => 'required|boolean',
-            'disability_type_id' => 'required_if:has_disability,1|nullable|exists:disability_types,id',
+            // --- بخش 2 و 3: سرپرست ---
+            'social_worker_id' => 'required|exists:social_workers,id',
+            'guardian_relation_type_id' => 'required|exists:guardian_relation_types,id',
+            'economic_decile' => 'nullable|integer|between:1,10',
+            'remarried_parent' => 'nullable|in:none,father,mother,both',
+            'children_from_previous_marriage' => 'nullable|integer|min:0',
+            'has_parent_disability' => 'required|boolean',
+            'parent_disability_description' => 'required_if:has_parent_disability,1|nullable|string|max:500',
+
+
+            // وضعیت معلولیت
+            'has_disability' => 'required|in:0,1',
+            'disability_type_id' => [
+                'nullable',
+                Rule::requiredIf($this->has_disability == '1'),
+                'exists:disability_types,id'
+            ],
+            'disability_description' => 'nullable|string|max:500',
+
+            // مهارت‌ها و آسیب‌ها
+            'skills' => 'nullable|array',
+            'skills.*' => 'exists:skills,id', // بررسی وجود هر مهارت در دیتابیس
+            'skills_description' => 'nullable|string|max:500',
+            'harm_types' => 'nullable|array',
+            'harm_types.*' => 'exists:harm_types,id',
 
             // فایل‌ها (با رعایت پسوند و حجم)
             'profile_photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'photo_id_card' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'photo_birth_certificate' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
 
-            // --- بخش 2 و 3: سرپرست ---
-            'social_worker_id' => 'required|exists:social_workers,id',
+
             'guardian_national_code' => [
                 'required', 'string', 'digits:10',
                 // اعتبارسنجی یونیک بودن کد ملی سرپرست (اگر جدید است)
                 Rule::unique('guardians', 'national_code')->ignore($this->current_guardian_id)
             ],
 
-            // استفاده از آرایه برای Rule::requiredIf جهت خوانایی بهتر
-            'guardian_first_name' => [$this->guardian_exists_in_db ? 'nullable' : 'required', 'string', 'max:255'],
-            'guardian_last_name' => [$this->guardian_exists_in_db ? 'nullable' : 'required', 'string', 'max:255'],
-            'guardian_birth_year' => [$this->guardian_exists_in_db ? 'nullable' : 'required', 'integer', 'between:1300,1450'],
+// فیلدهای زیر اگر سرپرست در دیتابیس وجود داشته باشد (guardian_exists_in_db == true) می‌تواند nullable باشد
+            'guardian_first_name' => [$this->guardian_exists_in_db ? 'nullable' : 'required', 'string', 'max:100'],
+            'guardian_last_name' => [$this->guardian_exists_in_db ? 'nullable' : 'required', 'string', 'max:100'],
+            'guardian_phone_number' => [$this->guardian_exists_in_db ? 'nullable' : 'required', 'regex:/^09[0-9]{9}$/'],
 
-            // خودرو
+// اعتبارسنجی تاریخ تولد سرپرست
+            'guardian_birth_year' => [$this->guardian_exists_in_db ? 'nullable' : 'required', 'integer', 'between:1300,1450'],
+            'guardian_birth_month' => [$this->guardian_exists_in_db ? 'nullable' : 'required', 'integer', 'between:1,12'],
+            'guardian_birth_day' => [
+                $this->guardian_exists_in_db ? 'nullable' : 'required',
+                'integer',
+                'between:1,31',
+                function ($attribute, $value, $fail) {
+                    if (!$this->guardian_exists_in_db) {
+                        if ($this->guardian_birth_month > 6 && $this->guardian_birth_month < 12 && $value > 30) $fail('روز نمی‌تواند بیش از ۳۰ باشد.');
+                        if ($this->guardian_birth_month == 12 && $value > 29) $fail('اسفند نمی‌تواند بیش از ۲۹ روز باشد.');
+                    }
+                }
+            ],
+            'occupation_id' => 'required|exists:occupations,id',
+            'job_type_id' => 'required|exists:job_types,id',
+            'children_count' => 'required|integer|min:0',
+            'children_in_house' => 'required|integer|min:0|lte:children_count', // نباید بیشتر از تعداد کل فرزندان باشد
+            'insurance_status' => 'required|boolean',
+            'insurance_type_id' => 'required_if:insurance_status,1|nullable|exists:insurance_types,id',
+            'divorced_child_at_home' => 'required|in:none,1,2,3,more',
+            'average_income' => 'required|numeric|min:0',
+
+// اشتغال سایر اعضای خانواده
+            'any_family_employed' => 'required|boolean',
+            'any_family_employed_description' => 'required_if:any_family_employed,1|nullable|string|max:500',
+
+// خودرو
             'has_vehicle' => 'required|boolean',
             'vehicle_type_id' => 'required_if:has_vehicle,1|nullable|exists:vehicle_types,id',
+            'vehicle_ownership_type' => 'required_if:has_vehicle,1|nullable|in:personal,company,rented',
+
+
+            'residence_status_id' => 'required|exists:residence_status_types,id',
+            'district_id' => 'nullable|exists:districts,id',
+            'is_local_to_city' => 'required|boolean',
+            'deposit_amount' => 'nullable|integer|min:0',
+            'monthly_rent' => 'nullable|integer|min:0',
+            'residence_duration_years' => 'nullable|integer|min:0',
+            'address' => 'required|string|max:1000',
+            'landline_phone' => ['nullable', 'regex:/^0[1-9]{2}[0-9]{8}$/'], // تلفن ثابت با کد شهر
+            'trusted_person_phone' => ['nullable', 'regex:/^09[0-9]{9}$/'], // تلفن فرد مورد اعتماد
+            'messenger_type' => 'nullable|string|max:70',
+            'messenger_number' => ['nullable', 'required_with:messenger_type', 'regex:/^09[0-9]{9}$/'],
 
             // --- بخش 5: مالی و بانکی (اصلاح مهم) ---
             'has_own_account' => 'required|in:0,1',
@@ -657,23 +722,32 @@ use Carbon\Carbon;
             'bank_id' => 'required|exists:banks,id',
             'card_number' => 'required|string|digits:16',
             'sheba_number' => ['required', 'string', 'size:26', 'regex:/^IR[0-9]{24}$/i'],
+            'subsidy_card_number' => 'nullable|string|digits:16',
+            'subsidy_sheba_number' => 'nullable|string|max:26',
 
-            // تحصیلات
             'is_studying' => 'required|boolean',
-            'education_level_id' => 'required_if:is_studying,1|nullable|exists:education_levels,id',
-            'school_name' => 'required_if:is_studying,1|nullable|string|max:255',
+            'education_level_id' => 'nullable|exists:education_levels,id',
+            'school_name' => 'nullable|string|max:255',
+            'major' => 'nullable|string|max:255',
+            'drop_reason' => 'nullable|string|max:1000',
+            'works_alongside_study' => 'required|boolean',
+            'monthly_income' => 'nullable|integer|min:0',
 
-            // --- بخش 6: حمایت ---
-            'need_level_id' => 'required|exists:need_level_types,id',
+
             'support_organization_id' => 'nullable|exists:support_organizations,id',
             'other_organization_name' => [
                 Rule::requiredIf(fn() => $this->isOtherOrganization()),
                 'nullable', 'string', 'max:255'
             ],
+            'coverage_start_day' => 'nullable|integer|between:1,31',
+            'coverage_start_month' => 'nullable|integer|between:1,12',
+            'coverage_start_year' => 'nullable|integer|between:1300,1450',
+            'need_level_id' => 'required|exists:need_level_types,id',
         ];
     }
 
-    private function isOtherOrganization() {
+    private function isOtherOrganization()
+    {
         return $this->support_organization_id == $this->support_organizations->where('slug', 'other')->first()?->id;
     }
 
