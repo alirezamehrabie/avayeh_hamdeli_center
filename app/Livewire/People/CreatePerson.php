@@ -51,6 +51,7 @@ use Carbon\Carbon;
     public $last_name;
     public $national_id;
 
+    public $person_id = null; // اضافه کردن این خط در کنار سایر public ها
 
     public $birth_day;
     public $birth_month;
@@ -108,9 +109,8 @@ use Carbon\Carbon;
     public $guardian_birth_year;
 
     public $occupation_id;
-    public $guardian_exists_in_db = false; // وضعیت وجود سرپرست در دیتابیس
-    public $current_guardian_id = null; // ID سرپرست موجود در دیتابیس
-    // --- پراپرتی جدید برای مدیریت منطق کپی از فیلدهای پدر ---
+    public $guardian_exists_in_db = false;
+    public $current_guardian_id = null;
     public $is_programmatic_guardian_lookup = false;
 
     // سایر متغیرهای فرم که در مراحل بعدی استفاده می‌شوند
@@ -603,6 +603,79 @@ use Carbon\Carbon;
         }
     }
 
+    protected function rules()
+    {
+        return [
+            // --- بخش 1: اطلاعات فردی مددجو ---
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'national_id' => [
+                'required', 'string', 'digits:10',
+                Rule::unique('people', 'national_id')->ignore($this->person_id)
+            ],
+            'birth_day' => ['required', 'integer', 'between:1,31', function ($attribute, $value, $fail) {
+                if ($this->birth_month > 6 && $value > 30) $fail('برای نیمه دوم سال، روز نمی‌تواند ۳۱ باشد.');
+                if ($this->birth_month == 12 && $value > 29) $fail('برای اسفند، روز نمی‌تواند بیشتر از ۲۹ باشد.');
+            }],
+            'birth_month' => 'required|integer|between:1,12',
+            'birth_year' => 'required|integer|between:1300,1450',
+            'gender' => 'required|in:مرد,زن',
+            'role' => 'required|in:فرزند,سرپرست',
+
+            // سادات: فقط اگر وضعیت "سادات" باشد، نسبت اجباری است
+            'sadaat_status' => 'required|in:عام,سادات',
+            'sadaat_relation_id' => 'required_if:sadaat_status,سادات|nullable|exists:sadaat_relations,id',
+
+            // معلولیت
+            'has_disability' => 'required|boolean',
+            'disability_type_id' => 'required_if:has_disability,1|nullable|exists:disability_types,id',
+
+            // فایل‌ها (با رعایت پسوند و حجم)
+            'profile_photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'photo_id_card' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+
+            // --- بخش 2 و 3: سرپرست ---
+            'social_worker_id' => 'required|exists:social_workers,id',
+            'guardian_national_code' => [
+                'required', 'string', 'digits:10',
+                // اعتبارسنجی یونیک بودن کد ملی سرپرست (اگر جدید است)
+                Rule::unique('guardians', 'national_code')->ignore($this->current_guardian_id)
+            ],
+
+            // استفاده از آرایه برای Rule::requiredIf جهت خوانایی بهتر
+            'guardian_first_name' => [$this->guardian_exists_in_db ? 'nullable' : 'required', 'string', 'max:255'],
+            'guardian_last_name' => [$this->guardian_exists_in_db ? 'nullable' : 'required', 'string', 'max:255'],
+            'guardian_birth_year' => [$this->guardian_exists_in_db ? 'nullable' : 'required', 'integer', 'between:1300,1450'],
+
+            // خودرو
+            'has_vehicle' => 'required|boolean',
+            'vehicle_type_id' => 'required_if:has_vehicle,1|nullable|exists:vehicle_types,id',
+
+            // --- بخش 5: مالی و بانکی (اصلاح مهم) ---
+            'has_own_account' => 'required|in:0,1',
+            'account_owner_relation_id' => 'required|exists:account_owner_relations,id',
+            'bank_id' => 'required|exists:banks,id',
+            'card_number' => 'required|string|digits:16',
+            'sheba_number' => ['required', 'string', 'size:26', 'regex:/^IR[0-9]{24}$/i'],
+
+            // تحصیلات
+            'is_studying' => 'required|boolean',
+            'education_level_id' => 'required_if:is_studying,1|nullable|exists:education_levels,id',
+            'school_name' => 'required_if:is_studying,1|nullable|string|max:255',
+
+            // --- بخش 6: حمایت ---
+            'need_level_id' => 'required|exists:need_level_types,id',
+            'support_organization_id' => 'nullable|exists:support_organizations,id',
+            'other_organization_name' => [
+                Rule::requiredIf(fn() => $this->isOtherOrganization()),
+                'nullable', 'string', 'max:255'
+            ],
+        ];
+    }
+
+    private function isOtherOrganization() {
+        return $this->support_organization_id == $this->support_organizations->where('slug', 'other')->first()?->id;
+    }
 
     // --- متد Save (ذخیره نهایی) ---
     public function save()
@@ -610,119 +683,122 @@ use Carbon\Carbon;
         $isNewPerson = true;
         $this->is_submitted = true;
 
-        $this->validate([
-            // --- بخش 1: اطلاعات فردی مددجو ---
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'national_id' => 'required|string|digits:10|unique:people,national_id',
-            'birth_day' => 'required|integer|between:1,31',
-            'birth_month' => 'required|integer|between:1,12',
-            'birth_year' => 'required|integer|between:1300,1450',
-            'father_name' => 'nullable|string|max:255',
-            'father_national_id' => 'nullable|string|digits:10',
-            'mother_national_id' => 'nullable|string|digits:10',
-            'phone_number' => 'nullable|string|max:20',
-            'gender' => 'required|in:مرد,زن',
-            'role' => 'required|in:فرزند,سرپرست', // با توجه به سناریو، معمولا "فرزند" است
-
-            'sadaat_status' => 'required|in:عام,سادات',
-            'sadaat_relation_id' => 'nullable|required_if:sadaat_status,سادات|exists:sadaat_relations,id',
-
-            'has_disability' => 'required|boolean',
-            'disability_type_id' => 'nullable|required_if:has_disability,1|exists:disability_types,id',
-            'disability_description' => 'nullable|string|max:1000',
-
-            'harm_types' => 'nullable|array',
-            'harm_types.*' => 'integer|exists:harm_types,id',
-
-            'skills_description' => 'nullable|string|max:1000',
-            'skills' => 'nullable|array', // مهارت‌ها یک آرایه از ID ها هستند
-
-            'photo_id_card' => 'nullable|image|max:2048', // حداکثر 2 مگابایت
-            'photo_birth_certificate' => 'nullable|image|max:2048',
-            'support_card_image' => 'nullable|image|max:2048',
-            'profile_photo' => 'nullable|image|max:2048', // حداکثر ۲ مگابایت
-
-            // --- بخش 2: وضعیت خانوادگی ---
-            'social_worker_id' => 'required|exists:social_workers,id',
-            'guardian_relation_type_id' => 'required|exists:guardian_relation_types,id', // نسبت سرپرست با مددجو همیشه باید مشخص باشد
-            'economic_decile' => 'nullable|integer|between:1,10',
-            'remarried_parent' => 'nullable|in:none,father,mother,both',
-            'children_from_previous_marriage' => 'nullable|integer|min:0',
-            'has_parent_disability' => 'nullable|boolean',
-            'parent_disability_description' => 'nullable|string|max:1000',
-
-            // --- بخش 3: اطلاعات سرپرست و معیشت ---
-            // کد ملی سرپرست همیشه مورد نیاز است و باید در جدول Guardian یونیک باشد
-            'guardian_national_code' => [
-                'required',
-                'string',
-                'digits:10',
-                Rule::unique('guardians', 'national_code')->ignore($this->current_guardian_id),
-            ],
-            // نام، نام خانوادگی و تاریخ تولد سرپرست فقط زمانی الزامی است که سرپرست جدید باشد
-            'guardian_first_name' => Rule::requiredIf($this->guardian_exists_in_db === false) . '|string|max:255',
-            'guardian_last_name' => Rule::requiredIf($this->guardian_exists_in_db === false) . '|string|max:255',
-            'guardian_birth_day' => Rule::requiredIf($this->guardian_exists_in_db === false) . '|integer|between:1,31',
-            'guardian_birth_month' => Rule::requiredIf($this->guardian_exists_in_db === false) . '|integer|between:1,12',
-            'guardian_birth_year' => Rule::requiredIf($this->guardian_exists_in_db === false) . '|integer|between:1300,1450',
-
-            'occupation_id' => 'nullable|exists:occupations,id',
-            'job_type_id' => 'nullable|exists:job_types,id',
-            'guardian_phone_number' => 'nullable|string|max:20',
-            'children_in_house' => 'nullable|integer|min:0',
-            'insurance_status' => 'nullable|boolean',
-            'insurance_type_id' => 'nullable|required_if:insurance_status,1|exists:insurance_types,id',
-            'divorced_child_at_home' => 'nullable|string|in:none,boy,girl,both',
-            'average_income' => 'nullable|integer|min:0',
-            'any_family_employed' => 'nullable|boolean',
-            'any_family_employed_description' => 'nullable|required_if:any_family_employed,1|string|max:1000',
-            'has_vehicle' => 'nullable|boolean',
-            'vehicle_type_id' => 'nullable|required_if:has_vehicle,1|exists:vehicle_types,id',
-            'vehicle_ownership_type' => 'nullable|required_if:has_vehicle,1|in:personal,company,rented',
-
-            // --- بخش 4: اطلاعات سکونت و تماس ---
-            'residence_status_id' => 'required|exists:residence_status_types,id',
-            'district_id' => 'nullable|exists:districts,id',
-            'is_local_to_city' => 'required|boolean',
-            'deposit_amount' => 'nullable|integer|min:0',
-            'monthly_rent' => 'nullable|integer|min:0',
-            'residence_duration_years' => 'nullable|integer|min:0',
-            'address' => 'nullable|string|max:1000',
-            'personal_phone' => 'nullable|string|max:20',
-            'landline_phone' => 'nullable|string|max:20',
-            'trusted_person_phone' => 'nullable|string|max:20',
-            'messenger_type' => 'nullable|string|max:50',
-            'messenger_number' => 'nullable|string|max:50',
-
-            // --- بخش 5: مالی و تحصیلی ---
-            'has_own_account' => ['required', 'in:0,1'],
-            // اگر حساب شخصی ندارد، حتماً باید نسبت صاحب حساب مشخص شود
-            'account_owner_relation_id' => ['nullable', Rule::in([1, 2])],
-            'bank_id' => 'nullable|exists:banks,id',
-            'card_number' => 'nullable|string|digits:16',
-            'sheba_number' => 'nullable|string|max:26',
-            'subsidy_card_number' => 'nullable|string|digits:16',
-            'subsidy_sheba_number' => 'nullable|string|max:26',
-
-            'is_studying' => 'required|boolean',
-            'school_name' => 'nullable|string|max:255',
-            'major' => 'nullable|string|max:255',
-            'education_level_id' => 'nullable|exists:education_levels,id',
-            'drop_reason' => 'nullable|string|max:1000',
-            'works_alongside_study' => 'required|boolean',
-            'monthly_income' => 'nullable|integer|min:0',
-
-            // --- بخش 6: سطح نیاز و پوشش حمایتی ---
-            'support_organization_id' => 'nullable|exists:support_organizations,id',
-            'other_organization_name' => 'required_if:support_organization_id,' .
-                ($this->support_organizations->where('slug', 'other')->first()?->id ?? '0') .
-                '|nullable|string|max:255',
-            'coverage_start_day' => 'nullable|integer|between:1,31',
-            'coverage_start_month' => 'nullable|integer|between:1,12',
-            'coverage_start_year' => 'nullable|integer|between:1300,1450',
-            'need_level_id' => 'required|exists:need_level_types,id',
-        ]);
+        $validatedData = $this->validate();
+//        $this->validate([
+//            'first_name' => 'required|string|max:255',
+//            'last_name' => 'required|string|max:255',
+//            'national_id' => [
+//                'required', 'string', 'digits:10',
+//                Rule::unique('people', 'national_id')->ignore($this->person_id)
+//            ],
+//            'birth_day' => 'required|integer|between:1,31',
+//            'birth_month' => 'required|integer|between:1,12',
+//            'birth_year' => 'required|integer|between:1300,1450',
+//            'father_name' => 'nullable|string|max:255',
+//            'father_national_id' => 'nullable|string|digits:10',
+//            'mother_national_id' => 'nullable|string|digits:10',
+//            'phone_number' => 'nullable|string|max:20',
+//            'gender' => 'required|in:مرد,زن',
+//            'role' => 'required|in:فرزند,سرپرست', // با توجه به سناریو، معمولا "فرزند" است
+//
+//            'sadaat_status' => 'required|in:عام,سادات',
+//            'sadaat_relation_id' => 'nullable|required_if:sadaat_status,سادات|exists:sadaat_relations,id',
+//
+//            'has_disability' => 'required|boolean',
+//            'disability_type_id' => 'nullable|required_if:has_disability,1|exists:disability_types,id',
+//            'disability_description' => 'nullable|string|max:1000',
+//
+//            'harm_types' => 'nullable|array',
+//            'harm_types.*' => 'integer|exists:harm_types,id',
+//
+//            'skills_description' => 'nullable|string|max:1000',
+//            'skills' => 'nullable|array', // مهارت‌ها یک آرایه از ID ها هستند
+//
+//            'photo_id_card' => 'nullable|image|max:2048', // حداکثر 2 مگابایت
+//            'photo_birth_certificate' => 'nullable|image|max:2048',
+//            'support_card_image' => 'nullable|image|max:2048',
+//            'profile_photo' => 'nullable|image|max:2048', // حداکثر ۲ مگابایت
+//
+//            // --- بخش 2: وضعیت خانوادگی ---
+//            'social_worker_id' => 'required|exists:social_workers,id',
+//            'guardian_relation_type_id' => 'required|exists:guardian_relation_types,id', // نسبت سرپرست با مددجو همیشه باید مشخص باشد
+//            'economic_decile' => 'nullable|integer|between:1,10',
+//            'remarried_parent' => 'nullable|in:none,father,mother,both',
+//            'children_from_previous_marriage' => 'required_unless:remarried_parent,none|integer|min:0',
+//            'has_parent_disability' => 'nullable|boolean',
+//            'parent_disability_description' => 'nullable|string|max:1000',
+//
+//            // --- بخش 3: اطلاعات سرپرست و معیشت ---
+//            // کد ملی سرپرست همیشه مورد نیاز است و باید در جدول Guardian یونیک باشد
+//            'guardian_national_code' => [
+//                'required',
+//                'string',
+//                'digits:10',
+//                Rule::unique('guardians', 'national_code')->ignore($this->current_guardian_id),
+//            ],
+//            // نام، نام خانوادگی و تاریخ تولد سرپرست فقط زمانی الزامی است که سرپرست جدید باشد
+//            'guardian_first_name' => Rule::requiredIf($this->guardian_exists_in_db === false) . '|string|max:255',
+//            'guardian_last_name' => Rule::requiredIf($this->guardian_exists_in_db === false) . '|string|max:255',
+//            'guardian_birth_day' => Rule::requiredIf($this->guardian_exists_in_db === false) . '|integer|between:1,31',
+//            'guardian_birth_month' => Rule::requiredIf($this->guardian_exists_in_db === false) . '|integer|between:1,12',
+//            'guardian_birth_year' => Rule::requiredIf($this->guardian_exists_in_db === false) . '|integer|between:1300,1450',
+//
+//            'occupation_id' => 'nullable|exists:occupations,id',
+//            'job_type_id' => 'nullable|exists:job_types,id',
+//            'guardian_phone_number' => 'nullable|string|max:20',
+//            'children_in_house' => 'nullable|integer|min:0',
+//            'insurance_status' => 'nullable|boolean',
+//            'insurance_type_id' => 'nullable|required_if:insurance_status,1|exists:insurance_types,id',
+//            'divorced_child_at_home' => 'nullable|string|in:none,boy,girl,both',
+//            'average_income' => 'nullable|integer|min:0',
+//            'any_family_employed' => 'nullable|boolean',
+//            'any_family_employed_description' => 'nullable|required_if:any_family_employed,1|string|max:1000',
+//            'has_vehicle' => 'nullable|boolean',
+//            'vehicle_type_id' => 'nullable|required_if:has_vehicle,1|exists:vehicle_types,id',
+//            'vehicle_ownership_type' => 'nullable|required_if:has_vehicle,1|in:personal,company,rented',
+//
+//            // --- بخش 4: اطلاعات سکونت و تماس ---
+//            'residence_status_id' => 'required|exists:residence_status_types,id',
+//            'district_id' => 'nullable|exists:districts,id',
+//            'is_local_to_city' => 'required|boolean',
+//            'deposit_amount' => 'nullable|integer|min:0',
+//            'monthly_rent' => 'nullable|integer|min:0',
+//            'residence_duration_years' => 'nullable|integer|min:0',
+//            'address' => 'nullable|string|max:1000',
+//            'personal_phone' => 'nullable|string|max:20',
+//            'landline_phone' => 'nullable|string|max:20',
+//            'trusted_person_phone' => 'nullable|string|max:20',
+//            'messenger_type' => 'nullable|string|max:50',
+//            'messenger_number' => 'nullable|string|max:50',
+//
+//            // --- بخش 5: مالی و تحصیلی ---
+//            'has_own_account' => ['required', 'in:0,1'],
+//            // اگر حساب شخصی ندارد، حتماً باید نسبت صاحب حساب مشخص شود
+//            'account_owner_relation_id' => 'required_with:has_own_account|in:1,2',
+//            'bank_id' => 'nullable|exists:banks,id',
+//            'card_number' => 'nullable|string|digits:16',
+//            'sheba_number' => 'nullable|string|max:26',
+//            'subsidy_card_number' => 'nullable|string|digits:16',
+//            'subsidy_sheba_number' => 'nullable|string|max:26',
+//
+//            'is_studying' => 'required|boolean',
+//            'school_name' => 'nullable|string|max:255',
+//            'major' => 'nullable|string|max:255',
+//            'education_level_id' => 'nullable|exists:education_levels,id',
+//            'drop_reason' => 'nullable|string|max:1000',
+//            'works_alongside_study' => 'required|boolean',
+//            'monthly_income' => 'nullable|integer|min:0',
+//
+//            // --- بخش 6: سطح نیاز و پوشش حمایتی ---
+//            'support_organization_id' => 'nullable|exists:support_organizations,id',
+//            'other_organization_name' => 'required_if:support_organization_id,' .
+//                ($this->support_organizations->where('slug', 'other')->first()?->id ?? '0') .
+//                '|nullable|string|max:255',
+//            'coverage_start_day' => 'nullable|integer|between:1,31',
+//            'coverage_start_month' => 'nullable|integer|between:1,12',
+//            'coverage_start_year' => 'nullable|integer|between:1300,1450',
+//            'need_level_id' => 'required|exists:need_level_types,id',
+//        ]);
 
         DB::beginTransaction();
         try {

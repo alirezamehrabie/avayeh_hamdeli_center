@@ -885,7 +885,7 @@
                         <div class="col-md-4">
                             <label class="form-label">شماره شبا</label>
                             <input type="text" class="form-control ltr-input" wire:model.live.debounce="sheba_number"
-                                   placeholder="IRXXXXXXXXXXXXXXXXXXXXXXXX" maxlength="24">
+                                   placeholder="IRXXXXXXXXXXXXXXXXXXXXXXXX" maxlength="26">
                             @error('sheba_number') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
@@ -900,7 +900,7 @@
                         <div class="col-md-4">
                             <label class="form-label">شماره شبا یارانه</label>
                             <input type="text" class="form-control ltr-input" wire:model.blur="subsidy_sheba_number"
-                                   placeholder="IRXXXXXXXXXXXXXXXXXXXXXXXX" maxlength="24">
+                                   placeholder="IRXXXXXXXXXXXXXXXXXXXXXXXX" maxlength="26">
                             @error('subsidy_sheba_number') <span
                                 class="text-danger small">{{ $message }}</span> @enderror
                         </div>
