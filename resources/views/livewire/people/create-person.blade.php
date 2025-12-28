@@ -49,7 +49,7 @@
 
                         <div class="col-md-4">
                             <label class="form-label">کد ملی <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" maxlength="10" wire:model.live="national_id">
+                            <input type="number" class="form-control" maxlength="10" wire:model.live="national_id">
                             @error('national_id')
                                 <span class="text-danger small">{{ $message }}</span>
                             @enderror
@@ -551,7 +551,7 @@
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label">کد ملی سرپرست <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" maxlength="10"
+                            <input type="number" class="form-control" maxlength="10"
                                    wire:model.live.debounce.500ms="guardian_national_code">
                             @error('guardian_national_code') <span
                                 class="text-danger small">{{ $message }}</span> @enderror

@@ -62,13 +62,32 @@ class CreateSocialWorker extends Component
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'national_id' => 'required|string|digits:10|unique:social_workers,national_id',
-            'mobile' => 'required|string|max:11',
-            'birth_year' => 'nullable|integer|between:1300,1400',
-            'start_year' => 'nullable|integer|between:1370,1450',
+            'id_number' => 'nullable|string',
+            'mobile' => [
+                'required',
+                'regex:/^09[0-9]{9}$/',
+                Rule::unique('social_workers', 'mobile')->ignore($this->social_worker_id ?? null),
+            ],
+            // تاریخ تولد
+            'birth_year'  => 'nullable|integer|between:1320,1410',
+            'birth_month' => 'nullable|integer|between:1,12',
+            'birth_day'   => 'nullable|integer|between:1,31',
+
+
+            // تاریخ شروع همکاری
+            'start_year'  => 'nullable|integer|between:1370,1450',
+            'start_month' => 'nullable|integer|between:1,12',
+            'start_day'   => 'nullable|integer|between:1,31',
+
             'district_id' => 'nullable|exists:districts,id',
             'occupation_id' => 'nullable|exists:occupations,id',
             'academic_level_id' => 'nullable|exists:academic_levels,id',
-            'photo' => 'nullable|image|max:1024', // حداکثر 1 مگابایت
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048', // حداکثر 1 مگابایت
+
+            // --- اطلاعات همکار علی‌البدل (Substitute) ---
+            'substitute_first_name' => 'nullable|string|max:100',
+            'substitute_last_name'  => 'nullable|string|max:100',
+            'substitute_mobile'     => ['nullable', 'regex:/^09[0-9]{9}$/'],
 
         ];
     }
