@@ -45,7 +45,7 @@
                                 @error('last_name') <span class="text-danger small">{{ $message }}</span> @enderror
                             </div>
 
-                            
+
                             <div class="col-md-4">
                                 <label class="form-label">کد ملی <span class="text-danger">*</span></label>
                                 <div class="input-group">
