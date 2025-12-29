@@ -23,9 +23,6 @@ return new class extends Migration {
                 ->nullOnDelete();
 
 
-            $table->integer('economic_decile')->nullable();
-
-
             $table->enum('deceased_parent', ['father', 'mother', 'both'])->nullable();
 
             // والد مجدد ازدواج کرده

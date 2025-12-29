@@ -35,6 +35,8 @@ return new class extends Migration
             // تعداد فرزندان
             $table->unsignedInteger('children_count')->default(0);
 
+            $table->integer('economic_decile')->nullable();
+
             $table->unsignedInteger('children_in_house')
                 ->nullable();
 

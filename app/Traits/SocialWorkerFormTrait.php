@@ -6,6 +6,7 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 trait SocialWorkerFormTrait
 {
+
     // --- فیلدهای اطلاعات فردی ---
     public $first_name;
     public $last_name;

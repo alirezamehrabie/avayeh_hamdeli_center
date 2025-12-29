@@ -3,6 +3,7 @@
 namespace App\Livewire\SocialWorkers;
 
 use App\Traits\SocialWorkerFormTrait;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Models\SocialWorker;
@@ -10,7 +11,8 @@ use App\Models\District;
 use App\Models\Occupation;
 use App\Models\AcademicLevel;
 use Illuminate\Support\Facades\DB;
-
+#[AllowDynamicProperties]
+#[Layout('layouts.app')]
 class CreateSocialWorker extends Component
 {
     use WithFileUploads, SocialWorkerFormTrait;
@@ -80,6 +82,6 @@ class CreateSocialWorker extends Component
             'academicLevels' => AcademicLevel::orderBy('sort_order')->get(),
             'allDistricts' => District::orderBy('sort_order')->get(),
             'allOccupations' => Occupation::all(),
-        ])->extends('layouts.app')->section('content');
+        ]);
     }
 }

@@ -21,6 +21,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'is_admin',
+
     ];
 
     /**
@@ -44,5 +46,11 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function isAdmin()
+    {
+        // این یک مثال است، بسته به فیلدهای دیتابیس شما تغییر می‌کند
+        return $this->email === 'admin@example.com';
     }
 }

@@ -35,6 +35,7 @@ class Guardian extends Model
         'job_type_id',
         'guardian_phone_number',
         'children_count',
+        'economic_decile',
         'children_in_house',
         'insurance_status',
         'insurance_type_id',
@@ -60,6 +61,7 @@ class Guardian extends Model
         'any_family_employed' => 'boolean',
         'has_vehicle' => 'boolean',
         'average_income' => 'integer',
+        'economic_decile' => 'integer',
     ];
 
     public function people()

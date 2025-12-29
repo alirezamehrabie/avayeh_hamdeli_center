@@ -34,17 +34,12 @@
     @livewireStyles
 </head>
 <body>
+
 @include('layouts.header')
 
 <main class="container py-4">
-    @yield('content')
+    {{ $slot }}
 </main>
-
-{{-- jQuery (مورد نیاز برای persian-datepicker) --}}
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
-
-{{-- Bootstrap JS --}}
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 @stack('scripts')
 @livewireScripts

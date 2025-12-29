@@ -49,7 +49,7 @@
 
                         <div class="col-md-4">
                             <label class="form-label">کد ملی <span class="text-danger">*</span></label>
-                            <input type="number" class="form-control" maxlength="10" wire:model.live="national_id">
+                            <input type="text" class="form-control" maxlength="10" wire:model.live="national_id">
                             @error('national_id')
                                 <span class="text-danger small">{{ $message }}</span>
                             @enderror
@@ -466,17 +466,6 @@
                                 class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">دهک اقتصادی</label>
-                            <select class="form-select" wire:model.blur="economic_decile">
-                                <option value="">— انتخاب کنید —</option>
-                                @foreach($deciles as $key => $label)
-                                    <option value="{{ $key }}">{{ $label }}</option>
-                                @endforeach
-                            </select>
-                            @error('economic_decile') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
 
                         {{-- remarried_parent --}}
                         <div class="col-md-4 mb-3">
@@ -551,7 +540,7 @@
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label">کد ملی سرپرست <span class="text-danger">*</span></label>
-                            <input type="number" class="form-control" maxlength="10"
+                            <input type="text" class="form-control" maxlength="10"
                                    wire:model.live.debounce.500ms="guardian_national_code">
                             @error('guardian_national_code') <span
                                 class="text-danger small">{{ $message }}</span> @enderror
@@ -672,6 +661,17 @@
                                    maxlength="11">
                             @error('guardian_phone_number') <span
                                 class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">دهک اقتصادی</label>
+                            <select wire:model="guardian.economic_decile" class="form-select">
+                                <option value="">انتخاب کنید...</option>
+                                @for ($i = 1; $i <= 10; $i++)
+                                    <option value="{{ $i }}">دهک {{ $i }}</option>
+                                @endfor
+                            </select>
+                            @error('guardian.economic_decile') <span class="text-danger">{{ $message }}</span> @enderror
                         </div>
 
 

@@ -13,7 +13,6 @@ class FamilyStatus extends Model
     protected $fillable = [
         'person_id',
         'guardian_relation_type_id',
-        'economic_decile',
         'remarried_parent',
         'children_from_previous_marriage',
         'has_parent_disability',
@@ -21,7 +20,6 @@ class FamilyStatus extends Model
     ];
 
     protected $casts = [
-        'economic_decile' => 'integer',
         'has_parent_disability' => 'boolean',
     ];
 
