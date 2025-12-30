@@ -137,15 +137,17 @@ class SocialWorker extends Model
 
             $harmTypeIds = $person->harmTypes->pluck('id')->toArray();
 
+            $shouldExcludeFather = in_array(1, $harmTypeIds) || in_array(7, $harmTypeIds) || in_array(5, $harmTypeIds);
             // ب) بررسی وضعیت پدر (اگر فوت پدر ID=1 یا فرزند طلاق ID=7 نباشد)
-            if (!in_array(1, $harmTypeIds) && !in_array(7, $harmTypeIds)) {
+            if (!$shouldExcludeFather) {
                 if ($person->father_national_id) {
                     $uniqueNationalIds->push($person->father_national_id);
                 }
             }
 
+            $shouldExcludeMother = in_array(2, $harmTypeIds) || in_array(5, $harmTypeIds);
             // ج) بررسی وضعیت مادر (اگر فوت مادر ID=2 نباشد)
-            if (!in_array(2, $harmTypeIds)) {
+            if (!$shouldExcludeMother) {
                 if ($person->mother_national_id) {
                     $uniqueNationalIds->push($person->mother_national_id);
                 }
