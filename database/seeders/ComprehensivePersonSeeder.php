@@ -92,8 +92,7 @@ class ComprehensivePersonSeeder extends Seeder
                 'occupation_id' => Occupation::inRandomOrder()->first()->id,
                 'district_id' => District::inRandomOrder()->first()->id,
                 'academic_level_id' => AcademicLevel::inRandomOrder()->first()->id,
-
-                // اطلاعات همکار علی‌البدل
+                
                 'substitute_first_name' => $faker->optional(1)->firstName(),
                 'substitute_last_name'  => $faker->optional(1)->lastName(),
                 'substitute_mobile'     => $faker->optional(1)->phoneNumber(),
