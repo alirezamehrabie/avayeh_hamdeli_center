@@ -3,13 +3,19 @@
         <h1 class="text-2xl font-bold text-gray-800 mb-6">خلاصه وضعیت مرکز</h1>
 
         <!-- Grid برای ویجت‌ها -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
 
             <livewire:admin.dashboard.stat-card
                 title="کل مددجویان"
                 :value="$totalPeople"
                 color="blue"
                 icon="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+
+            <livewire:admin.dashboard.stat-card
+                title="تعداد سرپرست (خانوار)"
+                :value="$guardianCount"
+                color="black"
+                icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
 
             <livewire:admin.dashboard.stat-card
                 title="مددکاران اجتماعی"
@@ -26,7 +32,7 @@
             <livewire:admin.dashboard.stat-card
                 title="تعداد آقایان"
                 :value="$maleCount"
-                color="indigo"
+                color="purple"
                 icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
 
         </div>
@@ -46,6 +52,7 @@
                         <thead>
                         <tr class="bg-gray-50 border-b border-gray-100">
                             <th class="p-4 text-sm font-semibold text-gray-600">کد مددجویی</th>
+                            <th class="p-4 text-sm font-semibold text-gray-600">کد خانوار</th>
                             <th class="p-4 text-sm font-semibold text-gray-600">نام</th>
                             <th class="p-4 text-sm font-semibold text-gray-600">نام خانوادگی</th>
                             <th class="p-4 text-sm font-semibold text-gray-600">نام پدر</th>
@@ -58,6 +65,7 @@
                         @forelse($latestPeople as $person)
                             <tr class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                                 <td class="p-4 text-sm text-gray-700 font-mono">{{ $person->person_code }}</td>
+                                <td class="p-4 text-sm text-gray-700 font-mono">{{ $person->guardian->guardian_code }}</td>
                                 <td class="p-4 text-sm text-gray-700">{{ $person->first_name }}</td>
                                 <td class="p-4 text-sm text-gray-700">{{ $person->last_name }}</td>
                                 <td class="p-4 text-sm text-gray-700">{{ $person->father_name }}</td>

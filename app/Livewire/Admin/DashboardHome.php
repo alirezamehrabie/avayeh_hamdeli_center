@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Models\Guardian;
 use App\Models\Person;
 use App\Models\SocialWorker;
 use Livewire\Component;
@@ -17,8 +18,9 @@ class DashboardHome extends Component
             'totalPeople' => Person::count(),
             'totalSocialWorkers' => SocialWorker::count(),
             // فرض بر این است که فیلد gender در مدل Person دارید
-            'maleCount' => Person::where('gender', 'male')->count(),
-            'femaleCount' => Person::where('gender', 'female')->count(),
+            'maleCount' => Person::where('gender', 'مرد')->count(),
+            'femaleCount' => Person::where('gender', 'زن')->count(),
+            'guardianCount' => Guardian::count(),
             'latestPeople' => Person::with(['guardian.socialWorker']) // لود کردن زنجیره‌ای روابط
             ->latest()
                 ->take(50)
