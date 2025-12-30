@@ -481,6 +481,7 @@ class CreatePerson extends Component
         $this->any_family_employed_description = $guardian->any_family_employed_description;
         $this->average_income = $guardian->average_income;
         $this->vehicle_type_id = $guardian->vehicle_type_id;
+        $this->vehicle_ownership_type = $guardian->vehicle_ownership_type;
 
         // فیلدهای بولی (Boolean) یا فیلدهای مورد استفاده در رادیو باتن باید به رشته تبدیل شوند
         $this->insurance_status = (bool)$guardian->insurance_status;

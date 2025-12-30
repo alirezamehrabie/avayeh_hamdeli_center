@@ -116,7 +116,7 @@ class ComprehensivePersonSeeder extends Seeder
 
             // ابتدا وضعیت‌های منطقی را تعیین می‌کنیم
             $isInsured = $faker->boolean(70); // ۷۰ درصد احتمال دارد بیمه باشد
-            $hasVehicle = $faker->boolean(30); // ۳۰ درصد احتمال دارد خودرو داشته باشد
+            $hasVehicle = $faker->boolean(90); // ۳۰ درصد احتمال دارد خودرو داشته باشد
             $hasEmployedFamily = $faker->boolean(50);
 
             // الف) ایجاد سرپرست (Guardian)
@@ -151,6 +151,7 @@ class ComprehensivePersonSeeder extends Seeder
                 // --- منطق شرطی خودرو ---
                 'has_vehicle' => $hasVehicle,
                 'vehicle_type_id' => $hasVehicle ? VehicleType::inRandomOrder()->first()->id : null,
+                'vehicle_ownership_type' => $hasVehicle ? $faker->randomElement(['personal', 'company' , 'rented']) : null,
             ]);
 
             // ب) اطلاعات سکونت و تماس (متصل به سرپرست)
