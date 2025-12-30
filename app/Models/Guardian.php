@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Morilog\Jalali\Jalalian;
 use Illuminate\Support\Facades\DB;
 
 class Guardian extends Model
@@ -34,8 +33,8 @@ class Guardian extends Model
         'occupation_id',
         'job_type_id',
         'guardian_phone_number',
-        'children_count',
         'economic_decile',
+        'children_count',
         'children_in_house',
         'insurance_status',
         'insurance_type_id',
@@ -55,13 +54,13 @@ class Guardian extends Model
         'guardian_birth_day' => 'integer',
         'guardian_birth_month' => 'integer',
         'guardian_birth_year' => 'integer',
+        'economic_decile' => 'integer',
         'children_count' => 'integer',
         'children_in_house' => 'integer',
         'insurance_status' => 'boolean',
         'any_family_employed' => 'boolean',
         'has_vehicle' => 'boolean',
         'average_income' => 'integer',
-        'economic_decile' => 'integer',
     ];
 
     public function people()

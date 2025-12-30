@@ -16,8 +16,6 @@ class SocialWorker extends Model
         'worker_code',
         'first_name',
         'last_name',
-        'full_name',
-        // 'full_name', // اگر مجازی باشد در fillable نیازی نیست، اما اگر معمولی باشد اضافه شود
         'birth_day',
         'birth_month',
         'birth_year',
@@ -40,6 +38,10 @@ class SocialWorker extends Model
         'substitute_first_name',
         'substitute_last_name',
         'substitute_mobile',
+    ];
+
+    protected $guarded = [
+        'full_name',
     ];
 
 

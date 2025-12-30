@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('academic_levels', function (Blueprint $blueprint) {
-            $blueprint->tinyIncrements('id'); // Primary Key (1-byte)
-            $blueprint->string('title');      // عنوان مقطع
-            $blueprint->unsignedTinyInteger('sort_order')->default(0); // برای ترتیب نمایش
-            $blueprint->timestamps();
+        Schema::create('academic_levels', function (Blueprint $table) {
+            $table->id('id'); // Primary Key (1-byte)
+            $table->string('title');      // عنوان مقطع
+            $table->unsignedTinyInteger('sort_order')->default(0); // برای ترتیب نمایش
+            $table->timestamps();
         });
     }
 

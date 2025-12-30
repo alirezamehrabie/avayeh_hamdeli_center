@@ -415,6 +415,7 @@ class CreatePerson extends Component
         $this->occupation_id = null;
         $this->job_type_id = null;
         $this->children_count = null;
+        $this->economic_decile = null;
         $this->children_in_house = null;
         $this->insurance_status = '0';
         $this->insurance_type_id = null;
@@ -473,6 +474,7 @@ class CreatePerson extends Component
         $this->occupation_id = $guardian->occupation_id;
         $this->job_type_id = $guardian->job_type_id;
         $this->children_count = $guardian->children_count;
+        $this->economic_decile = $guardian->economic_decile;
         $this->children_in_house = $guardian->children_in_house;
         $this->insurance_type_id = $guardian->insurance_type_id;
         $this->divorced_child_at_home = $guardian->divorced_child_at_home;
@@ -481,9 +483,9 @@ class CreatePerson extends Component
         $this->vehicle_type_id = $guardian->vehicle_type_id;
 
         // فیلدهای بولی (Boolean) یا فیلدهای مورد استفاده در رادیو باتن باید به رشته تبدیل شوند
-        $this->insurance_status = (string)$guardian->insurance_status;
-        $this->any_family_employed = (string)$guardian->any_family_employed;
-        $this->has_vehicle = (string)$guardian->has_vehicle;
+        $this->insurance_status = (bool)$guardian->insurance_status;
+        $this->any_family_employed = (bool)$guardian->any_family_employed;
+        $this->has_vehicle = (bool)$guardian->has_vehicle;
         $this->social_worker_id = $guardian->social_worker_id;
         $this->allow_change_social_worker = false; // همیشه بعد از جستجو قفل بماند
 

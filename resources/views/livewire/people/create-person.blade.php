@@ -665,11 +665,11 @@
 
                         <div class="col-md-4">
                             <label class="form-label">دهک اقتصادی</label>
-                            <select wire:model="guardian.economic_decile" class="form-select">
+                            <select wire:model="economic_decile" class="form-control">
                                 <option value="">انتخاب کنید...</option>
-                                @for ($i = 1; $i <= 10; $i++)
-                                    <option value="{{ $i }}">دهک {{ $i }}</option>
-                                @endfor
+                                @foreach($deciles as $key => $value)
+                                    <option value="{{ $key }}">{{ $value }}</option>
+                                @endforeach
                             </select>
                             @error('guardian.economic_decile') <span class="text-danger">{{ $message }}</span> @enderror
                         </div>

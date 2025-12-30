@@ -42,7 +42,6 @@ class CreateSocialWorker extends Component
                 'worker_code' => SocialWorker::generateNextWorkerCode(),
                 'first_name' => $this->first_name,
                 'last_name' => $this->last_name,
-                'full_name' => trim("{$this->first_name} {$this->last_name}"),
                 'national_id' => $this->national_id,
                 'id_number' => $this->id_number,
                 'birth_day' => $this->birth_day,

@@ -44,7 +44,6 @@ class EditSocialWorker extends Component
             $this->socialWorker->update([
                 'first_name' => $this->first_name,
                 'last_name' => $this->last_name,
-                'full_name' => trim("{$this->first_name} {$this->last_name}"),
                 'national_id' => $this->national_id,
                 'id_number' => $this->id_number,
                 'mobile' => $this->mobile,
