@@ -236,6 +236,7 @@ class ComprehensivePersonSeeder extends Seeder
                 SupportCoverage::create([
                     'person_id' => $person->id,
                     'support_organization_id' => SupportOrganization::inRandomOrder()->first()->id,
+                    'other_organization_name' => $faker->company(),
                     'coverage_start_year' => $faker->numberBetween(1300, 1405),
                     'coverage_start_month' => $faker->numberBetween(1, 12),
                     'coverage_start_day' => $faker->numberBetween(1, 31),
