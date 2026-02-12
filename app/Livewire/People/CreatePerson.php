@@ -75,13 +75,19 @@ class CreatePerson extends Component
     public $photo_id_card;
     public $photo_birth_certificate;
 
+
     public $profile_photo;          // برای آپلود فایل (Temporary Uploaded File)
     public $captured_photo_base64; // برای ذخیره رشته تصویر دوربین (Base64)
 
+    public $existing_photo_id_card = null;       // مسیر تصویر کارت ملی ذخیره شده
+    public $existing_photo_birth_certificate = null; // (اختیاری) برای شناسنامه هم
+    public $existing_profile_photo = null;           // (اختیاری) برای عکس پروفایل هم
+
     public $captured_id_card_base64;          // برای تصویر دوربین کارت ملی
+    public $captured_support_card_base64;
     public $captured_birth_certificate_base64;
     // معلولیت (پیش‌فرض 0 یا رشته '0' برای رادیو)
-    public $has_disability = '0';
+    public $has_disability = 0;
     public $disability_type_id;
     public $disability_description;
     public $skills_description;
@@ -198,8 +204,14 @@ class CreatePerson extends Component
     public $educationLevels;
     public $needLevelTypes;
 
-    public function mount()
+    public ?Person $person = null;
+    public string $mode;
+
+    public function mount(string $mode, ?Person $person = null)
     {
+        $this->person = $person;
+        $this->mode = $mode;
+
         $this->guardian = Guardian::with('bankInfo')->where('national_code', $this->guardian_national_code)->first();
         $this->sadaatRelations = SadaatRelation::orderBy('sort_order')->get();
         $this->allSkills = Skill::all();
@@ -225,6 +237,98 @@ class CreatePerson extends Component
             '1' => 'دهک ۱', '2' => 'دهک ۲', '3' => 'دهک ۳', '4' => 'دهک ۴', '5' => 'دهک ۵',
             '6' => 'دهک ۶', '7' => 'دهک ۷', '8' => 'دهک ۸', '9' => 'دهک ۹', '10' => 'دهک ۱۰',
         ];
+
+
+
+        if ($this->mode == "edit" && $person) {
+            $this->person_id = $person->id;
+            $this->first_name = $this->person->first_name;
+            $this->last_name = $this->person->last_name;
+            $this->national_id = $this->person->national_id;
+            $this->birth_day = $this->person->birth_day;
+            $this->birth_month = $this->person->birth_month;
+            $this->birth_year = $this->person->birth_year;
+            $this->father_name = $this->person->father_name;
+            $this->father_national_id = $this->person->father_national_id;
+            $this->mother_national_id = $this->person->mother_national_id;
+            $this->phone_number = $this->person->phone_number;
+            $this->gender = $this->person->gender;
+            $this->role = $this->person->role;
+            $this->sadaat_status = $this->person->sadaat_status;
+            $this->sadaat_relation_id = $this->person->sadaat_relation_id;
+            $this->has_disability = (int)$this->person->has_disability;
+            if($this->has_disability) {
+                $this->disability_type_id = $this->person->disability_type_id;
+                $this->disability_description = $this->person->disability_description;
+            }
+            $this->skills_description = $this->person->skills_description;
+
+            $this->existing_photo_id_card = $this->person->photo_id_card;
+            $this->existing_photo_birth_certificate = $this->person->photo_birth_certificate;
+            $this->existing_profile_photo = $this->person->profile_photo;
+
+
+            if($this->person->education())
+            {
+                $this->is_studying = $this->person->education->is_studying;
+                $this->school_name = $this->person->education->school_name;
+                $this->education_level_id = $this->person->education->education_level_id;
+                $this->major = $this->person->education->major;
+                $this->drop_reason = $this->person->education->drop_reason;
+                $this->works_alongside_study = $this->person->education->works_alongside_study;
+                $this->monthly_income = $this->person->education->monthly_income;
+            }
+
+            if($this->person->familyStatus())
+            {
+                $this->guardian_relation_type_id = $this->person->familyStatus->guardian_relation_type_id;
+                $this->remarried_parent = $this->person->familyStatus->remarried_parent;
+                $this->children_from_previous_marriage = $this->person->familyStatus->children_from_previous_marriage;
+            }
+
+
+            if($this->person->guardian()){
+                $this->guardian_national_code = $this->person->guardian->national_code;
+                $this->_populateGuardianFieldsFromModel($this->person->guardian);
+            }
+
+            if($this->person->harmTypes()){
+                $this->harm_types = $this->person->harmTypes()->pluck('harm_types.id')->map(fn($id) => (string)$id)->toArray();
+            }
+
+            if($this->person->skills())
+            {
+                $this->skills = $this->person->skills()->pluck('id')->toArray();
+            }
+
+            if ($this->person->bankInfo)
+            {
+                $this->has_own_account = (bool) $this->person->bankInfo->has_own_account;
+                $this->updateBankInfoFromGuardian();
+            }
+            else
+            {
+                $this->has_own_account = 0; // مقدار پیش‌فرض
+                $this->account_owner_relation_id = 2;
+                $this->updateBankInfoFromGuardian();
+            }
+
+
+
+            if($this->person->supportCoverage())
+            {
+                $this->support_organization_id = $this->person->supportCoverage->support_organization_id;
+                $this->coverage_start_day = $this->person->supportCoverage->coverage_start_day;
+                $this->coverage_start_month = $this->person->supportCoverage->coverage_start_month;
+                $this->coverage_start_year = $this->person->supportCoverage->coverage_start_year;
+
+            }
+
+
+            if($this->person->needsLevel()){
+                $this->need_level_id = $this->person->needsLevel->need_level_id;
+            }
+        }
     }
 
     public function updatedCardNumber($value)
@@ -512,13 +616,32 @@ class CreatePerson extends Component
             $this->messenger_number = $contact->messenger_number;
         }
 
-        if ($this->has_own_account == '0' && $guardian->bankInfo) {
-            $this->bank_id = $guardian->bankInfo->bank_id;
-            $this->card_number = $guardian->bankInfo->card_number;
-            $this->sheba_number = $guardian->bankInfo->sheba_number;
-            $this->subsidy_card_number = $guardian->bankInfo->subsidy_card_number;
-            $this->subsidy_sheba_number = $guardian->bankInfo->subsidy_sheba_number;
+        // واکشی اطلاعات بانکی مددجو
+        if ($this->person->bankInfo) {
+            // تشخیص has_own_account از روی account_owner_relation_id
+            // فرض: ID=1 یعنی خود مددجو، ID=2 یعنی سرپرست
+            $this->has_own_account = ($this->person->bankInfo->account_owner_relation_id == 1) ? '1' : '0';
+            $this->account_owner_relation_id = $this->person->bankInfo->account_owner_relation_id;
+
+            // در هر دو حالت، اطلاعات بانکی را از person->bankInfo می‌گیریم
+            $this->bank_id = $this->person->bankInfo->bank_id;
+            $this->card_number = $this->person->bankInfo->card_number;
+            $this->sheba_number = $this->person->bankInfo->sheba_number;
+            $this->subsidy_card_number = $this->person->bankInfo->subsidy_card_number;
+            $this->subsidy_sheba_number = $this->person->bankInfo->subsidy_sheba_number;
+            $this->other_account_owner_relation = $this->person->bankInfo->other_account_owner_relation;
+        } elseif ($this->has_own_account == '0' && $this->person->guardian && $this->person->guardian->bankInfo) {
+            // اگر مددجو اطلاعات بانکی ندارد ولی سرپرست دارد، از سرپرست استفاده می‌کنیم
+            $this->has_own_account = '0';
+            $this->account_owner_relation_id = 2; // سرپرست
+            $this->bank_id = $this->person->guardian->bankInfo->bank_id;
+            $this->card_number = $this->person->guardian->bankInfo->card_number;
+            $this->sheba_number = $this->person->guardian->bankInfo->sheba_number;
+            $this->subsidy_card_number = $this->person->guardian->bankInfo->subsidy_card_number;
+            $this->subsidy_sheba_number = $this->person->guardian->bankInfo->subsidy_sheba_number;
         }
+
+
     }
 
 
@@ -613,7 +736,9 @@ class CreatePerson extends Component
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'national_id' => [
-                'required', 'string', 'digits:10',
+                'required',
+                'string',
+                'digits:10',
                 Rule::unique('people', 'national_id')->ignore($this->person_id)
             ],
             'birth_day' => ['required', 'integer', 'between:1,31', function ($attribute, $value, $fail) {
@@ -758,26 +883,22 @@ class CreatePerson extends Component
     // --- متد Save (ذخیره نهایی) ---
     public function save()
     {
-        $isNewPerson = true;
         $this->is_submitted = true;
-
         $validatedData = $this->validate();
 
         DB::beginTransaction();
         try {
-
-            // ۱. پردازش تمام تصاویر در یک جا (با استفاده از متد هوشمند شما)
+            // ۱. پردازش تمام تصاویر
             $profilePhotoPath = $this->processImage($this->profile_photo, $this->captured_photo_base64, 'profile_photos');
             $idCardPath = $this->processImage($this->photo_id_card, $this->captured_id_card_base64, 'photo_id_card');
             $birthCertPath = $this->processImage($this->photo_birth_certificate, $this->captured_birth_certificate_base64, 'photo_birth_certificate');
-            $supportCardPath = $this->processImage($this->support_card_image, null, 'support_card_image');
-
+            $supportCardPath = $this->processImage($this->support_card_image, $this->captured_support_card_base64, 'support_card_image');
             // --- 2. آماده‌سازی تاریخ‌های کامل شمسی ---
             $personBirthDateFull = sprintf('%04d/%02d/%02d', $this->birth_year, $this->birth_month, $this->birth_day);
 
             $guardianBirthDateFull = null;
             if ($this->guardian_birth_year && $this->guardian_birth_month && $this->guardian_birth_day) {
-                $guardianBirthDateFull = sprintf('%04d/%02d/%02d', $this->guardian_birth_year, $this->guardian_birth_month, $this->guardian_birth_day);
+                $guardianBirthDateFull = sprintf('%04d/%02d/%02d', $this->guardian_birth_year, $this->guardian_birth_month, $this->guardian_birth_year);
             }
 
             $coverageDateFull = null;
@@ -785,145 +906,372 @@ class CreatePerson extends Component
                 $coverageDateFull = sprintf('%04d/%02d/%02d', $this->coverage_start_year, $this->coverage_start_month, $this->coverage_start_day);
             }
 
-            // --- 3. مدیریت سرپرست (ایجاد یا به‌روزرسانی) ---
-            $guardian_id_to_assign = null;
-            $guardianInstance = null; // برای نگهداری مدل Guardian
+            // ========================================
+            // حالت ویرایش (Edit Mode)
+            // ========================================
+            if ($this->mode == "edit") {
 
-            if ($this->guardian_exists_in_db && $this->current_guardian_id) {
-                $guardianInstance = Guardian::find($this->current_guardian_id);
+                // --- 3. مدیریت سرپرست (ایجاد یا به‌روزرسانی) ---
+                $guardianInstance = null;
+                $oldGuardianId = $this->person->guardian_id;
 
-                if (!$guardianInstance) {
-                    throw new \Exception("Existing guardian with ID {$this->current_guardian_id} not found.");
+                if ($this->guardian_exists_in_db && $this->current_guardian_id) {
+                    // سرپرست موجود در دیتابیس
+                    $guardianInstance = Guardian::find($this->current_guardian_id);
+                    if (!$guardianInstance) {
+                        throw new \Exception("سرپرست با شناسه {$this->current_guardian_id} یافت نشد.");
+                    }
+                } else {
+                    // ایجاد سرپرست جدید
+                    $guardianInstance = Guardian::create([
+                        'social_worker_id' => $this->social_worker_id,
+                        'guardian_code' => Guardian::generateNextGuardianCode(),
+                        'national_code' => $this->guardian_national_code,
+                        'first_name' => $this->guardian_first_name,
+                        'last_name' => $this->guardian_last_name,
+                        'guardian_birth_day' => $this->guardian_birth_day,
+                        'guardian_birth_month' => $this->guardian_birth_month,
+                        'guardian_birth_year' => $this->guardian_birth_year,
+                        'guardian_birth_date_full' => $guardianBirthDateFull,
+                        'children_count' => 0,
+                        'economic_decile' => $this->economic_decile ?: null,
+                    ]);
                 }
-            } else {
-                // اگر سرپرست جدید است، آن را ایجاد می‌کنیم
-                $guardianInstance = Guardian::create([
-                    'social_worker_id' => $this->social_worker_id,
-                    'guardian_code' => Guardian::generateNextGuardianCode(),
-                    'national_code' => $this->guardian_national_code,
-                    'first_name' => $this->guardian_first_name,
-                    'last_name' => $this->guardian_last_name,
-                    'guardian_birth_day' => $this->guardian_birth_day,
-                    'guardian_birth_month' => $this->guardian_birth_month,
-                    'guardian_birth_year' => $this->guardian_birth_year,
-                    'guardian_birth_date_full' => $guardianBirthDateFull,
-                    'children_count' => 0,
-                    'economic_decile' => $this->economic_decile ?: null,
-                ]);
-            }
-            $guardian_id_to_assign = $guardianInstance->id;
 
-            // اطلاعات معیشت و سایر جزئیات سرپرست را روی Guardian Instance به‌روز می‌کنیم.
-            // این بخش برای سرپرست جدید (که تازه ساخته شده) و سرپرست موجود (که از دیتابیس بازیابی شده) مشترک است.
-            if ($guardianInstance) {
+                // به‌روزرسانی اطلاعات سرپرست
                 $guardianInstance->update([
                     'social_worker_id' => $this->social_worker_id,
                     'occupation_id' => $this->occupation_id,
                     'job_type_id' => $this->job_type_id ?: null,
                     'guardian_phone_number' => $this->guardian_phone_number,
                     'children_in_house' => (int)$this->children_in_house,
-                    'insurance_status' => (bool)$this->insurance_status, // تبدیل به boolean
+                    'insurance_status' => (bool)$this->insurance_status,
                     'insurance_type_id' => ((bool)$this->insurance_status) ? $this->insurance_type_id : null,
                     'divorced_child_at_home' => $this->divorced_child_at_home ?: 'none',
                     'average_income' => (int)$this->average_income,
                     'any_family_employed' => (bool)$this->any_family_employed,
                     'any_family_employed_description' => ((bool)$this->any_family_employed) ? $this->any_family_employed_description : null,
-                    'has_vehicle' => (bool)$this->has_vehicle, // تبدیل به boolean
+                    'has_vehicle' => (bool)$this->has_vehicle,
                     'vehicle_type_id' => ((bool)$this->has_vehicle) ? $this->vehicle_type_id : null,
                     'vehicle_ownership_type' => ((bool)$this->has_vehicle) ? $this->vehicle_ownership_type : null,
                 ]);
-            } else {
-                // اگر به هر دلیلی Guardian Instance ایجاد یا بازیابی نشد، خطا صادر می‌کنیم
-                throw new \Exception("Failed to retrieve or create guardian instance for ID: " . ($this->current_guardian_id ?? 'new'));
-            }
 
+                // مدیریت تغییر سرپرست (کاهش/افزایش children_count)
+                if ($oldGuardianId != $guardianInstance->id) {
+                    // کاهش تعداد فرزندان سرپرست قبلی
+                    if ($oldGuardianId) {
+                        $oldGuardian = Guardian::find($oldGuardianId);
+                        if ($oldGuardian && $oldGuardian->children_count > 0) {
+                            $oldGuardian->decrement('children_count');
+                        }
+                    }
+                    // افزایش تعداد فرزندان سرپرست جدید
+                    $guardianInstance->increment('children_count');
+                }
 
-            // --- 4. ذخیره در جداول دیگر ---
+                // --- 4. به‌روزرسانی اطلاعات مددجو (Person) ---
+                $personUpdateData = [
+                    'first_name' => $this->first_name,
+                    'last_name' => $this->last_name,
+                    'national_id' => $this->national_id,
+                    'birth_day' => $this->birth_day,
+                    'birth_month' => $this->birth_month,
+                    'birth_year' => $this->birth_year,
+                    'birth_date_full' => $personBirthDateFull,
+                    'father_name' => $this->father_name,
+                    'father_national_id' => $this->father_national_id,
+                    'mother_national_id' => $this->mother_national_id,
+                    'phone_number' => $this->phone_number,
+                    'gender' => $this->gender,
+                    'role' => $this->role,
+                    'sadaat_status' => $this->sadaat_status,
+                    'sadaat_relation_id' => ($this->sadaat_status === 'سادات') ? $this->sadaat_relation_id : null,
+                    'skills_description' => $this->skills_description,
+                    'has_disability' => (bool)$this->has_disability,
+                    'disability_type_id' => ((bool)$this->has_disability) ? $this->disability_type_id : null,
+                    'disability_description' => ((bool)$this->has_disability) ? $this->disability_description : null,
+                    'guardian_id' => $guardianInstance->id,
+                ];
 
-            // جدول 1: Person - اطلاعات فردی مددجو
-            $person = Person::create([
-                'first_name' => $this->first_name,
-                'last_name' => $this->last_name,
-                'national_id' => $this->national_id,
-                'birth_day' => $this->birth_day,
-                'birth_month' => $this->birth_month,
-                'birth_year' => $this->birth_year,
-                'birth_date_full' => $personBirthDateFull,
-                'father_name' => $this->father_name,
-                'father_national_id' => $this->father_national_id,
-                'mother_national_id' => $this->mother_national_id,
-                'phone_number' => $this->phone_number,
-                'gender' => $this->gender,
-                'role' => $this->role,
-                'sadaat_status' => $this->sadaat_status,
-                'sadaat_relation_id' => ($this->sadaat_status === 'سادات') ? $this->sadaat_relation_id : null,
-                'skills_description' => $this->skills_description,
-                'profile_photo' => $profilePhotoPath,
-                'photo_id_card' => $idCardPath,
-                'photo_birth_certificate' => $birthCertPath,
-                'has_disability' => (bool)$this->has_disability, // تبدیل به boolean
-                'disability_type_id' => ((bool)$this->has_disability) ? $this->disability_type_id : null,
-                'disability_description' => ((bool)$this->has_disability) ? $this->disability_description : null,
-                'guardian_id' => $guardian_id_to_assign, // اختصاص Guardian ID به Person
-            ]);
+                // فقط در صورت آپلود تصویر جدید، مسیر را به‌روز کن
+                if ($profilePhotoPath) {
+                    $personUpdateData['profile_photo'] = $profilePhotoPath;
+                }
+                if ($idCardPath) {
+                    $personUpdateData['photo_id_card'] = $idCardPath;
+                }
+                if ($birthCertPath) {
+                    $personUpdateData['photo_birth_certificate'] = $birthCertPath;
+                }
 
-            if ($isNewPerson) {
-                $guardianInstance->increment('children_count');
-            }
+                $this->person->update($personUpdateData);
 
-            // جدول 2: FamilyStatus - وضعیت خانوادگی مددجو
-            FamilyStatus::create([
-                'person_id' => $person->id,
-                'guardian_relation_type_id' => $this->guardian_relation_type_id,
-                'remarried_parent' => $this->remarried_parent,
-                'children_from_previous_marriage' => (int)$this->children_from_previous_marriage,
-                'has_parent_disability' => (bool)$this->has_parent_disability, // تبدیل به boolean
-                'parent_disability_description' => ((bool)$this->has_parent_disability) ? $this->parent_disability_description : null,
-            ]);
+                // --- 5. به‌روزرسانی وضعیت خانوادگی (FamilyStatus) ---
+                $this->person->familyStatus()->updateOrCreate(
+                    ['person_id' => $this->person->id],
+                    [
+                        'guardian_relation_type_id' => $this->guardian_relation_type_id,
+                        'remarried_parent' => $this->remarried_parent,
+                        'children_from_previous_marriage' => (int)$this->children_from_previous_marriage,
+                        'has_parent_disability' => (bool)$this->has_parent_disability,
+                        'parent_disability_description' => ((bool)$this->has_parent_disability) ? $this->parent_disability_description : null,
+                    ]
+                );
 
-            // جدول 3: Residence - اطلاعات سکونت و تماس
-            \App\Models\Residence::updateOrCreate(
-                ['guardian_id' => $guardianInstance->id], // شرط پیدا کردن رکورد
-                [
-                    'person_id' => $person->id, // همچنان برای ارجاع سریع نگه می‌داریم
-                    'residence_status_id' => $this->residence_status_id,
-                    'district_id' => $this->district_id ?: null,
-                    'is_local_to_city' => (bool)$this->is_local_to_city,
-                    'deposit_amount' => (int)$this->deposit_amount,
-                    'monthly_rent' => (int)$this->monthly_rent,
-                    'residence_duration_years' => (int)$this->residence_duration_years,
-                    'address' => $this->address,
-                ]
-            );
-
-            // ۲. مدیریت اطلاعات تماس (متصل به سرپرست)
-            \App\Models\Contact::updateOrCreate(
-                ['guardian_id' => $guardianInstance->id], // شرط پیدا کردن رکورد
-                [
-                    'person_id' => $person->id,
-                    'landline_phone' => $this->landline_phone,
-                    'trusted_person_phone' => $this->trusted_person_phone,
-                    'messenger_type' => $this->messenger_type,
-                    'messenger_number' => $this->messenger_number,
-                ]
-            );
-            if ($this->has_own_account == '1') {
-                // ذخیره اطلاعات بانکی برای مددجو
-                BankInfo::create([
-                    'person_id' => $person->id,
-                    'bank_id' => $this->bank_id,
-                    'card_number' => $this->card_number,
-                    'sheba_number' => $this->sheba_number,
-                    'subsidy_card_number' => $this->subsidy_card_number,
-                    'subsidy_sheba_number' => $this->subsidy_sheba_number,
-                    'account_owner_relation_id' => $this->account_owner_relation_id,
-                    'other_account_owner_relation' => $this->other_account_owner_relation,
-                ]);
-            } else {
-                // ذخیره اطلاعات بانکی برای سرپرست
-                BankInfo::updateOrCreate(
+                // --- 6. به‌روزرسانی اطلاعات سکونت (Residence) ---
+                \App\Models\Residence::updateOrCreate(
                     ['guardian_id' => $guardianInstance->id],
                     [
+                        'person_id' => $this->person->id,
+                        'residence_status_id' => $this->residence_status_id,
+                        'district_id' => $this->district_id ?: null,
+                        'is_local_to_city' => (bool)$this->is_local_to_city,
+                        'deposit_amount' => (int)$this->deposit_amount,
+                        'monthly_rent' => (int)$this->monthly_rent,
+                        'residence_duration_years' => (int)$this->residence_duration_years,
+                        'address' => $this->address,
+                    ]
+                );
+
+                // --- 7. به‌روزرسانی اطلاعات تماس (Contact) ---
+                \App\Models\Contact::updateOrCreate(
+                    ['guardian_id' => $guardianInstance->id],
+                    [
+                        'person_id' => $this->person->id,
+                        'landline_phone' => $this->landline_phone,
+                        'trusted_person_phone' => $this->trusted_person_phone,
+                        'messenger_type' => $this->messenger_type,
+                        'messenger_number' => $this->messenger_number,
+                    ]
+                );
+
+                // --- 8. به‌روزرسانی اطلاعات بانکی (BankInfo) ---
+                if ($this->has_own_account == '1') {
+                    // حساب شخصی مددجو
+                    BankInfo::updateOrCreate(
+                        ['person_id' => $this->person->id],
+                        [
+                            'guardian_id' => null,
+                            'bank_id' => $this->bank_id,
+                            'card_number' => $this->card_number,
+                            'sheba_number' => $this->sheba_number,
+                            'subsidy_card_number' => $this->subsidy_card_number,
+                            'subsidy_sheba_number' => $this->subsidy_sheba_number,
+                            'account_owner_relation_id' => $this->account_owner_relation_id,
+                            'other_account_owner_relation' => $this->other_account_owner_relation,
+                        ]
+                    );
+                } else {
+                    // حساب سرپرست
+                    // ابتدا اطلاعات بانکی مددجو را حذف کن (اگر وجود داشت)
+                    BankInfo::where('person_id', $this->person->id)->delete();
+
+                    BankInfo::updateOrCreate(
+                        ['guardian_id' => $guardianInstance->id],
+                        [
+                            'person_id' => null,
+                            'bank_id' => $this->bank_id,
+                            'card_number' => $this->card_number,
+                            'sheba_number' => $this->sheba_number,
+                            'subsidy_card_number' => $this->subsidy_card_number,
+                            'subsidy_sheba_number' => $this->subsidy_sheba_number,
+                            'account_owner_relation_id' => $this->account_owner_relation_id,
+                            'other_account_owner_relation' => $this->other_account_owner_relation,
+                        ]
+                    );
+                }
+
+                // --- 9. به‌روزرسانی اطلاعات تحصیلی (Education) ---
+                $this->person->education()->updateOrCreate(
+                    ['person_id' => $this->person->id],
+                    [
+                        'is_studying' => (bool)$this->is_studying,
+                        'school_name' => $this->school_name,
+                        'major' => $this->major,
+                        'education_level_id' => $this->education_level_id ?: null,
+                        'drop_reason' => $this->drop_reason,
+                        'works_alongside_study' => (bool)$this->works_alongside_study,
+                        'monthly_income' => (int)$this->monthly_income,
+                    ]
+                );
+
+                // --- 10. به‌روزرسانی پوشش حمایتی (SupportCoverage) ---
+                $supportCoverageData = [
+                    'support_organization_id' => $this->support_organization_id,
+                    'other_organization_name' => $this->other_organization_name,
+                    'coverage_start_day' => $this->coverage_start_day ?: null,
+                    'coverage_start_month' => $this->coverage_start_month ?: null,
+                    'coverage_start_year' => $this->coverage_start_year ?: null,
+                    'coverage_start_date' => $coverageDateFull,
+                ];
+
+                if ($supportCardPath) {
+                    $supportCoverageData['support_card_image'] = $supportCardPath;
+                }
+
+                $this->person->supportCoverage()->updateOrCreate(
+                    ['person_id' => $this->person->id],
+                    $supportCoverageData
+                );
+
+                // --- 11. به‌روزرسانی سطح نیاز (NeedsLevel) ---
+                $this->person->needsLevel()->updateOrCreate(
+                    ['person_id' => $this->person->id],
+                    [
+                        'need_level_id' => $this->need_level_id,
+                        'evaluation_date' => now(),
+                        'reviewer_name' => auth()->user()->name ?? 'سیستم',
+                    ]
+                );
+
+                // --- 12. همگام‌سازی مهارت‌ها و آسیب‌ها ---
+                $this->person->skills()->sync($this->skills ?? []);
+                $this->person->harmTypes()->sync($this->harm_types ?? []);
+
+                DB::commit();
+
+                // به‌روزرسانی آمار مددکار اجتماعی
+                if ($this->social_worker_id) {
+                    $socialWorker = \App\Models\SocialWorker::find($this->social_worker_id);
+                    if ($socialWorker) {
+                        $socialWorker->refreshStatistics();
+                    }
+                }
+
+                session()->flash('success', 'اطلاعات مددجو با موفقیت به‌روزرسانی شد.');
+
+                return redirect()->route('people.form', [
+                    'mode' => 'edit',
+                    'person' => $this->person->id
+                ]);
+
+            }
+            // ========================================
+            // حالت ایجاد (Create Mode) - کد موجود شما
+            // ========================================
+            else {
+                $isNewPerson = true;
+
+                // --- 3. مدیریت سرپرست (ایجاد یا به‌روزرسانی) ---
+                $guardian_id_to_assign = null;
+                $guardianInstance = null;
+
+                if ($this->guardian_exists_in_db && $this->current_guardian_id) {
+                    $guardianInstance = Guardian::find($this->current_guardian_id);
+
+                    if (!$guardianInstance) {
+                        throw new \Exception("Existing guardian with ID {$this->current_guardian_id} not found.");
+                    }
+                } else {
+                    $guardianInstance = Guardian::create([
+                        'social_worker_id' => $this->social_worker_id,
+                        'guardian_code' => Guardian::generateNextGuardianCode(),
+                        'national_code' => $this->guardian_national_code,
+                        'first_name' => $this->guardian_first_name,
+                        'last_name' => $this->guardian_last_name,
+                        'guardian_birth_day' => $this->guardian_birth_day,
+                        'guardian_birth_month' => $this->guardian_birth_month,
+                        'guardian_birth_year' => $this->guardian_birth_year,
+                        'guardian_birth_date_full' => $guardianBirthDateFull,
+                        'children_count' => 0,
+                        'economic_decile' => $this->economic_decile ?: null,
+                    ]);
+                }
+                $guardian_id_to_assign = $guardianInstance->id;
+
+                if ($guardianInstance) {
+                    $guardianInstance->update([
+                        'social_worker_id' => $this->social_worker_id,
+                        'occupation_id' => $this->occupation_id,
+                        'job_type_id' => $this->job_type_id ?: null,
+                        'guardian_phone_number' => $this->guardian_phone_number,
+                        'children_in_house' => (int)$this->children_in_house,
+                        'insurance_status' => (bool)$this->insurance_status,
+                        'insurance_type_id' => ((bool)$this->insurance_status) ? $this->insurance_type_id : null,
+                        'divorced_child_at_home' => $this->divorced_child_at_home ?: 'none',
+                        'average_income' => (int)$this->average_income,
+                        'any_family_employed' => (bool)$this->any_family_employed,
+                        'any_family_employed_description' => ((bool)$this->any_family_employed) ? $this->any_family_employed_description : null,
+                        'has_vehicle' => (bool)$this->has_vehicle,
+                        'vehicle_type_id' => ((bool)$this->has_vehicle) ? $this->vehicle_type_id : null,
+                        'vehicle_ownership_type' => ((bool)$this->has_vehicle) ? $this->vehicle_ownership_type : null,
+                    ]);
+                } else {
+                    throw new \Exception("Failed to retrieve or create guardian instance for ID: " . ($this->current_guardian_id ?? 'new'));
+                }
+
+                // جدول 1: Person
+                $person = Person::create([
+                    'first_name' => $this->first_name,
+                    'last_name' => $this->last_name,
+                    'national_id' => $this->national_id,
+                    'birth_day' => $this->birth_day,
+                    'birth_month' => $this->birth_month,
+                    'birth_year' => $this->birth_year,
+                    'birth_date_full' => $personBirthDateFull,
+                    'father_name' => $this->father_name,
+                    'father_national_id' => $this->father_national_id,
+                    'mother_national_id' => $this->mother_national_id,
+                    'phone_number' => $this->phone_number,
+                    'gender' => $this->gender,
+                    'role' => $this->role,
+                    'sadaat_status' => $this->sadaat_status,
+                    'sadaat_relation_id' => ($this->sadaat_status === 'سادات') ? $this->sadaat_relation_id : null,
+                    'skills_description' => $this->skills_description,
+                    'profile_photo' => $profilePhotoPath,
+                    'photo_id_card' => $idCardPath,
+                    'photo_birth_certificate' => $birthCertPath,
+                    'has_disability' => (bool)$this->has_disability,
+                    'disability_type_id' => ((bool)$this->has_disability) ? $this->disability_type_id : null,
+                    'disability_description' => ((bool)$this->has_disability) ? $this->disability_description : null,
+                    'guardian_id' => $guardian_id_to_assign,
+                ]);
+
+                if ($isNewPerson) {
+                    $guardianInstance->increment('children_count');
+                }
+
+                // جدول 2: FamilyStatus
+                FamilyStatus::create([
+                    'person_id' => $person->id,
+                    'guardian_relation_type_id' => $this->guardian_relation_type_id,
+                    'remarried_parent' => $this->remarried_parent,
+                    'children_from_previous_marriage' => (int)$this->children_from_previous_marriage,
+                    'has_parent_disability' => (bool)$this->has_parent_disability,
+                    'parent_disability_description' => ((bool)$this->has_parent_disability) ? $this->parent_disability_description : null,
+                ]);
+
+                // جدول 3: Residence
+                \App\Models\Residence::updateOrCreate(
+                    ['guardian_id' => $guardianInstance->id],
+                    [
+                        'person_id' => $person->id,
+                        'residence_status_id' => $this->residence_status_id,
+                        'district_id' => $this->district_id ?: null,
+                        'is_local_to_city' => (bool)$this->is_local_to_city,
+                        'deposit_amount' => (int)$this->deposit_amount,
+                        'monthly_rent' => (int)$this->monthly_rent,
+                        'residence_duration_years' => (int)$this->residence_duration_years,
+                        'address' => $this->address,
+                    ]
+                );
+
+                // جدول 4: Contact
+                \App\Models\Contact::updateOrCreate(
+                    ['guardian_id' => $guardianInstance->id],
+                    [
+                        'person_id' => $person->id,
+                        'landline_phone' => $this->landline_phone,
+                        'trusted_person_phone' => $this->trusted_person_phone,
+                        'messenger_type' => $this->messenger_type,
+                        'messenger_number' => $this->messenger_number,
+                    ]
+                );
+
+                // جدول 5: BankInfo
+                if ($this->has_own_account == '1') {
+                    BankInfo::create([
+                        'person_id' => $person->id,
                         'bank_id' => $this->bank_id,
                         'card_number' => $this->card_number,
                         'sheba_number' => $this->sheba_number,
@@ -931,74 +1279,88 @@ class CreatePerson extends Component
                         'subsidy_sheba_number' => $this->subsidy_sheba_number,
                         'account_owner_relation_id' => $this->account_owner_relation_id,
                         'other_account_owner_relation' => $this->other_account_owner_relation,
-                    ]
-                );
-            }
-
-            // جدول 5: Education - اطلاعات تحصیلی
-            Education::create([
-                'person_id' => $person->id,
-                'is_studying' => (bool)$this->is_studying, // تبدیل به boolean
-                'school_name' => $this->school_name,
-                'major' => $this->major,
-                'education_level_id' => $this->education_level_id ?: null,
-                'drop_reason' => $this->drop_reason,
-                'works_alongside_study' => (bool)$this->works_alongside_study, // تبدیل به boolean
-                'monthly_income' => (int)$this->monthly_income,
-            ]);
-
-            // جدول 6: SupportCoverage - اطلاعات پوشش حمایتی
-            SupportCoverage::create([
-                'person_id' => $person->id,
-                'support_organization_id' => $this->support_organization_id,
-                'other_organization_name' => $this->other_organization_name,
-                'coverage_start_day' => $this->coverage_start_day ?: null,
-                'coverage_start_month' => $this->coverage_start_month ?: null,
-                'coverage_start_year' => $this->coverage_start_year ?: null,
-                'coverage_start_date' => $coverageDateFull,
-                'support_card_image' => $supportCardPath,
-            ]);
-
-            // جدول 7: NeedsLevel - سطح نیاز تشخیص داده شده
-            NeedsLevel::create([
-                'person_id' => $person->id,
-                'need_level_id' => $this->need_level_id,
-                'evaluation_date' => now(),
-                'reviewer_name' => auth()->user()->name ?? 'سیستم', // نام کاربر فعلی یا 'سیستم'
-            ]);
-
-            // Sync کردن مهارت‌ها (اتصال Person به Skills از طریق جدول واسط)
-            if (!empty($this->skills)) {
-                $person->skills()->sync($this->skills);
-            }
-
-            // اتصال نوع آسیب‌ها (Many-to-Many)
-            if (!empty($this->harm_types)) {
-                $person->harmTypes()->sync($this->harm_types);
-            }
-
-            DB::commit(); // اتمام موفقیت‌آمیز تراکنش
-
-            if ($this->social_worker_id) {
-                $socialWorker = \App\Models\SocialWorker::find($this->social_worker_id);
-                if ($socialWorker) {
-                    $socialWorker->refreshStatistics();
+                    ]);
+                } else {
+                    BankInfo::updateOrCreate(
+                        ['guardian_id' => $guardianInstance->id],
+                        [
+                            'bank_id' => $this->bank_id,
+                            'card_number' => $this->card_number,
+                            'sheba_number' => $this->sheba_number,
+                            'subsidy_card_number' => $this->subsidy_card_number,
+                            'subsidy_sheba_number' => $this->subsidy_sheba_number,
+                            'account_owner_relation_id' => $this->account_owner_relation_id,
+                            'other_account_owner_relation' => $this->other_account_owner_relation,
+                        ]
+                    );
                 }
+
+                // جدول 6: Education
+                Education::create([
+                    'person_id' => $person->id,
+                    'is_studying' => (bool)$this->is_studying,
+                    'school_name' => $this->school_name,
+                    'major' => $this->major,
+                    'education_level_id' => $this->education_level_id ?: null,
+                    'drop_reason' => $this->drop_reason,
+                    'works_alongside_study' => (bool)$this->works_alongside_study,
+                    'monthly_income' => (int)$this->monthly_income,
+                ]);
+
+                // جدول 7: SupportCoverage
+                SupportCoverage::create([
+                    'person_id' => $person->id,
+                    'support_organization_id' => $this->support_organization_id,
+                    'other_organization_name' => $this->other_organization_name,
+                    'coverage_start_day' => $this->coverage_start_day ?: null,
+                    'coverage_start_month' => $this->coverage_start_month ?: null,
+                    'coverage_start_year' => $this->coverage_start_year ?: null,
+                    'coverage_start_date' => $coverageDateFull,
+                    'support_card_image' => $supportCardPath,
+                ]);
+
+                // جدول 8: NeedsLevel
+                NeedsLevel::create([
+                    'person_id' => $person->id,
+                    'need_level_id' => $this->need_level_id,
+                    'evaluation_date' => now(),
+                    'reviewer_name' => auth()->user()->name ?? 'سیستم',
+                ]);
+
+                // Sync مهارت‌ها و آسیب‌ها
+                if (!empty($this->skills)) {
+                    $person->skills()->sync($this->skills);
+                }
+
+                if (!empty($this->harm_types)) {
+                    $person->harmTypes()->sync($this->harm_types);
+                }
+
+                DB::commit();
+
+                if ($this->social_worker_id) {
+                    $socialWorker = \App\Models\SocialWorker::find($this->social_worker_id);
+                    if ($socialWorker) {
+                        $socialWorker->refreshStatistics();
+                    }
+                }
+
+                session()->flash('success', 'اطلاعات مددجو با موفقیت ثبت و ذخیره شد.');
+                $this->reset();
+
+                return redirect()->route('people.form', [
+                    'mode' => 'create'
+                ]);
             }
-
-            session()->flash('success', 'اطلاعات مددجو با موفقیت ثبت و ذخیره شد.');
-            $this->reset(); // ریست کردن تمام فیلدهای فرم پس از ذخیره موفق
-
-            return redirect()->route('people.create'); // ریدایرکت به همین صفحه برای ثبت مددجوی جدید
 
         } catch (\Exception $e) {
-            DB::rollBack(); // در صورت بروز خطا، تراکنش را برمی‌گردانیم
-            \Log::error('Create Person Error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]); // لاگ خطا با جزئیات بیشتر
+            DB::rollBack();
+            \Log::error('Create/Edit Person Error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             session()->flash('error', 'خطا در ثبت اطلاعات. لطفاً ورودی‌ها را بررسی کنید و در صورت تکرار، با پشتیبانی تماس بگیرید.');
-            // در صورت نیاز به مشاهده خطای کامل در محیط توسعه، می‌توانید خط زیر را فعال کنید:
-            // throw $e;
+            // throw $e; // برای دیباگ در محیط توسعه
         }
     }
+
 
     /**
      * متد کمکی برای مدیریت هوشمند تصاویر (آپلود یا دوربین)

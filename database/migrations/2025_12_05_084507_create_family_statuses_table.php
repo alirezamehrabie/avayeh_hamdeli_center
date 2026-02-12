@@ -22,9 +22,6 @@ return new class extends Migration {
                 ->constrained('guardian_relation_types')
                 ->nullOnDelete();
 
-
-            $table->enum('deceased_parent', ['father', 'mother', 'both'])->nullable();
-
             // والد مجدد ازدواج کرده
             $table->enum('remarried_parent', ['none', 'father', 'mother', 'both'])
                 ->nullable()

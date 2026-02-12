@@ -289,13 +289,35 @@
                                             <div id="photo-preview-id-card" class="text-center">
                                                 @if($photo_id_card)
                                                     <img src="{{ $photo_id_card->temporaryUrl() }}" class="img-thumbnail" style="max-height: 150px;">
+                                                @elseif($captured_id_card_base64)
+                                                    <img src="{{ $captured_id_card_base64 }}" id="captured-img-id-card" class="img-thumbnail" style="max-height: 150px;">
+                                                @elseif($mode == 'edit' && $person && $person->photo_id_card)
+                                                    <img src="{{ asset('storage/' . $person->photo_id_card) }}" id="captured-img-id-card" class="img-thumbnail" style="max-height: 150px;">
                                                 @else
                                                     <img src="{{ asset('assets/images/no-image.png') }}" id="captured-img-id-card" class="img-thumbnail" style="max-height: 150px;">
                                                 @endif
                                             </div>
                                             <div class="mt-2 text-center">
-                                                <button type="button" class="btn btn-sm btn-primary" onclick="setupCamera('id-card', 'captured_id_card_base64')">فعالسازی دوربین</button>
-                                                <button type="button" id="capture-btn-id-card" class="btn btn-sm btn-success d-none" onclick="takePhoto('id-card', 'captured_id_card_base64')">گرفتن عکس</button>
+                                                @if($mode == 'edit')
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-warning"
+                                                            onclick="confirmRetakePhoto('id-card', 'captured_id_card_base64', 'کارت ملی')">
+                                                        <i class="bi bi-arrow-repeat"></i> تصویر مجدد
+                                                    </button>
+                                                @else
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-primary"
+                                                            onclick="setupCamera('id-card', 'captured_id_card_base64')">
+                                                        <i class="bi bi-camera"></i> فعالسازی دوربین
+                                                    </button>
+                                                @endif
+                                                <button type="button"
+                                                        id="capture-btn-id-card"
+                                                        class="btn btn-sm btn-success d-none"
+                                                        onclick="takePhoto('id-card', 'captured_id_card_base64')">
+                                                    <i class="bi bi-camera-fill"></i> گرفتن عکس
+                                                </button>
+                                                {{-- دکمه "گرفتن مجدد" بعد از عکس گرفتن توسط JS ایجاد می‌شود --}}
                                             </div>
                                         </div>
                                         <input type="hidden" wire:model="captured_id_card_base64">
@@ -309,6 +331,8 @@
                             </div>
                         </div>
 
+
+
                         <!-- بخش تصویر شناسنامه -->
                         <div class="col-md-4 mb-4">
                             <label class="form-label fw-bold">تصویر شناسنامه (ثبت آنلاین یا آپلود)</label>
@@ -321,13 +345,34 @@
                                             <div id="photo-preview-birth-cert" class="text-center">
                                                 @if($photo_birth_certificate)
                                                     <img src="{{ $photo_birth_certificate->temporaryUrl() }}" class="img-thumbnail" style="max-height: 150px;">
+                                                @elseif($captured_birth_certificate_base64)
+                                                    <img src="{{ $captured_birth_certificate_base64 }}" id="captured-img-birth-cert" class="img-thumbnail" style="max-height: 150px;">
+                                                @elseif($mode == 'edit' && $person && $person->photo_birth_certificate)
+                                                    <img src="{{ asset('storage/' . $person->photo_birth_certificate) }}" id="captured-img-birth-cert" class="img-thumbnail" style="max-height: 150px;">
                                                 @else
                                                     <img src="{{ asset('assets/images/no-image.png') }}" id="captured-img-birth-cert" class="img-thumbnail" style="max-height: 150px;">
                                                 @endif
                                             </div>
                                             <div class="mt-2 text-center">
-                                                <button type="button" class="btn btn-sm btn-primary" onclick="setupCamera('birth-cert', 'captured_birth_certificate_base64')">فعالسازی دوربین</button>
-                                                <button type="button" id="capture-btn-birth-cert" class="btn btn-sm btn-success d-none" onclick="takePhoto('birth-cert', 'captured_birth_certificate_base64')">گرفتن عکس</button>
+                                                @if($mode == 'edit')
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-warning"
+                                                            onclick="confirmRetakePhoto('birth-cert', 'captured_birth_certificate_base64', 'شناسنامه')">
+                                                        <i class="bi bi-arrow-repeat"></i> تصویر مجدد
+                                                    </button>
+                                                @else
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-primary"
+                                                            onclick="setupCamera('birth-cert', 'captured_birth_certificate_base64')">
+                                                        <i class="bi bi-camera"></i> فعالسازی دوربین
+                                                    </button>
+                                                @endif
+                                                <button type="button"
+                                                        id="capture-btn-birth-cert"
+                                                        class="btn btn-sm btn-success d-none"
+                                                        onclick="takePhoto('birth-cert', 'captured_birth_certificate_base64')">
+                                                    <i class="bi bi-camera-fill"></i> گرفتن عکس
+                                                </button>
                                             </div>
                                         </div>
                                         <input type="hidden" wire:model="captured_birth_certificate_base64">
@@ -343,6 +388,8 @@
 
 
 
+
+                        <!-- بخش تصویر مددجو -->
                         <div class="col-md-4 mb-4">
                             <label class="form-label fw-bold">تصویر مددجو (ثبت آنلاین یا آپلود)</label>
                             <div class="card p-3" style="background: #f8f9fa;">
@@ -352,11 +399,36 @@
                                             <video id="video-profile" width="100%" height="240" autoplay class="rounded border d-none"></video>
                                             <canvas id="canvas-profile" width="640" height="480" class="d-none"></canvas>
                                             <div id="photo-preview-profile" class="text-center">
-                                                <img src="{{ asset('assets/images/no-image.png') }}" id="captured-img-profile" class="img-thumbnail" style="max-height: 200px;">
+                                                @if($profile_photo)
+                                                    <img src="{{ $profile_photo->temporaryUrl() }}" class="img-thumbnail" style="max-height: 200px;">
+                                                @elseif($captured_photo_base64)
+                                                    <img src="{{ $captured_photo_base64 }}" id="captured-img-profile" class="img-thumbnail" style="max-height: 200px;">
+                                                @elseif($mode == 'edit' && $person && $person->profile_photo)
+                                                    <img src="{{ asset('storage/' . $person->profile_photo) }}" id="captured-img-profile" class="img-thumbnail" style="max-height: 200px;">
+                                                @else
+                                                    <img src="{{ asset('assets/images/no-image.png') }}" id="captured-img-profile" class="img-thumbnail" style="max-height: 200px;">
+                                                @endif
                                             </div>
                                             <div class="mt-2 text-center">
-                                                <button type="button" class="btn btn-sm btn-primary" onclick="setupCamera('profile', 'captured_photo_base64')">فعالسازی دوربین</button>
-                                                <button type="button" id="capture-btn-profile" class="btn btn-sm btn-success d-none" onclick="takePhoto('profile', 'captured_photo_base64')">گرفتن عکس</button>
+                                                @if($mode == 'edit')
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-warning"
+                                                            onclick="confirmRetakePhoto('profile', 'captured_photo_base64', 'مددجو')">
+                                                        <i class="bi bi-arrow-repeat"></i> تصویر مجدد
+                                                    </button>
+                                                @else
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-primary"
+                                                            onclick="setupCamera('profile', 'captured_photo_base64')">
+                                                        <i class="bi bi-camera"></i> فعالسازی دوربین
+                                                    </button>
+                                                @endif
+                                                <button type="button"
+                                                        id="capture-btn-profile"
+                                                        class="btn btn-sm btn-success d-none"
+                                                        onclick="takePhoto('profile', 'captured_photo_base64')">
+                                                    <i class="bi bi-camera-fill"></i> گرفتن عکس
+                                                </button>
                                             </div>
                                         </div>
                                         <input type="hidden" wire:model="captured_photo_base64">
@@ -368,6 +440,7 @@
                                 </div>
                             </div>
                         </div>
+
 
 
 
@@ -1097,15 +1170,65 @@
                             @error('coverage_start_day') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">تصویر کارت حمایت</label>
-                            <input class="form-control" type="file" wire:model="support_card_image">
-                            @error('support_card_image') <span class="text-danger small">{{ $message }}</span> @enderror
-                            @if ($support_card_image)
-                                <img src="{{ $support_card_image->temporaryUrl() }}" class="img-thumbnail mt-2"
-                                     style="max-height: 100px;">
-                            @endif
+                        <!-- بخش تصویر کارت حمایت -->
+                        <div class="col-md-4 mb-4">
+                            <label class="form-label fw-bold">تصویر کارت حمایت (ثبت آنلاین یا آپلود)</label>
+                            <div class="card p-3" style="background: #f8f9fa;">
+                                <div class="row">
+                                    <div class="col-md-7 border-start">
+                                        <div id="camera-container-support-card" wire:ignore>
+                                            <video id="video-support-card" width="100%" height="200" autoplay class="rounded border d-none"></video>
+                                            <canvas id="canvas-support-card" width="640" height="480" class="d-none"></canvas>
+                                            <div id="photo-preview-support-card" class="text-center">
+                                                @if($support_card_image && !is_string($support_card_image))
+                                                    {{-- فایل آپلود شده جدید (Temporary Upload) --}}
+                                                    <img src="{{ $support_card_image->temporaryUrl() }}" class="img-thumbnail" style="max-height: 150px;">
+                                                @elseif($captured_support_card_base64)
+                                                    {{-- تصویر گرفته شده با دوربین --}}
+                                                    <img src="{{ $captured_support_card_base64 }}" id="captured-img-support-card" class="img-thumbnail" style="max-height: 150px;">
+                                                @elseif($mode == 'edit' && $person && $person->supportCoverage && $person->supportCoverage->support_card_image)
+                                                    {{-- تصویر ذخیره شده قبلی در حالت ویرایش --}}
+                                                    <img src="{{ asset('storage/' . $person->supportCoverage->support_card_image) }}" id="captured-img-support-card" class="img-thumbnail" style="max-height: 150px;">
+                                                @else
+                                                    {{-- تصویر پیش‌فرض --}}
+                                                    <img src="{{ asset('assets/images/no-image.png') }}" id="captured-img-support-card" class="img-thumbnail" style="max-height: 150px;">
+                                                @endif
+                                            </div>
+                                            <div class="mt-2 text-center">
+                                                @if($mode == 'edit')
+                                                    {{-- حالت ویرایش: دکمه "تصویر مجدد" با تأییدیه --}}
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-warning"
+                                                            onclick="confirmRetakePhoto('support-card', 'captured_support_card_base64', 'کارت حمایت')">
+                                                        <i class="bi bi-arrow-repeat"></i> تصویر مجدد
+                                                    </button>
+                                                @else
+                                                    {{-- حالت ایجاد: دکمه معمولی "فعالسازی دوربین" --}}
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-primary"
+                                                            onclick="setupCamera('support-card', 'captured_support_card_base64')">
+                                                        <i class="bi bi-camera"></i> فعالسازی دوربین
+                                                    </button>
+                                                @endif
+                                                <button type="button"
+                                                        id="capture-btn-support-card"
+                                                        class="btn btn-sm btn-success d-none"
+                                                        onclick="takePhoto('support-card', 'captured_support_card_base64')">
+                                                    <i class="bi bi-camera-fill"></i> گرفتن عکس
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" wire:model="captured_support_card_base64">
+                                    </div>
+                                    <div class="col-md-5">
+                                        <p class="small text-muted">یا انتخاب فایل:</p>
+                                        <input type="file" wire:model="support_card_image" class="form-control" accept="image/*">
+                                        @error('support_card_image') <span class="text-danger small">{{ $message }}</span> @enderror
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+
 
                         <div class="col-md-4">
                             <label class="form-label">سطح نیاز (بر اساس ارزیابی اولیه مددکار) <span class="text-danger">*</span></label>
@@ -1141,70 +1264,145 @@
 </div>
 
 
-<script type="text/javascript">
-    // ذخیره استریم‌های فعال برای بستن دوربین پس از عکاسی
-    let activeStreams = {};
-
+@script
+<script>
     /**
-     * فعالسازی دوربین برای هر بخش
-     * @param {string} idPrefix - پیشوند ID المان‌ها (مثلا id-card)
-     * @param {string} wireProperty - نام متغیر در لایوایر
+     * تأییدیه قبل از فعال‌سازی دوربین (فقط در حالت Edit)
      */
-    async function setupCamera(idPrefix, wireProperty) {
-        const video = document.getElementById(`video-${idPrefix}`);
-        const preview = document.getElementById(`photo-preview-${idPrefix}`);
-        const captureBtn = document.getElementById(`capture-btn-${idPrefix}`);
-        const startBtn = event.target;
-
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-            video.srcObject = stream;
-            activeStreams[idPrefix] = stream;
-
-            video.classList.remove('d-none');
-            preview.classList.add('d-none');
-            startBtn.classList.add('d-none');
-            captureBtn.classList.remove('d-none');
-        } catch (err) {
-            alert("خطا در دسترسی به دوربین: " + err.message);
+    window.confirmRetakePhoto = function(cameraId, base64VarName, label) {
+        if (!confirm('آیا می‌خواهید تصویر ' + label + ' را مجدداً ثبت کنید؟')) {
+            return;
         }
-    }
+        setupCamera(cameraId, base64VarName);
+    };
 
     /**
-     * ثبت تصویر و ارسال به لایوایر
+     * فعال‌سازی دوربین
      */
-    function takePhoto(idPrefix, wireProperty) {
-        const video = document.getElementById(`video-${idPrefix}`);
-        const canvas = document.getElementById(`canvas-${idPrefix}`);
-        const capturedImg = document.getElementById(`captured-img-${idPrefix}`);
-        const preview = document.getElementById(`photo-preview-${idPrefix}`);
-        const captureBtn = document.getElementById(`capture-btn-${idPrefix}`);
+    window.setupCamera = function(cameraId, base64VarName) {
+        const video = document.getElementById('video-' + cameraId);
+        const captureBtn = document.getElementById('capture-btn-' + cameraId);
+        const preview = document.getElementById('photo-preview-' + cameraId);
 
-        // پیدا کردن دکمه فعالسازی (که الان مخفی است) برای بازگرداندن متن
-        const container = document.getElementById(`camera-container-${idPrefix}`);
-        const startBtn = container.querySelector('button.btn-primary');
+        if (!video) return;
 
-        const context = canvas.getContext('2d');
-        context.drawImage(video, 0, 0, 640, 480);
-        const data = canvas.toDataURL('image/png');
+        // مخفی کردن دکمه "گرفتن مجدد" اگر وجود داشت
+        const retakeBtn = document.getElementById('retake-btn-' + cameraId);
+        if (retakeBtn) {
+            retakeBtn.classList.add('d-none');
+        }
 
-        // نمایش در پیش‌نمایش
-        capturedImg.src = data;
+        // درخواست دسترسی به دوربین
+        navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' }
+        })
+            .then(function(stream) {
+                video.srcObject = stream;
+                video.classList.remove('d-none');
+                captureBtn.classList.remove('d-none');
+
+                // مخفی کردن پیش‌نمایش فعلی
+                if (preview) {
+                    preview.style.display = 'none';
+                }
+            })
+            .catch(function(err) {
+                alert('خطا در دسترسی به دوربین: ' + err.message);
+            });
+    };
+
+    /**
+     * گرفتن عکس از دوربین + نمایش دکمه "گرفتن مجدد"
+     */
+    window.takePhoto = function(cameraId, base64VarName) {
+        const video = document.getElementById('video-' + cameraId);
+        const canvas = document.getElementById('canvas-' + cameraId);
+        const preview = document.getElementById('photo-preview-' + cameraId);
+        const captureBtn = document.getElementById('capture-btn-' + cameraId);
+
+        if (!video || !canvas) return;
+
+        // رسم تصویر روی canvas
+        const ctx = canvas.getContext('2d');
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // تبدیل به base64
+        const base64 = canvas.toDataURL('image/png');
+
+        // ارسال به Livewire
+        $wire.set(base64VarName, base64);
+
+        // متوقف کردن دوربین
+        const stream = video.srcObject;
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+
+        // مخفی کردن ویدیو
         video.classList.add('d-none');
-        preview.classList.remove('d-none');
+
+        // نمایش پیش‌نمایش عکس گرفته شده
+        if (preview) {
+            preview.style.display = 'block';
+            preview.innerHTML = `
+                <img src="${base64}" class="img-thumbnail" style="max-height: 150px;">
+                <p class="text-success small mt-1 mb-0">📷 عکس ثبت شد</p>
+            `;
+        }
+
+        // مخفی کردن دکمه "گرفتن عکس"
         captureBtn.classList.add('d-none');
 
-        startBtn.innerText = "عکس مجدد";
-        startBtn.classList.remove('d-none');
-
-        // ارسال به لایوایر
-        @this.set(wireProperty, data);
-
-        // خاموش کردن دوربین
-        if (activeStreams[idPrefix]) {
-            activeStreams[idPrefix].getTracks().forEach(track => track.stop());
-            delete activeStreams[idPrefix];
+        // ✅ نمایش دکمه "گرفتن مجدد"
+        let retakeBtn = document.getElementById('retake-btn-' + cameraId);
+        if (!retakeBtn) {
+            // ایجاد دکمه برای اولین بار
+            retakeBtn = document.createElement('button');
+            retakeBtn.type = 'button';
+            retakeBtn.id = 'retake-btn-' + cameraId;
+            retakeBtn.className = 'btn btn-sm btn-outline-warning mt-1';
+            retakeBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> گرفتن مجدد';
+            retakeBtn.onclick = function() {
+                retakePhoto(cameraId, base64VarName);
+            };
+            // اضافه کردن کنار دکمه‌های موجود
+            captureBtn.parentNode.appendChild(retakeBtn);
+        } else {
+            // نمایش دکمه‌ای که قبلاً ایجاد شده
+            retakeBtn.classList.remove('d-none');
         }
-    }
+    };
+
+    /**
+     * ✅ گرفتن مجدد عکس - دوبین را دوباره فعال می‌کند
+     */
+    window.retakePhoto = function(cameraId, base64VarName) {
+        // پاک کردن عکس قبلی از Livewire
+        $wire.set(base64VarName, null);
+
+        // مخفی کردن دکمه "گرفتن مجدد"
+        const retakeBtn = document.getElementById('retake-btn-' + cameraId);
+        if (retakeBtn) {
+            retakeBtn.classList.add('d-none');
+        }
+
+        // ریست پیش‌نمایش
+        const preview = document.getElementById('photo-preview-' + cameraId);
+        if (preview) {
+            preview.innerHTML = `
+                <img src="{{ asset('assets/images/no-image.png') }}"
+                     id="captured-img-${cameraId}"
+                     class="img-thumbnail"
+                     style="max-height: 150px;">
+            `;
+        }
+
+        // فعال‌سازی مجدد دوربین
+        setupCamera(cameraId, base64VarName);
+    };
 </script>
+@endscript
+
 

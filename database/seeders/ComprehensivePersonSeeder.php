@@ -170,6 +170,7 @@ class ComprehensivePersonSeeder extends Seeder
                 'landline_phone' => $faker->numerify('021########'),
                 'messenger_type' => $faker->randomElement(['ایتا', 'واتس‌اپ']),
                 'messenger_number' => $guardian->guardian_phone_number,
+                'trusted_person_phone' => $faker->numerify('091########'),
             ]);
 
             // ج) ایجاد ۱ تا ۳ مددجو (Person) برای هر سرپرست
@@ -184,8 +185,17 @@ class ComprehensivePersonSeeder extends Seeder
                     'birth_day' => $faker->numberBetween(1, 30),
                     'birth_month' => $faker->numberBetween(1, 12),
                     'birth_year' => $faker->numberBetween(1385, 1402),
+                    'father_national_id' => $faker->numerify('##########'),
+                    'mother_national_id' => $faker->numerify('##########'),
+                    'phone_number' => $faker->numerify('0913#######'),
+                    'sadaat_status' => $faker->randomElement(['سادات','عام']),
+                    'has_disability' => $faker->randomElement(['0','1']),
+                    'disability_type_id' => $faker->randomElement([DisabilityType::inRandomOrder()->first()->id]),
+                    'disability_description' => $faker->text(200),
+                    'skills_description' => $faker->text(200),
+                    'sadaat_relation_id' => $faker->randomElement(SadaatRelation::pluck('id')->toArray()),
                     'gender' => $faker->randomElement(['مرد', 'زن']),
-                    'sadaat_status' => 'عام',
+
                 ]);
 
                 // د) وضعیت خانوادگی مددجو
@@ -193,15 +203,21 @@ class ComprehensivePersonSeeder extends Seeder
                     'person_id' => $person->id,
                     'guardian_relation_type_id' => GuardianRelationType::inRandomOrder()->first()->id,
                     'remarried_parent' => $faker->randomElement(['both', 'mother', 'father', 'none']),
-                    'has_parent_disability' => $faker->boolean(5),
+                    'children_from_previous_marriage' => $faker->numberBetween(0,10),
+                    'has_parent_disability' => $faker->randomElement([0,1]),
+
                 ]);
 
                 // ه) اطلاعات تحصیلی
                 Education::create([
                     'person_id' => $person->id,
-                    'is_studying' => true,
+                    'is_studying' => $faker->randomElement([0,1]),
                     'education_level_id' => EducationLevel::inRandomOrder()->first()->id,
                     'school_name' => 'مدرسه ' . $faker->firstName(),
+                    'major' => 'رشته ' . $faker->lastName(),
+                    'drop_reason' => $faker->text(100),
+                    'works_alongside_study' => $faker->randomElement([0,1]),
+                    'monthly_income' => $faker->numberBetween(50, 500) * 1000000,
                 ]);
 
                 // و) اطلاعات بانکی (شبیه‌سازی منطق فرم: یا برای مددجو یا برای سرپرست)
@@ -210,16 +226,19 @@ class ComprehensivePersonSeeder extends Seeder
                     'person_id' => $hasOwnAccount ? $person->id : null,
                     'guardian_id' => $hasOwnAccount ? null : $guardian->id,
                     'bank_id' => Bank::inRandomOrder()->first()->id,
+                    'has_own_account' => $hasOwnAccount ? 1 : 0,
+                    'account_owner_relation_id' => $hasOwnAccount ? '1' : '2',
                     'card_number' => $faker->numerify('################'),
                     'sheba_number' => 'IR' . $faker->numerify('########################'),
-                    'account_owner_relation_id' => AccountOwnerRelation::inRandomOrder()->first()->id,
                 ]);
 
                 // ز) پوشش حمایتی و سطح نیاز
                 SupportCoverage::create([
                     'person_id' => $person->id,
                     'support_organization_id' => SupportOrganization::inRandomOrder()->first()->id,
-                    'coverage_start_year' => 1402,
+                    'coverage_start_year' => $faker->numberBetween(1300, 1405),
+                    'coverage_start_month' => $faker->numberBetween(1, 12),
+                    'coverage_start_day' => $faker->numberBetween(1, 31),
                 ]);
 
                 NeedsLevel::create([

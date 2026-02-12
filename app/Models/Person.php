@@ -386,7 +386,7 @@ class Person extends Model
         return $this->hasOne(BankInfo::class);
     }
 
-    public function educationInfo()
+    public function education()
     {
         return $this->hasOne(Education::class);
     }

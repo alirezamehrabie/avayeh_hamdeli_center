@@ -5,13 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Person;
 
 class DisabilityType extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'name', // نام نوع معلولیت (مثلاً نابینا، ناشنوا، جسمی و حرکتی و ...)
+        'name',
     ];
 
     /**

@@ -96,25 +96,33 @@ trait HasJalaliBirthDate
             return null;
         }
 
-        $today = Jalalian::now();
-        $currentYear = $today->getYear();
+        $todayJalali = Jalalian::now();
+        $currentYear = $todayJalali->getYear();
 
         try {
-            $birthdayThisYear = Jalalian::fromFormat('Y/m/d',
+            $birthdayJalali = Jalalian::fromFormat(
+                'Y/m/d',
                 sprintf('%d/%02d/%02d', $currentYear, $this->birth_month, $this->birth_day)
             );
 
-            if ($birthdayThisYear->lessThan($today)) {
-                $birthdayThisYear = Jalalian::fromFormat('Y/m/d',
+            if ($birthdayJalali->lessThan($todayJalali)) {
+                $birthdayJalali = Jalalian::fromFormat(
+                    'Y/m/d',
                     sprintf('%d/%02d/%02d', $currentYear + 1, $this->birth_month, $this->birth_day)
                 );
             }
 
-            return $today->diffDays($birthdayThisYear);
+            // ✅ تبدیل به Carbon
+            $todayCarbon = $todayJalali->toCarbon();
+            $birthdayCarbon = $birthdayJalali->toCarbon();
+
+            return $todayCarbon->diffInDays($birthdayCarbon);
+
         } catch (\Exception $e) {
             return null;
         }
     }
+
 
     /**
      * آیا امروز تولدش است؟
