@@ -1151,8 +1151,6 @@ class CreatePerson extends Component
             // ========================================
             else {
                 $isNewPerson = true;
-
-                // --- 3. مدیریت سرپرست (ایجاد یا به‌روزرسانی) ---
                 $guardian_id_to_assign = null;
                 $guardianInstance = null;
 
@@ -1365,8 +1363,14 @@ class CreatePerson extends Component
     /**
      * متد کمکی برای مدیریت هوشمند تصاویر (آپلود یا دوربین)
      */
-    private function processImage($uploadedFile, $base64Data, $subFolder)
+    private function processImage($uploadedFile, $base64Data, $subFolder, $personCode = null)
     {
+        // ساخت مسیر نهایی: uploads/subFolder/personCode/
+        $folderPath = 'uploads/' . $subFolder;
+        if ($personCode) {
+            $folderPath .= '/' . $personCode;
+        }
+
         // ۱. اولویت با تصویر دوربین (Base64)
         if (!empty($base64Data)) {
             try {
@@ -1378,9 +1382,9 @@ class CreatePerson extends Component
                 $image_type = $image_type_aux[1] ?? 'png';
                 $image_base64 = base64_decode($image_parts[1]);
 
-                // نام‌گذاری فایل و تعیین مسیر (مثال: uploads/profiles/unique_id.png)
+                // نام‌گذاری فایل
                 $fileName = uniqid() . '_' . time() . '.' . $image_type;
-                $finalPath = 'uploads/' . $subFolder . '/' . $fileName;
+                $finalPath = $folderPath . '/' . $fileName;
 
                 // ذخیره فیزیکی در Storage (دیسک public)
                 \Illuminate\Support\Facades\Storage::disk('public')->put($finalPath, $image_base64);
@@ -1394,8 +1398,7 @@ class CreatePerson extends Component
 
         // ۲. اگر دوربین نبود، استفاده از فایل آپلود شده
         if ($uploadedFile) {
-            // متد store لاراول مسیر را برمی‌گرداند، ما آن را در uploads تنظیم می‌کنیم
-            return $uploadedFile->store('uploads/' . $subFolder, 'public');
+            return $uploadedFile->store($folderPath, 'public');
         }
 
         return null;
