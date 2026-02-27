@@ -71,7 +71,7 @@ class FastCreatePerson extends Component
             // Reset form
             $this->reset();
 
-            return redirect()->route('people.fast-create');
+            return redirect()->route('people.index');
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Fast Create Person Error: ' . $e->getMessage());

@@ -25,11 +25,11 @@
                     <a href="{{ route('people.fast-create') }}" class="block px-4 py-2 text-sm text-indigo-200 hover:text-white">
                         <i class="fa fa-bolt"></i> ثبت سریع فرد
                     </a>
+                    <a href="{{ route('people.index') }}" class="block px-4 py-2 text-sm text-indigo-200 hover:text-white">
+                        <i class="fa fa-users"></i> لیست مددجویان
+                    </a>
                     <a href="{{ route('people.form', ['mode' => 'create']) }}" class="block px-4 py-2 text-sm text-indigo-200 hover:text-white">
                         <i class="fa fa-user-plus"></i> ثبت مددجوی جدید (کامل)
-                    </a>
-                    <a href="#" class="block px-4 py-2 text-sm text-indigo-200 hover:text-white">
-                        <i class="fa fa-users"></i> لیست مددجویان
                     </a>
                 </div>
             </div>
