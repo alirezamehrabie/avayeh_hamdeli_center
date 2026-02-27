@@ -22,8 +22,15 @@
                     <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
                 </button>
                 <div x-show="open" class="mt-2 mr-8 space-y-1">
-                    <a href="{{ route('people.form', ['mode' => 'create']) }}" class="block px-4 py-2 text-sm text-indigo-200 hover:text-white">ثبت مددجوی جدید</a>
-                    <a href="#" class="block px-4 py-2 text-sm text-indigo-200 hover:text-white">لیست مددجویان</a>
+                    <a href="{{ route('people.fast-create') }}" class="block px-4 py-2 text-sm text-indigo-200 hover:text-white">
+                        <i class="fa fa-bolt"></i> ثبت سریع فرد
+                    </a>
+                    <a href="{{ route('people.form', ['mode' => 'create']) }}" class="block px-4 py-2 text-sm text-indigo-200 hover:text-white">
+                        <i class="fa fa-user-plus"></i> ثبت مددجوی جدید (کامل)
+                    </a>
+                    <a href="#" class="block px-4 py-2 text-sm text-indigo-200 hover:text-white">
+                        <i class="fa fa-users"></i> لیست مددجویان
+                    </a>
                 </div>
             </div>
         @endcan

@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Livewire\People\CreatePerson;
+use App\Livewire\People\FastCreatePerson;
 use App\Livewire\SocialWorkers\EditSocialWorker;
 use App\Livewire\SocialWorkers\CreateSocialWorker;
 use App\Livewire\SocialWorkers\IndexSocialWorkers;
@@ -24,6 +25,9 @@ Route::post('/logout', function () {
 Route::get('/', function () {
     return redirect()->route('login');
 });
+
+// مسیر ثبت‌نام سریع فرد جدید
+Route::get('/people/fast-create', FastCreatePerson::class)->name('people.fast-create');
 
 // مسیر نمایش فرم به Livewire تغییر می‌کند
 Route::get('/people/{mode}/{person?}', CreatePerson::class)->name('people.form');
