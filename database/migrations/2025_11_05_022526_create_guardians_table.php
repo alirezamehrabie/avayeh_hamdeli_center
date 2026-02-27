@@ -10,42 +10,29 @@ return new class extends Migration
     {
         Schema::create('guardians', function (Blueprint $table) {
             $table->id();
+            $table->unsignedInteger('guardian_code')->unique();
 
-            $table->string('national_code', 10)
-                ->unique()
-                ->nullable();
-
-            // ۲. نام و نام‌خانوادگی سرپرست
-            $table->string('first_name')
-                ->nullable();
-            $table->string('last_name')
-                ->nullable();
+            $table->string('national_code', 10)->unique()->nullable();
+            $table->string('first_name')->nullable();
+            $table->string('last_name')->nullable();
 
 
             // ===== افزودن فیلدهای جدید تاریخ تولد شمسی =====
-            $table->unsignedTinyInteger('guardian_birth_day')
-                ->nullable();
-            $table->unsignedTinyInteger('guardian_birth_month')
-                ->nullable();
-            $table->unsignedSmallInteger('guardian_birth_year')
-                ->nullable();
-            $table->string('guardian_birth_date_full', 20)
-                ->nullable();
+            $table->unsignedTinyInteger('guardian_birth_day')->nullable();
+            $table->unsignedTinyInteger('guardian_birth_month')->nullable();
+            $table->unsignedSmallInteger('guardian_birth_year')->nullable();
+            $table->string('guardian_birth_date_full', 10)->nullable();
 
-            // تعداد فرزندان
+
             $table->unsignedInteger('children_count')->default(0);
+            $table->unsignedInteger('children_in_house')->nullable()->default(0);
 
-            $table->integer('economic_decile')->nullable();
+            // وضعیت اشتغال اعضای خانواده
+            $table->boolean('any_family_employed')->default(false);
+            $table->text('any_family_employed_description')->nullable();
 
-            $table->unsignedInteger('children_in_house')
-                ->nullable();
-
-            // آیا خانواده کسی مشغول به کار است؟
-            $table->boolean('any_family_employed')
-                ->default(false);
-
-            $table->text('any_family_employed_description')
-                ->nullable();
+            // درآمد - فقط یکبار تعریف شده
+            $table->unsignedBigInteger('average_income')->nullable()->comment('Amount in Rials');
 
 
             // شغل و نوع شغل

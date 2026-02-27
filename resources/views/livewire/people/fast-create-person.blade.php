@@ -1,10 +1,10 @@
 <div>
-    <div class="card shadow-sm">
-        <div class="card-header bg-pink-800 text-white">
-            <h3 class="mb-0">ثبت‌نام سریع فرد جدید</h3>
-            <p class="mb-0 text-sm">فقط فیلدهای ضروری را پر کنید (نام، نام خانوادگی، کد ملی، تاریخ تولد)</p>
+    <div class="card shadow-sm pb-3">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-2 text-lg">ثبت‌نام سریع فرد جدید</h3>
+            <p class="mb-2 text-sm">فیلدهای ضروری را برای ثبت سریع پر کنید. اطلاعات اضافی را می‌توانید بعداً ویرایش کنید.</p>
         </div>
-        <div class="card-body">
+        <div class="card-body pt-4">
             @if (session()->has('success'))
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                     {{ session('success') }}
@@ -20,26 +20,34 @@
 
             <form wire:submit.prevent="save">
                 <div class="row g-3">
-                    <div class="col-md-4">
+                    <!-- Row 1: First name - Last name - National code - Father's name (all in one line) -->
+                    <div class="col-md-3">
                         <label class="form-label">نام <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" wire:model.blur="first_name" placeholder="مثال: علی">
+                        <input type="text" class="form-control" wire:model.blur="first_name" placeholder="">
                         @error('first_name') <span class="text-danger small">{{ $message }}</span> @enderror
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label">نام خانوادگی <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" wire:model.blur="last_name" placeholder="مثال: محمدی">
+                        <input type="text" class="form-control" wire:model.blur="last_name" placeholder="">
                         @error('last_name') <span class="text-danger small">{{ $message }}</span> @enderror
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label">کد ملی <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" maxlength="10" wire:model.live="national_id" placeholder="مثال: 0012345678">
+                        <input type="text" class="form-control" maxlength="10" wire:model.live="national_id" placeholder="">
                         @error('national_id') <span class="text-danger small">{{ $message }}</span> @enderror
                     </div>
 
-                    <div class="col-md-4">
-                        <label class="form-label">جنسیت <span class="text-danger">*</span></label>
+                    <div class="col-md-3">
+                        <label class="form-label">نام پدر</label>
+                        <input type="text" class="form-control" wire:model.blur="father_name" placeholder="">
+                        @error('father_name') <span class="text-danger small">{{ $message }}</span> @enderror
+                    </div>
+
+                    <!-- Row 2: Optional father's nationality - Optional mother's nationality - Gender - Date of birth -->
+                    <div class="col-md-3 pt-3">
+                        <label class="form-label">جنسیت</label>
                         <div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" value="male" wire:model.blur="gender" id="gender_male">
@@ -53,8 +61,8 @@
                         @error('gender') <span class="text-danger small">{{ $message }}</span> @enderror
                     </div>
 
-                    <div class="col-md-12">
-                        <label class="form-label">تاریخ تولد <span class="text-danger">*</span></label>
+                    <div class="col-md-3 pt-3">
+                        <label class="form-label">تاریخ تولد</label>
                         <div class="row g-2 dir-ltr">
                             <div class="col-4">
                                 <select wire:model.blur="birth_day" class="form-select">
@@ -78,7 +86,7 @@
                             <div class="col-4">
                                 <select wire:model.blur="birth_year" class="form-select">
                                     <option value="">سال</option>
-                                    @foreach(range(1300, 1420) as $year)
+                                    @foreach(range(1300, 1408) as $year)
                                         <option value="{{ $year }}">{{ $year }}</option>
                                     @endforeach
                                 </select>
@@ -86,10 +94,23 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="col-md-3 pt-3">
+                        <label class="form-label">کد ملی پدر (اختیاری)</label>
+                        <input type="text" class="form-control" maxlength="10" wire:model.live="father_national_id" placeholder="">
+                        @error('father_national_id') <span class="text-danger small">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div class="col-md-3 pt-3">
+                        <label class="form-label">کد ملی مادر (اختیاری)</label>
+                        <input type="text" class="form-control" maxlength="10" wire:model.live="mother_national_id" placeholder="">
+                        @error('mother_national_id') <span class="text-danger small">{{ $message }}</span> @enderror
+                    </div>
+
                 </div>
 
-                <div class="mt-4">
-                    <button type="submit" class="btn btn-primary">
+                <div class="mt-4 pt-3">
+                    <button type="submit" class="btn btn-success">
                         <i class="fa fa-save"></i> ثبت اطلاعات سریع
                     </button>
                     <a href="{{ url()->previous() ?? '/' }}" class="btn btn-secondary">

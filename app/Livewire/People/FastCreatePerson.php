@@ -18,6 +18,9 @@ class FastCreatePerson extends Component
     public $birth_month;
     public $birth_year;
     public $gender;
+    public $father_name;
+    public $father_national_id;
+    public $mother_national_id;
 
     public function rules()
     {
@@ -29,6 +32,9 @@ class FastCreatePerson extends Component
             'birth_month' => 'required|integer|min:1|max:12',
             'birth_year' => 'required|integer|min:1300|max:1420',
             'gender' => 'required|in:male,female',
+            'father_name' => 'nullable|string|max:100',
+            'father_national_id' => 'nullable|digits:10',
+            'mother_national_id' => 'nullable|digits:10',
         ];
     }
 
@@ -44,6 +50,9 @@ class FastCreatePerson extends Component
             'birth_year.required' => 'لطفاً سال تولد را انتخاب کنید',
             'gender.required' => 'لطفاً جنسیت را انتخاب کنید',
             'gender.in' => 'جنسیت باید مرد یا زن باشد',
+            'father_name.max' => 'نام پدر نمی‌تواند بیشتر از 100 کاراکتر باشد',
+            'father_national_id.digits' => 'کد ملی پدر باید 10 رقم باشد',
+            'mother_national_id.digits' => 'کد ملی مادر باید 10 رقم باشد',
         ];
     }
 
@@ -61,6 +70,9 @@ class FastCreatePerson extends Component
                 'birth_month' => $this->birth_month,
                 'birth_year' => $this->birth_year,
                 'gender' => $this->gender,
+                'father_name' => $this->father_name,
+                'father_national_id' => $this->father_national_id,
+                'mother_national_id' => $this->mother_national_id,
                 'person_code' => Person::generateUniqueCode(),
             ]);
 
