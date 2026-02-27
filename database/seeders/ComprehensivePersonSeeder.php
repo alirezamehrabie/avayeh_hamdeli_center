@@ -144,6 +144,7 @@ class ComprehensivePersonSeeder extends Seeder
                 'insurance_status' => $isInsured,
                 'insurance_type_id' => $isInsured ? InsuranceType::inRandomOrder()->first()->id : null,
                 'average_income' => $faker->numberBetween(5, 30) * 1000000,
+                'economic_decile' =>  $faker->numberBetween(1, 10),
                 'any_family_employed' => $hasEmployedFamily,
                 'any_family_employed_description' => $hasEmployedFamily
                     ? $faker->randomElement(['فرزند بزرگ خانواده در کارگاه نجاری', 'همسر در خانه خیاطی می‌کند', 'یکی از فرزندان شاگرد مغازه است'])
