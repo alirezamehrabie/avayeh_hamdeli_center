@@ -21,7 +21,7 @@ return new class extends Migration
             $table->unsignedBigInteger('deposit_amount')->nullable();
             $table->unsignedBigInteger('monthly_rent')->nullable();
             $table->integer('residence_duration_years')->nullable();
-            $table->text('address');
+            $table->text('address')->nullable();
 
             // تبدیل ستون متنی ناحیه به کلید خارجی
             $table->foreignId('district_id')

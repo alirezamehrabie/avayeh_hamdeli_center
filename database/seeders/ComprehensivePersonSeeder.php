@@ -134,7 +134,7 @@ class ComprehensivePersonSeeder extends Seeder
                 // مقدار ترکیبی (که درخواست کرده بودید)
                 'guardian_birth_date_full' => $gFullDate,
 
-                'economic_decile' => $faker->numberBetween(1, 10), // فیلد جدید منتقل شده
+
                 'occupation_id' => Occupation::inRandomOrder()->first()->id,
                 'job_type_id' => JobType::inRandomOrder()->first()->id,
                 'guardian_phone_number' => '09' . $faker->numerify('#########'),

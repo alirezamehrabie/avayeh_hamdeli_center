@@ -86,7 +86,7 @@
                             <div class="col-4">
                                 <select wire:model.blur="birth_year" class="form-select">
                                     <option value="">سال</option>
-                                    @foreach(range(1300, 1408) as $year)
+                                    @foreach(range(1300, 1420) as $year)
                                         <option value="{{ $year }}">{{ $year }}</option>
                                     @endforeach
                                 </select>

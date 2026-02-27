@@ -248,6 +248,7 @@ class CreatePerson extends Component
             $this->birth_day = $this->person->birth_day;
             $this->birth_month = $this->person->birth_month;
             $this->birth_year = $this->person->birth_year;
+            $this->birth_date_full = $this->person->birth_date_full;
             $this->father_name = $this->person->father_name;
             $this->father_national_id = $this->person->father_national_id;
             $this->mother_national_id = $this->person->mother_national_id;
@@ -320,6 +321,7 @@ class CreatePerson extends Component
             // Support coverage (with null check)
             if ($this->person->supportCoverage) {
                 $this->support_organization_id = $this->person->supportCoverage->support_organization_id;
+                $this->other_organization_name = $this->person->supportCoverage->other_organization_name;
                 $this->coverage_start_day = $this->person->supportCoverage->coverage_start_day;
                 $this->coverage_start_month = $this->person->supportCoverage->coverage_start_month;
                 $this->coverage_start_year = $this->person->supportCoverage->coverage_start_year;
@@ -757,20 +759,20 @@ class CreatePerson extends Component
             'role' => 'required|in:child,guardian',
 
             // سادات: فقط اگر وضعیت "سادات" باشد، نسبت اجباری است
-            'sadaat_status' => 'required|in:general,sadaat',
+            'sadaat_status' => 'nullable|in:general,sadaat',
             'sadaat_relation_id' => 'required_if:sadaat_status,sadaat|nullable|exists:sadaat_relations,id',
 
             // --- بخش 2 و 3: سرپرست ---
-            'social_worker_id' => 'required|exists:social_workers,id',
-            'guardian_relation_type_id' => 'required|exists:guardian_relation_types,id',
+            'guardian_relation_type_id' => 'nullable|exists:guardian_relation_types,id',
+            'social_worker_id' => 'nullable|exists:social_workers,id',
             'remarried_parent' => 'nullable|in:none,father,mother,both',
             'children_from_previous_marriage' => 'nullable|integer|min:0',
-            'has_parent_disability' => 'required|boolean',
+            'has_parent_disability' => 'nullable|boolean',
             'parent_disability_description' => 'required_if:has_parent_disability,1|nullable|string|max:500',
 
 
             // وضعیت معلولیت
-            'has_disability' => 'required|in:0,1',
+            'has_disability' => 'nullable|in:0,1',
             'disability_type_id' => [
                 'nullable',
                 Rule::requiredIf($this->has_disability == '1'),
@@ -792,21 +794,21 @@ class CreatePerson extends Component
 
 
             'guardian_national_code' => [
-                'required', 'string', 'digits:10',
+                'nullable', 'string', 'digits:10',
                 // اعتبارسنجی یونیک بودن کد ملی سرپرست (اگر جدید است)
                 Rule::unique('guardians', 'national_code')->ignore($this->current_guardian_id)
             ],
 
 // فیلدهای زیر اگر سرپرست در دیتابیس وجود داشته باشد (guardian_exists_in_db == true) می‌تواند nullable باشد
-            'guardian_first_name' => [$this->guardian_exists_in_db ? 'nullable' : 'required', 'string', 'max:100'],
-            'guardian_last_name' => [$this->guardian_exists_in_db ? 'nullable' : 'required', 'string', 'max:100'],
-            'guardian_phone_number' => [$this->guardian_exists_in_db ? 'nullable' : 'required', 'regex:/^09[0-9]{9}$/'],
+            'guardian_first_name' => [$this->guardian_exists_in_db ? 'nullable' : 'nullable', 'string', 'max:100'],
+            'guardian_last_name' => [$this->guardian_exists_in_db ? 'nullable' : 'nullable', 'string', 'max:100'],
+            'guardian_phone_number' => [$this->guardian_exists_in_db ? 'nullable' : 'nullable', 'regex:/^09[0-9]{9}$/'],
 
 // اعتبارسنجی تاریخ تولد سرپرست
-            'guardian_birth_year' => [$this->guardian_exists_in_db ? 'nullable' : 'required', 'integer', 'between:1300,1450'],
-            'guardian_birth_month' => [$this->guardian_exists_in_db ? 'nullable' : 'required', 'integer', 'between:1,12'],
+            'guardian_birth_year' => [$this->guardian_exists_in_db ? 'nullable' : 'nullable', 'integer', 'between:1300,1450'],
+            'guardian_birth_month' => [$this->guardian_exists_in_db ? 'nullable' : 'nullable', 'integer', 'between:1,12'],
             'guardian_birth_day' => [
-                $this->guardian_exists_in_db ? 'nullable' : 'required',
+                $this->guardian_exists_in_db ? 'nullable' : 'nullable',
                 'integer',
                 'between:1,31',
                 function ($attribute, $value, $fail) {
@@ -816,52 +818,52 @@ class CreatePerson extends Component
                     }
                 }
             ],
-            'occupation_id' => 'required|exists:occupations,id',
-            'job_type_id' => 'required|exists:job_types,id',
-            'children_in_house' => 'required|integer|min:0',
+            'occupation_id' => 'nullable|exists:occupations,id',
+            'job_type_id' => 'nullable|exists:job_types,id',
+            'children_in_house' => 'nullable|integer|min:0',
             'economic_decile' => 'nullable|integer|min:1|max:10',
-            'insurance_status' => 'required|boolean',
+            'insurance_status' => 'nullable|boolean',
             'insurance_type_id' => 'required_if:insurance_status,1|nullable|exists:insurance_types,id',
-            'divorced_child_at_home' => 'required|in:none,1,2,3,more',
-            'average_income' => 'required|numeric|min:0',
+            'divorced_child_at_home' => 'nullable|in:none,1,2,3,more',
+            'average_income' => 'nullable|numeric|min:0',
 
 // اشتغال سایر اعضای خانواده
-            'any_family_employed' => 'required|boolean',
+            'any_family_employed' => 'nullable|boolean',
             'any_family_employed_description' => 'required_if:any_family_employed,1|nullable|string|max:500',
 
 // خودرو
-            'has_vehicle' => 'required|boolean',
+            'has_vehicle' => 'nullable|boolean',
             'vehicle_type_id' => 'required_if:has_vehicle,1|nullable|exists:vehicle_types,id',
             'vehicle_ownership_type' => 'required_if:has_vehicle,1|nullable|in:personal,company,rented',
 
 
-            'residence_status_id' => 'required|exists:residence_status_types,id',
+            'residence_status_id' => 'nullable|exists:residence_status_types,id',
             'district_id' => 'nullable|exists:districts,id',
-            'is_local_to_city' => 'required|boolean',
+            'is_local_to_city' => 'nullable|boolean',
             'deposit_amount' => 'nullable|integer|min:0',
             'monthly_rent' => 'nullable|integer|min:0',
             'residence_duration_years' => 'nullable|integer|min:0',
-            'address' => 'required|string|max:1000',
+            'address' => 'nullable|string|max:1000',
             'landline_phone' => ['nullable', 'regex:/^0[1-9]{2}[0-9]{8}$/'], // تلفن ثابت با کد شهر
             'trusted_person_phone' => ['nullable', 'regex:/^09[0-9]{9}$/'], // تلفن فرد مورد اعتماد
             'messenger_type' => 'nullable|string|max:70',
             'messenger_number' => ['nullable', 'required_with:messenger_type', 'regex:/^09[0-9]{9}$/'],
 
             // --- بخش 5: مالی و بانکی (اصلاح مهم) ---
-            'has_own_account' => 'required|in:0,1',
-            'account_owner_relation_id' => 'required|exists:account_owner_relations,id',
-            'bank_id' => 'required|exists:banks,id',
-            'card_number' => 'required|string|digits:16',
-            'sheba_number' => ['required', 'string', 'size:26', 'regex:/^IR[0-9]{24}$/i'],
+            'has_own_account' => 'nullable|in:0,1',
+            'account_owner_relation_id' => 'nullable|exists:account_owner_relations,id',
+            'bank_id' => 'nullable|exists:banks,id',
+            'card_number' => 'nullable|string|digits:16',
+            'sheba_number' => ['nullable', 'string', 'size:26', 'regex:/^IR[0-9]{24}$/i'],
             'subsidy_card_number' => 'nullable|string|digits:16',
             'subsidy_sheba_number' => 'nullable|string|max:26',
 
-            'is_studying' => 'required|boolean',
+            'is_studying' => 'nullable|boolean',
             'education_level_id' => 'nullable|exists:education_levels,id',
             'school_name' => 'nullable|string|max:255',
             'major' => 'nullable|string|max:255',
             'drop_reason' => 'nullable|string|max:1000',
-            'works_alongside_study' => 'required|boolean',
+            'works_alongside_study' => 'nullable|boolean',
             'monthly_income' => 'nullable|integer|min:0',
 
 
@@ -873,7 +875,7 @@ class CreatePerson extends Component
             'coverage_start_day' => 'nullable|integer|between:1,31',
             'coverage_start_month' => 'nullable|integer|between:1,12',
             'coverage_start_year' => 'nullable|integer|between:1300,1450',
-            'need_level_id' => 'required|exists:need_level_types,id',
+            'need_level_id' => 'nullable|exists:need_level_types,id',
         ];
     }
 

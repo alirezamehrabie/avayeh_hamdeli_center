@@ -21,6 +21,7 @@ class FastCreatePerson extends Component
     public $father_name;
     public $father_national_id;
     public $mother_national_id;
+    public $role = 'child';
 
     public function rules()
     {
@@ -73,6 +74,7 @@ class FastCreatePerson extends Component
                 'father_name' => $this->father_name,
                 'father_national_id' => $this->father_national_id,
                 'mother_national_id' => $this->mother_national_id,
+                'role' => $this->role,
                 'person_code' => Person::generateUniqueCode(),
             ]);
 

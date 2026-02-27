@@ -34,6 +34,7 @@ return new class extends Migration
             // درآمد - فقط یکبار تعریف شده
             $table->unsignedBigInteger('average_income')->nullable()->comment('Amount in Rials');
 
+            $table->unsignedTinyInteger('economic_decile')->nullable()->comment('1 to 10');
 
             // شغل و نوع شغل
             $table->foreignId('occupation_id')
@@ -58,10 +59,6 @@ return new class extends Migration
             // کودک یا فرزند طلاق‌گرفته در منزل
             $table->string('divorced_child_at_home')
                 ->default('none');
-
-            // میانگین درآمد
-            $table->unsignedBigInteger('average_income')
-                ->nullable();
 
             // وضعیت داشتن خودرو
             $table->boolean('has_vehicle')
