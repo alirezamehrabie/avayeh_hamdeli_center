@@ -21,12 +21,9 @@ return new class extends Migration
             $table->string('first_name');
             $table->string('last_name');
 
-            
             $table->string('full_name', 511)
                 ->storedAs("CONCAT(COALESCE(first_name,''),' ',COALESCE(last_name,''))");
 
-
-            // اطلاعات تولد
             $table->unsignedTinyInteger('birth_day')->nullable();
             $table->unsignedTinyInteger('birth_month')->nullable();
             $table->unsignedSmallInteger('birth_year')->nullable();
@@ -35,11 +32,13 @@ return new class extends Migration
             $table->string('birth_date_full', 10)->nullable()
                 ->virtualAs("CONCAT_WS('/', birth_year, LPAD(birth_month, 2, '0'), LPAD(birth_day, 2, '0'))")
                 ->comment('YYYY/MM/DD - Auto Generated');
+            $table->index('birth_date_full', 'idx_people_birth_date_full');
 
             // اطلاعات والدین
             $table->string('father_name')->nullable();
             $table->char('father_national_id', 10)->nullable();
             $table->char('mother_national_id', 10)->nullable();
+            $table->string('phone_number', 20)->nullable();
 
             // وضعیت فرد
             $table->enum('gender', ['male', 'female']);
@@ -50,18 +49,21 @@ return new class extends Migration
                 ->nullable()
                 ->constrained('sadaat_relations')
                 ->nullOnDelete();
+            $table->index('sadaat_relation_id', 'idx_people_sadaat_relation');
 
             // مددکار اجتماعی
             $table->foreignId('social_worker_id')
                 ->nullable()
                 ->constrained('social_workers')
                 ->nullOnDelete();
+            $table->index('social_worker_id', 'idx_people_social_worker');
 
 
             $table->foreignId('guardian_id')
                 ->nullable()
                 ->constrained('guardians')
                 ->nullOnDelete();
+            $table->index('guardian_id', 'idx_people_guardian');
 
 
             $table->string('photo_id_card')->nullable();
@@ -70,6 +72,7 @@ return new class extends Migration
 
             $table->boolean('has_disability')->default(false);
             $table->foreignId('disability_type_id')->nullable()->constrained('disability_types')->nullOnDelete();
+            $table->index('disability_type_id', 'idx_people_disability_type');
             $table->text('disability_description')->nullable();
 
             $table->text('skills_description')->nullable();
@@ -79,6 +82,7 @@ return new class extends Migration
 
             $table->index(['last_name', 'first_name'], 'idx_people_name');
             $table->index('full_name', 'idx_people_full_name');
+            $table->index('has_disability', 'idx_people_has_disability');
 
 
             // Composite index covers year, year+month, and year+month+day searches
@@ -99,15 +103,15 @@ return new class extends Migration
     {
         Schema::table('people', function (Blueprint $table) {
             $table->dropIndex('idx_people_birth_month_day');
-            $table->dropIndex('idx_people_full_birth_date');
-            $table->dropIndex('idx_people_birth_day');
-            $table->dropIndex('idx_people_birth_month');
-            $table->dropIndex('idx_people_birth_year');
-            $table->dropIndex('idx_people_birth_date_full');
             $table->dropIndex('idx_people_name');
-            $table->dropIndex('idx_people_national_id');
-            $table->dropIndex('idx_people_has_disability');
             $table->dropIndex('idx_people_full_name');
+            $table->dropIndex('idx_people_birth_composite');
+            $table->dropIndex('idx_people_has_disability');
+            $table->dropIndex('idx_people_sadaat_relation');
+            $table->dropIndex('idx_people_social_worker');
+            $table->dropIndex('idx_people_guardian');
+            $table->dropIndex('idx_people_disability_type');
+            $table->dropIndex('idx_people_birth_date_full');
         });
 
         // حذف کل جدول people
