@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('first_name');
             $table->string('last_name');
 
+            
             $table->string('full_name', 511)
                 ->storedAs("CONCAT(COALESCE(first_name,''),' ',COALESCE(last_name,''))");
 
