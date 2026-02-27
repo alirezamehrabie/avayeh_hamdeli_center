@@ -40,9 +40,9 @@ return new class extends Migration
             $table->char('mother_national_id', 10)->nullable();
             $table->string('phone_number', 20)->nullable();
 
-            // وضعیت فرد
-            $table->enum('gender', ['male', 'female']);
-            $table->enum('role', ['child', 'guardian']);
+            // وضعیت فرد (nullable for fast registration)
+            $table->enum('gender', ['male', 'female'])->nullable();
+            $table->enum('role', ['child', 'guardian'])->nullable();
             $table->enum('sadaat_status', ['sadaat', 'general'])->nullable();
 
             $table->foreignId('sadaat_relation_id')
@@ -51,7 +51,7 @@ return new class extends Migration
                 ->nullOnDelete();
             $table->index('sadaat_relation_id', 'idx_people_sadaat_relation');
 
-            // مددکار اجتماعی
+            // مددکار اجتماعی (nullable for fast registration)
             $table->foreignId('social_worker_id')
                 ->nullable()
                 ->constrained('social_workers')
@@ -70,7 +70,7 @@ return new class extends Migration
             $table->string('photo_birth_certificate')->nullable();
             $table->string('profile_photo')->nullable();
 
-            $table->boolean('has_disability')->default(false);
+            $table->boolean('has_disability')->default(false)->nullable();
             $table->foreignId('disability_type_id')->nullable()->constrained('disability_types')->nullOnDelete();
             $table->index('disability_type_id', 'idx_people_disability_type');
             $table->text('disability_description')->nullable();
