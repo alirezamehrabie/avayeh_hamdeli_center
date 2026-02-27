@@ -66,8 +66,8 @@ class CreatePerson extends Component
     public $gender;
 
     // سادات (پیش‌فرض عام)
-    public $role = 'child'; // مقدار پیش‌فرض
-    public $sadaat_status = 'general'; // مقدار پیش‌فرض
+    public $role = 'فرزند'; // مقدار پیش‌فرض
+    public $sadaat_status = 'عام'; // مقدار پیش‌فرض
     public $sadaat_relation_id;
     public $social_worker_id;
 
@@ -268,39 +268,37 @@ class CreatePerson extends Component
             $this->existing_profile_photo = $this->person->profile_photo;
 
 
-            // Education data (with null check)
-            if ($this->person->education) {
-                $this->is_studying = $this->person->education->is_studying ? '1' : '0';
-                $this->school_name = $this->person->education->school_name ?? '';
+            if($this->person->education())
+            {
+                $this->is_studying = $this->person->education->is_studying;
+                $this->school_name = $this->person->education->school_name;
                 $this->education_level_id = $this->person->education->education_level_id;
-                $this->major = $this->person->education->major ?? '';
-                $this->drop_reason = $this->person->education->drop_reason ?? '';
-                $this->works_alongside_study = $this->person->education->works_alongside_study ? '1' : '0';
-                $this->monthly_income = $this->person->education->monthly_income ?? '';
+                $this->major = $this->person->education->major;
+                $this->drop_reason = $this->person->education->drop_reason;
+                $this->works_alongside_study = $this->person->education->works_alongside_study;
+                $this->monthly_income = $this->person->education->monthly_income;
             }
 
-            // Family status data (with null check)
-            if ($this->person->familyStatus) {
+            if($this->person->familyStatus())
+            {
                 $this->guardian_relation_type_id = $this->person->familyStatus->guardian_relation_type_id;
                 $this->remarried_parent = $this->person->familyStatus->remarried_parent;
                 $this->children_from_previous_marriage = $this->person->familyStatus->children_from_previous_marriage;
             }
 
 
-            // Guardian data (with null check)
-            if ($this->person->guardian) {
+            if($this->person->guardian()){
                 $this->guardian_national_code = $this->person->guardian->national_code;
                 $this->_populateGuardianFieldsFromModel($this->person->guardian);
             }
 
-            // Harm types (with null check)
-            if ($this->person->harmTypes) {
-                $this->harm_types = $this->person->harmTypes->pluck('id')->map(fn($id) => (string)$id)->toArray();
+            if($this->person->harmTypes()){
+                $this->harm_types = $this->person->harmTypes()->pluck('harm_types.id')->map(fn($id) => (string)$id)->toArray();
             }
 
-            // Skills (with null check)
-            if ($this->person->skills) {
-                $this->skills = $this->person->skills->pluck('id')->toArray();
+            if($this->person->skills())
+            {
+                $this->skills = $this->person->skills()->pluck('id')->toArray();
             }
 
             if ($this->person->bankInfo)
@@ -317,8 +315,8 @@ class CreatePerson extends Component
 
 
 
-            // Support coverage (with null check)
-            if ($this->person->supportCoverage) {
+            if($this->person->supportCoverage())
+            {
                 $this->support_organization_id = $this->person->supportCoverage->support_organization_id;
                 $this->coverage_start_day = $this->person->supportCoverage->coverage_start_day;
                 $this->coverage_start_month = $this->person->supportCoverage->coverage_start_month;
@@ -327,7 +325,7 @@ class CreatePerson extends Component
             }
 
 
-            if($this->person->needsLevel){
+            if($this->person->needsLevel()){
                 $this->need_level_id = $this->person->needsLevel->need_level_id;
             }
         }

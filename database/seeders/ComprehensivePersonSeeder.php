@@ -195,6 +195,7 @@ class ComprehensivePersonSeeder extends Seeder
                     'skills_description' => $faker->text(200),
                     'sadaat_relation_id' => $faker->randomElement(SadaatRelation::pluck('id')->toArray()),
                     'gender' => $faker->randomElement(['male', 'female']),
+                    'role' => 'child',
 
                 ]);
 
