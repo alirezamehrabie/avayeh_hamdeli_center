@@ -5,12 +5,13 @@ namespace App\Models;
 use App\Traits\HasJalaliBirthDate;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Morilog\Jalali\Jalalian;
 
 class Person extends Model
 {
-    use HasFactory, HasJalaliBirthDate;
+    use HasFactory, HasJalaliBirthDate, SoftDeletes;
 
     /**
      * لیست ماه‌های شمسی
@@ -308,17 +309,18 @@ class Person extends Model
      */
     protected static function generateUniqueCode(): string
     {
-        // پیدا کردن آخرین کد ثبت شده که ۵ رقمی است و در بازه جدید قرار دارد
-        $lastPersonCode = self::whereRaw('LENGTH(person_code) = 5')
-            ->where('person_code', '>=', '14000')
-            ->max('person_code');
+        return DB::transaction(function () {
+            $lastPersonCode = self::whereRaw('LENGTH(person_code) = 5')
+                ->where('person_code', '>=', '14000')
+                ->lockForUpdate()
+                ->max('person_code');
 
-        if ($lastPersonCode) {
-            return (string) ($lastPersonCode + 1);
-        }
+            if ($lastPersonCode) {
+                return (string) ($lastPersonCode + 1);
+            }
 
-        // اگر هیچ مددیار جدیدی نیست، از ۱۴۰۰۰ شروع کن
-        return '14000';
+            return '14000';
+        });
     }
 
 
