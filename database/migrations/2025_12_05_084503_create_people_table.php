@@ -12,34 +12,39 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // ۱. ایجاد جدول اصلی people
         Schema::create('people', function (Blueprint $table) {
             $table->id();
+
             $table->string('person_code', 6)->unique();
-            $table->string('first_name');
-            $table->string('last_name');
-            // ستون full_name در مرحله بعدی به صورت مجازی اضافه می‌شود
             $table->string('national_id', 10)->unique();
 
+            $table->string('first_name');
+            $table->string('last_name');
+
+            $table->string('full_name', 511)
+                ->storedAs("CONCAT(COALESCE(first_name,''),' ',COALESCE(last_name,''))");
+
+
             // اطلاعات تولد
-            $table->integer('birth_day');
+            $table->unsignedTinyInteger('birth_day')->nullable();
             $table->unsignedTinyInteger('birth_month')->nullable();
-            $table->integer('birth_year')->nullable();
-            $table->string('birth_date_full', 10)
-                ->nullable()
-                ->comment('تاریخ کامل تولد شمسی - فرمت: YYYY/MM/DD');
+            $table->unsignedSmallInteger('birth_year')->nullable();
+
+            // Generating full date safely instead of redundant storage
+            $table->string('birth_date_full', 10)->nullable()
+                ->virtualAs("CONCAT_WS('/', birth_year, LPAD(birth_month, 2, '0'), LPAD(birth_day, 2, '0'))")
+                ->comment('YYYY/MM/DD - Auto Generated');
 
             // اطلاعات والدین
             $table->string('father_name')->nullable();
-            $table->string('father_national_id', 10)->nullable();
-            $table->string('mother_national_id', 10)->nullable();
+            $table->char('father_national_id', 10)->nullable();
+            $table->char('mother_national_id', 10)->nullable();
 
             // وضعیت فرد
-            $table->enum('gender', ['مرد', 'زن']);
-            $table->enum('role', ['فرزند', 'سرپرست']);
+            $table->enum('gender', ['male', 'female']);
+            $table->enum('role', ['child', 'guardian']);
+            $table->enum('sadaat_status', ['sadaat', 'general'])->nullable();
 
-            // وضعیت سادات یا عام
-            $table->enum('sadaat_status', ['سادات', 'عام'])->nullable();
             $table->foreignId('sadaat_relation_id')
                 ->nullable()
                 ->constrained('sadaat_relations')
@@ -55,60 +60,35 @@ return new class extends Migration
             $table->foreignId('guardian_id')
                 ->nullable()
                 ->constrained('guardians')
-                ->onDelete('set null');
+                ->nullOnDelete();
 
-            // مستندات تصویری
+
             $table->string('photo_id_card')->nullable();
             $table->string('photo_birth_certificate')->nullable();
             $table->string('profile_photo')->nullable();
 
-            // معلولیت
             $table->boolean('has_disability')->default(false);
-            $table->unsignedBigInteger('disability_type_id')->nullable();
-            $table->foreign('disability_type_id')
-                ->references('id')
-                ->on('disability_types')
-                ->nullOnDelete();
+            $table->foreignId('disability_type_id')->nullable()->constrained('disability_types')->nullOnDelete();
             $table->text('disability_description')->nullable();
 
-            // توضیحات مهارت
             $table->text('skills_description')->nullable();
 
-            // زمان‌بندی
             $table->timestamps();
             $table->softDeletes();
 
-            // ایندکس‌های متنی و عددی
             $table->index(['last_name', 'first_name'], 'idx_people_name');
-            $table->index('national_id', 'idx_people_national_id');
-            $table->index('has_disability', 'idx_people_has_disability');
-            $table->index('birth_day',   'idx_people_birth_day');
-            $table->index('birth_month', 'idx_people_birth_month');
-            $table->index('birth_year',  'idx_people_birth_year');
-            $table->index('birth_date_full', 'idx_people_birth_date_full');
-            $table->index(
-                ['birth_month', 'birth_day'],
-                'idx_people_birth_month_day'
-            );
-            $table->index(
-                ['birth_year', 'birth_month', 'birth_day'],
-                'idx_people_full_birth_date'
-            );
-        });
-
-        // ۲. تعریف ستون مجازی full_name و ایندکس آن
-        DB::statement("
-            ALTER TABLE people
-            ADD COLUMN full_name VARCHAR(511)
-            GENERATED ALWAYS AS (
-                CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, ''))
-            ) STORED
-            AFTER last_name
-        ");
-
-        Schema::table('people', function (Blueprint $table) {
             $table->index('full_name', 'idx_people_full_name');
+
+
+            // Composite index covers year, year+month, and year+month+day searches
+            $table->index(['birth_year', 'birth_month', 'birth_day'], 'idx_people_birth_composite');
+
+            // Optional: Only if you have a "Upcoming Birthdays" feature
+            $table->index(['birth_month', 'birth_day'], 'idx_people_birth_month_day');
+
         });
+
+
     }
 
     /**

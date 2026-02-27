@@ -12,14 +12,21 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('guardian_code_counter', function (Blueprint $table) {
-            $table->id();
+            // کلید Singleton
+            $table->unsignedTinyInteger('singleton_id')->primary(); // همیشه = 1
+
+            // مقدار شمارنده
             $table->unsignedInteger('last_code')->default(999); // اولین کد = 1000
+
             $table->timestamps();
         });
 
-        // اضافه کردن رکورد پایه
+        // درج تنها ردیف مجاز
         DB::table('guardian_code_counter')->insert([
-            'last_code' => 999
+            'singleton_id' => 1,
+            'last_code' => 999,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 

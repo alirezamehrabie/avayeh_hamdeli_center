@@ -120,12 +120,12 @@
                             <label class="form-label">جنسیت <span class="text-danger">*</span></label>
                             <div>
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" value="مرد" wire:model.live="gender"
+                                    <input class="form-check-input" type="radio" value="male" wire:model.live="gender"
                                            id="gender_male">
                                     <label class="form-check-label" for="gender_male">مرد</label>
                                 </div>
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" value="زن" wire:model.live="gender"
+                                    <input class="form-check-input" type="radio" value="female" wire:model.live="gender"
                                            id="gender_female">
                                     <label class="form-check-label" for="gender_female">زن</label>
                                 </div>
@@ -137,10 +137,10 @@
                         <div class="form-group col-md-2">
                             <label class="d-block">وضعیت سادات <span class="text-danger">*</span></label>
                             <label class="radio-inline me-3">
-                                <input type="radio" class="form-check-input" value="عام" wire:model.live="sadaat_status" id="sadaat_status_general"> عام
+                                <input type="radio" class="form-check-input" value="general" wire:model.live="sadaat_status" id="sadaat_status_general"> عام
                             </label>
                             <label class="radio-inline">
-                                <input type="radio" class="form-check-input" value="سادات" wire:model.live="sadaat_status" id="sadaat_status_sadaat"> سادات
+                                <input type="radio" class="form-check-input" value="sadaat" wire:model.live="sadaat_status" id="sadaat_status_sadaat"> سادات
                             </label>
                             @error('sadaat_status') <span
                                 class="text-danger small d-block mt-1">{{ $message }}</span> @enderror
@@ -164,7 +164,7 @@
                         <div class="col-md-4">
                             <label class="form-label">نقش در خانواده <span class="text-danger">*</span></label>
                             <select class="form-select" wire:model.blur="role">
-                                <option value="فرزند">فرزند</option>
+                                <option value="child">فرزند</option>
                                 {{-- <option value="سرپرست">سرپرست</option> --}}
                             </select>
                             @error('role') <span class="text-danger small">{{ $message }}</span> @enderror

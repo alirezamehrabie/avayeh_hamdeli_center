@@ -617,7 +617,7 @@ class CreatePerson extends Component
         }
 
         // واکشی اطلاعات بانکی مددجو
-        if ($this->person->bankInfo) {
+        if ($this->person && $this->person->bankInfo) {
             // تشخیص has_own_account از روی account_owner_relation_id
             // فرض: ID=1 یعنی خود مددجو، ID=2 یعنی سرپرست
             $this->has_own_account = ($this->person->bankInfo->account_owner_relation_id == 1) ? '1' : '0';
@@ -630,7 +630,7 @@ class CreatePerson extends Component
             $this->subsidy_card_number = $this->person->bankInfo->subsidy_card_number;
             $this->subsidy_sheba_number = $this->person->bankInfo->subsidy_sheba_number;
             $this->other_account_owner_relation = $this->person->bankInfo->other_account_owner_relation;
-        } elseif ($this->has_own_account == '0' && $this->person->guardian && $this->person->guardian->bankInfo) {
+        } elseif ($this->has_own_account == '0' && $guardian->bankInfo) {
             // اگر مددجو اطلاعات بانکی ندارد ولی سرپرست دارد، از سرپرست استفاده می‌کنیم
             $this->has_own_account = '0';
             $this->account_owner_relation_id = 2; // سرپرست
@@ -751,12 +751,12 @@ class CreatePerson extends Component
             'father_national_id' => 'nullable|digits:10',
             'mother_national_id' => 'nullable|digits:10',
             'phone_number' => 'nullable|string|max:11',
-            'gender' => 'required|in:مرد,زن',
-            'role' => 'required|in:فرزند,سرپرست',
+            'gender' => 'required|in:male,female',
+            'role' => 'required|in:child,guardian',
 
             // سادات: فقط اگر وضعیت "سادات" باشد، نسبت اجباری است
-            'sadaat_status' => 'required|in:عام,سادات',
-            'sadaat_relation_id' => 'required_if:sadaat_status,سادات|nullable|exists:sadaat_relations,id',
+            'sadaat_status' => 'required|in:general,sadaat',
+            'sadaat_relation_id' => 'required_if:sadaat_status,sadaat|nullable|exists:sadaat_relations,id',
 
             // --- بخش 2 و 3: سرپرست ---
             'social_worker_id' => 'required|exists:social_workers,id',
@@ -985,7 +985,7 @@ class CreatePerson extends Component
                     'gender' => $this->gender,
                     'role' => $this->role,
                     'sadaat_status' => $this->sadaat_status,
-                    'sadaat_relation_id' => ($this->sadaat_status === 'سادات') ? $this->sadaat_relation_id : null,
+                    'sadaat_relation_id' => ($this->sadaat_status === 'sadaat') ? $this->sadaat_relation_id : null,
                     'skills_description' => $this->skills_description,
                     'has_disability' => (bool)$this->has_disability,
                     'disability_type_id' => ((bool)$this->has_disability) ? $this->disability_type_id : null,

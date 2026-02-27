@@ -29,7 +29,7 @@ return new class extends Migration
                 ->nullable();
             $table->unsignedSmallInteger('guardian_birth_year')
                 ->nullable();
-            $table->string('guardian_birth_date_full', 10)
+            $table->string('guardian_birth_date_full', 20)
                 ->nullable();
 
             // تعداد فرزندان

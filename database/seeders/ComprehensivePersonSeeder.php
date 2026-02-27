@@ -188,13 +188,13 @@ class ComprehensivePersonSeeder extends Seeder
                     'father_national_id' => $faker->numerify('##########'),
                     'mother_national_id' => $faker->numerify('##########'),
                     'phone_number' => $faker->numerify('0913#######'),
-                    'sadaat_status' => $faker->randomElement(['سادات','عام']),
+                    'sadaat_status' => $faker->randomElement(['sadaat','general']),
                     'has_disability' => $faker->randomElement(['0','1']),
                     'disability_type_id' => $faker->randomElement([DisabilityType::inRandomOrder()->first()->id]),
                     'disability_description' => $faker->text(200),
                     'skills_description' => $faker->text(200),
                     'sadaat_relation_id' => $faker->randomElement(SadaatRelation::pluck('id')->toArray()),
-                    'gender' => $faker->randomElement(['مرد', 'زن']),
+                    'gender' => $faker->randomElement(['male', 'female']),
 
                 ]);
 
