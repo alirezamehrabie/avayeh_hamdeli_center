@@ -11,11 +11,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('people', function (Blueprint $table) {
-            $table->dropForeign(['social_worker_id']); // اگر Foreign key تعریف شده
-            $table->dropColumn('social_worker_id');
-        });
-
         Schema::table('guardians', function (Blueprint $table) {
             $table->foreignId('social_worker_id')->nullable()->constrained('social_workers');
         });

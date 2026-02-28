@@ -51,14 +51,6 @@ return new class extends Migration
                 ->nullOnDelete();
             $table->index('sadaat_relation_id', 'idx_people_sadaat_relation');
 
-            // مددکار اجتماعی (nullable for fast registration)
-            $table->foreignId('social_worker_id')
-                ->nullable()
-                ->constrained('social_workers')
-                ->nullOnDelete();
-            $table->index('social_worker_id', 'idx_people_social_worker');
-
-
             $table->foreignId('guardian_id')
                 ->nullable()
                 ->constrained('guardians')
