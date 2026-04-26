@@ -1,6 +1,7 @@
 <aside class="flex flex-col w-64 h-screen px-4 py-8 overflow-y-auto bg-indigo-900 text-white transition-all duration-300">
-    <div class="flex items-center justify-center mb-8 border-b border-indigo-800 pb-4">
-        <span class="text-xl font-bold">آوای همدلی</span>
+    <div class="flex-row place-items-center justify-center mb-8 border-b border-indigo-800 pb-4">
+        <p class="text-xs pb-3">مرکز نیکوکاری تخصصی کودکان</p>
+        <p class="text-2xl font-bold">آوای همـــــدلی</p>
     </div>
 
     <nav class="flex-1 space-y-2">

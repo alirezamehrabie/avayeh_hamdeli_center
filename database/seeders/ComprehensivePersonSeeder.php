@@ -81,7 +81,7 @@ class ComprehensivePersonSeeder extends Seeder
                 'birth_date_full' => $birthDateFull,
 
                 'mobile' => $faker->phoneNumber(),
-                'family_members_count' => $faker->numberBetween(1, 5),
+
 
                 // فیلدهای تفکیک شده و کامل شروع همکاری
                 'start_day'       => $sDay,

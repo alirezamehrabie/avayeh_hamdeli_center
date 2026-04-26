@@ -897,8 +897,6 @@ class CreatePerson extends Component
             $idCardPath = $this->processImage($this->photo_id_card, $this->captured_id_card_base64, 'photo_id_card');
             $birthCertPath = $this->processImage($this->photo_birth_certificate, $this->captured_birth_certificate_base64, 'photo_birth_certificate');
             $supportCardPath = $this->processImage($this->support_card_image, $this->captured_support_card_base64, 'support_card_image');
-            // --- 2. آماده‌سازی تاریخ‌های کامل شمسی ---
-            $personBirthDateFull = sprintf('%04d/%02d/%02d', $this->birth_year, $this->birth_month, $this->birth_day);
 
             $guardianBirthDateFull = null;
             if ($this->guardian_birth_year && $this->guardian_birth_month && $this->guardian_birth_day) {
@@ -981,7 +979,6 @@ class CreatePerson extends Component
                     'birth_day' => $this->birth_day,
                     'birth_month' => $this->birth_month,
                     'birth_year' => $this->birth_year,
-                    'birth_date_full' => $personBirthDateFull,
                     'father_name' => $this->father_name,
                     'father_national_id' => $this->father_national_id,
                     'mother_national_id' => $this->mother_national_id,

@@ -40,7 +40,7 @@
                                     @if($person->gender == 'male')
                                         <span class="badge bg-primary">مرد</span>
                                     @elseif($person->gender == 'female')
-                                        <span class="badge bg-pink">زن</span>
+                                        <span class="badge text-white" style="background-color: #e83e8c;">زن</span>
                                     @else
                                         <span class="badge bg-secondary">نامشخص</span>
                                     @endif

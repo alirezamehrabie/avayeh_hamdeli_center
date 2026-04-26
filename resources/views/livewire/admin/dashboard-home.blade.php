@@ -44,7 +44,7 @@
             <div class="mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-lg font-semibold text-gray-800">آخرین مددجویان ثبت شده</h2>
-                    <a href="#" class="text-sm text-indigo-600 hover:underline">مشاهده همه</a>
+                    <a href="{{route('people.index')}}" class="text-sm text-indigo-600 hover:underline">مشاهده همه</a>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -65,7 +65,9 @@
                         @forelse($latestPeople as $person)
                             <tr class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                                 <td class="p-4 text-sm text-gray-700 font-mono">{{ $person->person_code }}</td>
-                                <td class="p-4 text-sm text-gray-700 font-mono">{{ $person->guardian->guardian_code }}</td>
+                                <td class="p-4 text-sm text-gray-700 font-mono">
+                                    {{ $person->guardian?->guardian_code ?? '-' }}
+                                </td>
                                 <td class="p-4 text-sm text-gray-700">{{ $person->first_name }}</td>
                                 <td class="p-4 text-sm text-gray-700">{{ $person->last_name }}</td>
                                 <td class="p-4 text-sm text-gray-700">{{ $person->father_name }}</td>
