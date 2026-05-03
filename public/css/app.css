@@ -1,10 +1,3 @@
-@import url('https://cdn.jsdelivr.net/npm/vazirmatn@latest/Vazirmatn.css');
-* {
-    font-family: 'Vazirmatn', sans-serif;
-}
-header h1, header span {
-    font-family: 'Vazirmatn', sans-serif;
-}
 header img {
     transition: transform 0.3s ease;
 }

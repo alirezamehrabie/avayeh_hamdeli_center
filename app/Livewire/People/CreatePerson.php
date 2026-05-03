@@ -402,7 +402,7 @@ class CreatePerson extends Component
 
         // --- اگر به این مرحله رسیدیم، یعنی national_code دقیقاً 10 رقمی و معتبر است. ---
         // سناریو 3: کد ملی 10 رقمی و کامل است. جستجو در دیتابیس را انجام می‌دهیم.
-        $guardian = Guardian::where('national_code', $national_code)->first();
+        $guardian = Guardian::with('bankInfo')->where('national_code', $national_code)->first();
 
         if ($guardian) {
             // سرپرست در دیتابیس یافت شد: تمام اطلاعات را از مدل پر می‌کنیم.
@@ -425,6 +425,8 @@ class CreatePerson extends Component
                 $this->guardian_last_name = null;
             }
         }
+
+        $this->updateBankInfoFromGuardian();
 
     }
 
@@ -638,11 +640,11 @@ class CreatePerson extends Component
             // اگر مددجو اطلاعات بانکی ندارد ولی سرپرست دارد، از سرپرست استفاده می‌کنیم
             $this->has_own_account = '0';
             $this->account_owner_relation_id = 2; // سرپرست
-            $this->bank_id = $this->person->guardian->bankInfo->bank_id;
-            $this->card_number = $this->person->guardian->bankInfo->card_number;
-            $this->sheba_number = $this->person->guardian->bankInfo->sheba_number;
-            $this->subsidy_card_number = $this->person->guardian->bankInfo->subsidy_card_number;
-            $this->subsidy_sheba_number = $this->person->guardian->bankInfo->subsidy_sheba_number;
+            $this->bank_id = $guardian->bankInfo->bank_id;
+            $this->card_number = $guardian->bankInfo->card_number;
+            $this->sheba_number = $guardian->bankInfo->sheba_number;
+            $this->subsidy_card_number = $guardian->bankInfo->subsidy_card_number;
+            $this->subsidy_sheba_number = $guardian->bankInfo->subsidy_sheba_number;
         }
 
 

@@ -14,7 +14,7 @@
                 <div class="rounded-md -space-y-px">
                     <div class="mb-4">
                         <label for="email" class="block text-sm font-medium text-gray-700 mb-1">نام کاربری</label>
-                        <input wire:model="email" id="email" type="email" required class="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <input wire:model="email" id="email" type="text" required class="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         @error('email') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                     </div>
                     <div>
