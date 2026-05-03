@@ -18,6 +18,7 @@ class EditSocialWorker extends Component
 {
     use WithFileUploads , SocialWorkerFormTrait;
     public SocialWorker $socialWorker;
+    public bool $embedded = false;
 
     public function mount(SocialWorker $socialWorker)
     {
@@ -70,6 +71,9 @@ class EditSocialWorker extends Component
 
             DB::commit();
             session()->flash('success', 'اطلاعات مددکار با موفقیت به‌روزرسانی شد.');
+            if ($this->embedded) {
+                $this->dispatch('open-dashboard-section', section: 'social-workers-list');
+            }
         } catch (\Exception $e) {
             DB::rollBack();
             session()->flash('error', 'خطا: ' . $e->getMessage());

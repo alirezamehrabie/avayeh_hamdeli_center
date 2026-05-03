@@ -13,24 +13,9 @@
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-<div class="flex h-screen overflow-hidden">
-    <!-- Sidebar -->
-    @include('layouts.partials.sidebar')
+{{ $slot }}
 
-    <div class="flex flex-col flex-1 w-full overflow-y-auto">
-        <!-- Header -->
-        @include('layouts.partials.header')
-
-        <!-- Main Content -->
-        <main class="p-6">
-            <div class="container mx-auto">
-                {{ $slot }}
-            </div>
-        </main>
-    </div>
-</div>
-
-@livewireScripts
+@livewireScriptConfig
 @stack('scripts')
 </body>
 </html>

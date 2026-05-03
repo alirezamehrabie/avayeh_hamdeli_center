@@ -618,7 +618,7 @@
                             @error('guardian_national_code') <span
                                 class="text-danger small">{{ $message }}</span> @enderror
 
-                            @if($guardian_national_code && strlen($guardian_national_code) === 10)
+                            @if($guardian_national_code && strlen((string) $guardian_national_code) === 10)
                                 @if($guardian_exists_in_db)
                                     <div class="alert alert-success mt-2 p-2">
                                         <i class="bi bi-check-circle me-1"></i> سرپرست یافت شد:
@@ -630,7 +630,7 @@
                                         لطفاً اطلاعات زیر را تکمیل کنید تا سرپرست جدید ثبت شود.
                                     </div>
                                 @endif
-                            @elseif(strlen($guardian_national_code) > 0 && strlen($guardian_national_code) < 10)
+                            @elseif(strlen((string) $guardian_national_code) > 0 && strlen((string) $guardian_national_code) < 10)
                                 <div class="alert alert-secondary mt-2 p-2">
                                     کد ملی سرپرست باید ۱۰ رقم باشد.
                                 </div>
@@ -1404,5 +1404,4 @@
     };
 </script>
 @endscript
-
 

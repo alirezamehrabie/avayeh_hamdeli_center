@@ -5,7 +5,11 @@
         <h1 class="text-2xl font-bold mb-4">لیست مددکاران اجتماعی</h1>
 
         <div class="mb-4">
-            <a href="{{ route('social-workers.create') }}" class="btn btn-primary">ثبت مددکار جدید</a>
+            @if($embedded)
+                <button type="button" wire:click="createSocialWorker" class="btn btn-primary">ثبت مددکار جدید</button>
+            @else
+                <a href="{{ route('social-workers.create') }}" class="btn btn-primary">ثبت مددکار جدید</a>
+            @endif
         </div>
 
         <table class="min-w-full bg-white border rounded">
@@ -26,7 +30,11 @@
                     <td class="py-2 px-4 border-b text-center">{{ $worker->national_id }}</td>
                     <td class="py-2 px-4 border-b text-center">{{ $worker->mobile }}</td>
                     <td class="py-2 px-4 border-b text-center">
-                        <a href="{{ route('social-workers.edit', $worker) }}" class="text-blue-500 hover:underline">ویرایش</a>
+                        @if($embedded)
+                            <button type="button" wire:click="editSocialWorker({{ $worker->id }})" class="text-blue-500 hover:underline">ویرایش</button>
+                        @else
+                            <a href="{{ route('social-workers.edit', $worker) }}" class="text-blue-500 hover:underline">ویرایش</a>
+                        @endif
                     </td>
                 </tr>
             @endforeach

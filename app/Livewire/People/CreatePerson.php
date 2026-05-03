@@ -206,11 +206,13 @@ class CreatePerson extends Component
 
     public ?Person $person = null;
     public string $mode;
+    public bool $embedded = false;
 
-    public function mount(string $mode, ?Person $person = null)
+    public function mount(string $mode, ?Person $person = null, bool $embedded = false)
     {
         $this->person = $person;
         $this->mode = $mode;
+        $this->embedded = $embedded;
 
         $this->guardian = Guardian::with('bankInfo')->where('national_code', $this->guardian_national_code)->first();
         $this->sadaatRelations = SadaatRelation::orderBy('sort_order')->get();
@@ -636,15 +638,15 @@ class CreatePerson extends Component
             $this->subsidy_card_number = $this->person->bankInfo->subsidy_card_number;
             $this->subsidy_sheba_number = $this->person->bankInfo->subsidy_sheba_number;
             $this->other_account_owner_relation = $this->person->bankInfo->other_account_owner_relation;
-        } elseif ($this->has_own_account == '0' && $guardian->bankInfo) {
+        } elseif ($this->has_own_account == '0' && ($guardianBankInfo = $guardian->bankInfo()->first())) {
             // اگر مددجو اطلاعات بانکی ندارد ولی سرپرست دارد، از سرپرست استفاده می‌کنیم
             $this->has_own_account = '0';
             $this->account_owner_relation_id = 2; // سرپرست
-            $this->bank_id = $guardian->bankInfo->bank_id;
-            $this->card_number = $guardian->bankInfo->card_number;
-            $this->sheba_number = $guardian->bankInfo->sheba_number;
-            $this->subsidy_card_number = $guardian->bankInfo->subsidy_card_number;
-            $this->subsidy_sheba_number = $guardian->bankInfo->subsidy_sheba_number;
+            $this->bank_id = $guardianBankInfo->bank_id;
+            $this->card_number = $guardianBankInfo->card_number;
+            $this->sheba_number = $guardianBankInfo->sheba_number;
+            $this->subsidy_card_number = $guardianBankInfo->subsidy_card_number;
+            $this->subsidy_sheba_number = $guardianBankInfo->subsidy_sheba_number;
         }
 
 
@@ -1143,6 +1145,11 @@ class CreatePerson extends Component
 
                 session()->flash('success', 'اطلاعات مددجو با موفقیت به‌روزرسانی شد.');
 
+                if ($this->embedded) {
+                    $this->dispatch('open-dashboard-section', section: 'people-list');
+                    return;
+                }
+
                 return redirect()->route('people.form', [
                     'mode' => 'edit',
                     'person' => $this->person->id
@@ -1347,6 +1354,12 @@ class CreatePerson extends Component
                 }
 
                 session()->flash('success', 'اطلاعات مددجو با موفقیت ثبت و ذخیره شد.');
+
+                if ($this->embedded) {
+                    $this->dispatch('open-dashboard-section', section: 'people-list');
+                    return;
+                }
+
                 $this->reset();
 
                 return redirect()->route('people.form', [

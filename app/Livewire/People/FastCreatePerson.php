@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
 #[Layout('layouts.app')]
 class FastCreatePerson extends Component
 {
+    public bool $embedded = false;
+
     // Required fields for fast registration
     public $first_name;
     public $last_name;
@@ -81,7 +83,12 @@ class FastCreatePerson extends Component
             DB::commit();
 
             session()->flash('success', 'اطلاعات فرد به صورت سریع ثبت شد. اکنون می‌توانید اطلاعات کامل این فرد را ویرایش کنید.');
-            
+
+            if ($this->embedded) {
+                $this->dispatch('open-dashboard-section', section: 'people-list');
+                return;
+            }
+
             // Reset form
             $this->reset();
 

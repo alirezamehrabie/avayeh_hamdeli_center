@@ -17,6 +17,7 @@ class CreateSocialWorker extends Component
 {
     use WithFileUploads, SocialWorkerFormTrait;
 
+    public bool $embedded = false;
 
     public function save()
     {
@@ -68,6 +69,11 @@ class CreateSocialWorker extends Component
 
             DB::commit();
             session()->flash('success', 'مددکار با موفقیت ثبت شد.');
+            if ($this->embedded) {
+                $this->dispatch('open-dashboard-section', section: 'social-workers-list');
+                return;
+            }
+
             $this->reset();
         } catch (\Exception $e) {
             DB::rollBack();

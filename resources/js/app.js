@@ -1,5 +1,7 @@
-import Alpine from 'alpinejs'
-Alpine.start()
-
 import './bootstrap';
-import 'bootstrap/dist/js/bootstrap.min.js'
+import 'bootstrap/dist/js/bootstrap.min.js';
+import { Livewire, Alpine } from '../../vendor/livewire/livewire/dist/livewire.esm';
+
+window.Alpine = Alpine;
+
+Livewire.start();

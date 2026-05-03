@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'مرکز نیکوکاری تخصصی کودکان آوای همدلی')</title>
 
+    @livewireStyles
+
     {{-- Vite Assets --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -22,6 +24,7 @@
     {{ $slot }}
 </main>
 
+@livewireScriptConfig
 @stack('scripts')
 </body>
 </html>

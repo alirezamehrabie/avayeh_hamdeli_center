@@ -13,6 +13,7 @@ class IndexPeople extends Component
     use WithPagination;
 
     public $search = '';
+    public bool $embedded = false;
 
     public function updatingSearch()
     {
@@ -37,6 +38,11 @@ class IndexPeople extends Component
 
     public function editPerson(Person $person)
     {
+        if ($this->embedded) {
+            $this->dispatch('open-dashboard-section', section: 'person-edit', id: $person->id);
+            return;
+        }
+
         return redirect()->route('people.form', [
             'mode' => 'edit',
             'person' => $person->id

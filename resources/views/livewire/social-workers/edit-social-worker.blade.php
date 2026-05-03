@@ -241,7 +241,11 @@
 
                     {{-- دکمه‌های عملیاتی مطابق طرح مددجو --}}
                     <div class="d-flex justify-content-end gap-2 mt-4 mb-5">
-                        <a href="{{ route('social-workers.index') }}" class="btn btn-outline-secondary px-4">بازگشت</a>
+                        @if($embedded)
+                            <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'social-workers-list' })" class="btn btn-outline-secondary px-4">بازگشت</button>
+                        @else
+                            <a href="{{ route('social-workers.index') }}" class="btn btn-outline-secondary px-4">بازگشت</a>
+                        @endif
                         <button type="submit" wire:loading.attr="disabled" class="btn btn-warning px-5 fw-bold">
                             <span wire:loading.remove wire:target="update">بروزرسانی اطلاعات</span>
                             <span wire:loading wire:target="update">
