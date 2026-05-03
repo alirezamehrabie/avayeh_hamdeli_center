@@ -13,7 +13,33 @@
             @endif
 
             <div class="mb-4">
-                <input type="text" class="form-control" wire:model.live="search" placeholder="جستجو بر اساس نام، نام خانوادگی، کد ملی یا کد مددجو...">
+                <label for="beneficiary-search" class="form-label fw-semibold">جستجوی سریع</label>
+                <div class="row g-2">
+                    <div class="col-12 col-md-4 col-lg-3">
+                        <select
+                            id="beneficiary-search-field"
+                            class="form-select"
+                            wire:model.live="searchField"
+                            aria-label="معیار جستجو"
+                        >
+                            <option value="all">همه فیلدها</option>
+                            <option value="person_code">کد مددجو</option>
+                            <option value="full_name">نام و نام خانوادگی</option>
+                            <option value="first_name">نام</option>
+                            <option value="last_name">نام خانوادگی</option>
+                            <option value="national_id">کد ملی</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-8 col-lg-9">
+                        <input
+                            id="beneficiary-search"
+                            type="text"
+                            class="form-control"
+                            wire:model.live.debounce.300ms="search"
+                            placeholder="عبارت جستجو را وارد کنید..."
+                        >
+                    </div>
+                </div>
                 @error('search') <span class="text-danger small">{{ $message }}</span> @enderror
             </div>
 
