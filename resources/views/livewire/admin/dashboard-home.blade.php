@@ -182,7 +182,7 @@
                                                 <td class="p-4 text-sm text-gray-700">{{ $person->first_name }}</td>
                                                 <td class="p-4 text-sm text-gray-700">{{ $person->last_name }}</td>
                                                 <td class="p-4 text-sm text-gray-700">{{ $person->father_name }}</td>
-                                                <td class="p-4 text-sm text-gray-700">{{ $person->national_id }}</td>
+                                                <td class="p-4 text-sm text-gray-700 font-">{{ $person->national_id }}</td>
                                                 <td class="p-4 text-sm">
                                                     <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-xs">
                                                         @if($person->guardian && $person->guardian->socialWorker)

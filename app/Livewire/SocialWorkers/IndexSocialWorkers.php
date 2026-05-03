@@ -72,6 +72,8 @@ class IndexSocialWorkers extends Component
 
     public function render()
     {
-        return view('livewire.social-workers.index-social-workers');
+        return view('livewire.social-workers.index-social-workers', [
+            'totalSocialWorkers' => SocialWorker::count(),
+        ]);
     }
 }

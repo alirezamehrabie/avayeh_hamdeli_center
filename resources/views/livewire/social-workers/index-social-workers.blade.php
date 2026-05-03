@@ -9,6 +9,18 @@
                     <p class="mt-1 text-sm text-slate-500">مدیریت اطلاعات مددکاران، کد مددکاری و راه‌های ارتباطی</p>
                 </div>
 
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <div wire:poll.5s class="rounded-2xl border border-emerald-100 bg-white/90 px-5 py-3 shadow-sm ring-1 ring-emerald-50 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
+                        <p class="text-xs font-semibold text-slate-500">تعداد مددکاران</p>
+                        <div class="mt-1 flex items-center justify-center gap-3" dir="ltr">
+                            <span class="relative flex h-3 w-3" aria-label="به‌روزرسانی زنده">
+                                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60"></span>
+                                <span class="relative inline-flex h-3 w-3 animate-pulse rounded-full bg-emerald-500 shadow-sm shadow-emerald-300"></span>
+                            </span>
+                            <span class="text-xl font-extrabold tracking-tight text-emerald-600 iranyekan-bold">{{ number_format($totalSocialWorkers) }}</span>
+                        </div>
+                    </div>
+
                 @if($embedded)
                     <button type="button" wire:click="createSocialWorker" class="inline-flex items-center justify-center rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-300">
                         ثبت مددکار جدید
@@ -18,6 +30,7 @@
                         ثبت مددکار جدید
                     </a>
                 @endif
+                </div>
             </div>
 
             <div class="mb-5">
@@ -43,7 +56,7 @@
                             id="social-worker-search"
                             type="text"
                             wire:model.live.debounce.300ms="search"
-                            class="w-full rounded-2xl border border-amber-200 bg-white px-4 py-3 pr-11 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-100"
+                            class="w-full rounded-2xl border border-amber-200 bg-white px-10 py-3 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-100"
                             placeholder="عبارت جستجو را وارد کنید..."
                         >
                         <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-amber-500">
@@ -73,10 +86,10 @@
                             <tr class="transition hover:bg-amber-50/70">
                                 <td class="px-5 py-4 text-center font-medium text-slate-700">{{ $worker->worker_code }}</td>
                                 <td class="px-5 py-4 text-right">
-                                    <div class="font-semibold text-slate-800">{{ $worker->full_name }}</div>
+                                    <div class="font-light text-slate-800">{{ $worker->full_name }}</div>
                                 </td>
-                                <td class="px-5 py-4 text-center font-mono text-slate-600">{{ $worker->national_id }}</td>
-                                <td class="px-5 py-4 text-center font-mono text-slate-600">{{ $worker->mobile }}</td>
+                                <td class="px-5 py-4 text-center font-light text-slate-600">{{ $worker->national_id }}</td>
+                                <td class="px-5 py-4 text-center font-light text-slate-600">{{ $worker->mobile }}</td>
                                 <td class="px-5 py-4 text-center">
                                     @if($embedded)
                                         <button type="button" wire:click="editSocialWorker({{ $worker->id }})" class="inline-flex items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:border-amber-300 hover:bg-amber-100">
