@@ -79,6 +79,9 @@
                                         <button wire:click="quickEditPerson({{ $person->id }})" class="btn btn-sm btn-warning">
                                             <i class="fa fa-bolt"></i> ویرایش سریع
                                         </button>
+                                        <button wire:click="deletePerson({{ $person->id }})" wire:confirm="آیا از انتقال این مددجو به بلاک لیست مطمئن هستید؟" class="btn btn-sm btn-outline-danger">
+                                            <i class="fa fa-ban"></i> حذف
+                                        </button>
                                     </div>
                                 </td>
                             </tr>

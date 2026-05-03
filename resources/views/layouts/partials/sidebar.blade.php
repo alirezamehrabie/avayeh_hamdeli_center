@@ -26,7 +26,7 @@
         @endif
 
         @can('manage-people')
-            <div x-data="{ open: {{ $dashboardMode ? ($isActive(['people-fast-create', 'people-list', 'person-create', 'person-edit']) ? 'true' : 'false') : (request()->routeIs('people.*') ? 'true' : 'false') }} }">
+            <div x-data="{ open: {{ $dashboardMode ? ($isActive(['people-fast-create', 'people-list', 'people-block-list', 'person-create', 'person-edit']) ? 'true' : 'false') : (request()->routeIs('people.*') ? 'true' : 'false') }} }">
                 <button type="button" @click="open = !open" class="flex items-center justify-between w-full px-4 py-3 rounded-lg hover:bg-indigo-800">
                     <div class="flex items-center">
                         <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
@@ -42,12 +42,16 @@
                         <button type="button" wire:click="selectSection('people-list')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'people-list' || $activeSection === 'person-edit' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             <i class="fa fa-users"></i> لیست مددجویان
                         </button>
+                        <button type="button" wire:click="selectSection('people-block-list')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'people-block-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
+                            <i class="fa fa-ban"></i> بلاک لیست مددجویان
+                        </button>
                         <button type="button" wire:click="selectSection('person-create')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'person-create' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             <i class="fa fa-user-plus"></i> فرم کامل ثبت نام
                         </button>
                     @else
                         <a href="{{ route('people.fast-create') }}" class="block px-4 py-2 text-sm text-indigo-200 hover:text-white"><i class="fa fa-bolt"></i> ثبت سریع فرد</a>
-                        <a href="{{ route('people.index') }}" class="block px-4 py-2 text-sm text-indigo-200 hover:text-white"><i class="fa fa-users"></i> لیست مددجویان</a>
+                        <a href="{{ route('people.index') }}" class="block px-4 py-2 text-sm {{ request()->routeIs('people.index') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}"><i class="fa fa-users"></i> لیست مددجویان</a>
+                        <a href="{{ route('people.block-list') }}" class="block px-4 py-2 text-sm {{ request()->routeIs('people.block-list') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}"><i class="fa fa-ban"></i> بلاک لیست مددجویان</a>
                         <a href="{{ route('people.form', ['mode' => 'create']) }}" class="block px-4 py-2 text-sm text-indigo-200 hover:text-white"><i class="fa fa-user-plus"></i> ثبت مددجوی جدید (کامل)</a>
                     @endif
                 </div>

@@ -307,10 +307,11 @@ class Person extends Model
      * تولید کد یکتا برای مددجو
      * فرمت: WWNNNN (کد مددکار 2 رقم + شماره ترتیبی 4 رقم)
      */
-    protected static function generateUniqueCode(): string
+    public static function generateUniqueCode(): string
     {
         return DB::transaction(function () {
-            $lastPersonCode = self::whereRaw('LENGTH(person_code) = 5')
+            $lastPersonCode = self::withTrashed()
+                ->whereRaw('LENGTH(person_code) = 5')
                 ->where('person_code', '>=', '14000')
                 ->lockForUpdate()
                 ->max('person_code');
@@ -321,6 +322,13 @@ class Person extends Model
 
             return '14000';
         });
+    }
+
+
+
+    public function restoreSupervision(): bool
+    {
+        return (bool) $this->restore();
     }
 
 

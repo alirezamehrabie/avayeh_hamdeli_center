@@ -15,6 +15,10 @@
                         <livewire:people.index-people :embedded="true" :key="'people-list'" />
                         @break
 
+                    @case('people-block-list')
+                        <livewire:people.deleted-people :embedded="true" :key="'people-block-list'" />
+                        @break
+
                     @case('person-create')
                         <livewire:people.create-person mode="create" :embedded="true" :key="'person-create'" />
                         @break

@@ -79,6 +79,14 @@ class IndexPeople extends Component
         return redirect()->route('people.fast-create', ['person' => $person->id]);
     }
 
+    public function deletePerson(Person $person): void
+    {
+        $person->delete();
+        $this->resetPage();
+
+        session()->flash('success', 'مددجو با موفقیت به بلاک لیست منتقل شد.');
+    }
+
     public function render()
     {
         return view('livewire.people.index-people');

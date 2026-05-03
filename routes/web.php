@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Livewire\People\CreatePerson;
 use App\Livewire\People\FastCreatePerson;
 use App\Livewire\People\IndexPeople;
+use App\Livewire\People\DeletedPeople;
 use App\Livewire\SocialWorkers\EditSocialWorker;
 use App\Livewire\SocialWorkers\CreateSocialWorker;
 use App\Livewire\SocialWorkers\IndexSocialWorkers;
@@ -33,6 +34,7 @@ Route::get('/people/fast-create/{person?}', FastCreatePerson::class)->name('peop
 
 // مسیر لیست مددجویان
 Route::get('/people', IndexPeople::class)->name('people.index');
+Route::get('/people/block-list', DeletedPeople::class)->name('people.block-list');
 
 // مسیر نمایش فرم به Livewire تغییر می‌کند
 Route::get('/people/{mode}/{person?}', CreatePerson::class)->name('people.form');

@@ -111,7 +111,7 @@
                                         @endif
 
                                         <button type="button" wire:click="deleteSocialWorker({{ $worker->id }})" wire:confirm="آیا از حذف این مددکار مطمئن هستید؟" class="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100">
-                                            تعلیق همکاری
+                                            حذف
                                         </button>
                                     </div>
                                 </td>
