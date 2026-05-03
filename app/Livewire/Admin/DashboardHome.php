@@ -31,9 +31,8 @@ class DashboardHome extends Component
         return view('livewire.admin.dashboard-home', [
             'totalPeople' => Person::count(),
             'totalSocialWorkers' => SocialWorker::count(),
-            // فرض بر این است که فیلد gender در مدل Person دارید
-            'maleCount' => Person::where('gender', 'مرد')->count(),
-            'femaleCount' => Person::where('gender', 'زن')->count(),
+            'maleCount' => Person::where('gender', 'male')->count(),
+            'femaleCount' => Person::where('gender', 'female')->count(),
             'guardianCount' => Guardian::count(),
             'latestPeople' => Person::with(['guardian.socialWorker']) // لود کردن زنجیره‌ای روابط
             ->latest()

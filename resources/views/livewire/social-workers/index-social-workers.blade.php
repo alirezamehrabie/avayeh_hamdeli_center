@@ -2,47 +2,112 @@
     {{-- resources/views/livewire/social-workers/index-social-workers.blade.php --}}
 
     <div class="container mx-auto p-4">
-        <h1 class="text-2xl font-bold mb-4">لیست مددکاران اجتماعی</h1>
+        <div class="rounded-2xl border border-amber-100 bg-gradient-to-br from-white via-amber-50/30 to-white p-5 shadow-sm">
+            <div class="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-800">لیست مددکاران اجتماعی</h1>
+                    <p class="mt-1 text-sm text-slate-500">مدیریت اطلاعات مددکاران، کد مددکاری و راه‌های ارتباطی</p>
+                </div>
 
-        <div class="mb-4">
-            @if($embedded)
-                <button type="button" wire:click="createSocialWorker" class="btn btn-primary">ثبت مددکار جدید</button>
-            @else
-                <a href="{{ route('social-workers.create') }}" class="btn btn-primary">ثبت مددکار جدید</a>
-            @endif
-        </div>
+                @if($embedded)
+                    <button type="button" wire:click="createSocialWorker" class="inline-flex items-center justify-center rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-300">
+                        ثبت مددکار جدید
+                    </button>
+                @else
+                    <a href="{{ route('social-workers.create') }}" class="inline-flex items-center justify-center rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-300">
+                        ثبت مددکار جدید
+                    </a>
+                @endif
+            </div>
 
-        <table class="min-w-full bg-white border rounded">
-            <thead class="bg-gray-100">
-            <tr>
-                <th class="py-2 px-4 border-b text-center">کد مددکاری</th>
-                <th class="py-2 px-4 border-b">نام و نام خانوادگی</th>
-                <th class="py-2 px-4 border-b text-center">کد ملی</th>
-                <th class="py-2 px-4 border-b text-center">موبایل</th>
-                <th class="py-2 px-4 border-b text-center">عملیات</th>
-            </tr>
-            </thead>
-            <tbody>
-            @foreach ($socialWorkers as $worker)
-                <tr class="hover:bg-gray-50">
-                    <td class="py-2 px-4 border-b text-center">{{ $worker->worker_code }}</td>
-                    <td class="py-2 px-4 border-b">{{ $worker->full_name }}</td>
-                    <td class="py-2 px-4 border-b text-center">{{ $worker->national_id }}</td>
-                    <td class="py-2 px-4 border-b text-center">{{ $worker->mobile }}</td>
-                    <td class="py-2 px-4 border-b text-center">
-                        @if($embedded)
-                            <button type="button" wire:click="editSocialWorker({{ $worker->id }})" class="text-blue-500 hover:underline">ویرایش</button>
-                        @else
-                            <a href="{{ route('social-workers.edit', $worker) }}" class="text-blue-500 hover:underline">ویرایش</a>
-                        @endif
-                    </td>
-                </tr>
-            @endforeach
-            </tbody>
-        </table>
+            <div class="mb-5">
+                <label for="social-worker-search" class="mb-2 block text-sm font-semibold text-slate-700">جستجوی سریع</label>
+                <div class="grid gap-3 md:grid-cols-[minmax(180px,240px)_1fr]">
+                    <select
+                        id="social-worker-search-field"
+                        wire:model.live="searchField"
+                        class="w-full rounded-2xl border border-amber-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-100"
+                        aria-label="معیار جستجو"
+                    >
+                        <option value="all">همه فیلدها</option>
+                        <option value="worker_code">کد مددکاری</option>
+                        <option value="full_name">نام و نام خانوادگی</option>
+                        <option value="first_name">نام</option>
+                        <option value="last_name">نام خانوادگی</option>
+                        <option value="national_id">کد ملی</option>
+                        <option value="mobile">موبایل</option>
+                    </select>
 
-        <div class="mt-4">
-            {{ $socialWorkers->links() }}
+                    <div class="relative">
+                        <input
+                            id="social-worker-search"
+                            type="text"
+                            wire:model.live.debounce.300ms="search"
+                            class="w-full rounded-2xl border border-amber-200 bg-white px-4 py-3 pr-11 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-100"
+                            placeholder="عبارت جستجو را وارد کنید..."
+                        >
+                        <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-amber-500">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.1-5.4a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/>
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+                @error('search') <span class="mt-1 block text-sm text-red-600">{{ $message }}</span> @enderror
+            </div>
+
+            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full border-collapse text-sm">
+                        <thead class="bg-gradient-to-l from-amber-500 to-yellow-400 text-white">
+                        <tr>
+                            <th class="px-5 py-4 text-center font-bold">کد مددکاری</th>
+                            <th class="px-5 py-4 text-right font-bold">نام و نام خانوادگی</th>
+                            <th class="px-5 py-4 text-center font-bold">کد ملی</th>
+                            <th class="px-5 py-4 text-center font-bold">موبایل</th>
+                            <th class="px-5 py-4 text-center font-bold">عملیات</th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                        @forelse ($this->socialWorkers as $worker)
+                            <tr class="transition hover:bg-amber-50/70">
+                                <td class="px-5 py-4 text-center font-medium text-slate-700">{{ $worker->worker_code }}</td>
+                                <td class="px-5 py-4 text-right">
+                                    <div class="font-semibold text-slate-800">{{ $worker->full_name }}</div>
+                                </td>
+                                <td class="px-5 py-4 text-center font-mono text-slate-600">{{ $worker->national_id }}</td>
+                                <td class="px-5 py-4 text-center font-mono text-slate-600">{{ $worker->mobile }}</td>
+                                <td class="px-5 py-4 text-center">
+                                    @if($embedded)
+                                        <button type="button" wire:click="editSocialWorker({{ $worker->id }})" class="inline-flex items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:border-amber-300 hover:bg-amber-100">
+                                            ویرایش
+                                        </button>
+                                    @else
+                                        <a href="{{ route('social-workers.edit', $worker) }}" class="inline-flex items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:border-amber-300 hover:bg-amber-100">
+                                            ویرایش
+                                        </a>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="px-5 py-10 text-center text-slate-500">
+                                    @if($search)
+                                        نتیجه‌ای برای این جستجو پیدا نشد.
+                                    @else
+                                        هنوز مددکاری ثبت نشده است.
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="mt-5">
+                {{ $this->socialWorkers->links() }}
+            </div>
         </div>
     </div>
 </div>
