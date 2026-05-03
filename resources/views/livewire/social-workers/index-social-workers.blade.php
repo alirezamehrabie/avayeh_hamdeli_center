@@ -69,6 +69,12 @@
                 @error('search') <span class="mt-1 block text-sm text-red-600">{{ $message }}</span> @enderror
             </div>
 
+            @if (session()->has('success'))
+                <div class="mb-5 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+                    {{ session('success') }}
+                </div>
+            @endif
+
             <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="overflow-x-auto">
                     <table class="min-w-full border-collapse text-sm">
@@ -78,6 +84,7 @@
                             <th class="px-5 py-4 text-right font-bold">نام و نام خانوادگی</th>
                             <th class="px-5 py-4 text-center font-bold">کد ملی</th>
                             <th class="px-5 py-4 text-center font-bold">موبایل</th>
+                            <th class="px-5 py-4 text-center font-bold">آمار تحت پوشش</th>
                             <th class="px-5 py-4 text-center font-bold">عملیات</th>
                         </tr>
                         </thead>
@@ -88,23 +95,30 @@
                                 <td class="px-5 py-4 text-right">
                                     <div class="font-light text-slate-800">{{ $worker->full_name }}</div>
                                 </td>
-                                <td class="px-5 py-4 text-center font-light text-slate-600">{{ $worker->national_id }}</td>
-                                <td class="px-5 py-4 text-center font-light text-slate-600">{{ $worker->mobile }}</td>
+                                <td class="px-5 py-4 text-center font-light text-slate-700">{{ $worker->national_id }}</td>
+                                <td class="px-5 py-4 text-center font-light text-slate-700">{{ $worker->mobile }}</td>
+                                <td class="px-5 py-4 text-center font-light text-slate-800">{{ $worker->covered_people_count }} نفر</td>
                                 <td class="px-5 py-4 text-center">
-                                    @if($embedded)
-                                        <button type="button" wire:click="editSocialWorker({{ $worker->id }})" class="inline-flex items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:border-amber-300 hover:bg-amber-100">
-                                            ویرایش
+                                    <div class="flex items-center justify-center gap-2">
+                                        @if($embedded)
+                                            <button type="button" wire:click="editSocialWorker({{ $worker->id }})" class="inline-flex items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:border-amber-300 hover:bg-amber-100">
+                                                ویرایش
+                                            </button>
+                                        @else
+                                            <a href="{{ route('social-workers.edit', $worker) }}" class="inline-flex items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:border-amber-300 hover:bg-amber-100">
+                                                ویرایش
+                                            </a>
+                                        @endif
+
+                                        <button type="button" wire:click="deleteSocialWorker({{ $worker->id }})" wire:confirm="آیا از حذف این مددکار مطمئن هستید؟" class="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100">
+                                            تعلیق همکاری
                                         </button>
-                                    @else
-                                        <a href="{{ route('social-workers.edit', $worker) }}" class="inline-flex items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:border-amber-300 hover:bg-amber-100">
-                                            ویرایش
-                                        </a>
-                                    @endif
+                                    </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-5 py-10 text-center text-slate-500">
+                                <td colspan="6" class="px-5 py-10 text-center text-slate-500">
                                     @if($search)
                                         نتیجه‌ای برای این جستجو پیدا نشد.
                                     @else

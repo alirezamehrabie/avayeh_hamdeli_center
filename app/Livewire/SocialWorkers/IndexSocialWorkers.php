@@ -39,6 +39,14 @@ class IndexSocialWorkers extends Component
         $this->dispatch('open-dashboard-section', section: 'social-worker-edit', id: $socialWorker->id);
     }
 
+    public function deleteSocialWorker(SocialWorker $socialWorker): void
+    {
+        $socialWorker->deactivate();
+        $this->resetPage();
+
+        session()->flash('success', 'مددکار با موفقیت حذف شد.');
+    }
+
     public function getSocialWorkersProperty()
     {
         $query = SocialWorker::orderBy('created_at', 'desc');

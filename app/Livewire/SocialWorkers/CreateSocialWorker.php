@@ -29,11 +29,6 @@ class CreateSocialWorker extends Component
             $startDateFull = $this->getStartDateFull();
             $photoPath = $this->uploadPhoto();
 
-
-            // ۲. تولید خودکار کد مددکاری (موقت - در مراحل بعد پیشرفته‌تر می‌شود)
-            $lastWorker = SocialWorker::orderBy('worker_code', 'desc')->first();
-            $nextCode = $lastWorker ? ($lastWorker->worker_code + 1) : 10;
-
             // ۳. ترکیب تاریخ‌ها برای ستون‌های Full
             $birthDateFull = $this->birth_year ? "{$this->birth_year}/{$this->birth_month}/{$this->birth_day}" : null;
             $startDateFull = $this->start_year ? "{$this->start_year}/{$this->start_month}/{$this->start_day}" : null;

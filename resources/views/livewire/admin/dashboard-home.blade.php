@@ -34,6 +34,10 @@
                         <livewire:social-workers.index-social-workers :embedded="true" :key="'social-workers-list'" />
                         @break
 
+                    @case('social-workers-block-list')
+                        <livewire:social-workers.deleted-social-workers :embedded="true" :key="'social-workers-block-list'" />
+                        @break
+
                     @case('social-worker-create')
                         <livewire:social-workers.create-social-worker :embedded="true" :key="'social-worker-create'" />
                         @break
@@ -59,7 +63,7 @@
 
                     @default
                         <div>
-                            <h1 class="text-2xl font-bold text-gray-800 mb-6">خلاصه وضعیت مرکز</h1>
+                            <h1 class="text-2xl font-bold text-gray-800 mb-6">خلاصه وضعیت مرکز نیکوکاری</h1>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                                 <livewire:admin.dashboard.stat-card

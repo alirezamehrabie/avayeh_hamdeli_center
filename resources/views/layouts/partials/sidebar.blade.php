@@ -56,8 +56,8 @@
 
         @can('manage-social-workers')
             @if($dashboardMode)
-                <div x-data="{ open: {{ $isActive(['social-workers-list', 'social-worker-create', 'social-worker-edit']) ? 'true' : 'false' }} }">
-                    <button type="button" @click="open = !open" class="flex items-center justify-between w-full px-4 py-3 rounded-lg hover:bg-indigo-800 {{ $isActive(['social-workers-list', 'social-worker-create', 'social-worker-edit']) ? 'bg-indigo-700' : '' }}">
+                <div x-data="{ open: {{ $isActive(['social-workers-list', 'social-workers-block-list', 'social-worker-create', 'social-worker-edit']) ? 'true' : 'false' }} }">
+                    <button type="button" @click="open = !open" class="flex items-center justify-between w-full px-4 py-3 rounded-lg hover:bg-indigo-800 {{ $isActive(['social-workers-list', 'social-workers-block-list', 'social-worker-create', 'social-worker-edit']) ? 'bg-indigo-700' : '' }}">
                         <div class="flex items-center">
                             <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                             <span>مددکاران</span>
@@ -67,14 +67,24 @@
                     <div x-show="open" class="mt-2 mr-8 space-y-1">
                         <button type="button" wire:click="selectSection('social-workers-list')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'social-workers-list' || $activeSection === 'social-worker-edit' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">لیست مددکاران</button>
                         <button type="button" wire:click="selectSection('social-worker-create')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'social-worker-create' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">ثبت مددکار جدید</button>
+                        <button type="button" wire:click="selectSection('social-workers-block-list')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'social-workers-block-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">بلاک لیست مددکاران</button>
                     </div>
                 </div>
             @else
-                <a href="{{ route('social-workers.index') }}"
-                   class="flex items-center px-4 py-3 rounded-lg hover:bg-indigo-800 {{ request()->routeIs('social-workers.*') ? 'bg-indigo-700' : '' }}">
-                    <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                    <span>مددکاران اجتماعی</span>
-                </a>
+                <div x-data="{ open: {{ request()->routeIs('social-workers.*') ? 'true' : 'false' }} }">
+                    <button type="button" @click="open = !open" class="flex items-center justify-between w-full px-4 py-3 rounded-lg hover:bg-indigo-800 {{ request()->routeIs('social-workers.*') ? 'bg-indigo-700' : '' }}">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                            <span>مددکاران اجتماعی</span>
+                        </div>
+                        <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div x-show="open" class="mt-2 mr-8 space-y-1">
+                        <a href="{{ route('social-workers.index') }}" class="block px-4 py-2 text-sm {{ request()->routeIs('social-workers.index') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">لیست مددکاران</a>
+                        <a href="{{ route('social-workers.block-list') }}" class="block px-4 py-2 text-sm {{ request()->routeIs('social-workers.block-list') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">بلاک لیست مددکاران</a>
+                        <a href="{{ route('social-workers.create') }}" class="block px-4 py-2 text-sm {{ request()->routeIs('social-workers.create') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">ثبت مددکار جدید</a>
+                    </div>
+                </div>
             @endif
         @endcan
 

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations;
 
 class SocialWorker extends Model
@@ -38,6 +39,7 @@ class SocialWorker extends Model
         'substitute_first_name',
         'substitute_last_name',
         'substitute_mobile',
+        'is_active',
     ];
 
     protected $guarded = [
@@ -57,13 +59,39 @@ class SocialWorker extends Model
         'covered_people_count' => 'integer',
         'covered_households_count' => 'integer',
         'covered_children_count' => 'integer',
+        'is_active' => 'boolean',
     ];
+
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('active', function (Builder $builder) {
+            $builder->where($builder->getModel()->getTable() . '.is_active', true);
+        });
+    }
 
 
     public static function generateNextWorkerCode(): int
     {
-        $maxCode = self::max('worker_code');
+        $maxCode = self::withoutGlobalScope('active')->withTrashed()->max('worker_code');
         return $maxCode ? ($maxCode + 1) : 10;
+    }
+
+
+    public function deactivate(): bool
+    {
+        $this->is_active = false;
+        $this->save();
+
+        return (bool) $this->delete();
+    }
+
+    public function reactivate(): bool
+    {
+        $this->restore();
+        $this->is_active = true;
+
+        return $this->save();
     }
 
     public function getFullNameAttribute()

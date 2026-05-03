@@ -7,6 +7,7 @@ use App\Livewire\People\IndexPeople;
 use App\Livewire\SocialWorkers\EditSocialWorker;
 use App\Livewire\SocialWorkers\CreateSocialWorker;
 use App\Livewire\SocialWorkers\IndexSocialWorkers;
+use App\Livewire\SocialWorkers\DeletedSocialWorkers;
 use App\Livewire\Admin\DashboardHome;
 use App\Livewire\Auth\Login;
 
@@ -39,6 +40,7 @@ Route::get('/people/{mode}/{person?}', CreatePerson::class)->name('people.form')
 Route::get('/social-workers/create', CreateSocialWorker::class)->name('social-workers.create');
 
 Route::get('/social-workers', IndexSocialWorkers::class)->name('social-workers.index');
+Route::get('/social-workers/block-list', DeletedSocialWorkers::class)->name('social-workers.block-list');
 Route::get('/social-workers/{socialWorker}/edit', EditSocialWorker::class)->name('social-workers.edit');
 Route::get('/admin/dashboard', DashboardHome::class)
     ->middleware(['auth', 'can:access-admin-panel'])
