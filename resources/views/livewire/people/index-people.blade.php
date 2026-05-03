@@ -72,9 +72,14 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <button wire:click="editPerson({{ $person->id }})" class="btn btn-sm btn-primary">
-                                        <i class="fa fa-edit"></i> ویرایش
-                                    </button>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <button wire:click="editPerson({{ $person->id }})" class="btn btn-sm btn-primary">
+                                            <i class="fa fa-edit"></i> ویرایش
+                                        </button>
+                                        <button wire:click="quickEditPerson({{ $person->id }})" class="btn btn-sm btn-warning">
+                                            <i class="fa fa-bolt"></i> ویرایش سریع
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         @empty

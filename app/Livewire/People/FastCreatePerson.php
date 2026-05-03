@@ -6,11 +6,13 @@ use Livewire\Component;
 use Livewire\Attributes\Layout;
 use App\Models\Person;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 #[Layout('layouts.app')]
 class FastCreatePerson extends Component
 {
     public bool $embedded = false;
+    public ?Person $person = null;
 
     // Required fields for fast registration
     public $first_name;
@@ -25,12 +27,37 @@ class FastCreatePerson extends Component
     public $mother_national_id;
     public $role = 'child';
 
+    public function mount(?Person $person = null): void
+    {
+        if (!$person?->exists) {
+            return;
+        }
+
+        $this->person = $person;
+        $this->first_name = $person->first_name;
+        $this->last_name = $person->last_name;
+        $this->national_id = $person->national_id;
+        $this->birth_day = $person->birth_day;
+        $this->birth_month = $person->birth_month;
+        $this->birth_year = $person->birth_year;
+        $this->gender = $person->gender;
+        $this->father_name = $person->father_name;
+        $this->father_national_id = $person->father_national_id;
+        $this->mother_national_id = $person->mother_national_id;
+        $this->role = $person->role ?: 'child';
+    }
+
     public function rules()
     {
         return [
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'national_id' => 'required|string|size:10|unique:people,national_id',
+            'national_id' => [
+                'required',
+                'string',
+                'size:10',
+                Rule::unique('people', 'national_id')->ignore($this->person?->id),
+            ],
             'birth_day' => 'required|integer|min:1|max:31',
             'birth_month' => 'required|integer|min:1|max:12',
             'birth_year' => 'required|integer|min:1300|max:1420',
@@ -65,7 +92,7 @@ class FastCreatePerson extends Component
 
         DB::beginTransaction();
         try {
-            $person = Person::create([
+            $data = [
                 'first_name' => $this->first_name,
                 'last_name' => $this->last_name,
                 'national_id' => $this->national_id,
@@ -77,20 +104,28 @@ class FastCreatePerson extends Component
                 'father_national_id' => $this->father_national_id,
                 'mother_national_id' => $this->mother_national_id,
                 'role' => $this->role,
-                'person_code' => Person::generateUniqueCode(),
-            ]);
+            ];
+
+            if ($this->person) {
+                $this->person->update($data);
+                $successMessage = 'ویرایش سریع مددجو با موفقیت انجام شد.';
+            } else {
+                Person::create($data + ['person_code' => Person::generateUniqueCode()]);
+                $successMessage = 'اطلاعات فرد به صورت سریع ثبت شد. اکنون می‌توانید اطلاعات کامل این فرد را ویرایش کنید.';
+            }
 
             DB::commit();
 
-            session()->flash('success', 'اطلاعات فرد به صورت سریع ثبت شد. اکنون می‌توانید اطلاعات کامل این فرد را ویرایش کنید.');
+            session()->flash('success', $successMessage);
 
             if ($this->embedded) {
                 $this->dispatch('open-dashboard-section', section: 'people-list');
                 return;
             }
 
-            // Reset form
-            $this->reset();
+            if (!$this->person) {
+                $this->reset();
+            }
 
             return redirect()->route('people.index');
         } catch (\Exception $e) {

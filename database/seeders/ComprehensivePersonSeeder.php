@@ -36,6 +36,11 @@ use Faker\Factory;
 
 class ComprehensivePersonSeeder extends Seeder
 {
+    private const SOCIAL_WORKER_COUNT = 10;
+    private const HOUSEHOLD_COUNT = 100;
+    private const MIN_CHILDREN_PER_HOUSEHOLD = 1;
+    private const MAX_CHILDREN_PER_HOUSEHOLD = 5;
+
     public function run(): void
     {
         $faker = Factory::create('fa_IR');
@@ -50,7 +55,7 @@ class ComprehensivePersonSeeder extends Seeder
 
         // ۳. ایجاد ۵ مددکار اجتماعی
         $socialWorkers = [];
-        for ($i = 0; $i < 2; $i++) {
+        for ($i = 0; $i < self::SOCIAL_WORKER_COUNT; $i++) {
 
             $firstName = $faker->firstName();
             $lastName = $faker->lastName();
@@ -103,7 +108,7 @@ class ComprehensivePersonSeeder extends Seeder
         }
 
         // ۴. ایجاد ۲۰ پرونده کامل (سرپرست + مددجو + مخلفات)
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 0; $i < self::HOUSEHOLD_COUNT; $i++) {
             $sw = $faker->randomElement($socialWorkers);
 
             // ۱. تولید مقادیر تصادفی برای تاریخ تولد
@@ -175,7 +180,7 @@ class ComprehensivePersonSeeder extends Seeder
             ]);
 
             // ج) ایجاد ۱ تا ۳ مددجو (Person) برای هر سرپرست
-            $childCount = rand(1, 2);
+            $childCount = rand(self::MIN_CHILDREN_PER_HOUSEHOLD, self::MAX_CHILDREN_PER_HOUSEHOLD);
             for ($j = 0; $j < $childCount; $j++) {
                 $person = Person::create([
                     'guardian_id' => $guardian->id,
@@ -258,6 +263,11 @@ class ComprehensivePersonSeeder extends Seeder
 
             // بروزرسانی تعداد فرزندان در جدول سرپرست
             $guardian->update(['children_count' => $childCount]);
+        }
+
+        // Recalculate the counters shown for each social worker after all seeded records exist.
+        foreach ($socialWorkers as $socialWorker) {
+            $socialWorker->refreshStatistics();
         }
     }
 

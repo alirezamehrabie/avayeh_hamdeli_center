@@ -1,8 +1,8 @@
 <div>
     <div class="card shadow-sm pb-3">
         <div class="card-header bg-primary text-white">
-            <h3 class="mb-2 text-lg">ثبت‌نام سریع فرد جدید</h3>
-            <p class="mb-2 text-sm">فیلدهای ضروری را برای ثبت سریع پر کنید. اطلاعات اضافی را می‌توانید بعداً ویرایش کنید.</p>
+            <h3 class="mb-2 text-lg">{{ $person ? 'ویرایش سریع مددجو' : 'ثبت‌نام سریع فرد جدید' }}</h3>
+            <p class="mb-2 text-sm">{{ $person ? 'فیلدهای ضروری مددجو را در فرم سریع ویرایش کنید.' : 'فیلدهای ضروری را برای ثبت سریع پر کنید. اطلاعات اضافی را می‌توانید بعداً ویرایش کنید.' }}</p>
         </div>
         <div class="card-body pt-4">
             @if (session()->has('success'))
@@ -111,7 +111,7 @@
 
                 <div class="mt-4 pt-3">
                     <button type="submit" class="btn btn-success">
-                        <i class="fa fa-save"></i> ثبت اطلاعات سریع
+                        <i class="fa fa-save"></i> {{ $person ? 'ذخیره ویرایش سریع' : 'ثبت اطلاعات سریع' }}
                     </button>
                     <a href="{{ url()->previous() ?? '/' }}" class="btn btn-secondary">
                         <i class="fa fa-arrow-left"></i> لغو

@@ -37,13 +37,13 @@
                 <div x-show="open" class="mt-2 mr-8 space-y-1">
                     @if($dashboardMode)
                         <button type="button" wire:click="selectSection('people-fast-create')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'people-fast-create' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            <i class="fa fa-bolt"></i> ثبت سریع فرد
+                            <i class="fa fa-bolt"></i> ثبت سریع مددجو
                         </button>
                         <button type="button" wire:click="selectSection('people-list')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'people-list' || $activeSection === 'person-edit' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             <i class="fa fa-users"></i> لیست مددجویان
                         </button>
                         <button type="button" wire:click="selectSection('person-create')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'person-create' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            <i class="fa fa-user-plus"></i> ثبت مددجوی جدید (کامل)
+                            <i class="fa fa-user-plus"></i> فرم کامل ثبت نام
                         </button>
                     @else
                         <a href="{{ route('people.fast-create') }}" class="block px-4 py-2 text-sm text-indigo-200 hover:text-white"><i class="fa fa-bolt"></i> ثبت سریع فرد</a>
@@ -77,6 +77,21 @@
                 </a>
             @endif
         @endcan
+
+        @if($dashboardMode)
+            <button type="button" wire:click="selectSection('advanced-reports')"
+                    class="flex items-center w-full px-4 py-3 rounded-lg transition-colors {{ $activeSection === 'advanced-reports' ? 'bg-indigo-700' : 'hover:bg-indigo-800' }}">
+                <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6m4 6V7m4 10v-4M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                <span>گزارش پیشرفته</span>
+            </button>
+        @else
+            <a href="{{ route('admin.dashboard', ['section' => 'advanced-reports']) }}"
+               class="flex items-center px-4 py-3 rounded-lg transition-colors hover:bg-indigo-800">
+                <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6m4 6V7m4 10v-4M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                <span>Advanced Reports</span>
+            </a>
+        @endif
+
     </nav>
 
     <div class="mt-auto pt-4 border-t border-indigo-800">

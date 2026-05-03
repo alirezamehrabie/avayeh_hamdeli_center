@@ -28,7 +28,7 @@ Route::get('/', function () {
 });
 
 // مسیر ثبت‌نام سریع فرد جدید
-Route::get('/people/fast-create', FastCreatePerson::class)->name('people.fast-create');
+Route::get('/people/fast-create/{person?}', FastCreatePerson::class)->name('people.fast-create');
 
 // مسیر لیست مددجویان
 Route::get('/people', IndexPeople::class)->name('people.index');
@@ -40,4 +40,6 @@ Route::get('/social-workers/create', CreateSocialWorker::class)->name('social-wo
 
 Route::get('/social-workers', IndexSocialWorkers::class)->name('social-workers.index');
 Route::get('/social-workers/{socialWorker}/edit', EditSocialWorker::class)->name('social-workers.edit');
-Route::get('/admin/dashboard', DashboardHome::class)->name('admin.dashboard');
+Route::get('/admin/dashboard', DashboardHome::class)
+    ->middleware(['auth', 'can:access-admin-panel'])
+    ->name('admin.dashboard');

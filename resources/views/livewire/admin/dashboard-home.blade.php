@@ -8,7 +8,7 @@
             <div class="container mx-auto">
                 @switch($activeSection)
                     @case('people-fast-create')
-                        <livewire:people.fast-create-person :embedded="true" :key="'people-fast-create'" />
+                        <livewire:people.fast-create-person :person="$editingPerson" :embedded="true" :key="'people-fast-create-'.($editingPerson?->id ?? 'new')" />
                         @break
 
                     @case('people-list')
@@ -47,6 +47,14 @@
                                 <button type="button" wire:click="selectSection('social-workers-list')" class="btn btn-primary">بازگشت به لیست مددکاران</button>
                             </div>
                         @endif
+                        @break
+
+
+                    @case('advanced-reports')
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <h1 class="text-2xl font-bold text-gray-800 mb-2">گزارش پیشرفته</h1>
+                            <p class="text-gray-600">گزارش گیری پیشرفته مرکز تخصصی کودکان آوای همدلی</p>
+                        </div>
                         @break
 
                     @default
@@ -135,7 +143,7 @@
 
                                         @if($campaignIndexRoute)
                                             <a href="{{ $campaignIndexRoute }}" class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100">
-                                                Campaign List
+                                                لیست پویش‌ها
                                             </a>
                                         @else
                                             <button type="button" disabled class="inline-flex cursor-not-allowed items-center justify-center rounded-lg bg-indigo-100 px-4 py-2.5 text-sm font-semibold text-indigo-700 opacity-70">

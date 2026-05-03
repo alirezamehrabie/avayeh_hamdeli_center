@@ -69,6 +69,16 @@ class IndexPeople extends Component
         ]);
     }
 
+    public function quickEditPerson(Person $person)
+    {
+        if ($this->embedded) {
+            $this->dispatch('open-dashboard-section', section: 'people-fast-create', id: $person->id);
+            return;
+        }
+
+        return redirect()->route('people.fast-create', ['person' => $person->id]);
+    }
+
     public function render()
     {
         return view('livewire.people.index-people');
