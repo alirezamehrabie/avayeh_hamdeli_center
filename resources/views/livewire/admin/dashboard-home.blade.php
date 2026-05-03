@@ -85,6 +85,67 @@
                                     icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                             </div>
 
+                            @php
+                                $campaignCreateRoute = \Illuminate\Support\Facades\Route::has('campaigns.create') ? route('campaigns.create') : null;
+                                $campaignIndexRoute = \Illuminate\Support\Facades\Route::has('campaigns.index') ? route('campaigns.index') : null;
+                            @endphp
+
+                            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="group relative overflow-hidden rounded-xl border border-emerald-100 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                                    <div class="absolute inset-y-0 right-0 w-1 bg-emerald-500"></div>
+                                    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                        <div class="flex items-center">
+                                            <div class="ml-4 rounded-lg bg-emerald-100 p-3 text-emerald-600">
+                                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-500">راه‌اندازی کمپین جدید</p>
+                                                <h2 class="mt-1 text-lg font-bold text-gray-800">ایجاد پویش</h2>
+                                            </div>
+                                        </div>
+
+                                        @if($campaignCreateRoute)
+                                            <a href="{{ $campaignCreateRoute }}" class="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-100">
+                                                ایجاد پویش
+                                            </a>
+                                        @else
+                                            <button type="button" disabled class="inline-flex cursor-not-allowed items-center justify-center rounded-lg bg-emerald-100 px-4 py-2.5 text-sm font-semibold text-emerald-700 opacity-70">
+                                                ایجاد پویش
+                                            </button>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <div class="group relative overflow-hidden rounded-xl border border-indigo-100 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                                    <div class="absolute inset-y-0 right-0 w-1 bg-indigo-500"></div>
+                                    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                        <div class="flex items-center">
+                                            <div class="ml-4 rounded-lg bg-indigo-100 p-3 text-indigo-600">
+                                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5h6M9 12h6m-6 7h6M5 5h.01M5 12h.01M5 19h.01"></path>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-500">مشاهده و مدیریت کمپین‌ها</p>
+                                                <h2 class="mt-1 text-lg font-bold text-gray-800">لیست پویش‌ها</h2>
+                                            </div>
+                                        </div>
+
+                                        @if($campaignIndexRoute)
+                                            <a href="{{ $campaignIndexRoute }}" class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100">
+                                                Campaign List
+                                            </a>
+                                        @else
+                                            <button type="button" disabled class="inline-flex cursor-not-allowed items-center justify-center rounded-lg bg-indigo-100 px-4 py-2.5 text-sm font-semibold text-indigo-700 opacity-70">
+                                                لیست پویش‌ها
+                                            </button>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                                 <div class="flex justify-between items-center mb-4">
                                     <h2 class="text-lg font-semibold text-gray-800">آخرین مددجویان ثبت شده</h2>
