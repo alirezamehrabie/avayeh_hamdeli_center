@@ -231,6 +231,8 @@ class CreatePerson extends Component
         $this->person = $person;
         $this->mode = $mode;
         $this->embedded = $embedded;
+        $this->current_step = 1;
+        $this->completed_steps = [];
 
         $this->guardian = Guardian::with('bankInfo')->where('national_code', $this->guardian_national_code)->first();
         $this->sadaatRelations = SadaatRelation::orderBy('sort_order')->get();
@@ -1456,6 +1458,17 @@ class CreatePerson extends Component
         }
     }
 
+    public function goToStep($step)
+    {
+        $step = (int) $step;
+
+        if ($step < 1 || $step > $this->total_steps) {
+            return;
+        }
+
+        $this->current_step = $step;
+    }
+
     public function skipStep()
     {
         // Skip without validation, but still mark as completed
@@ -1497,8 +1510,9 @@ class CreatePerson extends Component
                     'birth_day' => 'required|integer|min:1|max:31',
                     'birth_month' => 'required|integer|min:1|max:12',
                     'birth_year' => 'required|integer|min:1300|max:1420',
+                    'father_name' => 'required|string|max:100',
                     'gender' => 'required|in:male,female',
-                    'role' => 'required|in:child,parent,other',
+                    'role' => 'required|in:child,guardian',
                 ];
 
             case 2: // Skills and Talents

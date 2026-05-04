@@ -14,20 +14,21 @@
                         <span class="badge bg-primary">{{ number_format($this->wizardProgress, 0) }}% تکمیل شده</span>
                     </div>
                     <div class="progress" style="height: 25px;">
-                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
-                             role="progressbar" 
-                             style="width: {{ $this->wizardProgress }}%;" 
-                             aria-valuenow="{{ $this->wizardProgress }}" 
-                             aria-valuemin="0" 
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+                             role="progressbar"
+                             style="width: {{ $this->wizardProgress }}%;"
+                             aria-valuenow="{{ $this->wizardProgress }}"
+                             aria-valuemin="0"
                              aria-valuemax="100">
                             {{ number_format($this->wizardProgress, 0) }}%
                         </div>
                     </div>
-                    
+
                     {{-- Step Indicators --}}
                     <div class="d-flex justify-content-between mt-3 flex-wrap">
                         @foreach($wizard_steps as $stepNum => $stepName)
                             <div class="text-center" style="flex: 1; min-width: 80px;">
+                                <button type="button" wire:click="goToStep({{ $stepNum }})" class="btn p-0 border-0 bg-transparent">
                                 <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-1
                                     @if($stepNum < $current_step) bg-success text-white
                                     @elseif($stepNum == $current_step) bg-primary text-white
@@ -39,6 +40,7 @@
                                         {{ $stepNum }}
                                     @endif
                                 </div>
+                                </button>
                                 <div class="small" style="font-size: 0.75rem;">{{ $stepName }}</div>
                             </div>
                         @endforeach
@@ -132,7 +134,7 @@
                         </div>
 
                         <div class="col-md-4">
-                            <label class="form-label">نام پدر</label>
+                            <label class="form-label"> نام پدر <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" wire:model.blur="father_name">
                             @error('father_name') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
