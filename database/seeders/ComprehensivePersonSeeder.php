@@ -37,9 +37,9 @@ use Faker\Factory;
 class ComprehensivePersonSeeder extends Seeder
 {
     private const SOCIAL_WORKER_COUNT = 10;
-    private const HOUSEHOLD_COUNT = 100;
+    private const HOUSEHOLD_COUNT = 30;
     private const MIN_CHILDREN_PER_HOUSEHOLD = 1;
-    private const MAX_CHILDREN_PER_HOUSEHOLD = 5;
+    private const MAX_CHILDREN_PER_HOUSEHOLD = 6;
 
     public function run(): void
     {
@@ -144,7 +144,7 @@ class ComprehensivePersonSeeder extends Seeder
                 'job_type_id' => JobType::inRandomOrder()->first()->id,
                 'guardian_phone_number' => '09' . $faker->numerify('#########'),
                 'children_count' => 0, // در ادامه آپدیت می‌شود
-                'children_in_house' => rand(1, 5),
+                'children_in_house' => rand(1, 6),
                 // --- منطق شرطی بیمه ---
                 'insurance_status' => $isInsured,
                 'insurance_type_id' => $isInsured ? InsuranceType::inRandomOrder()->first()->id : null,

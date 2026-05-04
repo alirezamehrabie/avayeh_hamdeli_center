@@ -57,6 +57,9 @@
                         @endif
                         @break
 
+                    @case('guardians-list')
+                        <livewire:guardians.index-guardians :embedded="true" :key="'guardians-list'" />
+                        @break
 
                     @case('advanced-reports')
                         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">

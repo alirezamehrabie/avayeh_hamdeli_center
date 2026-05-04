@@ -39,14 +39,14 @@
                         <button type="button" wire:click="selectSection('people-fast-create')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'people-fast-create' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             <i class="fa fa-bolt"></i> ثبت سریع مددجو
                         </button>
+                        <button type="button" wire:click="selectSection('person-create')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'person-create' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
+                            <i class="fa fa-user-plus"></i> فرم کامل ثبت نام
+                        </button>
                         <button type="button" wire:click="selectSection('people-list')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'people-list' || $activeSection === 'person-edit' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             <i class="fa fa-users"></i> لیست مددجویان
                         </button>
                         <button type="button" wire:click="selectSection('people-block-list')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'people-block-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             <i class="fa fa-ban"></i> بلاک لیست مددجویان
-                        </button>
-                        <button type="button" wire:click="selectSection('person-create')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'person-create' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            <i class="fa fa-user-plus"></i> فرم کامل ثبت نام
                         </button>
                     @else
                         <a href="{{ route('people.fast-create') }}" class="block px-4 py-2 text-sm text-indigo-200 hover:text-white"><i class="fa fa-bolt"></i> ثبت سریع فرد</a>
@@ -91,6 +91,21 @@
                 </div>
             @endif
         @endcan
+
+        @if($dashboardMode)
+            <div x-data="{ open: {{ $isActive(['guardians-list']) ? 'true' : 'false' }} }">
+                <button type="button" @click="open = !open" class="flex items-center justify-between w-full px-4 py-3 rounded-lg hover:bg-indigo-800 {{ $isActive(['guardians-list']) ? 'bg-indigo-700' : '' }}">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m4-4a4 4 0 100-8 4 4 0 000 8zm6 2a3 3 0 100-6 3 3 0 000 6zM5 12a3 3 0 100-6 3 3 0 000 6z"></path></svg>
+                        <span>سرپرستان</span>
+                    </div>
+                    <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div x-show="open" class="mt-2 mr-8 space-y-1">
+                    <button type="button" wire:click="selectSection('guardians-list')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'guardians-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">لیست سرپرستان</button>
+                </div>
+            </div>
+        @endif
 
         @if($dashboardMode)
             <button type="button" wire:click="selectSection('advanced-reports')"
