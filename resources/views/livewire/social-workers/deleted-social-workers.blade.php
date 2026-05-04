@@ -1,6 +1,6 @@
 <div>
     <div class="container mx-auto p-4">
-        <div class="rounded-2xl border border-amber-100 bg-gradient-to-br from-white via-amber-50/30 to-white p-5 shadow-sm">
+        <div class="rounded-2xl border bg-gradient-to-br from-white to-cyan-50/30 p-5 shadow-sm" style="border-color: #bfe9f8;">
             <div class="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 class="text-2xl font-bold text-slate-800">فهرست مددکاران تعلیق‌شده</h1>
@@ -17,7 +17,7 @@
             <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="overflow-x-auto">
                     <table class="min-w-full border-collapse text-sm">
-                        <thead class="bg-gradient-to-l from-amber-500 to-yellow-400 text-white">
+                        <thead class="text-white" style="background: linear-gradient(to left, #53BEEA, #39addc);">
                         <tr>
                             <th class="px-5 py-4 text-center font-bold">کد مددکاری</th>
                             <th class="px-5 py-4 text-right font-bold">نام و نام خانوادگی</th>
@@ -30,7 +30,7 @@
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                         @forelse ($this->deletedSocialWorkers as $worker)
-                            <tr class="transition hover:bg-amber-50/70">
+                            <tr class="transition hover:bg-cyan-50/70">
                                 <td class="px-5 py-4 text-center font-medium text-slate-700">{{ $worker->worker_code }}</td>
                                 <td class="px-5 py-4 text-right">
                                     <div class="font-light text-slate-800">{{ $worker->full_name }}</div>
