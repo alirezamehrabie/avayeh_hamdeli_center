@@ -87,7 +87,57 @@
                     @case('advanced-reports')
                         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                             <h1 class="text-2xl font-bold text-gray-800 mb-2">گزارش پیشرفته</h1>
-                            <p class="text-gray-600">گزارش گیری پیشرفته مرکز تخصصی کودکان آوای همدلی</p>
+                            <p class="text-gray-600 mb-6">گزارش گیری پیشرفته مرکز تخصصی کودکان آوای همدلی</p>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                <button type="button" class="group relative text-right overflow-hidden rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-indigo-100">
+                                    <span class="absolute inset-y-0 right-0 w-1 bg-indigo-500"></span>
+                                    <div class="flex items-start justify-between">
+                                        <div>
+                                            <p class="text-xs font-semibold text-indigo-600 mb-2">Advanced Report</p>
+                                            <h2 class="text-base font-bold text-gray-800">گزارش پیشرفته مددجویان</h2>
+                                            <p class="text-xs text-gray-500 mt-2">تحلیل جامع اطلاعات مددجویان و شاخص‌های کلیدی</p>
+                                        </div>
+                                        <div class="rounded-lg bg-indigo-100 p-2 text-indigo-600">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6m4 6V7m4 10v-3M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </button>
+
+                                <button type="button" class="group relative text-right overflow-hidden rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-emerald-100">
+                                    <span class="absolute inset-y-0 right-0 w-1 bg-emerald-500"></span>
+                                    <div class="flex items-start justify-between">
+                                        <div>
+                                            <p class="text-xs font-semibold text-emerald-600 mb-2">Advanced Report</p>
+                                            <h2 class="text-base font-bold text-gray-800">گزارش پیشرفته سرپرستان</h2>
+                                            <p class="text-xs text-gray-500 mt-2">بررسی وضعیت سرپرستان، پوشش خانوار و روند عملکرد</p>
+                                        </div>
+                                        <div class="rounded-lg bg-emerald-100 p-2 text-emerald-600">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5V4H2v16h5m10 0v-4a3 3 0 00-3-3H10a3 3 0 00-3 3v4m10 0H7m8-13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </button>
+
+                                <button type="button" class="group relative text-right overflow-hidden rounded-xl border border-violet-100 bg-gradient-to-br from-violet-50 to-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-violet-100">
+                                    <span class="absolute inset-y-0 right-0 w-1 bg-violet-500"></span>
+                                    <div class="flex items-start justify-between">
+                                        <div>
+                                            <p class="text-xs font-semibold text-violet-600 mb-2">Advanced Report</p>
+                                            <h2 class="text-base font-bold text-gray-800">گزارش پیشرفته مددکاران</h2>
+                                            <p class="text-xs text-gray-500 mt-2">نمایش تخصصی عملکرد مددکاران و وضعیت پرونده‌ها</p>
+                                        </div>
+                                        <div class="rounded-lg bg-violet-100 p-2 text-violet-600">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 1.567-3 3.5S10.343 15 12 15s3-1.567 3-3.5S13.657 8 12 8zm0 0V5m0 10v4m7-7h-3M8 12H5m11.364 4.95l-2.121-2.121M9.757 9.757L7.636 7.636m8.728 0l-2.121 2.121M9.757 14.243l-2.121 2.121"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </button>
+                            </div>
                         </div>
                         @break
 
@@ -184,6 +234,98 @@
                                                 لیست پویش‌ها
                                             </button>
                                         @endif
+                                    </div>
+                                </div>
+                            </div>
+
+                            @php
+                                $maxBirthMonthCount = max(1, $birthMonthChart->max('count') ?? 1);
+                            @endphp
+                            <div class="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-4">
+                                <div class="xl:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                                    <div class="flex items-center justify-between mb-5">
+                                        <h2 class="text-lg font-semibold text-gray-800">تعداد مددجویان بر اساس ماه تولد</h2>
+                                        <span class="text-xs text-gray-500">فروردین تا اسفند</span>
+                                    </div>
+
+                                    <div class="rounded-xl border border-indigo-100 bg-indigo-50/30 p-4">
+                                        <div class="h-72 flex items-end gap-1 md:gap-2 pb-2 overflow-x-auto xl:overflow-x-hidden">
+                                        @foreach($birthMonthChart as $monthData)
+                                            @php
+                                                $heightPercentage = round(($monthData['count'] / $maxBirthMonthCount) * 100, 2);
+                                            @endphp
+                                                <div class="min-w-[44px] xl:min-w-0 xl:flex-1 flex flex-col items-center justify-end h-full">
+                                                    <p class="mb-2 text-xs font-bold text-indigo-700">{{ number_format($monthData['count']) }}</p>
+                                                    <div
+                                                        class="w-8 md:w-9 xl:w-full rounded-t-md bg-indigo-500 transition-all duration-300"
+                                                        style="height: {{ max($heightPercentage, $monthData['count'] > 0 ? 4 : 0) }}%;"
+                                                        title="{{ $monthData['count'] }} نفر"
+                                                    ></div>
+                                                    <p class="mt-2 text-[11px] text-gray-700 text-center whitespace-nowrap">{{ $monthData['label'] }}</p>
+                                                </div>
+                                        @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                                    <div class="mb-4">
+                                        <h2 class="text-lg font-semibold text-gray-800">وظایف و یادآوری‌ها</h2>
+                                        <p class="text-xs text-gray-500 mt-1">مدیریت کارهای روزانه، تاییدها، قراردادها و گزارش‌ها</p>
+                                    </div>
+
+                                    <form wire:submit.prevent="addReminder" class="space-y-3 mb-4">
+                                        <div>
+                                            <input
+                                                type="text"
+                                                wire:model.defer="newReminderTitle"
+                                                class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-300 focus:ring focus:ring-indigo-100"
+                                                placeholder="ثبت مورد جدید..."
+                                            >
+                                            @error('newReminderTitle')
+                                                <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                                            @enderror
+                                        </div>
+                                        <div>
+                                            <select wire:model.defer="newReminderCategory" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-300 focus:ring focus:ring-indigo-100">
+                                                <option value="today_tasks">کارهای امروز</option>
+                                                <option value="pending_approvals">موارد در انتظار تایید</option>
+                                                <option value="contract_deadlines">سررسید قراردادها</option>
+                                                <option value="required_reports">گزارش‌های مورد نیاز</option>
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition">
+                                            افزودن مورد
+                                        </button>
+                                    </form>
+
+                                    <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+                                        @forelse($reminders as $reminder)
+                                            <div class="rounded-lg border border-gray-100 bg-gray-50/70 p-3">
+                                                <div class="flex items-start justify-between gap-2">
+                                                    <button type="button" wire:click="toggleReminder({{ $reminder->id }})" class="text-right flex-1">
+                                                        <p class="text-sm font-medium {{ $reminder->is_done ? 'line-through text-gray-400' : 'text-gray-700' }}">
+                                                            {{ $reminder->title }}
+                                                        </p>
+                                                        <p class="text-[11px] mt-1 {{ $reminder->is_done ? 'text-gray-400' : 'text-indigo-600' }}">
+                                                            {{
+                                                                match($reminder->category) {
+                                                                    'today_tasks' => 'کارهای امروز',
+                                                                    'pending_approvals' => 'در انتظار تایید',
+                                                                    'contract_deadlines' => 'سررسید قرارداد',
+                                                                    'required_reports' => 'گزارش مورد نیاز',
+                                                                }
+                                                            }}
+                                                        </p>
+                                                    </button>
+                                                    <button type="button" wire:click="deleteReminder({{ $reminder->id }})" class="text-xs text-red-500 hover:text-red-700">حذف</button>
+                                                </div>
+                                            </div>
+                                        @empty
+                                            <div class="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-4 text-center text-xs text-gray-500">
+                                                هنوز موردی ثبت نشده است.
+                                            </div>
+                                        @endforelse
                                     </div>
                                 </div>
                             </div>

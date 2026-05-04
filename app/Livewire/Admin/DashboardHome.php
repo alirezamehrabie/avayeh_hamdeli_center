@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use AllowDynamicProperties;
+use App\Models\DashboardReminder;
 use App\Models\District;
 use App\Models\Guardian;
 use App\Models\Person;
@@ -20,6 +21,8 @@ class DashboardHome extends Component
     public string $activeSection = 'overview';
     public ?int $editingPersonId = null;
     public ?int $editingSocialWorkerId = null;
+    public string $newReminderTitle = '';
+    public string $newReminderCategory = 'today_tasks';
 
     public function mount(): void
     {
@@ -58,9 +61,75 @@ class DashboardHome extends Component
         }
     }
 
+    public function addReminder(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+
+        $validated = $this->validate([
+            'newReminderTitle' => ['required', 'string', 'max:255'],
+            'newReminderCategory' => ['required', 'in:today_tasks,pending_approvals,contract_deadlines,required_reports'],
+        ]);
+
+        DashboardReminder::create([
+            'user_id' => auth()->id(),
+            'title' => $validated['newReminderTitle'],
+            'category' => $validated['newReminderCategory'],
+            'is_done' => false,
+        ]);
+
+        $this->newReminderTitle = '';
+    }
+
+    public function toggleReminder(int $reminderId): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+
+        $reminder = DashboardReminder::query()
+            ->where('user_id', auth()->id())
+            ->findOrFail($reminderId);
+
+        $reminder->update(['is_done' => !$reminder->is_done]);
+    }
+
+    public function deleteReminder(int $reminderId): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+
+        DashboardReminder::query()
+            ->where('user_id', auth()->id())
+            ->findOrFail($reminderId)
+            ->delete();
+    }
+
     public function render()
     {
         $isOverview = $this->activeSection === 'overview';
+        $birthMonthChart = collect();
+
+        if ($isOverview) {
+            $monthCounts = Person::query()
+                ->selectRaw('birth_month, COUNT(*) as total')
+                ->whereBetween('birth_month', [1, 12])
+                ->groupBy('birth_month')
+                ->pluck('total', 'birth_month');
+
+            $birthMonthChart = collect(Person::$months)
+                ->map(function (string $label, int $month) use ($monthCounts) {
+                    return [
+                        'month' => $month,
+                        'label' => $label,
+                        'count' => (int) ($monthCounts[$month] ?? 0),
+                    ];
+                })
+                ->values();
+        }
+
+        $reminders = $isOverview
+            ? DashboardReminder::query()
+                ->where('user_id', auth()->id())
+                ->latest()
+                ->get()
+            : collect();
 
         return view('livewire.admin.dashboard-home', [
             'totalPeople' => $isOverview ? Person::count() : 0,
@@ -74,6 +143,8 @@ class DashboardHome extends Component
             'latestPeople' => $isOverview
                 ? Person::with(['guardian.socialWorker'])->latest()->take(5)->get()
                 : collect(),
+            'birthMonthChart' => $birthMonthChart,
+            'reminders' => $reminders,
             'editingPerson' => $this->editingPersonId ? Person::find($this->editingPersonId) : null,
             'editingSocialWorker' => $this->editingSocialWorkerId ? SocialWorker::find($this->editingSocialWorkerId) : null,
         ]);
