@@ -6,6 +6,45 @@
         <div class="card-body">
             {{-- شروع فرم --}}
             <form wire:submit.prevent="save">
+
+                {{-- Wizard Progress Bar --}}
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="mb-0">مرحله {{ $current_step }} از {{ $total_steps }}: {{ $wizard_steps[$current_step] }}</h5>
+                        <span class="badge bg-primary">{{ number_format($this->wizardProgress, 0) }}% تکمیل شده</span>
+                    </div>
+                    <div class="progress" style="height: 25px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
+                             role="progressbar" 
+                             style="width: {{ $this->wizardProgress }}%;" 
+                             aria-valuenow="{{ $this->wizardProgress }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                            {{ number_format($this->wizardProgress, 0) }}%
+                        </div>
+                    </div>
+                    
+                    {{-- Step Indicators --}}
+                    <div class="d-flex justify-content-between mt-3 flex-wrap">
+                        @foreach($wizard_steps as $stepNum => $stepName)
+                            <div class="text-center" style="flex: 1; min-width: 80px;">
+                                <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-1
+                                    @if($stepNum < $current_step) bg-success text-white
+                                    @elseif($stepNum == $current_step) bg-primary text-white
+                                    @else bg-secondary text-white @endif"
+                                    style="width: 35px; height: 35px; font-weight: bold;">
+                                    @if($stepNum < $current_step)
+                                        <i class="bi bi-check-lg"></i>
+                                    @else
+                                        {{ $stepNum }}
+                                    @endif
+                                </div>
+                                <div class="small" style="font-size: 0.75rem;">{{ $stepName }}</div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
                 {{-- پیام‌های فلش برای موفقیت یا خطا --}}
                 @if (session()->has('success'))
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -31,6 +70,8 @@
                 @endif
 
 
+                {{-- Step 1: Personal Information --}}
+                @if($current_step === 1)
                 <div class="mb-5">
                     <h4 class="border-bottom pb-2 mb-3 font-bold">اطلاعات فردی مددجو</h4>
 
@@ -169,10 +210,18 @@
                             </select>
                             @error('role') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
+                    </div>
+                </div>
+                @endif
 
+                {{-- Step 2: Skills and Talents --}}
+                @if($current_step === 2)
+                <div class="mb-5">
+                    <h4 class="border-bottom pb-2 mb-3 font-bold">مهارت‌ها و استعدادها</h4>
+                    <div class="row g-3">
                         {{-- بخش انتخاب مهارت‌ها --}}
                         <div class="col-12 mb-3">
-                            <label class="form-label font-bold">مهارت‌ها و استعدادها</label>
+                            <label class="form-label font-bold">مهارت‌ها</label>
                             <div class="card p-3 bg-light">
                                 <div class="row">
                                     @forelse($allSkills as $skill)
@@ -204,7 +253,15 @@
                             <textarea wire:model.blur="skills_description" class="form-control"></textarea>
                             @error('skills_description') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
+                    </div>
+                </div>
+                @endif
 
+                {{-- Step 3: Disability Information --}}
+                @if($current_step === 3)
+                <div class="mb-5">
+                    <h4 class="border-bottom pb-2 mb-3 font-bold">اطلاعات معلولیت و آسیب</h4>
+                    <div class="row g-3">
 
                         {{-- نوع آسیب (چند انتخابی) --}}
                         <div class="col-12 mb-3 mt-3">
@@ -275,7 +332,15 @@
                             @error('disability_description') <span
                                 class="text-danger small">{{ $message }}</span> @enderror
                         </div>
+                    </div>
+                </div>
+                @endif
 
+                {{-- Step 4: Identity Documents --}}
+                @if($current_step === 4)
+                <div class="mb-5">
+                    <h4 class="border-bottom pb-2 mb-3 font-bold">مدارک شناسایی</h4>
+                    <div class="row g-3">
 
                         <!-- بخش تصویر کارت ملی -->
                         <div class="col-md-4 mb-4">
@@ -448,10 +513,10 @@
 
                     </div>
                 </div>
-                {{-- جدا کننده بخش‌ها --}}
+                @endif
 
-                <hr class="my-5 border-2">
-
+                {{-- Step 5: Education Status --}}
+                @if($current_step === 5)
                 <div class="mb-5">
                     <h5 class="mt-5 border-bottom pb-2 mb-3 font-bold">وضعیت تحصیلی</h5>
                     <div class="row g-3">
@@ -521,8 +586,10 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
-                {{-- بخش 2: وضعیت خانوادگی --}}
+                {{-- Step 6: Family Status --}}
+                @if($current_step === 6)
                 <div class="mb-5">
                     <h4 class="border-bottom pb-2 mb-3 font-bold">وضعیت خانوادگی</h4>
 
@@ -589,11 +656,10 @@
 
                     </div>
                 </div>
+                @endif
 
-                {{-- جدا کننده --}}
-                <hr class="my-5 border-2">
-
-                {{-- بخش 3: اطلاعات سرپرست --}}
+                {{-- Step 7: Guardian and Livelihood Information --}}
+                @if($current_step === 7)
                 <div class="mb-5">
                     <h4 class="border-bottom pb-2 mb-3 font-bold">اطلاعات سرپرست و معیشت</h4>
 
@@ -896,13 +962,10 @@
                         @endif
                     </div>
                 </div>
+                @endif
 
-
-
-                {{-- جدا کننده --}}
-                <hr class="my-5 border-2">
-
-                {{-- بخش 5: اطلاعات بانکی و تحصیلی --}}
+                {{-- Step 8: Banking Information --}}
+                @if($current_step === 8)
                 <div class="mb-5">
                     <h4 class="border-bottom pb-2 mb-3 font-bold">اطلاعات بانکی</h4>
 
@@ -979,11 +1042,10 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
-                {{-- جدا کننده --}}
-                <hr class="my-5 border-2">
-
-                {{-- بخش 4: وضعیت سکونت و تماس --}}
+                {{-- Step 9: Housing Status and Contact Information --}}
+                @if($current_step === 9)
                 <div class="mb-5">
                     <h4 class="border-bottom pb-2 mb-3 font-bold">وضعیت سکونت و اطلاعات تماس</h4>
 
@@ -1101,11 +1163,10 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
-                {{-- جدا کننده --}}
-                <hr class="my-5 border-2">
-
-                {{-- بخش 6: سطح نیاز و پوشش حمایتی --}}
+                {{-- Step 10: Support Needs Level and Assistance Coverage --}}
+                @if($current_step === 10)
                 <div class="mb-5">
                     <h4 class="border-bottom pb-2 mb-3 font-bold">سطح نیاز و پوشش حمایتی</h4>
 
@@ -1242,21 +1303,45 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
-                {{-- دکمه ذخیره نهایی --}}
-                <div class="d-grid gap-2 mt-5 mb-3">
-                    <button type="submit" wire:loading.attr="disabled" class="btn btn-primary btn-lg py-3 shadow">
-                        {{-- حالت لودینگ --}}
-                        <span wire:loading wire:target="save"> <!-- wire:target به حالت اولیه بازگردانده شد -->
-                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                        در حال پردازش و ذخیره اطلاعات...
-                        </span>
-                        {{-- حالت عادی --}}
-                        <span wire:loading.remove wire:target="save"> <!-- wire:target به حالت اولیه بازگردانده شد -->
-                            <i class="bi bi-check-circle-fill me-2"></i>
-                                        ثبت نهایی اطلاعات مددجو
-                        </span>
-                    </button>
+                {{-- Wizard Navigation Buttons --}}
+                <div class="d-flex justify-content-between mt-5 mb-3">
+                    {{-- Previous Button --}}
+                    @if($current_step > 1)
+                        <button type="button" wire:click="previousStep" class="btn btn-secondary">
+                            <i class="bi bi-arrow-right"></i> مرحله قبل
+                        </button>
+                    @else
+                        <div></div>
+                    @endif
+
+                    <div class="d-flex gap-2">
+                        {{-- Skip Button (not on last step) --}}
+                        @if($current_step < $total_steps)
+                            <button type="button" wire:click="skipStep" class="btn btn-outline-warning">
+                                <i class="bi bi-skip-forward"></i> رد کردن
+                            </button>
+                        @endif
+
+                        {{-- Next or Submit Button --}}
+                        @if($current_step < $total_steps)
+                            <button type="button" wire:click="nextStep" class="btn btn-primary">
+                                مرحله بعد <i class="bi bi-arrow-left"></i>
+                            </button>
+                        @else
+                            <button type="submit" wire:loading.attr="disabled" class="btn btn-success btn-lg">
+                                <span wire:loading wire:target="save">
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                    در حال ذخیره...
+                                </span>
+                                <span wire:loading.remove wire:target="save">
+                                    <i class="bi bi-check-circle-fill me-2"></i>
+                                    ثبت نهایی اطلاعات
+                                </span>
+                            </button>
+                        @endif
+                    </div>
                 </div>
             </form>
         </div>
@@ -1404,4 +1489,3 @@
     };
 </script>
 @endscript
-

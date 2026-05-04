@@ -42,7 +42,6 @@ class Person extends Model
         'birth_day',
         'birth_month',
         'birth_year',
-        'birth_date_full',
         'father_name',
         'father_national_id',
         'mother_national_id',
@@ -68,6 +67,7 @@ class Person extends Model
      */
     protected $guarded = [
         'full_name', // ستون مجازی - فقط خواندنی
+        'birth_date_full', // ستون مجازی - فقط خواندنی
     ];
 
 

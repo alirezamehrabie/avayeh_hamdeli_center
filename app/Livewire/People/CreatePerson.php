@@ -47,6 +47,24 @@ class CreatePerson extends Component
 {
     use WithFileUploads;
     public $is_submitted = false;
+
+    // Wizard state properties
+    public $current_step = 1;
+    public $total_steps = 10;
+    public $completed_steps = [];
+    public $wizard_steps = [
+        1 => 'اطلاعات فردی',
+        2 => 'مهارت‌ها و استعدادها',
+        3 => 'اطلاعات معلولیت',
+        4 => 'مدارک شناسایی',
+        5 => 'وضعیت تحصیلی',
+        6 => 'وضعیت خانوادگی',
+        7 => 'اطلاعات سرپرست و معیشت',
+        8 => 'اطلاعات بانکی',
+        9 => 'وضعیت سکونت و تماس',
+        10 => 'سطح نیازمندی و پوشش حمایتی',
+    ];
+
     // --- 1. تعریف متغیرهای اطلاعات فردی مددجو ---
     public $first_name;
 
@@ -904,7 +922,7 @@ class CreatePerson extends Component
 
             $guardianBirthDateFull = null;
             if ($this->guardian_birth_year && $this->guardian_birth_month && $this->guardian_birth_day) {
-                $guardianBirthDateFull = sprintf('%04d/%02d/%02d', $this->guardian_birth_year, $this->guardian_birth_month, $this->guardian_birth_year);
+                $guardianBirthDateFull = sprintf('%04d/%02d/%02d', $this->guardian_birth_year, $this->guardian_birth_month, $this->guardian_birth_day);
             }
 
             $coverageDateFull = null;
@@ -1216,7 +1234,6 @@ class CreatePerson extends Component
                     'birth_day' => $this->birth_day,
                     'birth_month' => $this->birth_month,
                     'birth_year' => $this->birth_year,
-                    'birth_date_full' => $personBirthDateFull,
                     'father_name' => $this->father_name,
                     'father_national_id' => $this->father_national_id,
                     'mother_national_id' => $this->mother_national_id,
@@ -1420,6 +1437,111 @@ class CreatePerson extends Component
         return null;
     }
 
+
+    // Wizard navigation methods
+    public function nextStep()
+    {
+        $this->validateCurrentStep();
+        $this->markCurrentStepCompleted();
+        
+        if ($this->current_step < $this->total_steps) {
+            $this->current_step++;
+        }
+    }
+
+    public function previousStep()
+    {
+        if ($this->current_step > 1) {
+            $this->current_step--;
+        }
+    }
+
+    public function skipStep()
+    {
+        // Skip without validation, but still mark as completed
+        $this->markCurrentStepCompleted();
+        
+        if ($this->current_step < $this->total_steps) {
+            $this->current_step++;
+        }
+    }
+
+    public function getWizardProgressProperty()
+    {
+        return ($this->current_step / $this->total_steps) * 100;
+    }
+
+    private function validateCurrentStep()
+    {
+        $rules = $this->rulesForStep($this->current_step);
+        if (!empty($rules)) {
+            $this->validate($rules);
+        }
+    }
+
+    private function markCurrentStepCompleted()
+    {
+        if (!in_array($this->current_step, $this->completed_steps)) {
+            $this->completed_steps[] = $this->current_step;
+        }
+    }
+
+    private function rulesForStep($step)
+    {
+        switch ($step) {
+            case 1: // Personal Information
+                return [
+                    'first_name' => 'required|string|max:255',
+                    'last_name' => 'required|string|max:255',
+                    'national_id' => 'required|digits:10|unique:people,national_id,' . $this->person_id,
+                    'birth_day' => 'required|integer|min:1|max:31',
+                    'birth_month' => 'required|integer|min:1|max:12',
+                    'birth_year' => 'required|integer|min:1300|max:1420',
+                    'gender' => 'required|in:male,female',
+                    'role' => 'required|in:child,parent,other',
+                ];
+
+            case 2: // Skills and Talents
+                return []; // Optional fields
+
+            case 3: // Disability Information
+                return [
+                    'has_disability' => 'required|in:0,1',
+                    'disability_type_id' => Rule::requiredIf($this->has_disability == 1),
+                ];
+
+            case 4: // Identity Documents
+                return []; // Optional uploads
+
+            case 5: // Education Status
+                return [
+                    'is_studying' => 'required|in:0,1',
+                ];
+
+            case 6: // Family Status
+                return []; // Optional fields
+
+            case 7: // Guardian and Livelihood
+                return [
+                    'guardian_national_code' => 'required|digits:10',
+                ];
+
+            case 8: // Banking Information
+                return []; // Optional fields
+
+            case 9: // Housing and Contact
+                return [
+                    'residence_status_id' => 'required|exists:residence_status_types,id',
+                    'district_id' => 'required|exists:districts,id',
+                ];
+
+            case 10: // Support Needs and Final
+                return []; // Optional fields
+
+            default:
+                return [];
+        }
+    }
 
     public function render()
     {
