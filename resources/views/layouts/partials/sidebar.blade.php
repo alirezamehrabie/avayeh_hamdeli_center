@@ -1,5 +1,15 @@
-<aside class="flex flex-col w-64 h-screen px-4 py-8 overflow-y-auto bg-indigo-900 text-white transition-all duration-300">
-    <div class="flex-row place-items-center justify-center mb-8 border-b border-indigo-800 pb-4">
+<aside
+    x-show="sidebarOpen"
+    x-transition:enter="transition ease-out duration-300"
+    x-transition:enter-start="opacity-0 translate-x-8"
+    x-transition:enter-end="opacity-100 translate-x-0"
+    x-transition:leave="transition ease-in duration-250"
+    x-transition:leave-start="opacity-100 translate-x-0"
+    x-transition:leave-end="opacity-0 translate-x-8"
+    class="fixed inset-y-0 right-0 z-40 flex w-64 shrink-0 flex-col overflow-y-auto bg-indigo-900 px-4 py-8 text-white shadow-2xl transition-all duration-300 lg:relative lg:z-auto lg:h-screen lg:shadow-none"
+    style="display: none;"
+>
+    <div class="mb-8 border-b border-indigo-800 pb-4 text-center">
         <p class="text-xs pb-3">مرکز نیکوکاری تخصصی کودکان</p>
         <p class="text-2xl font-bold">آوای همـــــدلی</p>
     </div>
@@ -34,7 +44,7 @@
                     </div>
                     <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
                 </button>
-                <div x-show="open" class="mt-2 mr-8 space-y-1">
+                <div x-show="open" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
                     @if($dashboardMode)
                         <button type="button" wire:click="selectSection('people-fast-create')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'people-fast-create' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             <i class="fa fa-bolt"></i> ثبت سریع مددجو
@@ -68,7 +78,7 @@
                         </div>
                         <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
                     </button>
-                    <div x-show="open" class="mt-2 mr-8 space-y-1">
+                    <div x-show="open" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
                         <button type="button" wire:click="selectSection('social-workers-list')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'social-workers-list' || $activeSection === 'social-worker-edit' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">لیست مددکاران</button>
                         <button type="button" wire:click="selectSection('social-worker-create')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'social-worker-create' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">ثبت مددکار جدید</button>
                         <button type="button" wire:click="selectSection('social-workers-block-list')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'social-workers-block-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">بلاک لیست مددکاران</button>
@@ -83,7 +93,7 @@
                         </div>
                         <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
                     </button>
-                    <div x-show="open" class="mt-2 mr-8 space-y-1">
+                    <div x-show="open" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
                         <a href="{{ route('social-workers.index') }}" class="block px-4 py-2 text-sm {{ request()->routeIs('social-workers.index') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">لیست مددکاران</a>
                         <a href="{{ route('social-workers.block-list') }}" class="block px-4 py-2 text-sm {{ request()->routeIs('social-workers.block-list') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">بلاک لیست مددکاران</a>
                         <a href="{{ route('social-workers.create') }}" class="block px-4 py-2 text-sm {{ request()->routeIs('social-workers.create') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">ثبت مددکار جدید</a>
@@ -101,7 +111,7 @@
                     </div>
                     <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
                 </button>
-                <div x-show="open" class="mt-2 mr-8 space-y-1">
+                <div x-show="open" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
                     <button type="button" wire:click="selectSection('guardians-list')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'guardians-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">لیست سرپرستان</button>
                 </div>
             </div>
@@ -127,10 +137,12 @@
         <form method="POST" action="{{ route('logout') }}" x-data>
             @csrf
             <button type="submit" @click.prevent="if (confirm('آیا مطمئن هستید که می‌خواهید از سیستم خارج شوید؟')) $el.closest('form').submit()"
-                    class="flex items-center gap-2 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-red-100">
+                    class="group flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-300/30 bg-white/10 px-4 py-3 text-sm font-semibold text-rose-50 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-rose-200/60 hover:bg-rose-500/20 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-rose-300/20">
+                <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-500/20 text-rose-100 transition group-hover:bg-rose-400/30">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
+                </span>
                 خروج از سیستم
             </button>
         </form>

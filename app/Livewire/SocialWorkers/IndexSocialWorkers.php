@@ -7,27 +7,14 @@ use Livewire\Attributes\Layout;
 use Livewire\Component;
 use App\Models\SocialWorker;
 use Illuminate\Support\Facades\DB;
-use Livewire\WithPagination;
 
 #[AllowDynamicProperties]
 #[Layout('layouts.app')]
 class IndexSocialWorkers extends Component
 {
-    use WithPagination;
-
     public string $search = '';
     public string $searchField = 'all';
     public bool $embedded = false;
-
-    public function updatingSearch(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatingSearchField(): void
-    {
-        $this->resetPage();
-    }
 
     public function createSocialWorker(): void
     {
@@ -42,7 +29,6 @@ class IndexSocialWorkers extends Component
     public function deleteSocialWorker(SocialWorker $socialWorker): void
     {
         $socialWorker->deactivate();
-        $this->resetPage();
 
         session()->flash('success', 'مددکار با موفقیت حذف شد.');
     }
@@ -75,7 +61,7 @@ class IndexSocialWorkers extends Component
             };
         }
 
-        return $query->paginate(50);
+        return $query->get();
     }
 
     public function render()

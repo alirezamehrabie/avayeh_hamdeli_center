@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use AllowDynamicProperties;
+use App\Models\District;
 use App\Models\Guardian;
 use App\Models\Person;
 use App\Models\SocialWorker;
@@ -44,6 +45,9 @@ class DashboardHome extends Component
             'maleCount' => Person::where('gender', 'male')->count(),
             'femaleCount' => Person::where('gender', 'female')->count(),
             'guardianCount' => Guardian::count(),
+            'coveredRegions' => District::whereNotNull('id')
+                ->distinct('id')
+                ->count('id'),
             'latestPeople' => Person::with(['guardian.socialWorker']) // لود کردن زنجیره‌ای روابط
             ->latest()
                 ->take(5)

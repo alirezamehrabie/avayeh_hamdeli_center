@@ -8,6 +8,7 @@ class StatCard extends Component
 {
     public $title;
     public $value;
+    public $suffix = '';
     public $icon;
     public $color; // مثلا: blue, green, red, yellow
 

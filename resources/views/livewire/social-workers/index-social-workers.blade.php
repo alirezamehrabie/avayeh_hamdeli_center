@@ -131,10 +131,6 @@
                     </table>
                 </div>
             </div>
-
-            <div class="mt-5">
-                {{ $this->socialWorkers->links() }}
-            </div>
         </div>
     </div>
 </div>

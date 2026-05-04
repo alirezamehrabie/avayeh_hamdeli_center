@@ -59,7 +59,7 @@ class IndexPeople extends Component
     public function editPerson(Person $person)
     {
         if ($this->embedded) {
-            $this->dispatch('open-dashboard-section', section: 'person-edit', id: $person->id);
+            $this->dispatch('open-dashboard-sec/tion', section: 'person-edit', id: $person->id);
             return;
         }
 
