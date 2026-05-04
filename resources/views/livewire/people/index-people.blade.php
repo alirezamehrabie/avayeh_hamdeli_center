@@ -1,97 +1,96 @@
 <div>
-    <div class="card shadow-sm">
-        <div class="card-header bg-pink-800 text-white">
-            <h3 class="mb-0">لیست مددجویان</h3>
-            <p class="mb-0 text-sm">جستجو و مدیریت افراد ثبت شده</p>
-        </div>
-        <div class="card-body">
+    <div class="container mx-auto p-4">
+        <div class="rounded-2xl border bg-gradient-to-br from-white via-rose-50/30 to-white p-6 shadow-sm sm:p-7" style="border-color: #f5d0e1;">
+            <div class="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-800">لیست مددجویان</h1>
+                    <p class="mt-1 text-sm text-slate-500">جستجو و مدیریت افراد ثبت شده</p>
+                </div>
+                <div class="rounded-2xl border bg-white/90 px-5 py-3 shadow-sm" style="border-color: #f5d0e1;">
+                    <p class="text-xs font-semibold text-slate-500">تعداد نمایش داده شده</p>
+                    <p class="mt-1 text-center text-xl font-extrabold" style="color: #9D174D;">{{ number_format($this->people->total()) }}</p>
+                </div>
+            </div>
+
+            <div class="mb-6 rounded-2xl border bg-white/70 p-4 sm:p-5" style="border-color: #f5d0e1;">
+                <label for="beneficiary-search" class="mb-2 block text-sm font-semibold text-slate-700">جستجوی سریع</label>
+                <div class="grid gap-3 md:grid-cols-[minmax(180px,240px)_1fr]">
+                    <select
+                        id="beneficiary-search-field"
+                        wire:model.live="searchField"
+                        class="w-full rounded-2xl border bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition focus:outline-none focus:ring-4"
+                        style="border-color: #f5d0e1;"
+                        aria-label="معیار جستجو"
+                    >
+                        <option value="all">همه فیلدها</option>
+                        <option value="person_code">کد مددجو</option>
+                        <option value="full_name">نام و نام خانوادگی</option>
+                        <option value="first_name">نام</option>
+                        <option value="last_name">نام خانوادگی</option>
+                        <option value="national_id">کد ملی</option>
+                    </select>
+
+                    <input
+                        id="beneficiary-search"
+                        type="text"
+                        wire:model.live.debounce.300ms="search"
+                        class="w-full rounded-2xl border bg-white px-4 py-3 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:outline-none focus:ring-4"
+                        style="border-color: #f5d0e1;"
+                        placeholder="عبارت جستجو را وارد کنید..."
+                    >
+                </div>
+                @error('search') <span class="mt-1 block text-sm text-red-600">{{ $message }}</span> @enderror
+            </div>
+
             @if (session()->has('success'))
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <div class="mb-5 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
                     {{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @endif
 
-            <div class="mb-4">
-                <label for="beneficiary-search" class="form-label fw-semibold">جستجوی سریع</label>
-                <div class="row g-2">
-                    <div class="col-12 col-md-4 col-lg-3">
-                        <select
-                            id="beneficiary-search-field"
-                            class="form-select"
-                            wire:model.live="searchField"
-                            aria-label="معیار جستجو"
-                        >
-                            <option value="all">همه فیلدها</option>
-                            <option value="person_code">کد مددجو</option>
-                            <option value="full_name">نام و نام خانوادگی</option>
-                            <option value="first_name">نام</option>
-                            <option value="last_name">نام خانوادگی</option>
-                            <option value="national_id">کد ملی</option>
-                        </select>
-                    </div>
-                    <div class="col-12 col-md-8 col-lg-9">
-                        <input
-                            id="beneficiary-search"
-                            type="text"
-                            class="form-control"
-                            wire:model.live.debounce.300ms="search"
-                            placeholder="عبارت جستجو را وارد کنید..."
-                        >
-                    </div>
+            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full border-collapse text-sm">
+                        <thead class="text-white" style="background: linear-gradient(to left, #9D174D, #be185d);">
+                            <tr>
+                                <th class="px-5 py-4 text-center font-bold">ردیف</th>
+                                <th class="px-5 py-4 text-center font-bold">کد مددجو</th>
+                                <th class="px-5 py-4 text-right font-bold">نام و نام خانوادگی</th>
+                                <th class="px-5 py-4 text-center font-bold">کد ملی</th>
+                                <th class="px-5 py-4 text-center font-bold">تاریخ تولد</th>
+                                <th class="px-5 py-4 text-center font-bold">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @forelse($this->people as $person)
+                                <tr class="transition hover:bg-rose-50/70">
+                                    <td class="px-5 py-4 text-center font-light text-slate-700">{{ $this->people->firstItem() + $loop->index }}</td>
+                                    <td class="px-5 py-4 text-center font-medium text-slate-700">{{ $person->person_code }}</td>
+                                    <td class="px-5 py-4 text-right font-light text-slate-800">{{ $person->full_name }}</td>
+                                    <td class="px-5 py-4 text-center font-light text-slate-700">{{ $person->national_id }}</td>
+                                    <td class="px-5 py-4 text-center font-light text-slate-700">{{ $person->birth_date ?? 'نامشخص' }}</td>
+                                    <td class="px-5 py-4 text-center">
+                                        <div class="flex items-center justify-center gap-2 whitespace-nowrap">
+                                            <button wire:click="editPerson({{ $person->id }})" class="inline-flex items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-semibold transition" style="border-color: #f5d0e1; background-color: #fdf2f8; color: #9D174D;">
+                                                ویرایش
+                                            </button>
+                                            <button wire:click="quickEditPerson({{ $person->id }})" class="inline-flex items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:border-amber-300 hover:bg-amber-100">
+                                                ویرایش سریع
+                                            </button>
+                                            <button wire:click="deletePerson({{ $person->id }})" wire:confirm="آیا از انتقال این مددجو به بلاک لیست مطمئن هستید؟" class="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100">
+                                                حذف
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="px-5 py-10 text-center text-slate-500">هیچ مددجویی ثبت نشده است.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
-                @error('search') <span class="text-danger small">{{ $message }}</span> @enderror
-            </div>
-
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead class="table-light">
-                        <tr>
-                            <th>کد مددجو</th>
-                            <th>نام و نام خانوادگی</th>
-                            <th>کد ملی</th>
-                            <th>تاریخ تولد</th>
-                            <th>جنسیت</th>
-                            <th>عملیات</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($this->people as $person)
-                            <tr>
-                                <td>{{ $person->person_code }}</td>
-                                <td>{{ $person->full_name }}</td>
-                                <td>{{ $person->national_id }}</td>
-                                <td>{{ $person->birth_date ?? 'نامشخص' }}</td>
-                                <td>
-                                    @if($person->gender == 'male')
-                                        <span class="badge bg-primary">مرد</span>
-                                    @elseif($person->gender == 'female')
-                                        <span class="badge text-white" style="background-color: #e83e8c;">زن</span>
-                                    @else
-                                        <span class="badge bg-secondary">نامشخص</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    <div class="d-flex gap-2 flex-wrap">
-                                        <button wire:click="editPerson({{ $person->id }})" class="btn btn-sm btn-primary">
-                                            <i class="fa fa-edit"></i> ویرایش
-                                        </button>
-                                        <button wire:click="quickEditPerson({{ $person->id }})" class="btn btn-sm btn-warning">
-                                            <i class="fa fa-bolt"></i> ویرایش سریع
-                                        </button>
-                                        <button wire:click="deletePerson({{ $person->id }})" wire:confirm="آیا از انتقال این مددجو به بلاک لیست مطمئن هستید؟" class="btn btn-sm btn-outline-danger">
-                                            <i class="fa fa-ban"></i> حذف
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" class="text-center text-muted">هیچ مددجویی ثبت نشده است.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
             </div>
 
             <div class="mt-3">
