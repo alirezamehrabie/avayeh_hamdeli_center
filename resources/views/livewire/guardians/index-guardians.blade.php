@@ -78,7 +78,7 @@
                                         <button type="button" wire:click.stop="toggleGuardian({{ $guardian->id }})" onclick="event.stopPropagation()" class="inline-flex items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:border-amber-300 hover:bg-amber-100">
                                             {{ $expandedGuardianId === $guardian->id ? 'بستن' : 'مشاهده مددجویان' }}
                                         </button>
-                                        <button type="button" wire:click.stop="showHouseholdInfo({{ $guardian->id }})" onclick="event.stopPropagation()" class="inline-flex items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xژs font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100">
+                                        <button type="button" wire:click.stop="showHouseholdInfo({{ $guardian->id }})" onclick="event.stopPropagation()" class="inline-flex items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100">
                                             اطلاعات خانوار
                                         </button>
                                     </div>
