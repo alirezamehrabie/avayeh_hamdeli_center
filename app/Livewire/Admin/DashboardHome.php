@@ -54,6 +54,9 @@ class DashboardHome extends Component
             'social-worker-edit',
             'guardians-list',
             'advanced-reports',
+            'advanced-beneficiary-report',
+            'advanced-supervisor-report',
+            'advanced-social-worker-report',
         ];
 
         if (!in_array($this->activeSection, $validSections, true)) {

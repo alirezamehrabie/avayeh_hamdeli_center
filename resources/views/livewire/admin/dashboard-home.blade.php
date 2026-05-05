@@ -90,7 +90,7 @@
                             <p class="text-gray-600 mb-6">گزارش گیری پیشرفته مرکز تخصصی کودکان آوای همدلی</p>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                                <button type="button" class="group relative text-right overflow-hidden rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-indigo-100">
+                                <button type="button" wire:click="selectSection('advanced-beneficiary-report')" class="group relative block w-full text-right overflow-hidden rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-indigo-100">
                                     <span class="absolute inset-y-0 right-0 w-1 bg-indigo-500"></span>
                                     <div class="flex items-start justify-between">
                                         <div>
@@ -138,6 +138,24 @@
                                     </div>
                                 </button>
                             </div>
+                        </div>
+                        @break
+
+                    @case('advanced-beneficiary-report')
+                        <livewire:people.advanced-filter-builder :key="'advanced-beneficiary-report'" />
+                        @break
+
+                    @case('advanced-supervisor-report')
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <h1 class="text-xl font-bold text-gray-800 mb-2">گزارش پیشرفته سرپرستان</h1>
+                            <p class="text-sm text-gray-600">این بخش به زودی برای گزارش‌گیری پیشرفته سرپرستان تکمیل می‌شود.</p>
+                        </div>
+                        @break
+
+                    @case('advanced-social-worker-report')
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <h1 class="text-xl font-bold text-gray-800 mb-2">گزارش پیشرفته مددکاران</h1>
+                            <p class="text-sm text-gray-600">این بخش به زودی برای گزارش‌گیری پیشرفته مددکاران تکمیل می‌شود.</p>
                         </div>
                         @break
 
