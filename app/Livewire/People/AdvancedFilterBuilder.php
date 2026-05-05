@@ -3,7 +3,12 @@
 namespace App\Livewire\People;
 
 use App\Models\BeneficiarySavedFilter;
+use App\Models\DisabilityType;
+use App\Models\EducationLevel;
+use App\Models\GuardianRelationType;
+use App\Models\HarmType;
 use App\Models\Person;
+use App\Models\Skill;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
@@ -56,7 +61,54 @@ class AdvancedFilterBuilder extends Component
             'male' => 'مرد',
             'female' => 'زن',
         ]],
+        'skills' => ['label' => 'مهارت‌ها', 'type' => 'select', 'options' => []],
+        'harm_types' => ['label' => 'نوع آسیب', 'type' => 'select', 'options' => []],
+        'disability_status_type' => ['label' => 'معلولیت و نوع معلولیت', 'type' => 'select', 'options' => []],
+        'education_status' => ['label' => 'وضعیت تحصیلی', 'type' => 'select', 'options' => [
+            '1' => 'بله',
+            '0' => 'خیر',
+        ]],
+        'education_level' => ['label' => 'مقطع تحصیلی', 'type' => 'select', 'options' => []],
+        'works_alongside_study' => ['label' => 'همزمان با تحصیل کار می‌کند', 'type' => 'select', 'options' => [
+            '1' => 'بله',
+            '0' => 'خیر',
+        ]],
+        'guardian_relation' => ['label' => 'نسبت با سرپرست', 'type' => 'select', 'options' => []],
+        'guardian_national_code' => ['label' => 'کد ملی سرپرست', 'type' => 'text'],
     ];
+
+    public function mount(): void
+    {
+        $this->filterableFields['skills']['options'] = Skill::query()
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->toArray();
+
+        $this->filterableFields['harm_types']['options'] = HarmType::query()
+            ->orderBy('title')
+            ->pluck('title', 'id')
+            ->toArray();
+
+        $disabilityOptions = [
+            'has:1' => 'دارای معلولیت',
+            'has:0' => 'فاقد معلولیت',
+        ];
+        foreach (DisabilityType::query()->orderBy('name')->get(['id', 'name']) as $type) {
+            $disabilityOptions['type:' . $type->id] = 'نوع: ' . $type->name;
+        }
+        $this->filterableFields['disability_status_type']['options'] = $disabilityOptions;
+
+        $this->filterableFields['education_level']['options'] = EducationLevel::query()
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->toArray();
+
+        $this->filterableFields['guardian_relation']['options'] = GuardianRelationType::query()
+            ->orderBy('title')
+            ->pluck('title', 'id')
+            ->toArray();
+    }
 
     public function updatingGlobalSearch(): void
     {
@@ -217,6 +269,18 @@ class AdvancedFilterBuilder extends Component
                 if ($value === '') {
                     continue;
                 }
+
+                if ($field === 'guardian_national_code') {
+                    $query->whereHas('guardian', function (Builder $guardianQuery) use ($value, $operator) {
+                        if ($operator === 'exact') {
+                            $guardianQuery->where('national_code', $value);
+                        } else {
+                            $guardianQuery->where('national_code', 'like', "%{$value}%");
+                        }
+                    });
+                    continue;
+                }
+
                 if ($operator === 'exact') {
                     $query->where($field, $value);
                 } else {
@@ -226,6 +290,62 @@ class AdvancedFilterBuilder extends Component
 
             if ($type === 'select') {
                 $value = $filter['value'] ?? '';
+                if ($value === '') {
+                    continue;
+                }
+
+                if ($field === 'skills') {
+                    $query->whereHas('skills', function (Builder $skillQuery) use ($value) {
+                        $skillQuery->where('skills.id', $value);
+                    });
+                    continue;
+                }
+
+                if ($field === 'harm_types') {
+                    $query->whereHas('harmTypes', function (Builder $harmQuery) use ($value) {
+                        $harmQuery->where('harm_types.id', $value);
+                    });
+                    continue;
+                }
+
+                if ($field === 'disability_status_type') {
+                    if (str_starts_with((string) $value, 'has:')) {
+                        $query->where('has_disability', (int) str_replace('has:', '', (string) $value));
+                    }
+                    if (str_starts_with((string) $value, 'type:')) {
+                        $query->where('disability_type_id', (int) str_replace('type:', '', (string) $value));
+                    }
+                    continue;
+                }
+
+                if ($field === 'education_status') {
+                    $query->whereHas('education', function (Builder $educationQuery) use ($value) {
+                        $educationQuery->where('is_studying', (int) $value);
+                    });
+                    continue;
+                }
+
+                if ($field === 'education_level') {
+                    $query->whereHas('education', function (Builder $educationQuery) use ($value) {
+                        $educationQuery->where('education_level_id', $value);
+                    });
+                    continue;
+                }
+
+                if ($field === 'works_alongside_study') {
+                    $query->whereHas('education', function (Builder $educationQuery) use ($value) {
+                        $educationQuery->where('works_alongside_study', (int) $value);
+                    });
+                    continue;
+                }
+
+                if ($field === 'guardian_relation') {
+                    $query->whereHas('familyStatus', function (Builder $familyStatusQuery) use ($value) {
+                        $familyStatusQuery->where('guardian_relation_type_id', $value);
+                    });
+                    continue;
+                }
+
                 if ($value !== '') {
                     $query->where($field, $value);
                 }
@@ -255,6 +375,7 @@ class AdvancedFilterBuilder extends Component
                     $query->where('birth_year', (int) $filter['year']);
                 }
             }
+
         }
 
         return $query;
