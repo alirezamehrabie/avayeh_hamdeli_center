@@ -13,7 +13,14 @@
 
         <div class="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
             <label class="mb-2 block text-sm font-semibold text-slate-700">جستجوی سراسری</label>
-            <input type="text" wire:model.live.debounce.300ms="globalSearch" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-indigo-300 focus:ring focus:ring-indigo-100" placeholder="نام، کد ملی یا موبایل...">
+            <div class="flex flex-wrap items-center gap-2">
+                <input type="text" wire:model.live.debounce.300ms="globalSearch" class="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-indigo-300 focus:ring focus:ring-indigo-100" placeholder="نام، کد ملی یا موبایل...">
+                @if(trim($globalSearch) !== '' || count($filters) > 0)
+                    <button type="button" wire:click="clearAllFilters" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100">
+                        پاک‌کردن همه فیلترها
+                    </button>
+                @endif
+            </div>
         </div>
 
         <div class="mb-4 rounded-xl border border-slate-200 p-4">
@@ -199,6 +206,15 @@
                     <span class="rounded-md bg-white px-2 py-0.5 text-slate-800">{{ count($filters) }}</span>
                 </div>
             </div>
+            @if(count($filters) > 0)
+                <div class="mt-3 flex flex-wrap gap-1.5">
+                    @foreach($filters as $index => $filter)
+                        <button type="button" wire:click="removeFilter({{ $index }})" class="rounded-full border border-sky-200 bg-white px-2.5 py-1 text-[11px] text-slate-700 hover:bg-sky-50">
+                            {{ $filterableFields[$filter['field']]['label'] ?? $filter['field'] }} ×
+                        </button>
+                    @endforeach
+                </div>
+            @endif
         </div>
 
         <div class="overflow-hidden rounded-xl border border-slate-200 bg-white">

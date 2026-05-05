@@ -226,6 +226,13 @@ class AdvancedFilterBuilder extends Component
         $this->resetPage();
     }
 
+    public function clearAllFilters(): void
+    {
+        $this->filters = [];
+        $this->globalSearch = '';
+        $this->resetPage();
+    }
+
     public function toggleColumn(string $column): void
     {
         if (!isset($this->availableColumns[$column])) {
