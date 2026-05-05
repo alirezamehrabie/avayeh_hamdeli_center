@@ -83,185 +83,196 @@
                 {{-- Step 1: Personal Information --}}
                 @if($current_step === 1)
                 <div class="mb-5">
-                    <h4 class="border-bottom pb-2 mb-3 font-bold">اطلاعات فردی مددجو</h4>
-
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label">نام <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" wire:model.blur="first_name">
-                            @error('first_name') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">نام خانوادگی <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" wire:model.blur="last_name">
-                            @error('last_name') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">کد ملی <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" maxlength="10" wire:model.live="national_id">
-                            @error('national_id')
-                                <span class="text-danger small">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        {{-- تاریخ تولد 3 بخشی --}}
-                        <div class="col-md-4">
-                            <label class="form-label">تاریخ تولد <span class="text-danger">*</span></label>
-                            <div class="row g-2 dir-ltr">
-                                <div class="col-4">
-                                    <select wire:model.blur="birth_day" class="form-select">
-                                        <option value="">روز</option>
-                                        @foreach(range(1, 31) as $day)
-                                            <option value="{{ $day }}">{{ $day }}</option>
-                                        @endforeach
-                                    </select>
+                    <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom pb-3 mb-4">
+                                <div>
+                                    <h5 class="mb-1 fw-bold">اطلاعات فردی مددجو</h5>
+                                    <p class="mb-0 small text-muted">ابتدا اطلاعات هویتی را وارد کنید، سپس اطلاعات تکمیلی را ثبت نمایید.</p>
                                 </div>
-                                <div class="col-4">
-                                    <select wire:model.blur="birth_month" class="form-select">
-                                        <option value="">ماه</option>
-                                        @php $months = [1=>'فروردین',2=>'اردیبهشت',3=>'خرداد',4=>'تیر',5=>'مرداد',6=>'شهریور',7=>'مهر',8=>'آبان',9=>'آذر',10=>'دی',11=>'بهمن',12=>'اسفند']; @endphp
-                                        @foreach($months as $key => $month)
-                                            <option value="{{ $key }}">{{ $month }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-4">
-                                    <select wire:model.blur="birth_year" class="form-select">
-                                        <option value="">سال</option>
-                                        @foreach(range(1300, 1420) as $year)
-                                            <option value="{{ $year }}">{{ $year }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
+                                <small class="text-muted">فیلدهای <span class="text-danger">*</span> الزامی هستند.</small>
                             </div>
-                            @error('birth_day') <span class="text-danger small">{{ $message }}</span> <br> @enderror
-                            @error('birth_month') <span class="text-danger small">{{ $message }}</span> <br> @enderror
-                            @error('birth_year') <span class="text-danger small">{{ $message }}</span> <br> @enderror
-                        </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label"> نام پدر <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" wire:model.blur="father_name">
-                            @error('father_name') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div class="col-md-2">
-                            <label class="form-label">کد ملی پدر</label>
-                            <input type="text" class="form-control" maxlength="10" wire:model.blur="father_national_id">
-                            @error('father_national_id') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div class="col-md-2">
-                            <label class="form-label">کد ملی مادر</label>
-                            <input type="text" class="form-control" maxlength="10" wire:model.blur="mother_national_id">
-                            @error('mother_national_id') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-
-                        <div class="col-md-4">
-                            <label class="form-label">شماره موبایل مددجو</label>
-                            <input type="text" class="form-control" wire:model="phone_number" maxlength="11" placeholder="مثلاً 09121234567">
-                            @error('phone_number') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-                        {{-- جنسیت --}}
-                        <div class="col-md-2">
-                            <label class="form-label">جنسیت <span class="text-danger">*</span></label>
-                            <div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" value="male" wire:model.live="gender"
-                                           id="gender_male">
-                                    <label class="form-check-label" for="gender_male">مرد</label>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold mb-1">نام <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control form-control-sm @error('first_name') is-invalid @enderror" wire:model.blur="first_name" placeholder="مثال: امیرعلی" autocomplete="given-name" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                    @error('first_name') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                                 </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" value="female" wire:model.live="gender"
-                                           id="gender_female">
-                                    <label class="form-check-label" for="gender_female">زن</label>
+
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold mb-1">نام خانوادگی <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control form-control-sm @error('last_name') is-invalid @enderror" wire:model.blur="last_name" placeholder="مثال: رضایی" autocomplete="family-name" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                    @error('last_name') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                                 </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold mb-1">کد ملی <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control form-control-sm @error('national_id') is-invalid @enderror" maxlength="10" wire:model.live="national_id" inputmode="numeric" placeholder="10 رقم" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                    @error('national_id') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold mb-1">تاریخ تولد <span class="text-danger">*</span></label>
+                                    <div class="row g-2 dir-ltr">
+                                        <div class="col-4">
+                                            <select wire:model.blur="birth_day" class="form-select form-select-sm @error('birth_day') is-invalid @enderror" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                                <option value="">روز</option>
+                                                @foreach(range(1, 31) as $day)
+                                                    <option value="{{ $day }}">{{ $day }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-4">
+                                            <select wire:model.blur="birth_month" class="form-select form-select-sm @error('birth_month') is-invalid @enderror" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                                <option value="">ماه</option>
+                                                @php $months = [1=>'فروردین',2=>'اردیبهشت',3=>'خرداد',4=>'تیر',5=>'مرداد',6=>'شهریور',7=>'مهر',8=>'آبان',9=>'آذر',10=>'دی',11=>'بهمن',12=>'اسفند']; @endphp
+                                                @foreach($months as $key => $month)
+                                                    <option value="{{ $key }}">{{ $month }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-4">
+                                            <select wire:model.blur="birth_year" class="form-select form-select-sm @error('birth_year') is-invalid @enderror" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                                <option value="">سال</option>
+                                                @foreach(range(1300, 1420) as $year)
+                                                    <option value="{{ $year }}">{{ $year }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                    @error('birth_day') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                    @error('birth_month') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                    @error('birth_year') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold mb-1">نام پدر <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control form-control-sm @error('father_name') is-invalid @enderror" wire:model.blur="father_name" placeholder="نام کامل پدر" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                    @error('father_name') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold mb-1">شماره موبایل مددجو</label>
+                                    <input type="text" class="form-control form-control-sm @error('phone_number') is-invalid @enderror" wire:model="phone_number" maxlength="11" inputmode="numeric" placeholder="09xxxxxxxxx" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                    @error('phone_number') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                </div>
+
+                                <div class="col-md-2">
+                                    <label class="form-label small fw-semibold mb-1">کد ملی پدر</label>
+                                    <input type="text" class="form-control form-control-sm @error('father_national_id') is-invalid @enderror" maxlength="10" wire:model.blur="father_national_id" inputmode="numeric" placeholder="10 رقم" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                    @error('father_national_id') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                </div>
+
+                                <div class="col-md-2">
+                                    <label class="form-label small fw-semibold mb-1">کد ملی مادر</label>
+                                    <input type="text" class="form-control form-control-sm @error('mother_national_id') is-invalid @enderror" maxlength="10" wire:model.blur="mother_national_id" inputmode="numeric" placeholder="10 رقم" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                    @error('mother_national_id') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold mb-2">نقش در خانواده <span class="text-danger">*</span></label>
+                                    <select class="form-select form-select-sm @error('role') is-invalid @enderror" wire:model.blur="role" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                        <option value="child">فرزند</option>
+                                    </select>
+                                    @error('role') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold mb-2">جنسیت <span class="text-danger">*</span></label>
+                                    <div class="border rounded-3 p-2 d-flex gap-3 flex-wrap" style="background: #f8fafc; border-color: #dbe3ec !important;">
+                                        <div class="form-check mb-0">
+                                            <input class="form-check-input" type="radio" value="male" wire:model.live="gender" id="gender_male">
+                                            <label class="form-check-label small" for="gender_male">مرد</label>
+                                        </div>
+                                        <div class="form-check mb-0">
+                                            <input class="form-check-input" type="radio" value="female" wire:model.live="gender" id="gender_female">
+                                            <label class="form-check-label small" for="gender_female">زن</label>
+                                        </div>
+                                    </div>
+                                    @error('gender') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold mb-2">وضعیت سادات <span class="text-danger">*</span></label>
+                                    <div class="border rounded-3 p-2 d-flex gap-3 flex-wrap" style="background: #f8fafc; border-color: #dbe3ec !important;">
+                                        <div class="form-check mb-0">
+                                            <input type="radio" class="form-check-input" value="general" wire:model.live="sadaat_status" id="sadaat_status_general">
+                                            <label class="form-check-label small" for="sadaat_status_general">عام</label>
+                                        </div>
+                                        <div class="form-check mb-0">
+                                            <input type="radio" class="form-check-input" value="sadaat" wire:model.live="sadaat_status" id="sadaat_status_sadaat">
+                                            <label class="form-check-label small" for="sadaat_status_sadaat">سادات</label>
+                                        </div>
+                                    </div>
+                                    @error('sadaat_status') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                </div>
+
+                                @if($sadaat_status === 'سادات')
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-semibold mb-1">نسب سادات <span class="text-danger">*</span></label>
+                                        <select wire:model.blur="sadaat_relation_id" class="form-select form-select-sm @error('sadaat_relation_id') is-invalid @enderror" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                            <option value="">— انتخاب کنید —</option>
+                                            @foreach($sadaatRelations as $rel)
+                                                <option value="{{ $rel->id }}">{{ $rel->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('sadaat_relation_id') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                    </div>
+                                @endif
                             </div>
-                            @error('gender') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
-
-                        {{-- وضعیت سادات (با wire:model.live برای تغییر آنی) --}}
-                        <div class="form-group col-md-2">
-                            <label class="d-block">وضعیت سادات <span class="text-danger">*</span></label>
-                            <label class="radio-inline me-3">
-                                <input type="radio" class="form-check-input" value="general" wire:model.live="sadaat_status" id="sadaat_status_general"> عام
-                            </label>
-                            <label class="radio-inline">
-                                <input type="radio" class="form-check-input" value="sadaat" wire:model.live="sadaat_status" id="sadaat_status_sadaat"> سادات
-                            </label>
-                            @error('sadaat_status') <span
-                                class="text-danger small d-block mt-1">{{ $message }}</span> @enderror
-                        </div>
-
-                        {{-- نسب سادات: نمایش شرطی با Blade --}}
-                        @if($sadaat_status === 'سادات')
-                            <div class="form-group col-md-4">
-                                <label>نسب سادات <span class="text-danger">*</span></label>
-                                <select wire:model.blur="sadaat_relation_id" class="form-control">
-                                    <option value="">— انتخاب کنید —</option>
-                                    @foreach($sadaatRelations as $rel)
-                                        <option value="{{ $rel->id }}">{{ $rel->name }}</option>
-                                    @endforeach
-                                </select>
-                                @error('sadaat_relation_id') <span
-                                    class="text-danger small">{{ $message }}</span> @enderror
-                            </div>
-                        @endif
-
-                        <div class="col-md-4">
-                            <label class="form-label">نقش در خانواده <span class="text-danger">*</span></label>
-                            <select class="form-select" wire:model.blur="role">
-                                <option value="child">فرزند</option>
-                                {{-- <option value="سرپرست">سرپرست</option> --}}
-                            </select>
-                            @error('role') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-                    </div>
                 </div>
                 @endif
 
                 {{-- Step 2: Skills and Talents --}}
                 @if($current_step === 2)
                 <div class="mb-5">
-                    <h4 class="border-bottom pb-2 mb-3 font-bold">مهارت‌ها و استعدادها</h4>
-                    <div class="row g-3">
-                        {{-- بخش انتخاب مهارت‌ها --}}
-                        <div class="col-12 mb-3">
-                            <label class="form-label font-bold">مهارت‌ها</label>
-                            <div class="card p-3 bg-light">
-                                <div class="row">
-                                    @forelse($allSkills as $skill)
-                                        <div class="col-md-3 col-sm-6 mb-2">
-                                            <div class="form-check">
-                                                <input
-                                                    class="form-check-input"
-                                                    type="checkbox"
-                                                    value="{{ $skill->id }}"
-                                                    wire:model.live="skills"
-                                                    id="skill_{{ $skill->id }}"
-                                                >
-                                                <label class="form-check-label" for="skill_{{ $skill->id }}">
-                                                    {{ $skill->name }}
-                                                </label>
-                                            </div>
-                                        </div>
-                                    @empty
-                                        <div class="col-12 text-muted">هیچ مهارتی در سیستم تعریف نشده است.</div>
-                                    @endforelse
+                    <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom pb-3 mb-4">
+                                <div>
+                                    <h5 class="mb-1 fw-bold">مهارت‌ها و استعدادها</h5>
+                                    <p class="mb-0 small text-muted">مهارت های مرتبط را انتخاب کنید و در صورت نیاز توضیح کوتاه وارد نمایید.</p>
                                 </div>
                             </div>
-                            @error('skills') <span
-                                class="text-danger small d-block mt-1">{{ $message }}</span> @enderror
-                        </div>
 
-                        <div class="form-group mt-2 col-12">
-                            <label>توضیحات استعداد:</label>
-                            <textarea wire:model.blur="skills_description" class="form-control"></textarea>
-                            @error('skills_description') <span class="text-danger small">{{ $message }}</span> @enderror
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label small fw-semibold mb-2">انتخاب مهارت ها</label>
+                                    <div class="border p-3 p-md-4" style="border-radius: 14px; background: #f8fafc; border-color: #dbe3ec !important;">
+                                        <div class="row g-2">
+                                            @forelse($allSkills as $skill)
+                                                <div class="col-lg-3 col-md-4 col-sm-6">
+                                                    <label for="skill_{{ $skill->id }}" class="w-100 h-100 d-flex align-items-center gap-2 px-3 py-2 border bg-white" style="border-radius: 10px; border-color: #e2e8f0 !important; cursor: pointer;">
+                                                        <input
+                                                            class="form-check-input m-0"
+                                                            type="checkbox"
+                                                            value="{{ $skill->id }}"
+                                                            wire:model.live="skills"
+                                                            id="skill_{{ $skill->id }}"
+                                                        >
+                                                        <span class="small text-dark">{{ $skill->name }}</span>
+                                                    </label>
+                                                </div>
+                                            @empty
+                                                <div class="col-12 text-muted small">هیچ مهارتی در سیستم تعریف نشده است.</div>
+                                            @endforelse
+                                        </div>
+                                    </div>
+                                    @error('skills') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label small fw-semibold mb-1">توضیحات استعداد</label>
+                                    <textarea wire:model.blur="skills_description"
+                                              class="form-control form-control-sm @error('skills_description') is-invalid @enderror"
+                                              rows="4"
+                                              placeholder="در صورت نیاز، توضیح کوتاهی درباره استعدادها یا مهارت های ویژه ثبت کنید..."
+                                              style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec;"></textarea>
+                                    @error('skills_description') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -270,77 +281,81 @@
                 {{-- Step 3: Disability Information --}}
                 @if($current_step === 3)
                 <div class="mb-5">
-                    <h4 class="border-bottom pb-2 mb-3 font-bold">اطلاعات معلولیت و آسیب</h4>
-                    <div class="row g-3">
-
-                        {{-- نوع آسیب (چند انتخابی) --}}
-                        <div class="col-12 mb-3 mt-3">
-                            <label class="form-label font-bold">نوع آسیب (قابل انتخاب چندتایی)</label>
-
-                            <div class="card p-3 bg-light">
-                                <div class="row">
-
-                                    @forelse($allHarmTypes as $harm)
-                                        <div class="col-md-3 col-sm-6 mb-2">
-                                            <div class="form-check">
-                                                <input
-                                                    class="form-check-input"
-                                                    type="checkbox"
-                                                    value="{{ $harm->id }}"
-                                                    wire:model="harm_types"
-                                                    id="harm_{{ $harm->id }}"
-                                                >
-                                                <label class="form-check-label" for="harm_{{ $harm->id }}">
-                                                    {{ $harm->title }}
-                                                </label>
-                                            </div>
-                                        </div>
-                                    @empty
-                                        <div class="col-12 text-muted">
-                                            هیچ نوع آسیبی در سیستم ثبت نشده است.
-                                        </div>
-                                    @endforelse
-
+                    <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom pb-3 mb-4">
+                                <div>
+                                    <h5 class="mb-1 fw-bold">اطلاعات معلولیت و آسیب</h5>
+                                    <p class="mb-0 small text-muted">نوع آسیب را مشخص کنید و در صورت وجود معلولیت، جزئیات آن را تکمیل نمایید.</p>
                                 </div>
                             </div>
 
-                            @error('harm_types')
-                            <span class="text-danger small d-block mt-1">{{ $message }}</span>
-                            @enderror
-                        </div>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label small fw-semibold mb-2">نوع آسیب (چند انتخابی)</label>
+                                    <div class="border p-3 p-md-4" style="border-radius: 14px; background: #f8fafc; border-color: #dbe3ec !important;">
+                                        <div class="row g-2">
+                                            @forelse($allHarmTypes as $harm)
+                                                <div class="col-lg-3 col-md-4 col-sm-6">
+                                                    <label for="harm_{{ $harm->id }}" class="w-100 h-100 d-flex align-items-center gap-2 px-3 py-2 border bg-white" style="border-radius: 10px; border-color: #e2e8f0 !important; cursor: pointer;">
+                                                        <input
+                                                            class="form-check-input m-0"
+                                                            type="checkbox"
+                                                            value="{{ $harm->id }}"
+                                                            wire:model="harm_types"
+                                                            id="harm_{{ $harm->id }}"
+                                                        >
+                                                        <span class="small text-dark">{{ $harm->title }}</span>
+                                                    </label>
+                                                </div>
+                                            @empty
+                                                <div class="col-12 text-muted small">هیچ نوع آسیبی در سیستم ثبت نشده است.</div>
+                                            @endforelse
+                                        </div>
+                                    </div>
+                                    @error('harm_types') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                </div>
 
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold mb-2">آیا دارای معلولیت هست؟</label>
+                                    <div class="border rounded-3 p-2 d-flex gap-3 flex-wrap" style="background: #f8fafc; border-color: #dbe3ec !important; min-height: 42px;">
+                                        <div class="form-check mb-0">
+                                            <input type="radio" class="form-check-input" value="1" wire:model.live="has_disability" id="has_disability_yes">
+                                            <label class="form-check-label small" for="has_disability_yes">بله</label>
+                                        </div>
+                                        <div class="form-check mb-0">
+                                            <input type="radio" class="form-check-input" value="0" wire:model.live="has_disability" id="has_disability_no">
+                                            <label class="form-check-label small" for="has_disability_no">خیر</label>
+                                        </div>
+                                    </div>
+                                    @error('has_disability') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                </div>
 
-                        {{-- معلولیت (با wire:model.live) --}}
-                        <div class="col-md-2 mb-3">
-                            <label class="form-label">آیا دارای معلولیت هست؟</label>
-                            <div>
-                                <input type="radio" value="1" wire:model.live="has_disability" id="has_disability_yes">
-                                <label for="has_disability_yes">بله</label>
-                                <input type="radio" value="0" wire:model.live="has_disability" id="has_disability_no">
-                                <label for="has_disability_no">خیر</label>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold mb-1">نوع معلولیت</label>
+                                    <select class="form-select form-select-sm @error('disability_type_id') is-invalid @enderror"
+                                            wire:model.blur="disability_type_id"
+                                            style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;"
+                                            @if($has_disability != '1') disabled @endif>
+                                        <option value="">انتخاب کنید...</option>
+                                        @foreach($disabilityTypes as $type)
+                                            <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('disability_type_id') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold mb-1">توضیحات معلولیت</label>
+                                    <textarea class="form-control form-control-sm @error('disability_description') is-invalid @enderror"
+                                              wire:model.blur="disability_description"
+                                              rows="3"
+                                              placeholder="در صورت نیاز توضیح کوتاه ثبت کنید..."
+                                              style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec;"
+                                              @if($has_disability != '1') disabled @endif></textarea>
+                                    @error('disability_description') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                </div>
                             </div>
-                            @error('has_disability') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label">نوع معلولیت</label>
-                            {{-- اگر معلولیت ندارد، فیلد غیرفعال شود --}}
-                            <select class="form-select" wire:model.blur="disability_type_id"
-                                    @if($has_disability != '1') disabled @endif>
-                                <option value="">انتخاب کنید...</option>
-                                @foreach($disabilityTypes as $type)
-                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
-                                @endforeach
-                            </select>
-                            @error('disability_type_id') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label">توضیحات معلولیت</label>
-                            <textarea class="form-control h-1" wire:model.blur="disability_description"
-                                      @if($has_disability != '1') disabled @endif></textarea>
-                            @error('disability_description') <span
-                                class="text-danger small">{{ $message }}</span> @enderror
                         </div>
                     </div>
                 </div>
@@ -349,13 +364,18 @@
                 {{-- Step 4: Identity Documents --}}
                 @if($current_step === 4)
                 <div class="mb-5">
-                    <h4 class="border-bottom pb-2 mb-3 font-bold">مدارک شناسایی</h4>
-                    <div class="row g-3">
+                    <div class="card border-0 shadow-sm" style="border-radius: 16px; background: #ffffff;">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom pb-3 mb-4">
+                                <h4 class="mb-0 fw-bold">مدارک شناسایی</h4>
+                                <span class="badge text-dark" style="background: #eef2ff; border: 1px solid #dbe3ec;">مرحله 4</span>
+                            </div>
+                            <div class="row g-4">
 
                         <!-- بخش تصویر کارت ملی -->
-                        <div class="col-md-4 mb-4">
-                            <label class="form-label fw-bold">تصویر کارت ملی (ثبت آنلاین یا آپلود)</label>
-                            <div class="card p-3" style="background: #f8f9fa;">
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label small fw-semibold mb-2">تصویر کارت ملی</label>
+                            <div class="border h-100 p-3 p-md-4" style="border-radius: 14px; background: #f8fafc; border-color: #dbe3ec !important;">
                                 <div class="row">
                                     <div class="col-md-7 border-start">
                                         <div id="camera-container-id-card" wire:ignore>
@@ -398,8 +418,8 @@
                                         <input type="hidden" wire:model="captured_id_card_base64">
                                     </div>
                                     <div class="col-md-5">
-                                        <p class="small text-muted">یا انتخاب فایل:</p>
-                                        <input type="file" wire:model="photo_id_card" class="form-control" accept="image/*">
+                                        <p class="small text-muted mb-1">یا انتخاب فایل:</p>
+                                        <input type="file" wire:model="photo_id_card" class="form-control form-control-sm" accept="image/*" style="border-radius: 12px; background: #ffffff; border-color: #dbe3ec; min-height: 42px;">
                                         @error('photo_id_card') <span class="text-danger small">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
@@ -409,9 +429,9 @@
 
 
                         <!-- بخش تصویر شناسنامه -->
-                        <div class="col-md-4 mb-4">
-                            <label class="form-label fw-bold">تصویر شناسنامه (ثبت آنلاین یا آپلود)</label>
-                            <div class="card p-3" style="background: #f8f9fa;">
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label small fw-semibold mb-2">تصویر شناسنامه</label>
+                            <div class="border h-100 p-3 p-md-4" style="border-radius: 14px; background: #f8fafc; border-color: #dbe3ec !important;">
                                 <div class="row">
                                     <div class="col-md-7 border-start">
                                         <div id="camera-container-birth-cert" wire:ignore>
@@ -453,8 +473,8 @@
                                         <input type="hidden" wire:model="captured_birth_certificate_base64">
                                     </div>
                                     <div class="col-md-5">
-                                        <p class="small text-muted">یا انتخاب فایل:</p>
-                                        <input type="file" wire:model="photo_birth_certificate" class="form-control" accept="image/*">
+                                        <p class="small text-muted mb-1">یا انتخاب فایل:</p>
+                                        <input type="file" wire:model="photo_birth_certificate" class="form-control form-control-sm" accept="image/*" style="border-radius: 12px; background: #ffffff; border-color: #dbe3ec; min-height: 42px;">
                                         @error('photo_birth_certificate') <span class="text-danger small">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
@@ -465,9 +485,9 @@
 
 
                         <!-- بخش تصویر مددجو -->
-                        <div class="col-md-4 mb-4">
-                            <label class="form-label fw-bold">تصویر مددجو (ثبت آنلاین یا آپلود)</label>
-                            <div class="card p-3" style="background: #f8f9fa;">
+                        <div class="col-lg-4 col-md-12">
+                            <label class="form-label small fw-semibold mb-2">تصویر مددجو</label>
+                            <div class="border h-100 p-3 p-md-4" style="border-radius: 14px; background: #f8fafc; border-color: #dbe3ec !important;">
                                 <div class="row">
                                     <div class="col-md-6 border-start">
                                         <div id="camera-container-profile" wire:ignore>
@@ -509,18 +529,14 @@
                                         <input type="hidden" wire:model="captured_photo_base64">
                                     </div>
                                     <div class="col-md-6">
-                                        <p class="small text-muted">یا انتخاب فایل:</p>
-                                        <input type="file" wire:model="profile_photo" class="form-control" accept="image/*">
+                                        <p class="small text-muted mb-1">یا انتخاب فایل:</p>
+                                        <input type="file" wire:model="profile_photo" class="form-control form-control-sm" accept="image/*" style="border-radius: 12px; background: #ffffff; border-color: #dbe3ec; min-height: 42px;">
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-
-
-
-
-
+                            </div>
+                        </div>
                     </div>
                 </div>
                 @endif
@@ -528,71 +544,80 @@
                 {{-- Step 5: Education Status --}}
                 @if($current_step === 5)
                 <div class="mb-5">
-                    <h5 class="mt-5 border-bottom pb-2 mb-3 font-bold">وضعیت تحصیلی</h5>
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label">آیا مددجو در حال تحصیل است؟ <span
-                                    class="text-danger">*</span></label>
-                            <div>
-                                <input type="radio" value="1" wire:model.live="is_studying" id="studying_yes"> <label
-                                    for="studying_yes">بله</label>
-                                <input type="radio" value="0" wire:model.live="is_studying" id="studying_no"> <label
-                                    for="studying_no">خیر</label>
+                    <div class="card border-0 shadow-sm" style="border-radius: 16px; background: #ffffff;">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom pb-3 mb-4">
+                                <h4 class="mb-0 fw-bold">وضعیت تحصیلی</h4>
+                                <span class="badge text-dark" style="background: #eef2ff; border: 1px solid #dbe3ec;">مرحله 5</span>
                             </div>
-                            @error('is_studying') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold mb-1">آیا مددجو در حال تحصیل است؟ <span class="text-danger">*</span></label>
+                                    <div class="border rounded-3 p-2 d-flex gap-3 flex-wrap" style="background: #f8fafc; border-color: #dbe3ec !important; min-height: 42px;">
+                                        <div class="form-check mb-0">
+                                            <input class="form-check-input" type="radio" value="1" wire:model.live="is_studying" id="studying_yes">
+                                            <label class="form-check-label" for="studying_yes">بله</label>
+                                        </div>
+                                        <div class="form-check mb-0">
+                                            <input class="form-check-input" type="radio" value="0" wire:model.live="is_studying" id="studying_no">
+                                            <label class="form-check-label" for="studying_no">خیر</label>
+                                        </div>
+                                    </div>
+                                    @error('is_studying') <span class="text-danger small">{{ $message }}</span> @enderror
+                                </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">نام مدرسه/دانشگاه</label>
-                            <input type="text" class="form-control" wire:model.blur="school_name"
-                                   @if($is_studying != '1') disabled @endif>
-                            @error('school_name') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold mb-1">آیا همزمان با تحصیل کار می‌کند؟ <span class="text-danger">*</span></label>
+                                    <div class="border rounded-3 p-2 d-flex gap-3 flex-wrap" style="background: #f8fafc; border-color: #dbe3ec !important; min-height: 42px;">
+                                        <div class="form-check mb-0">
+                                            <input class="form-check-input" type="radio" value="1" wire:model.live="works_alongside_study" id="works_yes">
+                                            <label class="form-check-label" for="works_yes">بله</label>
+                                        </div>
+                                        <div class="form-check mb-0">
+                                            <input class="form-check-input" type="radio" value="0" wire:model.live="works_alongside_study" id="works_no">
+                                            <label class="form-check-label" for="works_no">خیر</label>
+                                        </div>
+                                    </div>
+                                    @error('works_alongside_study') <span class="text-danger small">{{ $message }}</span> @enderror
+                                </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">رشته تحصیلی</label>
-                            <input type="text" class="form-control" wire:model.blur="major"
-                                   @if($is_studying != '1') disabled @endif>
-                            @error('major') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold mb-1">نام مدرسه/دانشگاه</label>
+                                    <input type="text" class="form-control form-control-sm @error('school_name') is-invalid @enderror" wire:model.blur="school_name" placeholder="نام مرکز آموزشی" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;" @if($is_studying != '1') disabled @endif>
+                                    @error('school_name') <span class="text-danger small">{{ $message }}</span> @enderror
+                                </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">مقطع تحصیلی</label>
-                            <select class="form-select" wire:model.blur="education_level_id"
-                                    @if($is_studying != '1') disabled @endif>
-                                <option value="">— انتخاب کنید —</option>
-                                @foreach($educationLevels as $level)
-                                    <option value="{{ $level->id }}">{{ $level->name }}</option>
-                                @endforeach
-                            </select>
-                            @error('education_level_id') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold mb-1">رشته تحصیلی</label>
+                                    <input type="text" class="form-control form-control-sm @error('major') is-invalid @enderror" wire:model.blur="major" placeholder="مثال: حسابداری" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;" @if($is_studying != '1') disabled @endif>
+                                    @error('major') <span class="text-danger small">{{ $message }}</span> @enderror
+                                </div>
 
-                        @if($is_studying == '0')
-                            <div class="col-md-8">
-                                <label class="form-label">علت ترک تحصیل</label>
-                                <textarea class="form-control" wire:model.blur="drop_reason" rows="1"></textarea>
-                                @error('drop_reason') <span class="text-danger small">{{ $message }}</span> @enderror
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold mb-1">مقطع تحصیلی</label>
+                                    <select class="form-select form-select-sm @error('education_level_id') is-invalid @enderror" wire:model.blur="education_level_id" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;" @if($is_studying != '1') disabled @endif>
+                                        <option value="">— انتخاب کنید —</option>
+                                        @foreach($educationLevels as $level)
+                                            <option value="{{ $level->id }}">{{ $level->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('education_level_id') <span class="text-danger small">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold mb-1">درآمد ماهیانه از کار (ریال)</label>
+                                    <input type="number" class="form-control form-control-sm @error('monthly_income') is-invalid @enderror" wire:model.blur="monthly_income" min="0" placeholder="به ریال" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;" @if($works_alongside_study != '1') disabled @endif>
+                                    @error('monthly_income') <span class="text-danger small">{{ $message }}</span> @enderror
+                                </div>
+
+                                @if($is_studying == '0')
+                                    <div class="col-md-8">
+                                        <label class="form-label small fw-semibold mb-1">علت ترک تحصیل</label>
+                                        <textarea class="form-control form-control-sm @error('drop_reason') is-invalid @enderror" wire:model.blur="drop_reason" rows="2" placeholder="در صورت نیاز توضیح کوتاه ثبت کنید..." style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec;"></textarea>
+                                        @error('drop_reason') <span class="text-danger small">{{ $message }}</span> @enderror
+                                    </div>
+                                @endif
                             </div>
-                        @endif
-
-                        <div class="col-md-4">
-                            <label class="form-label">آیا همزمان با تحصیل کار می‌کند؟ <span class="text-danger">*</span></label>
-                            <div>
-                                <input type="radio" value="1" wire:model.live="works_alongside_study" id="works_yes">
-                                <label for="works_yes">بله</label>
-                                <input type="radio" value="0" wire:model.live="works_alongside_study" id="works_no">
-                                <label for="works_no">خیر</label>
-                            </div>
-                            @error('works_alongside_study') <span
-                                class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">درآمد ماهیانه از کار (ریال)</label>
-                            <input type="number" class="form-control" wire:model.blur="monthly_income" min="0"
-                                   @if($works_alongside_study != '1') disabled @endif placeholder="به ریال">
-                            @error('monthly_income') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
                     </div>
                 </div>
@@ -601,69 +626,63 @@
                 {{-- Step 6: Family Status --}}
                 @if($current_step === 6)
                 <div class="mb-5">
-                    <h4 class="border-bottom pb-2 mb-3 font-bold">وضعیت خانوادگی</h4>
-
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label">نسبت سرپرست با مددجو <span class="text-danger">*</span></label>
-                            <select class="form-select" wire:model.live="guardian_relation_type_id">
-                                <option value="">— انتخاب کنید —</option>
-                                @foreach($guardianRelationTypes as $type)
-                                    <option value="{{ $type->id }}">{{ $type->title }}</option>
-                                @endforeach
-                            </select>
-                            @error('guardian_relation_type_id') <span
-                                class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-
-                        {{-- remarried_parent --}}
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label" for="remarried_parent">ازدواج مجدد والدین</label>
-                            <select wire:model.blur="remarried_parent" id="remarried_parent" class="form-select">
-                                <option value="">انتخاب کنید...</option>
-                                {{-- مقادیر انگلیسی برای دیتابیس - متن فارسی برای نمایش --}}
-                                <option value="none">خیر</option>
-                                <option value="father">فقط پدر</option>
-                                <option value="mother">فقط مادر</option>
-                                <option value="both">هر دو</option>
-                            </select>
-                            @error('remarried_parent')
-                            <span class="text-danger small">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <div class="col-md-3">
-                            <label class="form-label">فرزندان از ازدواج قبلی</label>
-                            <input type="number" class="form-control" wire:model.blur="children_from_previous_marriage"
-                                   placeholder="تعداد">
-                            @error('children_from_previous_marriage') <span
-                                class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-
-                        {{-- معلولیت والدین --}}
-                        <div class="col-md-3">
-                            <div class="form-check mt-4">
-                                <input class="form-check-input" type="checkbox" id="has_parent_disability"
-                                       wire:model.live="has_parent_disability">
-                                <label class="form-check-label" for="has_parent_disability">
-                                    والدین دارای معلولیت هستند؟
-                                </label>
+                    <div class="card border-0 shadow-sm" style="border-radius: 16px; background: #ffffff;">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom pb-3 mb-4">
+                                <h4 class="mb-0 fw-bold">وضعیت خانوادگی</h4>
+                                <span class="badge text-dark" style="background: #eef2ff; border: 1px solid #dbe3ec;">مرحله 6</span>
                             </div>
-                            @error('has_parent_disability') <span
-                                class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
 
-                        @if($has_parent_disability)
-                            <div class="col-md-12">
-                                <label class="form-label">توضیحات معلولیت والدین</label>
-                                <textarea class="form-control" wire:model.blur="parent_disability_description"
-                                          rows="2"></textarea>
-                                @error('parent_disability_description') <span
-                                    class="text-danger small">{{ $message }}</span> @enderror
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold mb-1">نسبت سرپرست با مددجو <span class="text-danger">*</span></label>
+                                    <select class="form-select form-select-sm @error('guardian_relation_type_id') is-invalid @enderror" wire:model.live="guardian_relation_type_id" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                        <option value="">— انتخاب کنید —</option>
+                                        @foreach($guardianRelationTypes as $type)
+                                            <option value="{{ $type->id }}">{{ $type->title }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('guardian_relation_type_id') <span class="text-danger small">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold mb-1" for="remarried_parent">ازدواج مجدد والدین</label>
+                                    <select wire:model.blur="remarried_parent" id="remarried_parent" class="form-select form-select-sm @error('remarried_parent') is-invalid @enderror" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                        <option value="">انتخاب کنید...</option>
+                                        <option value="none">خیر</option>
+                                        <option value="father">فقط پدر</option>
+                                        <option value="mother">فقط مادر</option>
+                                        <option value="both">هر دو</option>
+                                    </select>
+                                    @error('remarried_parent') <span class="text-danger small">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold mb-1">فرزندان از ازدواج قبلی</label>
+                                    <input type="number" class="form-control form-control-sm @error('children_from_previous_marriage') is-invalid @enderror" wire:model.blur="children_from_previous_marriage" placeholder="تعداد" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                    @error('children_from_previous_marriage') <span class="text-danger small">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold mb-1">وضعیت معلولیت والدین</label>
+                                    <div class="border rounded-3 p-2 d-flex align-items-center gap-2" style="background: #f8fafc; border-color: #dbe3ec !important; min-height: 42px;">
+                                        <div class="form-check mb-0">
+                                            <input class="form-check-input" type="checkbox" id="has_parent_disability" wire:model.live="has_parent_disability">
+                                            <label class="form-check-label" for="has_parent_disability">والدین دارای معلولیت هستند؟</label>
+                                        </div>
+                                    </div>
+                                    @error('has_parent_disability') <span class="text-danger small">{{ $message }}</span> @enderror
+                                </div>
+
+                                @if($has_parent_disability)
+                                    <div class="col-md-12">
+                                        <label class="form-label small fw-semibold mb-1">توضیحات معلولیت والدین</label>
+                                        <textarea class="form-control form-control-sm @error('parent_disability_description') is-invalid @enderror" wire:model.blur="parent_disability_description" rows="2" placeholder="در صورت نیاز توضیحات بیشتری ثبت کنید..." style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec;"></textarea>
+                                        @error('parent_disability_description') <span class="text-danger small">{{ $message }}</span> @enderror
+                                    </div>
+                                @endif
                             </div>
-                        @endif
-
+                        </div>
                     </div>
                 </div>
                 @endif
@@ -671,7 +690,12 @@
                 {{-- Step 7: Guardian and Livelihood Information --}}
                 @if($current_step === 7)
                 <div class="mb-5">
-                    <h4 class="border-bottom pb-2 mb-3 font-bold">اطلاعات سرپرست و معیشت</h4>
+                    <div class="card border-0 shadow-sm" style="border-radius: 16px; background: #ffffff;">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom pb-3 mb-4">
+                                <h4 class="mb-0 fw-bold">اطلاعات سرپرست و معیشت</h4>
+                                <span class="badge text-dark" style="background: #eef2ff; border: 1px solid #dbe3ec;">مرحله 7</span>
+                            </div>
 
                     {{-- نمایش هشدار داینامیک بر اساس انتخاب نسبت در مرحله قبل --}}
                     @if($guardian_relation_type_id)
@@ -687,10 +711,10 @@
                     @endif
 
                     <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label">کد ملی سرپرست <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" maxlength="10"
-                                   wire:model.live.debounce.500ms="guardian_national_code">
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label small fw-semibold mb-1">کد ملی سرپرست <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control form-control-sm @error('guardian_national_code') is-invalid @enderror" maxlength="10"
+                                   wire:model.live.debounce.500ms="guardian_national_code" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                             @error('guardian_national_code') <span
                                 class="text-danger small">{{ $message }}</span> @enderror
 
@@ -714,8 +738,8 @@
                         </div>
 
 
-                        <div class="col-md-4">
-                            <label class="form-label d-flex justify-content-between">
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label small fw-semibold mb-1 d-flex justify-content-between">
                                 <span>مددکار مسئول <span class="text-danger">*</span></span>
                                 @if($guardian_exists_in_db)
                                     <small class="text-muted">
@@ -725,9 +749,9 @@
                             </label>
 
                             <div class="input-group">
-                                <select class="form-select @error('social_worker_id') is-invalid @enderror"
+                                <select class="form-select form-select-sm @error('social_worker_id') is-invalid @enderror"
                                         wire:model.blur="social_worker_id"
-                                    {{ ($guardian_exists_in_db && !$allow_social_worker_edit) ? 'disabled' : '' }}>
+                                    {{ ($guardian_exists_in_db && !$allow_social_worker_edit) ? 'disabled' : '' }} style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                     <option value="">انتخاب کنید...</option>
                                     @foreach($socialWorkers as $worker)
                                         <option value="{{ $worker->id }}">{{ $worker->first_name . ' ' . $worker->last_name }}</option>
@@ -750,26 +774,26 @@
 
 
                         <div class="col-md-4">
-                            <label class="form-label">نام سرپرست <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" wire:model.blur="guardian_first_name"
+                            <label class="form-label small fw-semibold mb-1">نام سرپرست <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control form-control-sm @error('guardian_first_name') is-invalid @enderror" wire:model.blur="guardian_first_name" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;"
                                    @if($guardian_exists_in_db) disabled @endif>
                             @error('guardian_first_name') <span
                                 class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="col-md-4">
-                            <label class="form-label">نام خانوادگی سرپرست <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" wire:model.blur="guardian_last_name"
+                            <label class="form-label small fw-semibold mb-1">نام خانوادگی سرپرست <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control form-control-sm @error('guardian_last_name') is-invalid @enderror" wire:model.blur="guardian_last_name" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;"
                                    @if($guardian_exists_in_db) disabled @endif>
                             @error('guardian_last_name') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         {{-- تاریخ تولد سرپرست --}}
                         <div class="col-md-5">
-                            <label class="form-label">تاریخ تولد سرپرست <span class="text-danger">*</span></label>
+                            <label class="form-label small fw-semibold mb-1">تاریخ تولد سرپرست <span class="text-danger">*</span></label>
                             <div class="row g-2 dir-ltr">
                                 <div class="col-4">
-                                    <select wire:model.blur="guardian_birth_day" class="form-select"
+                                    <select wire:model.blur="guardian_birth_day" class="form-select form-select-sm @error('guardian_birth_day') is-invalid @enderror" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;"
                                             @if($guardian_exists_in_db) disabled @endif>
                                         <option value="">روز</option>
                                         @foreach(range(1, 31) as $day)
@@ -778,7 +802,7 @@
                                     </select>
                                 </div>
                                 <div class="col-4">
-                                    <select wire:model.blur="guardian_birth_month" class="form-select"
+                                    <select wire:model.blur="guardian_birth_month" class="form-select form-select-sm @error('guardian_birth_month') is-invalid @enderror" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;"
                                             @if($guardian_exists_in_db) disabled @endif>
                                         <option value="">ماه</option>
                                         @php $months = [1=>'فروردین',2=>'اردیبهشت',3=>'خرداد',4=>'تیر',5=>'مرداد',6=>'شهریور',7=>'مهر',8=>'آبان',9=>'آذر',10=>'دی',11=>'بهمن',12=>'اسفند']; @endphp
@@ -788,7 +812,7 @@
                                     </select>
                                 </div>
                                 <div class="col-4">
-                                    <select wire:model.blur="guardian_birth_year" class="form-select"
+                                    <select wire:model.blur="guardian_birth_year" class="form-select form-select-sm @error('guardian_birth_year') is-invalid @enderror" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;"
                                             @if($guardian_exists_in_db) disabled @endif>
                                         <option value="">سال</option>
                                         @foreach(range(1300, 1420) as $year)
@@ -805,16 +829,16 @@
                         </div>
 
                         <div class="col-md-3">
-                            <label class="form-label">شماره تماس سرپرست</label>
-                            <input type="text" class="form-control" wire:model.blur="guardian_phone_number"
+                            <label class="form-label small fw-semibold mb-1">شماره تماس سرپرست</label>
+                            <input type="text" class="form-control form-control-sm @error('guardian_phone_number') is-invalid @enderror" wire:model.blur="guardian_phone_number" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;"
                                    maxlength="11">
                             @error('guardian_phone_number') <span
                                 class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="col-md-4">
-                            <label class="form-label">دهک اقتصادی</label>
-                            <select wire:model="economic_decile" class="form-control">
+                            <label class="form-label small fw-semibold mb-1">دهک اقتصادی</label>
+                            <select wire:model="economic_decile" class="form-select form-select-sm @error('guardian.economic_decile') is-invalid @enderror" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                 <option value="">انتخاب کنید...</option>
                                 @foreach($deciles as $key => $value)
                                     <option value="{{ $key }}">{{ $value }}</option>
@@ -825,8 +849,8 @@
 
 
                         <div class="col-md-4">
-                            <label class="form-label">شغل سرپرست <span class="text-danger">*</span></label>
-                            <select class="form-select" wire:model.blur="occupation_id">
+                            <label class="form-label small fw-semibold mb-1">شغل سرپرست <span class="text-danger">*</span></label>
+                            <select class="form-select form-select-sm @error('occupation_id') is-invalid @enderror" wire:model.blur="occupation_id" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                 <option value="">— انتخاب کنید —</option>
                                 @foreach($occupations as $job)
                                     <option value="{{ $job->id }}">{{ $job->name }}</option>
@@ -836,8 +860,8 @@
                         </div>
 
                         <div class="col-md-4">
-                            <label class="form-label">نوع شغل سرپرست</label>
-                            <select class="form-select" wire:model.blur="job_type_id">
+                            <label class="form-label small fw-semibold mb-1">نوع شغل سرپرست</label>
+                            <select class="form-select form-select-sm @error('job_type_id') is-invalid @enderror" wire:model.blur="job_type_id" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                 <option value="">— انتخاب کنید —</option>
                                 @foreach($jobTypes as $type)
                                     <option value="{{ $type->id }}">{{ $type->name }}</option>
@@ -847,33 +871,38 @@
                         </div>
 
                         <div class="col-md-4">
-                            <label class="form-label">تعداد فرزندان تحت پوشش مرکز</label>
-                            <span class="badge bg-secondary">
-    {{ $children_count ?? 0 }} نفر تحت پوشش
-</span>
+                            <label class="form-label small fw-semibold mb-1">تعداد فرزندان تحت پوشش مرکز</label>
+                            <div class="border rounded-3 px-3 py-2 d-flex align-items-center justify-content-between" style="background: #f8fafc; border-color: #dbe3ec !important; min-height: 42px;">
+                                <span class="text-muted small">تعداد ثبت‌شده</span>
+                                <span class="badge text-bg-secondary">{{ $children_count ?? 0 }} نفر</span>
+                            </div>
                             @error('children_count') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="col-md-4">
-                            <label class="form-label">تعداد فرزندان ساکن در منزل</label>
-                            <input type="number" class="form-control" wire:model.blur="children_in_house" min="0">
+                            <label class="form-label small fw-semibold mb-1">تعداد فرزندان ساکن در منزل</label>
+                            <input type="number" class="form-control form-control-sm @error('children_in_house') is-invalid @enderror" wire:model.blur="children_in_house" min="0" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                             @error('children_in_house') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-3">
-                            <label class="form-label">وضعیت بیمه سرپرست <span class="text-danger">*</span></label>
-                            <div>
-                                <input type="radio" value="1" wire:model.live="insurance_status" id="insurance_yes">
-                                <label for="insurance_yes">دارد</label>
-                                <input type="radio" value="0" wire:model.live="insurance_status" id="insurance_no">
-                                <label for="insurance_no">ندارد</label>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold mb-1">وضعیت بیمه سرپرست <span class="text-danger">*</span></label>
+                            <div class="border rounded-3 p-2 d-flex gap-3 flex-wrap" style="background: #f8fafc; border-color: #dbe3ec !important; min-height: 42px;">
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input" type="radio" value="1" wire:model.live="insurance_status" id="insurance_yes">
+                                    <label class="form-check-label" for="insurance_yes">دارد</label>
+                                </div>
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input" type="radio" value="0" wire:model.live="insurance_status" id="insurance_no">
+                                    <label class="form-check-label" for="insurance_no">ندارد</label>
+                                </div>
                             </div>
                             @error('insurance_status') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-5">
-                            <label class="form-label">نوع بیمه</label>
-                            <select class="form-select" wire:model.blur="insurance_type_id"
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold mb-1">نوع بیمه</label>
+                            <select class="form-select form-select-sm @error('insurance_type_id') is-invalid @enderror" wire:model.blur="insurance_type_id" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;"
                                     @if($insurance_status != '1') disabled @endif>
                                 <option value="">— انتخاب کنید —</option>
                                 @foreach($insuranceTypes as $type)
@@ -885,8 +914,8 @@
 
                         {{-- فرزندان طلاق در منزل (جدید) --}}
                         <div class="col-md-4">
-                            <label class="form-label">فرزندان مطلقه در منزل</label>
-                            <select class="form-select" wire:model="divorced_child_at_home">
+                            <label class="form-label small fw-semibold mb-1">فرزندان مطلقه در منزل</label>
+                            <select class="form-select form-select-sm @error('divorced_child_at_home') is-invalid @enderror" wire:model="divorced_child_at_home" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                 <option value="">انتخاب کنید...</option>
                                 <option value="none">ندارد</option>
                                 <option value="boy">فقط پسر</option>
@@ -898,45 +927,55 @@
                         </div>
 
                         <div class="col-md-4">
-                            <label class="form-label">متوسط درآمد ماهیانه (ریال)</label>
-                            <input type="number" class="form-control" wire:model="average_income" min="0"
+                            <label class="form-label small fw-semibold mb-1">متوسط درآمد ماهیانه (ریال)</label>
+                            <input type="number" class="form-control form-control-sm @error('average_income') is-invalid @enderror" wire:model="average_income" min="0" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;"
                                    placeholder="مثال: 50000000">
                             @error('average_income') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
 
                         <div class="col-md-4">
-                            <label class="form-label">آیا اعضای خانواده شاغل هستند؟</label>
-                            <div>
-                                <input type="radio" wire:model.live="any_family_employed" value="1"> بله
-                                <input type="radio" wire:model.live="any_family_employed" value="0" class="ms-3"> خیر
+                            <label class="form-label small fw-semibold mb-1">آیا اعضای خانواده شاغل هستند؟</label>
+                            <div class="border rounded-3 p-2 d-flex gap-3 flex-wrap" style="background: #f8fafc; border-color: #dbe3ec !important; min-height: 42px;">
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input" type="radio" wire:model.live="any_family_employed" value="1" id="any_family_employed_yes">
+                                    <label class="form-check-label" for="any_family_employed_yes">بله</label>
+                                </div>
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input" type="radio" wire:model.live="any_family_employed" value="0" id="any_family_employed_no">
+                                    <label class="form-check-label" for="any_family_employed_no">خیر</label>
+                                </div>
                             </div>
                         </div>
 
                         @if($any_family_employed == '1')
-                            <div class="col-md-4">
-                                <label class="form-label">توضیحات اعضای شاغل</label>
-                                <textarea class="form-control" wire:model="any_family_employed_description" rows="2"></textarea>
+                            <div class="col-md-8">
+                                <label class="form-label small fw-semibold mb-1">توضیحات اعضای شاغل</label>
+                                <textarea class="form-control form-control-sm @error('any_family_employed_description') is-invalid @enderror" wire:model="any_family_employed_description" rows="2" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec;"></textarea>
                                 @error('any_family_employed_description')
                                 <span class="text-danger small">{{ $message }}</span>
                                 @enderror
                             </div>
                         @endif
 
-                        <div class="col-md-3">
-                            <label class="form-label">آیا وسیله نقلیه دارند؟ <span class="text-danger">*</span></label>
-                            <div>
-                                <input type="radio" value="1" wire:model.live="has_vehicle" id="vehicle_yes"> <label
-                                    for="vehicle_yes">بله</label>
-                                <input type="radio" value="0" wire:model.live="has_vehicle" id="vehicle_no"> <label
-                                    for="vehicle_no">خیر</label>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold mb-1">آیا وسیله نقلیه دارند؟ <span class="text-danger">*</span></label>
+                            <div class="border rounded-3 p-2 d-flex gap-3 flex-wrap" style="background: #f8fafc; border-color: #dbe3ec !important; min-height: 42px;">
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input" type="radio" value="1" wire:model.live="has_vehicle" id="vehicle_yes">
+                                    <label class="form-check-label" for="vehicle_yes">بله</label>
+                                </div>
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input" type="radio" value="0" wire:model.live="has_vehicle" id="vehicle_no">
+                                    <label class="form-check-label" for="vehicle_no">خیر</label>
+                                </div>
                             </div>
                             @error('has_vehicle') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="col-md-4">
-                            <label class="form-label">نوع وسیله نقلیه</label>
-                            <select class="form-select" wire:model.blur="vehicle_type_id"
+                            <label class="form-label small fw-semibold mb-1">نوع وسیله نقلیه</label>
+                            <select class="form-select form-select-sm @error('vehicle_type_id') is-invalid @enderror" wire:model.blur="vehicle_type_id" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;"
                                     @if($has_vehicle != '1') disabled @endif>
                                 <option value="">— انتخاب کنید —</option>
                                 @foreach($vehicleTypes as $type)
@@ -948,22 +987,20 @@
 
                         @if($has_vehicle == '1')
                             <div class="col-md-4">
-                                <label class="form-label">مالکیت وسیله نقلیه</label>
-                                <div class="d-flex align-items-center mt-1">
-                                    <label class="me-3">
-                                        <input type="radio" wire:model="vehicle_ownership_type" value="personal">
-                                        <span class="ms-1">شخصی</span>
-                                    </label>
-
-                                    <label class="me-3">
-                                        <input type="radio" wire:model="vehicle_ownership_type" value="company">
-                                        <span class="ms-1">شراکتی</span>
-                                    </label>
-
-                                    <label>
-                                        <input type="radio" wire:model="vehicle_ownership_type" value="rented">
-                                        <span class="ms-1">استیجاری</span>
-                                    </label>
+                                <label class="form-label small fw-semibold mb-1">مالکیت وسیله نقلیه</label>
+                                <div class="border rounded-3 p-2 d-flex align-items-center flex-wrap gap-3" style="background: #f8fafc; border-color: #dbe3ec !important; min-height: 42px;">
+                                    <div class="form-check mb-0">
+                                        <input class="form-check-input" type="radio" wire:model="vehicle_ownership_type" value="personal" id="vehicle_ownership_personal">
+                                        <label class="form-check-label" for="vehicle_ownership_personal">شخصی</label>
+                                    </div>
+                                    <div class="form-check mb-0">
+                                        <input class="form-check-input" type="radio" wire:model="vehicle_ownership_type" value="company" id="vehicle_ownership_company">
+                                        <label class="form-check-label" for="vehicle_ownership_company">شراکتی</label>
+                                    </div>
+                                    <div class="form-check mb-0">
+                                        <input class="form-check-input" type="radio" wire:model="vehicle_ownership_type" value="rented" id="vehicle_ownership_rented">
+                                        <label class="form-check-label" for="vehicle_ownership_rented">استیجاری</label>
+                                    </div>
                                 </div>
                                 @error('vehicle_ownership_type')
                                 <span class="text-danger small d-block mt-1">{{ $message }}</span>
@@ -971,18 +1008,25 @@
                             </div>
                         @endif
                     </div>
+                        </div>
+                    </div>
                 </div>
                 @endif
 
                 {{-- Step 8: Banking Information --}}
                 @if($current_step === 8)
                 <div class="mb-5">
-                    <h4 class="border-bottom pb-2 mb-3 font-bold">اطلاعات بانکی</h4>
+                    <div class="card border-0 shadow-sm" style="border-radius: 16px; background: #ffffff;">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom pb-3 mb-4">
+                                <h4 class="mb-0 fw-bold">اطلاعات بانکی</h4>
+                                <span class="badge text-dark" style="background: #eef2ff; border: 1px solid #dbe3ec;">مرحله 8</span>
+                            </div>
 
                     <div class="row g-3">
-                        <div class="col-md-3">
-                            <label class="form-label">حساب شخصی دارد؟ <span class="text-danger">*</span></label>
-                            <div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold mb-1">حساب شخصی دارد؟ <span class="text-danger">*</span></label>
+                            <div class="border rounded-3 p-2 d-flex gap-3 flex-wrap" style="background: #f8fafc; border-color: #dbe3ec !important; min-height: 42px;">
                                 <div class="form-check form-check-inline">
                                     <input class="form-check-input" type="radio" value="1" wire:model.live="has_own_account" id="has_own_account_yes">
                                     <label class="form-check-label" for="has_own_account_yes">بله</label>
@@ -995,24 +1039,25 @@
                             @error('has_own_account') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-3">
-                            <label class="form-label">نسبت دارنده حساب</label>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold mb-1">نسبت دارنده حساب</label>
                             {{-- این فیلد اکنون فقط برای نمایش است و مقدار آن توسط منطق Livewire تعیین می‌شود --}}
                             <input type="text"
-                                   class="form-control"
+                                   class="form-control form-control-sm"
                                    value="{{ $accountRelations->find($account_owner_relation_id)?->name ?? 'انتخاب نشده' }}"
                                    readonly
                                    disabled
                                    placeholder="به طور خودکار تعیین می‌شود"
+                                   style="border-radius: 12px; background: #eef2f7; border-color: #dbe3ec; min-height: 42px;"
                             >
                             {{-- wire:model از روی این input حذف شده است، زیرا مقدار آن توسط کاربر تغییر نمی‌کند.
                                  Livewire مقدار account_owner_relation_id را از طریق پراپرتی خودش مدیریت می‌کند. --}}
                             @error('account_owner_relation_id') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">نام بانک <span class="text-danger">*</span></label>
-                            <select class="form-select" wire:model.blur="bank_id">
+                        <div class="col-lg-4 col-md-12">
+                            <label class="form-label small fw-semibold mb-1">نام بانک <span class="text-danger">*</span></label>
+                            <select class="form-select form-select-sm @error('bank_id') is-invalid @enderror" wire:model.blur="bank_id" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                 <option value="">— انتخاب کنید —</option>
                                 @foreach($banks as $bank)
                                     <option value="{{ $bank->id }}">{{ $bank->name }}</option>
@@ -1021,34 +1066,36 @@
                             @error('bank_id') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">شماره کارت</label>
-                            <input type="text" class="form-control" wire:model.live.debounce="card_number"
-                                   maxlength="16">
+                        <div class="col-lg-6 col-md-6">
+                            <label class="form-label small fw-semibold mb-1">شماره کارت</label>
+                            <input type="text" class="form-control form-control-sm @error('card_number') is-invalid @enderror" wire:model.live.debounce="card_number"
+                                   maxlength="16" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                             @error('card_number') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">شماره شبا</label>
-                            <input type="text" class="form-control ltr-input" wire:model.live.debounce="sheba_number"
-                                   placeholder="IRXXXXXXXXXXXXXXXXXXXXXXXX" maxlength="26">
+                        <div class="col-lg-6 col-md-6">
+                            <label class="form-label small fw-semibold mb-1">شماره شبا</label>
+                            <input type="text" class="form-control form-control-sm ltr-input @error('sheba_number') is-invalid @enderror" wire:model.live.debounce="sheba_number"
+                                   placeholder="IRXXXXXXXXXXXXXXXXXXXXXXXX" maxlength="26" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                             @error('sheba_number') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">شماره کارت یارانه</label>
-                            <input type="text" class="form-control" wire:model="subsidy_card_number"
-                                   maxlength="16">
+                        <div class="col-lg-6 col-md-6">
+                            <label class="form-label small fw-semibold mb-1">شماره کارت یارانه</label>
+                            <input type="text" class="form-control form-control-sm @error('subsidy_card_number') is-invalid @enderror" wire:model="subsidy_card_number"
+                                   maxlength="16" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                             @error('subsidy_card_number') <span
                                 class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">شماره شبا یارانه</label>
-                            <input type="text" class="form-control ltr-input" wire:model.blur="subsidy_sheba_number"
-                                   placeholder="IRXXXXXXXXXXXXXXXXXXXXXXXX" maxlength="26">
+                        <div class="col-lg-6 col-md-6">
+                            <label class="form-label small fw-semibold mb-1">شماره شبا یارانه</label>
+                            <input type="text" class="form-control form-control-sm ltr-input @error('subsidy_sheba_number') is-invalid @enderror" wire:model.blur="subsidy_sheba_number"
+                                   placeholder="IRXXXXXXXXXXXXXXXXXXXXXXXX" maxlength="26" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                             @error('subsidy_sheba_number') <span
                                 class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+                    </div>
                         </div>
                     </div>
                 </div>
@@ -1057,12 +1104,17 @@
                 {{-- Step 9: Housing Status and Contact Information --}}
                 @if($current_step === 9)
                 <div class="mb-5">
-                    <h4 class="border-bottom pb-2 mb-3 font-bold">وضعیت سکونت و اطلاعات تماس</h4>
+                    <div class="card border-0 shadow-sm" style="border-radius: 16px; background: #ffffff;">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom pb-3 mb-4">
+                                <h4 class="mb-0 fw-bold">وضعیت سکونت و اطلاعات تماس</h4>
+                                <span class="badge text-dark" style="background: #eef2ff; border: 1px solid #dbe3ec;">مرحله 9</span>
+                            </div>
 
                     <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label">وضعیت سکونت <span class="text-danger">*</span></label>
-                            <select class="form-select" wire:model.blur="residence_status_id">
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label small fw-semibold mb-1">وضعیت سکونت <span class="text-danger">*</span></label>
+                            <select class="form-select form-select-sm @error('residence_status_id') is-invalid @enderror" wire:model.blur="residence_status_id" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                 <option value="">— انتخاب کنید —</option>
                                 @foreach($residenceStatusTypes as $status)
                                     <option value="{{ $status->id }}">{{ $status->name }}</option>
@@ -1072,82 +1124,117 @@
                                 class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">منطقه <span class="text-danger">*</span></label>
-                            <select class="form-select" wire:model.blur="district_id">
-                                <option value="">— انتخاب کنید —</option>
-                                @foreach($districts as $district)
-                                    <option value="{{ $district->id }}">{{ $district->name }}</option>
-                                @endforeach
-                            </select>
+                        <div class="col-lg-4 col-md-6" x-data="{ open: false }">
+                            <label class="form-label small fw-semibold mb-1">منطقه <span class="text-danger">*</span></label>
+                            <div class="position-relative">
+                                <button type="button" @click="open = !open" class="btn w-100 d-flex align-items-center justify-content-between text-end @error('district_id') border-danger @enderror" style="border-radius: 12px; background: #f8fafc; border: 1px solid #dbe3ec; min-height: 42px;">
+                                    <span class="text-truncate">
+                                        {{ $districts->firstWhere('id', $district_id)?->name ?? '— انتخاب منطقه —' }}
+                                    </span>
+                                    <i class="bi bi-funnel"></i>
+                                </button>
+
+                                <div x-show="open" @click.outside="open=false" x-transition class="position-absolute start-0 w-100 mt-2 p-2 bg-white border shadow-sm" style="z-index: 25; border-radius: 12px; border-color: #dbe3ec !important;">
+                                    <div class="input-group input-group-sm mb-2">
+                                        <span class="input-group-text bg-white border-0"><i class="bi bi-search"></i></span>
+                                        <input type="text" id="district-search-grid" oninput="filterDistrictGrid()" class="form-control border-0" placeholder="جستجو در مناطق...">
+                                    </div>
+                                    <div id="district-grid-list" class="row g-2" style="max-height: 260px; overflow-y: auto;">
+                                        <div class="col-12 district-item" data-name="">
+                                            <button type="button" class="btn btn-sm w-100 text-end" style="background: #f8fafc;" wire:click="$set('district_id', '')" @click="open=false">
+                                            — انتخاب کنید —
+                                            </button>
+                                        </div>
+                                        @foreach($districts as $district)
+                                            <div class="col-md-4 col-6 district-item" data-name="{{ mb_strtolower($district->name) }}">
+                                                <button
+                                                    type="button"
+                                                    wire:click="$set('district_id', '{{ $district->id }}')"
+                                                    @click="open=false"
+                                                    class="btn btn-sm w-100 text-end d-flex justify-content-between align-items-center"
+                                                    style="background: #ffffff; border: 1px solid #eef2f7; border-radius: 8px;">
+                                                    <span class="text-truncate">{{ $district->name }}</span>
+                                                    @if((string)$district_id === (string)$district->id)
+                                                        <i class="bi bi-check2 text-success ms-1"></i>
+                                                    @endif
+                                                </button>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
                             @error('district_id') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">بومی شهر هستید؟ <span class="text-danger">*</span></label>
-                            <div>
-                                <input type="radio" value="1" wire:model.live="is_local_to_city" id="local_yes"> <label
-                                    for="local_yes">بله</label>
-                                <input type="radio" value="0" wire:model.live="is_local_to_city" id="local_no"> <label
-                                    for="local_no">خیر</label>
+                        <div class="col-lg-4 col-md-12">
+                            <label class="form-label small fw-semibold mb-1">بومی شهر هستید؟ <span class="text-danger">*</span></label>
+                            <div class="border rounded-3 p-2 d-flex gap-3 flex-wrap" style="background: #f8fafc; border-color: #dbe3ec !important; min-height: 42px;">
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input" type="radio" value="1" wire:model.live="is_local_to_city" id="local_yes">
+                                    <label class="form-check-label" for="local_yes">بله</label>
+                                </div>
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input" type="radio" value="0" wire:model.live="is_local_to_city" id="local_no">
+                                    <label class="form-check-label" for="local_no">خیر</label>
+                                </div>
                             </div>
                             @error('is_local_to_city') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         @if($residence_status_id == 2)
                             {{-- 2 برای "اجاره‌ای" --}}
-                            <div class="col-md-4">
-                                <label class="form-label">مبلغ ودیعه (ریال)</label>
-                                <input type="number" class="form-control" wire:model.blur="deposit_amount" min="0"
-                                       placeholder="به ریال">
+                            <div class="col-lg-3 col-md-6">
+                                <label class="form-label small fw-semibold mb-1">مبلغ ودیعه (ریال)</label>
+                                <input type="number" class="form-control form-control-sm @error('deposit_amount') is-invalid @enderror" wire:model.blur="deposit_amount" min="0"
+                                       placeholder="به ریال" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                 @error('deposit_amount') <span class="text-danger small">{{ $message }}</span> @enderror
                             </div>
-                            <div class="col-md-4">
-                                <label class="form-label">اجاره ماهیانه (ریال)</label>
-                                <input type="number" class="form-control" wire:model.blur="monthly_rent" min="0"
-                                       placeholder="به ریال">
+                            <div class="col-lg-3 col-md-6">
+                                <label class="form-label small fw-semibold mb-1">اجاره ماهیانه (ریال)</label>
+                                <input type="number" class="form-control form-control-sm @error('monthly_rent') is-invalid @enderror" wire:model.blur="monthly_rent" min="0"
+                                       placeholder="به ریال" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                 @error('monthly_rent') <span class="text-danger small">{{ $message }}</span> @enderror
                             </div>
                         @endif
 
-                        <div class="col-md-4">
-                            <label class="form-label">مدت زمان سکونت (سال)</label>
-                            <input type="number" class="form-control" wire:model.blur="residence_duration_years"
-                                   min="0">
+                        <div class="col-lg-3 col-md-6">
+                            <label class="form-label small fw-semibold mb-1">مدت زمان سکونت (سال)</label>
+                            <input type="number" class="form-control form-control-sm @error('residence_duration_years') is-invalid @enderror" wire:model.blur="residence_duration_years"
+                                   min="0" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                             @error('residence_duration_years') <span
                                 class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-12">
-                            <label class="form-label">آدرس کامل <span class="text-danger">*</span></label>
-                            <textarea class="form-control" wire:model.blur="address" rows="3"></textarea>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold mb-1">آدرس کامل <span class="text-danger">*</span></label>
+                            <textarea class="form-control form-control-sm @error('address') is-invalid @enderror" wire:model.blur="address" rows="3" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec;"></textarea>
                             @error('address') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
 
-                        <div class="col-md-4">
-                            <label class="form-label">شماره تلفن ثابت</label>
-                            <input type="text" class="form-control" wire:model.blur="landline_phone" maxlength="11">
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label small fw-semibold mb-1">شماره تلفن ثابت</label>
+                            <input type="text" class="form-control form-control-sm @error('landline_phone') is-invalid @enderror" wire:model.blur="landline_phone" maxlength="11" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                             @error('landline_phone') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">شماره تلفن فرد معتمد</label>
-                            <input type="text" class="form-control" wire:model.blur="trusted_person_phone" maxlength="11">
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label small fw-semibold mb-1">شماره تلفن فرد معتمد</label>
+                            <input type="text" class="form-control form-control-sm @error('trusted_person_phone') is-invalid @enderror" wire:model.blur="trusted_person_phone" maxlength="11" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                             @error('trusted_person_phone') <span
                                 class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
                         <!-- بخش نوع پیام‌رسان -->
-                        <div class="col-md-4 mb-3">
-                            <label for="messenger_type" class="form-label">نوع پیام‌رسان (انتخابی یا تایپی)</label>
+                        <div class="col-lg-4 col-md-6">
+                            <label for="messenger_type" class="form-label small fw-semibold mb-1">نوع پیام‌رسان (انتخابی یا تایپی)</label>
 
                             <input wire:model="messenger_type"
                                    type="text"
-                                   class="form-control @error('messenger_type') is-invalid @enderror"
+                                   class="form-control form-control-sm @error('messenger_type') is-invalid @enderror"
                                    id="messenger_type"
                                    list="messenger_list"
-                                   placeholder="انتخاب کنید یا بنویسید...">
+                                   placeholder="انتخاب کنید یا بنویسید..." style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
 
                             <!-- لیست پیشنهادی که در زمان کلیک یا تایپ ظاهر می‌شود -->
                             <datalist id="messenger_list">
@@ -1166,10 +1253,12 @@
                             @enderror
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">شماره یا آیدی پیام‌رسان</label>
-                            <input type="text" class="form-control" wire:model.blur="messenger_number" maxlength="11">
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label small fw-semibold mb-1">شماره یا آیدی پیام‌رسان</label>
+                            <input type="text" class="form-control form-control-sm @error('messenger_number') is-invalid @enderror" wire:model.blur="messenger_number" maxlength="11" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                             @error('messenger_number') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+                    </div>
                         </div>
                     </div>
                 </div>
@@ -1178,13 +1267,18 @@
                 {{-- Step 10: Support Needs Level and Assistance Coverage --}}
                 @if($current_step === 10)
                 <div class="mb-5">
-                    <h4 class="border-bottom pb-2 mb-3 font-bold">سطح نیاز و پوشش حمایتی</h4>
+                    <div class="card border-0 shadow-sm" style="border-radius: 16px; background: #ffffff;">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom pb-3 mb-4">
+                                <h4 class="mb-0 fw-bold">سطح نیاز و پوشش حمایتی</h4>
+                                <span class="badge text-dark" style="background: #eef2ff; border: 1px solid #dbe3ec;">مرحله 10</span>
+                            </div>
 
                     <div class="row g-3">
                         <!-- انتخاب نهاد -->
-                        <div class="col-md-4">
-                            <label>نوع نهاد حمایتی</label>
-                            <select wire:model.live="support_organization_id" class="form-control">
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label small fw-semibold mb-1">نوع نهاد حمایتی</label>
+                            <select wire:model.live="support_organization_id" class="form-select form-select-sm" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                 <option value="">— انتخاب کنید —</option>
                                 @foreach($support_organizations as $org)
                                     <option value="{{ $org->id }}">{{ $org->name }}</option>
@@ -1198,18 +1292,18 @@
                         @endphp
 
                         @if($support_organization_id == $otherId)
-                            <div x-transition class="col-md-4">
-                                <label>نام خیریه را وارد کنید</label>
-                                <input type="text" wire:model="other_organization_name" class="form-control" placeholder="مثلاً: خیریه امام علی (ع)">
+                            <div x-transition class="col-lg-4 col-md-6">
+                                <label class="form-label small fw-semibold mb-1">نام خیریه را وارد کنید</label>
+                                <input type="text" wire:model="other_organization_name" class="form-control form-control-sm @error('other_organization_name') is-invalid @enderror" placeholder="مثلاً: خیریه امام علی (ع)" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                 @error('other_organization_name') <span class="text-red-500">{{ $message }}</span> @enderror
                             </div>
                         @endif
 
-                        <div class="col-md-4">
-                            <label class="form-label">تاریخ شروع پوشش</label>
+                        <div class="col-lg-4 col-md-12">
+                            <label class="form-label small fw-semibold mb-1">تاریخ شروع پوشش</label>
                             <div class="row g-2 dir-ltr">
                                 <div class="col-4">
-                                    <select wire:model.blur="coverage_start_day" class="form-select">
+                                    <select wire:model.blur="coverage_start_day" class="form-select form-select-sm @error('coverage_start_day') is-invalid @enderror" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                         <option value="">روز</option>
                                         @foreach(range(1, 31) as $day)
                                             <option value="{{ $day }}">{{ $day }}</option>
@@ -1217,7 +1311,7 @@
                                     </select>
                                 </div>
                                 <div class="col-4">
-                                    <select wire:model.blur="coverage_start_month" class="form-select">
+                                    <select wire:model.blur="coverage_start_month" class="form-select form-select-sm @error('coverage_start_month') is-invalid @enderror" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                         <option value="">ماه</option>
                                         @php $months = [1=>'فروردین',2=>'اردیبهشت',3=>'خرداد',4=>'تیر',5=>'مرداد',6=>'شهریور',7=>'مهر',8=>'آبان',9=>'آذر',10=>'دی',11=>'بهمن',12=>'اسفند']; @endphp
                                         @foreach($months as $key => $month)
@@ -1226,7 +1320,7 @@
                                     </select>
                                 </div>
                                 <div class="col-4">
-                                    <select wire:model.blur="coverage_start_year" class="form-select">
+                                    <select wire:model.blur="coverage_start_year" class="form-select form-select-sm @error('coverage_start_year') is-invalid @enderror" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                         <option value="">سال</option>
                                         @foreach(range(1300, 1420) as $year)
                                             <option value="{{ $year }}">{{ $year }}</option>
@@ -1242,9 +1336,9 @@
                         </div>
 
                         <!-- بخش تصویر کارت حمایت -->
-                        <div class="col-md-4 mb-4">
-                            <label class="form-label fw-bold">تصویر کارت حمایت (ثبت آنلاین یا آپلود)</label>
-                            <div class="card p-3" style="background: #f8f9fa;">
+                        <div class="col-lg-8 col-md-12 mb-2">
+                            <label class="form-label small fw-semibold mb-2">تصویر کارت حمایت</label>
+                            <div class="border p-3 p-md-4" style="border-radius: 14px; background: #f8fafc; border-color: #dbe3ec !important;">
                                 <div class="row">
                                     <div class="col-md-7 border-start">
                                         <div id="camera-container-support-card" wire:ignore>
@@ -1292,8 +1386,8 @@
                                         <input type="hidden" wire:model="captured_support_card_base64">
                                     </div>
                                     <div class="col-md-5">
-                                        <p class="small text-muted">یا انتخاب فایل:</p>
-                                        <input type="file" wire:model="support_card_image" class="form-control" accept="image/*">
+                                        <p class="small text-muted mb-1">یا انتخاب فایل:</p>
+                                        <input type="file" wire:model="support_card_image" class="form-control form-control-sm" accept="image/*" style="border-radius: 12px; background: #ffffff; border-color: #dbe3ec; min-height: 42px;">
                                         @error('support_card_image') <span class="text-danger small">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
@@ -1301,9 +1395,9 @@
                         </div>
 
 
-                        <div class="col-md-4">
-                            <label class="form-label">سطح نیاز (بر اساس ارزیابی اولیه مددکار) <span class="text-danger">*</span></label>
-                            <select class="form-select" wire:model.blur="need_level_id">
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label small fw-semibold mb-1">سطح نیاز (بر اساس ارزیابی اولیه مددکار) <span class="text-danger">*</span></label>
+                            <select class="form-select form-select-sm @error('need_level_id') is-invalid @enderror" wire:model.blur="need_level_id" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                 <option value="">— انتخاب کنید —</option>
                                 @foreach($needLevelTypes as $level)
                                     <option value="{{ $level->id }}">{{ $level->title }}</option>
@@ -1312,41 +1406,56 @@
                             @error('need_level_id') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
                     </div>
+                        </div>
+                    </div>
                 </div>
                 @endif
 
                 {{-- Wizard Navigation Buttons --}}
-                <div class="d-flex justify-content-between mt-5 mb-3">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mt-5 mb-3 p-3 p-md-4 border" style="border-radius: 14px; background: #f8fafc; border-color: #dbe3ec !important;">
                     {{-- Previous Button --}}
                     @if($current_step > 1)
-                        <button type="button" wire:click="previousStep" class="btn btn-secondary">
-                            <i class="bi bi-arrow-right"></i> مرحله قبل
+                        <button type="button" wire:click="previousStep" class="btn px-4" style="border-radius: 12px; border: 1px solid #cbd5e1; background: #ffffff; color: #334155; min-height: 42px;">
+                            <i class="bi bi-arrow-right-circle me-1"></i> مرحله قبل
                         </button>
                     @else
                         <div></div>
                     @endif
 
-                    <div class="d-flex gap-2">
-                        {{-- Skip Button (not on last step) --}}
-                        @if($current_step < $total_steps)
-                            <button type="button" wire:click="skipStep" class="btn btn-outline-warning">
-                                <i class="bi bi-skip-forward"></i> رد کردن
-                            </button>
-                        @endif
-
-                        {{-- Next or Submit Button --}}
-                        @if($current_step < $total_steps)
-                            <button type="button" wire:click="nextStep" class="btn btn-primary">
-                                مرحله بعد <i class="bi bi-arrow-left"></i>
-                            </button>
-                        @else
-                            <button type="submit" wire:loading.attr="disabled" class="btn btn-success btn-lg">
+                    <div class="d-flex flex-wrap gap-2 justify-content-end">
+                        {{-- Temporary Save Button (sections 1-9) --}}
+                        @if($current_step <= 9)
+                            <button type="submit" wire:loading.attr="disabled" class="btn px-4" style="border-radius: 12px; border: 1px solid #16a34a; background: #f0fdf4; color: #166534; min-height: 42px;">
                                 <span wire:loading wire:target="save">
                                     <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                                     در حال ذخیره...
                                 </span>
                                 <span wire:loading.remove wire:target="save">
-                                    <i class="bi bi-check-circle-fill me-2"></i>
+                                    <i class="bi bi-save2-fill me-1"></i> ذخیره موقت مددجو
+                                </span>
+                            </button>
+                        @endif
+
+                        {{-- Skip Button (not on last step) --}}
+                        @if($current_step < $total_steps)
+                            <button type="button" wire:click="skipStep" class="btn px-4" style="border-radius: 12px; border: 1px solid #fbbf24; background: #fffbeb; color: #92400e; min-height: 42px;">
+                                <i class="bi bi-skip-forward-circle me-1"></i> رد کردن
+                            </button>
+                        @endif
+
+                        {{-- Next or Submit Button --}}
+                        @if($current_step < $total_steps)
+                            <button type="button" wire:click="nextStep" class="btn btn-primary px-4" style="border-radius: 12px; min-height: 42px; box-shadow: 0 6px 16px rgba(37, 99, 235, 0.18);">
+                                مرحله بعد <i class="bi bi-arrow-left-circle ms-1"></i>
+                            </button>
+                        @else
+                            <button type="submit" wire:loading.attr="disabled" class="btn btn-success px-4" style="border-radius: 12px; min-height: 42px; box-shadow: 0 6px 16px rgba(22, 163, 74, 0.2);">
+                                <span wire:loading wire:target="save">
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                    در حال ذخیره...
+                                </span>
+                                <span wire:loading.remove wire:target="save">
+                                    <i class="bi bi-check2-circle me-2"></i>
                                     ثبت نهایی اطلاعات
                                 </span>
                             </button>
@@ -1405,6 +1514,22 @@
                 alert('خطا در دسترسی به دوربین: ' + err.message);
             });
     };
+
+    window.filterDistrictGrid = function() {
+        const input = document.getElementById('district-search-grid');
+        const items = document.querySelectorAll('#district-grid-list .district-item');
+        if (!input || !items.length) return;
+        const query = input.value.trim().toLowerCase();
+        items.forEach((item, index) => {
+            if (index === 0) {
+                item.style.display = '';
+                return;
+            }
+            const name = (item.getAttribute('data-name') || '').toLowerCase();
+            item.style.display = name.includes(query) ? '' : 'none';
+        });
+    };
+
 
     /**
      * گرفتن عکس از دوربین + نمایش دکمه "گرفتن مجدد"
