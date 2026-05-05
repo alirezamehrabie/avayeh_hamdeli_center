@@ -4,11 +4,19 @@ namespace App\Livewire\People;
 
 use App\Models\BeneficiarySavedFilter;
 use App\Models\DisabilityType;
+use App\Models\District;
 use App\Models\EducationLevel;
 use App\Models\GuardianRelationType;
 use App\Models\HarmType;
+use App\Models\InsuranceType;
+use App\Models\JobType;
+use App\Models\NeedLevelType;
+use App\Models\Occupation;
 use App\Models\Person;
+use App\Models\ResidenceStatusType;
 use App\Models\Skill;
+use App\Models\SupportOrganization;
+use App\Models\VehicleType;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
@@ -75,6 +83,28 @@ class AdvancedFilterBuilder extends Component
         ]],
         'guardian_relation' => ['label' => 'نسبت با سرپرست', 'type' => 'select', 'options' => []],
         'guardian_national_code' => ['label' => 'کد ملی سرپرست', 'type' => 'text'],
+        'has_parent_disability' => ['label' => 'معلولیت والدین', 'type' => 'select', 'options' => [
+            '1' => 'بله',
+            '0' => 'خیر',
+        ]],
+        'guardian_full_name' => ['label' => 'نام و نام خانوادگی سرپرست', 'type' => 'text'],
+        'guardian_mobile' => ['label' => 'موبایل سرپرست', 'type' => 'text'],
+        'caseworker' => ['label' => 'مددکار (نام یا کد)', 'type' => 'text'],
+        'economic_decile' => ['label' => 'دهک اقتصادی', 'type' => 'select', 'options' => []],
+        'guardian_occupation' => ['label' => 'شغل سرپرست', 'type' => 'select', 'options' => []],
+        'guardian_job_type' => ['label' => 'نوع شغل سرپرست', 'type' => 'select', 'options' => []],
+        'supported_children_count' => ['label' => 'تعداد فرزندان تحت تکفل', 'type' => 'number'],
+        'insurance_status_type' => ['label' => 'بیمه و نوع بیمه', 'type' => 'select', 'options' => []],
+        'vehicle_status_type' => ['label' => 'وسیله نقلیه و نوع آن', 'type' => 'select', 'options' => []],
+        'average_income' => ['label' => 'میانگین درآمد ماهانه', 'type' => 'number'],
+        'housing_status' => ['label' => 'وضعیت مسکن', 'type' => 'select', 'options' => []],
+        'district' => ['label' => 'منطقه / ناحیه', 'type' => 'select', 'options' => []],
+        'is_local_to_city' => ['label' => 'بومی شهر', 'type' => 'select', 'options' => [
+            '1' => 'بله',
+            '0' => 'خیر',
+        ]],
+        'support_organization' => ['label' => 'نوع نهاد حمایتی', 'type' => 'select', 'options' => []],
+        'need_level' => ['label' => 'سطح نیازمندی', 'type' => 'select', 'options' => []],
     ];
 
     public function mount(): void
@@ -108,6 +138,56 @@ class AdvancedFilterBuilder extends Component
             ->orderBy('title')
             ->pluck('title', 'id')
             ->toArray();
+
+        $this->filterableFields['economic_decile']['options'] = collect(range(1, 10))
+            ->mapWithKeys(fn ($item) => [(string) $item => 'دهک ' . $item])
+            ->toArray();
+
+        $this->filterableFields['guardian_occupation']['options'] = Occupation::query()
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->toArray();
+
+        $this->filterableFields['guardian_job_type']['options'] = JobType::query()
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->toArray();
+
+        $insuranceOptions = ['status:1' => 'دارای بیمه', 'status:0' => 'فاقد بیمه'];
+        foreach (InsuranceType::query()->orderBy('name')->get(['id', 'name']) as $item) {
+            $insuranceOptions['type:' . $item->id] = 'نوع: ' . $item->name;
+        }
+        $this->filterableFields['insurance_status_type']['options'] = $insuranceOptions;
+
+        $vehicleOptions = ['status:1' => 'دارای وسیله نقلیه', 'status:0' => 'فاقد وسیله نقلیه'];
+        foreach (VehicleType::query()->orderBy('name')->get(['id', 'name']) as $item) {
+            $vehicleOptions['type:' . $item->id] = 'نوع: ' . $item->name;
+        }
+        $this->filterableFields['vehicle_status_type']['options'] = $vehicleOptions;
+
+        $this->filterableFields['housing_status']['options'] = ResidenceStatusType::query()
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->toArray();
+
+        $this->filterableFields['district']['options'] = District::query()
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->toArray();
+
+        $this->filterableFields['support_organization']['options'] = SupportOrganization::query()
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->toArray();
+
+        $this->filterableFields['need_level']['options'] = NeedLevelType::query()
+            ->orderBy('severity_order')
+            ->orderBy('title')
+            ->pluck('title', 'id')
+            ->toArray();
     }
 
     public function updatingGlobalSearch(): void
@@ -127,6 +207,7 @@ class AdvancedFilterBuilder extends Component
             'text' => ['field' => $field, 'type' => $type, 'operator' => 'contains', 'value' => ''],
             'select' => ['field' => $field, 'type' => $type, 'value' => ''],
             'date' => ['field' => $field, 'type' => $type, 'mode' => 'exact', 'exact' => '', 'from' => '', 'to' => '', 'month' => '', 'year' => ''],
+            'number' => ['field' => $field, 'type' => $type, 'operator' => 'eq', 'value' => ''],
             default => ['field' => $field, 'type' => $type],
         };
 
@@ -281,6 +362,40 @@ class AdvancedFilterBuilder extends Component
                     continue;
                 }
 
+                if ($field === 'guardian_full_name') {
+                    $query->whereHas('guardian', function (Builder $guardianQuery) use ($value) {
+                        $guardianQuery->where(function (Builder $nameQuery) use ($value) {
+                            $nameQuery->where('first_name', 'like', "%{$value}%")
+                                ->orWhere('last_name', 'like', "%{$value}%");
+                        });
+                    });
+                    continue;
+                }
+
+                if ($field === 'guardian_mobile') {
+                    $query->whereHas('guardian', function (Builder $guardianQuery) use ($value, $operator) {
+                        if ($operator === 'exact') {
+                            $guardianQuery->where('guardian_phone_number', $value);
+                        } else {
+                            $guardianQuery->where('guardian_phone_number', 'like', "%{$value}%");
+                        }
+                    });
+                    continue;
+                }
+
+                if ($field === 'caseworker') {
+                    $query->whereHas('guardian.socialWorker', function (Builder $workerQuery) use ($value) {
+                        $workerQuery->where(function (Builder $nameOrCodeQuery) use ($value) {
+                            $nameOrCodeQuery->where('first_name', 'like', "%{$value}%")
+                                ->orWhere('last_name', 'like', "%{$value}%")
+                                ->orWhere('worker_code', 'like', "%{$value}%")
+                                ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", ["%{$value}%"])
+                                ->orWhereRaw("CONCAT_WS(' ', last_name, first_name) like ?", ["%{$value}%"]);
+                        });
+                    });
+                    continue;
+                }
+
                 if ($operator === 'exact') {
                     $query->where($field, $value);
                 } else {
@@ -346,6 +461,97 @@ class AdvancedFilterBuilder extends Component
                     continue;
                 }
 
+                if ($field === 'has_parent_disability') {
+                    $query->whereHas('familyStatus', function (Builder $familyStatusQuery) use ($value) {
+                        $familyStatusQuery->where('has_parent_disability', (int) $value);
+                    });
+                    continue;
+                }
+
+                if ($field === 'economic_decile') {
+                    $query->whereHas('guardian', function (Builder $guardianQuery) use ($value) {
+                        $guardianQuery->where('economic_decile', (int) $value);
+                    });
+                    continue;
+                }
+
+                if ($field === 'guardian_occupation') {
+                    $query->whereHas('guardian', function (Builder $guardianQuery) use ($value) {
+                        $guardianQuery->where('occupation_id', $value);
+                    });
+                    continue;
+                }
+
+                if ($field === 'guardian_job_type') {
+                    $query->whereHas('guardian', function (Builder $guardianQuery) use ($value) {
+                        $guardianQuery->where('job_type_id', $value);
+                    });
+                    continue;
+                }
+
+                if ($field === 'insurance_status_type') {
+                    if (str_starts_with((string) $value, 'status:')) {
+                        $query->whereHas('guardian', function (Builder $guardianQuery) use ($value) {
+                            $guardianQuery->where('insurance_status', (int) str_replace('status:', '', (string) $value));
+                        });
+                    }
+                    if (str_starts_with((string) $value, 'type:')) {
+                        $query->whereHas('guardian', function (Builder $guardianQuery) use ($value) {
+                            $guardianQuery->where('insurance_type_id', (int) str_replace('type:', '', (string) $value));
+                        });
+                    }
+                    continue;
+                }
+
+                if ($field === 'vehicle_status_type') {
+                    if (str_starts_with((string) $value, 'status:')) {
+                        $query->whereHas('guardian', function (Builder $guardianQuery) use ($value) {
+                            $guardianQuery->where('has_vehicle', (int) str_replace('status:', '', (string) $value));
+                        });
+                    }
+                    if (str_starts_with((string) $value, 'type:')) {
+                        $query->whereHas('guardian', function (Builder $guardianQuery) use ($value) {
+                            $guardianQuery->where('vehicle_type_id', (int) str_replace('type:', '', (string) $value));
+                        });
+                    }
+                    continue;
+                }
+
+                if ($field === 'housing_status') {
+                    $query->whereHas('residenceContact', function (Builder $residenceQuery) use ($value) {
+                        $residenceQuery->where('residence_status_id', $value);
+                    });
+                    continue;
+                }
+
+                if ($field === 'district') {
+                    $query->whereHas('residenceContact', function (Builder $residenceQuery) use ($value) {
+                        $residenceQuery->where('district_id', $value);
+                    });
+                    continue;
+                }
+
+                if ($field === 'is_local_to_city') {
+                    $query->whereHas('residenceContact', function (Builder $residenceQuery) use ($value) {
+                        $residenceQuery->where('is_local_to_city', (int) $value);
+                    });
+                    continue;
+                }
+
+                if ($field === 'support_organization') {
+                    $query->whereHas('supportCoverage', function (Builder $supportCoverageQuery) use ($value) {
+                        $supportCoverageQuery->where('support_organization_id', $value);
+                    });
+                    continue;
+                }
+
+                if ($field === 'need_level') {
+                    $query->whereHas('needsLevel', function (Builder $needsLevelQuery) use ($value) {
+                        $needsLevelQuery->where('need_level_id', $value);
+                    });
+                    continue;
+                }
+
                 if ($value !== '') {
                     $query->where($field, $value);
                 }
@@ -373,6 +579,38 @@ class AdvancedFilterBuilder extends Component
 
                 if ($mode === 'year' && !empty($filter['year'])) {
                     $query->where('birth_year', (int) $filter['year']);
+                }
+            }
+
+            if ($type === 'number') {
+                $operator = $filter['operator'] ?? 'eq';
+                $value = $filter['value'] ?? null;
+                if ($value === '' || $value === null || !is_numeric($value)) {
+                    continue;
+                }
+
+                $map = [
+                    'eq' => '=',
+                    'gt' => '>',
+                    'lt' => '<',
+                    'gte' => '>=',
+                    'lte' => '<=',
+                ];
+                $sqlOperator = $map[$operator] ?? '=';
+                $numericValue = (int) $value;
+
+                if ($field === 'supported_children_count') {
+                    $query->whereHas('guardian', function (Builder $guardianQuery) use ($sqlOperator, $numericValue) {
+                        $guardianQuery->where('children_count', $sqlOperator, $numericValue);
+                    });
+                    continue;
+                }
+
+                if ($field === 'average_income') {
+                    $query->whereHas('guardian', function (Builder $guardianQuery) use ($sqlOperator, $numericValue) {
+                        $guardianQuery->where('average_income', $sqlOperator, $numericValue);
+                    });
+                    continue;
                 }
             }
 

@@ -19,14 +19,38 @@
         <div class="mb-4 rounded-xl border border-slate-200 p-4">
             <div class="mb-3 flex items-center justify-between">
                 <h2 class="text-sm font-bold text-slate-700">فیلترهای فعال</h2>
-                <div x-data="{ open: false }" class="relative">
+                <div x-data="{ open: false, query: '', activeType: 'all' }" class="relative">
                     <button type="button" @click="open=!open" class="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white">+ افزودن فیلتر</button>
-                    <div x-show="open" @click.outside="open=false" x-transition class="absolute left-0 z-20 mt-2 w-56 rounded-lg border border-slate-200 bg-white p-2 shadow-lg">
-                        @foreach($filterableFields as $fieldKey => $meta)
-                            <button type="button" wire:click="addFilter('{{ $fieldKey }}')" @click="open=false" class="block w-full rounded-md px-3 py-2 text-right text-xs text-slate-700 hover:bg-slate-100">
-                                {{ $meta['label'] }}
-                            </button>
-                        @endforeach
+                    <div x-show="open" @click.outside="open=false" x-transition class="absolute left-0 z-20 mt-2 w-[24rem] max-w-[90vw] rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
+                        <div class="mb-3">
+                            <input type="text" x-model="query" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs focus:border-indigo-300 focus:ring focus:ring-indigo-100" placeholder="جستجو در نام فیلترها...">
+                        </div>
+
+                        <div class="mb-3 flex flex-wrap gap-1.5 text-[11px]">
+                            <button type="button" @click="activeType='all'" :class="activeType === 'all' ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-600'" class="rounded-full border px-2.5 py-1 font-semibold">همه</button>
+                            <button type="button" @click="activeType='text'" :class="activeType === 'text' ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-600'" class="rounded-full border px-2.5 py-1 font-semibold">متنی</button>
+                            <button type="button" @click="activeType='select'" :class="activeType === 'select' ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-600'" class="rounded-full border px-2.5 py-1 font-semibold">انتخابی</button>
+                            <button type="button" @click="activeType='date'" :class="activeType === 'date' ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-600'" class="rounded-full border px-2.5 py-1 font-semibold">تاریخی</button>
+                            <button type="button" @click="activeType='number'" :class="activeType === 'number' ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-600'" class="rounded-full border px-2.5 py-1 font-semibold">عددی</button>
+                        </div>
+
+                        <div class="max-h-72 overflow-y-auto rounded-lg border border-slate-100 bg-slate-50/60 p-2">
+                            <div class="grid gap-1.5 sm:grid-cols-2">
+                                @foreach($filterableFields as $fieldKey => $meta)
+                                    <button
+                                        type="button"
+                                        wire:click="addFilter('{{ $fieldKey }}')"
+                                        @click="open=false"
+                                        x-show="(activeType === 'all' || activeType === '{{ $meta['type'] ?? '' }}') && '{{ Str::lower($meta['label']) }}'.includes(query.toLowerCase())"
+                                        class="flex min-h-11 items-center justify-between rounded-lg border border-transparent bg-white px-3 py-2 text-right text-xs text-slate-700 transition hover:border-indigo-100 hover:bg-indigo-50/60">
+                                        <span>{{ $meta['label'] }}</span>
+                                        <span class="mr-2 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500">
+                                            {{ $meta['type'] === 'text' ? 'متنی' : ($meta['type'] === 'select' ? 'انتخابی' : ($meta['type'] === 'date' ? 'تاریخی' : 'عددی')) }}
+                                        </span>
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -92,6 +116,19 @@
                                 @endif
                             </div>
                         @endif
+
+                        @if(($filter['type'] ?? null) === 'number')
+                            <div class="grid gap-2 md:grid-cols-3">
+                                <select wire:model.live="filters.{{ $index }}.operator" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs">
+                                    <option value="eq">= برابر</option>
+                                    <option value="gt">&gt; بزرگ‌تر</option>
+                                    <option value="gte">&gt;= بزرگ‌تر یا مساوی</option>
+                                    <option value="lt">&lt; کوچک‌تر</option>
+                                    <option value="lte">&lt;= کوچک‌تر یا مساوی</option>
+                                </select>
+                                <input type="number" wire:model.live.debounce.300ms="filters.{{ $index }}.value" class="md:col-span-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs" placeholder="مقدار عددی">
+                            </div>
+                        @endif
                     </div>
                 @empty
                     <p class="text-xs text-slate-500">هنوز فیلتری اضافه نشده است.</p>
@@ -147,6 +184,22 @@
                 {{ session('error') }}
             </div>
         @endif
+
+        <div class="mb-4 rounded-xl border border-sky-200 bg-gradient-to-l from-sky-50 to-cyan-50 p-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <p class="text-xs font-semibold text-sky-700">خلاصه لحظه‌ای نتایج جستجو</p>
+                    <p class="mt-1 text-sm font-bold text-slate-800">
+                        تعداد رکوردهای یافت‌شده:
+                        <span class="rounded-md bg-white px-2 py-0.5 text-sky-700">{{ number_format($this->people->total()) }}</span>
+                    </p>
+                </div>
+                <div class="text-xs text-slate-600">
+                    <span class="font-semibold">تعداد شروط فعال:</span>
+                    <span class="rounded-md bg-white px-2 py-0.5 text-slate-800">{{ count($filters) }}</span>
+                </div>
+            </div>
+        </div>
 
         <div class="overflow-hidden rounded-xl border border-slate-200 bg-white">
             <div class="overflow-x-auto">
