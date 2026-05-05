@@ -92,7 +92,11 @@
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                         @forelse ($this->socialWorkers as $worker)
-                            <tr class="transition hover:bg-cyan-50/70">
+                            <tr
+                                wire:key="social-worker-{{ $worker->id }}"
+                                wire:click="toggleSocialWorker({{ $worker->id }})"
+                                class="cursor-pointer transition hover:bg-cyan-50/70"
+                            >
                                 <td class="px-5 py-4 text-center font-medium text-slate-700">{{ $worker->worker_code }}</td>
                                 <td class="px-5 py-4 text-right">
                                     <div class="font-light text-slate-800">{{ $worker->full_name }}</div>
@@ -102,22 +106,77 @@
                                 <td class="px-5 py-4 text-center font-light text-slate-800">{{ $worker->covered_people_count }} نفر</td>
                                 <td class="px-5 py-4 text-center">
                                     <div class="flex items-center justify-center gap-2">
+                                        <button type="button" wire:click.stop="toggleSocialWorker({{ $worker->id }})" onclick="event.stopPropagation()" class="inline-flex items-center justify-center rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-700 transition hover:border-cyan-300 hover:bg-cyan-100">
+                                            {{ $expandedSocialWorkerId === $worker->id ? 'بستن' : 'سرپرستان' }}
+                                        </button>
                                         @if($embedded)
-                                            <button type="button" wire:click="editSocialWorker({{ $worker->id }})" class="inline-flex items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-semibold transition" style="border-color: #bfe9f8; background-color: #eff9fd; color: #1d9dcf;">
+                                            <button type="button" wire:click.stop="editSocialWorker({{ $worker->id }})" class="inline-flex items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-semibold transition" style="border-color: #bfe9f8; background-color: #eff9fd; color: #1d9dcf;">
                                                 ویرایش
                                             </button>
                                         @else
-                                            <a href="{{ route('social-workers.edit', $worker) }}" class="inline-flex items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-semibold transition" style="border-color: #bfe9f8; background-color: #eff9fd; color: #1d9dcf;">
+                                            <a href="{{ route('social-workers.edit', $worker) }}" wire:click.stop class="inline-flex items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-semibold transition" style="border-color: #bfe9f8; background-color: #eff9fd; color: #1d9dcf;">
                                                 ویرایش
                                             </a>
                                         @endif
 
-                                        <button type="button" wire:click="deleteSocialWorker({{ $worker->id }})" wire:confirm="آیا از حذف این مددکار مطمئن هستید؟" class="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100">
+                                        <button type="button" wire:click.stop="deleteSocialWorker({{ $worker->id }})" wire:confirm="آیا از حذف این مددکار مطمئن هستید؟" class="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100">
                                             حذف
                                         </button>
                                     </div>
                                 </td>
                             </tr>
+                            @if($expandedSocialWorkerId === $worker->id)
+                                <tr class="bg-cyan-50/40" wire:key="social-worker-panel-{{ $worker->id }}">
+                                    <td colspan="6" class="px-5 py-4">
+                                        <div
+                                            x-data="{ show: false }"
+                                            x-init="$nextTick(() => show = true)"
+                                            x-show="show"
+                                            x-transition:enter="transition ease-out duration-300"
+                                            x-transition:enter-start="opacity-0 -translate-y-2 scale-[0.98]"
+                                            x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                                            x-transition:leave="transition ease-in duration-200"
+                                            x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                                            x-transition:leave-end="opacity-0 -translate-y-2 scale-[0.98]"
+                                            class="rounded-2xl border border-cyan-100 bg-white p-4 shadow-sm"
+                                        >
+                                            <div class="mb-3 flex items-center justify-between">
+                                                <h2 class="text-sm font-bold text-slate-700">سرپرستان تحت پوشش {{ $worker->full_name }}</h2>
+                                                <span class="rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-700">{{ $worker->guardians->count() }} سرپرست</span>
+                                            </div>
+
+                                            <div class="overflow-x-auto">
+                                                <table class="min-w-full border-collapse text-xs">
+                                                    <thead class="bg-slate-50 text-slate-600">
+                                                        <tr>
+                                                            <th class="px-4 py-3 text-center font-bold">ردیف</th>
+                                                            <th class="px-4 py-3 text-center font-bold">کد ملی سرپرست</th>
+                                                            <th class="px-4 py-3 text-right font-bold">نام و نام خانوادگی سرپرست</th>
+                                                            <th class="px-4 py-3 text-center font-bold">موبایل سرپرست</th>
+                                                            <th class="px-4 py-3 text-center font-bold">تعداد مددجویان تحت سرپرستی</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="divide-y divide-slate-100">
+                                                        @forelse ($worker->guardians as $guardian)
+                                                            <tr class="transition hover:bg-slate-50">
+                                                                <td class="px-4 py-3 text-center font-medium text-slate-700">{{ $loop->iteration }}</td>
+                                                                <td class="px-4 py-3 text-center text-slate-600">{{ $guardian->national_code ?: '-' }}</td>
+                                                                <td class="px-4 py-3 text-right text-slate-700">{{ trim(($guardian->first_name ?? '') . ' ' . ($guardian->last_name ?? '')) ?: '-' }}</td>
+                                                                <td class="px-4 py-3 text-center text-slate-600">{{ $guardian->guardian_phone_number ?: '-' }}</td>
+                                                                <td class="px-4 py-3 text-center text-slate-600">{{ $guardian->people_count }}</td>
+                                                            </tr>
+                                                        @empty
+                                                            <tr>
+                                                                <td colspan="5" class="px-4 py-6 text-center text-slate-500">سرپرستی برای این مددکار ثبت نشده است.</td>
+                                                            </tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endif
                         @empty
                             <tr>
                                 <td colspan="6" class="px-5 py-10 text-center text-slate-500">

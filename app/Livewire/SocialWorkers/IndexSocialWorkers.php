@@ -15,6 +15,17 @@ class IndexSocialWorkers extends Component
     public string $search = '';
     public string $searchField = 'all';
     public bool $embedded = false;
+    public ?int $expandedSocialWorkerId = null;
+
+    public function updatingSearch(): void
+    {
+        $this->expandedSocialWorkerId = null;
+    }
+
+    public function updatingSearchField(): void
+    {
+        $this->expandedSocialWorkerId = null;
+    }
 
     public function createSocialWorker(): void
     {
@@ -33,9 +44,26 @@ class IndexSocialWorkers extends Component
         session()->flash('success', 'مددکار با موفقیت حذف شد.');
     }
 
+    public function toggleSocialWorker(int $socialWorkerId): void
+    {
+        $this->expandedSocialWorkerId = $this->expandedSocialWorkerId === $socialWorkerId ? null : $socialWorkerId;
+    }
+
     public function getSocialWorkersProperty()
     {
-        $query = SocialWorker::orderBy('created_at', 'desc');
+        $query = SocialWorker::with([
+            'guardians' => fn ($guardianQuery) => $guardianQuery
+                ->select([
+                    'id',
+                    'social_worker_id',
+                    'national_code',
+                    'first_name',
+                    'last_name',
+                    'guardian_phone_number',
+                ])
+                ->withCount('people')
+                ->orderBy('id'),
+        ])->orderBy('created_at', 'desc');
 
         if (trim($this->search) !== '') {
             $search = trim($this->search);
