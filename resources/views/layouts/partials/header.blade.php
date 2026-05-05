@@ -6,10 +6,6 @@
             <svg x-show="sidebarOpen" class="w-6 h-6" viewBox="0 0 24 24" fill="none"><path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         </button>
 
-        <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-amber-100 bg-white shadow-sm ring-1 ring-amber-50">
-            <img src="{{ asset('images/logo-sm.png') }}" alt="لوگوی مرکز آوای همدلی" class="h-10 w-10 object-contain">
-        </div>
-
         <div class="relative">
             <span class="text-gray-700 font-semibold">خوش آمدید، {{ auth()->user()->name ?? 'مدیر سیستم' }}</span>
         </div>
@@ -22,8 +18,9 @@
         </div>
 
         <div class="relative">
-            <img class="w-10 h-10 rounded-full object-cover border-2 border-indigo-500"
-                 src="https://ui-avatars.com/api/?name={{ auth()->user()->name ?? 'Admin' }}&background=4338ca&color=fff" alt="Avatar">
+            <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-amber-100 bg-white shadow-sm ring-1 ring-amber-50">
+                <img src="{{ asset('images/logo-sm.png') }}" alt="لوگوی مرکز آوای همدلی" class="h-10 w-10 object-contain">
+            </div>
         </div>
     </div>
 </header>
