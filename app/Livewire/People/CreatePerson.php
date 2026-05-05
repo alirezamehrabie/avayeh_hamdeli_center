@@ -34,6 +34,8 @@ use App\Models\SupportOrganization;
 use App\Models\Bank;
 use App\Models\EducationLevel;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\Layout;
 
 
@@ -47,6 +49,7 @@ class CreatePerson extends Component
 {
     use WithFileUploads;
     public $is_submitted = false;
+    public $show_step_error_badges = false;
 
     // Wizard state properties
     public $current_step = 1;
@@ -912,7 +915,13 @@ class CreatePerson extends Component
     public function save()
     {
         $this->is_submitted = true;
-        $validatedData = $this->validate();
+        try {
+            $validatedData = $this->validate();
+            $this->show_step_error_badges = false;
+        } catch (ValidationException $e) {
+            $this->show_step_error_badges = true;
+            throw $e;
+        }
 
         DB::beginTransaction();
         try {
@@ -1555,6 +1564,24 @@ class CreatePerson extends Component
             default:
                 return [];
         }
+    }
+
+    public function getStepIncompleteCountsProperty(): array
+    {
+        $counts = [];
+
+        for ($step = 1; $step <= (int) $this->total_steps; $step++) {
+            $rules = $this->rulesForStep($step);
+            if (empty($rules)) {
+                $counts[$step] = 0;
+                continue;
+            }
+
+            $validator = Validator::make($this->all(), $rules);
+            $counts[$step] = count($validator->errors()->keys());
+        }
+
+        return $counts;
     }
 
     public function render()

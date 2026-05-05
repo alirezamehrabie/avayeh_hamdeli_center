@@ -29,17 +29,25 @@
                         @foreach($wizard_steps as $stepNum => $stepName)
                             <div class="text-center" style="flex: 1; min-width: 80px;">
                                 <button type="button" wire:click="goToStep({{ $stepNum }})" class="btn p-0 border-0 bg-transparent">
-                                <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-1
-                                    @if($stepNum < $current_step) bg-success text-white
-                                    @elseif($stepNum == $current_step) bg-primary text-white
-                                    @else bg-secondary text-white @endif"
-                                    style="width: 35px; height: 35px; font-weight: bold;">
-                                    @if($stepNum < $current_step)
-                                        <i class="bi bi-check-lg"></i>
-                                    @else
-                                        {{ $stepNum }}
-                                    @endif
-                                </div>
+                                    <div class="position-relative d-inline-flex">
+                                        <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-1
+                                            @if($stepNum < $current_step) bg-success text-white
+                                            @elseif($stepNum == $current_step) bg-primary text-white
+                                            @else bg-secondary text-white @endif"
+                                            style="width: 35px; height: 35px; font-weight: bold;">
+                                            @if($stepNum < $current_step)
+                                                <i class="bi bi-check-lg"></i>
+                                            @else
+                                                {{ $stepNum }}
+                                            @endif
+                                        </div>
+                                        @if($show_step_error_badges && ($this->stepIncompleteCounts[$stepNum] ?? 0) > 0)
+                                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-white"
+                                                  style="font-size: 0.65rem; min-width: 1.35rem;">
+                                                {{ $this->stepIncompleteCounts[$stepNum] }}
+                                            </span>
+                                        @endif
+                                    </div>
                                 </button>
                                 <div class="small" style="font-size: 0.75rem;">{{ $stepName }}</div>
                             </div>
