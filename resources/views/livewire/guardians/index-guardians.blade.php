@@ -266,6 +266,18 @@
                         <p class="text-xs font-semibold text-emerald-700">متوسط درآمد ماهیانه</p>
                         <p class="mt-1 text-xl font-extrabold text-emerald-700" dir="rtl">{{ $selectedGuardian->average_income ? number_format($selectedGuardian->average_income) : '-' }} ریال </p>
                     </div>
+                    <div class="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                        <p class="text-xs font-semibold text-slate-500">وضعیت سکونت</p>
+                        <p class="mt-1 font-bold text-slate-800">{{ $selectedGuardian->residence?->residenceStatus?->name ?? '-' }}</p>
+                    </div>
+                    <div class="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                        <p class="text-xs font-semibold text-slate-500">محدوده سکونت</p>
+                        <p class="mt-1 font-bold text-slate-800">{{ $selectedGuardian->residence?->district?->name ?? '-' }}</p>
+                    </div>
+                    <div class="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 md:col-span-2">
+                        <p class="text-xs font-semibold text-slate-500">آدرس کامل</p>
+                        <p class="mt-1 font-bold text-slate-800">{{ $selectedGuardian->residence?->address ?? '-' }}</p>
+                    </div>
                 </div>
             </div>
         </div>

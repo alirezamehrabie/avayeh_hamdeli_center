@@ -83,7 +83,7 @@ class IndexGuardians extends Component
             return null;
         }
 
-        return Guardian::with(['socialWorker', 'occupation', 'insuranceType', 'vehicleType'])
+        return Guardian::with(['socialWorker', 'occupation', 'insuranceType', 'vehicleType', 'residence.residenceStatus', 'residence.district'])
             ->find($this->selectedGuardianId);
     }
 
