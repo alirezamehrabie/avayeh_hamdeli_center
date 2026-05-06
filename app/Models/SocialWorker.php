@@ -156,6 +156,7 @@ class SocialWorker extends Model
             ->get(['people.id', 'people.national_id', 'people.father_national_id', 'people.mother_national_id']);
 
         $uniqueNationalIds = collect();
+        $excludedNationalIds = collect();
 
         foreach ($people as $person) {
             // الف) کد ملی خود مددجو
@@ -171,6 +172,8 @@ class SocialWorker extends Model
                 if ($person->father_national_id) {
                     $uniqueNationalIds->push($person->father_national_id);
                 }
+            } elseif ($person->father_national_id) {
+                $excludedNationalIds->push($person->father_national_id);
             }
 
             $shouldExcludeMother = in_array(2, $harmTypeIds) || in_array(5, $harmTypeIds);
@@ -179,6 +182,8 @@ class SocialWorker extends Model
                 if ($person->mother_national_id) {
                     $uniqueNationalIds->push($person->mother_national_id);
                 }
+            } elseif ($person->mother_national_id) {
+                $excludedNationalIds->push($person->mother_national_id);
             }
         }
 
@@ -186,9 +191,13 @@ class SocialWorker extends Model
         $guardiansData = $this->guardians()
             ->get(['national_code', 'divorced_child_at_home']);
 
+        $excludedNationalIds = $excludedNationalIds->filter()->unique();
+
         // ۳. افزودن کدهای ملی سرپرستان به لیست یکتا
-        $guardiansData->pluck('national_code')->each(function ($code) use ($uniqueNationalIds) {
-            if ($code) $uniqueNationalIds->push($code);
+        $guardiansData->pluck('national_code')->each(function ($code) use ($uniqueNationalIds, $excludedNationalIds) {
+            if ($code && !$excludedNationalIds->contains($code)) {
+                $uniqueNationalIds->push($code);
+            }
         });
 
         // ۴. محاسبه تعداد افراد یکتا (ثبت شده در دیتابیس)

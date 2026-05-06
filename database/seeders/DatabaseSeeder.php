@@ -33,7 +33,7 @@ class DatabaseSeeder extends Seeder
             BankSeeder::class,
             HarmTypeSeeder::class,
             AdminUserSeeder::class,
-            ComprehensivePersonSeeder::class
+//            ComprehensivePersonSeeder::class
 
         ]);
     }
