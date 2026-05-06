@@ -711,10 +711,109 @@
                     @endif
 
                     <div class="row g-3">
-                        <div class="col-lg-4 col-md-6">
+                        <div
+                            class="col-lg-4 col-md-6"
+                            x-data="{
+                                openSuggestions: false,
+                                activeSuggestionIndex: -1,
+                                suggestionIds: @js($this->guardianSuggestions->pluck('id')->values()->all()),
+                                resetActive() {
+                                    this.activeSuggestionIndex = this.suggestionIds.length ? 0 : -1;
+                                },
+                                moveActive(direction) {
+                                    if (!this.openSuggestions) {
+                                        this.openSuggestions = true;
+                                    }
+                                    if (!this.suggestionIds.length) {
+                                        this.activeSuggestionIndex = -1;
+                                        return;
+                                    }
+                                    if (this.activeSuggestionIndex === -1) {
+                                        this.activeSuggestionIndex = 0;
+                                        return;
+                                    }
+                                    this.activeSuggestionIndex = (this.activeSuggestionIndex + direction + this.suggestionIds.length) % this.suggestionIds.length;
+                                },
+                                chooseActive() {
+                                    if (!this.openSuggestions || this.activeSuggestionIndex < 0 || !this.suggestionIds.length) {
+                                        return;
+                                    }
+                                    const guardianId = this.suggestionIds[this.activeSuggestionIndex];
+                                    if (!guardianId) {
+                                        return;
+                                    }
+                                    $wire.selectGuardianFromSuggestions(guardianId);
+                                    this.openSuggestions = false;
+                                    this.activeSuggestionIndex = -1;
+                                    this.$nextTick(() => this.$refs.guardianInput?.blur());
+                                }
+                            }"
+                            @click.outside="openSuggestions = false; activeSuggestionIndex = -1"
+                            @guardian-selected.window="openSuggestions = false; activeSuggestionIndex = -1; $nextTick(() => $refs.guardianInput?.blur())"
+                        >
                             <label class="form-label small fw-semibold mb-1">کد ملی سرپرست <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control form-control-sm @error('guardian_national_code') is-invalid @enderror" maxlength="10"
-                                   wire:model.live.debounce.500ms="guardian_national_code" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                            <div class="position-relative">
+                                <input
+                                    x-ref="guardianInput"
+                                    type="text"
+                                    class="form-control form-control-sm @error('guardian_national_code') is-invalid @enderror"
+                                    maxlength="10"
+                                    wire:model.live.debounce.500ms="guardian_national_code"
+                                    @focus="openSuggestions = true; resetActive()"
+                                    @input="if (!openSuggestions) { openSuggestions = true }; resetActive()"
+                                    @keydown.escape.window="openSuggestions = false"
+                                    @keydown.down.prevent="moveActive(1)"
+                                    @keydown.up.prevent="moveActive(-1)"
+                                    @keydown.enter.prevent="chooseActive()"
+                                    style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;"
+                                >
+
+                                <div
+                                    x-show="openSuggestions"
+                                    @mousedown.stop
+                                    x-transition
+                                    class="position-absolute start-0 w-100 mt-2 border bg-white shadow-sm overflow-hidden"
+                                    style="z-index: 30; border-radius: 14px; border-color: #dbe3ec !important;"
+                                >
+                                    <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom" style="background: #f8fafc; border-color: #eef2f7 !important;">
+                                        <span class="small fw-semibold text-secondary">سرپرستان ثبت‌شده</span>
+                                        <span class="badge rounded-pill text-bg-light border">{{ $this->guardianSuggestions->count() }}</span>
+                                    </div>
+
+                                    <div style="max-height: 260px; overflow-y: auto;">
+                                        <table class="table table-sm mb-0 align-middle">
+                                            <thead class="sticky-top" style="background: #f8fafc;">
+                                            <tr>
+                                                <th class="small text-center fw-semibold text-secondary py-2">کد ملی سرپرست</th>
+                                                <th class="small text-end fw-semibold text-secondary py-2">نام سرپرست</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            @forelse($this->guardianSuggestions as $suggestedGuardian)
+                                                <tr
+                                                    wire:key="guardian-suggestion-{{ $suggestedGuardian->id }}"
+                                                    wire:click="selectGuardianFromSuggestions({{ $suggestedGuardian->id }})"
+                                                    @mouseenter="activeSuggestionIndex = {{ $loop->index }}"
+                                                    @click="openSuggestions = false; activeSuggestionIndex = -1; $nextTick(() => $refs.guardianInput?.blur())"
+                                                    class="cursor-pointer"
+                                                    :class="{ 'table-primary': activeSuggestionIndex === {{ $loop->index }} }"
+                                                    style="cursor: pointer;"
+                                                >
+                                                    <td class="text-center small py-2 fw-semibold text-dark">{{ $suggestedGuardian->national_code }}</td>
+                                                    <td class="text-end small py-2 text-dark">{{ trim(($suggestedGuardian->first_name ?? '') . ' ' . ($suggestedGuardian->last_name ?? '')) ?: '-' }}</td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="2" class="text-center py-4 text-muted small">
+                                                        سرپرستی یافت نشد. می‌توانید مقدار جدید را دستی وارد کنید.
+                                                    </td>
+                                                </tr>
+                                            @endforelse
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
                             @error('guardian_national_code') <span
                                 class="text-danger small">{{ $message }}</span> @enderror
 

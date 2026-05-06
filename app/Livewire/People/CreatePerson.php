@@ -378,6 +378,49 @@ class CreatePerson extends Component
         ]);
     }
 
+    public function getGuardianSuggestionsProperty()
+    {
+        $search = trim((string) $this->guardian_national_code);
+        $fullNameExpression = DB::connection()->getDriverName() === 'sqlite'
+            ? "COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')"
+            : "CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, ''))";
+
+        $query = Guardian::query()
+            ->select(['id', 'national_code', 'first_name', 'last_name'])
+            ->whereNotNull('national_code')
+            ->where('national_code', '!=', '');
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search, $fullNameExpression) {
+                $q->where('national_code', 'LIKE', "%{$search}%")
+                    ->orWhere('first_name', 'LIKE', "%{$search}%")
+                    ->orWhere('last_name', 'LIKE', "%{$search}%")
+                    ->orWhereRaw("{$fullNameExpression} LIKE ?", ["%{$search}%"]);
+            })->orderByRaw('CASE WHEN national_code = ? THEN 0 ELSE 1 END', [$search]);
+        }
+
+        return $query->orderByDesc('id')
+            ->limit(15)
+            ->get()
+            ->unique('national_code')
+            ->values();
+    }
+
+    public function selectGuardianFromSuggestions(int $guardianId): void
+    {
+        $guardian = Guardian::query()
+            ->select(['id', 'national_code'])
+            ->find($guardianId);
+
+        if (!$guardian || empty($guardian->national_code)) {
+            return;
+        }
+
+        $this->guardian_national_code = $guardian->national_code;
+        $this->updatedGuardianNationalCode($guardian->national_code);
+        $this->dispatch('guardian-selected');
+    }
+
     public function updatedGuardianNationalCode($value)
     {
         // در اینجا اعتبارسنجی دقیق کد ملی (regex) را انجام نمی‌دهیم تا فقط در زمان ذخیره بررسی شود.
