@@ -1183,6 +1183,7 @@ class CreatePerson extends Component
                         'parent_disability_description' => ((bool)$this->has_parent_disability) ? $this->parent_disability_description : null,
                     ]
                 );
+                $this->syncFamilyStatusAcrossSiblings($this->person);
 
                 // --- 6. به‌روزرسانی اطلاعات سکونت (Residence) ---
                 \App\Models\Residence::updateOrCreate(
@@ -1408,6 +1409,7 @@ class CreatePerson extends Component
                     'has_parent_disability' => (bool)$this->has_parent_disability,
                     'parent_disability_description' => ((bool)$this->has_parent_disability) ? $this->parent_disability_description : null,
                 ]);
+                $this->syncFamilyStatusAcrossSiblings($person);
 
                 // جدول 3: Residence
                 \App\Models\Residence::updateOrCreate(
@@ -1625,6 +1627,34 @@ class CreatePerson extends Component
             if (!empty($harmTypesToRemove)) {
                 $sibling->harmTypes()->detach($harmTypesToRemove);
             }
+        }
+    }
+
+    private function syncFamilyStatusAcrossSiblings(Person $person): void
+    {
+        $fatherNationalId = trim((string)$person->father_national_id);
+        $motherNationalId = trim((string)$person->mother_national_id);
+
+        // برای جلوگیری از به‌روزرسانی اشتباه، هم‌گام‌سازی فقط وقتی انجام می‌شود
+        // که هر دو کد ملی والدین موجود باشند (خواهر/برادر واقعی با والدین یکسان).
+        if ($fatherNationalId === '' || $motherNationalId === '') {
+            return;
+        }
+
+        $siblings = Person::query()
+            ->where('id', '!=', $person->id)
+            ->where('father_national_id', $fatherNationalId)
+            ->where('mother_national_id', $motherNationalId)
+            ->get(['id']);
+
+        foreach ($siblings as $sibling) {
+            FamilyStatus::updateOrCreate(
+                ['person_id' => $sibling->id],
+                [
+                    'remarried_parent' => $this->remarried_parent ?: null,
+                    'children_from_previous_marriage' => (int)($this->children_from_previous_marriage ?? 0),
+                ]
+            );
         }
     }
 
