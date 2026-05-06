@@ -675,7 +675,7 @@
                                 </div>
 
                                 <div class="col-md-4">
-                                    <label class="form-label small fw-semibold mb-1">فرزندان از ازدواج قبلی</label>
+                                    <label class="form-label small fw-semibold mb-1">فرزندان از ازدواج قبلی والدین</label>
                                     <input type="number" class="form-control form-control-sm @error('children_from_previous_marriage') is-invalid @enderror" wire:model.blur="children_from_previous_marriage" placeholder="تعداد" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                     @error('children_from_previous_marriage') <span class="text-danger small">{{ $message }}</span> @enderror
                                 </div>
