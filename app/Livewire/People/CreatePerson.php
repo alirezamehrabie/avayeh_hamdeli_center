@@ -804,7 +804,7 @@ class CreatePerson extends Component
             $this->subsidy_sheba_number = $guardianBankInfo->subsidy_sheba_number;
         }
 
-
+        $this->recalculateChildrenInHouseRealtime();
     }
 
 
@@ -813,6 +813,23 @@ class CreatePerson extends Component
         if ($value == '0') {
             $this->any_family_employed_description = null;
         }
+    }
+
+    public function updatedChildrenFromPreviousMarriage($value): void
+    {
+        $this->children_from_previous_marriage = is_numeric($value) ? (int)$value : 0;
+        $this->recalculateChildrenInHouseRealtime();
+    }
+
+    public function updatedRemarriedParent(): void
+    {
+        $this->recalculateChildrenInHouseRealtime();
+    }
+
+    public function updatedChildrenCount($value): void
+    {
+        $this->children_count = is_numeric($value) ? (int)$value : 0;
+        $this->recalculateChildrenInHouseRealtime();
     }
 
     /**
@@ -1662,27 +1679,7 @@ class CreatePerson extends Component
 
     private function syncChildrenInHouseForParentGuardian(Guardian $guardian): void
     {
-        if (!$this->guardian_relation_type_id) {
-            return;
-        }
-
-        $relationType = GuardianRelationType::find($this->guardian_relation_type_id);
-        if (!$relationType) {
-            return;
-        }
-
-        $isFatherGuardian = $relationType->title === 'پدر';
-        $isMotherGuardian = $relationType->title === 'مادر';
-
-        if (!$isFatherGuardian && !$isMotherGuardian) {
-            return;
-        }
-
-        $isRemarriedForGuardian =
-            ($isFatherGuardian && in_array($this->remarried_parent, ['father', 'both'], true))
-            || ($isMotherGuardian && in_array($this->remarried_parent, ['mother', 'both'], true));
-
-        if (!$isRemarriedForGuardian) {
+        if (!$this->isParentGuardianWithRelevantRemarriage()) {
             return;
         }
 
@@ -1692,6 +1689,48 @@ class CreatePerson extends Component
         $guardian->update([
             'children_in_house' => $childrenCount + $childrenFromPreviousMarriage,
         ]);
+    }
+
+    private function recalculateChildrenInHouseRealtime(): void
+    {
+        $childrenCount = (int)($this->children_count ?? 0);
+        $childrenFromPreviousMarriage = max(0, (int)($this->children_from_previous_marriage ?? 0));
+
+        if (!$this->isParentGuardianWithRelevantRemarriage()) {
+            $this->children_in_house = $childrenCount;
+            return;
+        }
+
+        $this->children_in_house = $childrenCount + $childrenFromPreviousMarriage;
+    }
+
+    private function isParentGuardianWithRelevantRemarriage(): bool
+    {
+        if (!$this->guardian_relation_type_id) {
+            return false;
+        }
+
+        static $relationTypeTitleCache = [];
+        $relationTypeId = (int)$this->guardian_relation_type_id;
+
+        if (!array_key_exists($relationTypeId, $relationTypeTitleCache)) {
+            $relationTypeTitleCache[$relationTypeId] = GuardianRelationType::query()
+                ->where('id', $relationTypeId)
+                ->value('title');
+        }
+
+        $relationTypeTitle = trim((string)($relationTypeTitleCache[$relationTypeId] ?? ''));
+        $isFatherGuardian = $relationTypeTitle === 'پدر';
+        $isMotherGuardian = $relationTypeTitle === 'مادر';
+
+        if (!$isFatherGuardian && !$isMotherGuardian) {
+            return false;
+        }
+
+        $remarriedParent = strtolower(trim((string)$this->remarried_parent));
+
+        return ($isFatherGuardian && in_array($remarriedParent, ['father', 'both'], true))
+            || ($isMotherGuardian && in_array($remarriedParent, ['mother', 'both'], true));
     }
 
 
