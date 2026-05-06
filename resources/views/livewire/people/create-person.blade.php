@@ -146,21 +146,24 @@
                                     @error('birth_year') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                                 </div>
 
-                                <div class="col-md-4">
-                                    <label class="form-label small fw-semibold mb-1">نام پدر <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control form-control-sm @error('father_name') is-invalid @enderror" wire:model.blur="father_name" placeholder="نام کامل پدر" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
-                                    @error('father_name') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
-                                </div>
-
-                                <div class="col-md-4">
-                                    <label class="form-label small fw-semibold mb-1">شماره موبایل مددجو</label>
-                                    <input type="text" class="form-control form-control-sm @error('phone_number') is-invalid @enderror" wire:model="phone_number" maxlength="11" inputmode="numeric" placeholder="09xxxxxxxxx" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
-                                    @error('phone_number') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
-                                </div>
-
                                 <div class="col-md-2">
                                     <label class="form-label small fw-semibold mb-1">کد ملی پدر</label>
-                                    <input type="text" class="form-control form-control-sm @error('father_national_id') is-invalid @enderror" maxlength="10" wire:model.blur="father_national_id" inputmode="numeric" placeholder="10 رقم" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                    <input type="text" class="form-control form-control-sm @error('father_national_id') is-invalid @enderror" maxlength="10" wire:model.live.debounce.350ms="father_national_id" inputmode="numeric" placeholder="10 رقم" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                    @if($showFatherSuggestions && strlen(trim((string)$father_national_id)) >= 5 && $this->fatherSuggestions->count())
+                                        <div class="mt-1 rounded-3 border bg-white shadow-sm" style="border-color: #dbe3ec; max-height: 150px; overflow-y: auto;">
+                                            @foreach($this->fatherSuggestions as $fatherSuggestion)
+                                                <button
+                                                    type="button"
+                                                    wire:click="selectFatherFromSuggestions('{{ $fatherSuggestion->father_national_id }}')"
+                                                    class="w-100 border-0 bg-transparent px-2 py-1 text-start transition hover:bg-cyan-50"
+                                                    style="border-bottom: 1px solid #f1f5f9;"
+                                                >
+                                                    <div class="small fw-semibold text-slate-800">{{ $fatherSuggestion->father_name }}</div>
+                                                    <div class="small text-muted">{{ $fatherSuggestion->father_national_id }}</div>
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                     @error('father_national_id') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                                 </div>
 
@@ -171,8 +174,22 @@
                                 </div>
 
                                 <div class="col-md-4">
+                                    <label class="form-label small fw-semibold mb-1">نام پدر <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control form-control-sm @error('father_name') is-invalid @enderror" wire:model.blur="father_name" placeholder="نام پدر" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                    @error('father_name') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold mb-1">شماره موبایل مددجو</label>
+                                    <input type="text" class="form-control form-control-sm @error('phone_number') is-invalid @enderror" wire:model="phone_number" maxlength="11" inputmode="numeric" placeholder="09xxxxxxxxx" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                    @error('phone_number') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                </div>
+
+
+
+                                <div class="col-md-4">
                                     <label class="form-label small fw-semibold mb-2">نقش در خانواده <span class="text-danger">*</span></label>
-                                    <select class="form-select form-select-sm @error('role') is-invalid @enderror" wire:model.blur="role" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                    <select disabled class="form-select form-select-sm @error('role') is-invalid @enderror" wire:model.blur="role" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                         <option value="child">فرزند</option>
                                     </select>
                                     @error('role') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror

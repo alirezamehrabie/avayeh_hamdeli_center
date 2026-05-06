@@ -183,13 +183,13 @@
                                     icon="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
 
                                 <livewire:admin.dashboard.stat-card
-                                    title="بانوان"
+                                    title="دختر"
                                     :value="$femaleCount  . ' نفر '"
                                     color="blue"
                                     icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
 
                                 <livewire:admin.dashboard.stat-card
-                                    title="آقایان"
+                                    title="پسر"
                                     :value="$maleCount  . ' نفر '"
                                     color="blue"
                                     icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>

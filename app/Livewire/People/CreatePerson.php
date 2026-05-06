@@ -115,6 +115,7 @@ class CreatePerson extends Component
 
     public $harm_types = [];        // لیست IDهایی که کاربر انتخاب می‌کند
     public $allHarmTypes;           // جهت نمایش در فرم
+    public bool $showFatherSuggestions = false;
 
     // مهارت‌ها
     public $skills = []; // آرایه برای ذخیره شناسه مهارت‌های انتخاب شده (تیک خورده)
@@ -376,6 +377,94 @@ class CreatePerson extends Component
         $this->validateOnly('national_id', [
             'national_id' => ['nullable', 'digits:10'],
         ]);
+    }
+
+    public function updatedFatherNationalId($value): void
+    {
+        $this->showFatherSuggestions = true;
+        $fatherNationalId = preg_replace('/\D+/', '', trim((string)$value));
+        $this->father_national_id = $fatherNationalId;
+
+        if (strlen($fatherNationalId) !== 10) {
+            $this->resetValidation('father_national_id');
+            return;
+        }
+
+        $this->validateOnly('father_national_id', [
+            'father_national_id' => ['nullable', 'digits:10'],
+        ]);
+
+        $query = Person::query()
+            ->where('father_national_id', $fatherNationalId)
+            ->whereNotNull('father_name')
+            ->where('father_name', '!=', '');
+
+        if (!empty($this->person?->id)) {
+            $query->where('id', '!=', $this->person->id);
+        }
+
+        $existingFatherName = $query->orderByDesc('id')->value('father_name');
+
+        if ($existingFatherName) {
+            $this->father_name = trim((string)$existingFatherName);
+        }
+    }
+
+    public function getFatherSuggestionsProperty()
+    {
+        $search = trim((string)$this->father_national_id);
+        if ($search === '' || strlen($search) < 4) {
+            return collect();
+        }
+
+        $fullNameExpression = DB::connection()->getDriverName() === 'sqlite'
+            ? "COALESCE(father_name, '')"
+            : "COALESCE(father_name, '')";
+
+        $query = Person::query()
+            ->select(['father_national_id', 'father_name'])
+            ->whereNotNull('father_national_id')
+            ->where('father_national_id', '!=', '')
+            ->whereNotNull('father_name')
+            ->where('father_name', '!=', '');
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search, $fullNameExpression) {
+                $q->where('father_national_id', 'LIKE', "%{$search}%")
+                    ->orWhereRaw("{$fullNameExpression} LIKE ?", ["%{$search}%"]);
+            })->orderByRaw('CASE WHEN father_national_id = ? THEN 0 ELSE 1 END', [$search]);
+        }
+
+        return $query->orderByDesc('id')
+            ->limit(6)
+            ->get()
+            ->unique('father_national_id')
+            ->values();
+    }
+
+    public function selectFatherFromSuggestions(string $fatherNationalId): void
+    {
+        $normalizedFatherNationalId = trim($fatherNationalId);
+        if ($normalizedFatherNationalId === '') {
+            return;
+        }
+
+        $fatherRecord = Person::query()
+            ->select(['father_national_id', 'father_name'])
+            ->where('father_national_id', $normalizedFatherNationalId)
+            ->whereNotNull('father_name')
+            ->where('father_name', '!=', '')
+            ->orderByDesc('id')
+            ->first();
+
+        if (!$fatherRecord) {
+            return;
+        }
+
+        $this->father_national_id = $fatherRecord->father_national_id;
+        $this->father_name = $fatherRecord->father_name;
+        $this->showFatherSuggestions = false;
+        $this->resetValidation('father_national_id');
     }
 
     public function getGuardianSuggestionsProperty()
@@ -1203,7 +1292,7 @@ class CreatePerson extends Component
 
                 // --- 12. همگام‌سازی مهارت‌ها و آسیب‌ها ---
                 $this->person->skills()->sync($this->skills ?? []);
-                $this->person->harmTypes()->sync($this->harm_types ?? []);
+                $this->syncPersonHarmTypesWithFamilyPropagation($this->person, $this->harm_types ?? []);
 
                 DB::commit();
 
@@ -1412,7 +1501,9 @@ class CreatePerson extends Component
                 }
 
                 if (!empty($this->harm_types)) {
-                    $person->harmTypes()->sync($this->harm_types);
+                    $this->syncPersonHarmTypesWithFamilyPropagation($person, $this->harm_types);
+                } else {
+                    $this->syncPersonHarmTypesWithFamilyPropagation($person, []);
                 }
 
                 DB::commit();
@@ -1489,6 +1580,52 @@ class CreatePerson extends Component
         }
 
         return null;
+    }
+
+    private function syncPersonHarmTypesWithFamilyPropagation(Person $person, array $selectedHarmTypes): void
+    {
+        $selectedHarmTypeIds = collect($selectedHarmTypes)
+            ->filter(fn($value) => $value !== null && $value !== '')
+            ->map(fn($value) => (int)$value)
+            ->unique()
+            ->values()
+            ->all();
+
+        $person->harmTypes()->sync($selectedHarmTypeIds);
+
+        // آسیب‌های مرتبط با والدین که باید بین فرزندان با والد مشترک همگام شوند
+        $parentRelatedHarmTypeIds = [1, 2, 5, 7]; // فوت پدر، فوت مادر، زندانی والدین، فرزند طلاق
+        $harmTypesToPropagate = array_values(array_intersect($selectedHarmTypeIds, $parentRelatedHarmTypeIds));
+        $harmTypesToRemove = array_values(array_diff($parentRelatedHarmTypeIds, $harmTypesToPropagate));
+
+        $fatherNationalId = trim((string)$person->father_national_id);
+        $motherNationalId = trim((string)$person->mother_national_id);
+
+        if ($fatherNationalId === '' && $motherNationalId === '') {
+            return;
+        }
+
+        $siblingsQuery = Person::query()->where('id', '!=', $person->id);
+        $siblingsQuery->where(function ($query) use ($fatherNationalId, $motherNationalId) {
+            if ($fatherNationalId !== '') {
+                $query->orWhere('father_national_id', $fatherNationalId);
+            }
+            if ($motherNationalId !== '') {
+                $query->orWhere('mother_national_id', $motherNationalId);
+            }
+        });
+
+        $siblings = $siblingsQuery->get(['id']);
+
+        foreach ($siblings as $sibling) {
+            if (!empty($harmTypesToPropagate)) {
+                $sibling->harmTypes()->syncWithoutDetaching($harmTypesToPropagate);
+            }
+
+            if (!empty($harmTypesToRemove)) {
+                $sibling->harmTypes()->detach($harmTypesToRemove);
+            }
+        }
     }
 
 
