@@ -1183,6 +1183,7 @@ class CreatePerson extends Component
                         'parent_disability_description' => ((bool)$this->has_parent_disability) ? $this->parent_disability_description : null,
                     ]
                 );
+                $this->syncChildrenInHouseForParentGuardian($guardianInstance);
                 $this->syncFamilyStatusAcrossSiblings($this->person);
 
                 // --- 6. به‌روزرسانی اطلاعات سکونت (Residence) ---
@@ -1409,6 +1410,7 @@ class CreatePerson extends Component
                     'has_parent_disability' => (bool)$this->has_parent_disability,
                     'parent_disability_description' => ((bool)$this->has_parent_disability) ? $this->parent_disability_description : null,
                 ]);
+                $this->syncChildrenInHouseForParentGuardian($guardianInstance);
                 $this->syncFamilyStatusAcrossSiblings($person);
 
                 // جدول 3: Residence
@@ -1656,6 +1658,40 @@ class CreatePerson extends Component
                 ]
             );
         }
+    }
+
+    private function syncChildrenInHouseForParentGuardian(Guardian $guardian): void
+    {
+        if (!$this->guardian_relation_type_id) {
+            return;
+        }
+
+        $relationType = GuardianRelationType::find($this->guardian_relation_type_id);
+        if (!$relationType) {
+            return;
+        }
+
+        $isFatherGuardian = $relationType->title === 'پدر';
+        $isMotherGuardian = $relationType->title === 'مادر';
+
+        if (!$isFatherGuardian && !$isMotherGuardian) {
+            return;
+        }
+
+        $isRemarriedForGuardian =
+            ($isFatherGuardian && in_array($this->remarried_parent, ['father', 'both'], true))
+            || ($isMotherGuardian && in_array($this->remarried_parent, ['mother', 'both'], true));
+
+        if (!$isRemarriedForGuardian) {
+            return;
+        }
+
+        $childrenFromPreviousMarriage = (int)($this->children_from_previous_marriage ?? 0);
+        $childrenCount = (int)($guardian->children_count ?? 0);
+
+        $guardian->update([
+            'children_in_house' => $childrenCount + $childrenFromPreviousMarriage,
+        ]);
     }
 
 
