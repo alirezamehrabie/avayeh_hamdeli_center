@@ -16,6 +16,7 @@ class IndexSocialWorkers extends Component
     public string $searchField = 'all';
     public bool $embedded = false;
     public ?int $expandedSocialWorkerId = null;
+    public array $coveredDetailsByWorker = [];
 
     public function updatingSearch(): void
     {
@@ -46,7 +47,19 @@ class IndexSocialWorkers extends Component
 
     public function toggleSocialWorker(int $socialWorkerId): void
     {
-        $this->expandedSocialWorkerId = $this->expandedSocialWorkerId === $socialWorkerId ? null : $socialWorkerId;
+        if ($this->expandedSocialWorkerId === $socialWorkerId) {
+            $this->expandedSocialWorkerId = null;
+            return;
+        }
+
+        $this->expandedSocialWorkerId = $socialWorkerId;
+
+        if (!array_key_exists($socialWorkerId, $this->coveredDetailsByWorker)) {
+            $socialWorker = SocialWorker::find($socialWorkerId);
+            $this->coveredDetailsByWorker[$socialWorkerId] = $socialWorker
+                ? $socialWorker->getCoveredPeopleDetails()
+                : [];
+        }
     }
 
     public function getSocialWorkersProperty()
@@ -90,6 +103,11 @@ class IndexSocialWorkers extends Component
         }
 
         return $query->get();
+    }
+
+    public function getCoveredDetailsForWorker(int $socialWorkerId): array
+    {
+        return $this->coveredDetailsByWorker[$socialWorkerId] ?? [];
     }
 
     public function render()

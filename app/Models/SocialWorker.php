@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations;
+use Illuminate\Support\Collection;
 
 class SocialWorker extends Model
 {
@@ -150,58 +151,12 @@ class SocialWorker extends Model
 
     public function calculateCoveredPeopleCount(): int
     {
-        // ۱. بارگذاری مددجویان با فیلتر ستون‌ها و Eager Loading برای جلوگیری از N+1
-        $people = $this->people()
-            ->with(['harmTypes' => fn($q) => $q->select('harm_types.id')])
-            ->get(['people.id', 'people.national_id', 'people.father_national_id', 'people.mother_national_id']);
-
-        $uniqueNationalIds = collect();
-        $excludedNationalIds = collect();
-
-        foreach ($people as $person) {
-            // الف) کد ملی خود مددجو
-            if ($person->national_id) {
-                $uniqueNationalIds->push($person->national_id);
-            }
-
-            $harmTypeIds = $person->harmTypes->pluck('id')->toArray();
-
-            $shouldExcludeFather = in_array(1, $harmTypeIds) || in_array(7, $harmTypeIds) || in_array(5, $harmTypeIds);
-            // ب) بررسی وضعیت پدر (اگر فوت پدر ID=1 یا فرزند طلاق ID=7 نباشد)
-            if (!$shouldExcludeFather) {
-                if ($person->father_national_id) {
-                    $uniqueNationalIds->push($person->father_national_id);
-                }
-            } elseif ($person->father_national_id) {
-                $excludedNationalIds->push($person->father_national_id);
-            }
-
-            $shouldExcludeMother = in_array(2, $harmTypeIds) || in_array(5, $harmTypeIds);
-            // ج) بررسی وضعیت مادر (اگر فوت مادر ID=2 نباشد)
-            if (!$shouldExcludeMother) {
-                if ($person->mother_national_id) {
-                    $uniqueNationalIds->push($person->mother_national_id);
-                }
-            } elseif ($person->mother_national_id) {
-                $excludedNationalIds->push($person->mother_national_id);
-            }
-        }
+        $coveredDetails = $this->getCoveredPeopleDetails();
+        $baseCount = count($coveredDetails);
 
         // ۲. دریافت اطلاعات سرپرستان (کد ملی + وضعیت فرزندان طلاق در منزل)
         $guardiansData = $this->guardians()
             ->get(['national_code', 'divorced_child_at_home']);
-
-        $excludedNationalIds = $excludedNationalIds->filter()->unique();
-
-        // ۳. افزودن کدهای ملی سرپرستان به لیست یکتا
-        $guardiansData->pluck('national_code')->each(function ($code) use ($uniqueNationalIds, $excludedNationalIds) {
-            if ($code && !$excludedNationalIds->contains($code)) {
-                $uniqueNationalIds->push($code);
-            }
-        });
-
-        // ۴. محاسبه تعداد افراد یکتا (ثبت شده در دیتابیس)
-        $baseCount = $uniqueNationalIds->filter()->unique()->count();
 
         // ۵. محاسبه مقدار افزایشی بابت "فرزندان طلاق در منزل سرپرست"
         // این افراد کد ملی ندارند، پس مستقیماً به عدد نهایی اضافه می‌شوند
@@ -216,6 +171,165 @@ class SocialWorker extends Model
 
         // حاصل نهایی: افراد دارای کد ملی + افراد اظهار شده در منزل سرپرست
         return $baseCount + $extraCount;
+    }
+
+    public function getCoveredPeopleDetails(): array
+    {
+        $people = $this->people()
+            ->with([
+                'harmTypes' => fn($q) => $q->select('harm_types.id'),
+                'guardian:id,national_code,first_name,last_name',
+            ])
+            ->get([
+                'people.id',
+                'people.first_name',
+                'people.last_name',
+                'people.person_code',
+                'people.national_id',
+                'people.father_name',
+                'people.father_national_id',
+                'people.mother_national_id',
+                'people.guardian_id',
+            ]);
+
+        $detailsByNationalId = [];
+        $excludedNationalIds = collect();
+        $parentNationalIds = collect();
+
+        foreach ($people as $person) {
+            $beneficiaryNationalId = $this->normalizeNationalId($person->national_id);
+            $fatherNationalId = $this->normalizeNationalId($person->father_national_id);
+            $motherNationalId = $this->normalizeNationalId($person->mother_national_id);
+            $guardianNationalId = $this->normalizeNationalId($person->guardian?->national_code);
+
+            $beneficiaryFullName = trim(($person->first_name ?? '') . ' ' . ($person->last_name ?? '')) ?: '-';
+            $guardianFullName = trim(($person->guardian?->first_name ?? '') . ' ' . ($person->guardian?->last_name ?? '')) ?: '-';
+            $sourceLabel = $beneficiaryFullName . ($person->person_code ? " ({$person->person_code})" : '');
+
+            $harmTypeIds = $person->harmTypes->pluck('id')->toArray();
+            $shouldExcludeFather = in_array(1, $harmTypeIds) || in_array(7, $harmTypeIds) || in_array(5, $harmTypeIds);
+            $shouldExcludeMother = in_array(2, $harmTypeIds) || in_array(5, $harmTypeIds);
+
+            if ($beneficiaryNationalId) {
+                $this->addCoveredDetail($detailsByNationalId, $beneficiaryNationalId, 'beneficiary', $beneficiaryFullName, $sourceLabel);
+            }
+
+            if ($fatherNationalId) {
+                $parentNationalIds->push($fatherNationalId);
+                if (!$shouldExcludeFather) {
+                    $fatherName = trim((string)$person->father_name) ?: '-';
+                    $this->addCoveredDetail($detailsByNationalId, $fatherNationalId, 'father', $fatherName, $sourceLabel);
+                } else {
+                    $excludedNationalIds->push($fatherNationalId);
+                }
+            }
+
+            if ($motherNationalId) {
+                $parentNationalIds->push($motherNationalId);
+                if (!$shouldExcludeMother) {
+                    $this->addCoveredDetail($detailsByNationalId, $motherNationalId, 'mother', '-', $sourceLabel);
+                } else {
+                    $excludedNationalIds->push($motherNationalId);
+                }
+            }
+
+            if (!$guardianNationalId) {
+                continue;
+            }
+
+            $fatherIncluded = $fatherNationalId && !$shouldExcludeFather;
+            $motherIncluded = $motherNationalId && !$shouldExcludeMother;
+
+            if ($fatherIncluded && $guardianNationalId === $fatherNationalId) {
+                $this->addCoveredDetail($detailsByNationalId, $guardianNationalId, 'guardian', $guardianFullName, $sourceLabel);
+                continue;
+            }
+
+            if ($motherIncluded && $guardianNationalId === $motherNationalId) {
+                $this->addCoveredDetail($detailsByNationalId, $guardianNationalId, 'guardian', $guardianFullName, $sourceLabel);
+                continue;
+            }
+
+            if ($excludedNationalIds->contains($guardianNationalId) || $parentNationalIds->contains($guardianNationalId)) {
+                continue;
+            }
+
+            $this->addCoveredDetail($detailsByNationalId, $guardianNationalId, 'guardian', $guardianFullName, $sourceLabel);
+        }
+
+        return collect($detailsByNationalId)
+            ->map(function (array $detail) {
+                $detail['roles'] = collect($detail['roles'])->unique()->values()->all();
+                $detail['sources'] = collect($detail['sources'])->unique()->values()->all();
+                $detail['role_label'] = $this->buildRoleLabel($detail['roles']);
+                return $detail;
+            })
+            ->sortBy('national_id')
+            ->values()
+            ->all();
+    }
+
+    private function addCoveredDetail(array &$detailsByNationalId, string $nationalId, string $role, string $name, string $sourceLabel): void
+    {
+        if (!isset($detailsByNationalId[$nationalId])) {
+            $detailsByNationalId[$nationalId] = [
+                'national_id' => $nationalId,
+                'name' => $name ?: '-',
+                'roles' => [$role],
+                'sources' => [$sourceLabel],
+            ];
+            return;
+        }
+
+        $detailsByNationalId[$nationalId]['roles'][] = $role;
+        $detailsByNationalId[$nationalId]['sources'][] = $sourceLabel;
+
+        if (($detailsByNationalId[$nationalId]['name'] === '-' || empty($detailsByNationalId[$nationalId]['name'])) && $name && $name !== '-') {
+            $detailsByNationalId[$nationalId]['name'] = $name;
+        }
+    }
+
+    private function buildRoleLabel(array $roles): string
+    {
+        $rolesCollection = collect($roles)->unique();
+
+        if ($rolesCollection->contains('father') && $rolesCollection->contains('guardian')) {
+            return 'پدر/سرپرست';
+        }
+
+        if ($rolesCollection->contains('mother') && $rolesCollection->contains('guardian')) {
+            return 'مادر/سرپرست';
+        }
+
+        if ($rolesCollection->contains('beneficiary') && $rolesCollection->contains('guardian')) {
+            return 'مددجو/سرپرست';
+        }
+
+        $labels = [
+            'beneficiary' => 'مددجو',
+            'father' => 'پدر',
+            'mother' => 'مادر',
+            'guardian' => 'سرپرست',
+        ];
+
+        return $rolesCollection
+            ->map(fn(string $role) => $labels[$role] ?? $role)
+            ->implode('/');
+    }
+
+    private function normalizeNationalId(?string $nationalId): ?string
+    {
+        if (!$nationalId) {
+            return null;
+        }
+
+        $normalized = preg_replace('/\D+/', '', trim($nationalId));
+
+        if (!$normalized || strlen($normalized) !== 10) {
+            return null;
+        }
+
+        return $normalized;
     }
 
 

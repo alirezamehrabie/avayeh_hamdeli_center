@@ -173,6 +173,48 @@
                                                     </tbody>
                                                 </table>
                                             </div>
+
+                                            <div class="mt-6 mb-3 flex items-center justify-between">
+                                                <h2 class="text-sm font-bold text-slate-700">جزئیات افراد مؤثر در آمار تحت پوشش</h2>
+                                                <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                                                    {{ count($this->getCoveredDetailsForWorker($worker->id)) }} نفر (بر پایه کد ملی)
+                                                </span>
+                                            </div>
+
+                                            <div class="overflow-x-auto">
+                                                <table class="min-w-full border-collapse text-xs">
+                                                    <thead class="bg-slate-50 text-slate-600">
+                                                        <tr>
+                                                            <th class="px-4 py-3 text-center font-bold">ردیف</th>
+                                                            <th class="px-4 py-3 text-center font-bold">کد ملی</th>
+                                                            <th class="px-4 py-3 text-right font-bold">نام</th>
+                                                            <th class="px-4 py-3 text-center font-bold">دسته</th>
+                                                            <th class="px-4 py-3 text-right font-bold">منبع ثبت</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="divide-y divide-slate-100">
+                                                        @forelse ($this->getCoveredDetailsForWorker($worker->id) as $detail)
+                                                            <tr class="transition hover:bg-slate-50">
+                                                                <td class="px-4 py-3 text-center font-medium text-slate-700">{{ $loop->iteration }}</td>
+                                                                <td class="px-4 py-3 text-center text-slate-700">{{ $detail['national_id'] }}</td>
+                                                                <td class="px-4 py-3 text-right text-slate-700">{{ $detail['name'] ?: '-' }}</td>
+                                                                <td class="px-4 py-3 text-center">
+                                                                    <span class="rounded-full bg-sky-100 px-2.5 py-1 text-[11px] font-semibold text-sky-700">
+                                                                        {{ $detail['role_label'] }}
+                                                                    </span>
+                                                                </td>
+                                                                <td class="px-4 py-3 text-right text-slate-600">{{ implode('، ', $detail['sources']) }}</td>
+                                                            </tr>
+                                                        @empty
+                                                            <tr>
+                                                                <td colspan="5" class="px-4 py-6 text-center text-slate-500">
+                                                                    موردی برای نمایش ثبت نشده است.
+                                                                </td>
+                                                            </tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                </table>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
