@@ -194,6 +194,19 @@
                                                     </thead>
                                                     <tbody class="divide-y divide-slate-100">
                                                         @forelse ($this->getCoveredDetailsForWorker($worker->id) as $detail)
+                                                            @php
+                                                                $details = $this->getCoveredDetailsForWorker($worker->id);
+                                                                $currentGuardianGroup = $detail['guardian_group'] ?? '-';
+                                                                $previousGuardianGroup = $loop->index > 0 ? ($details[$loop->index - 1]['guardian_group'] ?? '-') : null;
+                                                                $isNewSourceGroup = $loop->first || $currentGuardianGroup !== $previousGuardianGroup;
+                                                            @endphp
+                                                            @if($isNewSourceGroup)
+                                                                <tr class="bg-cyan-50/70">
+                                                                    <td colspan="5" class="px-4 py-2.5 text-right text-[11px] font-bold text-cyan-800">
+                                                                        سرپرست مشترک: {{ $currentGuardianGroup }}
+                                                                    </td>
+                                                                </tr>
+                                                            @endif
                                                             <tr class="transition hover:bg-slate-50">
                                                                 <td class="px-4 py-3 text-center font-medium text-slate-700">{{ $loop->iteration }}</td>
                                                                 <td class="px-4 py-3 text-center text-slate-700">{{ $detail['national_id'] }}</td>

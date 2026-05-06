@@ -205,20 +205,26 @@ class SocialWorker extends Model
             $beneficiaryFullName = trim(($person->first_name ?? '') . ' ' . ($person->last_name ?? '')) ?: '-';
             $guardianFullName = trim(($person->guardian?->first_name ?? '') . ' ' . ($person->guardian?->last_name ?? '')) ?: '-';
             $sourceLabel = $beneficiaryFullName . ($person->person_code ? " ({$person->person_code})" : '');
+            $guardianLabel = trim(($person->guardian?->first_name ?? '') . ' ' . ($person->guardian?->last_name ?? ''));
+            if ($guardianLabel === '') {
+                $guardianLabel = $guardianNationalId ? "سرپرست {$guardianNationalId}" : 'سرپرست نامشخص';
+            } elseif ($guardianNationalId) {
+                $guardianLabel .= " ({$guardianNationalId})";
+            }
 
             $harmTypeIds = $person->harmTypes->pluck('id')->toArray();
             $shouldExcludeFather = in_array(1, $harmTypeIds) || in_array(7, $harmTypeIds) || in_array(5, $harmTypeIds);
             $shouldExcludeMother = in_array(2, $harmTypeIds) || in_array(5, $harmTypeIds);
 
             if ($beneficiaryNationalId) {
-                $this->addCoveredDetail($detailsByNationalId, $beneficiaryNationalId, 'beneficiary', $beneficiaryFullName, $sourceLabel);
+                $this->addCoveredDetail($detailsByNationalId, $beneficiaryNationalId, 'beneficiary', $beneficiaryFullName, $sourceLabel, $guardianLabel);
             }
 
             if ($fatherNationalId) {
                 $parentNationalIds->push($fatherNationalId);
                 if (!$shouldExcludeFather) {
                     $fatherName = trim((string)$person->father_name) ?: '-';
-                    $this->addCoveredDetail($detailsByNationalId, $fatherNationalId, 'father', $fatherName, $sourceLabel);
+                    $this->addCoveredDetail($detailsByNationalId, $fatherNationalId, 'father', $fatherName, $sourceLabel, $guardianLabel);
                 } else {
                     $excludedNationalIds->push($fatherNationalId);
                 }
@@ -227,7 +233,7 @@ class SocialWorker extends Model
             if ($motherNationalId) {
                 $parentNationalIds->push($motherNationalId);
                 if (!$shouldExcludeMother) {
-                    $this->addCoveredDetail($detailsByNationalId, $motherNationalId, 'mother', '-', $sourceLabel);
+                    $this->addCoveredDetail($detailsByNationalId, $motherNationalId, 'mother', '-', $sourceLabel, $guardianLabel);
                 } else {
                     $excludedNationalIds->push($motherNationalId);
                 }
@@ -241,12 +247,12 @@ class SocialWorker extends Model
             $motherIncluded = $motherNationalId && !$shouldExcludeMother;
 
             if ($fatherIncluded && $guardianNationalId === $fatherNationalId) {
-                $this->addCoveredDetail($detailsByNationalId, $guardianNationalId, 'guardian', $guardianFullName, $sourceLabel);
+                $this->addCoveredDetail($detailsByNationalId, $guardianNationalId, 'guardian', $guardianFullName, $sourceLabel, $guardianLabel);
                 continue;
             }
 
             if ($motherIncluded && $guardianNationalId === $motherNationalId) {
-                $this->addCoveredDetail($detailsByNationalId, $guardianNationalId, 'guardian', $guardianFullName, $sourceLabel);
+                $this->addCoveredDetail($detailsByNationalId, $guardianNationalId, 'guardian', $guardianFullName, $sourceLabel, $guardianLabel);
                 continue;
             }
 
@@ -254,22 +260,34 @@ class SocialWorker extends Model
                 continue;
             }
 
-            $this->addCoveredDetail($detailsByNationalId, $guardianNationalId, 'guardian', $guardianFullName, $sourceLabel);
+            $this->addCoveredDetail($detailsByNationalId, $guardianNationalId, 'guardian', $guardianFullName, $sourceLabel, $guardianLabel);
         }
 
         return collect($detailsByNationalId)
             ->map(function (array $detail) {
                 $detail['roles'] = collect($detail['roles'])->unique()->values()->all();
                 $detail['sources'] = collect($detail['sources'])->unique()->values()->all();
+                $detail['guardians'] = collect($detail['guardians'])->unique()->values()->all();
+                $detail['guardian_group'] = $detail['guardians'][0] ?? '-';
                 $detail['role_label'] = $this->buildRoleLabel($detail['roles']);
                 return $detail;
             })
-            ->sortBy('national_id')
+            ->sortBy([
+                ['guardian_group', 'asc'],
+                ['national_id', 'asc'],
+            ])
             ->values()
             ->all();
     }
 
-    private function addCoveredDetail(array &$detailsByNationalId, string $nationalId, string $role, string $name, string $sourceLabel): void
+    private function addCoveredDetail(
+        array &$detailsByNationalId,
+        string $nationalId,
+        string $role,
+        string $name,
+        string $sourceLabel,
+        string $guardianLabel
+    ): void
     {
         if (!isset($detailsByNationalId[$nationalId])) {
             $detailsByNationalId[$nationalId] = [
@@ -277,12 +295,14 @@ class SocialWorker extends Model
                 'name' => $name ?: '-',
                 'roles' => [$role],
                 'sources' => [$sourceLabel],
+                'guardians' => [$guardianLabel],
             ];
             return;
         }
 
         $detailsByNationalId[$nationalId]['roles'][] = $role;
         $detailsByNationalId[$nationalId]['sources'][] = $sourceLabel;
+        $detailsByNationalId[$nationalId]['guardians'][] = $guardianLabel;
 
         if (($detailsByNationalId[$nationalId]['name'] === '-' || empty($detailsByNationalId[$nationalId]['name'])) && $name && $name !== '-') {
             $detailsByNationalId[$nationalId]['name'] = $name;
