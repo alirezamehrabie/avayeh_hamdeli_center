@@ -11,6 +11,7 @@ use App\Livewire\SocialWorkers\CreateSocialWorker;
 use App\Livewire\SocialWorkers\IndexSocialWorkers;
 use App\Livewire\SocialWorkers\DeletedSocialWorkers;
 use App\Livewire\Admin\DashboardHome;
+use App\Livewire\Admin\UserAccount;
 use App\Livewire\Admin\UserManagement;
 use App\Livewire\Auth\Login;
 
@@ -54,3 +55,7 @@ Route::get('/admin/dashboard', DashboardHome::class)
 Route::get('/admin/system-settings/users', UserManagement::class)
     ->middleware(['auth', 'can:access-admin-panel'])
     ->name('admin.user-management');
+
+Route::get('/admin/system-settings/user-account', UserAccount::class)
+    ->middleware(['auth'])
+    ->name('admin.user-account');
