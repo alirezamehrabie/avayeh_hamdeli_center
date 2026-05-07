@@ -123,7 +123,7 @@ class CreatePerson extends Component
     // --- 2. تعریف متغیرهای وضعیت خانوادگی ---
     public $guardian_relation_type_id;
     public $economic_decile;
-    public $remarried_parent;
+    public $remarried_parent = 'none';
     public $children_from_previous_marriage;
 
     public $has_parent_disability = false; // مقدار پیش‌فرض Boolean
@@ -313,6 +313,8 @@ class CreatePerson extends Component
                 $this->guardian_relation_type_id = $this->person->familyStatus->guardian_relation_type_id;
                 $this->remarried_parent = $this->person->familyStatus->remarried_parent;
                 $this->children_from_previous_marriage = $this->person->familyStatus->children_from_previous_marriage;
+                $this->has_parent_disability = (bool)$this->person->familyStatus->has_parent_disability;
+                $this->parent_disability_description = $this->person->familyStatus->parent_disability_description;
             }
 
 
@@ -828,6 +830,10 @@ class CreatePerson extends Component
 
     public function updatedRemarriedParent(): void
     {
+        if (trim((string)$this->remarried_parent) === 'none') {
+            $this->children_from_previous_marriage = 0;
+        }
+
         $this->recalculateChildrenInHouseRealtime();
     }
 
@@ -1702,6 +1708,10 @@ class CreatePerson extends Component
                 [
                     'remarried_parent' => $this->remarried_parent ?: null,
                     'children_from_previous_marriage' => (int)($this->children_from_previous_marriage ?? 0),
+                    'has_parent_disability' => (bool)$this->has_parent_disability,
+                    'parent_disability_description' => (bool)$this->has_parent_disability
+                        ? $this->parent_disability_description
+                        : null,
                 ]
             );
         }
