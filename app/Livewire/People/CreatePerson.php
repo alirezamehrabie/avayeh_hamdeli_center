@@ -5,6 +5,7 @@ namespace App\Livewire\People;
 use AllowDynamicProperties;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use App\Models\Person;
 use App\Models\FamilyStatus;
@@ -1141,7 +1142,7 @@ class CreatePerson extends Component
                     }
                 } else {
                     // ایجاد سرپرست جدید
-                    $guardianInstance = Guardian::create([
+                    $guardianPayload = [
                         'social_worker_id' => $this->social_worker_id,
                         'guardian_code' => Guardian::generateNextGuardianCode(),
                         'national_code' => $this->guardian_national_code,
@@ -1153,7 +1154,8 @@ class CreatePerson extends Component
                         'guardian_birth_date_full' => $guardianBirthDateFull,
                         'children_count' => 0,
                         'economic_decile' => $this->economic_decile ?: null,
-                    ]);
+                    ];
+                    $guardianInstance = $this->createGuardianSafely($guardianPayload);
                 }
 
                 // به‌روزرسانی اطلاعات سرپرست
@@ -1225,80 +1227,67 @@ class CreatePerson extends Component
                 $this->person->update($personUpdateData);
 
                 // --- 5. به‌روزرسانی وضعیت خانوادگی (FamilyStatus) ---
-                $this->person->familyStatus()->updateOrCreate(
-                    ['person_id' => $this->person->id],
-                    [
-                        'guardian_relation_type_id' => $this->guardian_relation_type_id,
-                        'remarried_parent' => $this->remarried_parent,
-                        'children_from_previous_marriage' => (int)$this->children_from_previous_marriage,
-                        'has_parent_disability' => (bool)$this->has_parent_disability,
-                        'parent_disability_description' => ((bool)$this->has_parent_disability) ? $this->parent_disability_description : null,
-                    ]
-                );
+                $this->atomicUpsert('family_statuses', ['person_id' => $this->person->id], [
+                    'guardian_relation_type_id' => $this->guardian_relation_type_id,
+                    'remarried_parent' => $this->remarried_parent,
+                    'children_from_previous_marriage' => (int)$this->children_from_previous_marriage,
+                    'has_parent_disability' => (bool)$this->has_parent_disability,
+                    'parent_disability_description' => ((bool)$this->has_parent_disability) ? $this->parent_disability_description : null,
+                ]);
                 $this->syncChildrenInHouseForParentGuardian($guardianInstance);
                 $this->syncFamilyStatusAcrossSiblings($this->person);
 
                 // --- 6. به‌روزرسانی اطلاعات سکونت (Residence) ---
-                \App\Models\Residence::updateOrCreate(
-                    ['guardian_id' => $guardianInstance->id],
-                    [
-                        'person_id' => $this->person->id,
-                        'residence_status_id' => $this->residence_status_id,
-                        'district_id' => $this->district_id ?: null,
-                        'is_local_to_city' => (bool)$this->is_local_to_city,
-                        'deposit_amount' => (int)$this->deposit_amount,
-                        'monthly_rent' => (int)$this->monthly_rent,
-                        'residence_duration_years' => (int)$this->residence_duration_years,
-                        'address' => $this->address,
-                    ]
-                );
+                $this->atomicUpsert('residences', ['guardian_id' => $guardianInstance->id], [
+                    'person_id' => $this->person->id,
+                    'residence_status_id' => $this->residence_status_id,
+                    'district_id' => $this->district_id ?: null,
+                    'is_local_to_city' => (bool)$this->is_local_to_city,
+                    'deposit_amount' => (int)$this->deposit_amount,
+                    'monthly_rent' => (int)$this->monthly_rent,
+                    'residence_duration_years' => (int)$this->residence_duration_years,
+                    'address' => $this->address,
+                ]);
 
                 // --- 7. به‌روزرسانی اطلاعات تماس (Contact) ---
-                \App\Models\Contact::updateOrCreate(
-                    ['guardian_id' => $guardianInstance->id],
-                    [
-                        'person_id' => $this->person->id,
-                        'landline_phone' => $this->landline_phone,
-                        'trusted_person_phone' => $this->trusted_person_phone,
-                        'messenger_type' => $this->messenger_type,
-                        'messenger_number' => $this->messenger_number,
-                    ]
-                );
+                $this->atomicUpsert('contacts', ['guardian_id' => $guardianInstance->id], [
+                    'person_id' => $this->person->id,
+                    'landline_phone' => $this->landline_phone,
+                    'trusted_person_phone' => $this->trusted_person_phone,
+                    'messenger_type' => $this->messenger_type,
+                    'messenger_number' => $this->messenger_number,
+                ]);
 
                 // --- 8. به‌روزرسانی اطلاعات بانکی (BankInfo) ---
                 if ($this->has_own_account == '1') {
                     // حساب شخصی مددجو
-                    BankInfo::updateOrCreate(
-                        ['person_id' => $this->person->id],
-                        [
-                            'guardian_id' => null,
-                            'bank_id' => $this->bank_id,
-                            'card_number' => $this->card_number,
-                            'sheba_number' => $this->sheba_number,
-                            'subsidy_card_number' => $this->subsidy_card_number,
-                            'subsidy_sheba_number' => $this->subsidy_sheba_number,
-                            'account_owner_relation_id' => $this->account_owner_relation_id,
-                            'other_account_owner_relation' => $this->other_account_owner_relation,
-                        ]
-                    );
+                    $this->atomicUpsert('bank_infos', ['person_id' => $this->person->id], [
+                        'guardian_id' => null,
+                        'has_own_account' => true,
+                        'bank_id' => $this->bank_id,
+                        'card_number' => $this->card_number,
+                        'sheba_number' => $this->sheba_number,
+                        'subsidy_card_number' => $this->subsidy_card_number,
+                        'subsidy_sheba_number' => $this->subsidy_sheba_number,
+                        'account_owner_relation_id' => $this->account_owner_relation_id,
+                        'other_account_owner_relation' => $this->other_account_owner_relation,
+                    ]);
                 } else {
                     // حساب سرپرست
                     // ابتدا اطلاعات بانکی مددجو را حذف کن (اگر وجود داشت)
                     BankInfo::where('person_id', $this->person->id)->delete();
 
-                    BankInfo::updateOrCreate(
-                        ['guardian_id' => $guardianInstance->id],
-                        [
-                            'person_id' => null,
-                            'bank_id' => $this->bank_id,
-                            'card_number' => $this->card_number,
-                            'sheba_number' => $this->sheba_number,
-                            'subsidy_card_number' => $this->subsidy_card_number,
-                            'subsidy_sheba_number' => $this->subsidy_sheba_number,
-                            'account_owner_relation_id' => $this->account_owner_relation_id,
-                            'other_account_owner_relation' => $this->other_account_owner_relation,
-                        ]
-                    );
+                    $this->atomicUpsert('bank_infos', ['guardian_id' => $guardianInstance->id], [
+                        'person_id' => null,
+                        'has_own_account' => false,
+                        'bank_id' => $this->bank_id,
+                        'card_number' => $this->card_number,
+                        'sheba_number' => $this->sheba_number,
+                        'subsidy_card_number' => $this->subsidy_card_number,
+                        'subsidy_sheba_number' => $this->subsidy_sheba_number,
+                        'account_owner_relation_id' => $this->account_owner_relation_id,
+                        'other_account_owner_relation' => $this->other_account_owner_relation,
+                    ]);
                 }
 
                 // --- 9. به‌روزرسانی اطلاعات تحصیلی (Education) ---
@@ -1329,20 +1318,14 @@ class CreatePerson extends Component
                     $supportCoverageData['support_card_image'] = $supportCardPath;
                 }
 
-                $this->person->supportCoverage()->updateOrCreate(
-                    ['person_id' => $this->person->id],
-                    $supportCoverageData
-                );
+                $this->atomicUpsert('support_coverages', ['person_id' => $this->person->id], $supportCoverageData);
 
                 // --- 11. به‌روزرسانی سطح نیاز (NeedsLevel) ---
-                $this->person->needsLevel()->updateOrCreate(
-                    ['person_id' => $this->person->id],
-                    [
-                        'need_level_id' => $this->need_level_id,
-                        'evaluation_date' => now(),
-                        'reviewer_name' => auth()->user()->name ?? 'سیستم',
-                    ]
-                );
+                $this->atomicUpsert('needs_levels', ['person_id' => $this->person->id], [
+                    'need_level_id' => $this->need_level_id,
+                    'evaluation_date' => now(),
+                    'reviewer_name' => auth()->user()->name ?? 'سیستم',
+                ]);
 
                 // --- 12. همگام‌سازی مهارت‌ها و آسیب‌ها ---
                 $this->person->skills()->sync($this->skills ?? []);
@@ -1386,7 +1369,7 @@ class CreatePerson extends Component
                         throw new \Exception("Existing guardian with ID {$this->current_guardian_id} not found.");
                     }
                 } else {
-                    $guardianInstance = Guardian::create([
+                    $guardianPayload = [
                         'social_worker_id' => $this->social_worker_id,
                         'guardian_code' => Guardian::generateNextGuardianCode(),
                         'national_code' => $this->guardian_national_code,
@@ -1398,7 +1381,8 @@ class CreatePerson extends Component
                         'guardian_birth_date_full' => $guardianBirthDateFull,
                         'children_count' => 0,
                         'economic_decile' => $this->economic_decile ?: null,
-                    ]);
+                    ];
+                    $guardianInstance = $this->createGuardianSafely($guardianPayload);
                 }
                 $guardian_id_to_assign = $guardianInstance->id;
 
@@ -1425,7 +1409,7 @@ class CreatePerson extends Component
                 }
 
                 // جدول 1: Person
-                $person = Person::create([
+                $personPayload = [
                     'first_name' => $this->first_name,
                     'last_name' => $this->last_name,
                     'national_id' => $this->national_id,
@@ -1448,15 +1432,15 @@ class CreatePerson extends Component
                     'disability_type_id' => ((bool)$this->has_disability) ? $this->disability_type_id : null,
                     'disability_description' => ((bool)$this->has_disability) ? $this->disability_description : null,
                     'guardian_id' => $guardian_id_to_assign,
-                ]);
+                ];
+                $person = $this->createPersonSafely($personPayload);
 
                 if ($isNewPerson) {
                     $guardianInstance->increment('children_count');
                 }
 
                 // جدول 2: FamilyStatus
-                FamilyStatus::create([
-                    'person_id' => $person->id,
+                $this->atomicUpsert('family_statuses', ['person_id' => $person->id], [
                     'guardian_relation_type_id' => $this->guardian_relation_type_id,
                     'remarried_parent' => $this->remarried_parent,
                     'children_from_previous_marriage' => (int)$this->children_from_previous_marriage,
@@ -1467,36 +1451,31 @@ class CreatePerson extends Component
                 $this->syncFamilyStatusAcrossSiblings($person);
 
                 // جدول 3: Residence
-                \App\Models\Residence::updateOrCreate(
-                    ['guardian_id' => $guardianInstance->id],
-                    [
-                        'person_id' => $person->id,
-                        'residence_status_id' => $this->residence_status_id,
-                        'district_id' => $this->district_id ?: null,
-                        'is_local_to_city' => (bool)$this->is_local_to_city,
-                        'deposit_amount' => (int)$this->deposit_amount,
-                        'monthly_rent' => (int)$this->monthly_rent,
-                        'residence_duration_years' => (int)$this->residence_duration_years,
-                        'address' => $this->address,
-                    ]
-                );
+                $this->atomicUpsert('residences', ['guardian_id' => $guardianInstance->id], [
+                    'person_id' => $person->id,
+                    'residence_status_id' => $this->residence_status_id,
+                    'district_id' => $this->district_id ?: null,
+                    'is_local_to_city' => (bool)$this->is_local_to_city,
+                    'deposit_amount' => (int)$this->deposit_amount,
+                    'monthly_rent' => (int)$this->monthly_rent,
+                    'residence_duration_years' => (int)$this->residence_duration_years,
+                    'address' => $this->address,
+                ]);
 
                 // جدول 4: Contact
-                \App\Models\Contact::updateOrCreate(
-                    ['guardian_id' => $guardianInstance->id],
-                    [
-                        'person_id' => $person->id,
-                        'landline_phone' => $this->landline_phone,
-                        'trusted_person_phone' => $this->trusted_person_phone,
-                        'messenger_type' => $this->messenger_type,
-                        'messenger_number' => $this->messenger_number,
-                    ]
-                );
+                $this->atomicUpsert('contacts', ['guardian_id' => $guardianInstance->id], [
+                    'person_id' => $person->id,
+                    'landline_phone' => $this->landline_phone,
+                    'trusted_person_phone' => $this->trusted_person_phone,
+                    'messenger_type' => $this->messenger_type,
+                    'messenger_number' => $this->messenger_number,
+                ]);
 
                 // جدول 5: BankInfo
                 if ($this->has_own_account == '1') {
-                    BankInfo::create([
-                        'person_id' => $person->id,
+                    $this->atomicUpsert('bank_infos', ['person_id' => $person->id], [
+                        'guardian_id' => null,
+                        'has_own_account' => true,
                         'bank_id' => $this->bank_id,
                         'card_number' => $this->card_number,
                         'sheba_number' => $this->sheba_number,
@@ -1506,18 +1485,17 @@ class CreatePerson extends Component
                         'other_account_owner_relation' => $this->other_account_owner_relation,
                     ]);
                 } else {
-                    BankInfo::updateOrCreate(
-                        ['guardian_id' => $guardianInstance->id],
-                        [
-                            'bank_id' => $this->bank_id,
-                            'card_number' => $this->card_number,
-                            'sheba_number' => $this->sheba_number,
-                            'subsidy_card_number' => $this->subsidy_card_number,
-                            'subsidy_sheba_number' => $this->subsidy_sheba_number,
-                            'account_owner_relation_id' => $this->account_owner_relation_id,
-                            'other_account_owner_relation' => $this->other_account_owner_relation,
-                        ]
-                    );
+                    $this->atomicUpsert('bank_infos', ['guardian_id' => $guardianInstance->id], [
+                        'person_id' => null,
+                        'has_own_account' => false,
+                        'bank_id' => $this->bank_id,
+                        'card_number' => $this->card_number,
+                        'sheba_number' => $this->sheba_number,
+                        'subsidy_card_number' => $this->subsidy_card_number,
+                        'subsidy_sheba_number' => $this->subsidy_sheba_number,
+                        'account_owner_relation_id' => $this->account_owner_relation_id,
+                        'other_account_owner_relation' => $this->other_account_owner_relation,
+                    ]);
                 }
 
                 // جدول 6: Education
@@ -1533,8 +1511,7 @@ class CreatePerson extends Component
                 ]);
 
                 // جدول 7: SupportCoverage
-                SupportCoverage::create([
-                    'person_id' => $person->id,
+                $this->atomicUpsert('support_coverages', ['person_id' => $person->id], [
                     'support_organization_id' => $this->support_organization_id,
                     'other_organization_name' => $this->other_organization_name,
                     'coverage_start_day' => $this->coverage_start_day ?: null,
@@ -1545,8 +1522,7 @@ class CreatePerson extends Component
                 ]);
 
                 // جدول 8: NeedsLevel
-                NeedsLevel::create([
-                    'person_id' => $person->id,
+                $this->atomicUpsert('needs_levels', ['person_id' => $person->id], [
                     'need_level_id' => $this->need_level_id,
                     'evaluation_date' => now(),
                     'reviewer_name' => auth()->user()->name ?? 'سیستم',
@@ -1637,6 +1613,65 @@ class CreatePerson extends Component
         }
 
         return null;
+    }
+
+    private function atomicUpsert(string $table, array $uniqueBy, array $values): void
+    {
+        $now = now();
+        $record = array_merge($uniqueBy, $values, [
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        $updateColumns = array_values(array_unique(array_merge(array_keys($values), ['updated_at'])));
+
+        DB::table($table)->upsert([$record], array_keys($uniqueBy), $updateColumns);
+    }
+
+    private function createGuardianSafely(array $attributes): Guardian
+    {
+        try {
+            return Guardian::create($attributes);
+        } catch (QueryException $e) {
+            if (!$this->isDuplicateKeyException($e)) {
+                throw $e;
+            }
+
+            $nationalCode = trim((string) ($attributes['national_code'] ?? ''));
+            if ($nationalCode === '') {
+                throw $e;
+            }
+
+            $existingGuardian = Guardian::where('national_code', $nationalCode)->first();
+            if (!$existingGuardian) {
+                throw $e;
+            }
+
+            return $existingGuardian;
+        }
+    }
+
+    private function createPersonSafely(array $attributes): Person
+    {
+        try {
+            return Person::create($attributes);
+        } catch (QueryException $e) {
+            if ($this->isDuplicateKeyException($e)) {
+                throw ValidationException::withMessages([
+                    'national_id' => 'این کد ملی قبلا ثبت شده است.',
+                ]);
+            }
+
+            throw $e;
+        }
+    }
+
+    private function isDuplicateKeyException(QueryException $exception): bool
+    {
+        $sqlState = $exception->errorInfo[0] ?? null;
+        $driverCode = $exception->errorInfo[1] ?? null;
+
+        return $sqlState === '23000' || $sqlState === '23505' || $driverCode === 1062 || $driverCode === 19;
     }
 
     private function syncPersonHarmTypesWithFamilyPropagation(Person $person, array $selectedHarmTypes): void
