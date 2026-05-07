@@ -155,6 +155,13 @@
     @if($this->selectedGuardian)
     @php
         $selectedGuardian = $this->selectedGuardian;
+        $extraHouseholdMembers = is_array($selectedGuardian->extra_household_members ?? null)
+            ? $selectedGuardian->extra_household_members
+            : [];
+        $extraHouseholdMembersCount = count($extraHouseholdMembers);
+        $childrenCount = (int)($selectedGuardian->children_count ?? $selectedGuardian->people_count ?? 0);
+        $childrenInHouse = (int)($selectedGuardian->children_in_house ?? 0);
+        $childrenFromPreviousMarriageApplied = max(0, $childrenInHouse - $childrenCount - $extraHouseholdMembersCount);
         $vehicleOwnershipLabels = [
             'personal' => 'شخصی',
             'company' => 'شراکتی',
@@ -277,6 +284,58 @@
                     <div class="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 md:col-span-2">
                         <p class="text-xs font-semibold text-slate-500">آدرس کامل</p>
                         <p class="mt-1 font-bold text-slate-800">{{ $selectedGuardian->residence?->address ?? '-' }}</p>
+                    </div>
+
+                    <div class="rounded-2xl border border-cyan-100 bg-cyan-50/60 p-4 md:col-span-2">
+                        <div class="mb-3">
+                            <p class="text-sm font-bold text-cyan-800">ترکیب اعضای خانوار</p>
+                            <p class="mt-1 text-xs text-slate-600">این بخش مبنای عدد «فرزندان ساکن در منزل» را شفاف نشان می‌دهد.</p>
+                        </div>
+
+                        <div class="grid gap-3 md:grid-cols-4">
+                            <div class="rounded-xl border border-cyan-100 bg-white p-3">
+                                <p class="text-[11px] font-semibold text-slate-500">تحت پوشش مرکز</p>
+                                <p class="mt-1 text-lg font-extrabold text-slate-800">{{ $childrenCount }}</p>
+                            </div>
+                            <div class="rounded-xl border border-violet-100 bg-white p-3">
+                                <p class="text-[11px] font-semibold text-slate-500">ازدواج قبلی</p>
+                                <p class="mt-1 text-lg font-extrabold text-violet-700">{{ $childrenFromPreviousMarriageApplied }}</p>
+                            </div>
+                            <div class="rounded-xl border border-emerald-100 bg-white p-3">
+                                <p class="text-[11px] font-semibold text-slate-500">افراد غیرمددجو</p>
+                                <p class="mt-1 text-lg font-extrabold text-emerald-700">{{ $extraHouseholdMembersCount }}</p>
+                            </div>
+                            <div class="rounded-xl border border-amber-100 bg-white p-3">
+                                <p class="text-[11px] font-semibold text-slate-500">ساکن در منزل (نهایی)</p>
+                                <p class="mt-1 text-lg font-extrabold text-amber-700">{{ $childrenInHouse }}</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-700">
+                            <span class="font-semibold">فرمول:</span>
+                            <span class="ms-1">{{ $childrenCount }}</span>
+                            <span class="mx-1">+</span>
+                            <span>{{ $childrenFromPreviousMarriageApplied }}</span>
+                            <span class="mx-1">+</span>
+                            <span>{{ $extraHouseholdMembersCount }}</span>
+                            <span class="mx-1">=</span>
+                            <span class="font-extrabold text-slate-900">{{ $childrenInHouse }}</span>
+                        </div>
+
+                        <div class="mt-3 rounded-xl border border-cyan-100 bg-white p-3">
+                            <p class="mb-2 text-xs font-semibold text-slate-600">شرح افراد غیرمددجو ساکن در منزل</p>
+                            @if($extraHouseholdMembersCount > 0)
+                                <div class="grid gap-2 md:grid-cols-3">
+                                    @foreach($extraHouseholdMembers as $member)
+                                        <div class="rounded-lg border border-slate-100 bg-slate-50 px-2 py-1.5 text-xs text-slate-700">
+                                            {{ $member['description'] ?? '-' }}
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="text-xs text-slate-500">برای این خانوار فرد غیرمددجو ثبت نشده است.</p>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>
