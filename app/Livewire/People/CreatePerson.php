@@ -40,7 +40,7 @@ use Livewire\Attributes\Layout;
 
 
 // برای استفاده از Rule::requiredIf
-use Carbon\Carbon;
+use App\Helpers\Carbon\Carbon;
 
 // برای تبدیل تاریخ شمسی به میلادی
 #[AllowDynamicProperties]
@@ -1809,7 +1809,7 @@ class CreatePerson extends Component
     {
         $this->validateCurrentStep();
         $this->markCurrentStepCompleted();
-        
+
         if ($this->current_step < $this->total_steps) {
             $this->current_step++;
         }
@@ -1837,7 +1837,7 @@ class CreatePerson extends Component
     {
         // Skip without validation, but still mark as completed
         $this->markCurrentStepCompleted();
-        
+
         if ($this->current_step < $this->total_steps) {
             $this->current_step++;
         }

@@ -29,6 +29,10 @@ Route::post('/logout', function () {
 })->name('logout');
 
 Route::get('/', function () {
+    if (auth()->check()) {
+        return redirect()->route('admin.dashboard');
+    }
+
     return redirect()->route('login');
 });
 

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Morilog\Jalali\Jalalian;
+use App\Helpers\Morilog\Jalalian;
 
 class Person extends Model
 {
