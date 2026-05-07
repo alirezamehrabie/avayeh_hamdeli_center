@@ -1095,6 +1095,16 @@ class CreatePerson extends Component
         return $this->support_organization_id == $this->support_organizations->where('slug', 'other')->first()?->id;
     }
 
+    private function shouldCreateGuardianRecord(): bool
+    {
+        // Do not create an identity-less guardian record.
+        return !(
+            trim((string) $this->guardian_national_code) === '' &&
+            trim((string) $this->guardian_first_name) === '' &&
+            trim((string) $this->guardian_last_name) === ''
+        );
+    }
+
     // --- متد Save (ذخیره نهایی) ---
     public function save()
     {
@@ -1140,7 +1150,7 @@ class CreatePerson extends Component
                     if (!$guardianInstance) {
                         throw new \Exception("سرپرست با شناسه {$this->current_guardian_id} یافت نشد.");
                     }
-                } else {
+                } elseif ($this->shouldCreateGuardianRecord()) {
                     // ایجاد سرپرست جدید
                     $guardianPayload = [
                         'social_worker_id' => $this->social_worker_id,
@@ -1158,27 +1168,29 @@ class CreatePerson extends Component
                     $guardianInstance = $this->createGuardianSafely($guardianPayload);
                 }
 
-                // به‌روزرسانی اطلاعات سرپرست
-                $guardianInstance->update([
-                    'social_worker_id' => $this->social_worker_id,
-                    'occupation_id' => $this->occupation_id,
-                    'job_type_id' => $this->job_type_id ?: null,
-                    'guardian_phone_number' => $this->guardian_phone_number,
-                    'children_in_house' => (int)$this->children_in_house,
-                    'extra_household_members' => $this->extra_household_members,
-                    'insurance_status' => (bool)$this->insurance_status,
-                    'insurance_type_id' => ((bool)$this->insurance_status) ? $this->insurance_type_id : null,
-                    'divorced_child_at_home' => $this->divorced_child_at_home ?: 'none',
-                    'average_income' => (int)$this->average_income,
-                    'any_family_employed' => (bool)$this->any_family_employed,
-                    'any_family_employed_description' => ((bool)$this->any_family_employed) ? $this->any_family_employed_description : null,
-                    'has_vehicle' => (bool)$this->has_vehicle,
-                    'vehicle_type_id' => ((bool)$this->has_vehicle) ? $this->vehicle_type_id : null,
-                    'vehicle_ownership_type' => ((bool)$this->has_vehicle) ? $this->vehicle_ownership_type : null,
-                ]);
+                // به‌روزرسانی اطلاعات سرپرست (در صورت وجود رکورد)
+                if ($guardianInstance) {
+                    $guardianInstance->update([
+                        'social_worker_id' => $this->social_worker_id,
+                        'occupation_id' => $this->occupation_id,
+                        'job_type_id' => $this->job_type_id ?: null,
+                        'guardian_phone_number' => $this->guardian_phone_number,
+                        'children_in_house' => (int)$this->children_in_house,
+                        'extra_household_members' => $this->extra_household_members,
+                        'insurance_status' => (bool)$this->insurance_status,
+                        'insurance_type_id' => ((bool)$this->insurance_status) ? $this->insurance_type_id : null,
+                        'divorced_child_at_home' => $this->divorced_child_at_home ?: 'none',
+                        'average_income' => (int)$this->average_income,
+                        'any_family_employed' => (bool)$this->any_family_employed,
+                        'any_family_employed_description' => ((bool)$this->any_family_employed) ? $this->any_family_employed_description : null,
+                        'has_vehicle' => (bool)$this->has_vehicle,
+                        'vehicle_type_id' => ((bool)$this->has_vehicle) ? $this->vehicle_type_id : null,
+                        'vehicle_ownership_type' => ((bool)$this->has_vehicle) ? $this->vehicle_ownership_type : null,
+                    ]);
+                }
 
                 // مدیریت تغییر سرپرست (کاهش/افزایش children_count)
-                if ($oldGuardianId != $guardianInstance->id) {
+                if ($guardianInstance && $oldGuardianId != $guardianInstance->id) {
                     // کاهش تعداد فرزندان سرپرست قبلی
                     if ($oldGuardianId) {
                         $oldGuardian = Guardian::find($oldGuardianId);
@@ -1210,7 +1222,7 @@ class CreatePerson extends Component
                     'has_disability' => (bool)$this->has_disability,
                     'disability_type_id' => ((bool)$this->has_disability) ? $this->disability_type_id : null,
                     'disability_description' => ((bool)$this->has_disability) ? $this->disability_description : null,
-                    'guardian_id' => $guardianInstance->id,
+                    'guardian_id' => $guardianInstance?->id,
                 ];
 
                 // فقط در صورت آپلود تصویر جدید، مسیر را به‌روز کن
@@ -1234,29 +1246,35 @@ class CreatePerson extends Component
                     'has_parent_disability' => (bool)$this->has_parent_disability,
                     'parent_disability_description' => ((bool)$this->has_parent_disability) ? $this->parent_disability_description : null,
                 ]);
-                $this->syncChildrenInHouseForParentGuardian($guardianInstance);
+                if ($guardianInstance) {
+                    $this->syncChildrenInHouseForParentGuardian($guardianInstance);
+                }
                 $this->syncFamilyStatusAcrossSiblings($this->person);
 
                 // --- 6. به‌روزرسانی اطلاعات سکونت (Residence) ---
-                $this->atomicUpsert('residences', ['guardian_id' => $guardianInstance->id], [
-                    'person_id' => $this->person->id,
-                    'residence_status_id' => $this->residence_status_id,
-                    'district_id' => $this->district_id ?: null,
-                    'is_local_to_city' => (bool)$this->is_local_to_city,
-                    'deposit_amount' => (int)$this->deposit_amount,
-                    'monthly_rent' => (int)$this->monthly_rent,
-                    'residence_duration_years' => (int)$this->residence_duration_years,
-                    'address' => $this->address,
-                ]);
+                if ($guardianInstance) {
+                    $this->atomicUpsert('residences', ['guardian_id' => $guardianInstance->id], [
+                        'person_id' => $this->person->id,
+                        'residence_status_id' => $this->residence_status_id,
+                        'district_id' => $this->district_id ?: null,
+                        'is_local_to_city' => (bool)$this->is_local_to_city,
+                        'deposit_amount' => (int)$this->deposit_amount,
+                        'monthly_rent' => (int)$this->monthly_rent,
+                        'residence_duration_years' => (int)$this->residence_duration_years,
+                        'address' => $this->address,
+                    ]);
+                }
 
                 // --- 7. به‌روزرسانی اطلاعات تماس (Contact) ---
-                $this->atomicUpsert('contacts', ['guardian_id' => $guardianInstance->id], [
-                    'person_id' => $this->person->id,
-                    'landline_phone' => $this->landline_phone,
-                    'trusted_person_phone' => $this->trusted_person_phone,
-                    'messenger_type' => $this->messenger_type,
-                    'messenger_number' => $this->messenger_number,
-                ]);
+                if ($guardianInstance) {
+                    $this->atomicUpsert('contacts', ['guardian_id' => $guardianInstance->id], [
+                        'person_id' => $this->person->id,
+                        'landline_phone' => $this->landline_phone,
+                        'trusted_person_phone' => $this->trusted_person_phone,
+                        'messenger_type' => $this->messenger_type,
+                        'messenger_number' => $this->messenger_number,
+                    ]);
+                }
 
                 // --- 8. به‌روزرسانی اطلاعات بانکی (BankInfo) ---
                 if ($this->has_own_account == '1') {
@@ -1277,17 +1295,19 @@ class CreatePerson extends Component
                     // ابتدا اطلاعات بانکی مددجو را حذف کن (اگر وجود داشت)
                     BankInfo::where('person_id', $this->person->id)->delete();
 
-                    $this->atomicUpsert('bank_infos', ['guardian_id' => $guardianInstance->id], [
-                        'person_id' => null,
-                        'has_own_account' => false,
-                        'bank_id' => $this->bank_id,
-                        'card_number' => $this->card_number,
-                        'sheba_number' => $this->sheba_number,
-                        'subsidy_card_number' => $this->subsidy_card_number,
-                        'subsidy_sheba_number' => $this->subsidy_sheba_number,
-                        'account_owner_relation_id' => $this->account_owner_relation_id,
-                        'other_account_owner_relation' => $this->other_account_owner_relation,
-                    ]);
+                    if ($guardianInstance) {
+                        $this->atomicUpsert('bank_infos', ['guardian_id' => $guardianInstance->id], [
+                            'person_id' => null,
+                            'has_own_account' => false,
+                            'bank_id' => $this->bank_id,
+                            'card_number' => $this->card_number,
+                            'sheba_number' => $this->sheba_number,
+                            'subsidy_card_number' => $this->subsidy_card_number,
+                            'subsidy_sheba_number' => $this->subsidy_sheba_number,
+                            'account_owner_relation_id' => $this->account_owner_relation_id,
+                            'other_account_owner_relation' => $this->other_account_owner_relation,
+                        ]);
+                    }
                 }
 
                 // --- 9. به‌روزرسانی اطلاعات تحصیلی (Education) ---
@@ -1368,7 +1388,7 @@ class CreatePerson extends Component
                     if (!$guardianInstance) {
                         throw new \Exception("Existing guardian with ID {$this->current_guardian_id} not found.");
                     }
-                } else {
+                } elseif ($this->shouldCreateGuardianRecord()) {
                     $guardianPayload = [
                         'social_worker_id' => $this->social_worker_id,
                         'guardian_code' => Guardian::generateNextGuardianCode(),
@@ -1384,7 +1404,7 @@ class CreatePerson extends Component
                     ];
                     $guardianInstance = $this->createGuardianSafely($guardianPayload);
                 }
-                $guardian_id_to_assign = $guardianInstance->id;
+                $guardian_id_to_assign = $guardianInstance?->id;
 
                 if ($guardianInstance) {
                     $guardianInstance->update([
@@ -1404,8 +1424,6 @@ class CreatePerson extends Component
                         'vehicle_type_id' => ((bool)$this->has_vehicle) ? $this->vehicle_type_id : null,
                         'vehicle_ownership_type' => ((bool)$this->has_vehicle) ? $this->vehicle_ownership_type : null,
                     ]);
-                } else {
-                    throw new \Exception("Failed to retrieve or create guardian instance for ID: " . ($this->current_guardian_id ?? 'new'));
                 }
 
                 // جدول 1: Person
@@ -1435,7 +1453,7 @@ class CreatePerson extends Component
                 ];
                 $person = $this->createPersonSafely($personPayload);
 
-                if ($isNewPerson) {
+                if ($isNewPerson && $guardianInstance) {
                     $guardianInstance->increment('children_count');
                 }
 
@@ -1447,29 +1465,35 @@ class CreatePerson extends Component
                     'has_parent_disability' => (bool)$this->has_parent_disability,
                     'parent_disability_description' => ((bool)$this->has_parent_disability) ? $this->parent_disability_description : null,
                 ]);
-                $this->syncChildrenInHouseForParentGuardian($guardianInstance);
+                if ($guardianInstance) {
+                    $this->syncChildrenInHouseForParentGuardian($guardianInstance);
+                }
                 $this->syncFamilyStatusAcrossSiblings($person);
 
                 // جدول 3: Residence
-                $this->atomicUpsert('residences', ['guardian_id' => $guardianInstance->id], [
-                    'person_id' => $person->id,
-                    'residence_status_id' => $this->residence_status_id,
-                    'district_id' => $this->district_id ?: null,
-                    'is_local_to_city' => (bool)$this->is_local_to_city,
-                    'deposit_amount' => (int)$this->deposit_amount,
-                    'monthly_rent' => (int)$this->monthly_rent,
-                    'residence_duration_years' => (int)$this->residence_duration_years,
-                    'address' => $this->address,
-                ]);
+                if ($guardianInstance) {
+                    $this->atomicUpsert('residences', ['guardian_id' => $guardianInstance->id], [
+                        'person_id' => $person->id,
+                        'residence_status_id' => $this->residence_status_id,
+                        'district_id' => $this->district_id ?: null,
+                        'is_local_to_city' => (bool)$this->is_local_to_city,
+                        'deposit_amount' => (int)$this->deposit_amount,
+                        'monthly_rent' => (int)$this->monthly_rent,
+                        'residence_duration_years' => (int)$this->residence_duration_years,
+                        'address' => $this->address,
+                    ]);
+                }
 
                 // جدول 4: Contact
-                $this->atomicUpsert('contacts', ['guardian_id' => $guardianInstance->id], [
-                    'person_id' => $person->id,
-                    'landline_phone' => $this->landline_phone,
-                    'trusted_person_phone' => $this->trusted_person_phone,
-                    'messenger_type' => $this->messenger_type,
-                    'messenger_number' => $this->messenger_number,
-                ]);
+                if ($guardianInstance) {
+                    $this->atomicUpsert('contacts', ['guardian_id' => $guardianInstance->id], [
+                        'person_id' => $person->id,
+                        'landline_phone' => $this->landline_phone,
+                        'trusted_person_phone' => $this->trusted_person_phone,
+                        'messenger_type' => $this->messenger_type,
+                        'messenger_number' => $this->messenger_number,
+                    ]);
+                }
 
                 // جدول 5: BankInfo
                 if ($this->has_own_account == '1') {
@@ -1485,17 +1509,19 @@ class CreatePerson extends Component
                         'other_account_owner_relation' => $this->other_account_owner_relation,
                     ]);
                 } else {
-                    $this->atomicUpsert('bank_infos', ['guardian_id' => $guardianInstance->id], [
-                        'person_id' => null,
-                        'has_own_account' => false,
-                        'bank_id' => $this->bank_id,
-                        'card_number' => $this->card_number,
-                        'sheba_number' => $this->sheba_number,
-                        'subsidy_card_number' => $this->subsidy_card_number,
-                        'subsidy_sheba_number' => $this->subsidy_sheba_number,
-                        'account_owner_relation_id' => $this->account_owner_relation_id,
-                        'other_account_owner_relation' => $this->other_account_owner_relation,
-                    ]);
+                    if ($guardianInstance) {
+                        $this->atomicUpsert('bank_infos', ['guardian_id' => $guardianInstance->id], [
+                            'person_id' => null,
+                            'has_own_account' => false,
+                            'bank_id' => $this->bank_id,
+                            'card_number' => $this->card_number,
+                            'sheba_number' => $this->sheba_number,
+                            'subsidy_card_number' => $this->subsidy_card_number,
+                            'subsidy_sheba_number' => $this->subsidy_sheba_number,
+                            'account_owner_relation_id' => $this->account_owner_relation_id,
+                            'other_account_owner_relation' => $this->other_account_owner_relation,
+                        ]);
+                    }
                 }
 
                 // جدول 6: Education
