@@ -130,7 +130,7 @@ class Person extends Model
         }
 
         try {
-            $currentYear = Jalalian::now()->getYear();
+            $currentYear = self::resolveJalalianNow()->getYear();
             return $currentYear - $this->birth_year;
         } catch (\Exception $e) {
             return null;
@@ -148,7 +148,7 @@ class Person extends Model
         }
 
         try {
-            $now = Jalalian::now();
+            $now = self::resolveJalalianNow();
 
             $currentYear = $now->getYear();
             $currentMonth = $now->getMonth();
@@ -229,7 +229,7 @@ class Person extends Model
     public function scopeAgeRange($query, int $minAge, int $maxAge)
     {
         try {
-            $currentYear = Jalalian::now()->getYear();
+            $currentYear = self::resolveJalalianNow()->getYear();
         } catch (\Exception $e) {
             $currentYear = (int) jdate('Y');
         }
@@ -247,7 +247,7 @@ class Person extends Model
     public function scopeBirthdayThisMonth($query)
     {
         try {
-            $currentMonth = Jalalian::now()->getMonth();
+            $currentMonth = self::resolveJalalianNow()->getMonth();
         } catch (\Exception $e) {
             $currentMonth = (int) jdate('m');
         }
@@ -329,6 +329,20 @@ class Person extends Model
     public function restoreSupervision(): bool
     {
         return (bool) $this->restore();
+    }
+
+    private static function resolveJalalianNow()
+    {
+        if (class_exists(Jalalian::class)) {
+            return Jalalian::now();
+        }
+
+        $legacyClass = 'Morilog\\Jalali\\Jalalian';
+        if (class_exists($legacyClass)) {
+            return $legacyClass::now();
+        }
+
+        throw new \RuntimeException('No Jalalian implementation is available.');
     }
 
 
