@@ -10,13 +10,14 @@ class AdminUserSeeder extends Seeder
 {
     public function run(): void
     {
-        // ایجاد یک کاربر با مشخصات مدیر
+        // ایجاد/به‌روزرسانی حساب مدیریت اصلی سیستم (غیرقابل حذف/تنزل)
         User::updateOrCreate(
-            ['email' => 'admin@avayeh-hamdeli.ir'], // اگر این ایمیل وجود نداشت بساز، اگر داشت آپدیت کن
+            ['email' => User::PRIMARY_ADMIN_EMAIL],
             [
-                'name' => 'مدیر سیستم',
-                'password' => Hash::make('123456'), // حتماً بعداً رمز را تغییر دهید
-                'is_admin' => true, // تنظیم به عنوان مدیر
+                'name' => User::PRIMARY_ADMIN_USERNAME,
+                'password' => Hash::make('admin123'),
+                'is_admin' => true,
+                'access_level' => User::ACCESS_LEVEL_MANAGER,
             ]
         );
     }

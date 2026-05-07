@@ -57,6 +57,7 @@ class DashboardHome extends Component
             'advanced-beneficiary-report',
             'advanced-supervisor-report',
             'advanced-social-worker-report',
+            'system-settings-user-management',
         ];
 
         if (!in_array($this->activeSection, $validSections, true)) {

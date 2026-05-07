@@ -159,6 +159,10 @@
                         </div>
                         @break
 
+                    @case('system-settings-user-management')
+                        <livewire:admin.user-management :key="'system-settings-user-management'" />
+                        @break
+
                     @default
                         <div>
                             <h1 class="text-2xl font-bold text-gray-800 mb-6">خلاصه وضعیت مرکز نیکوکاری</h1>

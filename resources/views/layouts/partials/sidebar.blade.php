@@ -22,7 +22,16 @@
         $socialWorkersOpen = $dashboardMode ? $isActive(['social-workers-list', 'social-workers-block-list', 'social-worker-create', 'social-worker-edit']) : request()->routeIs('social-workers.*');
         $guardiansOpen = $dashboardMode ? $isActive(['guardians-list']) : false;
         $reportsOpen = $dashboardMode ? $isActive(['advanced-reports', 'advanced-beneficiary-report', 'advanced-supervisor-report', 'advanced-social-worker-report']) : false;
-        $defaultOpenMenu = $peopleOpen ? 'people' : ($socialWorkersOpen ? 'social-workers' : ($guardiansOpen ? 'guardians' : ($reportsOpen ? 'reports' : '')));
+        $systemSettingsOpen = $dashboardMode ? $isActive(['system-settings-user-management']) : request()->routeIs('admin.user-management');
+        $defaultOpenMenu = $peopleOpen
+            ? 'people'
+            : ($socialWorkersOpen
+                ? 'social-workers'
+                : ($guardiansOpen
+                    ? 'guardians'
+                    : ($reportsOpen
+                        ? 'reports'
+                        : ($systemSettingsOpen ? 'system-settings' : ''))));
     @endphp
 
     <nav x-data="{ openMenu: '{{ $defaultOpenMenu }}' }" class="flex-1 space-y-2">
@@ -143,6 +152,38 @@
                 <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6m4 6V7m4 10v-4M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
                 <span>Advanced Reports</span>
             </a>
+        @endif
+
+        @if($dashboardMode)
+            <div>
+                <button type="button" @click="openMenu = openMenu === 'system-settings' ? '' : 'system-settings'" class="flex items-center justify-between w-full px-4 py-3 rounded-lg hover:bg-indigo-800 {{ $isActive(['system-settings-user-management']) ? 'bg-indigo-700' : '' }}">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-1.14 1.603-1.14 1.902 0a1.724 1.724 0 002.573 1.01c1-.58 2.18.6 1.6 1.6a1.724 1.724 0 001.01 2.573c1.14.3 1.14 1.603 0 1.902a1.724 1.724 0 00-1.01 2.573c.58 1-.6 2.18-1.6 1.6a1.724 1.724 0 00-2.573 1.01c-.3 1.14-1.603 1.14-1.902 0a1.724 1.724 0 00-2.573-1.01c-1 .58-2.18-.6-1.6-1.6a1.724 1.724 0 00-1.01-2.573c-1.14-.3-1.14-1.603 0-1.902a1.724 1.724 0 001.01-2.573c-.58-1 .6-2.18 1.6-1.6a1.724 1.724 0 002.573-1.01z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7z"></path></svg>
+                        <span>تنظیمات سیستم</span>
+                    </div>
+                    <svg :class="openMenu === 'system-settings' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div x-show="openMenu === 'system-settings'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
+                    <button type="button" wire:click="selectSection('system-settings-user-management')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'system-settings-user-management' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
+                        مدیریت کاربران
+                    </button>
+                </div>
+            </div>
+        @else
+            <div>
+                <button type="button" @click="openMenu = openMenu === 'system-settings' ? '' : 'system-settings'" class="flex items-center justify-between w-full px-4 py-3 rounded-lg hover:bg-indigo-800 {{ request()->routeIs('admin.user-management') ? 'bg-indigo-700' : '' }}">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-1.14 1.603-1.14 1.902 0a1.724 1.724 0 002.573 1.01c1-.58 2.18.6 1.6 1.6a1.724 1.724 0 001.01 2.573c1.14.3 1.14 1.603 0 1.902a1.724 1.724 0 00-1.01 2.573c.58 1-.6 2.18-1.6 1.6a1.724 1.724 0 00-2.573 1.01c-.3 1.14-1.603 1.14-1.902 0a1.724 1.724 0 00-2.573-1.01c-1 .58-2.18-.6-1.6-1.6a1.724 1.724 0 00-1.01-2.573c-1.14-.3-1.14-1.603 0-1.902a1.724 1.724 0 001.01-2.573c-.58-1 .6-2.18 1.6-1.6a1.724 1.724 0 002.573-1.01z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7z"></path></svg>
+                        <span>تنظیمات سیستم</span>
+                    </div>
+                    <svg :class="openMenu === 'system-settings' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div x-show="openMenu === 'system-settings'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
+                    <a href="{{ route('admin.user-management') }}" class="block px-4 py-2 text-sm {{ request()->routeIs('admin.user-management') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
+                        مدیریت کاربران
+                    </a>
+                </div>
+            </div>
         @endif
 
     </nav>

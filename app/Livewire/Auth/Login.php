@@ -20,21 +20,26 @@ class Login extends Component
     public $portal = 'admin';
 
     protected $rules = [
-        'email' => 'required|email',
+        'email' => 'required|string',
         'password' => 'required|min:6',
         'portal' => 'required|in:admin,user',
     ];
 
     public function login()
     {
-        $this->email = Str::lower(trim((string) $this->email));
+        $loginInput = Str::lower(trim((string) $this->email));
+        $this->email = $loginInput;
         $this->validate();
         $this->ensureIsNotRateLimited();
 
-        if (Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
+        $credentials = filter_var($loginInput, FILTER_VALIDATE_EMAIL)
+            ? ['email' => $loginInput, 'password' => $this->password]
+            : ['name' => $loginInput, 'password' => $this->password];
+
+        if (Auth::attempt($credentials, $this->remember)) {
             session()->regenerate();
 
-            $isAdmin = (bool) auth()->user()->is_admin;
+            $isAdmin = auth()->user()->isAdmin();
             if (($this->portal === 'admin' && ! $isAdmin) || ($this->portal === 'user' && $isAdmin)) {
                 Auth::logout();
                 session()->regenerate();
