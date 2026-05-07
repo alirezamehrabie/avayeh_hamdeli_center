@@ -225,7 +225,7 @@
                                     @error('sadaat_status') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                                 </div>
 
-                                @if($sadaat_status === 'سادات')
+                                @if($sadaat_status === 'sadaat')
                                     <div class="col-md-4">
                                         <label class="form-label small fw-semibold mb-1">نسب سادات <span class="text-danger">*</span></label>
                                         <select wire:model.blur="sadaat_relation_id" class="form-select form-select-sm @error('sadaat_relation_id') is-invalid @enderror" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">

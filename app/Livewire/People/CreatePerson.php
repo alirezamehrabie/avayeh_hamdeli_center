@@ -1439,7 +1439,7 @@ class CreatePerson extends Component
                     'gender' => $this->gender,
                     'role' => $this->role,
                     'sadaat_status' => $this->sadaat_status,
-                    'sadaat_relation_id' => ($this->sadaat_status === 'سادات') ? $this->sadaat_relation_id : null,
+                    'sadaat_relation_id' => ($this->sadaat_status === 'sadaat') ? $this->sadaat_relation_id : null,
                     'skills_description' => $this->skills_description,
                     'profile_photo' => $profilePhotoPath,
                     'photo_id_card' => $idCardPath,

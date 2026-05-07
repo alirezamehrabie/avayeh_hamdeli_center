@@ -10,14 +10,9 @@
                     <img class="w-56" src="{{ asset('/images/logo-sm.png') }}" alt="لوگوی آوای همدلی">
                     <h1 class="mt-8 text-3xl font-black leading-tight text-slate-800">سامانه آوای همدلی</h1>
                     <p class="mt-4 text-sm leading-7 text-slate-600">
-                        یک بستر امن برای مدیریت خدمات، پیگیری امور مددجویان و هماهنگی بهتر میان کاربران و مدیران.
+                        یک بستر امن برای مدیریت، پیگیری امور مددجویان و هماهنگی بهتر میان کاربران و مدیران.
                     </p>
                 </div>
-                <ul class="space-y-3 text-sm text-slate-600">
-                    <li>طراحی واکنش گرا برای موبایل، تبلت و دسکتاپ</li>
-                    <li>ورود امن با محدودسازی تلاش های ناموفق</li>
-                    <li>تجربه کاربری ساده و سریع برای همه نقش ها</li>
-                </ul>
             </section>
 
             <section class="p-6 sm:p-10 lg:p-12">

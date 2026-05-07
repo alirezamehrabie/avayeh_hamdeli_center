@@ -31,7 +31,6 @@ class User extends Authenticatable
         'profile_photo_path',
         'is_admin',
         'access_level',
-
     ];
 
     /**
