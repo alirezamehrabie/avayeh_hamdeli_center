@@ -986,7 +986,7 @@
                             @error('job_type_id') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label small fw-semibold mb-1">تعداد فرزندان تحت پوشش مرکز</label>
                             <div class="border rounded-3 px-3 py-2 d-flex align-items-center justify-content-between" style="background: #f8fafc; border-color: #dbe3ec !important; min-height: 42px;">
                                 <span class="text-muted small">تعداد ثبت‌شده</span>
@@ -995,10 +995,57 @@
                             @error('children_count') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label small fw-semibold mb-1">تعداد فرزندان ساکن در منزل</label>
-                            <input type="number" class="form-control form-control-sm @error('children_in_house') is-invalid @enderror" wire:model.blur="children_in_house" min="0" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                            <input disabled type="number" class="form-control form-control-sm @error('children_in_house') is-invalid @enderror" wire:model.blur="children_in_house" min="0" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                             @error('children_in_house') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold mb-1">افراد غیرمددجو ساکن در منزل</label>
+                            <div class="border rounded-3 p-2" style="background: #f8fafc; border-color: #dbe3ec !important;">
+                                <div class="d-flex gap-2 align-items-center">
+                                    <input
+                                        type="text"
+                                        class="form-control form-control-sm"
+                                        wire:model.defer="new_extra_household_member_description"
+                                        placeholder="مثال: خاله مجرد، فرزند طلاق"
+                                        style="border-radius: 10px; background: #ffffff; border-color: #dbe3ec; min-height: 38px;"
+                                    >
+                                    <button
+                                        type="button"
+                                        wire:click="addExtraHouseholdMember"
+                                        class="btn btn-sm text-white px-3"
+                                        style="background: #53BEEA; border-radius: 10px; min-height: 38px; white-space: nowrap;"
+                                    >
+                                        + افزودن نفر
+                                    </button>
+                                </div>
+
+                                @if(!empty($extra_household_members))
+                                    <div class="mt-2 row g-2">
+                                        @foreach($extra_household_members as $index => $member)
+                                            <div class="col-12 col-md-4">
+                                                <div class="d-flex justify-content-between align-items-center rounded-2 px-2 py-1 h-100" style="background: #ffffff; border: 1px solid #e5edf5;">
+                                                    <span class="small text-slate-700 text-truncate pe-2" title="{{ $member['description'] ?? '-' }}">{{ $member['description'] ?? '-' }}</span>
+                                                    <button
+                                                        type="button"
+                                                        wire:click="removeExtraHouseholdMember({{ $index }})"
+                                                        class="btn btn-sm p-0 text-danger"
+                                                        style="font-size: 12px; white-space: nowrap;"
+                                                    >
+                                                        حذف
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
+
+                                <div class="mt-2 small text-muted">
+                                    مجموع افراد افزوده‌شده: {{ count($extra_household_members ?? []) }} نفر
+                                </div>
+                            </div>
                         </div>
 
                         <div class="col-md-4">
@@ -1028,19 +1075,6 @@
                             @error('insurance_type_id') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
-                        {{-- فرزندان طلاق در منزل (جدید) --}}
-                        <div class="col-md-4">
-                            <label class="form-label small fw-semibold mb-1">فرزندان مطلقه در منزل</label>
-                            <select class="form-select form-select-sm @error('divorced_child_at_home') is-invalid @enderror" wire:model="divorced_child_at_home" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
-                                <option value="">انتخاب کنید...</option>
-                                <option value="none">ندارد</option>
-                                <option value="boy">فقط پسر</option>
-                                <option value="girl">فقط دختر</option>
-                                <option value="both">پسر و دختر</option>
-                            </select>
-                            @error('divorced_child_at_home') <span
-                                class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
 
                         <div class="col-md-4">
                             <label class="form-label small fw-semibold mb-1">متوسط درآمد ماهیانه (ریال)</label>

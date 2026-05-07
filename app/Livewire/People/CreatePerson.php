@@ -148,6 +148,8 @@ class CreatePerson extends Component
     public $guardian_phone_number;
     public $children_count;
     public $children_in_house;
+    public $extra_household_members = [];
+    public $new_extra_household_member_description = '';
     public $insurance_status = '0';
     public $insurance_type_id;
     public $divorced_child_at_home = 'none';
@@ -684,6 +686,8 @@ class CreatePerson extends Component
         $this->children_count = null;
         $this->economic_decile = null;
         $this->children_in_house = null;
+        $this->extra_household_members = [];
+        $this->new_extra_household_member_description = '';
         $this->insurance_status = '0';
         $this->insurance_type_id = null;
         $this->divorced_child_at_home = null;
@@ -743,6 +747,7 @@ class CreatePerson extends Component
         $this->children_count = $guardian->children_count;
         $this->economic_decile = $guardian->economic_decile;
         $this->children_in_house = $guardian->children_in_house;
+        $this->extra_household_members = is_array($guardian->extra_household_members) ? $guardian->extra_household_members : [];
         $this->insurance_type_id = $guardian->insurance_type_id;
         $this->divorced_child_at_home = $guardian->divorced_child_at_home;
         $this->any_family_employed_description = $guardian->any_family_employed_description;
@@ -829,6 +834,29 @@ class CreatePerson extends Component
     public function updatedChildrenCount($value): void
     {
         $this->children_count = is_numeric($value) ? (int)$value : 0;
+        $this->recalculateChildrenInHouseRealtime();
+    }
+
+    public function addExtraHouseholdMember(): void
+    {
+        $description = trim((string)$this->new_extra_household_member_description);
+        if ($description === '') {
+            return;
+        }
+
+        $this->extra_household_members[] = ['description' => $description];
+        $this->new_extra_household_member_description = '';
+        $this->recalculateChildrenInHouseRealtime();
+    }
+
+    public function removeExtraHouseholdMember(int $index): void
+    {
+        if (!isset($this->extra_household_members[$index])) {
+            return;
+        }
+
+        unset($this->extra_household_members[$index]);
+        $this->extra_household_members = array_values($this->extra_household_members);
         $this->recalculateChildrenInHouseRealtime();
     }
 
@@ -1129,6 +1157,7 @@ class CreatePerson extends Component
                     'job_type_id' => $this->job_type_id ?: null,
                     'guardian_phone_number' => $this->guardian_phone_number,
                     'children_in_house' => (int)$this->children_in_house,
+                    'extra_household_members' => $this->extra_household_members,
                     'insurance_status' => (bool)$this->insurance_status,
                     'insurance_type_id' => ((bool)$this->insurance_status) ? $this->insurance_type_id : null,
                     'divorced_child_at_home' => $this->divorced_child_at_home ?: 'none',
@@ -1374,6 +1403,7 @@ class CreatePerson extends Component
                         'job_type_id' => $this->job_type_id ?: null,
                         'guardian_phone_number' => $this->guardian_phone_number,
                         'children_in_house' => (int)$this->children_in_house,
+                        'extra_household_members' => $this->extra_household_members,
                         'insurance_status' => (bool)$this->insurance_status,
                         'insurance_type_id' => ((bool)$this->insurance_status) ? $this->insurance_type_id : null,
                         'divorced_child_at_home' => $this->divorced_child_at_home ?: 'none',
@@ -1685,9 +1715,10 @@ class CreatePerson extends Component
 
         $childrenFromPreviousMarriage = (int)($this->children_from_previous_marriage ?? 0);
         $childrenCount = (int)($guardian->children_count ?? 0);
+        $extraHouseholdCount = count($this->extra_household_members ?? []);
 
         $guardian->update([
-            'children_in_house' => $childrenCount + $childrenFromPreviousMarriage,
+            'children_in_house' => $childrenCount + $childrenFromPreviousMarriage + $extraHouseholdCount,
         ]);
     }
 
@@ -1695,13 +1726,14 @@ class CreatePerson extends Component
     {
         $childrenCount = (int)($this->children_count ?? 0);
         $childrenFromPreviousMarriage = max(0, (int)($this->children_from_previous_marriage ?? 0));
+        $extraHouseholdCount = count($this->extra_household_members ?? []);
 
         if (!$this->isParentGuardianWithRelevantRemarriage()) {
-            $this->children_in_house = $childrenCount;
+            $this->children_in_house = $childrenCount + $extraHouseholdCount;
             return;
         }
 
-        $this->children_in_house = $childrenCount + $childrenFromPreviousMarriage;
+        $this->children_in_house = $childrenCount + $childrenFromPreviousMarriage + $extraHouseholdCount;
     }
 
     private function isParentGuardianWithRelevantRemarriage(): bool
