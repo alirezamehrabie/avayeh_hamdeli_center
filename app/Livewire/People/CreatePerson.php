@@ -1724,9 +1724,9 @@ class CreatePerson extends Component
 
     private function recalculateChildrenInHouseRealtime(): void
     {
-        $childrenCount = (int)($this->children_count ?? 0);
-        $childrenFromPreviousMarriage = max(0, (int)($this->children_from_previous_marriage ?? 0));
-        $extraHouseholdCount = count($this->extra_household_members ?? []);
+        $childrenCount = $this->getBaseChildrenCount();
+        $childrenFromPreviousMarriage = $this->getAppliedChildrenFromPreviousMarriage();
+        $extraHouseholdCount = $this->getExtraHouseholdCount();
 
         if (!$this->isParentGuardianWithRelevantRemarriage()) {
             $this->children_in_house = $childrenCount + $extraHouseholdCount;
@@ -1734,6 +1734,15 @@ class CreatePerson extends Component
         }
 
         $this->children_in_house = $childrenCount + $childrenFromPreviousMarriage + $extraHouseholdCount;
+    }
+
+    public function getChildrenInHouseFormulaProperty(): array
+    {
+        return [
+            'children_count' => $this->getBaseChildrenCount(),
+            'children_from_previous_marriage' => $this->getAppliedChildrenFromPreviousMarriage(),
+            'extra_household_members' => $this->getExtraHouseholdCount(),
+        ];
     }
 
     private function isParentGuardianWithRelevantRemarriage(): bool
@@ -1763,6 +1772,25 @@ class CreatePerson extends Component
 
         return ($isFatherGuardian && in_array($remarriedParent, ['father', 'both'], true))
             || ($isMotherGuardian && in_array($remarriedParent, ['mother', 'both'], true));
+    }
+
+    private function getBaseChildrenCount(): int
+    {
+        return (int)($this->children_count ?? 0);
+    }
+
+    private function getExtraHouseholdCount(): int
+    {
+        return count($this->extra_household_members ?? []);
+    }
+
+    private function getAppliedChildrenFromPreviousMarriage(): int
+    {
+        if (!$this->isParentGuardianWithRelevantRemarriage()) {
+            return 0;
+        }
+
+        return max(0, (int)($this->children_from_previous_marriage ?? 0));
     }
 
 

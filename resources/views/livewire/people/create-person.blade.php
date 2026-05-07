@@ -1000,9 +1000,9 @@
                             <input disabled type="number" class="form-control form-control-sm @error('children_in_house') is-invalid @enderror" wire:model.blur="children_in_house" min="0" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                             @error('children_in_house') <span class="text-danger small">{{ $message }}</span> @enderror
                             <div class="mt-1 rounded-2 px-2 py-1 small" style="background: #eef6fb; color: #4b5563; border: 1px solid #d9e8f3;">
-                                نحوه محاسبه: ({{ (int)($children_count ?? 0) }}) فرزندان تحت پوشش
-                                + ({{ (int)($children_from_previous_marriage ?? 0) }}) فرزندان ازدواج قبلی
-                                + ({{ count($extra_household_members ?? []) }}) افراد افزوده‌شده دستی
+                                نحوه محاسبه: ({{ $this->childrenInHouseFormula['children_count'] }}) فرزندان تحت پوشش
+                                + ({{ $this->childrenInHouseFormula['children_from_previous_marriage'] }}) فرزندان ازدواج قبلیِ
+                                + ({{ $this->childrenInHouseFormula['extra_household_members'] }}) افراد افزوده‌شده دستی
                             </div>
                         </div>
 
