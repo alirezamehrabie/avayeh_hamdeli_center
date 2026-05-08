@@ -58,7 +58,6 @@
                                 <th class="px-5 py-4 text-right font-bold">نام و نام خانوادگی</th>
                                 <th class="px-5 py-4 text-center font-bold">کد ملی</th>
                                 <th class="px-5 py-4 text-center font-bold">تاریخ تولد</th>
-                                <th class="px-5 py-4 text-right font-bold">رهگیری ثبت</th>
                                 <th class="px-5 py-4 text-center font-bold">عملیات</th>
                             </tr>
                         </thead>
@@ -79,39 +78,68 @@
                                                 . '<div><strong>زمان آخرین ویرایش:</strong> ' . e(optional($person->updated_at)->format('Y/m/d H:i') ?? '-') . '</div>'
                                                 . '</div>';
                                         @endphp
-                                        <button
-                                            type="button"
-                                            class="js-tracking-tooltip inline-flex h-9 w-9 items-center justify-center rounded-full border bg-white text-slate-600 shadow-sm transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-200"
-                                            style="border-color: #f5d0e1;"
-                                            aria-label="نمایش تاریخچه ثبت و ویرایش"
-                                            data-bs-toggle="tooltip"
-                                            data-bs-placement="top"
-                                            data-bs-html="true"
-                                            data-bs-custom-class="beneficiary-tracking-tooltip"
-                                            data-bs-title="{{ $trackingTooltip }}"
-                                            x-data="{}"
-                                            x-init="if (window.bootstrap?.Tooltip) { new window.bootstrap.Tooltip($el, { container: 'body', trigger: 'hover focus click', sanitize: false }); }"
-                                        >
-                                            <i class="bi bi-clock-history text-base"></i>
-                                        </button>
-                                    </td>
-                                    <td class="px-5 py-4 text-center">
                                         <div class="flex items-center justify-center gap-2 whitespace-nowrap">
-                                            <button wire:click="editPerson({{ $person->id }})" class="inline-flex items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-semibold transition" style="border-color: #f5d0e1; background-color: #fdf2f8; color: #9D174D;">
-                                                ویرایش
+                                            <button
+                                                type="button"
+                                                class="js-tracking-tooltip inline-flex h-9 w-9 items-center justify-center rounded-full border bg-white text-slate-600 shadow-sm transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-200"
+                                                style="border-color: #f5d0e1;"
+                                                aria-label="رهگیری ثبت"
+                                                data-bs-toggle="tooltip"
+                                                data-bs-placement="top"
+                                                data-bs-html="true"
+                                                data-bs-custom-class="beneficiary-tracking-tooltip"
+                                                data-bs-title="{{ $trackingTooltip }}"
+                                                x-data="{}"
+                                                x-init="if (window.bootstrap?.Tooltip) { new window.bootstrap.Tooltip($el, { container: 'body', trigger: 'hover focus click', sanitize: false }); }"
+                                            >
+                                                <i class="bi bi-clock-history"></i>
                                             </button>
-                                            <button wire:click="quickEditPerson({{ $person->id }})" class="inline-flex items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:border-amber-300 hover:bg-amber-100">
-                                                ویرایش سریع
+
+                                            <button
+                                                wire:click="editPerson({{ $person->id }})"
+                                                class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 text-indigo-700 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                                                aria-label="ویرایش کامل"
+                                                data-bs-toggle="tooltip"
+                                                data-bs-placement="top"
+                                                data-bs-title="ویرایش کامل اطلاعات مددجو"
+                                                x-data="{}"
+                                                x-init="if (window.bootstrap?.Tooltip) { new window.bootstrap.Tooltip($el, { container: 'body', trigger: 'hover focus', sanitize: false }); }"
+                                            >
+                                                <i class="bi bi-pencil-square"></i>
                                             </button>
-                                            <button wire:click="deletePerson({{ $person->id }})" wire:confirm="آیا از انتقال این مددجو به بلاک لیست مطمئن هستید؟" class="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100">
-                                                حذف
+
+                                            <button
+                                                wire:click="quickEditPerson({{ $person->id }})"
+                                                class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-amber-200 bg-amber-50 text-amber-700 shadow-sm transition hover:border-amber-300 hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                                                aria-label="ویرایش سریع"
+                                                data-bs-toggle="tooltip"
+                                                data-bs-placement="top"
+                                                data-bs-title="ویرایش سریع اطلاعات کلیدی"
+                                                x-data="{}"
+                                                x-init="if (window.bootstrap?.Tooltip) { new window.bootstrap.Tooltip($el, { container: 'body', trigger: 'hover focus', sanitize: false }); }"
+                                            >
+                                                <i class="bi bi-lightning-charge"></i>
+                                            </button>
+
+                                            <button
+                                                wire:click="deletePerson({{ $person->id }})"
+                                                wire:confirm="آیا از انتقال این مددجو به بلاک لیست مطمئن هستید؟"
+                                                class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700 shadow-sm transition hover:border-rose-300 hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-rose-200"
+                                                aria-label="حذف"
+                                                data-bs-toggle="tooltip"
+                                                data-bs-placement="top"
+                                                data-bs-title="انتقال به بلاک لیست"
+                                                x-data="{}"
+                                                x-init="if (window.bootstrap?.Tooltip) { new window.bootstrap.Tooltip($el, { container: 'body', trigger: 'hover focus', sanitize: false }); }"
+                                            >
+                                                <i class="bi bi-trash3"></i>
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-5 py-10 text-center text-slate-500">هیچ مددجویی ثبت نشده است.</td>
+                                    <td colspan="6" class="px-5 py-10 text-center text-slate-500">هیچ مددجویی ثبت نشده است.</td>
                                 </tr>
                             @endforelse
                         </tbody>
