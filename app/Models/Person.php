@@ -6,6 +6,8 @@ use App\Traits\HasJalaliBirthDate;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Request;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Helpers\Morilog\Jalalian;
 
@@ -51,6 +53,8 @@ class Person extends Model
         'sadaat_status',
         'sadaat_relation_id',
         'social_worker_id',
+        'created_by',
+        'updated_by',
         'photo_id_card',
         'photo_birth_certificate',
         'has_disability',
@@ -353,12 +357,54 @@ class Person extends Model
         parent::boot();
 
         static::creating(function ($model) {
+            $actorId = Auth::id();
             if (empty($model->person_code)) {
                 // دیگر نیازی به ارسال social_worker_id نیست
                 $model->person_code = self::generateUniqueCode();
             }
+
+            if (empty($model->created_by) && $actorId) {
+                $model->created_by = $actorId;
+            }
+
+            if (empty($model->updated_by) && $actorId) {
+                $model->updated_by = $actorId;
+            }
         });
 
+        static::updating(function ($model) {
+            $actorId = Auth::id();
+            if ($actorId) {
+                $model->updated_by = $actorId;
+            }
+        });
+
+        static::created(function (self $model) {
+            $model->storeAuditLog('created', [], $model->getAttributes());
+        });
+
+        static::updated(function (self $model) {
+            $changes = $model->getChanges();
+            unset($changes['updated_at']);
+
+            if (empty($changes)) {
+                return;
+            }
+
+            $beforeValues = [];
+            $afterValues = [];
+
+            foreach (array_keys($changes) as $field) {
+                $beforeValues[$field] = $model->getOriginal($field);
+                $afterValues[$field] = $model->getAttribute($field);
+            }
+
+            $model->storeAuditLog('updated', $beforeValues, $afterValues);
+        });
+
+        static::deleted(function (self $model) {
+            $model->storeAuditLog('deleted', $model->getOriginal(), []);
+        });
     }
 
 
@@ -438,5 +484,34 @@ class Person extends Model
     public function harmTypes()
     {
         return $this->belongsToMany(HarmType::class, 'harm_type_person');
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function updater()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function auditLogs()
+    {
+        return $this->hasMany(BeneficiaryAuditLog::class)->latest();
+    }
+
+    private function storeAuditLog(string $action, array $beforeValues, array $afterValues): void
+    {
+        BeneficiaryAuditLog::create([
+            'person_id' => $this->id,
+            'user_id' => Auth::id(),
+            'action' => $action,
+            'changed_fields' => array_values(array_unique(array_merge(array_keys($beforeValues), array_keys($afterValues)))),
+            'before_values' => empty($beforeValues) ? null : $beforeValues,
+            'after_values' => empty($afterValues) ? null : $afterValues,
+            'ip_address' => Request::ip(),
+            'user_agent' => Request::userAgent(),
+        ]);
     }
 }

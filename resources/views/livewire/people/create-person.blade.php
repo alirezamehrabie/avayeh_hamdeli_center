@@ -79,6 +79,78 @@
                     </div>
                 @endif
 
+                @if($mode === 'edit' && $person)
+                    <div class="mb-4 rounded-4 border bg-white p-3 p-md-4 shadow-sm" style="border-color: #dbe3ec;">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                            <h5 class="mb-0 fw-bold text-slate-800">رهگیری فعالیت کاربران</h5>
+                            <span class="badge text-bg-light border">شناسه مددجو: {{ $person->person_code ?? '-' }}</span>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <div class="rounded-3 border p-3 h-100" style="border-color: #e2e8f0; background: #f8fafc;">
+                                    <p class="small text-muted mb-1">ایجادکننده</p>
+                                    <p class="fw-semibold mb-1">{{ $person->creator?->name ?? 'نامشخص' }}</p>
+                                    <p class="small mb-0 text-slate-600">{{ optional($person->created_at)->format('Y/m/d H:i:s') ?? '-' }}</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="rounded-3 border p-3 h-100" style="border-color: #e2e8f0; background: #f8fafc;">
+                                    <p class="small text-muted mb-1">آخرین ویرایش توسط</p>
+                                    <p class="fw-semibold mb-1">{{ $person->updater?->name ?? $person->creator?->name ?? 'نامشخص' }}</p>
+                                    <p class="small mb-0 text-slate-600">{{ optional($person->updated_at)->format('Y/m/d H:i:s') ?? '-' }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div hidden class="rounded-3 border p-3" style="border-color: #e2e8f0;">
+                            <p class="fw-semibold mb-2">تاریخچه تغییرات</p>
+                            @if($person->auditLogs->isEmpty())
+                                <p class="small text-muted mb-0">هنوز لاگی برای این مددجو ثبت نشده است.</p>
+                            @else
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle mb-0">
+                                        <thead class="table-light">
+                                        <tr>
+                                            <th>زمان</th>
+                                            <th>کاربر</th>
+                                            <th>نوع عملیات</th>
+                                            <th>فیلدهای تغییر یافته</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        @foreach($person->auditLogs as $log)
+                                            <tr>
+                                                <td class="small">{{ optional($log->created_at)->format('Y/m/d H:i:s') }}</td>
+                                                <td class="small">{{ $log->user?->name ?? 'سیستم/نامشخص' }}</td>
+                                                <td class="small fw-semibold">
+                                                    @if($log->action === 'created')
+                                                        ایجاد
+                                                    @elseif($log->action === 'updated')
+                                                        ویرایش
+                                                    @elseif($log->action === 'deleted')
+                                                        حذف
+                                                    @else
+                                                        {{ $log->action }}
+                                                    @endif
+                                                </td>
+                                                <td class="small">
+                                                    @if(!empty($log->changed_fields))
+                                                        {{ implode('، ', $log->changed_fields) }}
+                                                    @else
+                                                        -
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
 
                 {{-- Step 1: Personal Information --}}
                 @if($current_step === 1)

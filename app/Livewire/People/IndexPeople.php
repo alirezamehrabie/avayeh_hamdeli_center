@@ -29,7 +29,7 @@ class IndexPeople extends Component
 
     public function getPeopleProperty()
     {
-        $query = Person::orderBy('created_at', 'desc');
+        $query = Person::with(['creator:id,name', 'updater:id,name'])->orderBy('created_at', 'desc');
 
         if (trim($this->search) !== '') {
             $search = trim($this->search);

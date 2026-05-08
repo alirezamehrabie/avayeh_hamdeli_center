@@ -58,6 +58,7 @@
                                 <th class="px-5 py-4 text-right font-bold">نام و نام خانوادگی</th>
                                 <th class="px-5 py-4 text-center font-bold">کد ملی</th>
                                 <th class="px-5 py-4 text-center font-bold">تاریخ تولد</th>
+                                <th class="px-5 py-4 text-right font-bold">رهگیری ثبت</th>
                                 <th class="px-5 py-4 text-center font-bold">عملیات</th>
                             </tr>
                         </thead>
@@ -69,6 +70,31 @@
                                     <td class="px-5 py-4 text-right font-light text-slate-800">{{ $person->full_name }}</td>
                                     <td class="px-5 py-4 text-center font-light text-slate-700">{{ $person->national_id }}</td>
                                     <td class="px-5 py-4 text-center font-light text-slate-700">{{ $person->birth_date ?? 'نامشخص' }}</td>
+                                    <td class="px-5 py-4 text-center">
+                                        @php
+                                            $trackingTooltip = '<div class="text-end lh-base">'
+                                                . '<div><strong>ایجادکننده:</strong> ' . e($person->creator?->name ?? 'نامشخص') . '</div>'
+                                                . '<div><strong>زمان ایجاد:</strong> ' . e(optional($person->created_at)->format('Y/m/d H:i') ?? '-') . '</div>'
+                                                . '<div><strong>آخرین ویرایش توسط:</strong> ' . e($person->updater?->name ?? $person->creator?->name ?? 'نامشخص') . '</div>'
+                                                . '<div><strong>زمان آخرین ویرایش:</strong> ' . e(optional($person->updated_at)->format('Y/m/d H:i') ?? '-') . '</div>'
+                                                . '</div>';
+                                        @endphp
+                                        <button
+                                            type="button"
+                                            class="js-tracking-tooltip inline-flex h-9 w-9 items-center justify-center rounded-full border bg-white text-slate-600 shadow-sm transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-200"
+                                            style="border-color: #f5d0e1;"
+                                            aria-label="نمایش تاریخچه ثبت و ویرایش"
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            data-bs-html="true"
+                                            data-bs-custom-class="beneficiary-tracking-tooltip"
+                                            data-bs-title="{{ $trackingTooltip }}"
+                                            x-data="{}"
+                                            x-init="if (window.bootstrap?.Tooltip) { new window.bootstrap.Tooltip($el, { container: 'body', trigger: 'hover focus click', sanitize: false }); }"
+                                        >
+                                            <i class="bi bi-clock-history text-base"></i>
+                                        </button>
+                                    </td>
                                     <td class="px-5 py-4 text-center">
                                         <div class="flex items-center justify-center gap-2 whitespace-nowrap">
                                             <button wire:click="editPerson({{ $person->id }})" class="inline-flex items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-semibold transition" style="border-color: #f5d0e1; background-color: #fdf2f8; color: #9D174D;">
@@ -85,7 +111,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-5 py-10 text-center text-slate-500">هیچ مددجویی ثبت نشده است.</td>
+                                    <td colspan="7" class="px-5 py-10 text-center text-slate-500">هیچ مددجویی ثبت نشده است.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -99,3 +125,23 @@
         </div>
     </div>
 </div>
+
+@push('styles')
+    <style>
+        .tooltip.beneficiary-tracking-tooltip .tooltip-inner {
+            max-width: 24rem;
+            text-align: right;
+            border-radius: 0.9rem;
+            border: 1px solid #f5d0e1;
+            background: #fff;
+            color: #334155;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.15);
+            padding: 0.65rem 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        .tooltip.beneficiary-tracking-tooltip .tooltip-arrow::before {
+            border-top-color: #f5d0e1;
+        }
+    </style>
+@endpush

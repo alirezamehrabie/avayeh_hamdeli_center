@@ -1,8 +1,10 @@
 import './bootstrap';
 import 'bootstrap/dist/js/bootstrap.min.js';
+import * as bootstrap from 'bootstrap';
 import { Livewire, Alpine } from '../../vendor/livewire/livewire/dist/livewire.esm';
 
 window.Alpine = Alpine;
+window.bootstrap = bootstrap;
 
 Alpine.data('rialAmountInput', (model) => ({
     model,

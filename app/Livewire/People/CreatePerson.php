@@ -235,6 +235,14 @@ class CreatePerson extends Component
 
     public function mount(string $mode, ?Person $person = null, bool $embedded = false)
     {
+        if ($person?->exists) {
+            $person->load([
+                'creator:id,name',
+                'updater:id,name',
+                'auditLogs' => fn($query) => $query->with('user:id,name')->limit(15),
+            ]);
+        }
+
         $this->person = $person;
         $this->mode = $mode;
         $this->embedded = $embedded;
