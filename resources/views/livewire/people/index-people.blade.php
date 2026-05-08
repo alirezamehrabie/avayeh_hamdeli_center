@@ -71,11 +71,12 @@
                                     <td class="px-5 py-4 text-center font-light text-slate-700">{{ $person->birth_date ?? 'نامشخص' }}</td>
                                     <td class="px-5 py-4 text-center">
                                         @php
-                                            $trackingTooltip = '<div class="text-end lh-base">'
-                                                . '<div><strong>ایجادکننده:</strong> ' . e($person->creator?->name ?? 'نامشخص') . '</div>'
-                                                . '<div><strong>زمان ایجاد:</strong> ' . e(optional($person->created_at)->format('Y/m/d H:i') ?? '-') . '</div>'
-                                                . '<div><strong>آخرین ویرایش توسط:</strong> ' . e($person->updater?->name ?? $person->creator?->name ?? 'نامشخص') . '</div>'
-                                                . '<div><strong>زمان آخرین ویرایش:</strong> ' . e(optional($person->updated_at)->format('Y/m/d H:i') ?? '-') . '</div>'
+                                            $trackingTooltip = '<div class="tracking-tooltip-wrap" dir="rtl">'
+                                                . '<div class="tracking-tooltip-title">رهگیری ثبت</div>'
+                                                . '<div class="tracking-tooltip-row"><span class="label">ایجادکننده</span><span class="value">' . e($person->creator?->name ?? 'نامشخص') . '</span></div>'
+                                                . '<div class="tracking-tooltip-row"><span class="label">زمان ایجاد</span><span class="value">' . e(optional($person->created_at)->format('Y/m/d H:i') ?? '-') . '</span></div>'
+                                                . '<div class="tracking-tooltip-row"><span class="label">آخرین ویرایش توسط</span><span class="value">' . e($person->updater?->name ?? $person->creator?->name ?? 'نامشخص') . '</span></div>'
+                                                . '<div class="tracking-tooltip-row"><span class="label">زمان آخرین ویرایش</span><span class="value">' . e(optional($person->updated_at)->format('Y/m/d H:i') ?? '-') . '</span></div>'
                                                 . '</div>';
                                         @endphp
                                         <div class="flex items-center justify-center gap-2 whitespace-nowrap">
@@ -90,7 +91,7 @@
                                                 data-bs-custom-class="beneficiary-tracking-tooltip"
                                                 data-bs-title="{{ $trackingTooltip }}"
                                                 x-data="{}"
-                                                x-init="if (window.bootstrap?.Tooltip) { new window.bootstrap.Tooltip($el, { container: 'body', trigger: 'hover focus click', sanitize: false }); }"
+                                                x-init="if (window.bootstrap?.Tooltip) { const t = new window.bootstrap.Tooltip($el, { container: 'body', trigger: 'hover focus', sanitize: false, delay: { show: 120, hide: 80 } }); $el.addEventListener('click', () => t.hide()); $el.addEventListener('mouseleave', () => t.hide()); }"
                                             >
                                                 <i class="bi bi-clock-history"></i>
                                             </button>
@@ -103,7 +104,7 @@
                                                 data-bs-placement="top"
                                                 data-bs-title="ویرایش کامل اطلاعات مددجو"
                                                 x-data="{}"
-                                                x-init="if (window.bootstrap?.Tooltip) { new window.bootstrap.Tooltip($el, { container: 'body', trigger: 'hover focus', sanitize: false }); }"
+                                                x-init="if (window.bootstrap?.Tooltip) { const t = new window.bootstrap.Tooltip($el, { container: 'body', trigger: 'hover focus', delay: { show: 120, hide: 80 } }); $el.addEventListener('click', () => t.hide()); $el.addEventListener('mouseleave', () => t.hide()); }"
                                             >
                                                 <i class="bi bi-pencil-square"></i>
                                             </button>
@@ -116,7 +117,7 @@
                                                 data-bs-placement="top"
                                                 data-bs-title="ویرایش سریع اطلاعات کلیدی"
                                                 x-data="{}"
-                                                x-init="if (window.bootstrap?.Tooltip) { new window.bootstrap.Tooltip($el, { container: 'body', trigger: 'hover focus', sanitize: false }); }"
+                                                x-init="if (window.bootstrap?.Tooltip) { const t = new window.bootstrap.Tooltip($el, { container: 'body', trigger: 'hover focus', delay: { show: 120, hide: 80 } }); $el.addEventListener('click', () => t.hide()); $el.addEventListener('mouseleave', () => t.hide()); }"
                                             >
                                                 <i class="bi bi-lightning-charge"></i>
                                             </button>
@@ -130,7 +131,7 @@
                                                 data-bs-placement="top"
                                                 data-bs-title="انتقال به بلاک لیست"
                                                 x-data="{}"
-                                                x-init="if (window.bootstrap?.Tooltip) { new window.bootstrap.Tooltip($el, { container: 'body', trigger: 'hover focus', sanitize: false }); }"
+                                                x-init="if (window.bootstrap?.Tooltip) { const t = new window.bootstrap.Tooltip($el, { container: 'body', trigger: 'hover focus', delay: { show: 120, hide: 80 } }); $el.addEventListener('click', () => t.hide()); $el.addEventListener('mouseleave', () => t.hide()); }"
                                             >
                                                 <i class="bi bi-trash3"></i>
                                             </button>
@@ -157,19 +158,77 @@
 @push('styles')
     <style>
         .tooltip.beneficiary-tracking-tooltip .tooltip-inner {
-            max-width: 24rem;
+            max-width: 21rem;
+            min-width: 17rem;
             text-align: right;
-            border-radius: 0.9rem;
-            border: 1px solid #f5d0e1;
-            background: #fff;
+            direction: rtl;
+            border-radius: 0.95rem;
+            border: 1px solid #fecdd3;
+            background: linear-gradient(180deg, #fff 0%, #fffafc 100%);
             color: #334155;
-            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.15);
-            padding: 0.65rem 0.75rem;
-            font-size: 0.75rem;
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.14);
+            padding: 0.7rem 0.8rem;
+            font-size: 0.74rem;
+            line-height: 1.5;
         }
 
         .tooltip.beneficiary-tracking-tooltip .tooltip-arrow::before {
-            border-top-color: #f5d0e1;
+            border-top-color: #fecdd3;
+            border-bottom-color: #fecdd3;
+            border-left-color: #fecdd3;
+            border-right-color: #fecdd3;
+        }
+
+        .tooltip .tooltip-inner {
+            border-radius: 0.75rem;
+            font-size: 0.72rem;
+            background: #fff;
+            color: #334155;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.12);
+            padding: 0.42rem 0.62rem;
+        }
+
+        .tooltip .tooltip-arrow::before {
+            border-top-color: #e2e8f0;
+            border-bottom-color: #e2e8f0;
+            border-left-color: #e2e8f0;
+            border-right-color: #e2e8f0;
+        }
+
+        .tracking-tooltip-wrap {
+            display: grid;
+            gap: 0.42rem;
+        }
+
+        .tracking-tooltip-title {
+            margin-bottom: 0.1rem;
+            padding-bottom: 0.35rem;
+            border-bottom: 1px solid #ffe4e6;
+            font-size: 0.78rem;
+            font-weight: 800;
+            color: #9f1239;
+        }
+
+        .tracking-tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            align-items: baseline;
+            font-size: 0.73rem;
+        }
+
+        .tracking-tooltip-row .label {
+            color: #64748b;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .tracking-tooltip-row .value {
+            color: #0f172a;
+            font-weight: 700;
+            text-align: left;
+            direction: ltr;
         }
     </style>
 @endpush
