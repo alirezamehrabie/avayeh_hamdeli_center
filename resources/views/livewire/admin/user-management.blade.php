@@ -128,7 +128,7 @@
                                 {{ $user->access_level === 'manager' ? 'Manager' : ($user->access_level === 'admin' ? 'Admin' : 'Regular User') }}
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-center text-slate-500">{{ optional($user->created_at)->format('Y-m-d H:i') }}</td>
+                        <td class="px-4 py-3 text-center text-slate-500">{{ $user->created_at ? \App\Helpers\Morilog\Jalalian::fromDateTime($user->created_at)->format('Y/m/d H:i') : '-' }}</td>
                         <td class="px-4 py-3 text-center">
                             <div class="flex items-center justify-center gap-2">
                                 @if(auth()->id() !== $user->id)
