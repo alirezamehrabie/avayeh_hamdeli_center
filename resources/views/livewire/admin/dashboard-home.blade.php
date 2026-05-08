@@ -84,6 +84,17 @@
                         <livewire:guardians.index-guardians :embedded="true" :key="'guardians-list'" />
                         @break
 
+                    @case('guardian-edit')
+                        @if($editingGuardian)
+                            <livewire:guardians.edit-guardian :guardian="$editingGuardian" :embedded="true" :key="'guardian-edit-'.$editingGuardian->id" />
+                        @else
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                                <p class="text-red-600 mb-4">سرپرست انتخاب شده یافت نشد.</p>
+                                <button type="button" wire:click="selectSection('guardians-list')" class="btn btn-primary">بازگشت به لیست سرپرستان</button>
+                            </div>
+                        @endif
+                        @break
+
                     @case('advanced-reports')
                         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                             <h1 class="text-2xl font-bold text-gray-800 mb-2">گزارش پیشرفته</h1>

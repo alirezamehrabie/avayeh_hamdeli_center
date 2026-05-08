@@ -75,6 +75,9 @@
                                 <td class="px-5 py-4 text-center font-light text-slate-800">{{ $guardian->people_count }} نفر</td>
                                 <td class="px-5 py-4 text-center">
                                     <div class="flex items-center justify-center gap-2">
+                                        <button type="button" wire:click.stop="editGuardian({{ $guardian->id }})" onclick="event.stopPropagation()" class="inline-flex items-center justify-center rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700 transition hover:border-sky-300 hover:bg-sky-100">
+                                            ویرایش
+                                        </button>
                                         <button type="button" wire:click.stop="toggleGuardian({{ $guardian->id }})" onclick="event.stopPropagation()" class="inline-flex items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:border-amber-300 hover:bg-amber-100">
                                             {{ $expandedGuardianId === $guardian->id ? 'بستن' : 'مشاهده مددجویان' }}
                                         </button>

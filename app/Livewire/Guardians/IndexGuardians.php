@@ -71,6 +71,16 @@ class IndexGuardians extends Component
         $this->showHouseholdModal = true;
     }
 
+    public function editGuardian(int $guardianId): mixed
+    {
+        if ($this->embedded) {
+            $this->dispatch('open-dashboard-section', section: 'guardian-edit', id: $guardianId);
+            return null;
+        }
+
+        return redirect()->route('guardians.edit', ['guardian' => $guardianId]);
+    }
+
     public function closeHouseholdModal(): void
     {
         $this->showHouseholdModal = false;

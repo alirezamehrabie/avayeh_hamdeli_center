@@ -21,6 +21,7 @@ class DashboardHome extends Component
     public string $activeSection = 'overview';
     public ?int $editingPersonId = null;
     public ?int $editingSocialWorkerId = null;
+    public ?int $editingGuardianId = null;
     public string $newReminderTitle = '';
     public string $newReminderCategory = 'today_tasks';
 
@@ -37,6 +38,7 @@ class DashboardHome extends Component
         $this->normalizeActiveSection();
         $this->editingPersonId = in_array($section, ['person-edit', 'people-fast-create'], true) ? $id : null;
         $this->editingSocialWorkerId = $section === 'social-worker-edit' ? $id : null;
+        $this->editingGuardianId = $section === 'guardian-edit' ? $id : null;
     }
 
     private function normalizeActiveSection(): void
@@ -53,6 +55,7 @@ class DashboardHome extends Component
             'social-worker-create',
             'social-worker-edit',
             'guardians-list',
+            'guardian-edit',
             'advanced-reports',
             'advanced-beneficiary-report',
             'advanced-supervisor-report',
@@ -152,6 +155,7 @@ class DashboardHome extends Component
             'reminders' => $reminders,
             'editingPerson' => $this->editingPersonId ? Person::find($this->editingPersonId) : null,
             'editingSocialWorker' => $this->editingSocialWorkerId ? SocialWorker::find($this->editingSocialWorkerId) : null,
+            'editingGuardian' => $this->editingGuardianId ? Guardian::find($this->editingGuardianId) : null,
         ]);
     }
 }

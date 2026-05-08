@@ -6,6 +6,8 @@ use App\Livewire\People\FastCreatePerson;
 use App\Livewire\People\IndexPeople;
 use App\Livewire\People\DeletedPeople;
 use App\Livewire\People\AdvancedFilterBuilder;
+use App\Livewire\Guardians\EditGuardian;
+use App\Livewire\Guardians\IndexGuardians;
 use App\Livewire\SocialWorkers\EditSocialWorker;
 use App\Livewire\SocialWorkers\CreateSocialWorker;
 use App\Livewire\SocialWorkers\IndexSocialWorkers;
@@ -43,6 +45,8 @@ Route::get('/people/fast-create/{person?}', FastCreatePerson::class)->name('peop
 Route::get('/people', IndexPeople::class)->name('people.index');
 Route::get('/people/advanced-reporting', AdvancedFilterBuilder::class)->name('people.advanced-reporting');
 Route::get('/people/block-list', DeletedPeople::class)->name('people.block-list');
+Route::get('/guardians', IndexGuardians::class)->name('guardians.index');
+Route::get('/guardians/{guardian}/edit', EditGuardian::class)->name('guardians.edit');
 
 // مسیر نمایش فرم به Livewire تغییر می‌کند
 Route::get('/people/{mode}/{person?}', CreatePerson::class)->name('people.form');
