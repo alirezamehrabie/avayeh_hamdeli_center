@@ -43,7 +43,7 @@ return new class extends Migration
             // وضعیت فرد (nullable for fast registration)
             $table->enum('gender', ['male', 'female'])->nullable();
             $table->enum('role', ['child', 'guardian'])->nullable();
-            $table->enum('sadaat_status', ['sadaat', 'general'])->nullable();
+            $table->enum('sadaat_status', ['sadaat', 'general'])->default('general');
 
             $table->foreignId('sadaat_relation_id')
                 ->nullable()
