@@ -534,7 +534,7 @@
                                                 @elseif($mode == 'edit' && $person && $person->photo_birth_certificate)
                                                     <img src="{{ asset($person->photo_birth_certificate) }}" id="captured-img-birth-cert" class="img-thumbnail" style="max-height: 150px;">
                                                 @else
-                                                    <img src="{{ asset('assets/images/no-image.png') }}" id="captured-img-birth-cert" class="img-thumbnail" style="max-height: 150px;">
+                                                    <img src="{{ asset('images/no-image.png') }}" id="captured-img-birth-cert" class="img-thumbnail" style="max-height: 150px;">
                                                 @endif
                                             </div>
                                             <div class="mt-2 text-center">
