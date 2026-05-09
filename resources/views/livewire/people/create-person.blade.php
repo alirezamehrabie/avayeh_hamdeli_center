@@ -1579,7 +1579,8 @@
                                                     {{-- تصویر گرفته شده با دوربین --}}
                                                     <img src="{{ $captured_support_card_base64 }}" id="captured-img-support-card" class="img-thumbnail" style="max-height: 150px;">
                                                 @elseif($mode == 'edit' && $person && $person->supportCoverage && $person->supportCoverage->support_card_image)
-                                                    <img src="{{ asset('storage/' . $person->supportCoverage->support_card_image) }}" id="captured-img-support-card" class="img-thumbnail" style="max-height: 150px;">
+                                                    {{-- تصویر ذخیره شده قبلی در حالت ویرایش --}}
+                                                    <img src="{{ asset($person->supportCoverage->support_card_image) }}" id="captured-img-support-card" class="img-thumbnail" style="max-height: 150px;">
                                                 @else
                                                     {{-- تصویر پیش‌فرض --}}
                                                     <img src="{{ asset('assets/images/no-image.png') }}" id="captured-img-support-card" class="img-thumbnail" style="max-height: 150px;">
