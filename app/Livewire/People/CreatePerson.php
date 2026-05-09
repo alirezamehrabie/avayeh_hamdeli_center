@@ -1610,10 +1610,18 @@ class CreatePerson extends Component
      */
     private function processImage($uploadedFile, $base64Data, $subFolder, $personCode = null)
     {
-        // ساخت مسیر نهایی: uploads/subFolder/personCode/
+        // ساخت مسیر نسبی: uploads/subFolder/personCode/ (جهت ذخیره در دیتابیس)
         $folderPath = 'uploads/' . $subFolder;
         if ($personCode) {
             $folderPath .= '/' . $personCode;
+        }
+
+        // مسیر فیزیکی روی سرور (پوشه public)
+        $publicDirectory = public_path($folderPath);
+
+        // بررسی و ایجاد پوشه در صورت عدم وجود
+        if (!\Illuminate\Support\Facades\File::exists($publicDirectory)) {
+            \Illuminate\Support\Facades\File::makeDirectory($publicDirectory, 0755, true, true);
         }
 
         // ۱. اولویت با تصویر دوربین (Base64)
@@ -1629,12 +1637,14 @@ class CreatePerson extends Component
 
                 // نام‌گذاری فایل
                 $fileName = uniqid() . '_' . time() . '.' . $image_type;
-                $finalPath = $folderPath . '/' . $fileName;
 
-                // ذخیره فیزیکی در Storage (دیسک public)
-                \Illuminate\Support\Facades\Storage::disk('public')->put($finalPath, $image_base64);
+                // مسیر کامل برای ذخیره فیزیکی فایل
+                $targetPath = $publicDirectory . DIRECTORY_SEPARATOR . $fileName;
 
-                return $finalPath;
+                // ذخیره مستقیم در پوشه public (جایگزین Storage)
+                file_put_contents($targetPath, $image_base64);
+
+                return $folderPath . '/' . $fileName;
             } catch (\Exception $e) {
                 \Log::error("خطا در پردازش تصویر دوربین ($subFolder): " . $e->getMessage());
                 return null;
@@ -1643,11 +1653,26 @@ class CreatePerson extends Component
 
         // ۲. اگر دوربین نبود، استفاده از فایل آپلود شده
         if ($uploadedFile) {
-            return $uploadedFile->store($folderPath, 'public');
+            try {
+                $extension = strtolower((string) $uploadedFile->getClientOriginalExtension());
+                // در صورتی که فایل اکستنشن نداشت پیش‌فرض png در نظر می‌گیریم
+                $extension = $extension ?: 'png';
+                $fileName = uniqid() . '_' . time() . '.' . $extension;
+                $targetPath = $publicDirectory . DIRECTORY_SEPARATOR . $fileName;
+
+                // کپی مستقیم فایل به جای استفاده از متد store
+                if (\Illuminate\Support\Facades\File::copy($uploadedFile->getRealPath(), $targetPath)) {
+                    return $folderPath . '/' . $fileName;
+                }
+            } catch (\Exception $e) {
+                \Log::error("خطا در آپلود فایل ($subFolder): " . $e->getMessage());
+                return null;
+            }
         }
 
         return null;
     }
+
 
     private function atomicUpsert(string $table, array $uniqueBy, array $values): void
     {
