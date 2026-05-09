@@ -590,7 +590,7 @@
                                                 @elseif($mode == 'edit' && $person && $person->profile_photo)
                                                     <img src="{{ asset($person->profile_photo) }}" id="captured-img-profile" class="img-thumbnail" style="max-height: 200px;">
                                                 @else
-                                                    <img src="{{ asset('assets/images/no-image.png') }}" id="captured-img-profile" class="img-thumbnail" style="max-height: 200px;">
+                                                    <img src="{{ asset('images/no-image.png') }}" id="captured-img-profile" class="img-thumbnail" style="max-height: 200px;">
                                                 @endif
                                             </div>
                                             <div class="mt-2 text-center">
@@ -1583,7 +1583,7 @@
                                                     <img src="{{ asset($person->supportCoverage->support_card_image) }}" id="captured-img-support-card" class="img-thumbnail" style="max-height: 150px;">
                                                 @else
                                                     {{-- تصویر پیش‌فرض --}}
-                                                    <img src="{{ asset('assets/images/no-image.png') }}" id="captured-img-support-card" class="img-thumbnail" style="max-height: 150px;">
+                                                    <img src="{{ asset('images/no-image.png') }}" id="captured-img-support-card" class="img-thumbnail" style="max-height: 150px;">
                                                 @endif
                                             </div>
                                             <div class="mt-2 text-center">
@@ -1839,7 +1839,7 @@
         const preview = document.getElementById('photo-preview-' + cameraId);
         if (preview) {
             preview.innerHTML = `
-                <img src="{{ asset('assets/images/no-image.png') }}"
+                <img src="{{ asset('images/no-image.png') }}"
                      id="captured-img-${cameraId}"
                      class="img-thumbnail"
                      style="max-height: 150px;">
