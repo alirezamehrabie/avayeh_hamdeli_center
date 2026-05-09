@@ -73,10 +73,10 @@
                                         @php
                                             $trackingTooltip = '<div class="tracking-tooltip-wrap" dir="rtl">'
                                                 . '<div class="tracking-tooltip-title">رهگیری ثبت</div>'
-                                                . '<div class="tracking-tooltip-row"><span class="label">ایجادکننده</span><span class="value">' . e($person->creator?->name ?? 'نامشخص') . '</span></div>'
-                                                . '<div class="tracking-tooltip-row"><span class="label">زمان ایجاد</span><span class="value">' . e(optional($person->created_at)->format('Y/m/d H:i') ?? '-') . '</span></div>'
-                                                . '<div class="tracking-tooltip-row"><span class="label">آخرین ویرایش توسط</span><span class="value">' . e($person->updater?->name ?? $person->creator?->name ?? 'نامشخص') . '</span></div>'
-                                                . '<div class="tracking-tooltip-row"><span class="label">زمان آخرین ویرایش</span><span class="value">' . e(optional($person->updated_at)->format('Y/m/d H:i') ?? '-') . '</span></div>'
+                                                . '<div class="tracking-tooltip-row"><span class="label"> ایجادکننده </span><span class="value">' . e($person->creator?->name ?? 'نامشخص') . '</span></div>'
+                                                . '<div class="tracking-tooltip-row"><span class="label"> زمان ایجاد </span><span class="value">' . e(optional($person->created_at)->format('Y/m/d H:i') ?? '-') . '</span></div>'
+                                                . '<div class="tracking-tooltip-row"><span class="label"> آخرین ویرایش توسط </span><span class="value">' . e($person->updater?->name ?? $person->creator?->name ?? 'نامشخص') . '</span></div>'
+                                                . '<div class="tracking-tooltip-row"><span class="label">زمان آخرین ویرایش </span><span class="value">' . e(optional($person->updated_at)->format('Y/m/d H:i') ?? '-') . '</span></div>'
                                                 . '</div>';
                                         @endphp
                                         <div class="flex items-center justify-center gap-2 whitespace-nowrap">

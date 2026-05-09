@@ -87,9 +87,8 @@ class CreatePerson extends Component
     public $phone_number;
     public $gender;
 
-    // سادات (پیش‌فرض عام)
-    public $role = 'child'; // مقدار پیش‌فرض
-    public $sadaat_status = 'general'; // مقدار پیش‌فرض
+    public $role = 'child';
+    public $sadaat_status = 'general';
     public $sadaat_relation_id;
     public $social_worker_id;
 
