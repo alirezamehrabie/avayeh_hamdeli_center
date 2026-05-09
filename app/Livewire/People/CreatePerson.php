@@ -58,14 +58,14 @@ class CreatePerson extends Component
     public $completed_steps = [];
     public $wizard_steps = [
         1 => 'اطلاعات فردی',
-        2 => 'مهارت‌ها و استعدادها',
-        3 => 'اطلاعات معلولیت',
+        2 => 'مهارت‌ و استعدادها',
+        3 => 'آسیب و معلولیت',
         4 => 'مدارک شناسایی',
         5 => 'وضعیت تحصیلی',
         6 => 'وضعیت خانوادگی',
-        7 => 'اطلاعات سرپرست و معیشت',
+        7 => 'اطلاعات سرپرست',
         8 => 'اطلاعات بانکی',
-        9 => 'وضعیت سکونت و تماس',
+        9 => 'سکونت و تماس',
         10 => 'سطح نیازمندی و پوشش حمایتی',
     ];
 
@@ -1611,7 +1611,8 @@ class CreatePerson extends Component
     private function processImage($uploadedFile, $base64Data, $subFolder, $personCode = null)
     {
         // ساخت مسیر نهایی: uploads/subFolder/personCode/
-        $folderPath = 'uploads/' . $subFolder;
+        $relativePath = 'uploads/' . $subFolder;
+        $folderPath = public_path($relativePath);
         if ($personCode) {
             $folderPath .= '/' . $personCode;
         }
