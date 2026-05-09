@@ -476,7 +476,7 @@
                                                 @elseif($captured_id_card_base64)
                                                     <img src="{{ $captured_id_card_base64 }}" id="captured-img-id-card" class="img-thumbnail" style="max-height: 150px;">
                                                 @elseif($mode == 'edit' && $person && $person->photo_id_card)
-                                                    <img src="{{ asset('storage/' . $person->photo_id_card) }}" id="captured-img-id-card" class="img-thumbnail" style="max-height: 150px;">
+                                                    <img src="{{ asset($person->photo_id_card) }}" id="captured-img-id-card" class="img-thumbnail" style="max-height: 150px;">
                                                 @else
                                                     <img src="{{ asset('assets/images/no-image.png') }}" id="captured-img-id-card" class="img-thumbnail" style="max-height: 150px;">
                                                 @endif
@@ -532,7 +532,7 @@
                                                 @elseif($captured_birth_certificate_base64)
                                                     <img src="{{ $captured_birth_certificate_base64 }}" id="captured-img-birth-cert" class="img-thumbnail" style="max-height: 150px;">
                                                 @elseif($mode == 'edit' && $person && $person->photo_birth_certificate)
-                                                    <img src="{{ asset('storage/' . $person->photo_birth_certificate) }}" id="captured-img-birth-cert" class="img-thumbnail" style="max-height: 150px;">
+                                                    <img src="{{ asset($person->photo_birth_certificate) }}" id="captured-img-birth-cert" class="img-thumbnail" style="max-height: 150px;">
                                                 @else
                                                     <img src="{{ asset('assets/images/no-image.png') }}" id="captured-img-birth-cert" class="img-thumbnail" style="max-height: 150px;">
                                                 @endif
@@ -588,7 +588,7 @@
                                                 @elseif($captured_photo_base64)
                                                     <img src="{{ $captured_photo_base64 }}" id="captured-img-profile" class="img-thumbnail" style="max-height: 200px;">
                                                 @elseif($mode == 'edit' && $person && $person->profile_photo)
-                                                    <img src="{{ asset('storage/' . $person->profile_photo) }}" id="captured-img-profile" class="img-thumbnail" style="max-height: 200px;">
+                                                    <img src="{{ asset($person->profile_photo) }}" id="captured-img-profile" class="img-thumbnail" style="max-height: 200px;">
                                                 @else
                                                     <img src="{{ asset('assets/images/no-image.png') }}" id="captured-img-profile" class="img-thumbnail" style="max-height: 200px;">
                                                 @endif
