@@ -1611,8 +1611,7 @@ class CreatePerson extends Component
     private function processImage($uploadedFile, $base64Data, $subFolder, $personCode = null)
     {
         // ساخت مسیر نهایی: uploads/subFolder/personCode/
-        $relativePath = 'uploads/' . $subFolder;
-        $folderPath = public_path($relativePath);
+        $folderPath = 'uploads/' . $subFolder;
         if ($personCode) {
             $folderPath .= '/' . $personCode;
         }

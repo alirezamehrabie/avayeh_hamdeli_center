@@ -7,10 +7,11 @@
         <div class="grid w-full max-w-6xl overflow-hidden rounded-3xl bg-white/90 shadow-2xl ring-1 ring-slate-200 backdrop-blur md:grid-cols-2">
             <section class="hidden md:flex flex-col justify-between bg-gradient-to-b from-[#f5f7fa] via-[#eef2f6] to-[#e7ebf0] p-10 text-slate-800">
                 <div>
-                    <img class="w-56" src="{{ asset('/images/logo-sm.png') }}" alt="لوگوی آوای همدلی">
+                    <img class="w-6/12" src="{{ asset('/images/logo-sm.png') }}" alt="لوگوی آوای همدلی">
                     <h1 class="mt-8 text-3xl font-black leading-tight text-slate-800">سامانه آوای همدلی</h1>
-                    <p class="mt-4 text-sm leading-7 text-slate-600">
-                        یک بستر امن برای مدیریت، پیگیری امور مددجویان و هماهنگی بهتر میان کاربران و مدیران.
+                    <h2 class="mt-4 text-md font-semibold leading-tight text-slate-600">مرکز نیکوکاری تخصصی کودکان آوای همدلی</h2>
+                    <p class="mt-12 text-sm leading-6 text-slate-600">
+                        بستر امن مدیریت و پیگیری امور مددجویان و هماهنگی کاربران و مدیران
                     </p>
                 </div>
             </section>
@@ -22,7 +23,7 @@
                     </div>
 
                     <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900">ورود به سامانه</h2>
-                    <p class="mt-2 text-sm text-slate-600">برای دسترسی به پنل کاربری یا مدیریت، اطلاعات خود را وارد کنید.</p>
+                    <p class="mt-2 text-sm text-slate-600">جهت دسترسی نام کاربری و رمز عبور را وارد کنید.</p>
 
                     <form class="mt-8 space-y-5" wire:submit.prevent="login" autocomplete="on" novalidate>
                         <div>
