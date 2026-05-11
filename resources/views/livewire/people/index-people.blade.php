@@ -1,16 +1,47 @@
 <div>
     <div class="container mx-auto p-4">
         <div class="rounded-2xl border bg-gradient-to-br from-white via-rose-50/30 to-white p-6 shadow-sm sm:p-7" style="border-color: #f5d0e1;">
-            <div class="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold text-slate-800">لیست مددجویان</h1>
-                    <p class="mt-1 text-sm text-slate-500">جستجو و مدیریت افراد ثبت شده</p>
-                </div>
-                <div class="rounded-2xl border bg-white/90 px-5 py-3 shadow-sm" style="border-color: #f5d0e1;">
-                    <p class="text-xs font-semibold text-slate-500">تعداد نمایش داده شده</p>
-                    <p class="mt-1 text-center text-xl font-extrabold" style="color: #9D174D;">{{ number_format($this->people->total()) }}</p>
+            <div class="mb-6 rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100">
+                <div class="flex flex-col gap-4 px-5 py-5 lg:flex-row lg:items-center lg:justify-between">
+
+                    <div class="flex items-start gap-4">
+                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-sm"
+                             style="background: linear-gradient(to left, #9D174D, #BE185D);">
+                            <i class="fa fa-users text-xl"></i>
+                        </div>
+
+                        <div>
+                            <h1 class="text-xl font-extrabold text-slate-800 lg:text-2xl">لیست مددجویان</h1>
+                            <p class="mt-1 text-sm text-slate-500">جستجو، مشاهده و مدیریت افراد ثبت‌شده در سامانه</p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                        <a  href="{{ route('admin.dashboard', ['section' => 'people-fast-create']) }}"
+                           class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4"
+                           style="background: linear-gradient(to left, #9D174D, #BE185D); --tw-ring-color: rgb(244 114 182 / 0.25);">
+                            <i class="fa fa-bolt ml-2 text-sm"></i>
+                            ثبت نام سریع
+                        </a>
+
+                        <a href="{{ route('admin.dashboard', ['section' => 'person-create']) }}"
+                           class="inline-flex items-center justify-center rounded-xl border px-4 py-2.5 text-sm font-semibold shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4"
+                           style="border-color: #f3d2df; color: #9D174D; background-color: #fff7fb; --tw-ring-color: rgb(244 114 182 / 0.18);">
+                            <i class="fa fa-user-plus ml-2 text-sm"></i>
+                            ثبت نام کامل
+                        </a>
+
+                        <div class="min-w-[140px] rounded-xl border px-4 py-2.5 text-center shadow-sm"
+                             style="border-color: #f3d2df; background: linear-gradient(180deg, #fffafc 0%, #ffffff 100%);">
+                            <p class="text-xs font-semibold text-slate-500">تعداد نمایش داده شده</p>
+                            <p class="mt-1 text-xl font-extrabold" style="color: #9D174D;">
+                                {{ number_format($this->people->total()) }}
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
+
 
             <div class="mb-6 rounded-2xl border bg-white/70 p-4 sm:p-5" style="border-color: #f5d0e1;">
                 <label for="beneficiary-search" class="mb-2 block text-sm font-semibold text-slate-700">جستجوی سریع</label>
@@ -71,12 +102,12 @@
                                     <td class="px-5 py-4 text-center font-light text-slate-700">{{ $person->birth_date ?? 'نامشخص' }}</td>
                                     <td class="px-5 py-4 text-center">
                                         @php
-                                            $trackingTooltip = '<div class="tracking-tooltip-wrap" dir="rtl">'
-                                                . '<div class="tracking-tooltip-title">رهگیری ثبت</div>'
-                                                . '<div class="tracking-tooltip-row"><span class="label"> ایجادکننده </span><span class="value">' . e($person->creator?->name ?? 'نامشخص') . '</span></div>'
+                                            $trackingTooltip = '<div class="tracking-tooltip-wrap border-gray-400" dir="rtl">'
+                                                . '<div class="tracking-tooltip-title my-2">رهگیری ثبت نام</div>'
+                                                . '<div class="tracking-tooltip-row"><span class="label"> ایجادکننده </span><span class="value">' . e($person->creator?->name ?? 'مدیریت') . '</span></div>'
                                                 . '<div class="tracking-tooltip-row"><span class="label"> زمان ایجاد </span><span class="value">' . e(optional($person->created_at)->format('Y/m/d H:i') ?? '-') . '</span></div>'
-                                                . '<div class="tracking-tooltip-row"><span class="label"> آخرین ویرایش توسط </span><span class="value">' . e($person->updater?->name ?? $person->creator?->name ?? 'نامشخص') . '</span></div>'
-                                                . '<div class="tracking-tooltip-row"><span class="label">زمان آخرین ویرایش </span><span class="value">' . e(optional($person->updated_at)->format('Y/m/d H:i') ?? '-') . '</span></div>'
+                                                . '<div class="tracking-tooltip-row"><span class="label"> آخرین ویرایش توسط </span><span class="value">' . e($person->updater?->name ?? $person->creator?->name ?? 'مدیریت') . '</span></div>'
+                                                . '<div class="tracking-tooltip-row"><span class="label"> زمان آخرین ویرایش </span><span class="value">' . e(optional($person->updated_at)->format('Y/m/d H:i') ?? '-') . '</span></div>'
                                                 . '</div>';
                                         @endphp
                                         <div class="flex items-center justify-center gap-2 whitespace-nowrap">

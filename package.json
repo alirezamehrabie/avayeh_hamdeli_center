@@ -20,6 +20,7 @@
         "@popperjs/core": "^2.11.8",
         "audit": "^0.0.6",
         "bootstrap": "^5.3.8",
-        "bootstrap-icons": "^1.13.1"
+        "bootstrap-icons": "^1.13.1",
+        "openai": "^6.37.0"
     }
 }

@@ -62,6 +62,8 @@ class DashboardHome extends Component
             'advanced-social-worker-report',
             'system-settings-user-management',
             'system-settings-user-account',
+            'define-services',
+            'service-delivery',
         ];
 
         if (!in_array($this->activeSection, $validSections, true)) {
@@ -149,7 +151,7 @@ class DashboardHome extends Component
                 ? District::whereNotNull('id')->distinct('id')->count('id')
                 : 0,
             'latestPeople' => $isOverview
-                ? Person::with(['guardian.socialWorker'])->latest()->take(5)->get()
+                ? Person::with(['guardian.socialWorker'])->latest()->take(8)->get()
                 : collect(),
             'birthMonthChart' => $birthMonthChart,
             'reminders' => $reminders,

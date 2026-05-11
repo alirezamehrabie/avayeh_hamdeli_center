@@ -22,6 +22,7 @@ class HarmTypeSeeder extends Seeder
             'فرزند طلاق',
             'آسیب دیده اجتماعی (فردی)',
             'افسردگی (فردی)',
+            'بیماری صعب العلاج'
         ];
 
         foreach ($items as $title) {

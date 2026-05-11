@@ -13,7 +13,7 @@
 
         @if($isManager)
             <div class="mb-5 rounded-xl border border-indigo-100 bg-indigo-50 p-4">
-                <h2 class="mb-3 text-sm font-bold text-indigo-800">درخواست‌های در انتظار تایید Manager</h2>
+                <h2 class="mb-3 text-sm font-bold text-indigo-800">درخواست‌های در انتظار تایید مدیریت</h2>
                 @if($pendingRequests->isEmpty())
                     <p class="text-xs text-indigo-700">درخواستی در انتظار تایید وجود ندارد.</p>
                 @else
@@ -85,9 +85,9 @@
                     wire:model="access_level"
                     class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100"
                 >
-                    <option value="manager" disabled>Manager (محافظت‌شده)</option>
-                    <option value="admin" @disabled(!$actorCanCreateAdmin)>Admin</option>
-                    <option value="regular_user">Regular User</option>
+                    <option value="manager" disabled>مدیریت (محافظت‌شده)</option>
+                    <option value="admin" @disabled(!$actorCanCreateAdmin)>ادمین</option>
+                    <option value="regular_user">کاربر عادی</option>
                 </select>
                 @error('access_level') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
             </div>
@@ -135,19 +135,19 @@
                                     @if(!$user->isProtectedManagerAccount())
                                         @if(($pendingActionMap[$user->id]['downgrade_admin'] ?? false) || ($pendingActionMap[$user->id]['delete_user'] ?? false) || ($pendingActionMap[$user->id]['promote_to_admin'] ?? false))
                                             <span class="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">
-                                                درخواست در انتظار تایید Manager
+                                                درخواست در انتظار تایید مدیر
                                             </span>
                                         @endif
 
                                         @if($user->access_level !== 'admin' && !($pendingActionMap[$user->id]['promote_to_admin'] ?? false))
                                             <button type="button" wire:click="setAccessLevel({{ $user->id }}, 'admin')" class="inline-flex items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100">
-                                                تغییر به Admin
+                                                تغییر به ادمین
                                             </button>
                                         @endif
 
                                         @if($user->access_level !== 'regular_user' && !($pendingActionMap[$user->id]['downgrade_admin'] ?? false))
                                             <button type="button" wire:click="setAccessLevel({{ $user->id }}, 'regular_user')" class="inline-flex items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100">
-                                                تغییر به Regular User
+                                                تغییر به کاربر عادی
                                             </button>
                                         @endif
                                     @endif
@@ -157,7 +157,7 @@
                                             حذف
                                         </button>
                                     @elseif($user->isProtectedManagerAccount())
-                                        <span class="text-xs font-semibold text-indigo-600">Manager محافظت‌شده</span>
+                                        <span class="text-xs font-semibold text-indigo-600">(مدیر) محافظت‌شده</span>
                                     @endif
                                 @else
                                     <span class="text-xs text-slate-400">حساب فعلی</span>

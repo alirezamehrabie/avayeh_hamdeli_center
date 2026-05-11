@@ -86,7 +86,7 @@ class UserManagement extends Component
         $actor = auth()->user();
         if (! $actor->isManager() && $user->access_level === User::ACCESS_LEVEL_ADMIN) {
             $this->queueManagerApproval($user->id, UserActionRequest::ACTION_DELETE);
-            session()->flash('success', 'درخواست حذف ادمین ثبت شد و منتظر تایید Manager است.');
+            session()->flash('success', 'درخواست حذف ادمین ثبت شد و منتظر تایید مدیر است.');
             return;
         }
 

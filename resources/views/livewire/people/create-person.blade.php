@@ -180,9 +180,97 @@
 
                                 <div class="col-md-4">
                                     <label class="form-label small fw-semibold mb-1">کد ملی <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control form-control-sm @error('national_id') is-invalid @enderror" maxlength="10" wire:model.live="national_id" inputmode="numeric" placeholder="10 رقم" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                    <input type="text" class="form-control form-control-sm @error('national_id') is-invalid @enderror" maxlength="10" wire:model.live.debounce.350ms="national_id" inputmode="numeric" placeholder="10 رقم" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                     @error('national_id') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                                 </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold mb-1">سریال شناسنامه</label>
+                                    <input type="text" class="form-control form-control-sm @error('shenasnameh_serial') is-invalid @enderror" maxlength="6" wire:model.live="shenasnameh_serial" inputmode="numeric" placeholder="6 رقم" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                    @error('shenasnameh_serial') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                </div>
+
+                                <div class="col-md-2">
+                                    <label class="form-label small fw-semibold mb-1">شماره سری</label>
+                                    <input type="text" class="form-control form-control-sm @error('shenasnameh_series_number') is-invalid @enderror" maxlength="2" wire:model.live="shenasnameh_series_number" inputmode="numeric" placeholder="2 رقم" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                    @error('shenasnameh_series_number') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                </div>
+
+                                <div class="col-md-2 position-relative"
+                                     x-data="{
+                                        openSeriesLetters: false,
+                                        selectedSeriesLetter: @entangle('shenasnameh_series_letter'),
+                                        seriesLetterOptions: @js($this->shenasnamehSeriesLetterOptions),
+                                        selectSeriesLetter(letter) {
+                                            if (!this.seriesLetterOptions.includes(letter)) return;
+                                            this.selectedSeriesLetter = letter;
+                                            this.openSeriesLetters = false;
+                                        },
+                                        selectSeriesLetterByKey(event) {
+                                            const key = (event.key || '').trim();
+                                            if (key.length !== 1) return;
+                                            if (!this.seriesLetterOptions.includes(key)) return;
+                                            event.preventDefault();
+                                            this.selectSeriesLetter(key);
+                                        },
+                                        clearSeriesLetter() {
+                                            this.selectedSeriesLetter = '';
+                                            this.openSeriesLetters = false;
+                                        }
+                                     }"
+                                     @click.outside="openSeriesLetters = false">
+                                    <label class="form-label small fw-semibold mb-1">حرف سری</label>
+                                    <div class="border @error('shenasnameh_series_letter') border-danger @else border-light @enderror p-2"
+                                         style="border-radius: 12px; background: #f8fafc;">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <small class="text-muted">انتخاب از لیست</small>
+                                            <button type="button"
+                                                    x-cloak
+                                                    x-show="selectedSeriesLetter"
+                                                    @click="clearSeriesLetter()"
+                                                    class="btn btn-link btn-sm p-0 text-decoration-none">
+                                                پاک کردن
+                                            </button>
+                                        </div>
+
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-secondary w-100 d-flex align-items-center justify-content-between"
+                                                @click="openSeriesLetters = !openSeriesLetters"
+                                                @keydown="selectSeriesLetterByKey($event)"
+                                                :aria-expanded="openSeriesLetters.toString()"
+                                                aria-haspopup="listbox"
+                                                style="border-radius: 10px; min-height: 34px;">
+                                            <span x-text="selectedSeriesLetter || 'انتخاب حرف سری'"></span>
+                                            <span class="small" x-text="openSeriesLetters ? '▲' : '▼'"></span>
+                                        </button>
+
+                                        <div x-show="openSeriesLetters"
+                                             x-cloak
+                                             x-transition
+                                             class="position-absolute start-0 end-0 mt-1 mx-2 p-2 border border-light rounded-3 bg-white shadow-sm z-3"
+                                             role="listbox"
+                                             aria-label="حروف سری شناسنامه"
+                                             style="max-height: 220px; overflow-y: auto;">
+                                            <div class="row g-1">
+                                            @foreach($this->shenasnamehSeriesLetterOptions as $letter)
+                                                <div class="col-3">
+                                                    <button type="button"
+                                                            role="option"
+                                                            :aria-selected="selectedSeriesLetter === '{{ $letter }}' ? 'true' : 'false'"
+                                                            @click="selectSeriesLetter('{{ $letter }}')"
+                                                            class="btn btn-sm w-100"
+                                                            :class="selectedSeriesLetter === '{{ $letter }}' ? 'btn-primary' : 'btn-outline-secondary'"
+                                                            style="border-radius: 10px; min-height: 34px;">
+                                                        {{ $letter }}
+                                                    </button>
+                                                </div>
+                                            @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @error('shenasnameh_series_letter') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                </div>
+
 
                                 <div class="col-md-4">
                                     <label class="form-label small fw-semibold mb-1">تاریخ تولد <span class="text-danger">*</span></label>
@@ -218,8 +306,10 @@
                                     @error('birth_year') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                                 </div>
 
+                                <hr>
+
                                 <div class="col-md-2">
-                                    <label class="form-label small fw-semibold mb-1">کد ملی پدر</label>
+                                    <label class="form-label small fw-semibold mb-1">کد ملی پدر <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control form-control-sm @error('father_national_id') is-invalid @enderror" maxlength="10" wire:model.live.debounce.350ms="father_national_id" inputmode="numeric" placeholder="10 رقم" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                     @if($showFatherSuggestions && strlen(trim((string)$father_national_id)) >= 5 && $this->fatherSuggestions->count())
                                         <div class="mt-1 rounded-3 border bg-white shadow-sm" style="border-color: #dbe3ec; max-height: 150px; overflow-y: auto;">
@@ -240,14 +330,14 @@
                                 </div>
 
                                 <div class="col-md-2">
-                                    <label class="form-label small fw-semibold mb-1">کد ملی مادر</label>
-                                    <input type="text" class="form-control form-control-sm @error('mother_national_id') is-invalid @enderror" maxlength="10" wire:model.blur="mother_national_id" inputmode="numeric" placeholder="10 رقم" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                    <label class="form-label small fw-semibold mb-1">کد ملی مادر <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control form-control-sm @error('mother_national_id') is-invalid @enderror" maxlength="10" wire:model.live.debounce.350ms="mother_national_id" inputmode="numeric" placeholder="10 رقم" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                     @error('mother_national_id') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                                 </div>
 
                                 <div class="col-md-4">
                                     <label class="form-label small fw-semibold mb-1">نام پدر <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control form-control-sm @error('father_name') is-invalid @enderror" wire:model.blur="father_name" placeholder="نام پدر" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                    <input type="text" class="form-control form-control-sm @error('father_name') is-invalid @enderror" wire:model.blur="father_name" placeholder="مثال: عباس" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                     @error('father_name') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                                 </div>
 
@@ -357,7 +447,7 @@
                                     <textarea wire:model.blur="skills_description"
                                               class="form-control form-control-sm @error('skills_description') is-invalid @enderror"
                                               rows="4"
-                                              placeholder="در صورت نیاز، توضیح کوتاهی درباره استعدادها یا مهارت های ویژه ثبت کنید..."
+                                              placeholder="در صورت نیاز، توضیح کوتاهی درباره استعدادها یا مهارت‌های ویژه ثبت کنید ..."
                                               style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec;"></textarea>
                                     @error('skills_description') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                                 </div>

@@ -62,9 +62,9 @@ class FastCreatePerson extends Component
             'birth_month' => 'required|integer|min:1|max:12',
             'birth_year' => 'required|integer|min:1300|max:1420',
             'gender' => 'required|in:male,female',
-            'father_name' => 'nullable|string|max:100',
-            'father_national_id' => 'nullable|digits:10',
-            'mother_national_id' => 'nullable|digits:10',
+            'father_name' => 'required|string|max:100',
+            'father_national_id' => 'required|digits:10',
+            'mother_national_id' => 'required|digits:10',
         ];
     }
 

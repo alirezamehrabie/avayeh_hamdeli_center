@@ -22,6 +22,7 @@
         $socialWorkersOpen = $dashboardMode ? $isActive(['social-workers-list', 'social-workers-block-list', 'social-worker-create', 'social-worker-edit']) : request()->routeIs('social-workers.*');
         $guardiansOpen = $dashboardMode ? $isActive(['guardians-list']) : false;
         $reportsOpen = $dashboardMode ? $isActive(['advanced-reports', 'advanced-beneficiary-report', 'advanced-supervisor-report', 'advanced-social-worker-report']) : false;
+        $servicesOpen = $dashboardMode ? $isActive(['define-services', 'service-delivery']) : false;
         $systemSettingsOpen = $dashboardMode ? $isActive(['system-settings-user-management', 'system-settings-user-account']) : request()->routeIs('admin.user-management') || request()->routeIs('admin.user-account');
         $defaultOpenMenu = $peopleOpen
             ? 'people'
@@ -29,9 +30,11 @@
                 ? 'social-workers'
                 : ($guardiansOpen
                     ? 'guardians'
-                    : ($reportsOpen
-                        ? 'reports'
-                        : ($systemSettingsOpen ? 'system-settings' : ''))));
+                    : ($servicesOpen
+                        ? 'services'
+                        : ($reportsOpen
+                            ? 'reports'
+                            : ($systemSettingsOpen ? 'system-settings' : '')))));
     @endphp
 
     <nav x-data="{ openMenu: '{{ $defaultOpenMenu }}' }" class="flex-1 space-y-2">
@@ -127,6 +130,22 @@
                 </button>
                 <div x-show="openMenu === 'guardians'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
                     <button type="button" wire:click="selectSection('guardians-list')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'guardians-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">لیست سرپرستان</button>
+                </div>
+            </div>
+        @endif
+
+        @if($dashboardMode)
+            <div>
+                <button type="button" @click="openMenu = openMenu === 'services' ? '' : 'services'" class="flex items-center justify-between w-full px-4 py-3 rounded-lg hover:bg-indigo-800 {{ $isActive(['define-services', 'service-delivery']) ? 'bg-indigo-700' : '' }}">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16"></path></svg>
+                        <span>خدمات</span>
+                    </div>
+                    <svg :class="openMenu === 'services' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div x-show="openMenu === 'services'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
+                    <button type="button" wire:click="selectSection('define-services')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'define-services' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">تعریف خدمات</button>
+                    <button type="button" wire:click="selectSection('service-delivery')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'service-delivery' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">تحویل خدمات</button>
                 </div>
             </div>
         @endif

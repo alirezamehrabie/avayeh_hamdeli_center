@@ -40,14 +40,14 @@
                     </div>
 
                     <div class="col-md-3">
-                        <label class="form-label">نام پدر</label>
+                        <label class="form-label">نام پدر <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" wire:model.blur="father_name" placeholder="">
                         @error('father_name') <span class="text-danger small">{{ $message }}</span> @enderror
                     </div>
 
                     <!-- Row 2: Optional father's nationality - Optional mother's nationality - Gender - Date of birth -->
                     <div class="col-md-3 pt-3">
-                        <label class="form-label">جنسیت</label>
+                        <label class="form-label">جنسیت <span class="text-danger">*</span></label>
                         <div>
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="radio" value="male" wire:model.blur="gender" id="gender_male">
@@ -62,7 +62,7 @@
                     </div>
 
                     <div class="col-md-3 pt-3">
-                        <label class="form-label">تاریخ تولد</label>
+                        <label class="form-label">تاریخ تولد <span class="text-danger">*</span></label>
                         <div class="row g-2 dir-ltr">
                             <div class="col-4">
                                 <select wire:model.blur="birth_day" class="form-select">
@@ -96,13 +96,13 @@
                     </div>
 
                     <div class="col-md-3 pt-3">
-                        <label class="form-label">کد ملی پدر (اختیاری)</label>
+                        <label class="form-label">کد ملی پدر <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" maxlength="10" wire:model.live="father_national_id" placeholder="">
                         @error('father_national_id') <span class="text-danger small">{{ $message }}</span> @enderror
                     </div>
 
                     <div class="col-md-3 pt-3">
-                        <label class="form-label">کد ملی مادر (اختیاری)</label>
+                        <label class="form-label"> کد ملی مادر <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" maxlength="10" wire:model.live="mother_national_id" placeholder="">
                         @error('mother_national_id') <span class="text-danger small">{{ $message }}</span> @enderror
                     </div>

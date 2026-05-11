@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 use App\Models\{AcademicLevel,
     Person,
     FamilyStatus,
@@ -36,10 +37,10 @@ use Faker\Factory;
 
 class ComprehensivePersonSeeder extends Seeder
 {
-    private const SOCIAL_WORKER_COUNT = 10;
-    private const HOUSEHOLD_COUNT = 30;
-    private const MIN_CHILDREN_PER_HOUSEHOLD = 1;
-    private const MAX_CHILDREN_PER_HOUSEHOLD = 6;
+    private const DEFAULT_SOCIAL_WORKER_COUNT = 6;
+    private const DEFAULT_HOUSEHOLD_COUNT = 12;
+    private const DEFAULT_MIN_CHILDREN_PER_HOUSEHOLD = 1;
+    private const DEFAULT_MAX_CHILDREN_PER_HOUSEHOLD = 8;
 
     public function run(): void
     {
@@ -53,9 +54,17 @@ class ComprehensivePersonSeeder extends Seeder
         // ۲. پر کردن جداول پایه (Lookup Tables) در صورت خالی بودن
         $this->seedLookupTables();
 
-        // ۳. ایجاد ۵ مددکار اجتماعی
+        $socialWorkerCount = $this->resolveIntSetting('social_worker_count', self::DEFAULT_SOCIAL_WORKER_COUNT, 1);
+        $householdCount = $this->resolveIntSetting('household_count', self::DEFAULT_HOUSEHOLD_COUNT, 1);
+        $minChildrenPerHousehold = $this->resolveIntSetting('min_children_per_household', self::DEFAULT_MIN_CHILDREN_PER_HOUSEHOLD, 0);
+        $maxChildrenPerHousehold = $this->resolveIntSetting('max_children_per_household', self::DEFAULT_MAX_CHILDREN_PER_HOUSEHOLD, 0);
+        if ($maxChildrenPerHousehold < $minChildrenPerHousehold) {
+            $maxChildrenPerHousehold = $minChildrenPerHousehold;
+        }
+
+        // ۳. ایجاد مددکارهای اجتماعی
         $socialWorkers = [];
-        for ($i = 0; $i < self::SOCIAL_WORKER_COUNT; $i++) {
+        for ($i = 0; $i < $socialWorkerCount; $i++) {
 
             $firstName = $faker->firstName();
             $lastName = $faker->lastName();
@@ -107,8 +116,8 @@ class ComprehensivePersonSeeder extends Seeder
             ]);
         }
 
-        // ۴. ایجاد ۲۰ پرونده کامل (سرپرست + مددجو + مخلفات)
-        for ($i = 0; $i < self::HOUSEHOLD_COUNT; $i++) {
+        // ۴. ایجاد پرونده کامل (سرپرست + مددجو + مخلفات)
+        for ($i = 0; $i < $householdCount; $i++) {
             $sw = $faker->randomElement($socialWorkers);
 
             // ۱. تولید مقادیر تصادفی برای تاریخ تولد
@@ -180,7 +189,8 @@ class ComprehensivePersonSeeder extends Seeder
             ]);
 
             // ج) ایجاد ۱ تا ۳ مددجو (Person) برای هر سرپرست
-            $childCount = rand(self::MIN_CHILDREN_PER_HOUSEHOLD, self::MAX_CHILDREN_PER_HOUSEHOLD);
+            $childCount = rand($minChildrenPerHousehold, $maxChildrenPerHousehold);
+            $guardianBankInfoCreated = false;
             for ($j = 0; $j < $childCount; $j++) {
                 $person = Person::create([
                     'guardian_id' => $guardian->id,
@@ -227,17 +237,30 @@ class ComprehensivePersonSeeder extends Seeder
                     'monthly_income' => $faker->numberBetween(50, 500) * 1000000,
                 ]);
 
-                // و) اطلاعات بانکی (شبیه‌سازی منطق فرم: یا برای مددجو یا برای سرپرست)
+                // و) اطلاعات بانکی: برای جلوگیری از خطای unique روی guardian_id، اطلاعات حساب سرپرست فقط یک‌بار ثبت می‌شود.
                 $hasOwnAccount = $faker->boolean();
-                BankInfo::create([
-                    'person_id' => $hasOwnAccount ? $person->id : null,
-                    'guardian_id' => $hasOwnAccount ? null : $guardian->id,
-                    'bank_id' => Bank::inRandomOrder()->first()->id,
-                    'has_own_account' => $hasOwnAccount ? 1 : 0,
-                    'account_owner_relation_id' => $hasOwnAccount ? '1' : '2',
-                    'card_number' => $faker->numerify('################'),
-                    'sheba_number' => 'IR' . $faker->numerify('########################'),
-                ]);
+                if ($hasOwnAccount) {
+                    BankInfo::create([
+                        'person_id' => $person->id,
+                        'guardian_id' => null,
+                        'bank_id' => Bank::inRandomOrder()->first()->id,
+                        'has_own_account' => 1,
+                        'account_owner_relation_id' => '1',
+                        'card_number' => $faker->numerify('################'),
+                        'sheba_number' => 'IR' . $faker->numerify('########################'),
+                    ]);
+                } elseif (!$guardianBankInfoCreated) {
+                    BankInfo::create([
+                        'person_id' => null,
+                        'guardian_id' => $guardian->id,
+                        'bank_id' => Bank::inRandomOrder()->first()->id,
+                        'has_own_account' => 0,
+                        'account_owner_relation_id' => '2',
+                        'card_number' => $faker->numerify('################'),
+                        'sheba_number' => 'IR' . $faker->numerify('########################'),
+                    ]);
+                    $guardianBankInfoCreated = true;
+                }
 
                 // ز) پوشش حمایتی و سطح نیاز
                 SupportCoverage::create([
@@ -290,5 +313,27 @@ class ComprehensivePersonSeeder extends Seeder
         if (HarmType::count() == 0) HarmType::create(['title' => 'بیماری خاص']);
         if (SupportOrganization::count() == 0) SupportOrganization::create(['name' => 'کمیته امداد']);
         if (AccountOwnerRelation::count() == 0) AccountOwnerRelation::create(['title' => 'خودش']);
+    }
+
+    private function resolveIntSetting(string $key, int $default, int $min = 0): int
+    {
+        $value = null;
+
+        if ($this->command && method_exists($this->command, 'option')) {
+            try {
+                $value = $this->command->option($key);
+            } catch (InvalidArgumentException $exception) {
+                // The option is not defined for this command (e.g. default db:seed).
+                $value = null;
+            }
+        }
+
+        if ($value === null || $value === '') {
+            $envKey = 'COMPREHENSIVE_PERSON_SEEDER_' . strtoupper($key);
+            $value = env($envKey, $default);
+        }
+
+        $value = (int) $value;
+        return max($min, $value);
     }
 }

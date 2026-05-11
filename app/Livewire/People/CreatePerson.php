@@ -49,6 +49,12 @@ use App\Helpers\Carbon\Carbon;
 class CreatePerson extends Component
 {
     use WithFileUploads;
+    private const SHENASNAMEH_SERIES_LETTERS = [
+        'ا', 'ب', 'پ', 'ت', 'ث', 'ج', 'چ', 'ح', 'خ', 'د', 'ذ', 'ر', 'ز', 'ژ',
+        'س', 'ش', 'ص', 'ض', 'ط', 'ظ', 'ع', 'غ', 'ف', 'ق', 'ک', 'گ', 'ل', 'م',
+        'ن', 'و', 'ه', 'ی',
+    ];
+
     public $is_submitted = false;
     public $show_step_error_badges = false;
 
@@ -74,6 +80,9 @@ class CreatePerson extends Component
 
     public $last_name;
     public $national_id;
+    public $shenasnameh_serial;
+    public $shenasnameh_series_number;
+    public $shenasnameh_series_letter;
 
     public $person_id = null; // اضافه کردن این خط در کنار سایر public ها
 
@@ -281,6 +290,9 @@ class CreatePerson extends Component
             $this->first_name = $this->person->first_name;
             $this->last_name = $this->person->last_name;
             $this->national_id = $this->person->national_id;
+            $this->shenasnameh_serial = $this->person->shenasnameh_serial;
+            $this->shenasnameh_series_number = $this->person->shenasnameh_series_number;
+            $this->shenasnameh_series_letter = $this->person->shenasnameh_series_letter;
             $this->birth_day = $this->person->birth_day;
             $this->birth_month = $this->person->birth_month;
             $this->birth_year = $this->person->birth_year;
@@ -389,6 +401,36 @@ class CreatePerson extends Component
         $this->validateOnly('national_id', [
             'national_id' => ['nullable', 'digits:10'],
         ]);
+    }
+
+    public function updatedShenasnamehSerial($value): void
+    {
+        $this->shenasnameh_serial = preg_replace('/\D+/', '', trim((string) $value));
+        $this->validateOnly('shenasnameh_serial', [
+            'shenasnameh_serial' => ['nullable', 'regex:/^[0-9]{6}$/'],
+        ]);
+    }
+
+    public function updatedShenasnamehSeriesNumber($value): void
+    {
+        $this->shenasnameh_series_number = preg_replace('/\D+/', '', trim((string) $value));
+        $this->validateOnly('shenasnameh_series_number', [
+            'shenasnameh_series_number' => ['nullable', 'regex:/^[0-9]{2}$/'],
+        ]);
+    }
+
+    public function updatedShenasnamehSeriesLetter($value): void
+    {
+        $letter = preg_replace('/\s+/u', '', trim((string) $value));
+        $this->shenasnameh_series_letter = mb_substr($letter, 0, 1);
+        $this->validateOnly('shenasnameh_series_letter', [
+            'shenasnameh_series_letter' => ['nullable', Rule::in(self::SHENASNAMEH_SERIES_LETTERS)],
+        ]);
+    }
+
+    public function getShenasnamehSeriesLetterOptionsProperty(): array
+    {
+        return self::SHENASNAMEH_SERIES_LETTERS;
     }
 
     public function updatedFatherNationalId($value): void
@@ -963,6 +1005,9 @@ class CreatePerson extends Component
                 'digits:10',
                 Rule::unique('people', 'national_id')->ignore($this->person_id)
             ],
+            'shenasnameh_serial' => ['nullable', 'regex:/^[0-9]{6}$/'],
+            'shenasnameh_series_number' => ['nullable', 'regex:/^[0-9]{2}$/'],
+            'shenasnameh_series_letter' => ['nullable', Rule::in(self::SHENASNAMEH_SERIES_LETTERS)],
             'birth_day' => ['required', 'integer', 'between:1,31', function ($attribute, $value, $fail) {
                 if ($this->birth_month > 6 && $value > 30) $fail('برای نیمه دوم سال، روز نمی‌تواند ۳۱ باشد.');
                 if ($this->birth_month == 12 && $value > 29) $fail('برای اسفند، روز نمی‌تواند بیشتر از ۲۹ باشد.');
@@ -970,8 +1015,8 @@ class CreatePerson extends Component
             'birth_month' => 'required|integer|between:1,12',
             'birth_year' => 'required|integer|between:1300,1450',
             'father_name' => 'required|string|max:100',
-            'father_national_id' => 'nullable|digits:10',
-            'mother_national_id' => 'nullable|digits:10',
+            'father_national_id' => 'required|digits:10',
+            'mother_national_id' => 'required|digits:10',
             'phone_number' => 'nullable|string|max:11',
             'gender' => 'required|in:male,female',
             'role' => 'required|in:child,guardian',
@@ -1214,6 +1259,9 @@ class CreatePerson extends Component
                     'first_name' => $this->first_name,
                     'last_name' => $this->last_name,
                     'national_id' => $this->national_id,
+                    'shenasnameh_serial' => $this->shenasnameh_serial,
+                    'shenasnameh_series_number' => $this->shenasnameh_series_number,
+                    'shenasnameh_series_letter' => $this->shenasnameh_series_letter,
                     'birth_day' => $this->birth_day,
                     'birth_month' => $this->birth_month,
                     'birth_year' => $this->birth_year,
@@ -1438,6 +1486,9 @@ class CreatePerson extends Component
                     'first_name' => $this->first_name,
                     'last_name' => $this->last_name,
                     'national_id' => $this->national_id,
+                    'shenasnameh_serial' => $this->shenasnameh_serial,
+                    'shenasnameh_series_number' => $this->shenasnameh_series_number,
+                    'shenasnameh_series_letter' => $this->shenasnameh_series_letter,
                     'birth_day' => $this->birth_day,
                     'birth_month' => $this->birth_month,
                     'birth_year' => $this->birth_year,
@@ -1964,6 +2015,9 @@ class CreatePerson extends Component
                     'first_name' => 'required|string|max:255',
                     'last_name' => 'required|string|max:255',
                     'national_id' => 'required|digits:10|unique:people,national_id,' . $this->person_id,
+                    'shenasnameh_serial' => 'nullable|regex:/^[0-9]{6}$/',
+                    'shenasnameh_series_number' => 'nullable|regex:/^[0-9]{2}$/',
+                    'shenasnameh_series_letter' => ['nullable', Rule::in(self::SHENASNAMEH_SERIES_LETTERS)],
                     'birth_day' => 'required|integer|min:1|max:31',
                     'birth_month' => 'required|integer|min:1|max:12',
                     'birth_year' => 'required|integer|min:1300|max:1420',
