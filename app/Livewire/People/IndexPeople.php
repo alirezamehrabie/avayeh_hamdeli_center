@@ -109,10 +109,10 @@ class IndexPeople extends Component
         }
 
         return Person::with([
-            'socialWorker',
             'guardian.occupation',
             'guardian.jobType',
             'guardian.residence',
+            'guardian.socialWorker',
             'education.educationLevel',
             'supportCoverage.organization',
             'disabilityType',

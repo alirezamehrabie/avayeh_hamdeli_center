@@ -217,6 +217,14 @@
                 $selectedPerson->guardian?->occupation?->name,
                 $selectedPerson->guardian?->jobType?->name,
             ])->filter()->implode(' - ');
+            $guardianFullName = trim(collect([
+                $selectedPerson->guardian?->first_name,
+                $selectedPerson->guardian?->last_name,
+            ])->filter()->implode(' '));
+            $guardianStatus = $selectedPerson->familyStatus?->guardianRelationType?->title ?: '-';
+            if ($guardianFullName !== '') {
+                $guardianStatus .= ' - ' . $guardianFullName;
+            }
             $detailItems = [
                 ['label' => 'نام و نام خانوادگی', 'value' => $selectedPerson->full_name ?: '-'],
                 ['label' => 'کد ملی', 'value' => $selectedPerson->national_id ?: '-'],
@@ -229,11 +237,11 @@
                 ['label' => 'مهارت‌ها', 'value' => $skills ?: ($selectedPerson->skills_description ?: '-')],
                 ['label' => 'نهاد حامی', 'value' => $supportOrganizationName],
                 ['label' => 'نوع معلولیت', 'value' => $selectedPerson->has_disability ? ($selectedPerson->disabilityType?->name ?: ($selectedPerson->disability_description ?: 'دارد')) : 'ندارد'],
-                ['label' => 'وضعیت سرپرست', 'value' => $selectedPerson->familyStatus?->guardianRelationType?->title ?: '-'],
+                ['label' => 'وضعیت سرپرست', 'value' => $guardianStatus],
                 ['label' => 'شغل سرپرست', 'value' => $guardianJob ?: '-'],
                 ['label' => 'اشتغال مددجو', 'value' => $employmentStatus],
                 ['label' => 'آدرس منزل سرپرست', 'value' => $selectedPerson->guardian?->residence?->address ?: '-'],
-                ['label' => 'مددکار اختصاص‌یافته', 'value' => $selectedPerson->socialWorker?->full_name ?: '-'],
+                ['label' => 'مددکار اختصاص‌یافته', 'value' => $selectedPerson->guardian?->socialWorker?->full_name ?: '-'],
                 ['label' => 'سطح نیاز', 'value' => $selectedPerson->needsLevel?->levelType?->title ?: '-'],
             ];
         @endphp
