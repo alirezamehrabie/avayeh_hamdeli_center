@@ -224,7 +224,12 @@ return [
         'personal_phone'                => 'تلفن همراه',
         'account_owner_relation_id'     => 'شناسه نسبت مالک حساب',
         'need_level_id'                 => 'شناسه سطح نیاز',
-        'shenasnameh_lserial' => 'سریال شناسنامه'
+        'shenasnameh_serial' => 'سریال شناسنامه',
+        'shenasnameh_series_number' => 'سری عددی شناسنامه',
+        'any_family_employed_description' => 'توضیحات اعضای شاغل',
+        'has_vehicle' => 'وسیله نقلیه',
+        'vehicle_type_id' => 'نوع وسیله نقلیه',
+        'vehicle_ownership_type' => 'نوع مالکیت وسیله نقلیه',
     ],
 
     'values' => [
@@ -232,9 +237,9 @@ return [
             'general' => 'عام',
             'sadaat' => 'سادات',
         ],
-        'type' => [
-            'admin' => 'مدیر',
-            'user' => 'کاربر',
+        'any_family_employed' => [
+            '0' => 'خیر',
+            '1' => 'بله',
         ],
     ],
 

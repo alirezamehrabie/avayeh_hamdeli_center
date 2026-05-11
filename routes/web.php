@@ -39,29 +39,33 @@ Route::get('/', function () {
 });
 
 // مسیر ثبت‌نام سریع فرد جدید
-Route::get('/people/fast-create/{person?}', FastCreatePerson::class)->name('people.fast-create');
+Route::get('/people/fast-create/{person?}', FastCreatePerson::class)
+    ->middleware(['auth'])
+    ->name('people.fast-create');
 
 // مسیر لیست مددجویان
-Route::get('/people', IndexPeople::class)->name('people.index');
-Route::get('/people/advanced-reporting', AdvancedFilterBuilder::class)->name('people.advanced-reporting');
-Route::get('/people/block-list', DeletedPeople::class)->name('people.block-list');
-Route::get('/guardians', IndexGuardians::class)->name('guardians.index');
-Route::get('/guardians/{guardian}/edit', EditGuardian::class)->name('guardians.edit');
+Route::get('/people', IndexPeople::class)->middleware(['auth', 'can:manage-people'])->name('people.index');
+Route::get('/people/advanced-reporting', AdvancedFilterBuilder::class)->middleware(['auth', 'can:full-access'])->name('people.advanced-reporting');
+Route::get('/people/block-list', DeletedPeople::class)->middleware(['auth', 'can:people-delete'])->name('people.block-list');
+Route::get('/guardians', IndexGuardians::class)->middleware(['auth', 'can:full-access'])->name('guardians.index');
+Route::get('/guardians/{guardian}/edit', EditGuardian::class)->middleware(['auth', 'can:full-access'])->name('guardians.edit');
 
 // مسیر نمایش فرم به Livewire تغییر می‌کند
-Route::get('/people/{mode}/{person?}', CreatePerson::class)->name('people.form');
+Route::get('/people/{mode}/{person?}', CreatePerson::class)
+    ->middleware(['auth'])
+    ->name('people.form');
 // Route to handle form submission
-Route::get('/social-workers/create', CreateSocialWorker::class)->name('social-workers.create');
+Route::get('/social-workers/create', CreateSocialWorker::class)->middleware(['auth', 'can:manage-social-workers'])->name('social-workers.create');
 
-Route::get('/social-workers', IndexSocialWorkers::class)->name('social-workers.index');
-Route::get('/social-workers/block-list', DeletedSocialWorkers::class)->name('social-workers.block-list');
-Route::get('/social-workers/{socialWorker}/edit', EditSocialWorker::class)->name('social-workers.edit');
+Route::get('/social-workers', IndexSocialWorkers::class)->middleware(['auth', 'can:manage-social-workers'])->name('social-workers.index');
+Route::get('/social-workers/block-list', DeletedSocialWorkers::class)->middleware(['auth', 'can:manage-social-workers'])->name('social-workers.block-list');
+Route::get('/social-workers/{socialWorker}/edit', EditSocialWorker::class)->middleware(['auth', 'can:manage-social-workers'])->name('social-workers.edit');
 Route::get('/admin/dashboard', DashboardHome::class)
     ->middleware(['auth', 'can:access-admin-panel'])
     ->name('admin.dashboard');
 
 Route::get('/admin/system-settings/users', UserManagement::class)
-    ->middleware(['auth', 'can:access-admin-panel'])
+    ->middleware(['auth', 'can:full-access'])
     ->name('admin.user-management');
 
 Route::get('/admin/system-settings/user-account', UserAccount::class)

@@ -63,23 +63,33 @@
                 </button>
                 <div x-show="openMenu === 'people'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
                     @if($dashboardMode)
-                        <button type="button" wire:click="selectSection('people-fast-create')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'people-fast-create' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            <i class="fa fa-bolt"></i> ثبت سریع مددجو
-                        </button>
-                        <button type="button" wire:click="selectSection('person-create')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'person-create' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            <i class="fa fa-user-plus"></i> فرم کامل ثبت نام
-                        </button>
+                        @can('people-register')
+                            <button type="button" wire:click="selectSection('people-fast-create')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'people-fast-create' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
+                                <i class="fa fa-bolt"></i> ثبت سریع مددجو
+                            </button>
+                            <button type="button" wire:click="selectSection('person-create')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'person-create' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
+                                <i class="fa fa-user-plus"></i> فرم کامل ثبت نام
+                            </button>
+                        @endcan
                         <button type="button" wire:click="selectSection('people-list')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'people-list' || $activeSection === 'person-edit' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             <i class="fa fa-users"></i> لیست مددجویان
                         </button>
-                        <button type="button" wire:click="selectSection('people-block-list')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'people-block-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            <i class="fa fa-ban"></i> بلاک لیست مددجویان
-                        </button>
+                        @can('people-delete')
+                            <button type="button" wire:click="selectSection('people-block-list')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'people-block-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
+                                <i class="fa fa-ban"></i> بلاک لیست مددجویان
+                            </button>
+                        @endcan
                     @else
-                        <a href="{{ route('people.fast-create') }}" class="block px-4 py-2 text-sm text-indigo-200 hover:text-white"><i class="fa fa-bolt"></i> ثبت سریع فرد</a>
+                        @can('people-register')
+                            <a href="{{ route('people.fast-create') }}" class="block px-4 py-2 text-sm text-indigo-200 hover:text-white"><i class="fa fa-bolt"></i> ثبت سریع فرد</a>
+                        @endcan
                         <a href="{{ route('people.index') }}" class="block px-4 py-2 text-sm {{ request()->routeIs('people.index') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}"><i class="fa fa-users"></i> لیست مددجویان</a>
-                        <a href="{{ route('people.block-list') }}" class="block px-4 py-2 text-sm {{ request()->routeIs('people.block-list') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}"><i class="fa fa-ban"></i> بلاک لیست مددجویان</a>
-                        <a href="{{ route('people.form', ['mode' => 'create']) }}" class="block px-4 py-2 text-sm text-indigo-200 hover:text-white"><i class="fa fa-user-plus"></i> ثبت مددجوی جدید (کامل)</a>
+                        @can('people-delete')
+                            <a href="{{ route('people.block-list') }}" class="block px-4 py-2 text-sm {{ request()->routeIs('people.block-list') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}"><i class="fa fa-ban"></i> بلاک لیست مددجویان</a>
+                        @endcan
+                        @can('people-register')
+                            <a href="{{ route('people.form', ['mode' => 'create']) }}" class="block px-4 py-2 text-sm text-indigo-200 hover:text-white"><i class="fa fa-user-plus"></i> ثبت مددجوی جدید (کامل)</a>
+                        @endcan
                     @endif
                 </div>
             </div>
@@ -119,6 +129,7 @@
             @endif
         @endcan
 
+        @can('full-access')
         @if($dashboardMode)
             <div>
                 <button type="button" @click="openMenu = openMenu === 'guardians' ? '' : 'guardians'" class="flex items-center justify-between w-full px-4 py-3 rounded-lg hover:bg-indigo-800 {{ $isActive(['guardians-list']) ? 'bg-indigo-700' : '' }}">
@@ -172,6 +183,7 @@
                 <span>Advanced Reports</span>
             </a>
         @endif
+        @endcan
 
         @if($dashboardMode)
             <div>
@@ -183,9 +195,11 @@
                     <svg :class="openMenu === 'system-settings' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
                 </button>
                 <div x-show="openMenu === 'system-settings'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
-                    <button type="button" wire:click="selectSection('system-settings-user-management')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'system-settings-user-management' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                        مدیریت کاربران
-                    </button>
+                    @can('full-access')
+                        <button type="button" wire:click="selectSection('system-settings-user-management')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'system-settings-user-management' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
+                            مدیریت کاربران
+                        </button>
+                    @endcan
                     <button type="button" wire:click="selectSection('system-settings-user-account')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'system-settings-user-account' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                         حساب کاربری
                     </button>
@@ -201,9 +215,11 @@
                     <svg :class="openMenu === 'system-settings' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
                 </button>
                 <div x-show="openMenu === 'system-settings'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
-                    <a href="{{ route('admin.user-management') }}" class="block px-4 py-2 text-sm {{ request()->routeIs('admin.user-management') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                        مدیریت کاربران
-                    </a>
+                    @can('full-access')
+                        <a href="{{ route('admin.user-management') }}" class="block px-4 py-2 text-sm {{ request()->routeIs('admin.user-management') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
+                            مدیریت کاربران
+                        </a>
+                    @endcan
                     <a href="{{ route('admin.user-account') }}" class="block px-4 py-2 text-sm {{ request()->routeIs('admin.user-account') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                         حساب کاربری
                     </a>

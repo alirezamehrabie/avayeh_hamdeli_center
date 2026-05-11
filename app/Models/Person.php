@@ -83,7 +83,6 @@ class Person extends Model
         'birth_month' => 'integer',
         'birth_year' => 'integer',
         'has_disability' => 'boolean',
-        'skills' => 'array',
     ];
 
     /**

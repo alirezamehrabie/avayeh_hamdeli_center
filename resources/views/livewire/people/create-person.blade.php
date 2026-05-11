@@ -428,7 +428,7 @@
                                                             class="form-check-input m-0"
                                                             type="checkbox"
                                                             value="{{ $skill->id }}"
-                                                            wire:model.live="skills"
+                                                            wire:model="skills"
                                                             id="skill_{{ $skill->id }}"
                                                         >
                                                         <span class="small text-dark">{{ $skill->name }}</span>

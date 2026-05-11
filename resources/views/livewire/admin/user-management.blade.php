@@ -2,7 +2,7 @@
     <div class="rounded-2xl border border-indigo-100 bg-white p-5 shadow-sm">
         <div class="mb-5">
             <h1 class="text-2xl font-bold text-slate-800">مدیریت کاربران</h1>
-            <p class="mt-1 text-sm text-slate-500">ایجاد کاربر جدید با نام کاربری و رمز عبور</p>
+            <p class="mt-1 text-sm text-slate-500">ایجاد کاربر جدید و تخصیص سطح دسترسی ماژول‌ها برای ثبت، ویرایش یا حذف مددجو</p>
         </div>
 
         @if (session()->has('success'))
@@ -46,7 +46,158 @@
             </div>
         @endif
 
+        @if($editing_user_id)
+            <form
+                wire:submit.prevent="updateUser"
+                x-data="{}"
+                x-on:scroll-to-user-edit.window="$el.scrollIntoView({ behavior: 'smooth', block: 'start' })"
+                class="mb-6 grid gap-4 rounded-2xl border border-amber-200 bg-amber-50/40 p-5 md:grid-cols-4"
+            >
+                <div class="md:col-span-4 flex items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">ویرایش کاربر</h2>
+                        <p class="mt-1 text-sm text-slate-500">نام، نام خانوادگی، نام کاربری، سطح دسترسی و رمز عبور کاربر را در همین صفحه تغییر دهید.</p>
+                    </div>
+                    <button
+                        type="button"
+                        wire:click="cancelEditingUser"
+                        class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+                    >
+                        انصراف
+                    </button>
+                </div>
+
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">نام</label>
+                    <input
+                        type="text"
+                        wire:model.blur="edit_first_name"
+                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-amber-300 focus:outline-none focus:ring-4 focus:ring-amber-100"
+                    >
+                    @error('edit_first_name') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
+                </div>
+
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">نام خانوادگی</label>
+                    <input
+                        type="text"
+                        wire:model.blur="edit_last_name"
+                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-amber-300 focus:outline-none focus:ring-4 focus:ring-amber-100"
+                    >
+                    @error('edit_last_name') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
+                </div>
+
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">نام کاربری</label>
+                    <input
+                        type="text"
+                        wire:model.blur="edit_username"
+                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-amber-300 focus:outline-none focus:ring-4 focus:ring-amber-100"
+                    >
+                    @error('edit_username') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
+                </div>
+
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">سطح دسترسی</label>
+                    <select
+                        wire:model="edit_access_level"
+                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-amber-300 focus:outline-none focus:ring-4 focus:ring-amber-100"
+                    >
+                        <option value="manager" disabled>مدیریت (محافظت‌شده)</option>
+                        <option value="admin" @disabled(!$actorCanCreateAdmin)>ادمین</option>
+                        <option value="regular_user">کاربر عادی</option>
+                    </select>
+                    @error('edit_access_level') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
+                </div>
+
+                <div x-data="{ showPassword: false }">
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">رمز عبور جدید</label>
+                    <div class="relative">
+                        <input
+                            x-bind:type="showPassword ? 'text' : 'password'"
+                            wire:model.blur="edit_password"
+                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 pl-10 text-sm text-slate-700 focus:border-amber-300 focus:outline-none focus:ring-4 focus:ring-amber-100"
+                            placeholder="در صورت نیاز تغییر دهید"
+                        >
+                        <button
+                            type="button"
+                            x-on:click="showPassword = !showPassword"
+                            class="absolute inset-y-0 left-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-600"
+                            x-bind:aria-label="showPassword ? 'مخفی کردن رمز عبور' : 'نمایش رمز عبور'"
+                        >
+                            <svg x-show="!showPassword" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <svg x-show="showPassword" x-cloak xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.956 9.956 0 012.042-3.368M6.223 6.223A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.97 9.97 0 01-4.294 5.225M15 12a3 3 0 00-4.243-4.243M9.88 9.88A3 3 0 0014.12 14.12M3 3l18 18" />
+                            </svg>
+                        </button>
+                    </div>
+                    @error('edit_password') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
+                </div>
+
+                <div class="md:col-span-2" x-data="{ showPassword: false }">
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">تکرار رمز عبور جدید</label>
+                    <div class="relative">
+                        <input
+                            x-bind:type="showPassword ? 'text' : 'password'"
+                            wire:model.blur="edit_password_confirmation"
+                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 pl-10 text-sm text-slate-700 focus:border-amber-300 focus:outline-none focus:ring-4 focus:ring-amber-100"
+                            placeholder="تکرار رمز عبور جدید"
+                        >
+                        <button
+                            type="button"
+                            x-on:click="showPassword = !showPassword"
+                            class="absolute inset-y-0 left-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-600"
+                            x-bind:aria-label="showPassword ? 'مخفی کردن رمز عبور' : 'نمایش رمز عبور'"
+                        >
+                            <svg x-show="!showPassword" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <svg x-show="showPassword" x-cloak xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.956 9.956 0 012.042-3.368M6.223 6.223A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.97 9.97 0 01-4.294 5.225M15 12a3 3 0 00-4.243-4.243M9.88 9.88A3 3 0 0014.12 14.12M3 3l18 18" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="md:col-span-4 flex items-center gap-3">
+                    <button
+                        type="submit"
+                        class="inline-flex items-center justify-center rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600 focus:outline-none focus:ring-4 focus:ring-amber-100"
+                    >
+                        ذخیره تغییرات
+                    </button>
+                    <span class="text-xs text-slate-500">اگر رمز عبور را خالی بگذارید، رمز فعلی حفظ می‌شود.</span>
+                </div>
+            </form>
+        @endif
+
         <form wire:submit.prevent="createUser" class="grid gap-4 md:grid-cols-4">
+            <div>
+                <label class="mb-2 block text-sm font-semibold text-slate-700">نام</label>
+                <input
+                    type="text"
+                    wire:model.blur="first_name"
+                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                    placeholder="مثال: علی"
+                >
+                @error('first_name') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
+            </div>
+
+            <div>
+                <label class="mb-2 block text-sm font-semibold text-slate-700">نام خانوادگی</label>
+                <input
+                    type="text"
+                    wire:model.blur="last_name"
+                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                    placeholder="مثال: رضایی"
+                >
+                @error('last_name') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
+            </div>
+
             <div>
                 <label class="mb-2 block text-sm font-semibold text-slate-700">نام کاربری</label>
                 <input
@@ -58,25 +209,57 @@
                 @error('username') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
             </div>
 
-            <div>
+            <div x-data="{ showPassword: false }">
                 <label class="mb-2 block text-sm font-semibold text-slate-700">رمز عبور</label>
-                <input
-                    type="password"
-                    wire:model.blur="password"
-                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100"
-                    placeholder="حداقل 8 کاراکتر"
-                >
+                <div class="relative">
+                    <input
+                        x-bind:type="showPassword ? 'text' : 'password'"
+                        wire:model.blur="password"
+                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 pl-10 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                        placeholder="حداقل 8 کاراکتر"
+                    >
+                    <button
+                        type="button"
+                        x-on:click="showPassword = !showPassword"
+                        class="absolute inset-y-0 left-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-600"
+                        x-bind:aria-label="showPassword ? 'مخفی کردن رمز عبور' : 'نمایش رمز عبور'"
+                    >
+                        <svg x-show="!showPassword" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        <svg x-show="showPassword" x-cloak xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.956 9.956 0 012.042-3.368M6.223 6.223A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.97 9.97 0 01-4.294 5.225M15 12a3 3 0 00-4.243-4.243M9.88 9.88A3 3 0 0014.12 14.12M3 3l18 18" />
+                        </svg>
+                    </button>
+                </div>
                 @error('password') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
             </div>
 
-            <div>
+            <div x-data="{ showPassword: false }">
                 <label class="mb-2 block text-sm font-semibold text-slate-700">تکرار رمز عبور</label>
-                <input
-                    type="password"
-                    wire:model.blur="password_confirmation"
-                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100"
-                    placeholder="تکرار رمز عبور"
-                >
+                <div class="relative">
+                    <input
+                        x-bind:type="showPassword ? 'text' : 'password'"
+                        wire:model.blur="password_confirmation"
+                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 pl-10 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                        placeholder="تکرار رمز عبور"
+                    >
+                    <button
+                        type="button"
+                        x-on:click="showPassword = !showPassword"
+                        class="absolute inset-y-0 left-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-600"
+                        x-bind:aria-label="showPassword ? 'مخفی کردن رمز عبور' : 'نمایش رمز عبور'"
+                    >
+                        <svg x-show="!showPassword" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        <svg x-show="showPassword" x-cloak xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.956 9.956 0 012.042-3.368M6.223 6.223A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.97 9.97 0 01-4.294 5.225M15 12a3 3 0 00-4.243-4.243M9.88 9.88A3 3 0 0014.12 14.12M3 3l18 18" />
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <div>
@@ -90,6 +273,25 @@
                     <option value="regular_user">کاربر عادی</option>
                 </select>
                 @error('access_level') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
+            </div>
+
+            <div class="md:col-span-4">
+                <label class="mb-2 block text-sm font-semibold text-slate-700">دسترسی‌های قابل تخصیص</label>
+                <div class="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-2">
+                    @foreach($permissionOptions as $permissionKey => $permissionLabel)
+                        <label class="flex items-start gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700">
+                            <input
+                                type="checkbox"
+                                value="{{ $permissionKey }}"
+                                wire:model="permissions"
+                                class="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                            >
+                            <span>{{ $permissionLabel }}</span>
+                        </label>
+                    @endforeach
+                </div>
+                @error('permissions') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
+                @error('permissions.*') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
             </div>
 
             <div class="md:col-span-4">
@@ -107,9 +309,11 @@
                 <thead class="bg-slate-50 text-slate-600">
                 <tr>
                     <th class="px-4 py-3 text-center font-bold">#</th>
+                    <th class="px-4 py-3 text-right font-bold">نام و نام خانوادگی</th>
                     <th class="px-4 py-3 text-right font-bold">نام کاربری</th>
                     <th class="px-4 py-3 text-right font-bold">ایمیل سیستمی</th>
                     <th class="px-4 py-3 text-center font-bold">سطح دسترسی</th>
+                    <th class="px-4 py-3 text-right font-bold">دسترسی‌های فعال</th>
                     <th class="px-4 py-3 text-center font-bold">تاریخ ایجاد</th>
                     <th class="px-4 py-3 text-center font-bold">عملیات</th>
                 </tr>
@@ -118,6 +322,7 @@
                 @forelse($users as $user)
                     <tr>
                         <td class="px-4 py-3 text-center text-slate-500">{{ $loop->iteration }}</td>
+                        <td class="px-4 py-3 text-right font-semibold text-slate-700">{{ $user->full_name ?: '-' }}</td>
                         <td class="px-4 py-3 text-right font-semibold text-slate-700">{{ $user->name }}</td>
                         <td class="px-4 py-3 text-right text-slate-600">{{ $user->email }}</td>
                         <td class="px-4 py-3 text-center">
@@ -127,6 +332,23 @@
                                 {{ $user->access_level === 'regular_user' ? 'bg-slate-100 text-slate-600' : '' }}">
                                 {{ $user->access_level === 'manager' ? 'Manager' : ($user->access_level === 'admin' ? 'Admin' : 'Regular User') }}
                             </span>
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <div class="flex flex-wrap justify-end gap-2">
+                                @foreach($permissionOptions as $permissionKey => $permissionLabel)
+                                    @php($enabled = $user->hasPermission($permissionKey))
+                                    <button
+                                        type="button"
+                                        wire:click="toggleUserPermission({{ $user->id }}, '{{ $permissionKey }}')"
+                                        @disabled(auth()->id() === $user->id || $user->isProtectedManagerAccount())
+                                        class="rounded-full border px-2.5 py-1 text-[11px] font-semibold transition
+                                            {{ $enabled ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-slate-50 text-slate-500' }}
+                                            disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                        {{ $permissionLabel }}
+                                    </button>
+                                @endforeach
+                            </div>
                         </td>
                         <td class="px-4 py-3 text-center text-slate-500">{{ $user->created_at ? \App\Helpers\Morilog\Jalalian::fromDateTime($user->created_at)->format('Y/m/d H:i') : '-' }}</td>
                         <td class="px-4 py-3 text-center">
@@ -150,6 +372,10 @@
                                                 تغییر به کاربر عادی
                                             </button>
                                         @endif
+
+                                        <button type="button" wire:click="startEditingUser({{ $user->id }})" class="inline-flex items-center justify-center rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700 transition hover:bg-sky-100">
+                                            ویرایش
+                                        </button>
                                     @endif
 
                                     @if(!$user->isProtectedManagerAccount() && !($pendingActionMap[$user->id]['delete_user'] ?? false))
@@ -167,7 +393,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-4 py-6 text-center text-slate-500">کاربری ثبت نشده است.</td>
+                        <td colspan="8" class="px-4 py-6 text-center text-slate-500">کاربری ثبت نشده است.</td>
                     </tr>
                 @endforelse
                 </tbody>

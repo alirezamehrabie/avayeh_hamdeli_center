@@ -243,6 +243,12 @@ class CreatePerson extends Component
 
     public function mount(string $mode, ?Person $person = null, bool $embedded = false)
     {
+        abort_unless(auth()->check(), 403);
+        abort_unless(
+            auth()->user()->can($mode === 'edit' ? 'people-edit' : 'people-register'),
+            403
+        );
+
         if ($person?->exists) {
             $person->load([
                 'creator:id,name',
@@ -350,8 +356,9 @@ class CreatePerson extends Component
             }
 
             // Skills (with null check)
-            if ($this->person->skills) {
-                $this->skills = $this->person->skills->pluck('id')->toArray();
+            if ($this->person->skills()->exists()) {
+                // Read from the relation query directly so it cannot be confused with model attributes/casts.
+                $this->skills = $this->person->skills()->pluck('skills.id')->map(fn ($id) => (string) $id)->toArray();
             }
 
             if ($this->person->bankInfo)
@@ -2088,6 +2095,8 @@ class CreatePerson extends Component
 
     public function render()
     {
+        abort_unless(auth()->check(), 403);
+
         return view('livewire.people.create-person');
     }
 }

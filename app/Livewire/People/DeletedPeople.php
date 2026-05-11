@@ -14,6 +14,11 @@ class DeletedPeople extends Component
 
     public bool $embedded = false;
 
+    public function mount(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('people-delete'), 403);
+    }
+
     public function getPeopleProperty()
     {
         return Person::onlyTrashed()
@@ -23,6 +28,8 @@ class DeletedPeople extends Component
 
     public function restoreSupervision(int $personId): void
     {
+        abort_unless(auth()->check() && auth()->user()->can('people-delete'), 403);
+
         $person = Person::onlyTrashed()->findOrFail($personId);
         $person->restoreSupervision();
         $this->resetPage();
@@ -32,6 +39,8 @@ class DeletedPeople extends Component
 
     public function render()
     {
+        abort_unless(auth()->check() && auth()->user()->can('people-delete'), 403);
+
         return view('livewire.people.deleted-people');
     }
 }

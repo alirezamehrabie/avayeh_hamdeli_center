@@ -29,6 +29,12 @@ class FastCreatePerson extends Component
 
     public function mount(?Person $person = null): void
     {
+        abort_unless(auth()->check(), 403);
+        abort_unless(
+            auth()->user()->can($person?->exists ? 'people-edit' : 'people-register'),
+            403
+        );
+
         if (!$person?->exists) {
             return;
         }
@@ -88,6 +94,12 @@ class FastCreatePerson extends Component
 
     public function save()
     {
+        abort_unless(auth()->check(), 403);
+        abort_unless(
+            auth()->user()->can($this->person?->exists ? 'people-edit' : 'people-register'),
+            403
+        );
+
         $this->validate();
 
         DB::beginTransaction();
@@ -137,6 +149,8 @@ class FastCreatePerson extends Component
 
     public function render()
     {
+        abort_unless(auth()->check(), 403);
+
         return view('livewire.people.fast-create-person');
     }
 }

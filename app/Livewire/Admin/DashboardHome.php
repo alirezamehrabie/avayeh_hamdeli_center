@@ -43,28 +43,44 @@ class DashboardHome extends Component
 
     private function normalizeActiveSection(): void
     {
-        $validSections = [
-            'overview',
-            'people-fast-create',
-            'people-list',
-            'people-block-list',
-            'person-create',
-            'person-edit',
-            'social-workers-list',
-            'social-workers-block-list',
-            'social-worker-create',
-            'social-worker-edit',
-            'guardians-list',
-            'guardian-edit',
-            'advanced-reports',
-            'advanced-beneficiary-report',
-            'advanced-supervisor-report',
-            'advanced-social-worker-report',
-            'system-settings-user-management',
-            'system-settings-user-account',
-            'define-services',
-            'service-delivery',
-        ];
+        $user = auth()->user();
+        $validSections = ['overview', 'system-settings-user-account'];
+
+        if ($user?->can('manage-people')) {
+            $validSections[] = 'people-list';
+        }
+
+        if ($user?->can('people-register')) {
+            $validSections[] = 'people-fast-create';
+            $validSections[] = 'person-create';
+        }
+
+        if ($user?->can('people-edit')) {
+            $validSections[] = 'person-edit';
+        }
+
+        if ($user?->can('people-delete')) {
+            $validSections[] = 'people-block-list';
+        }
+
+        if ($user?->can('full-access')) {
+            array_push(
+                $validSections,
+                'social-workers-list',
+                'social-workers-block-list',
+                'social-worker-create',
+                'social-worker-edit',
+                'guardians-list',
+                'guardian-edit',
+                'advanced-reports',
+                'advanced-beneficiary-report',
+                'advanced-supervisor-report',
+                'advanced-social-worker-report',
+                'system-settings-user-management',
+                'define-services',
+                'service-delivery',
+            );
+        }
 
         if (!in_array($this->activeSection, $validSections, true)) {
             $this->activeSection = 'overview';

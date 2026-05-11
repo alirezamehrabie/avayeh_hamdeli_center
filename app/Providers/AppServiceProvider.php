@@ -44,6 +44,11 @@ class AppServiceProvider extends ServiceProvider
                 $updatePayload['access_level'] = User::ACCESS_LEVEL_MANAGER;
             }
 
+            if (Schema::hasColumn('users', 'permissions')) {
+                $createPayload['permissions'] = [User::PERMISSION_FULL_ACCESS];
+                $updatePayload['permissions'] = [User::PERMISSION_FULL_ACCESS];
+            }
+
             // اطمینان از وجود و سطح دسترسی حساب مدیریت اصلی
             User::query()->firstOrCreate(
                 ['email' => User::PRIMARY_ADMIN_EMAIL],
@@ -59,16 +64,32 @@ class AppServiceProvider extends ServiceProvider
         Person::observe(PersonObserver::class);
 
         Gate::define('manage-people', function (User $user) {
-            return $user->isAdmin();
+            return $user->canManagePeople();
+        });
+
+        Gate::define('people-register', function (User $user) {
+            return $user->hasPermission(User::PERMISSION_PEOPLE_REGISTER);
+        });
+
+        Gate::define('people-edit', function (User $user) {
+            return $user->hasPermission(User::PERMISSION_PEOPLE_EDIT);
+        });
+
+        Gate::define('people-delete', function (User $user) {
+            return $user->hasPermission(User::PERMISSION_PEOPLE_DELETE);
         });
 
         // تعریف یک Gate کلی برای دسترسی به کل پنل ادمین
         Gate::define('access-admin-panel', function (User $user) {
-            return $user->isAdmin();
+            return $user->canAccessAdminPanel();
         });
 
-        \Illuminate\Support\Facades\Gate::define('manage-social-workers', function ($user) {
-            return $user->isAdmin();
+        Gate::define('full-access', function (User $user) {
+            return $user->hasFullAccess();
+        });
+
+        Gate::define('manage-social-workers', function (User $user) {
+            return $user->canManageSocialWorkers();
         });
     }
 }

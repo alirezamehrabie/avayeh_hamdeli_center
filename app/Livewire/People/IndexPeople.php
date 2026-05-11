@@ -16,6 +16,13 @@ class IndexPeople extends Component
     public $search = '';
     public string $searchField = 'all';
     public bool $embedded = false;
+    public ?int $selectedPersonId = null;
+    public bool $showPersonModal = false;
+
+    public function mount(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('manage-people'), 403);
+    }
 
     public function updatingSearch()
     {
@@ -58,6 +65,8 @@ class IndexPeople extends Component
 
     public function editPerson(Person $person)
     {
+        abort_unless(auth()->check() && auth()->user()->can('people-edit'), 403);
+
         if ($this->embedded) {
             $this->dispatch('open-dashboard-section', section: 'person-edit', id: $person->id);
             return;
@@ -71,6 +80,8 @@ class IndexPeople extends Component
 
     public function quickEditPerson(Person $person)
     {
+        abort_unless(auth()->check() && auth()->user()->can('people-edit'), 403);
+
         if ($this->embedded) {
             $this->dispatch('open-dashboard-section', section: 'people-fast-create', id: $person->id);
             return;
@@ -79,8 +90,43 @@ class IndexPeople extends Component
         return redirect()->route('people.fast-create', ['person' => $person->id]);
     }
 
+    public function showPersonInfo(int $personId): void
+    {
+        $this->selectedPersonId = $personId;
+        $this->showPersonModal = true;
+    }
+
+    public function closePersonModal(): void
+    {
+        $this->showPersonModal = false;
+        $this->selectedPersonId = null;
+    }
+
+    public function getSelectedPersonProperty(): ?Person
+    {
+        if (!$this->selectedPersonId) {
+            return null;
+        }
+
+        return Person::with([
+            'socialWorker',
+            'guardian.occupation',
+            'guardian.jobType',
+            'guardian.residence',
+            'education.educationLevel',
+            'supportCoverage.organization',
+            'disabilityType',
+            'familyStatus.guardianRelationType',
+            'skills',
+            'harmTypes',
+            'needsLevel.levelType',
+        ])->find($this->selectedPersonId);
+    }
+
     public function deletePerson(Person $person): void
     {
+        abort_unless(auth()->check() && auth()->user()->can('people-delete'), 403);
+
         $person->delete();
         $this->resetPage();
 
@@ -89,6 +135,8 @@ class IndexPeople extends Component
 
     public function render()
     {
+        abort_unless(auth()->check() && auth()->user()->can('manage-people'), 403);
+
         return view('livewire.people.index-people');
     }
 }
