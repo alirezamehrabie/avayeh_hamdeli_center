@@ -185,13 +185,13 @@
                                 </div>
 
                                 <div class="col-md-4">
-                                    <label class="form-label small fw-semibold mb-1">سریال شناسنامه</label>
+                                    <label class="form-label small fw-semibold mb-1">سریال شناسنامه <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control form-control-sm @error('shenasnameh_serial') is-invalid @enderror" maxlength="6" wire:model.live="shenasnameh_serial" inputmode="numeric" placeholder="6 رقم" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                     @error('shenasnameh_serial') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                                 </div>
 
                                 <div class="col-md-2">
-                                    <label class="form-label small fw-semibold mb-1">شماره سری</label>
+                                    <label class="form-label small fw-semibold mb-1">شماره سری <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control form-control-sm @error('shenasnameh_series_number') is-invalid @enderror" maxlength="2" wire:model.live="shenasnameh_series_number" inputmode="numeric" placeholder="2 رقم" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                     @error('shenasnameh_series_number') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                                 </div>
@@ -219,7 +219,7 @@
                                         }
                                      }"
                                      @click.outside="openSeriesLetters = false">
-                                    <label class="form-label small fw-semibold mb-1">حرف سری</label>
+                                    <label class="form-label small fw-semibold mb-1">حرف سری <span class="text-danger">*</span></label>
                                     <div class="border @error('shenasnameh_series_letter') border-danger @else border-light @enderror p-2"
                                          style="border-radius: 12px; background: #f8fafc;">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -250,7 +250,7 @@
                                              class="position-absolute start-0 end-0 mt-1 mx-2 p-2 border border-light rounded-3 bg-white shadow-sm z-3"
                                              role="listbox"
                                              aria-label="حروف سری شناسنامه"
-                                             style="max-height: 220px; overflow-y: auto;">
+                                             style="max-height: 220px; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none;">
                                             <div class="row g-1">
                                             @foreach($this->shenasnamehSeriesLetterOptions as $letter)
                                                 <div class="col-3">
@@ -790,12 +790,31 @@
                                 </div>
 
                                 @if($is_studying == '0')
-                                    <div class="col-md-8">
-                                        <label class="form-label small fw-semibold mb-1">علت ترک تحصیل</label>
-                                        <textarea class="form-control form-control-sm @error('drop_reason') is-invalid @enderror" wire:model.blur="drop_reason" rows="2" placeholder="در صورت نیاز توضیح کوتاه ثبت کنید..." style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec;"></textarea>
-                                        @error('drop_reason') <span class="text-danger small">{{ $message }}</span> @enderror
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-semibold mb-1">دلیل عدم تحصیل</label>
+                                        <select class="form-select form-select-sm @error('reason_for_not_studying') is-invalid @enderror" wire:model.live="reason_for_not_studying" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                            <option value="">— انتخاب کنید —</option>
+                                            <option value="graduation">فارغ التحصیلی</option>
+                                            <option value="dropped_out">ترک تحصیل</option>
+                                            <option value="below_school_age">زیر سن مدرسه</option>
+                                        </select>
+                                        @error('reason_for_not_studying') <span class="text-danger small">{{ $message }}</span> @enderror
                                     </div>
+
+                                    @if($this->shouldShowEducationDegreeField())
+                                        <div class="col-md-4">
+                                            <label class="form-label small fw-semibold mb-1">مدرک تحصیلی</label>
+                                            <select class="form-select form-select-sm @error('education_degree') is-invalid @enderror" wire:model.blur="education_degree" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                                <option value="">— انتخاب کنید —</option>
+                                                @foreach($educationLevels as $level)
+                                                    <option value="{{ $level->id }}">{{ $level->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            @error('education_degree') <span class="text-danger small">{{ $message }}</span> @enderror
+                                        </div>
+                                    @endif
                                 @endif
+
                             </div>
                         </div>
                     </div>

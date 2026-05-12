@@ -204,9 +204,16 @@
                 : ($supportOrganization?->name ?? '-');
             $harmTypes = $selectedPerson->harmTypes->pluck('title')->filter()->implode('، ');
             $skills = $selectedPerson->skills->pluck('name')->filter()->implode('، ');
+            $reasonForNotStudying = match ($selectedPerson->education?->reason_for_not_studying) {
+                'graduation' => 'فارغ التحصیلی',
+                'dropped_out' => 'ترک تحصیل',
+                'below_school_age' => 'زیر سن مدرسه',
+                default => null,
+            };
             $educationStatus = match (true) {
                 !$selectedPerson->education => '-',
                 $selectedPerson->education->is_studying => trim('در حال تحصیل' . ($selectedPerson->education->educationLevel?->name ? ' - ' . $selectedPerson->education->educationLevel->name : '')),
+                filled($reasonForNotStudying) => trim($reasonForNotStudying . ($selectedPerson->education->educationDegreeLevel?->name ? ' - ' . $selectedPerson->education->educationDegreeLevel->name : '')),
                 filled($selectedPerson->education->drop_reason) => 'ترک تحصیل - ' . $selectedPerson->education->drop_reason,
                 default => 'در حال تحصیل نیست',
             };

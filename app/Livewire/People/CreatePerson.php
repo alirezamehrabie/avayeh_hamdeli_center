@@ -202,6 +202,8 @@ class CreatePerson extends Component
     public $school_name;
     public $major;
     public $education_level_id;
+    public $reason_for_not_studying;
+    public $education_degree;
     public $drop_reason;
     public $works_alongside_study = '0';
     public $monthly_income;
@@ -329,6 +331,8 @@ class CreatePerson extends Component
                 $this->school_name = $this->person->education->school_name ?? '';
                 $this->education_level_id = $this->person->education->education_level_id;
                 $this->major = $this->person->education->major ?? '';
+                $this->reason_for_not_studying = $this->person->education->reason_for_not_studying ?? '';
+                $this->education_degree = $this->person->education->education_degree;
                 $this->drop_reason = $this->person->education->drop_reason ?? '';
                 $this->works_alongside_study = $this->person->education->works_alongside_study ? '1' : '0';
                 $this->monthly_income = $this->person->education->monthly_income ?? '';
@@ -404,9 +408,15 @@ class CreatePerson extends Component
 
     public function updatedNationalId($value)
     {
-        // اعتبارسنجی فقط همین فیلد
         $this->validateOnly('national_id', [
-            'national_id' => ['nullable', 'digits:10'],
+            'national_id' => [
+                'required',
+                'digits:10',
+                Rule::unique('people', 'national_id'),
+            ],
+        ], [
+            'national_id.digits' => 'کد ملی باید 10 رقم باشد.',
+            'national_id.unique' => 'این کد ملی قبلاً ثبت شده است.',
         ]);
     }
 
@@ -981,8 +991,25 @@ class CreatePerson extends Component
             $this->school_name = null;
             $this->major = null;
             $this->education_level_id = null;
-            // drop_reason و works_alongside_study ممکن است مستقل باشند
+            return;
         }
+
+        $this->reason_for_not_studying = null;
+        $this->education_degree = null;
+        $this->drop_reason = null;
+    }
+
+    public function updatedReasonForNotStudying($value)
+    {
+        if (!in_array($value, ['graduation', 'dropped_out'], true)) {
+            $this->education_degree = null;
+        }
+    }
+
+    public function shouldShowEducationDegreeField(): bool
+    {
+        return $this->is_studying === '0'
+            && in_array($this->reason_for_not_studying, ['graduation', 'dropped_out'], true);
     }
 
     public function updatedHasParentDisability($value)
@@ -1012,9 +1039,9 @@ class CreatePerson extends Component
                 'digits:10',
                 Rule::unique('people', 'national_id')->ignore($this->person_id)
             ],
-            'shenasnameh_serial' => ['nullable', 'regex:/^[0-9]{6}$/'],
-            'shenasnameh_series_number' => ['nullable', 'regex:/^[0-9]{2}$/'],
-            'shenasnameh_series_letter' => ['nullable', Rule::in(self::SHENASNAMEH_SERIES_LETTERS)],
+            'shenasnameh_serial' => ['required', 'regex:/^[0-9]{6}$/'],
+            'shenasnameh_series_number' => ['required', 'regex:/^[0-9]{2}$/'],
+            'shenasnameh_series_letter' => ['required', Rule::in(self::SHENASNAMEH_SERIES_LETTERS)],
             'birth_day' => ['required', 'integer', 'between:1,31', function ($attribute, $value, $fail) {
                 if ($this->birth_month > 6 && $value > 30) $fail('برای نیمه دوم سال، روز نمی‌تواند ۳۱ باشد.');
                 if ($this->birth_month == 12 && $value > 29) $fail('برای اسفند، روز نمی‌تواند بیشتر از ۲۹ باشد.');
@@ -1132,6 +1159,16 @@ class CreatePerson extends Component
             'education_level_id' => 'nullable|exists:education_levels,id',
             'school_name' => 'nullable|string|max:255',
             'major' => 'nullable|string|max:255',
+            'reason_for_not_studying' => [
+                'nullable',
+                Rule::requiredIf(fn () => $this->is_studying === '0'),
+                Rule::in(['graduation', 'dropped_out', 'below_school_age']),
+            ],
+            'education_degree' => [
+                'nullable',
+                Rule::requiredIf(fn () => $this->shouldShowEducationDegreeField()),
+                'exists:education_levels,id',
+            ],
             'drop_reason' => 'nullable|string|max:1000',
             'works_alongside_study' => 'nullable|boolean',
             'monthly_income' => 'nullable|integer|min:0',
@@ -1380,6 +1417,8 @@ class CreatePerson extends Component
                         'school_name' => $this->school_name,
                         'major' => $this->major,
                         'education_level_id' => $this->education_level_id ?: null,
+                        'reason_for_not_studying' => $this->reason_for_not_studying ?: null,
+                        'education_degree' => $this->education_degree ?: null,
                         'drop_reason' => $this->drop_reason,
                         'works_alongside_study' => (bool)$this->works_alongside_study,
                         'monthly_income' => (int)$this->monthly_income,
@@ -1596,6 +1635,8 @@ class CreatePerson extends Component
                     'school_name' => $this->school_name,
                     'major' => $this->major,
                     'education_level_id' => $this->education_level_id ?: null,
+                    'reason_for_not_studying' => $this->reason_for_not_studying ?: null,
+                    'education_degree' => $this->education_degree ?: null,
                     'drop_reason' => $this->drop_reason,
                     'works_alongside_study' => (bool)$this->works_alongside_study,
                     'monthly_income' => (int)$this->monthly_income,
@@ -2046,9 +2087,19 @@ class CreatePerson extends Component
                 return []; // Optional uploads
 
             case 5: // Education Status
-                return [
+                $rules = [
                     'is_studying' => 'required|in:0,1',
                 ];
+
+                if ($this->is_studying === '0') {
+                    $rules['reason_for_not_studying'] = 'required|in:graduation,dropped_out,below_school_age';
+                }
+
+                if ($this->shouldShowEducationDegreeField()) {
+                    $rules['education_degree'] = 'required|exists:education_levels,id';
+                }
+
+                return $rules;
 
             case 6: // Family Status
                 return []; // Optional fields

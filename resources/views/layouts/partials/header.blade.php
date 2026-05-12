@@ -7,7 +7,7 @@
         </button>
 
         <div class="relative">
-            <span class="text-gray-700 font-semibold">خوش آمدید، {{ auth()->user()->name ?? 'مدیر سیستم' }}</span>
+            <span class="text-gray-700 font-semibold">{{ auth()->user()->access_level === 'manager' ? 'مدیریت محترم ←' : 'اپراتور محترم ←' }} {{ auth()->user()->first_name ?? '' }}  {{ auth()->user()->last_name ?? 'کاربر' }} </span>
         </div>
     </div>
 

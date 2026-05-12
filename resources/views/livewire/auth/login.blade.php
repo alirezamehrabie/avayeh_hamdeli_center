@@ -38,25 +38,27 @@
                                         wire:target="login"
                                         aria-pressed="{{ $portal === 'admin' ? 'true' : 'false' }}"
                                         class="relative z-10 rounded-lg px-3 py-2 text-center text-sm font-semibold transition-colors duration-200 focus:outline-none disabled:opacity-60 {{ $portal === 'admin' ? 'text-[#5964AE]' : 'text-slate-600 hover:text-slate-800' }}">
-                                    مدیر
+                                    اپراتور
                                 </button>
+
+
                                 <button type="button"
                                         wire:click="$set('portal', 'user')"
                                         wire:loading.attr="disabled"
                                         wire:target="login"
                                         aria-pressed="{{ $portal === 'user' ? 'true' : 'false' }}"
                                         class="relative z-10 rounded-lg px-3 py-2 text-center text-sm font-semibold transition-colors duration-200 focus:outline-none disabled:opacity-60 {{ $portal === 'user' ? 'text-[#5964AE]' : 'text-slate-600 hover:text-slate-800' }}">
-                                    کاربر
+                                    مهمان
                                 </button>
                             </div>
                             @error('portal') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
                         </div>
 
                         <div>
-                            <label for="email" class="mb-2 block text-sm font-bold text-slate-700">ایمیل</label>
-                            <input wire:model.defer="email" id="email" type="email" required autocomplete="username" inputmode="email" autocapitalize="off" spellcheck="false" dir="ltr"
-                                   class="w-full rounded-xl border border-[#BBBBBB] px-4 py-3 text-slate-900 placeholder-slate-400 transition focus:border-[#36A9DF] focus:outline-none focus:ring-4 focus:ring-[#36A9DF]/20"
-                                   placeholder="example@domain.com">
+                            <label for="email" class="mb-2 block text-sm font-bold text-slate-700">نام کاربری</label>
+                            <input wire:model.defer="email" id="email" type="text" required autocomplete="username" inputmode="username" autocapitalize="off" spellcheck="false" dir="ltr"
+                                   class="w-full rounded-xl text-right border border-[#BBBBBB] px-4 py-3 text-slate-900 placeholder-slate-400 transition focus:border-[#36A9DF] focus:outline-none focus:ring-4 focus:ring-[#36A9DF]/20"
+                                   placeholder="نام کاربری خود را وارد کنید">
                             @error('email') <span class="mt-1 block text-xs text-red-600" role="alert" aria-live="assertive">{{ $message }}</span> @enderror
                         </div>
 

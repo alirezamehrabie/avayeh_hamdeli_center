@@ -195,6 +195,8 @@ return [
 
 
     'attributes' => [
+        'username','email' => 'نام کاربری',
+        'password' => 'رمز عبور',
         'national_id'                   => 'کد ملی',
         'first_name'                    => 'نام مددجو',
         'last_name'                     => 'نام خانوادگی مددجو',
@@ -226,10 +228,13 @@ return [
         'need_level_id'                 => 'شناسه سطح نیاز',
         'shenasnameh_serial' => 'سریال شناسنامه',
         'shenasnameh_series_number' => 'سری عددی شناسنامه',
+        'shenasnameh_series_letter' => 'تک حرف سری شناسنامه',
         'any_family_employed_description' => 'توضیحات اعضای شاغل',
         'has_vehicle' => 'وسیله نقلیه',
         'vehicle_type_id' => 'نوع وسیله نقلیه',
         'vehicle_ownership_type' => 'نوع مالکیت وسیله نقلیه',
+        'reason_for_not_studying' => 'علت عدم تحصیل'
+
     ],
 
     'values' => [

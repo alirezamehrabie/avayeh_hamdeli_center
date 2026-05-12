@@ -14,6 +14,8 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     public const PRIMARY_ADMIN_USERNAME = 'admin';
+    public const PRIMARY_ADMIN_FIRSTNAME = 'مهدی';
+    public const PRIMARY_ADMIN_LASTNAME = 'نمازی';
     public const PRIMARY_ADMIN_EMAIL = 'admin@local.system';
     public const ACCESS_LEVEL_MANAGER = 'manager';
     public const ACCESS_LEVEL_ADMIN = 'admin';

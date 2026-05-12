@@ -15,6 +15,8 @@ class Education extends Model
         'school_name',
         'major',
         'education_level_id',
+        'reason_for_not_studying',
+        'education_degree',
         'drop_reason',
         'works_alongside_study',
         'monthly_income',
@@ -40,5 +42,10 @@ class Education extends Model
     public function educationLevel()
     {
         return $this->belongsTo(EducationLevel::class);
+    }
+
+    public function educationDegreeLevel(): BelongsTo
+    {
+        return $this->belongsTo(EducationLevel::class, 'education_degree');
     }
 }

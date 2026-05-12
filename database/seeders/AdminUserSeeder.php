@@ -15,6 +15,8 @@ class AdminUserSeeder extends Seeder
             ['email' => User::PRIMARY_ADMIN_EMAIL],
             [
                 'name' => User::PRIMARY_ADMIN_USERNAME,
+                'first_name' => User::PRIMARY_ADMIN_FIRSTNAME,
+                'last_name' => User::PRIMARY_ADMIN_LASTNAME,
                 'password' => Hash::make('admin123'),
                 'is_admin' => true,
                 'access_level' => User::ACCESS_LEVEL_MANAGER,
