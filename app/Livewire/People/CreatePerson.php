@@ -1724,9 +1724,22 @@ class CreatePerson extends Component
             \Illuminate\Support\Facades\File::makeDirectory($publicDirectory, 0755, true, true);
         }
 
-        // ۱. اولویت با تصویر دوربین (Base64)
+        // ۱. اولویت با تصویر دوربین (Base64 یا مسیر موقت ذخیره‌شده)
         if (!empty($base64Data)) {
             try {
+                if (is_string($base64Data) && str_starts_with($base64Data, 'uploads/temp_captures/')) {
+                    $sourcePath = public_path($base64Data);
+                    if (file_exists($sourcePath)) {
+                        $extension = strtolower((string) pathinfo($sourcePath, PATHINFO_EXTENSION)) ?: 'png';
+                        $fileName = uniqid() . '_' . time() . '.' . $extension;
+                        $targetPath = $publicDirectory . DIRECTORY_SEPARATOR . $fileName;
+
+                        if (copy($sourcePath, $targetPath)) {
+                            return $folderPath . '/' . $fileName;
+                        }
+                    }
+                }
+
                 // استخراج داده‌های اصلی تصویر
                 $image_parts = explode(";base64,", $base64Data);
                 if (count($image_parts) < 2) return null;
@@ -1771,6 +1784,67 @@ class CreatePerson extends Component
         }
 
         return null;
+    }
+
+    public function storeCapturedImage(string $target, string $base64): void
+    {
+        $allowedTargets = [
+            'captured_id_card_base64',
+            'captured_birth_certificate_base64',
+            'captured_photo_base64',
+            'captured_support_card_base64',
+        ];
+
+        if (!in_array($target, $allowedTargets, true) || !str_contains($base64, ';base64,')) {
+            return;
+        }
+
+        try {
+            $imageParts = explode(';base64,', $base64, 2);
+            if (count($imageParts) !== 2) {
+                return;
+            }
+
+            $mimePart = $imageParts[0];
+            $encoded = $imageParts[1];
+            $extension = 'jpg';
+
+            if (str_contains($mimePart, 'image/')) {
+                $tmp = explode('image/', $mimePart, 2);
+                $extension = strtolower((string)($tmp[1] ?? 'jpg')) ?: 'jpg';
+            }
+
+            if ($extension === 'jpeg') {
+                $extension = 'jpg';
+            }
+
+            if (!in_array($extension, ['jpg', 'png', 'webp'], true)) {
+                $extension = 'jpg';
+            }
+
+            $binary = base64_decode($encoded, true);
+            if ($binary === false) {
+                return;
+            }
+
+            $relativeDir = 'uploads/temp_captures';
+            $absoluteDir = public_path($relativeDir);
+            if (!\Illuminate\Support\Facades\File::exists($absoluteDir)) {
+                \Illuminate\Support\Facades\File::makeDirectory($absoluteDir, 0755, true, true);
+            }
+
+            $fileName = uniqid('capture_', true) . '.' . $extension;
+            $relativePath = $relativeDir . '/' . $fileName;
+            $absolutePath = public_path($relativePath);
+            file_put_contents($absolutePath, $binary);
+
+            $this->{$target} = $relativePath;
+        } catch (\Throwable $exception) {
+            \Log::warning('Failed to store captured image', [
+                'target' => $target,
+                'message' => $exception->getMessage(),
+            ]);
+        }
     }
 
 

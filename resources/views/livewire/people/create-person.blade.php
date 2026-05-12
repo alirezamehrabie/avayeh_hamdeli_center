@@ -564,7 +564,7 @@
                                                 @if($photo_id_card)
                                                     <img src="{{ $photo_id_card->temporaryUrl() }}" class="img-thumbnail" style="max-height: 150px;">
                                                 @elseif($captured_id_card_base64)
-                                                    <img src="{{ $captured_id_card_base64 }}" id="captured-img-id-card" class="img-thumbnail" style="max-height: 150px;">
+                                                    <img src="{{ \Illuminate\Support\Str::startsWith($captured_id_card_base64, 'data:image') ? $captured_id_card_base64 : asset($captured_id_card_base64) }}" id="captured-img-id-card" class="img-thumbnail" style="max-height: 150px;">
                                                 @elseif($mode == 'edit' && $person && $person->photo_id_card)
                                                     <img src="{{ asset($person->photo_id_card) }}" id="captured-img-id-card" class="img-thumbnail" style="max-height: 150px;">
                                                 @else
@@ -594,7 +594,6 @@
                                                 {{-- دکمه "گرفتن مجدد" بعد از عکس گرفتن توسط JS ایجاد می‌شود --}}
                                             </div>
                                         </div>
-                                        <input type="hidden" wire:model="captured_id_card_base64">
                                     </div>
                                     <div class="col-md-5">
                                         <p class="small text-muted mb-1">یا انتخاب فایل:</p>
@@ -620,7 +619,7 @@
                                                 @if($photo_birth_certificate)
                                                     <img src="{{ $photo_birth_certificate->temporaryUrl() }}" class="img-thumbnail" style="max-height: 150px;">
                                                 @elseif($captured_birth_certificate_base64)
-                                                    <img src="{{ $captured_birth_certificate_base64 }}" id="captured-img-birth-cert" class="img-thumbnail" style="max-height: 150px;">
+                                                    <img src="{{ \Illuminate\Support\Str::startsWith($captured_birth_certificate_base64, 'data:image') ? $captured_birth_certificate_base64 : asset($captured_birth_certificate_base64) }}" id="captured-img-birth-cert" class="img-thumbnail" style="max-height: 150px;">
                                                 @elseif($mode == 'edit' && $person && $person->photo_birth_certificate)
                                                     <img src="{{ asset($person->photo_birth_certificate) }}" id="captured-img-birth-cert" class="img-thumbnail" style="max-height: 150px;">
                                                 @else
@@ -649,7 +648,6 @@
                                                 </button>
                                             </div>
                                         </div>
-                                        <input type="hidden" wire:model="captured_birth_certificate_base64">
                                     </div>
                                     <div class="col-md-5">
                                         <p class="small text-muted mb-1">یا انتخاب فایل:</p>
@@ -676,7 +674,7 @@
                                                 @if($profile_photo)
                                                     <img src="{{ $profile_photo->temporaryUrl() }}" class="img-thumbnail" style="max-height: 200px;">
                                                 @elseif($captured_photo_base64)
-                                                    <img src="{{ $captured_photo_base64 }}" id="captured-img-profile" class="img-thumbnail" style="max-height: 200px;">
+                                                    <img src="{{ \Illuminate\Support\Str::startsWith($captured_photo_base64, 'data:image') ? $captured_photo_base64 : asset($captured_photo_base64) }}" id="captured-img-profile" class="img-thumbnail" style="max-height: 200px;">
                                                 @elseif($mode == 'edit' && $person && $person->profile_photo)
                                                     <img src="{{ asset($person->profile_photo) }}" id="captured-img-profile" class="img-thumbnail" style="max-height: 200px;">
                                                 @else
@@ -705,7 +703,6 @@
                                                 </button>
                                             </div>
                                         </div>
-                                        <input type="hidden" wire:model="captured_photo_base64">
                                     </div>
                                     <div class="col-md-6">
                                         <p class="small text-muted mb-1">یا انتخاب فایل:</p>
@@ -1686,7 +1683,7 @@
                                                     <img src="{{ $support_card_image->temporaryUrl() }}" class="img-thumbnail" style="max-height: 150px;">
                                                 @elseif($captured_support_card_base64)
                                                     {{-- تصویر گرفته شده با دوربین --}}
-                                                    <img src="{{ $captured_support_card_base64 }}" id="captured-img-support-card" class="img-thumbnail" style="max-height: 150px;">
+                                                    <img src="{{ \Illuminate\Support\Str::startsWith($captured_support_card_base64, 'data:image') ? $captured_support_card_base64 : asset($captured_support_card_base64) }}" id="captured-img-support-card" class="img-thumbnail" style="max-height: 150px;">
                                                 @elseif($mode == 'edit' && $person && $person->supportCoverage && $person->supportCoverage->support_card_image)
                                                     {{-- تصویر ذخیره شده قبلی در حالت ویرایش --}}
                                                     <img src="{{ asset($person->supportCoverage->support_card_image) }}" id="captured-img-support-card" class="img-thumbnail" style="max-height: 150px;">
@@ -1719,7 +1716,6 @@
                                                 </button>
                                             </div>
                                         </div>
-                                        <input type="hidden" wire:model="captured_support_card_base64">
                                     </div>
                                     <div class="col-md-5">
                                         <p class="small text-muted mb-1">یا انتخاب فایل:</p>
@@ -1878,17 +1874,22 @@
 
         if (!video || !canvas) return;
 
-        // رسم تصویر روی canvas
+        // رسم تصویر روی canvas با سقف ابعاد برای کاهش بار پردازشی فرم
         const ctx = canvas.getContext('2d');
-        canvas.width = video.videoWidth || 640;
-        canvas.height = video.videoHeight || 480;
+        const sourceWidth = video.videoWidth || 640;
+        const sourceHeight = video.videoHeight || 480;
+        const maxWidth = 1280;
+        const scale = sourceWidth > maxWidth ? (maxWidth / sourceWidth) : 1;
+
+        canvas.width = Math.round(sourceWidth * scale);
+        canvas.height = Math.round(sourceHeight * scale);
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        // تبدیل به base64
-        const base64 = canvas.toDataURL('image/png');
+        // تبدیل به base64 فشرده‌تر
+        const base64 = canvas.toDataURL('image/jpeg', 0.8);
 
-        // ارسال به Livewire
-        $wire.set(base64VarName, base64);
+        // ذخیره روی سرور به‌صورت فایل موقت و نگه‌داری فقط مسیر در state
+        $wire.storeCapturedImage(base64VarName, base64);
 
         // متوقف کردن دوربین
         const stream = video.srcObject;
