@@ -28,7 +28,7 @@ return new class extends Migration
             $table->unsignedInteger('children_in_house')->nullable()->default(0);
 
             // وضعیت اشتغال اعضای خانواده
-            $table->boolean('any_family_employed')->default(false);
+            $table->boolean('any_family_employed')->nullable();
             $table->text('any_family_employed_description')->nullable();
 
             // درآمد - فقط یکبار تعریف شده
@@ -60,8 +60,7 @@ return new class extends Migration
                 ->default('none');
 
             // وضعیت داشتن خودرو
-            $table->boolean('has_vehicle')
-                ->default(false);
+            $table->boolean('has_vehicle')->nullable();
 
             $table->foreignId('vehicle_type_id')
                 ->nullable()

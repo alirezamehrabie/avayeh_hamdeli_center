@@ -160,21 +160,21 @@ class CreatePerson extends Component
     public $children_in_house;
     public $extra_household_members = [];
     public $new_extra_household_member_description = '';
-    public $insurance_status = '0';
+    public $insurance_status;
     public $insurance_type_id;
     public $divorced_child_at_home = 'none';
     public $average_income;
-    public $any_family_employed = '0';
+    public $any_family_employed;
     public $any_family_employed_description;
 
-    public $has_vehicle = '0';
+    public $has_vehicle;
     public $vehicle_type_id;
     public $vehicle_ownership_type = 'personal';
 
     // --- 4. تعریف متغیرهای سکونت و تماس ---
     public $residence_status_id;
     public $district_id;
-    public $is_local_to_city = '1';
+    public $is_local_to_city;
     public $deposit_amount;
     public $monthly_rent;
     public $residence_duration_years;
@@ -1063,8 +1063,8 @@ class CreatePerson extends Component
             'sadaat_relation_id' => 'required_if:sadaat_status,sadaat|nullable|exists:sadaat_relations,id',
 
             // --- بخش 2 و 3: سرپرست ---
-            'guardian_relation_type_id' => 'nullable|exists:guardian_relation_types,id',
-            'social_worker_id' => 'nullable|exists:social_workers,id',
+            'guardian_relation_type_id' => 'required|exists:guardian_relation_types,id',
+            'social_worker_id' => 'required|exists:social_workers,id',
             'remarried_parent' => 'nullable|in:none,father,mother,both',
             'children_from_previous_marriage' => 'nullable|integer|min:0',
             'has_parent_disability' => 'nullable|boolean',
@@ -1094,14 +1094,13 @@ class CreatePerson extends Component
 
 
             'guardian_national_code' => [
-                'nullable', 'string', 'digits:10',
-                // اعتبارسنجی یونیک بودن کد ملی سرپرست (اگر جدید است)
+                'required', 'string', 'digits:10',
                 Rule::unique('guardians', 'national_code')->ignore($this->current_guardian_id)
             ],
 
 // فیلدهای زیر اگر سرپرست در دیتابیس وجود داشته باشد (guardian_exists_in_db == true) می‌تواند nullable باشد
-            'guardian_first_name' => [$this->guardian_exists_in_db ? 'nullable' : 'nullable', 'string', 'max:100'],
-            'guardian_last_name' => [$this->guardian_exists_in_db ? 'nullable' : 'nullable', 'string', 'max:100'],
+            'guardian_first_name' => [$this->guardian_exists_in_db ? 'nullable' : 'required', 'string', 'max:100'],
+            'guardian_last_name'  => [$this->guardian_exists_in_db ? 'nullable' : 'required', 'string', 'max:100'],
             'guardian_phone_number' => [$this->guardian_exists_in_db ? 'nullable' : 'nullable', 'regex:/^09[0-9]{9}$/'],
 
 // اعتبارسنجی تاریخ تولد سرپرست
@@ -1122,8 +1121,8 @@ class CreatePerson extends Component
             'job_type_id' => 'nullable|exists:job_types,id',
             'children_in_house' => 'nullable|integer|min:0',
             'economic_decile' => 'nullable|integer|min:1|max:10',
-            'insurance_status' => 'nullable|boolean',
-            'insurance_type_id' => 'required_if:insurance_status,1|nullable|exists:insurance_types,id',
+            'insurance_status' => 'required|boolean',
+            'insurance_type_id' => 'nullable|required_if:insurance_status,1|exists:insurance_types,id',
             'divorced_child_at_home' => 'nullable|in:none,1,2,3,more',
             'average_income' => 'nullable|numeric|min:0',
 
@@ -2113,11 +2112,23 @@ class CreatePerson extends Component
                 return $rules;
 
             case 6: // Family Status
-                return []; // Optional fields
+                return [
+                    'guardian_relation_type_id' => 'required|exists:guardian_relation_types,id',
+                ]; // Optional fields
 
             case 7: // Guardian and Livelihood
                 return [
-                    'guardian_national_code' => 'required|digits:10',
+                    'guardian_national_code' => [
+                        'required', 'string', 'digits:10',
+                        Rule::unique('guardians', 'national_code')->ignore($this->current_guardian_id)
+                    ],
+
+                    'social_worker_id' => 'required|exists:social_workers,id',
+                    'guardian_first_name' => [$this->guardian_exists_in_db ? 'nullable' : 'required', 'string', 'max:100'],
+                    'guardian_last_name'  => [$this->guardian_exists_in_db ? 'nullable' : 'required', 'string', 'max:100'],
+
+                    'insurance_status' => 'required|boolean',
+                    'insurance_type_id' => 'nullable|required_if:insurance_status,1|exists:insurance_types,id',
                 ];
 
             case 8: // Banking Information
@@ -2125,8 +2136,8 @@ class CreatePerson extends Component
 
             case 9: // Housing and Contact
                 return [
-                    'residence_status_id' => 'required|exists:residence_status_types,id',
-                    'district_id' => 'required|exists:districts,id',
+                    'residence_status_id' => 'nullable|exists:residence_status_types,id',
+                    'district_id' => 'nullable|exists:districts,id',
                 ];
 
             case 10: // Support Needs and Final

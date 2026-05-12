@@ -342,7 +342,7 @@
                                 </div>
 
                                 <div class="col-md-4">
-                                    <label class="form-label small fw-semibold mb-1">شماره موبایل مددجو</label>
+                                    <label class="form-label small fw-semibold mb-1">شماره موبایل مددجو <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control form-control-sm @error('phone_number') is-invalid @enderror" wire:model="phone_number" maxlength="11" inputmode="numeric" placeholder="09123456789" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                     @error('phone_number') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                                 </div>
@@ -350,7 +350,7 @@
 
 
                                 <div class="col-md-4">
-                                    <label class="form-label small fw-semibold mb-2">نقش در خانواده <span class="text-danger">*</span></label>
+                                    <label class="form-label small fw-semibold mb-2">نقش در خانواده </label>
                                     <select disabled class="form-select form-select-sm @error('role') is-invalid @enderror" wire:model.blur="role" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                         <option value="child">فرزند</option>
                                     </select>
@@ -471,7 +471,7 @@
 
                             <div class="row g-3">
                                 <div class="col-12">
-                                    <label class="form-label small fw-semibold mb-2">نوع آسیب (چند انتخابی)</label>
+                                    <label class="form-label small fw-semibold mb-2">نوع آسیب (چند انتخابی) <span class="text-danger">*</span></label>
                                     <div class="border p-3 p-md-4" style="border-radius: 14px; background: #f8fafc; border-color: #dbe3ec !important;">
                                         <div class="row g-2">
                                             @forelse($allHarmTypes as $harm)
@@ -1087,7 +1087,7 @@
 
                         {{-- تاریخ تولد سرپرست --}}
                         <div class="col-md-5">
-                            <label class="form-label small fw-semibold mb-1">تاریخ تولد سرپرست <span class="text-danger">*</span></label>
+                            <label class="form-label small fw-semibold mb-1">تاریخ تولد سرپرست </label>
                             <div class="row g-2 dir-ltr">
                                 <div class="col-4">
                                     <select wire:model.blur="guardian_birth_day" class="form-select form-select-sm @error('guardian_birth_day') is-invalid @enderror" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;"
@@ -1146,7 +1146,7 @@
 
 
                         <div class="col-md-4">
-                            <label class="form-label small fw-semibold mb-1">شغل سرپرست <span class="text-danger">*</span></label>
+                            <label class="form-label small fw-semibold mb-1">شغل سرپرست </label>
                             <select class="form-select form-select-sm @error('occupation_id') is-invalid @enderror" wire:model.blur="occupation_id" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                 <option value="">— انتخاب کنید —</option>
                                 @foreach($occupations as $job)
@@ -1295,7 +1295,7 @@
                         @endif
 
                         <div class="col-md-4">
-                            <label class="form-label small fw-semibold mb-1">آیا وسیله نقلیه دارند؟ <span class="text-danger">*</span></label>
+                            <label class="form-label small fw-semibold mb-1">آیا وسیله نقلیه دارند؟ </label>
                             <div class="border rounded-3 p-2 d-flex gap-3 flex-wrap" style="background: #f8fafc; border-color: #dbe3ec !important; min-height: 42px;">
                                 <div class="form-check mb-0">
                                     <input class="form-check-input" type="radio" value="1" wire:model.live="has_vehicle" id="vehicle_yes">
@@ -1361,7 +1361,7 @@
 
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <label class="form-label small fw-semibold mb-1">حساب شخصی دارد؟ <span class="text-danger">*</span></label>
+                            <label class="form-label small fw-semibold mb-1">حساب شخصی دارد؟ </label>
                             <div class="border rounded-3 p-2 d-flex gap-3 flex-wrap" style="background: #f8fafc; border-color: #dbe3ec !important; min-height: 42px;">
                                 <div class="form-check form-check-inline">
                                     <input class="form-check-input" type="radio" value="1" wire:model.live="has_own_account" id="has_own_account_yes">
@@ -1392,7 +1392,7 @@
                         </div>
 
                         <div class="col-lg-4 col-md-12">
-                            <label class="form-label small fw-semibold mb-1">نام بانک <span class="text-danger">*</span></label>
+                            <label class="form-label small fw-semibold mb-1">نام بانک </label>
                             <select class="form-select form-select-sm @error('bank_id') is-invalid @enderror" wire:model.blur="bank_id" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                 <option value="">— انتخاب کنید —</option>
                                 @foreach($banks as $bank)
@@ -1449,7 +1449,7 @@
 
                     <div class="row g-3">
                         <div class="col-lg-4 col-md-6">
-                            <label class="form-label small fw-semibold mb-1">وضعیت سکونت <span class="text-danger">*</span></label>
+                            <label class="form-label small fw-semibold mb-1">وضعیت سکونت </label>
                             <select class="form-select form-select-sm @error('residence_status_id') is-invalid @enderror" wire:model.blur="residence_status_id" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                 <option value="">— انتخاب کنید —</option>
                                 @foreach($residenceStatusTypes as $status)
@@ -1461,7 +1461,7 @@
                         </div>
 
                         <div class="col-lg-4 col-md-6" x-data="{ open: false }">
-                            <label class="form-label small fw-semibold mb-1">منطقه <span class="text-danger">*</span></label>
+                            <label class="form-label small fw-semibold mb-1">منطقه </label>
                             <div class="position-relative">
                                 <button type="button" @click="open = !open" class="btn w-100 d-flex align-items-center justify-content-between text-end @error('district_id') border-danger @enderror" style="border-radius: 12px; background: #f8fafc; border: 1px solid #dbe3ec; min-height: 42px;">
                                     <span class="text-truncate">
@@ -1503,7 +1503,7 @@
                         </div>
 
                         <div class="col-lg-4 col-md-12">
-                            <label class="form-label small fw-semibold mb-1">بومی شهر هستید؟ <span class="text-danger">*</span></label>
+                            <label class="form-label small fw-semibold mb-1">بومی شهر هستید؟ </label>
                             <div class="border rounded-3 p-2 d-flex gap-3 flex-wrap" style="background: #f8fafc; border-color: #dbe3ec !important; min-height: 42px;">
                                 <div class="form-check mb-0">
                                     <input class="form-check-input" type="radio" value="1" wire:model.live="is_local_to_city" id="local_yes">
@@ -1534,7 +1534,7 @@
                         @endif
 
                         <div class="col-lg-3 col-md-6">
-                            <label class="form-label small fw-semibold mb-1">مدت زمان سکونت (سال)</label>
+                            <label class="form-label small fw-semibold mb-1">سال‌های سکونت در منطقه</label>
                             <input type="number" class="form-control form-control-sm @error('residence_duration_years') is-invalid @enderror" wire:model.blur="residence_duration_years"
                                    min="0" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                             @error('residence_duration_years') <span
@@ -1542,7 +1542,7 @@
                         </div>
 
                         <div class="col-12">
-                            <label class="form-label small fw-semibold mb-1">آدرس کامل <span class="text-danger">*</span></label>
+                            <label class="form-label small fw-semibold mb-1">آدرس کامل محل سکونت </label>
                             <textarea class="form-control form-control-sm @error('address') is-invalid @enderror" wire:model.blur="address" rows="3" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec;"></textarea>
                             @error('address') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
@@ -1732,7 +1732,7 @@
 
 
                         <div class="col-lg-4 col-md-6">
-                            <label class="form-label small fw-semibold mb-1">سطح نیاز (بر اساس ارزیابی اولیه مددکار) <span class="text-danger">*</span></label>
+                            <label class="form-label small fw-semibold mb-1">سطح نیاز (براساس ارزیابی مدیریت و سرگروهان) </label>
                             <select class="form-select form-select-sm @error('need_level_id') is-invalid @enderror" wire:model.blur="need_level_id" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                 <option value="">— انتخاب کنید —</option>
                                 @foreach($needLevelTypes as $level)

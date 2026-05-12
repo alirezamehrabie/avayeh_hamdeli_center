@@ -17,7 +17,7 @@ return new class extends Migration
                 ->constrained('residence_status_types')
                 ->nullOnDelete();
 
-            $table->boolean('is_local_to_city')->default(true);
+            $table->boolean('is_local_to_city')->nullable();
             $table->unsignedBigInteger('deposit_amount')->nullable();
             $table->unsignedBigInteger('monthly_rent')->nullable();
             $table->integer('residence_duration_years')->nullable();

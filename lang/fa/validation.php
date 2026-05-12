@@ -232,6 +232,8 @@ return [
         'shenasnameh_series_letter' => 'حرف سری شناسنامه',
         'harm_types' => 'نوع آسیب مددجو',
         'education_degree' => 'مدرک تحصیلی',
+        'insurance_status' => 'وضعیت بیمه',
+        'insurance_type_id' => 'نوع بیمه',
         'any_family_employed_description' => 'توضیحات اعضای شاغل',
         'has_vehicle' => 'وسیله نقلیه',
         'vehicle_type_id' => 'نوع وسیله نقلیه',
@@ -245,7 +247,7 @@ return [
             'general' => 'عام',
             'sadaat' => 'سادات',
         ],
-        'any_family_employed' => [
+        'any_family_employed' ,'insurance_status' => [
             '0' => 'خیر',
             '1' => 'بله',
         ],
