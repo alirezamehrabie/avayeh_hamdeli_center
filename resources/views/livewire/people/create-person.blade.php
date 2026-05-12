@@ -1886,7 +1886,8 @@
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
         // تبدیل به base64 فشرده‌تر
-        const base64 = canvas.toDataURL('image/jpeg', 0.8);
+        const jpegQuality = cameraId === 'id-card' ? 0.86 : 0.8;
+        const base64 = canvas.toDataURL('image/jpeg', jpegQuality);
 
         // ذخیره روی سرور به‌صورت فایل موقت و نگه‌داری فقط مسیر در state
         $wire.storeCapturedImage(base64VarName, base64);

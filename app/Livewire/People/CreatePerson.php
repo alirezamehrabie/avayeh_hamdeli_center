@@ -1072,8 +1072,8 @@ class CreatePerson extends Component
             'role' => 'required|in:child,guardian',
 
             // سادات: فقط اگر وضعیت "سادات" باشد، نسبت اجباری است
-            'sadaat_status' => 'nullable|in:general,sadaat',
-            'sadaat_relation_id' => 'required_if:sadaat_status,sadaat|nullable|exists:sadaat_relations,id',
+            'sadaat_status' => 'required|in:general,sadaat',
+            'sadaat_relation_id' => 'nullable|exists:sadaat_relations,id',
 
             // --- بخش 2 و 3: سرپرست ---
             'guardian_relation_type_id' => 'required|exists:guardian_relation_types,id',
@@ -2196,7 +2196,7 @@ class CreatePerson extends Component
                     'gender' => 'required|in:male,female',
                     'role' => 'required|in:child,guardian',
                     'sadaat_status' => 'required|in:general,sadaat',
-                    'sadaat_relation_id' => 'required_if:sadaat_status,sadaat|nullable|exists:sadaat_relations,id',
+                    'sadaat_relation_id' => 'nullable|exists:sadaat_relations,id',
                 ];
 
             case 2: // Skills and Talents
