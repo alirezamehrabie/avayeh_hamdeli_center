@@ -288,9 +288,18 @@
                 @click.stop
             >
                 <div class="flex items-start justify-between gap-4 px-6 py-5 text-white" style="background: linear-gradient(to left, #9D174D, #BE185D);">
-                    <div>
+                    <div class="flex items-center gap-4">
+                        <div class="shrink-0 overflow-hidden rounded-2xl border-2 border-white/60 bg-white/20 shadow-sm" style="width: 60px; height: 80px; aspect-ratio: 3 / 4;">
+                            <img
+                                src="{{ $selectedPerson->profile_photo ? asset($selectedPerson->profile_photo) : asset('images/no-image.png') }}"
+                                alt="تصویر مددجو"
+                                class="h-full w-full object-cover"
+                            >
+                        </div>
+                        <div>
                         <h2 class="text-xl font-extrabold">اطلاعات مددجو</h2>
                         <p class="mt-1 text-sm text-white/85">{{ $selectedPerson->full_name ?: 'بدون نام' }}</p>
+                        </div>
                     </div>
                     <button type="button" @click="close()" class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-2xl leading-none text-white transition hover:bg-white/25" aria-label="بستن">
                         &times;
