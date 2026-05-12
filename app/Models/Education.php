@@ -46,6 +46,6 @@ class Education extends Model
 
     public function educationDegreeLevel(): BelongsTo
     {
-        return $this->belongsTo(EducationLevel::class, 'education_degree');
+        return $this->belongsTo(AcademicLevel::class, 'education_degree');
     }
 }

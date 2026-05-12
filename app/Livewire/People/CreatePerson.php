@@ -3,6 +3,7 @@
 namespace App\Livewire\People;
 
 use AllowDynamicProperties;
+use App\Models\AcademicLevel;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Database\QueryException;
@@ -237,6 +238,7 @@ class CreatePerson extends Component
     public $accountRelations;
     public $banks;
     public $educationLevels;
+    public $academicLevels;
     public $needLevelTypes;
 
     public ?Person $person = null;
@@ -280,6 +282,7 @@ class CreatePerson extends Component
         $this->accountRelations = AccountOwnerRelation::all(); // اضافه شده به mount
         $this->banks = Bank::all(); // اضافه شده به mount
         $this->educationLevels = EducationLevel::orderBy('sort_order')->get(); // اضافه شده به mount
+        $this->academicLevels = AcademicLevel::orderBy('sort_order')->get();
         $this->needLevelTypes = NeedLevelType::all(); // اضافه شده به mount
         $this->allHarmTypes = HarmType::all();
         $this->support_organizations = SupportOrganization::all();
@@ -1035,10 +1038,10 @@ class CreatePerson extends Component
             'last_name' => 'required|string|max:255',
             'national_id' => [
                 'required',
-                'string',
                 'digits:10',
                 Rule::unique('people', 'national_id')->ignore($this->person_id)
             ],
+
             'shenasnameh_serial' => ['required', 'regex:/^[0-9]{6}$/'],
             'shenasnameh_series_number' => ['required', 'regex:/^[0-9]{2}$/'],
             'shenasnameh_series_letter' => ['required', Rule::in(self::SHENASNAMEH_SERIES_LETTERS)],
@@ -1049,9 +1052,9 @@ class CreatePerson extends Component
             'birth_month' => 'required|integer|between:1,12',
             'birth_year' => 'required|integer|between:1300,1450',
             'father_name' => 'required|string|max:100',
+            'phone_number' => 'required|digits:11',
             'father_national_id' => 'required|digits:10',
             'mother_national_id' => 'required|digits:10',
-            'phone_number' => 'nullable|string|max:11',
             'gender' => 'required|in:male,female',
             'role' => 'required|in:child,guardian',
 
@@ -1081,7 +1084,7 @@ class CreatePerson extends Component
             'skills' => 'nullable|array',
             'skills.*' => 'exists:skills,id', // بررسی وجود هر مهارت در دیتابیس
             'skills_description' => 'nullable|string|max:500',
-            'harm_types' => 'nullable|array',
+            'harm_types' => 'required|array',
             'harm_types.*' => 'exists:harm_types,id',
 
             // فایل‌ها (با رعایت پسوند و حجم)
@@ -1167,7 +1170,7 @@ class CreatePerson extends Component
             'education_degree' => [
                 'nullable',
                 Rule::requiredIf(fn () => $this->shouldShowEducationDegreeField()),
-                'exists:education_levels,id',
+                'exists:academic_levels,id',
             ],
             'drop_reason' => 'nullable|string|max:1000',
             'works_alongside_study' => 'nullable|boolean',
@@ -2063,15 +2066,20 @@ class CreatePerson extends Component
                     'first_name' => 'required|string|max:255',
                     'last_name' => 'required|string|max:255',
                     'national_id' => 'required|digits:10|unique:people,national_id,' . $this->person_id,
-                    'shenasnameh_serial' => 'nullable|regex:/^[0-9]{6}$/',
-                    'shenasnameh_series_number' => 'nullable|regex:/^[0-9]{2}$/',
-                    'shenasnameh_series_letter' => ['nullable', Rule::in(self::SHENASNAMEH_SERIES_LETTERS)],
+                    'shenasnameh_serial' => 'required|regex:/^[0-9]{6}$/',
+                    'shenasnameh_series_number' => 'required|regex:/^[0-9]{2}$/',
+                    'shenasnameh_series_letter' => ['required', Rule::in(self::SHENASNAMEH_SERIES_LETTERS)],
+                    'phone_number' => 'required|digits:11',
+                    'father_national_id' => 'required|digits:10',
+                    'mother_national_id' => 'required|digits:10',
                     'birth_day' => 'required|integer|min:1|max:31',
                     'birth_month' => 'required|integer|min:1|max:12',
                     'birth_year' => 'required|integer|min:1300|max:1420',
                     'father_name' => 'required|string|max:100',
                     'gender' => 'required|in:male,female',
                     'role' => 'required|in:child,guardian',
+                    'sadaat_status' => 'required|in:general,sadaat',
+                    'sadaat_relation_id' => 'required_if:sadaat_status,sadaat|nullable|exists:sadaat_relations,id',
                 ];
 
             case 2: // Skills and Talents
@@ -2079,6 +2087,9 @@ class CreatePerson extends Component
 
             case 3: // Disability Information
                 return [
+                    'harm_types' => 'required|array',
+                    'harm_types.*' => 'exists:harm_types,id',
+
                     'has_disability' => 'required|in:0,1',
                     'disability_type_id' => Rule::requiredIf($this->has_disability == 1),
                 ];
@@ -2096,7 +2107,7 @@ class CreatePerson extends Component
                 }
 
                 if ($this->shouldShowEducationDegreeField()) {
-                    $rules['education_degree'] = 'required|exists:education_levels,id';
+                    $rules['education_degree'] = 'required|exists:academic_levels,id';
                 }
 
                 return $rules;

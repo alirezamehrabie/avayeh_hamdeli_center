@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::table('educations', function (Blueprint $table) {
             $table->string('reason_for_not_studying')->nullable()->after('education_level_id');
             $table->foreignId('education_degree')->nullable()->after('reason_for_not_studying')
-                ->constrained('education_levels')->nullOnDelete();
+                ->constrained('academic_levels')->nullOnDelete();
         });
     }
 

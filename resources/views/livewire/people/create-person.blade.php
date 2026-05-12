@@ -343,7 +343,7 @@
 
                                 <div class="col-md-4">
                                     <label class="form-label small fw-semibold mb-1">شماره موبایل مددجو</label>
-                                    <input type="text" class="form-control form-control-sm @error('phone_number') is-invalid @enderror" wire:model="phone_number" maxlength="11" inputmode="numeric" placeholder="09xxxxxxxxx" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                    <input type="text" class="form-control form-control-sm @error('phone_number') is-invalid @enderror" wire:model="phone_number" maxlength="11" inputmode="numeric" placeholder="09123456789" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                     @error('phone_number') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                                 </div>
 
@@ -568,7 +568,7 @@
                                                 @elseif($mode == 'edit' && $person && $person->photo_id_card)
                                                     <img src="{{ asset($person->photo_id_card) }}" id="captured-img-id-card" class="img-thumbnail" style="max-height: 150px;">
                                                 @else
-                                                    <img src="{{ asset('images/no-images.png') }}" id="captured-img-id-card" class="img-thumbnail" style="max-height: 150px;">
+                                                    <img src="{{ asset('images/no-image.png') }}" id="captured-img-id-card" class="img-thumbnail" style="max-height: 150px;">
                                                 @endif
                                             </div>
                                             <div class="mt-2 text-center">
@@ -624,7 +624,7 @@
                                                 @elseif($mode == 'edit' && $person && $person->photo_birth_certificate)
                                                     <img src="{{ asset($person->photo_birth_certificate) }}" id="captured-img-birth-cert" class="img-thumbnail" style="max-height: 150px;">
                                                 @else
-                                                    <img src="{{ asset('images/no-images.png') }}" id="captured-img-birth-cert" class="img-thumbnail" style="max-height: 150px;">
+                                                    <img src="{{ asset('images/no-image.png') }}" id="captured-img-birth-cert" class="img-thumbnail" style="max-height: 150px;">
                                                 @endif
                                             </div>
                                             <div class="mt-2 text-center">
@@ -680,7 +680,7 @@
                                                 @elseif($mode == 'edit' && $person && $person->profile_photo)
                                                     <img src="{{ asset($person->profile_photo) }}" id="captured-img-profile" class="img-thumbnail" style="max-height: 200px;">
                                                 @else
-                                                    <img src="{{ asset('images/no-images.png') }}" id="captured-img-profile" class="img-thumbnail" style="max-height: 200px;">
+                                                    <img src="{{ asset('images/no-image.png') }}" id="captured-img-profile" class="img-thumbnail" style="max-height: 200px;">
                                                 @endif
                                             </div>
                                             <div class="mt-2 text-center">
@@ -806,8 +806,8 @@
                                             <label class="form-label small fw-semibold mb-1">مدرک تحصیلی</label>
                                             <select class="form-select form-select-sm @error('education_degree') is-invalid @enderror" wire:model.blur="education_degree" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                                 <option value="">— انتخاب کنید —</option>
-                                                @foreach($educationLevels as $level)
-                                                    <option value="{{ $level->id }}">{{ $level->name }}</option>
+                                                @foreach($academicLevels as $level)
+                                                    <option value="{{ $level->id }}">{{ $level->title }}</option>
                                                 @endforeach
                                             </select>
                                             @error('education_degree') <span class="text-danger small">{{ $message }}</span> @enderror

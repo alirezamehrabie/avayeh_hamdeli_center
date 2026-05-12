@@ -11,6 +11,7 @@ class AcademicLevelSeeder extends Seeder
     public function run(): void
     {
         $levels = [
+            ['title' => 'فاقد مدرک تحصیلی' , 'sort_order', 'sort_order' => 0],
             ['title' => 'سیکل', 'sort_order' => 1],
             ['title' => 'دیپلم', 'sort_order' => 2],
             ['title' => 'کاردانی', 'sort_order' => 3],

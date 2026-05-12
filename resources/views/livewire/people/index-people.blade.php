@@ -213,7 +213,7 @@
             $educationStatus = match (true) {
                 !$selectedPerson->education => '-',
                 $selectedPerson->education->is_studying => trim('در حال تحصیل' . ($selectedPerson->education->educationLevel?->name ? ' - ' . $selectedPerson->education->educationLevel->name : '')),
-                filled($reasonForNotStudying) => trim($reasonForNotStudying . ($selectedPerson->education->educationDegreeLevel?->name ? ' - ' . $selectedPerson->education->educationDegreeLevel->name : '')),
+                filled($reasonForNotStudying) => trim($reasonForNotStudying . ($selectedPerson->education->educationDegreeLevel?->title ? ' - ' . $selectedPerson->education->educationDegreeLevel->title : '')),
                 filled($selectedPerson->education->drop_reason) => 'ترک تحصیل - ' . $selectedPerson->education->drop_reason,
                 default => 'در حال تحصیل نیست',
             };

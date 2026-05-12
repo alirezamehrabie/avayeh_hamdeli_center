@@ -14,4 +14,5 @@ class AcademicLevel extends Model
     {
         return $this->hasMany(SocialWorker::class, 'academic_level_id');
     }
+
 }
