@@ -1101,9 +1101,9 @@ class CreatePerson extends Component
             'harm_types.*' => 'exists:harm_types,id',
 
             // فایل‌ها (با رعایت پسوند و حجم)
-            'profile_photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            'photo_id_card' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            'photo_birth_certificate' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'profile_photo' => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
+            'photo_id_card' => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
+            'photo_birth_certificate' => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
 
 
             'guardian_national_code' => [
