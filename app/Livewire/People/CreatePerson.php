@@ -194,9 +194,9 @@ class CreatePerson extends Component
     public $other_account_owner_relation; // توضیح نسبت سایر
     public $bank_id;
     public $card_number = '';
-    public $sheba_number = '';
+    public $sheba_number = 'IR';
     public $subsidy_card_number = '';
-    public $subsidy_sheba_number = '';
+    public $subsidy_sheba_number = 'IR';
 
     // تحصیل
     public $is_studying = '0'; // پیش‌فرض خیر
@@ -406,7 +406,20 @@ class CreatePerson extends Component
 
     public function updatedShebaNumber($value)
     {
-        $this->subsidy_sheba_number = $value;
+        $normalized = $this->normalizeIban((string) $value);
+        $this->sheba_number = $normalized;
+
+        if (
+            $this->isCompleteIban($normalized) &&
+            ($this->subsidy_sheba_number === 'IR' || $this->subsidy_sheba_number === '')
+        ) {
+            $this->subsidy_sheba_number = $normalized;
+        }
+    }
+
+    public function updatedSubsidyShebaNumber($value): void
+    {
+        $this->subsidy_sheba_number = $this->normalizeIban((string) $value);
     }
 
     public function updatedNationalId($value)
@@ -670,9 +683,9 @@ class CreatePerson extends Component
             if ($guardian && $guardian->bankInfo) {
                 $this->bank_id = $guardian->bankInfo->bank_id;
                 $this->card_number = $guardian->bankInfo->card_number;
-                $this->sheba_number = $guardian->bankInfo->sheba_number;
+                $this->sheba_number = $guardian->bankInfo->sheba_number ?? 'IR';
                 $this->subsidy_card_number = $guardian->bankInfo->subsidy_card_number;
-                $this->subsidy_sheba_number = $guardian->bankInfo->subsidy_sheba_number;
+                $this->subsidy_sheba_number = $guardian->bankInfo->subsidy_sheba_number ?? 'IR';
             } else {
                 // اگر سرپرست جدید است یا اطلاعات بانکی ندارد، فیلدها را خالی کنیم
                 $this->resetBankInfoFields();
@@ -684,9 +697,9 @@ class CreatePerson extends Component
     {
         $this->bank_id = null;
         $this->card_number = null;
-        $this->sheba_number = null;
+        $this->sheba_number = 'IR';
         $this->subsidy_card_number = null;
-        $this->subsidy_sheba_number = null;
+        $this->subsidy_sheba_number = 'IR';
     }
 
 
@@ -866,9 +879,9 @@ class CreatePerson extends Component
             // در هر دو حالت، اطلاعات بانکی را از person->bankInfo می‌گیریم
             $this->bank_id = $this->person->bankInfo->bank_id;
             $this->card_number = $this->person->bankInfo->card_number;
-            $this->sheba_number = $this->person->bankInfo->sheba_number;
+            $this->sheba_number = $this->person->bankInfo->sheba_number ?? 'IR';
             $this->subsidy_card_number = $this->person->bankInfo->subsidy_card_number;
-            $this->subsidy_sheba_number = $this->person->bankInfo->subsidy_sheba_number;
+            $this->subsidy_sheba_number = $this->person->bankInfo->subsidy_sheba_number ?? 'IR';
             $this->other_account_owner_relation = $this->person->bankInfo->other_account_owner_relation;
         } elseif ($this->has_own_account == '0' && ($guardianBankInfo = $guardian->bankInfo()->first())) {
             // اگر مددجو اطلاعات بانکی ندارد ولی سرپرست دارد، از سرپرست استفاده می‌کنیم
@@ -876,9 +889,9 @@ class CreatePerson extends Component
             $this->account_owner_relation_id = 2; // سرپرست
             $this->bank_id = $guardianBankInfo->bank_id;
             $this->card_number = $guardianBankInfo->card_number;
-            $this->sheba_number = $guardianBankInfo->sheba_number;
+            $this->sheba_number = $guardianBankInfo->sheba_number ?? 'IR';
             $this->subsidy_card_number = $guardianBankInfo->subsidy_card_number;
-            $this->subsidy_sheba_number = $guardianBankInfo->subsidy_sheba_number;
+            $this->subsidy_sheba_number = $guardianBankInfo->subsidy_sheba_number ?? 'IR';
         }
 
         $this->recalculateChildrenInHouseRealtime();
@@ -958,16 +971,16 @@ class CreatePerson extends Component
             if ($guardian && $guardian->bankInfo) {
                 $this->bank_id = $guardian->bankInfo->bank_id;
                 $this->card_number = $guardian->bankInfo->card_number;
-                $this->sheba_number = $guardian->bankInfo->sheba_number;
+                $this->sheba_number = $guardian->bankInfo->sheba_number ?? 'IR';
                 $this->subsidy_card_number = $guardian->bankInfo->subsidy_card_number;
-                $this->subsidy_sheba_number = $guardian->bankInfo->subsidy_sheba_number;
+                $this->subsidy_sheba_number = $guardian->bankInfo->subsidy_sheba_number ?? 'IR';
             }
         } else { // اگر "بله" انتخاب شود
             $this->bank_id = null;
             $this->card_number = null;
-            $this->sheba_number = null;
+            $this->sheba_number = 'IR';
             $this->subsidy_card_number = null;
-            $this->subsidy_sheba_number = null;
+            $this->subsidy_sheba_number = 'IR';
         }
     }
 
@@ -1153,9 +1166,9 @@ class CreatePerson extends Component
             'account_owner_relation_id' => 'nullable|exists:account_owner_relations,id',
             'bank_id' => 'nullable|exists:banks,id',
             'card_number' => 'nullable|string|digits:16',
-            'sheba_number' => ['nullable', 'string', 'size:26', 'regex:/^IR[0-9]{24}$/i'],
+            'sheba_number' => ['nullable', 'string', 'regex:/^(IR|IR[0-9]{24})$/i'],
             'subsidy_card_number' => 'nullable|string|digits:16',
-            'subsidy_sheba_number' => 'nullable|string|max:26',
+            'subsidy_sheba_number' => ['nullable', 'string', 'regex:/^(IR|IR[0-9]{24})$/i'],
 
             'is_studying' => 'nullable|boolean',
             'education_level_id' => 'nullable|exists:education_levels,id',
@@ -1207,6 +1220,9 @@ class CreatePerson extends Component
     public function save()
     {
         $this->is_submitted = true;
+        $this->sheba_number = $this->normalizeIbanForStorage($this->sheba_number);
+        $this->subsidy_sheba_number = $this->normalizeIbanForStorage($this->subsidy_sheba_number);
+
         try {
             $validatedData = $this->validate();
             $this->show_step_error_badges = false;
@@ -2069,6 +2085,34 @@ class CreatePerson extends Component
         }
 
         return max(0, (int)($this->children_from_previous_marriage ?? 0));
+    }
+
+    private function normalizeIban(string $value): string
+    {
+        $normalized = strtoupper(trim($value));
+        $normalized = preg_replace('/\s+/', '', $normalized);
+        $normalized = preg_replace('/[^A-Z0-9]/', '', $normalized);
+
+        if ($normalized === '') {
+            return 'IR';
+        }
+
+        if (!str_starts_with($normalized, 'IR')) {
+            $normalized = 'IR' . $normalized;
+        }
+
+        return substr($normalized, 0, 26);
+    }
+
+    private function normalizeIbanForStorage($value): ?string
+    {
+        $normalized = $this->normalizeIban((string) ($value ?? ''));
+        return $normalized === 'IR' ? null : $normalized;
+    }
+
+    private function isCompleteIban(string $value): bool
+    {
+        return (bool) preg_match('/^IR[0-9]{24}$/i', trim($value));
     }
 
 

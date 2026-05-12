@@ -238,7 +238,9 @@ return [
         'has_vehicle' => 'وسیله نقلیه',
         'vehicle_type_id' => 'نوع وسیله نقلیه',
         'vehicle_ownership_type' => 'نوع مالکیت وسیله نقلیه',
-        'reason_for_not_studying' => 'علت عدم تحصیل'
+        'reason_for_not_studying' => 'علت عدم تحصیل',
+        'subsidy_sheba_number' => 'شماره شبا یارانه',
+        'sheba_number' => 'شماره شبا'
 
     ],
 

@@ -26,7 +26,8 @@ class DistrictSeeder extends Seeder
             'هفتصد دستگاه',
             'کوشک',
             'گلدشت',
-            'اصغرآباد'
+            'اصغرآباد',
+            'اندوان'
         ];
 
         foreach ($districts as $index => $name) {

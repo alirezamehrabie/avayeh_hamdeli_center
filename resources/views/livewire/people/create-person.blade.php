@@ -1408,8 +1408,8 @@
 
                         <div class="col-lg-6 col-md-6">
                             <label class="form-label small fw-semibold mb-1">شماره شبا</label>
-                            <input type="text" class="form-control form-control-sm ltr-input @error('sheba_number') is-invalid @enderror" wire:model.live.debounce="sheba_number"
-                                   placeholder="IRXXXXXXXXXXXXXXXXXXXXXXXX" maxlength="26" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                            <input type="text" class="form-control form-control-sm ltr-input @error('sheba_number') is-invalid @enderror" wire:model.live.debounce.200ms="sheba_number"
+                                   placeholder="24 رقم بعد از IR" maxlength="26" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                             @error('sheba_number') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
 
@@ -1424,7 +1424,7 @@
                         <div class="col-lg-6 col-md-6">
                             <label class="form-label small fw-semibold mb-1">شماره شبا یارانه</label>
                             <input type="text" class="form-control form-control-sm ltr-input @error('subsidy_sheba_number') is-invalid @enderror" wire:model.blur="subsidy_sheba_number"
-                                   placeholder="IRXXXXXXXXXXXXXXXXXXXXXXXX" maxlength="26" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                   placeholder="24 رقم بعد از IR" maxlength="26" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                             @error('subsidy_sheba_number') <span
                                 class="text-danger small">{{ $message }}</span> @enderror
                         </div>
