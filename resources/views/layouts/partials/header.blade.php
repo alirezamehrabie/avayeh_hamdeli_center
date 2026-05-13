@@ -18,7 +18,7 @@
         </div>
 
         <div class="relative">
-            <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-amber-100 bg-white shadow-sm ring-1 ring-amber-50">
+            <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white ring-1 ring-amber-50">
                 <img src="{{ asset('images/logo-sm.png') }}" alt="لوگوی مرکز آوای همدلی" class="h-10 w-10 object-contain">
             </div>
         </div>

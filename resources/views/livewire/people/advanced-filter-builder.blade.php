@@ -1,22 +1,32 @@
-<div class="container mx-auto p-4" dir="rtl">
-    <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="mb-5 flex items-center justify-between gap-4">
-            <div>
-                <h1 class="text-2xl font-bold text-slate-800">گزارش‌گیری پیشرفته مددجویان</h1>
+<div class="container mx-auto max-w-7xl p-0" dir="rtl">
+    <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 xl:p-7">
+        <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+
+            <div class="min-w-0 flex-1">
+                <h1 class="text-xl font-bold text-slate-800 sm:text-2xl xl:text-[1.7rem]">گزارش‌گیری پیشرفته مددجویان</h1>
                 <p class="mt-1 text-sm text-slate-500">فیلترهای پویا، مدیریت ستون‌ها و ذخیره قالب‌های جستجو</p>
             </div>
-            <div class="flex items-center gap-2">
-                <button wire:click="exportToExcel" class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">خروجی اکسل</button>
-                <button wire:click="exportToPdf" class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">خروجی PDF</button>
+
+            <div class="flex items-center gap-2 lg:flex-shrink-0">
+                <button wire:click="exportToExcel"
+                        class="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100">
+                    خروجی اکسل
+                </button>
+
+                <button wire:click="exportToPdf"
+                        class="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 transition hover:bg-rose-100">
+                    خروجی PDF
+                </button>
             </div>
         </div>
 
+
         <div class="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
             <label class="mb-2 block text-sm font-semibold text-slate-700">جستجوی سراسری</label>
-            <div class="flex flex-wrap items-center gap-2">
-                <input type="text" wire:model.live.debounce.300ms="globalSearch" class="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-indigo-300 focus:ring focus:ring-indigo-100" placeholder="نام، کد ملی یا موبایل...">
+            <div class="flex flex-col gap-2 lg:flex-row lg:items-center">
+                <input type="text" wire:model.live.debounce.300ms="globalSearch" class="w-full min-w-0 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-indigo-300 focus:ring focus:ring-indigo-100 lg:flex-1" placeholder="نام، کد ملی یا موبایل...">
                 @if(trim($globalSearch) !== '' || count($filters) > 0)
-                    <button type="button" wire:click="clearAllFilters" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100">
+                    <button type="button" wire:click="clearAllFilters" class="w-full rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 lg:w-auto lg:shrink-0">
                         پاک‌کردن همه فیلترها
                     </button>
                 @endif
@@ -24,11 +34,11 @@
         </div>
 
         <div class="mb-4 rounded-xl border border-slate-200 p-4">
-            <div class="mb-3 flex items-center justify-between">
+            <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <h2 class="text-sm font-bold text-slate-700">فیلترهای فعال</h2>
-                <div x-data="{ open: false, query: '', activeType: 'all' }" class="relative">
-                    <button type="button" @click="open=!open" class="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white">+ افزودن فیلتر</button>
-                    <div x-show="open" @click.outside="open=false" x-transition class="absolute left-0 z-20 mt-2 w-[24rem] max-w-[90vw] rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
+                <div x-data="{ open: false, query: '', activeType: 'all' }" class="relative w-full lg:w-auto">
+                    <button type="button" @click="open=!open" class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white lg:w-auto">+ افزودن فیلتر</button>
+                    <div x-show="open" @click.outside="open=false" x-transition class="absolute inset-x-0 right-0 z-20 mt-2 w-full max-w-full rounded-xl border border-slate-200 bg-white p-3 shadow-xl lg:inset-x-auto lg:left-0 lg:right-auto lg:w-[24rem] lg:max-w-[90vw]">
                         <div class="mb-3">
                             <input type="text" x-model="query" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs focus:border-indigo-300 focus:ring focus:ring-indigo-100" placeholder="جستجو در نام فیلترها...">
                         </div>
@@ -62,12 +72,12 @@
                 </div>
             </div>
 
-            <div class="space-y-3">
+            <div class="space-y-3 xl:grid xl:grid-cols-2 xl:gap-3 xl:space-y-0">
                 @forelse($filters as $index => $filter)
                     <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                        <div class="mb-2 flex items-center justify-between">
+                        <div class="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <p class="text-xs font-semibold text-slate-600">{{ $filterableFields[$filter['field']]['label'] ?? $filter['field'] }}</p>
-                            <button type="button" wire:click="removeFilter({{ $index }})" class="text-xs font-semibold text-rose-600">حذف</button>
+                            <button type="button" wire:click="removeFilter({{ $index }})" class="self-start text-xs font-semibold text-rose-600 sm:self-auto">حذف</button>
                         </div>
 
                         @if(($filter['type'] ?? null) === 'text')
@@ -143,14 +153,14 @@
             </div>
         </div>
 
-        <div class="mb-4 grid gap-4 lg:grid-cols-2">
+        <div class="mb-4 grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
             <div class="rounded-xl border border-slate-200 p-4">
                 <h2 class="mb-3 text-sm font-bold text-slate-700">مدیریت ستون‌ها</h2>
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
                     @foreach($availableColumns as $columnKey => $columnLabel)
-                        <label class="flex items-center gap-2 rounded-md border border-slate-100 bg-slate-50 px-2 py-1.5 text-xs">
+                        <label class="flex min-w-0 items-center gap-2 rounded-md border border-slate-100 bg-slate-50 px-2 py-1.5 text-xs">
                             <input type="checkbox" @checked(in_array($columnKey, $visibleColumns, true)) wire:click="toggleColumn('{{ $columnKey }}')">
-                            <span>{{ $columnLabel }}</span>
+                            <span class="min-w-0 break-words">{{ $columnLabel }}</span>
                         </label>
                     @endforeach
                 </div>
@@ -158,18 +168,18 @@
 
             <div class="rounded-xl border border-slate-200 p-4">
                 <h2 class="mb-3 text-sm font-bold text-slate-700">فیلترهای ذخیره شده</h2>
-                <div class="mb-3 flex gap-2">
-                    <input type="text" wire:model.defer="saveFilterName" class="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-xs" placeholder="نام فیلتر">
-                    <button type="button" wire:click="saveCurrentFilters" class="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white">ذخیره</button>
+                <div class="mb-3 flex flex-col gap-2 md:flex-row">
+                    <input type="text" wire:model.defer="saveFilterName" class="w-full min-w-0 rounded-lg border border-slate-200 px-3 py-2 text-xs md:flex-1" placeholder="نام فیلتر">
+                    <button type="button" wire:click="saveCurrentFilters" class="w-full rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white md:w-auto md:shrink-0">ذخیره</button>
                 </div>
                 <div class="space-y-2">
                     @forelse($this->savedFilters as $saved)
-                        <div class="flex items-center gap-2 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
-                            <button type="button" wire:click="loadSavedFilter({{ $saved->id }})" class="flex flex-1 items-center justify-between text-xs hover:text-indigo-700">
-                                <span>{{ $saved->name }}</span>
-                                <span class="text-slate-400">{{ $saved->created_at->format('Y/m/d') }}</span>
+                        <div class="flex flex-col gap-2 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 lg:flex-row lg:items-center">
+                            <button type="button" wire:click="loadSavedFilter({{ $saved->id }})" class="flex min-w-0 flex-1 flex-col items-start justify-between gap-1 text-right text-xs hover:text-indigo-700 lg:flex-row lg:items-center lg:gap-3">
+                                <span class="break-words">{{ $saved->name }}</span>
+                                <span class="shrink-0 text-slate-400">{{ $saved->created_at->format('Y/m/d') }}</span>
                             </button>
-                            <button type="button" wire:click="deleteSavedFilter({{ $saved->id }})" wire:confirm="آیا از حذف این فیلتر ذخیره‌شده مطمئن هستید؟" class="rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-100">
+                            <button type="button" wire:click="deleteSavedFilter({{ $saved->id }})" wire:confirm="آیا از حذف این فیلتر ذخیره‌شده مطمئن هستید؟" class="self-start rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-100 lg:self-auto">
                                 حذف
                             </button>
                         </div>
@@ -193,15 +203,15 @@
         @endif
 
         <div class="mb-4 rounded-xl border border-sky-200 bg-gradient-to-l from-sky-50 to-cyan-50 p-4">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-                <div>
+            <div class="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between">
+                <div class="min-w-0">
                     <p class="text-xs font-semibold text-sky-700">خلاصه لحظه‌ای نتایج جستجو</p>
                     <p class="mt-1 text-sm font-bold text-slate-800">
                         تعداد رکوردهای یافت‌شده:
                         <span class="rounded-md bg-white px-2 py-0.5 text-sky-700">{{ number_format($this->people->total()) }}</span>
                     </p>
                 </div>
-                <div class="text-xs text-slate-600">
+                <div class="text-xs text-slate-600 lg:text-left">
                     <span class="font-semibold">تعداد شروط فعال:</span>
                     <span class="rounded-md bg-white px-2 py-0.5 text-slate-800">{{ count($filters) }}</span>
                 </div>

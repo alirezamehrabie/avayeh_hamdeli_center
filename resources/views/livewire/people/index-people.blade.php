@@ -1,5 +1,5 @@
 <div>
-    <div class="container mx-auto p-4">
+    <div class="container mx-auto p-0">
         <div class="rounded-2xl border bg-gradient-to-br from-white via-rose-50/30 to-white p-6 shadow-sm sm:p-7" style="border-color: #f5d0e1;">
             <div class="mb-6 rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100">
                 <div class="flex flex-col gap-4 px-5 py-5 lg:flex-row lg:items-center lg:justify-between">
@@ -35,7 +35,7 @@
 
                         <div class="min-w-[140px] rounded-xl border px-4 py-2.5 text-center shadow-sm"
                              style="border-color: #f3d2df; background: linear-gradient(180deg, #fffafc 0%, #ffffff 100%);">
-                            <p class="text-xs font-semibold text-slate-500">تعداد نمایش داده شده</p>
+                            <p class="text-xs font-semibold text-slate-500 py-2">تعداد مددجویان</p>
                             <p class="mt-1 text-xl font-extrabold" style="color: #9D174D;">
                                 {{ number_format($this->people->total()) }}
                             </p>

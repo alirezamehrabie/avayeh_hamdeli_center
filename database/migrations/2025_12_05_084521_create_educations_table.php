@@ -17,9 +17,7 @@ return new class extends Migration
                 ->constrained('people')
                 ->onDelete('cascade');
 
-            $table->boolean('is_studying')
-                ->default(true)
-                ->nullable();
+            $table->boolean('is_studying')->nullable();
 
             $table->string('school_name')
                 ->nullable();
@@ -48,7 +46,7 @@ return new class extends Migration
         });
     }
 
-    
+
     public function down(): void
     {
         Schema::dropIfExists('educations');
