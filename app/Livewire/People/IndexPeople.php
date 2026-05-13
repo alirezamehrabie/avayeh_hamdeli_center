@@ -114,6 +114,7 @@ class IndexPeople extends Component
             'guardian.residence',
             'guardian.socialWorker',
             'education.educationLevel',
+            'education.educationDegreeLevel',
             'supportCoverage.organization',
             'disabilityType',
             'familyStatus.guardianRelationType',

@@ -229,7 +229,7 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                     @forelse($this->people as $person)
-                        <tr class="hover:bg-slate-50">
+                        <tr wire:key="advanced-person-row-{{ $person->id }}" wire:click="showPersonInfo({{ $person->id }})" class="cursor-pointer transition hover:bg-slate-50">
                             @foreach($visibleColumns as $columnKey)
                                 <td class="whitespace-nowrap px-4 py-3 text-xs text-slate-700">
                                     @switch($columnKey)
@@ -261,5 +261,7 @@
         <div class="mt-3">
             {{ $this->people->links() }}
         </div>
+
+        @include('livewire.people.partials.person-details-modal')
     </div>
 </div>

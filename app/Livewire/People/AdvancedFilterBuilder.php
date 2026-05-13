@@ -31,6 +31,8 @@ class AdvancedFilterBuilder extends Component
     public string $globalSearch = '';
     public array $filters = [];
     public string $saveFilterName = '';
+    public ?int $selectedPersonId = null;
+    public bool $showPersonModal = false;
 
     public array $visibleColumns = [
         'person_code',
@@ -326,6 +328,40 @@ class AdvancedFilterBuilder extends Component
         return response()->streamDownload(function () use ($pdf) {
             echo $pdf->output();
         }, 'advanced-beneficiary-report-' . Str::slug((string) now()) . '.pdf');
+    }
+
+    public function showPersonInfo(int $personId): void
+    {
+        $this->selectedPersonId = $personId;
+        $this->showPersonModal = true;
+    }
+
+    public function closePersonModal(): void
+    {
+        $this->showPersonModal = false;
+        $this->selectedPersonId = null;
+    }
+
+    public function getSelectedPersonProperty(): ?Person
+    {
+        if (!$this->selectedPersonId) {
+            return null;
+        }
+
+        return Person::with([
+            'guardian.occupation',
+            'guardian.jobType',
+            'guardian.residence',
+            'guardian.socialWorker',
+            'education.educationLevel',
+            'education.educationDegreeLevel',
+            'supportCoverage.organization',
+            'disabilityType',
+            'familyStatus.guardianRelationType',
+            'skills',
+            'harmTypes',
+            'needsLevel.levelType',
+        ])->find($this->selectedPersonId);
     }
 
     protected function buildQuery(): Builder
