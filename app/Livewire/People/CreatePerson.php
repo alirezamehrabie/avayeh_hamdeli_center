@@ -199,14 +199,14 @@ class CreatePerson extends Component
     public $subsidy_sheba_number = 'IR';
 
     // تحصیل
-    public $is_studying = '0'; // پیش‌فرض خیر
+    public $is_studying;
     public $school_name;
     public $major;
     public $education_level_id;
     public $reason_for_not_studying;
     public $education_degree;
     public $drop_reason;
-    public $works_alongside_study = '0';
+    public $works_alongside_study;
     public $monthly_income;
 
     // حمایت
@@ -1216,10 +1216,51 @@ class CreatePerson extends Component
         );
     }
 
+    private function normalizeNullableFields(): void
+    {
+        foreach ([
+            'sadaat_relation_id',
+            'children_from_previous_marriage',
+            'disability_type_id',
+            'occupation_id',
+            'job_type_id',
+            'children_in_house',
+            'economic_decile',
+            'insurance_type_id',
+            'average_income',
+            'vehicle_type_id',
+            'residence_status_id',
+            'district_id',
+            'deposit_amount',
+            'monthly_rent',
+            'residence_duration_years',
+            'account_owner_relation_id',
+            'bank_id',
+            'education_level_id',
+            'education_degree',
+            'monthly_income',
+            'support_organization_id',
+            'coverage_start_day',
+            'coverage_start_month',
+            'coverage_start_year',
+            'need_level_id',
+        ] as $field) {
+            if ($this->{$field} === '') {
+                $this->{$field} = null;
+            }
+        }
+    }
+
+    private function toNullableInt(mixed $value): ?int
+    {
+        return $value === null || $value === '' ? null : (int) $value;
+    }
+
     // --- متد Save (ذخیره نهایی) ---
     public function save()
     {
         $this->is_submitted = true;
+        $this->normalizeNullableFields();
         $this->sheba_number = $this->normalizeIbanForStorage($this->sheba_number);
         $this->subsidy_sheba_number = $this->normalizeIbanForStorage($this->subsidy_sheba_number);
 
@@ -1289,12 +1330,12 @@ class CreatePerson extends Component
                         'occupation_id' => $this->occupation_id,
                         'job_type_id' => $this->job_type_id ?: null,
                         'guardian_phone_number' => $this->guardian_phone_number,
-                        'children_in_house' => (int)$this->children_in_house,
+                        'children_in_house' => $this->toNullableInt($this->children_in_house),
                         'extra_household_members' => $this->extra_household_members,
                         'insurance_status' => (bool)$this->insurance_status,
                         'insurance_type_id' => ((bool)$this->insurance_status) ? $this->insurance_type_id : null,
                         'divorced_child_at_home' => $this->divorced_child_at_home ?: 'none',
-                        'average_income' => (int)$this->average_income,
+                        'average_income' => $this->toNullableInt($this->average_income),
                         'any_family_employed' => (bool)$this->any_family_employed,
                         'any_family_employed_description' => ((bool)$this->any_family_employed) ? $this->any_family_employed_description : null,
                         'has_vehicle' => (bool)$this->has_vehicle,
@@ -1359,7 +1400,7 @@ class CreatePerson extends Component
                 $this->atomicUpsert('family_statuses', ['person_id' => $this->person->id], [
                     'guardian_relation_type_id' => $this->guardian_relation_type_id,
                     'remarried_parent' => $this->remarried_parent,
-                    'children_from_previous_marriage' => (int)$this->children_from_previous_marriage,
+                    'children_from_previous_marriage' => $this->toNullableInt($this->children_from_previous_marriage),
                     'has_parent_disability' => (bool)$this->has_parent_disability,
                     'parent_disability_description' => ((bool)$this->has_parent_disability) ? $this->parent_disability_description : null,
                 ]);
@@ -1375,9 +1416,9 @@ class CreatePerson extends Component
                         'residence_status_id' => $this->residence_status_id,
                         'district_id' => $this->district_id ?: null,
                         'is_local_to_city' => (bool)$this->is_local_to_city,
-                        'deposit_amount' => (int)$this->deposit_amount,
-                        'monthly_rent' => (int)$this->monthly_rent,
-                        'residence_duration_years' => (int)$this->residence_duration_years,
+                        'deposit_amount' => $this->toNullableInt($this->deposit_amount),
+                        'monthly_rent' => $this->toNullableInt($this->monthly_rent),
+                        'residence_duration_years' => $this->toNullableInt($this->residence_duration_years),
                         'address' => $this->address,
                     ]);
                 }
@@ -1439,7 +1480,7 @@ class CreatePerson extends Component
                         'education_degree' => $this->education_degree ?: null,
                         'drop_reason' => $this->drop_reason,
                         'works_alongside_study' => (bool)$this->works_alongside_study,
-                        'monthly_income' => (int)$this->monthly_income,
+                        'monthly_income' => $this->toNullableInt($this->monthly_income),
                     ]
                 );
 
@@ -1531,12 +1572,12 @@ class CreatePerson extends Component
                         'occupation_id' => $this->occupation_id,
                         'job_type_id' => $this->job_type_id ?: null,
                         'guardian_phone_number' => $this->guardian_phone_number,
-                        'children_in_house' => (int)$this->children_in_house,
+                        'children_in_house' => $this->toNullableInt($this->children_in_house),
                         'extra_household_members' => $this->extra_household_members,
                         'insurance_status' => (bool)$this->insurance_status,
                         'insurance_type_id' => ((bool)$this->insurance_status) ? $this->insurance_type_id : null,
                         'divorced_child_at_home' => $this->divorced_child_at_home ?: 'none',
-                        'average_income' => (int)$this->average_income,
+                        'average_income' => $this->toNullableInt($this->average_income),
                         'any_family_employed' => (bool)$this->any_family_employed,
                         'any_family_employed_description' => ((bool)$this->any_family_employed) ? $this->any_family_employed_description : null,
                         'has_vehicle' => (bool)$this->has_vehicle,
@@ -1583,7 +1624,7 @@ class CreatePerson extends Component
                 $this->atomicUpsert('family_statuses', ['person_id' => $person->id], [
                     'guardian_relation_type_id' => $this->guardian_relation_type_id,
                     'remarried_parent' => $this->remarried_parent,
-                    'children_from_previous_marriage' => (int)$this->children_from_previous_marriage,
+                    'children_from_previous_marriage' => $this->toNullableInt($this->children_from_previous_marriage),
                     'has_parent_disability' => (bool)$this->has_parent_disability,
                     'parent_disability_description' => ((bool)$this->has_parent_disability) ? $this->parent_disability_description : null,
                 ]);
@@ -1599,9 +1640,9 @@ class CreatePerson extends Component
                         'residence_status_id' => $this->residence_status_id,
                         'district_id' => $this->district_id ?: null,
                         'is_local_to_city' => (bool)$this->is_local_to_city,
-                        'deposit_amount' => (int)$this->deposit_amount,
-                        'monthly_rent' => (int)$this->monthly_rent,
-                        'residence_duration_years' => (int)$this->residence_duration_years,
+                        'deposit_amount' => $this->toNullableInt($this->deposit_amount),
+                        'monthly_rent' => $this->toNullableInt($this->monthly_rent),
+                        'residence_duration_years' => $this->toNullableInt($this->residence_duration_years),
                         'address' => $this->address,
                     ]);
                 }
@@ -1657,7 +1698,7 @@ class CreatePerson extends Component
                     'education_degree' => $this->education_degree ?: null,
                     'drop_reason' => $this->drop_reason,
                     'works_alongside_study' => (bool)$this->works_alongside_study,
-                    'monthly_income' => (int)$this->monthly_income,
+                    'monthly_income' => $this->toNullableInt($this->monthly_income),
                 ]);
 
                 // جدول 7: SupportCoverage

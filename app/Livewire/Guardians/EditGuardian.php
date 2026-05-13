@@ -218,8 +218,37 @@ class EditGuardian extends Component
         }
     }
 
+    private function normalizeNullableFields(): void
+    {
+        foreach ([
+            'social_worker_id',
+            'occupation_id',
+            'job_type_id',
+            'insurance_type_id',
+            'average_income',
+            'vehicle_type_id',
+            'residence_status_id',
+            'district_id',
+            'deposit_amount',
+            'monthly_rent',
+            'residence_duration_years',
+            'bank_id',
+            'account_owner_relation_id',
+        ] as $field) {
+            if ($this->{$field} === '') {
+                $this->{$field} = null;
+            }
+        }
+    }
+
+    private function toNullableInt(mixed $value): ?int
+    {
+        return $value === null || $value === '' ? null : (int) $value;
+    }
+
     public function save(): mixed
     {
+        $this->normalizeNullableFields();
         $this->validate();
 
         DB::transaction(function () {
@@ -245,7 +274,7 @@ class EditGuardian extends Component
                 'insurance_status' => (bool) $this->insurance_status,
                 'insurance_type_id' => (bool) $this->insurance_status ? $this->insurance_type_id : null,
                 'divorced_child_at_home' => $this->divorced_child_at_home ?: 'none',
-                'average_income' => $this->average_income,
+                'average_income' => $this->toNullableInt($this->average_income),
                 'any_family_employed' => (bool) $this->any_family_employed,
                 'any_family_employed_description' => (bool) $this->any_family_employed ? $this->any_family_employed_description : null,
                 'has_vehicle' => (bool) $this->has_vehicle,
@@ -260,9 +289,9 @@ class EditGuardian extends Component
                     'residence_status_id' => $this->residence_status_id,
                     'district_id' => $this->district_id,
                     'is_local_to_city' => (bool) $this->is_local_to_city,
-                    'deposit_amount' => $this->deposit_amount,
-                    'monthly_rent' => $this->monthly_rent,
-                    'residence_duration_years' => $this->residence_duration_years,
+                    'deposit_amount' => $this->toNullableInt($this->deposit_amount),
+                    'monthly_rent' => $this->toNullableInt($this->monthly_rent),
+                    'residence_duration_years' => $this->toNullableInt($this->residence_duration_years),
                     'address' => $this->address,
                 ]
             );
