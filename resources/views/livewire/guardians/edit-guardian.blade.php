@@ -125,9 +125,10 @@
                         </div>
                     </div>
                     <div class="mt-3 grid gap-3 md:grid-cols-3">
-                        <div>
+                        <div x-data="{ amount: @js($average_income ?? '') }">
                             <label class="mb-1 block text-xs font-semibold text-slate-600">متوسط درآمد ماهیانه (ریال)</label>
-                            <input type="number" wire:model.blur="average_income" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                            <input type="number" wire:model.blur="average_income" x-model="amount" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                            <p x-show="amount !== '' && amount !== null" x-cloak class="mt-1 text-xs font-medium text-emerald-600" x-text="new Intl.NumberFormat('en-US').format(Number(amount || 0)) + ' Rial'"></p>
                         </div>
                         <div>
                             <label class="mb-1 block text-xs font-semibold text-slate-600">وضعیت بیمه</label>
@@ -241,13 +242,15 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div>
+                        <div x-data="{ amount: @js($deposit_amount ?? '') }">
                             <label class="mb-1 block text-xs font-semibold text-slate-600">ودیعه</label>
-                            <input type="number" wire:model.blur="deposit_amount" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                            <input type="number" wire:model.blur="deposit_amount" x-model="amount" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                            <p x-show="amount !== '' && amount !== null" x-cloak class="mt-1 text-xs font-medium text-emerald-600" x-text="new Intl.NumberFormat('en-US').format(Number(amount || 0)) + ' Rial'"></p>
                         </div>
-                        <div>
+                        <div x-data="{ amount: @js($monthly_rent ?? '') }">
                             <label class="mb-1 block text-xs font-semibold text-slate-600">اجاره ماهانه</label>
-                            <input type="number" wire:model.blur="monthly_rent" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                            <input type="number" wire:model.blur="monthly_rent" x-model="amount" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                            <p x-show="amount !== '' && amount !== null" x-cloak class="mt-1 text-xs font-medium text-emerald-600" x-text="new Intl.NumberFormat('en-US').format(Number(amount || 0)) + ' Rial'"></p>
                         </div>
                     </div>
                     <div class="mt-3 grid gap-3 md:grid-cols-4">

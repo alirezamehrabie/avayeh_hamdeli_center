@@ -780,9 +780,10 @@
                                     @error('education_level_id') <span class="text-danger small">{{ $message }}</span> @enderror
                                 </div>
 
-                                <div class="col-md-4">
+                                <div class="col-md-4" x-data="{ amount: @js($monthly_income ?? '') }">
                                     <label class="form-label small fw-semibold mb-1">درآمد ماهیانه از کار (ریال)</label>
-                                    <input type="number" class="form-control form-control-sm @error('monthly_income') is-invalid @enderror" wire:model.blur="monthly_income" min="0" placeholder="به ریال" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;" @if($works_alongside_study != '1') disabled @endif>
+                                    <input type="number" class="form-control form-control-sm @error('monthly_income') is-invalid @enderror" wire:model.blur="monthly_income" x-model="amount" min="0" placeholder="150,000,000" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;" @if($works_alongside_study != '1') disabled @endif>
+                                    <x-money-preview/>
                                     @error('monthly_income') <span class="text-danger small">{{ $message }}</span> @enderror
                                 </div>
 
@@ -1259,12 +1260,21 @@
                         </div>
 
 
-                        <div class="col-md-4">
+                        <div class="col-md-4" x-data="{ amount: @js($average_income ?? '') }">
                             <label class="form-label small fw-semibold mb-1">متوسط درآمد ماهیانه (ریال)</label>
-                            <input type="number" class="form-control form-control-sm @error('average_income') is-invalid @enderror" wire:model="average_income" min="0" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;"
-                                   placeholder="مثال: 50000000">
+                            <input
+                                    type="number"
+                                    class="form-control form-control-sm @error('average_income') is-invalid @enderror"
+                                    wire:model="average_income"
+                                    x-model="amount"
+                                    min="0"
+                                    style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;"
+                                    placeholder="250,000,000"
+                            >
+                            <x-money-preview/>
                             @error('average_income') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
+
 
 
                         <div class="col-md-4">
@@ -1516,19 +1526,38 @@
 
                         @if($residence_status_id == 2)
                             {{-- 2 برای "اجاره‌ای" --}}
-                            <div class="col-lg-3 col-md-6">
+                            <div class="col-lg-3 col-md-6" x-data="{ amount: @js($deposit_amount ?? '') }">
                                 <label class="form-label small fw-semibold mb-1">مبلغ ودیعه (ریال)</label>
-                                <input type="number" class="form-control form-control-sm @error('deposit_amount') is-invalid @enderror" wire:model.blur="deposit_amount" min="0"
-                                       placeholder="به ریال" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                <input
+                                        type="number"
+                                        class="form-control form-control-sm @error('deposit_amount') is-invalid @enderror"
+                                        wire:model.blur="deposit_amount"
+                                        x-model="amount"
+                                        min="0"
+                                        placeholder="100,000,000,000"
+                                        style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;"
+                                >
+                                <x-money-preview/>
                                 @error('deposit_amount') <span class="text-danger small">{{ $message }}</span> @enderror
                             </div>
-                            <div class="col-lg-3 col-md-6">
+
+
+                            <div class="col-lg-3 col-md-6" x-data="{ amount: @js($monthly_rent ?? '') }">
                                 <label class="form-label small fw-semibold mb-1">اجاره ماهیانه (ریال)</label>
-                                <input type="number" class="form-control form-control-sm @error('monthly_rent') is-invalid @enderror" wire:model.blur="monthly_rent" min="0"
-                                       placeholder="به ریال" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                <input
+                                        type="number"
+                                        class="form-control form-control-sm @error('monthly_rent') is-invalid @enderror"
+                                        wire:model.blur="monthly_rent"
+                                        x-model="amount"
+                                        min="0"
+                                        placeholder="50,000,000"
+                                        style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;"
+                                >
+                                <x-money-preview/>
                                 @error('monthly_rent') <span class="text-danger small">{{ $message }}</span> @enderror
                             </div>
                         @endif
+
 
                         <div class="col-lg-3 col-md-6">
                             <label class="form-label small fw-semibold mb-1">سال‌های سکونت در منطقه</label>
