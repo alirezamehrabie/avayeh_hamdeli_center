@@ -2044,17 +2044,7 @@ class CreatePerson extends Component
 
     private function syncChildrenInHouseForParentGuardian(Guardian $guardian): void
     {
-        if (!$this->isParentGuardianWithRelevantRemarriage()) {
-            return;
-        }
-
-        $childrenFromPreviousMarriage = (int)($this->children_from_previous_marriage ?? 0);
-        $childrenCount = (int)($guardian->children_count ?? 0);
-        $extraHouseholdCount = count($this->extra_household_members ?? []);
-
-        $guardian->update([
-            'children_in_house' => $childrenCount + $childrenFromPreviousMarriage + $extraHouseholdCount,
-        ]);
+        $guardian->refreshChildrenInHouse();
     }
 
     private function recalculateChildrenInHouseRealtime(): void

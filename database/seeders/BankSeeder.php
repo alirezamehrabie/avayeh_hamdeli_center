@@ -38,6 +38,7 @@ class BankSeeder extends Seeder
             'موسسه اعتباری نور',
             'موسسه ملل (عسکریه سابق)',
             'موسسه اعتباری کوثر',
+            'بانک امداد ولایت',
         ];
 
         foreach ($banks as $bank) {

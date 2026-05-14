@@ -24,6 +24,7 @@ class JobTypeSeeder extends Seeder
             'حق‌التدریس / حق‌الزحمه‌ای',
             'نمایندگی / عاملیت فروش',
             'دورکاری / فریلنس',
+            'از کار افتاده / مورد خاص'
         ];
 
         foreach ($types as $type) {

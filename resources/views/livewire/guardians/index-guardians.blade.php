@@ -7,17 +7,35 @@
                     <p class="mt-1 text-sm text-slate-500">مشاهده سرپرستان و مددجویان تحت نظارت هر سرپرست</p>
                 </div>
 
-                <div wire:poll.5s class="rounded-2xl border border-emerald-100 bg-white/90 px-5 py-3 shadow-sm ring-1 ring-emerald-50 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
-                    <p class="text-xs font-semibold text-slate-500">تعداد سرپرستان</p>
-                    <div class="mt-1 flex items-center justify-center gap-3" dir="ltr">
-                        <span class="relative flex h-3 w-3" aria-label="به‌روزرسانی زنده">
-                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60"></span>
-                            <span class="relative inline-flex h-3 w-3 animate-pulse rounded-full bg-emerald-500 shadow-sm shadow-emerald-300"></span>
-                        </span>
-                        <span class="text-xl font-extrabold tracking-tight text-emerald-600 iranyekan-bold">{{ number_format($totalGuardians) }}</span>
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <div wire:poll.5s class="rounded-2xl border border-emerald-100 bg-white/90 px-5 py-3 shadow-sm ring-1 ring-emerald-50 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
+                        <p class="text-xs font-semibold text-slate-500">تعداد سرپرستان</p>
+                        <div class="mt-1 flex items-center justify-center gap-3" dir="ltr">
+                            <span class="relative flex h-3 w-3" aria-label="به‌روزرسانی زنده">
+                                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60"></span>
+                                <span class="relative inline-flex h-3 w-3 animate-pulse rounded-full bg-emerald-500 shadow-sm shadow-emerald-300"></span>
+                            </span>
+                            <span class="text-xl font-extrabold tracking-tight text-emerald-600 iranyekan-bold">{{ number_format($totalGuardians) }}</span>
+                        </div>
                     </div>
+                    <button
+                        type="button"
+                        wire:click="refreshStats"
+                        class="inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-700 shadow-sm transition hover:border-sky-300 hover:bg-sky-100"
+                    >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M20 9a8 8 0 00-14.9-3M4 15a8 8 0 0014.9 3"/>
+                        </svg>
+                        بروزرسانی
+                    </button>
                 </div>
             </div>
+
+            @if (session('status'))
+                <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+                    {{ session('status') }}
+                </div>
+            @endif
 
             <div class="mb-5">
                 <label for="guardian-search" class="mb-2 block text-sm font-semibold text-slate-700">جستجوی سریع سرپرستان</label>

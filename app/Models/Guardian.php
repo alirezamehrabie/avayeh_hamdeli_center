@@ -263,4 +263,49 @@ class Guardian extends Model
 
         return $query->where('guardian_birth_year', '>=', $minYear);
     }
+
+    public function refreshChildrenInHouse(): void
+    {
+        $childrenCount = (int) ($this->children_count ?? 0);
+        $extraHouseholdCount = count($this->extra_household_members ?? []);
+        $childrenFromPreviousMarriage = 0;
+
+        $people = $this->people()->with(['familyStatus.guardianRelationType'])->get();
+
+        foreach ($people as $person) {
+            $familyStatus = $person->familyStatus;
+            if (!$familyStatus || !$familyStatus->guardianRelationType) {
+                continue;
+            }
+
+            $relationTypeTitle = trim((string) ($familyStatus->guardianRelationType->title ?? ''));
+            $remarriedParent = strtolower(trim((string) ($familyStatus->remarried_parent ?? '')));
+
+            $isFatherGuardian = $relationTypeTitle === 'پدر';
+            $isMotherGuardian = $relationTypeTitle === 'مادر';
+            $isRelevantRemarriage = ($isFatherGuardian && in_array($remarriedParent, ['father', 'both'], true))
+                || ($isMotherGuardian && in_array($remarriedParent, ['mother', 'both'], true));
+
+            if (!$isRelevantRemarriage) {
+                continue;
+            }
+
+            $childrenFromPreviousMarriage = max(
+                $childrenFromPreviousMarriage,
+                max(0, (int) ($familyStatus->children_from_previous_marriage ?? 0))
+            );
+        }
+
+        $this->children_in_house = $childrenCount + $extraHouseholdCount + $childrenFromPreviousMarriage;
+        $this->saveQuietly();
+    }
+
+    public static function refreshAllChildrenInHouse(): void
+    {
+        static::query()->chunkById(200, function ($guardians): void {
+            foreach ($guardians as $guardian) {
+                $guardian->refreshChildrenInHouse();
+            }
+        });
+    }
 }

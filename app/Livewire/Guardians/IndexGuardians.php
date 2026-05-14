@@ -87,6 +87,12 @@ class IndexGuardians extends Component
         $this->selectedGuardianId = null;
     }
 
+    public function refreshStats(): void
+    {
+        Guardian::refreshAllChildrenInHouse();
+        session()->flash('status', 'آمار سرپرستان با موفقیت به‌روزرسانی شد.');
+    }
+
     public function getSelectedGuardianProperty(): ?Guardian
     {
         if (!$this->selectedGuardianId) {
