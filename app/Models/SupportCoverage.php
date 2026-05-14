@@ -13,6 +13,7 @@ class SupportCoverage extends Model
     protected $fillable = [
         'person_id',
         'support_organization_id', // کلید خارجی جدید
+        'description',
         'other_organization_name', // فیلد متنی برای "سایر"
         'coverage_start_day',      // ✅ فیلد جدید
         'coverage_start_month',    // ✅ فیلد جدید

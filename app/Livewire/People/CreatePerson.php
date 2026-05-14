@@ -213,6 +213,7 @@ class CreatePerson extends Component
     public $organization_type;
     public $support_organizations; // برای نگه داشتن لیست در listBox
     public $support_organization_id; // برای ذخیره ID انتخاب شده
+    public $support_organization_description;
     public $other_organization_name; // برای ذخیره نام خیریه دستی
     public $coverage_start_day;
     public $coverage_start_month;
@@ -385,6 +386,7 @@ class CreatePerson extends Component
             // Support coverage (with null check)
             if ($this->person->supportCoverage) {
                 $this->support_organization_id = $this->person->supportCoverage->support_organization_id;
+                $this->support_organization_description = $this->person->supportCoverage->description;
                 $this->other_organization_name = $this->person->supportCoverage->other_organization_name;
                 $this->coverage_start_day = $this->person->supportCoverage->coverage_start_day;
                 $this->coverage_start_month = $this->person->supportCoverage->coverage_start_month;
@@ -414,6 +416,20 @@ class CreatePerson extends Component
             ($this->subsidy_sheba_number === 'IR' || $this->subsidy_sheba_number === '')
         ) {
             $this->subsidy_sheba_number = $normalized;
+        }
+    }
+
+    public function updatedSupportOrganizationId($value): void
+    {
+        if (blank($value)) {
+            $this->support_organization_description = null;
+            $this->other_organization_name = null;
+
+            return;
+        }
+
+        if (!$this->isOtherOrganization()) {
+            $this->other_organization_name = null;
         }
     }
 
@@ -1190,6 +1206,7 @@ class CreatePerson extends Component
 
 
             'support_organization_id' => 'nullable|exists:support_organizations,id',
+            'support_organization_description' => 'nullable|string|max:2000',
             'other_organization_name' => [
                 Rule::requiredIf(fn() => $this->isOtherOrganization()),
                 'nullable', 'string', 'max:255'
@@ -1240,6 +1257,7 @@ class CreatePerson extends Component
             'education_degree',
             'monthly_income',
             'support_organization_id',
+            'support_organization_description',
             'coverage_start_day',
             'coverage_start_month',
             'coverage_start_year',
@@ -1487,6 +1505,7 @@ class CreatePerson extends Component
                 // --- 10. به‌روزرسانی پوشش حمایتی (SupportCoverage) ---
                 $supportCoverageData = [
                     'support_organization_id' => $this->support_organization_id,
+                    'description' => $this->support_organization_description,
                     'other_organization_name' => $this->other_organization_name,
                     'coverage_start_day' => $this->coverage_start_day ?: null,
                     'coverage_start_month' => $this->coverage_start_month ?: null,
@@ -1704,6 +1723,7 @@ class CreatePerson extends Component
                 // جدول 7: SupportCoverage
                 $this->atomicUpsert('support_coverages', ['person_id' => $person->id], [
                     'support_organization_id' => $this->support_organization_id,
+                    'description' => $this->support_organization_description,
                     'other_organization_name' => $this->other_organization_name,
                     'coverage_start_day' => $this->coverage_start_day ?: null,
                     'coverage_start_month' => $this->coverage_start_month ?: null,

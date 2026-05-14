@@ -1651,6 +1651,14 @@
                             </select>
                         </div>
 
+                        @if(filled($support_organization_id))
+                            <div x-transition class="col-lg-4 col-md-6">
+                                <label class="form-label small fw-semibold mb-1">توضیحات نهاد حمایتی</label>
+                                <input type="text" wire:model.blur="support_organization_description" class="form-control form-control-sm @error('support_organization_description') is-invalid @enderror" placeholder="توضیحات تکمیلی درباره این پوشش" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                @error('support_organization_description') <span class="text-danger small">{{ $message }}</span> @enderror
+                            </div>
+                        @endif
+
                         <!-- فیلد شرطی برای "خیریه دیگر" -->
                         @php
                             $otherId = $support_organizations->where('slug', 'other')->first()?->id;

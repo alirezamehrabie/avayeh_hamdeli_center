@@ -46,6 +46,7 @@
             ['label' => 'وضعیت تحصیلی', 'value' => $educationStatus],
             ['label' => 'مهارت‌ها', 'value' => $skills ?: ($selectedPerson->skills_description ?: '-')],
             ['label' => 'نهاد حامی', 'value' => $supportOrganizationName],
+            ['label' => 'توضیحات نهاد حامی', 'value' => $selectedPerson->supportCoverage?->description ?: '-'],
             ['label' => 'نوع معلولیت', 'value' => $selectedPerson->has_disability ? (($selectedPerson->disabilityType?->name ?? '') . ($selectedPerson->disability_description ? ' - ' . $selectedPerson->disability_description : '')) : 'ندارد'],
             ['label' => 'وضعیت سرپرست', 'value' => $guardianStatus],
             ['label' => 'شغل سرپرست', 'value' => $guardianJob ?: '-'],
