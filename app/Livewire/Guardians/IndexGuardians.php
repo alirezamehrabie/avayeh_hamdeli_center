@@ -14,6 +14,7 @@ class IndexGuardians extends Component
     use WithPagination;
 
     public bool $embedded = false;
+    public bool $hasAutoRefreshedStats = false;
     public ?int $expandedGuardianId = null;
     public string $search = '';
     public string $searchField = 'all';
@@ -87,10 +88,19 @@ class IndexGuardians extends Component
         $this->selectedGuardianId = null;
     }
 
+    public function refreshStatsOnLoad(): void
+    {
+        if ($this->hasAutoRefreshedStats) {
+            return;
+        }
+
+        $this->hasAutoRefreshedStats = true;
+        $this->refreshGuardianStats('آمار سرپرستان به‌روزرسانی شد.');
+    }
+
     public function refreshStats(): void
     {
-        Guardian::refreshAllChildrenInHouse();
-        session()->flash('status', 'آمار سرپرستان با موفقیت به‌روزرسانی شد.');
+        $this->refreshGuardianStats('آمار سرپرستان به‌روزرسانی شد.');
     }
 
     public function getSelectedGuardianProperty(): ?Guardian
@@ -109,5 +119,11 @@ class IndexGuardians extends Component
         return view('livewire.guardians.index-guardians', [
             'totalGuardians' => Guardian::count(),
         ]);
+    }
+
+    private function refreshGuardianStats(string $message): void
+    {
+        Guardian::refreshAllChildrenInHouse();
+        $this->dispatch('guardian-stats-refreshed', message: $message);
     }
 }

@@ -1,5 +1,25 @@
-<div>
-    <div class="container mx-auto p-4">
+<div
+    wire:init="refreshStatsOnLoad"
+    x-data="{
+        showToast: false,
+        toastMessage: '',
+        toastTimer: null,
+        openToast(message) {
+            this.toastMessage = message;
+            this.showToast = true;
+
+            if (this.toastTimer) {
+                clearTimeout(this.toastTimer);
+            }
+
+            this.toastTimer = setTimeout(() => {
+                this.showToast = false;
+            }, 3500);
+        }
+    }"
+    x-on:guardian-stats-refreshed.window="openToast($event.detail.message)"
+>
+    <div class="container mx-auto p-0">
         <div class="rounded-2xl border border-amber-100 bg-gradient-to-br from-white via-amber-50/30 to-white p-5 shadow-sm">
             <div class="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -30,12 +50,6 @@
                     </button>
                 </div>
             </div>
-
-            @if (session('status'))
-                <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-                    {{ session('status') }}
-                </div>
-            @endif
 
             <div class="mb-5">
                 <label for="guardian-search" class="mb-2 block text-sm font-semibold text-slate-700">جستجوی سریع سرپرستان</label>
@@ -173,6 +187,50 @@
             </div>
         </div>
     </div>
+
+    <div
+        x-cloak
+        x-show="showToast"
+        x-transition:enter="transform transition ease-out duration-300"
+        x-transition:enter-start="translate-y-4 opacity-0"
+        x-transition:enter-end="translate-y-0 opacity-100"
+        x-transition:leave="transform transition ease-in duration-200"
+        x-transition:leave-start="translate-y-0 opacity-100"
+        x-transition:leave-end="translate-y-4 opacity-0"
+        class="pointer-events-none fixed bottom-6 right-6 z-[70] w-full max-w-sm px-4"
+        style="display: none;"
+    >
+        <div class="pointer-events-auto overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-2xl ring-1 ring-emerald-100">
+            <div class="flex items-start gap-3 bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-3 text-white">
+                <div class="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <p class="text-sm font-extrabold">به‌روزرسانی آمار</p>
+                    <p class="mt-1 text-sm text-white/90" x-text="toastMessage"></p>
+                </div>
+                <button type="button" @click="showToast = false" class="rounded-full bg-white/10 p-1 text-white transition hover:bg-white/20" aria-label="بستن">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="h-1.5 w-full overflow-hidden bg-emerald-100">
+                <div class="h-full bg-emerald-500" style="animation: guardian-toast-progress 3.5s linear forwards;"></div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        [x-cloak] { display: none !important; }
+        @keyframes guardian-toast-progress {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+    </style>
+
     @if($this->selectedGuardian)
     @php
         $selectedGuardian = $this->selectedGuardian;
