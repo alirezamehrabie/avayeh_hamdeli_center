@@ -1,7 +1,8 @@
 <div>
     <div class="card shadow-sm">
         <div class="card-header bg-pink-800 text-white">
-            <h3 class="mb-0">فرم ثبت‌نام مددجوی جدید</h3>
+            <h3 class="mt-0 py-2 fw-bold">ثبت اطلاعات مددجوی جدید</h3>
+            <p class="text-sm mb-2 fw-light">اپراتور گرامی لطفاً تمامی اطلاعات موردنیاز را با دقت وارد کنید.</p>
         </div>
         <div class="card-body">
             {{-- شروع فرم --}}
@@ -1729,7 +1730,7 @@
                                                     <img src="{{ asset($person->supportCoverage->support_card_image) }}" id="captured-img-support-card" class="img-thumbnail" style="max-height: 150px;">
                                                 @else
                                                     {{-- تصویر پیش‌فرض --}}
-                                                    <img src="{{ asset('images/no-images.png') }}" id="captured-img-support-card" class="img-thumbnail" style="max-height: 150px;">
+                                                    <img src="{{ asset('images/no-image.png') }}" id="captured-img-support-card" class="img-thumbnail" style="max-height: 150px;">
                                                 @endif
                                             </div>
                                             <div class="mt-2 text-center">

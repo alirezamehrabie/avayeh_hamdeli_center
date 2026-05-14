@@ -1,6 +1,6 @@
 <div>
     <div class="card shadow-sm pb-3">
-        <div class="card-header bg-primary text-white">
+        <div class="card-header bg-pink-800 text-white">
             <h3 class="mb-2 text-lg">{{ $person ? 'ویرایش سریع مددجو' : 'ثبت‌نام سریع فرد جدید' }}</h3>
             <p class="mb-2 text-sm">{{ $person ? 'فیلدهای ضروری مددجو را در فرم سریع ویرایش کنید.' : 'فیلدهای ضروری را برای ثبت سریع پر کنید. اطلاعات اضافی را می‌توانید بعداً ویرایش کنید.' }}</p>
         </div>

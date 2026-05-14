@@ -2,11 +2,42 @@
     @php
         $selectedPerson = $this->selectedPerson;
         $supportOrganization = $selectedPerson->supportCoverage?->organization;
+        $showEditAction = method_exists($this, 'editPerson') && auth()->user()?->can('people-edit');
         $supportOrganizationName = $supportOrganization?->slug === 'other'
             ? ($selectedPerson->supportCoverage?->other_organization_name ?: ($supportOrganization?->name ?? '-'))
             : ($supportOrganization?->name ?? '-');
         $harmTypes = $selectedPerson->harmTypes->pluck('title')->filter()->implode('، ');
         $skills = $selectedPerson->skills->pluck('name')->filter()->implode('، ');
+        $birthDateValue = $selectedPerson->formatted_birth_date ?? $selectedPerson->birth_date ?? '-';
+        $ageBreakdown = null;
+        if ($selectedPerson->birth_year && $selectedPerson->birth_month && $selectedPerson->birth_day) {
+            try {
+                $todayJalali = \App\Helpers\Morilog\Jalalian::now();
+                $years = $todayJalali->getYear() - (int) $selectedPerson->birth_year;
+                $months = $todayJalali->getMonth() - (int) $selectedPerson->birth_month;
+                $days = $todayJalali->getDay() - (int) $selectedPerson->birth_day;
+
+                if ($days < 0) {
+                    $previousMonthDate = $todayJalali->subDays($todayJalali->getDay());
+                    $days += $previousMonthDate->getDaysOf($previousMonthDate->getMonth());
+                    $months--;
+                }
+
+                if ($months < 0) {
+                    $months += 12;
+                    $years--;
+                }
+
+                if ($years >= 0) {
+                    $ageBreakdown = sprintf('%d سال، %d ماه و %d روز', $years, $months, $days);
+                }
+            } catch (\Throwable $e) {
+                $ageBreakdown = null;
+            }
+        }
+        if ($ageBreakdown) {
+            $birthDateValue;
+        }
         $reasonForNotStudying = match ($selectedPerson->education?->reason_for_not_studying) {
             'graduation' => 'فارغ التحصیلی',
             'dropped_out' => 'ترک تحصیل',
@@ -39,7 +70,7 @@
             ['label' => 'نام و نام خانوادگی', 'value' => $selectedPerson->full_name ?: '-'],
             ['label' => 'کد ملی', 'value' => $selectedPerson->national_id ?: '-'],
             ['label' => 'نام پدر', 'value' => $selectedPerson->father_name ?: '-'],
-            ['label' => 'تاریخ تولد', 'value' => $selectedPerson->formatted_birth_date ?? $selectedPerson->birth_date ?? '-'],
+            'birthDateValue' => ['label' => 'تاریخ تولد', 'value' => $birthDateValue],
             ['label' => 'نوع آسیب', 'value' => $harmTypes ?: '-'],
             ['label' => 'وضعیت سادات', 'value' => $selectedPerson->sadaat_status === 'sadaat' ? 'سادات' : 'عام'],
             ['label' => 'شماره موبایل', 'value' => $selectedPerson->phone_number ?: '-'],
@@ -103,21 +134,62 @@
                     <div>
                         <h2 class="text-xl font-extrabold">اطلاعات مددجو</h2>
                         <p class="mt-1 text-sm text-white/85">{{ $selectedPerson->full_name ?: 'بدون نام' }}</p>
+                        <div class="mt-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/12 px-3 py-1.5 text-xs font-semibold text-white/95 backdrop-blur-sm">
+                            <span class="text-white/70">کد مددجو</span>
+                            <span dir="ltr">{{ $selectedPerson->formatted_person_code ?: ($selectedPerson->person_code ?: '-') }}</span>
+                        </div>
                     </div>
                 </div>
-                <button type="button" @click="close()" class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-2xl leading-none text-white transition hover:bg-white/25" aria-label="بستن">
-                    &times;
-                </button>
+                <div class="flex flex-col items-end gap-2">
+                    <button type="button" @click="close()" class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-2xl leading-none text-white transition hover:bg-white/25" aria-label="بستن">
+                        &times;
+                    </button>
+                    @if($showEditAction)
+                        <button type="button" wire:click="editPerson({{ $selectedPerson->id }})" class="mt-4 inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/15 p-2 text-white transition hover:bg-white/25"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a4 4 0 01-1.414.95L7 17l1.514-4.122a4 4 0 01.95-1.414z"/></svg></button>
+                    @endif
+                </div>
             </div>
 
             <div class="max-h-[75vh] overflow-y-auto p-6">
                 <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    @foreach($detailItems as $item)
-                        <div class="rounded-2xl border border-slate-100 bg-white/90 p-4 shadow-sm">
-                            <p class="text-xs font-semibold text-slate-500">{{ $item['label'] }}</p>
-                            <p class="mt-1 font-bold leading-7 text-slate-800">{{ $item['value'] }}</p>
-                        </div>
+                    @foreach($detailItems as $key => $item)
+
+                        @switch($key)
+                            @case('birthDateValue')
+                                <div class="rounded-2xl border border-slate-100 bg-white/90 p-4 shadow-sm">
+                                    <p class="text-xs font-semibold text-slate-500">
+                                        {{ $item['label'] }}
+                                    </p>
+                                    <div class="mt-1 flex flex-col items-start gap-2">
+                                    @if($ageBreakdown)
+
+                                            <p class="font-bold leading-7 text-slate-800">
+                                                {{ $item['value'] }}
+                                            </p>
+                                            <div
+                                                class="inline-flex items-center rounded-full bg-pink-50 text-pink-700 px-3 py-1 text-sm font-semibold">
+                                                {{ $ageBreakdown }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                                @break
+
+
+                            @default
+                                <div class="rounded-2xl border border-slate-100 bg-white/90 p-4 shadow-sm">
+                                    <p class="text-xs font-semibold text-slate-500">
+                                        {{ $item['label'] }}
+                                    </p>
+
+                                    <p class="mt-1 font-bold leading-7 text-slate-800">
+                                        {{ $item['value'] }}
+                                    </p>
+                                </div>
+                        @endswitch
+
                     @endforeach
+
                 </div>
             </div>
         </div>

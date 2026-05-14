@@ -2,7 +2,7 @@
     <div>
         @props([
         'model' => 'amount',
-        'unit' => 'ریال',
+        'unit' => 'ریـال',
     ])
 
         <p

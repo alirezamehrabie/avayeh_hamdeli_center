@@ -63,20 +63,24 @@
                 </button>
                 <div x-show="openMenu === 'people'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
                     @if($dashboardMode)
-                        @can('people-register')
-                            <button type="button" wire:click="selectSection('people-fast-create')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'people-fast-create' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                                <i class="fa fa-bolt"></i> ثبت سریع مددجو
-                            </button>
-                            <button type="button" wire:click="selectSection('person-create')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'person-create' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                                <i class="fa fa-user-plus"></i> فرم کامل ثبت نام
-                            </button>
-                        @endcan
+
                         <button type="button" wire:click="selectSection('people-list')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'people-list' || $activeSection === 'person-edit' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             <i class="fa fa-users"></i> لیست مددجویان
                         </button>
+
+                        @can('people-register')
+                            <button type="button" wire:click="selectSection('person-create')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'person-create' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
+                                <i class="fa fa-user-plus"></i> فرم کامل ثبت نام
+                            </button>
+
+                            <button type="button" wire:click="selectSection('people-fast-create')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'people-fast-create' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
+                                <i class="fa fa-bolt"></i> ثبت سریع مددجو
+                            </button>
+                        @endcan
+
                         @can('people-delete')
                             <button type="button" wire:click="selectSection('people-block-list')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'people-block-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                                <i class="fa fa-ban"></i> بلاک لیست مددجویان
+                                <i class="fa fa-ban"></i> مددجویان غیرفعال
                             </button>
                         @endcan
                     @else
@@ -108,7 +112,7 @@
                     <div x-show="openMenu === 'social-workers'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
                         <button type="button" wire:click="selectSection('social-workers-list')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'social-workers-list' || $activeSection === 'social-worker-edit' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">لیست مددکاران</button>
                         <button type="button" wire:click="selectSection('social-worker-create')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'social-worker-create' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">ثبت مددکار جدید</button>
-                        <button type="button" wire:click="selectSection('social-workers-block-list')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'social-workers-block-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">بلاک لیست مددکاران</button>
+                        <button type="button" wire:click="selectSection('social-workers-block-list')" class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'social-workers-block-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">مددکاران غیرفعال</button>
                     </div>
                 </div>
             @else
@@ -122,7 +126,7 @@
                     </button>
                     <div x-show="openMenu === 'social-workers'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
                         <a href="{{ route('social-workers.index') }}" class="block px-4 py-2 text-sm {{ request()->routeIs('social-workers.index') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">لیست مددکاران</a>
-                        <a href="{{ route('social-workers.block-list') }}" class="block px-4 py-2 text-sm {{ request()->routeIs('social-workers.block-list') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">بلاک لیست مددکاران</a>
+                        <a href="{{ route('social-workers.block-list') }}" class="block px-4 py-2 text-sm {{ request()->routeIs('social-workers.block-list') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">بلاک لیست مددکاران </a>
                         <a href="{{ route('social-workers.create') }}" class="block px-4 py-2 text-sm {{ request()->routeIs('social-workers.create') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">ثبت مددکار جدید</a>
                     </div>
                 </div>
