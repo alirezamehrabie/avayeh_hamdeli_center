@@ -22,6 +22,7 @@ class OccupationSeeder extends Seeder
             'مغازه‌دار',
             'مدیر / سرپرست',
             'معلم / دبیر',
+            'طلبه',
         ];
 
         $data = collect($items)

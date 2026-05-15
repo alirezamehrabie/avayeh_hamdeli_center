@@ -27,6 +27,7 @@ class EducationLevelSeeder extends Seeder
             ['name' => 'کارشناسی (لیسانس)',         'sort_order' => 15],
             ['name' => 'کارشناسی ارشد (فوق لیسانس)',     'sort_order' => 16],
             ['name' => 'دکتری (حرفه‌ای)',       'sort_order' => 17],
+            ['name' => 'تحصیلات حوزوی', 'sort_order' => 18],
         ];
 
         foreach ($levels as $level) {
