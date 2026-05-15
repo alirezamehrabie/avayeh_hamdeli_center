@@ -140,6 +140,7 @@ class CreatePerson extends Component
 
     public $has_parent_disability = false; // مقدار پیش‌فرض Boolean
     public $parent_disability_description;
+    public bool $parentDisabilityPrefilled = false;
 
     // --- 3. تعریف متغیرهای اطلاعات سرپرست ---
     public $guardian_national_code; // کد ملی سرپرست برای جستجو
@@ -492,6 +493,7 @@ class CreatePerson extends Component
 
         if (strlen($fatherNationalId) !== 10) {
             $this->clearDetectedMotherSuggestion();
+            $this->refreshParentDisabilityFromFamily();
             $this->resetValidation('father_national_id');
             return;
         }
@@ -516,11 +518,13 @@ class CreatePerson extends Component
         }
 
         $this->refreshDetectedMotherSuggestion($fatherNationalId);
+        $this->refreshParentDisabilityFromFamily();
     }
 
     public function updatedMotherNationalId($value): void
     {
         $this->mother_national_id = preg_replace('/\D+/', '', trim((string) $value));
+        $this->refreshParentDisabilityFromFamily();
     }
 
     public function getFatherSuggestionsProperty()
@@ -634,6 +638,8 @@ class CreatePerson extends Component
         ) {
             $this->mother_national_id = $this->detected_mother_national_id;
         }
+
+        $this->refreshParentDisabilityFromFamily();
     }
 
     private function clearDetectedMotherSuggestion(): void
@@ -1122,9 +1128,66 @@ class CreatePerson extends Component
 
     public function updatedHasParentDisability($value)
     {
+        $this->parentDisabilityPrefilled = false;
+
         if ($value == '0') {
             $this->parent_disability_description = null;
         }
+    }
+
+    public function updatedParentDisabilityDescription(): void
+    {
+        $this->parentDisabilityPrefilled = false;
+    }
+
+    private function refreshParentDisabilityFromFamily(): void
+    {
+        if ($this->mode === 'edit') {
+            return;
+        }
+
+        $fatherNationalId = preg_replace('/\D+/', '', trim((string) $this->father_national_id));
+        $motherNationalId = preg_replace('/\D+/', '', trim((string) $this->mother_national_id));
+
+        if (strlen($fatherNationalId) !== 10 || strlen($motherNationalId) !== 10) {
+            $this->clearPrefilledParentDisability();
+
+            return;
+        }
+
+        $matchingFamilyStatus = FamilyStatus::query()
+            ->select([
+                'family_statuses.has_parent_disability',
+                'family_statuses.parent_disability_description',
+            ])
+            ->join('people', 'people.id', '=', 'family_statuses.person_id')
+            ->where('people.father_national_id', $fatherNationalId)
+            ->where('people.mother_national_id', $motherNationalId)
+            ->where('family_statuses.has_parent_disability', true)
+            ->orderByDesc('family_statuses.updated_at')
+            ->orderByDesc('family_statuses.id')
+            ->first();
+
+        if (!$matchingFamilyStatus) {
+            $this->clearPrefilledParentDisability();
+
+            return;
+        }
+
+        $this->has_parent_disability = true;
+        $this->parent_disability_description = $matchingFamilyStatus->parent_disability_description;
+        $this->parentDisabilityPrefilled = true;
+    }
+
+    private function clearPrefilledParentDisability(): void
+    {
+        if (!$this->parentDisabilityPrefilled) {
+            return;
+        }
+
+        $this->has_parent_disability = false;
+        $this->parent_disability_description = null;
+        $this->parentDisabilityPrefilled = false;
     }
 
     public function updatedHasVehicle($value)

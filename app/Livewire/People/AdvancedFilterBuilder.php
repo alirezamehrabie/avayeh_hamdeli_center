@@ -68,8 +68,8 @@ class AdvancedFilterBuilder extends Component
             'general' => 'غیر سادات',
         ]],
         'gender' => ['label' => 'جنسیت', 'type' => 'select', 'options' => [
-            'male' => 'مرد',
-            'female' => 'زن',
+            'male' => 'پسر',
+            'female' => 'دختر',
         ]],
         'skills' => ['label' => 'مهارت‌ها', 'type' => 'select', 'options' => []],
         'harm_types' => ['label' => 'نوع آسیب', 'type' => 'select', 'options' => []],
