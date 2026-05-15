@@ -311,7 +311,7 @@
 
                                 <div class="col-md-2">
                                     <label class="form-label small fw-semibold mb-1">کد ملی پدر <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control form-control-sm @error('father_national_id') is-invalid @enderror" maxlength="10" wire:model.live.debounce.350ms="father_national_id" inputmode="numeric" placeholder="10 رقم" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                    <input type="text" class="form-control form-control-sm @error('father_national_id') is-invalid @enderror" maxlength="10" wire:model.live.debounce.450ms="father_national_id" inputmode="numeric" placeholder="10 رقم" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
                                     @if($showFatherSuggestions && strlen(trim((string)$father_national_id)) >= 5 && $this->fatherSuggestions->count())
                                         <div class="mt-1 rounded-3 border bg-white shadow-sm" style="border-color: #dbe3ec; max-height: 150px; overflow-y: auto;">
                                             @foreach($this->fatherSuggestions as $fatherSuggestion)

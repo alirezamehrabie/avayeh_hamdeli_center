@@ -234,6 +234,7 @@ return [
         'education_degree' => 'مدرک تحصیلی',
         'insurance_status' => 'وضعیت بیمه',
         'insurance_type_id' => 'نوع بیمه',
+        'is_studying' => 'وضعیت تحصیلی',
         'any_family_employed_description' => 'توضیحات اعضای شاغل',
         'has_vehicle' => 'وسیله نقلیه',
         'vehicle_type_id' => 'نوع وسیله نقلیه',

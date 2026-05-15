@@ -17,13 +17,11 @@ return new class extends Migration
                 ->constrained('people')
                 ->onDelete('cascade');
 
-            $table->boolean('is_studying')->nullable();
+            $table->boolean('is_studying')->nullable()->default(1);
 
-            $table->string('school_name')
-                ->nullable();
+            $table->string('school_name')->nullable();
 
-            $table->string('major')
-                ->nullable();
+            $table->string('major')->nullable();
 
             // سطح تحصیلات
             $table->foreignId('education_level_id')
@@ -31,12 +29,9 @@ return new class extends Migration
                 ->constrained('education_levels')
                 ->nullOnDelete();
 
-            $table->text('drop_reason')
-                ->nullable();
+            $table->text('drop_reason')->nullable();
 
-            $table->boolean('works_alongside_study')
-                ->default(false)
-                ->nullable();
+            $table->boolean('works_alongside_study')->nullable()->default(false);
 
             $table->unsignedBigInteger('monthly_income')
                 ->nullable();
