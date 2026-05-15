@@ -94,6 +94,8 @@ class CreatePerson extends Component
     public $father_name;
     public $father_national_id;
     public $mother_national_id;
+    public $detected_mother_national_id = null;
+    public $detected_mother_hint = null;
     public $phone_number;
     public $gender;
 
@@ -489,6 +491,7 @@ class CreatePerson extends Component
         $this->father_national_id = $fatherNationalId;
 
         if (strlen($fatherNationalId) !== 10) {
+            $this->clearDetectedMotherSuggestion();
             $this->resetValidation('father_national_id');
             return;
         }
@@ -511,6 +514,13 @@ class CreatePerson extends Component
         if ($existingFatherName) {
             $this->father_name = trim((string)$existingFatherName);
         }
+
+        $this->refreshDetectedMotherSuggestion($fatherNationalId);
+    }
+
+    public function updatedMotherNationalId($value): void
+    {
+        $this->mother_national_id = preg_replace('/\D+/', '', trim((string) $value));
     }
 
     public function getFatherSuggestionsProperty()
@@ -568,6 +578,72 @@ class CreatePerson extends Component
         $this->father_name = $fatherRecord->father_name;
         $this->showFatherSuggestions = false;
         $this->resetValidation('father_national_id');
+        $this->refreshDetectedMotherSuggestion($this->father_national_id);
+    }
+
+    private function refreshDetectedMotherSuggestion(string $fatherNationalId): void
+    {
+        $normalizedFatherNationalId = preg_replace('/\D+/', '', trim($fatherNationalId));
+        if (strlen($normalizedFatherNationalId) !== 10) {
+            $this->clearDetectedMotherSuggestion();
+
+            return;
+        }
+
+        $query = Person::query()
+            ->selectRaw('mother_national_id, MAX(id) as latest_id, COUNT(*) as matches_count')
+            ->where('father_national_id', $normalizedFatherNationalId)
+            ->whereNotNull('mother_national_id')
+            ->where('mother_national_id', '!=', '');
+
+        if (!empty($this->person?->id)) {
+            $query->where('id', '!=', $this->person->id);
+        }
+
+        $detectedMother = $query
+            ->groupBy('mother_national_id')
+            ->orderByDesc('matches_count')
+            ->orderByDesc('latest_id')
+            ->first();
+
+        if (!$detectedMother || empty($detectedMother->mother_national_id)) {
+            $this->clearDetectedMotherSuggestion();
+
+            return;
+        }
+
+        $latestLinkedRecord = Person::query()
+            ->select(['father_name', 'father_national_id'])
+            ->where('id', $detectedMother->latest_id)
+            ->first();
+
+        $previousSuggestedMother = $this->detected_mother_national_id;
+        $this->detected_mother_national_id = trim((string) $detectedMother->mother_national_id);
+
+        $fatherDisplayName = trim((string) ($latestLinkedRecord?->father_name ?: $this->father_name ?: 'پدر'));
+        $fatherDisplayNationalId = trim((string) ($latestLinkedRecord?->father_national_id ?: $normalizedFatherNationalId));
+        $this->detected_mother_hint = sprintf(
+            'همسر  %s - %s',
+            $fatherDisplayName,
+            $fatherDisplayNationalId
+        );
+
+        if (
+            blank($this->mother_national_id) ||
+            $this->mother_national_id === $previousSuggestedMother
+        ) {
+            $this->mother_national_id = $this->detected_mother_national_id;
+        }
+    }
+
+    private function clearDetectedMotherSuggestion(): void
+    {
+        if ($this->mother_national_id === $this->detected_mother_national_id) {
+            $this->mother_national_id = null;
+        }
+
+        $this->detected_mother_national_id = null;
+        $this->detected_mother_hint = null;
     }
 
     public function getGuardianSuggestionsProperty()

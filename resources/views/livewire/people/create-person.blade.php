@@ -333,6 +333,9 @@
                                 <div class="col-md-2">
                                     <label class="form-label small fw-semibold mb-1">کد ملی مادر <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control form-control-sm @error('mother_national_id') is-invalid @enderror" maxlength="10" wire:model.live.debounce.350ms="mother_national_id" inputmode="numeric" placeholder="10 رقم" style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;">
+                                    @if($detected_mother_hint)
+                                        <span class="mt-1 text-xs px-2" style="color: #1f2937;">{{ $detected_mother_hint }}</span>
+                                    @endif
                                     @error('mother_national_id') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                                 </div>
 
