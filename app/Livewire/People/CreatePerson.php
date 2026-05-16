@@ -194,7 +194,7 @@ class CreatePerson extends Component
 
     // بانک
     public $has_own_account = 0;
-    public $account_owner_relation_id;
+    public $account_owner_relation_id = '2';
     public $other_account_owner_relation; // توضیح نسبت سایر
     public $bank_id;
     public $card_number = '';

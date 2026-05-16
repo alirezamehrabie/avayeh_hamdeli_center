@@ -2,7 +2,7 @@
     <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-                <p class="text-sm font-semibold text-cyan-600">Advanced Reports / Operator Report</p>
+                <p class="text-sm font-semibold text-cyan-600">گزارش پیشرفته / گزارش اپراتورها</p>
                 <h1 class="mt-2 text-2xl font-bold text-slate-800">گزارش عملکرد اپراتورها</h1>
                 <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
                     این بخش روند ثبت، ویرایش، حذف و لاگ فعالیت کاربران سیستم را در بازه‌های ساعتی، روزانه، ماهانه و سالانه نمایش می‌دهد.
@@ -87,7 +87,7 @@
                         <option value="">همه اپراتورها</option>
                         @foreach($operatorOptions as $operatorOption)
                             <option value="{{ $operatorOption->id }}">
-                                {{ ($operatorOption->first_name ?: '-') . ' - ' . ($operatorOption->last_name ?: $operatorOption->name) }}
+                                {{ ($operatorOption->first_name ?: '-') . ' ' . ($operatorOption->last_name ?: $operatorOption->name) }}
                             </option>
                         @endforeach
                     </select>

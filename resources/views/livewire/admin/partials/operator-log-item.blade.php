@@ -14,7 +14,7 @@
         @if($log['changedFieldsCount'] > 0)
             <span class="font-semibold text-slate-600">فیلدهای تغییرکرده:</span>
             @foreach($log['changedFields'] as $field)
-                <span class="rounded-full bg-slate-100 px-3 py-1">{{ $field }}</span>
+                <span class="rounded-full bg-slate-100 px-3 py-1">{{ __($field) }}</span>
             @endforeach
             @if($log['changedFieldsCount'] > count($log['changedFields']))
                 <span class="rounded-full bg-slate-100 px-3 py-1">+{{ $log['changedFieldsCount'] - count($log['changedFields']) }} مورد دیگر</span>

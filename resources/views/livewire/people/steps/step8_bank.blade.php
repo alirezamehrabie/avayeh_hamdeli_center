@@ -36,8 +36,6 @@
                                placeholder="به طور خودکار تعیین می‌شود"
                                style="border-radius: 12px; background: #eef2f7; border-color: #dbe3ec; min-height: 42px;"
                         >
-                        {{-- wire:model از روی این input حذف شده است، زیرا مقدار آن توسط کاربر تغییر نمی‌کند.
-                             Livewire مقدار account_owner_relation_id را از طریق پراپرتی خودش مدیریت می‌کند. --}}
                         @error('account_owner_relation_id') <span class="text-danger small">{{ $message }}</span> @enderror
                     </div>
 
