@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Livewire\People;
-
 use AllowDynamicProperties;
 use App\Models\AcademicLevel;
 use Livewire\Component;
@@ -39,6 +38,8 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\Layout;
+use Illuminate\Support\Facades\Cache;
+
 
 
 // برای استفاده از Rule::requiredIf
@@ -530,9 +531,24 @@ class CreatePerson extends Component
     public function getFatherSuggestionsProperty()
     {
         $search = trim((string)$this->father_national_id);
-        if ($search === '' || strlen($search) < 4) {
+
+        if ($search === '' || strlen($search) < 5) {
             return collect();
         }
+
+        return Cache::remember(
+            "father_suggestions_{$search}",
+            now()->addMinutes(20),
+
+            function () use ($search) {
+
+                return Person::query()
+                    ->select(['father_national_id', 'father_name'])
+                    ->where('father_national_id', 'LIKE', "{$search}%")
+                    ->limit(6)
+                    ->get();
+            }
+        );
 
         $fullNameExpression = DB::connection()->getDriverName() === 'sqlite'
             ? "COALESCE(father_name, '')"
@@ -547,8 +563,8 @@ class CreatePerson extends Component
 
         if ($search !== '') {
             $query->where(function ($q) use ($search, $fullNameExpression) {
-                $q->where('father_national_id', 'LIKE', "%{$search}%")
-                    ->orWhereRaw("{$fullNameExpression} LIKE ?", ["%{$search}%"]);
+                $q->where('father_national_id', 'LIKE', "{$search}%")
+                    ->orWhere('father_name', 'LIKE', "{$search}%");
             })->orderByRaw('CASE WHEN father_national_id = ? THEN 0 ELSE 1 END', [$search]);
         }
 
@@ -674,7 +690,7 @@ class CreatePerson extends Component
         }
 
         return $query->orderByDesc('id')
-            ->limit(15)
+            ->limit(8)
             ->get()
             ->unique('national_code')
             ->values();

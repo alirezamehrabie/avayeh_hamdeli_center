@@ -124,9 +124,9 @@
         >
             <div class="flex items-start justify-between gap-4 px-6 py-4 text-white" style="background: linear-gradient(to left, #9D174D, #BE185D);">
                 <div class="flex items-center gap-4">
-                    <div class="shrink-0 overflow-hidden rounded-2xl border-2 border-white/60 bg-white/20 shadow-sm" style="width: 120px; height: 140px; aspect-ratio: 3 / 4;">
+                    <div class="shrink-0 overflow-hidden rounded-2xl border-2 border-white/60 bg-white/20 shadow-sm" style="width: 110px; height: 140px; aspect-ratio: 3 / 4;">
                         <img
-                            src="{{ $selectedPerson->profile_photo ? asset($selectedPerson->profile_photo) : asset('images/no-image.png') }}"
+                            src="{{ $selectedPerson->profile_photo ? asset($selectedPerson->profile_photo) : asset('images/no-image-profiles.png') }}"
                             alt="تصویر مددجو"
                             class="h-full w-full object-cover"
                         >
