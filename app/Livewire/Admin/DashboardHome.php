@@ -63,6 +63,10 @@ class DashboardHome extends Component
             $validSections[] = 'people-block-list';
         }
 
+        if ($user?->can('access-admin-panel')) {
+            $validSections[] = 'advanced-operator-report';
+        }
+
         if ($user?->can('full-access')) {
             array_push(
                 $validSections,
@@ -74,6 +78,7 @@ class DashboardHome extends Component
                 'guardian-edit',
                 'advanced-reports',
                 'advanced-beneficiary-report',
+                'advanced-operator-report',
                 'advanced-supervisor-report',
                 'advanced-social-worker-report',
                 'system-settings-user-management',

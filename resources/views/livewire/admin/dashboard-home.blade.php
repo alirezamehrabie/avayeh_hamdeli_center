@@ -100,7 +100,8 @@
                             <h1 class="text-2xl font-bold text-gray-800 mb-2">گزارش پیشرفته</h1>
                             <p class="text-gray-600 mb-6">گزارش گیری پیشرفته مرکز تخصصی کودکان آوای همدلی</p>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                                @can('full-access')
                                 <button type="button" wire:click="selectSection('advanced-beneficiary-report')" class="group relative block w-full text-right overflow-hidden rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-indigo-100">
                                     <span class="absolute inset-y-0 right-0 w-1 bg-indigo-500"></span>
                                     <div class="flex items-start justify-between">
@@ -112,6 +113,23 @@
                                         <div class="rounded-lg bg-indigo-100 p-2 text-indigo-600">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6m4 6V7m4 10v-3M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </button>
+                                @endcan
+
+                                <button type="button" wire:click="selectSection('advanced-operator-report')" class="group relative text-right overflow-hidden rounded-xl border border-cyan-100 bg-gradient-to-br from-cyan-50 to-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-cyan-100">
+                                    <span class="absolute inset-y-0 right-0 w-1 bg-cyan-500"></span>
+                                    <div class="flex items-start justify-between">
+                                        <div>
+                                            <p class="text-xs font-semibold text-cyan-600 mb-2">Operator Report</p>
+                                            <h2 class="text-base font-bold text-gray-800">گزارش عملکرد اپراتورها</h2>
+                                            <p class="text-xs text-gray-500 mt-2">تحلیل ثبت، ویرایش، حذف و روند فعالیت هر کاربر سیستم</p>
+                                        </div>
+                                        <div class="rounded-lg bg-cyan-100 p-2 text-cyan-600">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2zm3-6h.01M12 15h.01M16 15h.01M8 11h.01M12 11h.01M16 11h.01"></path>
                                             </svg>
                                         </div>
                                     </div>
@@ -154,6 +172,10 @@
 
                     @case('advanced-beneficiary-report')
                         <livewire:people.advanced-filter-builder :key="'advanced-beneficiary-report'" />
+                        @break
+
+                    @case('advanced-operator-report')
+                        <livewire:admin.operator-report :key="'advanced-operator-report'" />
                         @break
 
                     @case('advanced-supervisor-report')
