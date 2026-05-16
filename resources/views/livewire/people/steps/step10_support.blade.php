@@ -99,7 +99,7 @@
                                                 <img src="{{ asset($person->supportCoverage->support_card_image) }}" id="captured-img-support-card" class="img-thumbnail" style="max-height: 150px;">
                                             @else
                                                 {{-- تصویر پیش‌فرض --}}
-                                                <img src="{{ asset('images/no-image.png') }}" id="captured-img-support-card" class="img-thumbnail" style="max-height: 150px;">
+                                                <img src="{{ asset('images/no-images.png?v=3') }}" id="captured-img-support-card" class="img-thumbnail" style="max-height: 150px;">
                                             @endif
                                         </div>
                                         <div class="mt-2 text-center">

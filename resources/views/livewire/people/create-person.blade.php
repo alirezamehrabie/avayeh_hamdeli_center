@@ -359,32 +359,42 @@
         if (preview) {
             preview.style.display = 'block';
             preview.innerHTML = `
-                <img src="${base64}" class="img-thumbnail" style="max-height: 150px;">
-                <p class="text-success small mt-1 mb-0">📷 عکس ثبت شد</p>
-            `;
+        <div class="text-center mt-2">
+            <img src="${base64}" class="img-fluid rounded-3 border shadow-sm" style="max-height:260px;">
+            <div class="mt-2">
+                <span class="px-3 py-1 rounded-pill small"
+                      style="background:#ecfdf5;color:#047857;">
+                      <i class="bi bi-check-circle me-1"></i>
+                      عکس ثبت شد
+                </span>
+            </div>
+        </div>
+    `;
         }
 
-        // مخفی کردن دکمه "گرفتن عکس"
+// مخفی کردن دکمه "گرفتن عکس"
         captureBtn.classList.add('d-none');
 
-        // ✅ نمایش دکمه "گرفتن مجدد"
+// ✅ نمایش دکمه "گرفتن مجدد"
         let retakeBtn = document.getElementById('retake-btn-' + cameraId);
         if (!retakeBtn) {
-            // ایجاد دکمه برای اولین بار
             retakeBtn = document.createElement('button');
             retakeBtn.type = 'button';
             retakeBtn.id = 'retake-btn-' + cameraId;
-            retakeBtn.className = 'btn btn-sm btn-outline-warning mt-1';
+            retakeBtn.className = 'btn btn-sm rounded-3 px-3 py-1 d-flex align-items-center gap-1 border-0 mt-2';
+            retakeBtn.style.background = '#fff7ed';
+            retakeBtn.style.color = '#c2410c';
             retakeBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> گرفتن مجدد';
             retakeBtn.onclick = function() {
                 retakePhoto(cameraId, base64VarName);
             };
-            // اضافه کردن کنار دکمه‌های موجود
+
             captureBtn.parentNode.appendChild(retakeBtn);
         } else {
-            // نمایش دکمه‌ای که قبلاً ایجاد شده
             retakeBtn.classList.remove('d-none');
         }
+
+
     };
 
     /**
@@ -404,7 +414,7 @@
         const preview = document.getElementById('photo-preview-' + cameraId);
         if (preview) {
             preview.innerHTML = `
-                <img src="{{ asset('images/no-images.png') }}"
+                <img src="{{ asset('images/no-images.png?v=3') }}"
                      id="captured-img-${cameraId}"
                      class="img-thumbnail"
                      style="max-height: 150px;">

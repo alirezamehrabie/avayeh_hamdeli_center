@@ -126,7 +126,7 @@
                 <div class="flex items-center gap-4">
                     <div class="shrink-0 overflow-hidden rounded-2xl border-2 border-white/60 bg-white/20 shadow-sm" style="width: 110px; height: 140px; aspect-ratio: 3 / 4;">
                         <img
-                            src="{{ $selectedPerson->profile_photo ? asset($selectedPerson->profile_photo) : asset('images/no-image-profiles.png') }}"
+                            src="{{ $selectedPerson->profile_photo ? asset($selectedPerson->profile_photo) : asset('images/no-image-profile.png?v=2') }}"
                             alt="تصویر مددجو"
                             class="h-full w-full object-cover"
                         >

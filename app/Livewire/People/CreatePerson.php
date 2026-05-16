@@ -193,7 +193,7 @@ class CreatePerson extends Component
     // --- 5. متغیرهای مالی، تحصیلی و حمایتی ---
 
     // بانک
-    public $has_own_account; // پیش‌فرض بله
+    public $has_own_account = 0;
     public $account_owner_relation_id;
     public $other_account_owner_relation; // توضیح نسبت سایر
     public $bank_id;
