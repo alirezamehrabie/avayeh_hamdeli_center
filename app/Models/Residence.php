@@ -3,12 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Residence extends Model
 {
     use HasFactory;
+
+    private const MONEY_SCALE = 100;
 
     protected $fillable = [
         'person_id',
@@ -35,5 +38,39 @@ class Residence extends Model
     public function district(): BelongsTo
     {
         return $this->belongsTo(District::class);
+    }
+
+    protected function depositAmount(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => $this->fromStoredMoney($value),
+            set: fn ($value) => $this->toStoredMoney($value),
+        );
+    }
+
+    protected function monthlyRent(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => $this->fromStoredMoney($value),
+            set: fn ($value) => $this->toStoredMoney($value),
+        );
+    }
+
+    private function toStoredMoney(mixed $value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return intdiv((int) $value, self::MONEY_SCALE);
+    }
+
+    private function fromStoredMoney(mixed $value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return (int) $value * self::MONEY_SCALE;
     }
 }

@@ -1429,6 +1429,13 @@ class CreatePerson extends Component
         return $value === null || $value === '' ? null : (int) $value;
     }
 
+    private function toStoredMoneyAmount(mixed $value): ?int
+    {
+        $amount = $this->toNullableInt($value);
+
+        return $amount === null ? null : intdiv($amount, 100);
+    }
+
     // --- متد Save (ذخیره نهایی) ---
     public function save()
     {
@@ -1589,8 +1596,8 @@ class CreatePerson extends Component
                         'residence_status_id' => $this->residence_status_id,
                         'district_id' => $this->district_id ?: null,
                         'is_local_to_city' => (bool)$this->is_local_to_city,
-                        'deposit_amount' => $this->toNullableInt($this->deposit_amount),
-                        'monthly_rent' => $this->toNullableInt($this->monthly_rent),
+                        'deposit_amount' => $this->toStoredMoneyAmount($this->deposit_amount),
+                        'monthly_rent' => $this->toStoredMoneyAmount($this->monthly_rent),
                         'residence_duration_years' => $this->toNullableInt($this->residence_duration_years),
                         'address' => $this->address,
                     ]);
