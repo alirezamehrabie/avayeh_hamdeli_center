@@ -8,7 +8,7 @@
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom pb-3 mb-4">
                     <div>
                         <h5 class="mb-1 fw-bold">اطلاعات معلولیت و آسیب</h5>
-                        <p class="mb-0 small text-muted">نوع آسیب را مشخص کنید و در صورت وجود معلولیت، جزئیات آن را تکمیل نمایید.</p>
+                        <p class="mb-0 small text-muted">نوع آسیب را مشخص کنید و در صورت وجود بیماری خاص یا معلولیت، جزئیات آن را تکمیل نمایید.</p>
                     </div>
                 </div>
 
@@ -39,7 +39,7 @@
                     </div>
 
                     <div class="col-md-4">
-                        <label class="form-label small fw-semibold mb-2">آیا دارای معلولیت هست؟</label>
+                        <label class="form-label small fw-semibold mb-2">آیا دارای بیماری خاص یا معلولیت هست؟</label>
                         <div class="border rounded-3 p-2 d-flex gap-3 flex-wrap" style="background: #f8fafc; border-color: #dbe3ec !important; min-height: 42px;">
                             <div class="form-check mb-0">
                                 <input type="radio" class="form-check-input" value="1" wire:model.live="has_disability" id="has_disability_yes">
@@ -54,7 +54,7 @@
                     </div>
 
                     <div class="col-md-4">
-                        <label class="form-label small fw-semibold mb-1">نوع معلولیت</label>
+                        <label class="form-label small fw-semibold mb-1">نوع بیماری خاص یا معلولیت</label>
                         <select class="form-select form-select-sm @error('disability_type_id') is-invalid @enderror"
                                 wire:model.blur="disability_type_id"
                                 style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec; min-height: 42px;"
@@ -68,11 +68,11 @@
                     </div>
 
                     <div class="col-md-4">
-                        <label class="form-label small fw-semibold mb-1">توضیحات معلولیت</label>
+                        <label class="form-label small fw-semibold mb-1">توضیحات بیماری یا معلولیت</label>
                         <textarea class="form-control form-control-sm @error('disability_description') is-invalid @enderror"
                                   wire:model.blur="disability_description"
                                   rows="3"
-                                  placeholder="در صورت نیاز توضیح کوتاه ثبت کنید..."
+                                  placeholder="توضیح بیماری خاص یا معلولیت مددجو ..."
                                   style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec;"
                                   @if($has_disability != '1') disabled @endif></textarea>
                         @error('disability_description') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror

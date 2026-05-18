@@ -1821,8 +1821,8 @@ class CreatePerson extends Component
                         'residence_status_id' => $this->residence_status_id,
                         'district_id' => $this->district_id ?: null,
                         'is_local_to_city' => (bool)$this->is_local_to_city,
-                        'deposit_amount' => $this->toNullableInt($this->deposit_amount),
-                        'monthly_rent' => $this->toNullableInt($this->monthly_rent),
+                        'deposit_amount' => $this->toStoredMoneyAmount($this->deposit_amount),
+                        'monthly_rent' => $this->toStoredMoneyAmount($this->monthly_rent),
                         'residence_duration_years' => $this->toNullableInt($this->residence_duration_years),
                         'address' => $this->address,
                     ]);

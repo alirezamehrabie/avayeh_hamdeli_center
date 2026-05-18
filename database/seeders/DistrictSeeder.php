@@ -28,7 +28,8 @@ class DistrictSeeder extends Seeder
             'گلدشت',
             'اصغرآباد',
             'اندوان',
-            'دستگرد قداده'
+            'دستگرد قداده',
+            'قائمیه'
         ];
 
         foreach ($districts as $index => $name) {

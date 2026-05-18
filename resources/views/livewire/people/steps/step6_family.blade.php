@@ -1,6 +1,3 @@
-
-
-{{-- Step 6: Family Status --}}
 @if($current_step === 6)
     <div class="mb-5">
         <div class="card border-0 shadow-sm" style="border-radius: 16px; background: #ffffff;">
@@ -40,21 +37,21 @@
                         @error('children_from_previous_marriage') <span class="text-danger small">{{ $message }}</span> @enderror
                     </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label small fw-semibold mb-1">وضعیت معلولیت والدین</label>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold mb-1">وضعیت بیماری یا معلولیت والدین</label>
                         <div class="border rounded-3 p-2 d-flex align-items-center gap-2" style="background: #f8fafc; border-color: #dbe3ec !important; min-height: 42px;">
                             <div class="form-check mb-0">
                                 <input class="form-check-input" type="checkbox" id="has_parent_disability" wire:model.live="has_parent_disability">
-                                <label class="form-check-label" for="has_parent_disability">والدین دارای معلولیت هستند؟</label>
+                                <label class="form-check-label" for="has_parent_disability">والدین دارای بیماری خاص یا معلولیت هستند؟</label>
                             </div>
                         </div>
                         @error('has_parent_disability') <span class="text-danger small">{{ $message }}</span> @enderror
                     </div>
 
                     @if($has_parent_disability)
-                        <div class="col-md-12">
-                            <label class="form-label small fw-semibold mb-1">توضیحات معلولیت والدین</label>
-                            <textarea class="form-control form-control-sm @error('parent_disability_description') is-invalid @enderror" wire:model.blur="parent_disability_description" rows="2" placeholder="در صورت نیاز توضیحات بیشتری ثبت کنید..." style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec;"></textarea>
+                        <div class="col-md-8">
+                            <label class="form-label small fw-semibold mb-1">توضیحات بیماری یا معلولیت والدین</label>
+                            <textarea class="form-control form-control-sm @error('parent_disability_description') is-invalid @enderror" wire:model.blur="parent_disability_description" rows="2" placeholder="توضیح بیماری خاص یا معلولیت والدین ...." style="border-radius: 12px; background: #f8fafc; border-color: #dbe3ec;"></textarea>
                             @error('parent_disability_description') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
                     @endif

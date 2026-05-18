@@ -14,18 +14,21 @@ class DisabilityTypeSeeder extends Seeder
     public function run(): void
     {
         $types = [
-            'جسمی حرکتی',
-            'شنوایی (ناشنوا/کم‌شنوا)',
-            'بینایی (نابینا/کم‌بینا)',
-            'ذهنی',
-            'روانی',
-            'گفتاری',
-            'چند معلولیتی',
-            'سایر',
+            1 => 'جسمی حرکتی',
+            2 => 'شنوایی (ناشنوا/کم‌شنوا)',
+            3 => 'بینایی (نابینا/کم‌بینا)',
+            4 => 'ذهنی',
+            5 => 'روانی',
+            6 => 'گفتاری',
+            7 => 'چند معلولیتی',
+            8 => 'سایر معلولیت',
+            9 => 'بیماری خاص'
         ];
 
-        foreach ($types as $type) {
-            DisabilityType::create(['name' => $type]);
+        foreach ($types as $id => $name) {
+            DisabilityType::updateOrCreate(
+                ['id' => $id],
+                ['name' => $name]);
         }
     }
 }

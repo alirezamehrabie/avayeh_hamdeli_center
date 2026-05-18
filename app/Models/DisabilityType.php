@@ -11,13 +11,8 @@ class DisabilityType extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'name',
-    ];
+    protected $fillable = ['id','name'];
 
-    /**
-     * هر نوع معلولیت، می‌تواند برای چندین فرد ثبت شود
-     */
     public function people(): HasMany
     {
         return $this->hasMany(Person::class, 'disability_type_id');

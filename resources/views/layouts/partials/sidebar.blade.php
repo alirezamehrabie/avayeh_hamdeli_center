@@ -9,10 +9,38 @@
     class="fixed inset-y-0 right-0 z-40 flex w-64 shrink-0 flex-col overflow-y-auto bg-indigo-900 px-4 py-8 text-white shadow-2xl transition-all duration-300 lg:relative lg:z-auto lg:h-screen lg:shadow-none"
     style="display: none;"
 >
-    <div class="mb-8 border-b border-indigo-800 pb-4 text-center">
-        <p class="text-xs pb-3">مرکز نیکوکاری تخصصی کودکان</p>
-        <p class="text-2xl font-bold">آوای همـــــدلی</p>
+    <div class="mb-8 pb-0 border-b border-indigo-700/30">
+        <div class="text-center space-y-3">
+            <!-- Logo/Icon -->
+            <div class="flex justify-center">
+                <div class="w-16 h-16 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                    <svg class="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Title -->
+            <div>
+                <p class="text-[10px] text-indigo-200/70 font-light tracking-wide mb-1">
+                    مرکز نیکوکاری تخصصی کودکان
+                </p>
+                <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-l from-indigo-200 via-purple-200 to-indigo-300">
+                    آوای همدلی
+                </h1>
+            </div>
+
+            <!-- Version Badge -->
+            <div class="flex justify-center pt-1">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 text-[10px] font-semibold text-indigo-100 bg-indigo-900/40 rounded-full border border-indigo-600/40 backdrop-blur-sm">
+                <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
+                نسخه 1.0.0
+            </span>
+            </div>
+        </div>
     </div>
+
+
 
     @php
         $dashboardMode = $dashboardMode ?? false;
@@ -238,18 +266,21 @@
 
     </nav>
 
-    <div class="mt-auto pt-4 border-t border-indigo-800">
+    <div class="mt-auto pt-4 border-t border-indigo-800/50">
         <form method="POST" action="{{ route('logout') }}" x-data>
             @csrf
-            <button type="submit" @click.prevent="if (confirm('آیا مطمئن هستید که می‌خواهید از سیستم خارج شوید؟')) $el.closest('form').submit()"
-                    class="group flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-300/30 bg-white/10 px-4 py-3 text-sm font-semibold text-rose-50 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-rose-200/60 hover:bg-rose-500/20 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-rose-300/20">
-                <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-500/20 text-rose-100 transition group-hover:bg-rose-400/30">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                </span>
-                خروج از سیستم
+            <button type="submit"
+                    @click.prevent="if (confirm('آیا مطمئن هستید که می‌خواهید از سیستم خارج شوید؟')) $el.closest('form').submit()"
+                    class="group flex w-full items-center gap-3 rounded-xl bg-indigo-800/30 px-4 py-3 text-sm font-semibold text-indigo-100 shadow-sm transition-all duration-200 hover:bg-indigo-700/40 hover:shadow-md hover:shadow-indigo-500/20 active:scale-[0.98]">
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/20 transition-all duration-200 group-hover:bg-indigo-400/30">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5 text-indigo-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                </div>
+                <span class="transition-colors group-hover:text-white">خروج از سیستم</span>
             </button>
         </form>
     </div>
+
+
 </aside>
