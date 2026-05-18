@@ -193,11 +193,12 @@
                         @break
 
                     @case('define-services')
-                        <livewire:services.manage-services :key="'define-services'" />
+{{--                        <livewire:services.manage-services :key="'define-services'" />--}}
+                        <livewire:under-construction :key="'define-services'" />
                         @break
 
                     @case('service-delivery')
-                        <livewire:services.service-delivery-manager :key="'service-delivery'" />
+                        <livewire:under-construction :key="'service-delivery'" />
                         @break
 
                     @case('system-settings-user-management')
