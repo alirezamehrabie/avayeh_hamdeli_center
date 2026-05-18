@@ -106,6 +106,7 @@
                         <option value="manager" disabled>مدیریت (محافظت‌شده)</option>
                         <option value="admin" @disabled(!$actorCanCreateAdmin)>ادمین</option>
                         <option value="regular_user">کاربر عادی</option>
+                        <option value="social_worker">مددکار (سیستمی)</option>
                     </select>
                     @error('edit_access_level') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
                 </div>
@@ -329,8 +330,9 @@
                             <span class="rounded-full px-2.5 py-1 text-xs font-semibold
                                 {{ $user->access_level === 'manager' ? 'bg-indigo-100 text-indigo-700' : '' }}
                                 {{ $user->access_level === 'admin' ? 'bg-emerald-100 text-emerald-700' : '' }}
-                                {{ $user->access_level === 'regular_user' ? 'bg-slate-100 text-slate-600' : '' }}">
-                                {{ $user->access_level === 'manager' ? 'Manager' : ($user->access_level === 'admin' ? 'Admin' : 'Regular User') }}
+                                {{ $user->access_level === 'regular_user' ? 'bg-slate-100 text-slate-600' : '' }}
+                                {{ $user->access_level === 'social_worker' ? 'bg-cyan-100 text-cyan-700' : '' }}">
+                                {{ $user->access_level === 'manager' ? 'Manager' : ($user->access_level === 'admin' ? 'Admin' : ($user->access_level === 'social_worker' ? 'Social Worker' : 'Regular User')) }}
                             </span>
                         </td>
                         <td class="px-4 py-3 text-right">

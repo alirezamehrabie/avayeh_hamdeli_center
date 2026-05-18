@@ -20,6 +20,7 @@ class User extends Authenticatable
     public const ACCESS_LEVEL_MANAGER = 'manager';
     public const ACCESS_LEVEL_ADMIN = 'admin';
     public const ACCESS_LEVEL_REGULAR = 'regular_user';
+    public const ACCESS_LEVEL_SOCIAL_WORKER = 'social_worker';
     public const PERMISSION_PEOPLE_REGISTER = 'people_register';
     public const PERMISSION_PEOPLE_EDIT = 'people_edit';
     public const PERMISSION_PEOPLE_DELETE = 'people_delete';
@@ -179,7 +180,9 @@ class User extends Authenticatable
 
     public function canAccessSocialWorkerPanel(): bool
     {
-        return ! $this->isAdmin() && $this->socialWorker()->exists();
+        return ! $this->isAdmin()
+            && $this->access_level === self::ACCESS_LEVEL_SOCIAL_WORKER
+            && $this->socialWorker()->exists();
     }
 
     public function canAccessAdminPanel(): bool

@@ -169,6 +169,7 @@ class UserManagement extends Component
                 User::ACCESS_LEVEL_MANAGER,
                 User::ACCESS_LEVEL_ADMIN,
                 User::ACCESS_LEVEL_REGULAR,
+                User::ACCESS_LEVEL_SOCIAL_WORKER,
             ])],
         ], [
             'edit_first_name.required' => 'نام الزامی است.',
@@ -294,6 +295,7 @@ class UserManagement extends Component
             User::ACCESS_LEVEL_MANAGER,
             User::ACCESS_LEVEL_ADMIN,
             User::ACCESS_LEVEL_REGULAR,
+            User::ACCESS_LEVEL_SOCIAL_WORKER,
         ], true), 422);
 
         if (auth()->id() === $userId) {

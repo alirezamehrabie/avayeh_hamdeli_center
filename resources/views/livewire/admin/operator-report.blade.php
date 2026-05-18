@@ -345,7 +345,7 @@
                                         </p>
                                     </div>
                                     <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                                        <p class="text-xs font-semibold text-slate-500">شدیدترین نوع فعالیت</p>
+                                        <p class="text-xs font-semibold text-slate-500">بیشترین نوع فعالیت</p>
                                         @php
                                             $dominant = collect($report['distribution'])->sortByDesc('count')->first();
                                         @endphp

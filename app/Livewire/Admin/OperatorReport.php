@@ -43,6 +43,7 @@ class OperatorReport extends Component
         [$start, $end] = $this->resolveRange();
 
         $operators = User::query()
+            ->whereNull('social_worker_id')
             ->when(! $canViewAllOperators, fn ($query) => $query->whereKey($actor->id))
             ->when($canViewAllOperators && filled($this->selectedOperatorId), fn ($query) => $query->whereKey((int) $this->selectedOperatorId))
             ->orderByRaw("case access_level when 'manager' then 1 when 'admin' then 2 else 3 end")
@@ -57,6 +58,7 @@ class OperatorReport extends Component
             'canViewAllOperators' => $canViewAllOperators,
             'reports' => $reports,
             'operatorOptions' => User::query()
+                ->whereNull('social_worker_id')
                 ->when($canViewAllOperators, function ($query) {
                     $query
                         ->orderByRaw("case access_level when 'manager' then 1 when 'admin' then 2 else 3 end")

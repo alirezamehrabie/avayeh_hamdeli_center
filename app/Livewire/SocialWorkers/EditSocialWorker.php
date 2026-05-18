@@ -82,7 +82,7 @@ class EditSocialWorker extends Component
                 'first_name' => trim((string) $this->first_name),
                 'last_name' => trim((string) $this->last_name),
                 'email' => $username . '@local.system',
-                'access_level' => User::ACCESS_LEVEL_REGULAR,
+                'access_level' => User::ACCESS_LEVEL_SOCIAL_WORKER,
                 'is_admin' => false,
                 'permissions' => [],
                 'social_worker_id' => $this->socialWorker->id,
