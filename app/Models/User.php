@@ -40,6 +40,7 @@ class User extends Authenticatable
         'is_admin',
         'access_level',
         'permissions',
+        'social_worker_id',
     ];
 
     /**
@@ -64,6 +65,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_admin' => 'boolean',
             'permissions' => 'array',
+            'social_worker_id' => 'integer',
         ];
     }
 
@@ -175,9 +177,19 @@ class User extends Authenticatable
         return $this->hasFullAccess();
     }
 
+    public function canAccessSocialWorkerPanel(): bool
+    {
+        return ! $this->isAdmin() && $this->socialWorker()->exists();
+    }
+
     public function canAccessAdminPanel(): bool
     {
         return $this->canManagePeople() || $this->canManageSocialWorkers() || $this->isAdmin();
+    }
+
+    public function socialWorker()
+    {
+        return $this->belongsTo(SocialWorker::class);
     }
 
     /**

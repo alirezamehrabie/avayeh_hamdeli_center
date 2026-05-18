@@ -10,6 +10,7 @@ use App\Models\SocialWorker;
 use App\Models\District;
 use App\Models\Occupation;
 use App\Models\AcademicLevel;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 #[AllowDynamicProperties]
 #[Layout('layouts.app')]
@@ -21,7 +22,10 @@ class CreateSocialWorker extends Component
 
     public function save()
     {
-        $this->validate($this->getValidationRules());
+        $this->validate(array_merge($this->getValidationRules(), [
+            'account_username' => ['required', 'string', 'max:100', 'unique:users,name'],
+            'account_password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]));
 
         try {
             DB::beginTransaction();
@@ -34,7 +38,7 @@ class CreateSocialWorker extends Component
             $startDateFull = $this->start_year ? "{$this->start_year}/{$this->start_month}/{$this->start_day}" : null;
 
             // ۴. ذخیره در دیتابیس
-            SocialWorker::create([
+            $socialWorker = SocialWorker::create([
                 'worker_code' => SocialWorker::generateNextWorkerCode(),
                 'first_name' => $this->first_name,
                 'last_name' => $this->last_name,
@@ -60,6 +64,20 @@ class CreateSocialWorker extends Component
                 'substitute_first_name' => $this->substitute_first_name,
                 'substitute_last_name' => $this->substitute_last_name,
                 'substitute_mobile' => $this->substitute_mobile,
+            ]);
+
+            $username = mb_strtolower(trim((string) $this->account_username));
+
+            User::create([
+                'name' => $username,
+                'first_name' => trim((string) $this->first_name),
+                'last_name' => trim((string) $this->last_name),
+                'email' => $username . '@local.system',
+                'password' => $this->account_password,
+                'access_level' => User::ACCESS_LEVEL_REGULAR,
+                'is_admin' => false,
+                'permissions' => [],
+                'social_worker_id' => $socialWorker->id,
             ]);
 
             DB::commit();

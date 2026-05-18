@@ -43,12 +43,12 @@
 
 
                                 <button type="button"
-                                        wire:click="$set('portal', 'user')"
+                                        wire:click="$set('portal', 'social_worker')"
                                         wire:loading.attr="disabled"
                                         wire:target="login"
-                                        aria-pressed="{{ $portal === 'user' ? 'true' : 'false' }}"
-                                        class="relative z-10 rounded-lg px-3 py-2 text-center text-sm font-semibold transition-colors duration-200 focus:outline-none disabled:opacity-60 {{ $portal === 'user' ? 'text-[#5964AE]' : 'text-slate-600 hover:text-slate-800' }}">
-                                    مهمان
+                                        aria-pressed="{{ $portal === 'social_worker' ? 'true' : 'false' }}"
+                                        class="relative z-10 rounded-lg px-3 py-2 text-center text-sm font-semibold transition-colors duration-200 focus:outline-none disabled:opacity-60 {{ $portal === 'social_worker' ? 'text-[#5964AE]' : 'text-slate-600 hover:text-slate-800' }}">
+                                    مددکار اجتماعی
                                 </button>
                             </div>
                             @error('portal') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror

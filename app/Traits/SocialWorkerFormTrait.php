@@ -42,6 +42,9 @@ trait SocialWorkerFormTrait
     public $occupation_id;
     public $academic_level_id;
     public $existingPhoto;
+    public $account_username;
+    public $account_password;
+    public $account_password_confirmation;
 
     public $canEditNationalId = false;
 

@@ -16,6 +16,7 @@ use App\Livewire\Admin\DashboardHome;
 use App\Livewire\Admin\UserAccount;
 use App\Livewire\Admin\UserManagement;
 use App\Livewire\Auth\Login;
+use App\Livewire\SocialWorkers\Dashboard as SocialWorkerDashboard;
 
 
 // مسیر لاگین با استفاده از کامپوننت Livewire
@@ -32,7 +33,13 @@ Route::post('/logout', function () {
 
 Route::get('/', function () {
     if (auth()->check()) {
-        return redirect()->route('admin.dashboard');
+        if (auth()->user()->can('access-admin-panel')) {
+            return redirect()->route('admin.dashboard');
+        }
+
+        if (auth()->user()->can('access-social-worker-panel')) {
+            return redirect()->route('social-worker.dashboard');
+        }
     }
 
     return redirect()->route('login');
@@ -71,3 +78,7 @@ Route::get('/admin/system-settings/users', UserManagement::class)
 Route::get('/admin/system-settings/user-account', UserAccount::class)
     ->middleware(['auth'])
     ->name('admin.user-account');
+
+Route::get('/social-worker/dashboard', SocialWorkerDashboard::class)
+    ->middleware(['auth', 'can:access-social-worker-panel'])
+    ->name('social-worker.dashboard');

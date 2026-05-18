@@ -91,5 +91,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('manage-social-workers', function (User $user) {
             return $user->canManageSocialWorkers();
         });
+
+        Gate::define('access-social-worker-panel', function (User $user) {
+            return $user->canAccessSocialWorkerPanel();
+        });
     }
 }

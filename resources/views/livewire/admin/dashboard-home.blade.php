@@ -193,33 +193,11 @@
                         @break
 
                     @case('define-services')
-                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <h1 class="text-xl font-bold text-gray-800 mb-2">Define Services</h1>
-                            <p class="text-sm text-gray-600">Placeholder for defining services offered by the center.</p>
-                            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div class="rounded-xl border border-indigo-100 bg-indigo-50/60 p-4">
-                                    <p class="text-sm text-gray-600">Use this area to configure categories, bundling rules, and service metadata.</p>
-                                </div>
-                                <div class="rounded-xl border border-emerald-100 bg-emerald-50/60 p-4">
-                                    <p class="text-sm text-gray-600">Add or adjust eligibility criteria that apply when assigning services to beneficiaries.</p>
-                                </div>
-                            </div>
-                        </div>
+                        <livewire:services.manage-services :key="'define-services'" />
                         @break
 
                     @case('service-delivery')
-                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <h1 class="text-xl font-bold text-gray-800 mb-2">Service Delivery</h1>
-                            <p class="text-sm text-gray-600">Placeholder for tracking delivery phases, schedules, and outcomes.</p>
-                            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div class="rounded-xl border border-blue-100 bg-blue-50/60 p-4">
-                                    <p class="text-sm text-gray-600">Monitor which teams are executing services and log deviations.</p>
-                                </div>
-                                <div class="rounded-xl border border-rose-100 bg-rose-50/60 p-4">
-                                    <p class="text-sm text-gray-600">Record beneficiary interactions and satisfaction notes per delivery milestone.</p>
-                                </div>
-                            </div>
-                        </div>
+                        <livewire:services.service-delivery-manager :key="'service-delivery'" />
                         @break
 
                     @case('system-settings-user-management')

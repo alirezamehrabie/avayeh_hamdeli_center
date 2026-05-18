@@ -22,7 +22,7 @@ class Login extends Component
     protected $rules = [
         'email' => 'required|string',
         'password' => 'required|min:6',
-        'portal' => 'required|in:admin,user',
+        'portal' => 'required|in:admin,social_worker',
     ];
 
     public function login()
@@ -40,7 +40,9 @@ class Login extends Component
             session()->regenerate();
 
             $isAdmin = auth()->user()->isAdmin();
-            if (($this->portal === 'admin' && ! $isAdmin) || ($this->portal === 'user' && $isAdmin)) {
+            $isSocialWorker = auth()->user()->canAccessSocialWorkerPanel();
+
+            if (($this->portal === 'admin' && ! $isAdmin) || ($this->portal === 'social_worker' && ! $isSocialWorker)) {
                 Auth::logout();
                 session()->regenerate();
                 RateLimiter::hit($this->throttleKey(), 120);
@@ -51,6 +53,10 @@ class Login extends Component
             RateLimiter::clear($this->throttleKey());
             if ($isAdmin) {
                 return redirect()->intended(route('admin.dashboard'));
+            }
+
+            if ($isSocialWorker) {
+                return redirect()->intended(route('social-worker.dashboard'));
             }
 
             return redirect()->intended('/');

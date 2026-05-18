@@ -142,6 +142,28 @@
 
                 <hr class="my-5 border-2">
 
+                <div class="mb-5">
+                    <h4 class="border-bottom pb-2 mb-3 font-bold text-info">حساب کاربری مددکار</h4>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">نام کاربری ورود <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control text-center" wire:model.blur="account_username" placeholder="مثال: sw01">
+                            @error('account_username') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">رمز عبور <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control text-center" wire:model.blur="account_password" placeholder="حداقل 8 کاراکتر">
+                            @error('account_password') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">تکرار رمز عبور <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control text-center" wire:model.blur="account_password_confirmation" placeholder="تکرار رمز عبور">
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-5 border-2">
+
                 {{-- بخش دوم: اطلاعات حرفه‌ای --}}
                 <div class="mb-5">
                     <h4 class="border-bottom pb-2 mb-3 font-bold text-success">اطلاعات حرفه‌ای و منطقه خدمت</h4>

@@ -9,6 +9,7 @@ use App\Models\SocialWorker;
 use App\Models\District;
 use App\Models\Occupation;
 use App\Models\AcademicLevel;
+use App\Models\User;
 use App\Traits\SocialWorkerFormTrait;
 use Illuminate\Support\Facades\DB;
 
@@ -32,11 +33,17 @@ class EditSocialWorker extends Component
         if ($socialWorker->start_date_full) {
             [$this->start_year, $this->start_month, $this->start_day] = explode('/', $socialWorker->start_date_full);
         }
+
+        $this->existingPhoto = $socialWorker->photo_path;
+        $this->account_username = (string) optional($socialWorker->user)->name;
     }
 
     public function update()
     {
-        $this->validate($this->getValidationRules($this->socialWorker->id));
+        $this->validate(array_merge($this->getValidationRules($this->socialWorker->id), [
+            'account_username' => ['required', 'string', 'max:100', 'unique:users,name,' . optional($this->socialWorker->user)->id],
+            'account_password' => ['nullable', 'string', 'min:8', 'confirmed'],
+        ]));
 
         DB::beginTransaction();
         try {
@@ -68,6 +75,27 @@ class EditSocialWorker extends Component
                 'substitute_last_name' => $this->substitute_last_name,
                 'substitute_mobile' => $this->substitute_mobile,
             ]);
+
+            $username = mb_strtolower(trim((string) $this->account_username));
+            $userPayload = [
+                'name' => $username,
+                'first_name' => trim((string) $this->first_name),
+                'last_name' => trim((string) $this->last_name),
+                'email' => $username . '@local.system',
+                'access_level' => User::ACCESS_LEVEL_REGULAR,
+                'is_admin' => false,
+                'permissions' => [],
+                'social_worker_id' => $this->socialWorker->id,
+            ];
+
+            if (filled($this->account_password)) {
+                $userPayload['password'] = $this->account_password;
+            }
+
+            $this->socialWorker->user()->updateOrCreate(
+                ['social_worker_id' => $this->socialWorker->id],
+                $userPayload
+            );
 
             DB::commit();
             session()->flash('success', 'اطلاعات مددکار با موفقیت به‌روزرسانی شد.');

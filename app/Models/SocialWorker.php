@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations;
 use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class SocialWorker extends Model
 {
@@ -137,6 +138,11 @@ class SocialWorker extends Model
     public function district()
     {
         return $this->belongsTo(District::class);
+    }
+
+    public function user(): HasOne
+    {
+        return $this->hasOne(User::class);
     }
 
     public function occupation()
