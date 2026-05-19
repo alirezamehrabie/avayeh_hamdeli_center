@@ -142,6 +142,9 @@ class CreatePerson extends Component
     public $has_parent_disability = false; // مقدار پیش‌فرض Boolean
     public $parent_disability_description;
     public bool $parentDisabilityPrefilled = false;
+    public $father_left_home = false;
+    public $mother_left_home = false;
+    public bool $parentDeparturePrefilled = false;
 
     // --- 3. تعریف متغیرهای اطلاعات سرپرست ---
     public $guardian_national_code; // کد ملی سرپرست برای جستجو
@@ -353,6 +356,8 @@ class CreatePerson extends Component
                 $this->children_from_previous_marriage = $this->person->familyStatus->children_from_previous_marriage;
                 $this->has_parent_disability = (bool)$this->person->familyStatus->has_parent_disability;
                 $this->parent_disability_description = $this->person->familyStatus->parent_disability_description;
+                $this->father_left_home = (bool) $this->person->familyStatus->father_left_home;
+                $this->mother_left_home = (bool) $this->person->familyStatus->mother_left_home;
             }
 
 
@@ -495,6 +500,7 @@ class CreatePerson extends Component
         if (strlen($fatherNationalId) !== 10) {
             $this->clearDetectedMotherSuggestion();
             $this->refreshParentDisabilityFromFamily();
+            $this->refreshParentDepartureFromFamily();
             $this->resetValidation('father_national_id');
             return;
         }
@@ -520,12 +526,14 @@ class CreatePerson extends Component
 
         $this->refreshDetectedMotherSuggestion($fatherNationalId);
         $this->refreshParentDisabilityFromFamily();
+        $this->refreshParentDepartureFromFamily();
     }
 
     public function updatedMotherNationalId($value): void
     {
         $this->mother_national_id = preg_replace('/\D+/', '', trim((string) $value));
         $this->refreshParentDisabilityFromFamily();
+        $this->refreshParentDepartureFromFamily();
     }
 
     public function getFatherSuggestionsProperty()
@@ -656,6 +664,7 @@ class CreatePerson extends Component
         }
 
         $this->refreshParentDisabilityFromFamily();
+        $this->refreshParentDepartureFromFamily();
     }
 
     private function clearDetectedMotherSuggestion(): void
@@ -1156,6 +1165,16 @@ class CreatePerson extends Component
         $this->parentDisabilityPrefilled = false;
     }
 
+    public function updatedFatherLeftHome(): void
+    {
+        $this->parentDeparturePrefilled = false;
+    }
+
+    public function updatedMotherLeftHome(): void
+    {
+        $this->parentDeparturePrefilled = false;
+    }
+
     private function refreshParentDisabilityFromFamily(): void
     {
         if ($this->mode === 'edit') {
@@ -1206,6 +1225,60 @@ class CreatePerson extends Component
         $this->parentDisabilityPrefilled = false;
     }
 
+    private function refreshParentDepartureFromFamily(): void
+    {
+        if ($this->mode === 'edit') {
+            return;
+        }
+
+        $fatherNationalId = preg_replace('/\D+/', '', trim((string) $this->father_national_id));
+        $motherNationalId = preg_replace('/\D+/', '', trim((string) $this->mother_national_id));
+
+        if (strlen($fatherNationalId) !== 10 || strlen($motherNationalId) !== 10) {
+            $this->clearPrefilledParentDeparture();
+
+            return;
+        }
+
+        $matchingFamilyStatuses = FamilyStatus::query()
+            ->select([
+                'family_statuses.father_left_home',
+                'family_statuses.mother_left_home',
+            ])
+            ->join('people', 'people.id', '=', 'family_statuses.person_id')
+            ->where('people.father_national_id', $fatherNationalId)
+            ->where('people.mother_national_id', $motherNationalId)
+            ->where(function ($query) {
+                $query
+                    ->where('family_statuses.father_left_home', true)
+                    ->orWhere('family_statuses.mother_left_home', true);
+            })
+            ->orderByDesc('family_statuses.updated_at')
+            ->orderByDesc('family_statuses.id')
+            ->get();
+
+        if ($matchingFamilyStatuses->isEmpty()) {
+            $this->clearPrefilledParentDeparture();
+
+            return;
+        }
+
+        $this->father_left_home = $matchingFamilyStatuses->contains(fn ($status) => (bool) $status->father_left_home);
+        $this->mother_left_home = $matchingFamilyStatuses->contains(fn ($status) => (bool) $status->mother_left_home);
+        $this->parentDeparturePrefilled = true;
+    }
+
+    private function clearPrefilledParentDeparture(): void
+    {
+        if (!$this->parentDeparturePrefilled) {
+            return;
+        }
+
+        $this->father_left_home = false;
+        $this->mother_left_home = false;
+        $this->parentDeparturePrefilled = false;
+    }
+
     public function updatedHasVehicle($value)
     {
         if ($value == '0') {
@@ -1253,6 +1326,8 @@ class CreatePerson extends Component
             'children_from_previous_marriage' => 'nullable|integer|min:0',
             'has_parent_disability' => 'nullable|boolean',
             'parent_disability_description' => 'required_if:has_parent_disability,1|nullable|string|max:500',
+            'father_left_home' => 'nullable|boolean',
+            'mother_left_home' => 'nullable|boolean',
 
 
             // وضعیت معلولیت
@@ -1583,6 +1658,8 @@ class CreatePerson extends Component
                     'children_from_previous_marriage' => $this->toNullableInt($this->children_from_previous_marriage),
                     'has_parent_disability' => (bool)$this->has_parent_disability,
                     'parent_disability_description' => ((bool)$this->has_parent_disability) ? $this->parent_disability_description : null,
+                    'father_left_home' => (bool) $this->father_left_home,
+                    'mother_left_home' => (bool) $this->mother_left_home,
                 ]);
                 if ($guardianInstance) {
                     $this->syncChildrenInHouseForParentGuardian($guardianInstance);
@@ -1808,6 +1885,8 @@ class CreatePerson extends Component
                     'children_from_previous_marriage' => $this->toNullableInt($this->children_from_previous_marriage),
                     'has_parent_disability' => (bool)$this->has_parent_disability,
                     'parent_disability_description' => ((bool)$this->has_parent_disability) ? $this->parent_disability_description : null,
+                    'father_left_home' => (bool) $this->father_left_home,
+                    'mother_left_home' => (bool) $this->mother_left_home,
                 ]);
                 if ($guardianInstance) {
                     $this->syncChildrenInHouseForParentGuardian($guardianInstance);
@@ -2219,6 +2298,8 @@ class CreatePerson extends Component
                     'parent_disability_description' => (bool)$this->has_parent_disability
                         ? $this->parent_disability_description
                         : null,
+                    'father_left_home' => (bool) $this->father_left_home,
+                    'mother_left_home' => (bool) $this->mother_left_home,
                 ]
             );
         }

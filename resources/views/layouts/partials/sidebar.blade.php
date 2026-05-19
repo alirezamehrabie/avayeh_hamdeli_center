@@ -22,7 +22,7 @@
 
             <!-- Title -->
             <div>
-                <p class="text-[10px] text-indigo-200/70 font-light tracking-wide mb-1">
+                <p class="text-[11px] text-indigo-200/70 font-light tracking-wide mb-2">
                     مرکز نیکوکاری تخصصی کودکان
                 </p>
                 <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-l from-indigo-200 via-purple-200 to-indigo-300">

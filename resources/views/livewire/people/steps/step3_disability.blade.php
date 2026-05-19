@@ -19,7 +19,7 @@
                             <div class="row g-2">
                                 @forelse($allHarmTypes as $harm)
                                     <div class="col-lg-3 col-md-4 col-sm-6">
-                                        <label for="harm_{{ $harm->id }}" class="w-100 h-100 d-flex align-items-center gap-2 px-3 py-2 border bg-white" style="border-radius: 10px; border-color: #e2e8f0 !important; cursor: pointer;">
+                                        <label for="harm_{{ $harm->id }}" class="w-100 h-100 d-flex align-items-center gap-2 px-3 py-2 border bg-white mb-0" style="border-radius: 10px; border-color: #e2e8f0 !important; cursor: pointer;">
                                             <input
                                                 class="form-check-input m-0 p-2"
                                                 type="checkbox"
@@ -33,13 +33,37 @@
                                 @empty
                                     <div class="col-12 text-muted small">هیچ نوع آسیبی در سیستم ثبت نشده است.</div>
                                 @endforelse
+
+                                <div class="col-lg-3 col-md-4 col-sm-6">
+                                    <label for="father_left_home" class="w-100 h-100 d-flex align-items-center gap-2 px-3 py-2 border bg-white mb-0" style="border-radius: 10px; border-color: #e2e8f0 !important; cursor: pointer;">
+                                        <input
+                                            class="form-check-input m-0 p-2"
+                                            type="checkbox"
+                                            wire:model.live="father_left_home"
+                                            id="father_left_home"
+                                        >
+                                        <span class="small text-dark">پدر خانه را ترک کرده است</span>
+                                    </label>
+                                </div>
+
+                                <div class="col-lg-3 col-md-4 col-sm-6">
+                                    <label for="mother_left_home" class="w-100 h-100 d-flex align-items-center gap-2 px-3 py-2 border bg-white mb-0" style="border-radius: 10px; border-color: #e2e8f0 !important; cursor: pointer;">
+                                        <input
+                                            class="form-check-input m-0 p-2"
+                                            type="checkbox"
+                                            wire:model.live="mother_left_home"
+                                            id="mother_left_home"
+                                        >
+                                        <span class="small text-dark">مادر خانه را ترک کرده است</span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                         @error('harm_types') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="col-md-4">
-                        <label class="form-label small fw-semibold mb-2">آیا دارای بیماری خاص یا معلولیت هست؟</label>
+                        <label class="form-label small fw-semibold mb-2">آیا مددجو بیماری خاص یا معلولیت دارد؟</label>
                         <div class="border rounded-3 p-2 d-flex gap-3 flex-wrap" style="background: #f8fafc; border-color: #dbe3ec !important; min-height: 42px;">
                             <div class="form-check mb-0">
                                 <input type="radio" class="form-check-input" value="1" wire:model.live="has_disability" id="has_disability_yes">

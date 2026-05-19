@@ -17,10 +17,14 @@ class FamilyStatus extends Model
         'children_from_previous_marriage',
         'has_parent_disability',
         'parent_disability_description',
+        'father_left_home',
+        'mother_left_home',
     ];
 
     protected $casts = [
         'has_parent_disability' => 'boolean',
+        'father_left_home' => 'boolean',
+        'mother_left_home' => 'boolean',
     ];
 
     // تعریف رابطه با جدول Lookup
