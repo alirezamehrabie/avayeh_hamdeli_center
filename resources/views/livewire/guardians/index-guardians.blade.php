@@ -48,6 +48,13 @@
                         </svg>
                         بروزرسانی
                     </button>
+                    <button
+                        type="button"
+                        wire:click="showHouseholdSizeDetails"
+                        class="inline-flex items-center justify-center gap-2 rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-700 shadow-sm transition hover:border-violet-300 hover:bg-violet-100"
+                    >
+                        جزئیات بیشتر
+                    </button>
                 </div>
             </div>
 
@@ -421,4 +428,126 @@
         </div>
     </div>
 @endif
+
+    @if($showHouseholdSizeModal)
+        <div
+            x-data="{
+                open: @js($showHouseholdSizeModal),
+                close() {
+                    this.open = false;
+                    setTimeout(() => $wire.closeHouseholdSizeModal(), 220);
+                }
+            }"
+            x-show="open"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
+            @keydown.escape.window="close()"
+            style="display: none;"
+        >
+            <div class="absolute inset-0" @click="close()"></div>
+            <div
+                x-show="open"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+                x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                x-transition:leave-end="opacity-0 translate-y-4 scale-95"
+                class="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-violet-100 bg-white shadow-2xl"
+                @click.stop
+            >
+                <div class="flex items-start justify-between gap-4 bg-gradient-to-l from-violet-600 to-fuchsia-500 px-6 py-5 text-white">
+                    <div>
+                        <h2 class="text-xl font-extrabold">جزئیات خانوارها بر اساس اندازه</h2>
+                        <p class="mt-1 text-sm text-white/85">تعداد خانوارها در هر اندازه خانوار</p>
+                    </div>
+                    <button type="button" @click="close()" class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-2xl leading-none text-white transition hover:bg-white/25" aria-label="بستن">
+                        &times;
+                    </button>
+                </div>
+
+                <div class="max-h-[75vh] overflow-y-auto p-6">
+                    <div class="mb-4 flex rounded-2xl border border-slate-200 bg-slate-50 p-1">
+                        <button type="button" wire:click="setHouseholdStatsTab('household_size')" class="flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition {{ $householdStatsTab === 'household_size' ? 'bg-white text-violet-700 shadow-sm' : 'text-slate-600' }}">
+                            بر اساس اندازه خانوار
+                        </button>
+                        <button type="button" wire:click="setHouseholdStatsTab('coverage_count')" class="flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition {{ $householdStatsTab === 'coverage_count' ? 'bg-white text-violet-700 shadow-sm' : 'text-slate-600' }}">
+                            بر اساس مددجویان تحت پوشش
+                        </button>
+                    </div>
+
+                    <div class="space-y-3">
+                        @if($householdStatsTab === 'household_size')
+                            @forelse($householdSizeStats as $stat)
+                                <div class="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50">
+                                    <button
+                                        type="button"
+                                        wire:click="toggleHouseholdSize({{ $stat['household_size'] }})"
+                                        class="flex w-full items-center justify-between px-4 py-3 text-right transition hover:bg-slate-100"
+                                    >
+                                        <span class="font-semibold text-slate-700">خانواده {{ $stat['household_size'] }} نفره</span>
+                                        <span class="font-bold text-violet-700">{{ number_format($stat['households_count']) }} مورد</span>
+                                    </button>
+
+                                    @if($expandedHouseholdSize === $stat['household_size'])
+                                        <div class="border-t border-slate-200 bg-white px-4 py-3">
+                                            @if(!empty($stat['national_codes']))
+                                                <div class="flex flex-wrap gap-2">
+                                                    @foreach($stat['national_codes'] as $nationalCode)
+                                                        <span class="rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">{{ $nationalCode }}</span>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <p class="text-sm text-slate-500">کد ملی ثبت نشده است.</p>
+                                            @endif
+                                        </div>
+                                    @endif
+                                </div>
+                            @empty
+                                <div class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-center text-slate-500">
+                                    داده‌ای برای نمایش وجود ندارد.
+                                </div>
+                            @endforelse
+                        @else
+                            @forelse($coverageCountStats as $stat)
+                                <div class="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50">
+                                    <button
+                                        type="button"
+                                        wire:click="toggleCoverageCount({{ $stat['coverage_count'] }})"
+                                        class="flex w-full items-center justify-between px-4 py-3 text-right transition hover:bg-slate-100"
+                                    >
+                                        <span class="font-semibold text-slate-700">خانواده‌هایی با {{ $stat['coverage_count'] }} مددجوی تحت پوشش</span>
+                                        <span class="font-bold text-violet-700">{{ number_format($stat['households_count']) }} مورد</span>
+                                    </button>
+
+                                    @if($expandedCoverageCount === $stat['coverage_count'])
+                                        <div class="border-t border-slate-200 bg-white px-4 py-3">
+                                            @if(!empty($stat['national_codes']))
+                                                <div class="flex flex-wrap gap-2">
+                                                    @foreach($stat['national_codes'] as $nationalCode)
+                                                        <span class="rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">{{ $nationalCode }}</span>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <p class="text-sm text-slate-500">کد ملی ثبت نشده است.</p>
+                                            @endif
+                                        </div>
+                                    @endif
+                                </div>
+                            @empty
+                                <div class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-center text-slate-500">
+                                    داده‌ای برای نمایش وجود ندارد.
+                                </div>
+                            @endforelse
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

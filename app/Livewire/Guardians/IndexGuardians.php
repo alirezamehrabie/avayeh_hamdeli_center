@@ -20,6 +20,10 @@ class IndexGuardians extends Component
     public string $searchField = 'all';
     public ?int $selectedGuardianId = null;
     public bool $showHouseholdModal = false;
+    public bool $showHouseholdSizeModal = false;
+    public string $householdStatsTab = 'household_size';
+    public ?int $expandedHouseholdSize = null;
+    public ?int $expandedCoverageCount = null;
 
     public function updatingSearch(): void
     {
@@ -88,6 +92,33 @@ class IndexGuardians extends Component
         $this->selectedGuardianId = null;
     }
 
+    public function showHouseholdSizeDetails(): void
+    {
+        $this->showHouseholdSizeModal = true;
+    }
+
+    public function setHouseholdStatsTab(string $tab): void
+    {
+        $this->householdStatsTab = $tab;
+    }
+
+    public function toggleHouseholdSize(int $householdSize): void
+    {
+        $this->expandedHouseholdSize = $this->expandedHouseholdSize === $householdSize ? null : $householdSize;
+    }
+
+    public function toggleCoverageCount(int $coverageCount): void
+    {
+        $this->expandedCoverageCount = $this->expandedCoverageCount === $coverageCount ? null : $coverageCount;
+    }
+
+    public function closeHouseholdSizeModal(): void
+    {
+        $this->showHouseholdSizeModal = false;
+        $this->expandedHouseholdSize = null;
+        $this->expandedCoverageCount = null;
+    }
+
     public function refreshStatsOnLoad(): void
     {
         if ($this->hasAutoRefreshedStats) {
@@ -118,6 +149,34 @@ class IndexGuardians extends Component
     {
         return view('livewire.guardians.index-guardians', [
             'totalGuardians' => Guardian::count(),
+            'householdSizeStats' => Guardian::query()
+                ->select(['id', 'national_code', 'first_name', 'last_name', 'children_in_house'])
+                ->orderBy('children_in_house')
+                ->orderBy('national_code')
+                ->get()
+                ->groupBy(fn (Guardian $guardian) => (int) ($guardian->children_in_house ?? 0))
+                ->map(function ($guardians, $householdSize) {
+                    return [
+                        'household_size' => (int) $householdSize,
+                        'households_count' => $guardians->count(),
+                        'national_codes' => $guardians->pluck('national_code')->filter()->values()->all(),
+                    ];
+                })
+                ->values(),
+            'coverageCountStats' => Guardian::query()
+                ->select(['id', 'national_code', 'first_name', 'last_name', 'children_count'])
+                ->orderBy('children_count')
+                ->orderBy('national_code')
+                ->get()
+                ->groupBy(fn (Guardian $guardian) => (int) ($guardian->children_count ?? 0))
+                ->map(function ($guardians, $coverageCount) {
+                    return [
+                        'coverage_count' => (int) $coverageCount,
+                        'households_count' => $guardians->count(),
+                        'national_codes' => $guardians->pluck('national_code')->filter()->values()->all(),
+                    ];
+                })
+                ->values(),
         ]);
     }
 
