@@ -22,6 +22,7 @@ class DeletedPeople extends Component
     public function getPeopleProperty()
     {
         return Person::onlyTrashed()
+            ->with(['guardian' => fn ($query) => $query->withTrashed()])
             ->orderBy('deleted_at', 'desc')
             ->paginate(20);
     }

@@ -75,6 +75,7 @@ class DashboardHome extends Component
                 'social-worker-create',
                 'social-worker-edit',
                 'guardians-list',
+                'guardians-block-list',
                 'guardian-edit',
                 'advanced-reports',
                 'advanced-beneficiary-report',

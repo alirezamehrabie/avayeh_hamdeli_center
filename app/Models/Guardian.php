@@ -47,7 +47,8 @@ class Guardian extends Model
         'any_family_employed_description',
         'has_vehicle',
         'vehicle_type_id',
-        'vehicle_ownership_type'
+        'vehicle_ownership_type',
+        'deletion_reason',
     ];
 
     /**
@@ -306,6 +307,45 @@ class Guardian extends Model
             foreach ($guardians as $guardian) {
                 $guardian->refreshChildrenInHouse();
             }
+        });
+    }
+
+    public function softDeleteFamily(string $reason): bool
+    {
+        return (bool) DB::transaction(function () use ($reason) {
+            foreach ($this->people()->get() as $person) {
+                $person->forceFill([
+                    'deletion_reason' => $reason,
+                ])->saveQuietly();
+
+                $person->delete();
+            }
+
+            $this->forceFill([
+                'deletion_reason' => $reason,
+            ])->saveQuietly();
+
+            return $this->delete();
+        });
+    }
+
+    public function restoreFamily(): bool
+    {
+        return (bool) DB::transaction(function () {
+            $restored = (bool) $this->restore();
+
+            $this->forceFill([
+                'deletion_reason' => null,
+            ])->saveQuietly();
+
+            $this->people()
+                ->onlyTrashed()
+                ->get()
+                ->each(function (Person $person): void {
+                    $person->restoreSupervision();
+                });
+
+            return $restored;
         });
     }
 }

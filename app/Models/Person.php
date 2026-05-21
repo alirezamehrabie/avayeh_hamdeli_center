@@ -65,7 +65,8 @@ class Person extends Model
         'disability_description',
         'person_code',
         'skills_description',
-        'profile_photo'
+        'profile_photo',
+        'deletion_reason',
     ];
 
 
@@ -334,7 +335,13 @@ class Person extends Model
 
     public function restoreSupervision(): bool
     {
-        return (bool) $this->restore();
+        $restored = (bool) $this->restore();
+
+        $this->forceFill([
+            'deletion_reason' => null,
+        ])->saveQuietly();
+
+        return $restored;
     }
 
     private static function resolveJalalianNow()

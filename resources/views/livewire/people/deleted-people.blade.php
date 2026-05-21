@@ -26,8 +26,10 @@
                                 <th class="px-5 py-4 text-center font-bold">کد مددجو</th>
                                 <th class="px-5 py-4 text-right font-bold">نام و نام خانوادگی</th>
                                 <th class="px-5 py-4 text-center font-bold">کد ملی</th>
+                                <th class="px-5 py-4 text-right font-bold">سرپرست</th>
                                 <th class="px-5 py-4 text-center font-bold">تاریخ تولد</th>
                                 <th class="px-5 py-4 text-center font-bold">جنسیت</th>
+                                <th class="px-5 py-4 text-right font-bold">علت حذف</th>
                                 <th class="px-5 py-4 text-center font-bold">تاریخ حذف</th>
                                 <th class="px-5 py-4 text-center font-bold">عملیات</th>
                             </tr>
@@ -38,6 +40,7 @@
                                     <td class="px-5 py-4 text-center font-medium text-slate-700">{{ $person->person_code }}</td>
                                     <td class="px-5 py-4 text-right font-light text-slate-800">{{ $person->full_name }}</td>
                                     <td class="px-5 py-4 text-center font-light text-slate-700">{{ $person->national_id }}</td>
+                                    <td class="px-5 py-4 text-right font-light text-slate-700">{{ trim(($person->guardian?->first_name ?? '') . ' ' . ($person->guardian?->last_name ?? '')) ?: '-' }}</td>
                                     <td class="px-5 py-4 text-center font-light text-slate-700">{{ $person->birth_date ?? 'نامشخص' }}</td>
                                     <td class="px-5 py-4 text-center font-light text-slate-700">
                                         @if($person->gender == 'male')
@@ -48,6 +51,7 @@
                                             نامشخص
                                         @endif
                                     </td>
+                                    <td class="px-5 py-4 text-right font-light text-slate-700">{{ $person->deletion_reason ?? '-' }}</td>
                                     <td class="px-5 py-4 text-center font-light text-slate-700">{{ $person->deleted_at?->format('Y-m-d H:i') }}</td>
                                     <td class="px-5 py-4 text-center">
                                         <button wire:click="restoreSupervision({{ $person->id }})" class="inline-flex items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100">
@@ -57,7 +61,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-5 py-10 text-center text-slate-500">هیچ مددجوی حذف‌شده‌ای وجود ندارد.</td>
+                                    <td colspan="9" class="px-5 py-10 text-center text-slate-500">هیچ مددجوی حذف‌شده‌ای وجود ندارد.</td>
                                 </tr>
                             @endforelse
                         </tbody>

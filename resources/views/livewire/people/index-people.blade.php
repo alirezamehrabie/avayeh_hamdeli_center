@@ -162,9 +162,8 @@
 
                                             @can('people-delete')
                                                 <button
-                                                    wire:click.stop="deletePerson({{ $person->id }})"
+                                                    wire:click.stop="openDeleteModal({{ $person->id }})"
                                                     onclick="event.stopPropagation()"
-                                                    wire:confirm="آیا از انتقال این مددجو به بلاک لیست مطمئن هستید؟"
                                                     class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700 shadow-sm transition hover:border-rose-300 hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-rose-200"
                                                     aria-label="حذف"
                                                     data-bs-toggle="tooltip"
@@ -194,6 +193,80 @@
             </div>
         </div>
     </div>
+
+    @if($showDeleteModal && $deletingPerson)
+        <div
+            wire:key="person-delete-modal"
+            x-data="{
+                open: @js($showDeleteModal),
+                close() {
+                    this.open = false;
+                    setTimeout(() => $wire.closeDeleteModal(), 220);
+                }
+            }"
+            x-show="open"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
+            @keydown.escape.window="close()"
+            style="display: none;"
+        >
+            <div class="absolute inset-0" @click="close()"></div>
+
+            <div
+                x-show="open"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+                x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                x-transition:leave-end="opacity-0 translate-y-4 scale-95"
+                class="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-rose-100 bg-white shadow-2xl"
+                @click.stop
+            >
+                <div class="flex items-start justify-between gap-4 bg-gradient-to-l from-rose-600 to-pink-500 px-6 py-5 text-white">
+                    <div>
+                        <h2 class="text-xl font-extrabold">حذف مددجو و انتقال به بلاک لیست</h2>
+                        <p class="mt-1 text-sm text-white/85">{{ $deletingPerson->full_name }}</p>
+                    </div>
+                    <button type="button" @click="close()" class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-2xl leading-none text-white transition hover:bg-white/25" aria-label="بستن">
+                        &times;
+                    </button>
+                </div>
+
+                <div class="space-y-5 p-6">
+                    <div class="rounded-2xl border border-rose-100 bg-rose-50/70 p-4 text-sm text-slate-700">
+                        برای انتقال این مددجو به بلاک لیست، ثبت علت حذف الزامی است.
+                    </div>
+
+                    <div>
+                        <label for="person-deletion-reason" class="mb-2 block text-sm font-semibold text-slate-700">علت حذف <span class="text-rose-600">*</span></label>
+                        <textarea
+                            id="person-deletion-reason"
+                            wire:model.defer="deletionReason"
+                            rows="4"
+                            class="w-full rounded-2xl border border-rose-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-rose-400 focus:outline-none focus:ring-4 focus:ring-rose-100"
+                            placeholder="علت انتقال این مددجو به بلاک لیست را ثبت کنید..."
+                        ></textarea>
+                        @error('deletionReason') <span class="mt-2 block text-sm font-semibold text-rose-600">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                        <button type="button" @click="close()" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100">
+                            انصراف
+                        </button>
+                        <button type="button" wire:click="confirmDeletePerson" class="inline-flex items-center justify-center rounded-2xl border border-rose-200 bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700">
+                            حذف مددجو
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 
     @include('livewire.people.partials.person-details-modal')
 </div>

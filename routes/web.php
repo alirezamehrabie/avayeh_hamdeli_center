@@ -8,6 +8,7 @@ use App\Livewire\People\DeletedPeople;
 use App\Livewire\People\AdvancedFilterBuilder;
 use App\Livewire\Guardians\EditGuardian;
 use App\Livewire\Guardians\IndexGuardians;
+use App\Livewire\Guardians\DeletedGuardians;
 use App\Livewire\SocialWorkers\EditSocialWorker;
 use App\Livewire\SocialWorkers\CreateSocialWorker;
 use App\Livewire\SocialWorkers\IndexSocialWorkers;
@@ -55,6 +56,7 @@ Route::get('/people', IndexPeople::class)->middleware(['auth', 'can:manage-peopl
 Route::get('/people/advanced-reporting', AdvancedFilterBuilder::class)->middleware(['auth', 'can:full-access'])->name('people.advanced-reporting');
 Route::get('/people/block-list', DeletedPeople::class)->middleware(['auth', 'can:people-delete'])->name('people.block-list');
 Route::get('/guardians', IndexGuardians::class)->middleware(['auth', 'can:full-access'])->name('guardians.index');
+Route::get('/guardians/block-list', DeletedGuardians::class)->middleware(['auth', 'can:full-access'])->name('guardians.block-list');
 Route::get('/guardians/{guardian}/edit', EditGuardian::class)->middleware(['auth', 'can:full-access'])->name('guardians.edit');
 
 // مسیر نمایش فرم به Livewire تغییر می‌کند

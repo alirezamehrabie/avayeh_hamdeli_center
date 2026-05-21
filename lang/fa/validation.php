@@ -241,7 +241,7 @@ return [
         'vehicle_ownership_type' => 'نوع مالکیت وسیله نقلیه',
         'reason_for_not_studying' => 'علت عدم تحصیل',
         'subsidy_sheba_number' => 'شماره شبا یارانه',
-        'sheba_number' => 'شماره شبا'
+        'sheba_number' => 'شماره شبا',
 
     ],
 

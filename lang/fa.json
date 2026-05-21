@@ -1,4 +1,6 @@
 {
+    "id" : "شناسه",
+    "deleted_at" : "بازگشت /فرایند حذف",
     "guardian_id": "شناسه سرپرست",
     "first_name": "نام",
     "last_name": "نام خانوادگی",
@@ -51,5 +53,7 @@
     "any_family_employed_description": "توضیحات اشتغال اعضای خانواده",
     "has_vehicle": "دارای وسیله نقلیه",
     "vehicle_type_id": "نوع وسیله نقلیه",
-    "vehicle_ownership_type": "نوع مالکیت وسیله نقلیه"
+    "vehicle_ownership_type": "نوع مالکیت وسیله نقلیه",
+    "general" : "عام",
+    "sadaat" : "سادات"
 }

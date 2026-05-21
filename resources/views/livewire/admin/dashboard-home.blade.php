@@ -81,7 +81,13 @@
                         @break
 
                     @case('guardians-list')
+{{--                        <livewire:under-construction :key="'define-services'" />--}}
                         <livewire:guardians.index-guardians :embedded="true" :key="'guardians-list'" />
+                        @break
+
+                    @case('guardians-block-list')
+                        <livewire:under-construction :key="'define-services'" />
+{{--                        <livewire:guardians.deleted-guardians :embedded="true" :key="'guardians-block-list'" />--}}
                         @break
 
                     @case('guardian-edit')
@@ -221,7 +227,7 @@
                                     icon="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
 
                                 <livewire:admin.dashboard.stat-card
-                                    title="خانوار فعال"
+                                    title="سرپرستان فعال"
                                     :value="$guardianCount  . ' خانوار '"
                                     color="blue"
                                     icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>

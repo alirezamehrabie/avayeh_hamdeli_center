@@ -21,9 +21,17 @@ class IndexGuardians extends Component
     public ?int $selectedGuardianId = null;
     public bool $showHouseholdModal = false;
     public bool $showHouseholdSizeModal = false;
+    public bool $showDeleteModal = false;
     public string $householdStatsTab = 'household_size';
+    public string $deletionReason = '';
     public ?int $expandedHouseholdSize = null;
     public ?int $expandedCoverageCount = null;
+    public ?int $deletingGuardianId = null;
+
+    public function mount(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
+    }
 
     public function updatingSearch(): void
     {
@@ -84,6 +92,59 @@ class IndexGuardians extends Component
         }
 
         return redirect()->route('guardians.edit', ['guardian' => $guardianId]);
+    }
+
+    public function openDeleteModal(int $guardianId): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
+
+        $this->deletingGuardianId = Guardian::query()->findOrFail($guardianId)->id;
+        $this->deletionReason = '';
+        $this->resetValidation('deletionReason');
+        $this->showDeleteModal = true;
+    }
+
+    public function closeDeleteModal(): void
+    {
+        $this->showDeleteModal = false;
+        $this->deletingGuardianId = null;
+        $this->deletionReason = '';
+        $this->resetValidation('deletionReason');
+    }
+
+    public function deleteGuardianFamily(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
+
+        $validated = $this->validate([
+            'deletionReason' => ['required', 'string', 'max:1000'],
+        ], [
+            'deletionReason.required' => 'ثبت علت حذف الزامی است.',
+        ]);
+
+        $guardian = Guardian::query()->findOrFail($this->deletingGuardianId);
+        $guardianName = trim($guardian->first_name . ' ' . $guardian->last_name);
+
+        $guardian->softDeleteFamily($validated['deletionReason']);
+
+        if ($this->expandedGuardianId === $guardian->id) {
+            $this->expandedGuardianId = null;
+        }
+
+        $this->closeDeleteModal();
+        $this->resetPage();
+
+        session()->flash('success', 'خانوار ' . ($guardianName !== '' ? $guardianName : 'انتخاب‌شده') . ' با همه مددجویان مرتبط به بلاک لیست منتقل شد.');
+    }
+
+    public function goToDeletedGuardians(): mixed
+    {
+        if ($this->embedded) {
+            $this->dispatch('open-dashboard-section', section: 'guardians-block-list');
+            return null;
+        }
+
+        return redirect()->route('guardians.block-list');
     }
 
     public function closeHouseholdModal(): void
@@ -147,6 +208,8 @@ class IndexGuardians extends Component
 
     public function render()
     {
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
+
         return view('livewire.guardians.index-guardians', [
             'totalGuardians' => Guardian::count(),
             'householdSizeStats' => Guardian::query()
@@ -177,6 +240,11 @@ class IndexGuardians extends Component
                     ];
                 })
                 ->values(),
+            'deletingGuardian' => $this->deletingGuardianId
+                ? Guardian::query()
+                    ->withCount('people')
+                    ->find($this->deletingGuardianId)
+                : null,
         ]);
     }
 

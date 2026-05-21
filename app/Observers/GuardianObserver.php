@@ -49,7 +49,7 @@ class GuardianObserver
      */
     public function restored(Guardian $guardian): void
     {
-        //
+        $guardian->socialWorker?->updateStatistics();
     }
 
     /**

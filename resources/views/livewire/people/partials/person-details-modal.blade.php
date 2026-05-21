@@ -86,13 +86,51 @@
             ['label' => 'مددکار اختصاص‌یافته', 'value' => $selectedPerson->guardian?->socialWorker?->full_name ?: '-'],
             ['label' => 'سطح نیاز', 'value' => $selectedPerson->needsLevel?->levelType?->title ?: '-'],
         ];
+        $personImages = collect([
+            [
+                'label' => 'عکس پروفایل',
+                'url' => $selectedPerson->profile_photo ? asset($selectedPerson->profile_photo) : asset('images/no-image-profile.png?v=2'),
+            ],
+            [
+                'label' => 'عکس شناسنامه',
+                'url' => $selectedPerson->photo_birth_certificate ? asset($selectedPerson->photo_birth_certificate) : null,
+            ],
+            [
+                'label' => 'عکس کارت ملی',
+                'url' => $selectedPerson->photo_id_card ? asset($selectedPerson->photo_id_card) : null,
+            ],
+            [
+                'label' => 'عکس کارت حمایتی',
+                'url' => $selectedPerson->supportCoverage?->support_card_image ? asset($selectedPerson->supportCoverage->support_card_image) : null,
+            ],
+        ])->filter(fn ($image) => filled($image['url']))->values();
     @endphp
 
     <div
         wire:key="person-modal"
         x-data="{
             open: @js($showPersonModal),
+            viewerOpen: false,
+            viewerImages: @js($personImages),
+            viewerIndex: 0,
+            openViewer(index = 0) {
+                if (! this.viewerImages.length) return;
+                this.viewerIndex = index;
+                this.viewerOpen = true;
+            },
+            closeViewer() {
+                this.viewerOpen = false;
+            },
+            nextImage() {
+                if (this.viewerImages.length < 2) return;
+                this.viewerIndex = (this.viewerIndex + 1) % this.viewerImages.length;
+            },
+            previousImage() {
+                if (this.viewerImages.length < 2) return;
+                this.viewerIndex = (this.viewerIndex - 1 + this.viewerImages.length) % this.viewerImages.length;
+            },
             close() {
+                this.closeViewer();
                 this.open = false;
                 setTimeout(() => $wire.closePersonModal(), 220);
             }
@@ -105,7 +143,9 @@
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0"
         class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
-        @keydown.escape.window="close()"
+        @keydown.escape.window="viewerOpen ? closeViewer() : close()"
+        @keydown.arrow-right.window="if (viewerOpen) nextImage()"
+        @keydown.arrow-left.window="if (viewerOpen) previousImage()"
         style="display: none;"
     >
         <div class="absolute inset-0" @click="close()"></div>
@@ -128,7 +168,8 @@
                         <img
                             src="{{ $selectedPerson->profile_photo ? asset($selectedPerson->profile_photo) : asset('images/no-image-profile.png?v=2') }}"
                             alt="تصویر مددجو"
-                            class="h-full w-full object-cover"
+                            class="h-full w-full cursor-zoom-in object-cover"
+                            @click="openViewer(0)"
                         >
                     </div>
                     <div>
@@ -191,6 +232,65 @@
                     @endforeach
 
                 </div>
+            </div>
+
+            <div
+                x-show="viewerOpen"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                class="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/80 p-4"
+                @click.self="closeViewer()"
+                style="display: none;"
+            >
+                <button
+                    type="button"
+                    class="absolute left-4 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-2xl text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                    @click.stop="previousImage()"
+                    :disabled="viewerImages.length < 2"
+                    aria-label="تصویر قبلی"
+                >
+                    &#8249;
+                </button>
+
+                <div class="relative flex w-full max-w-4xl flex-col items-center gap-4" @click.stop>
+                    <button
+                        type="button"
+                        class="absolute right-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-2xl leading-none text-white transition hover:bg-white/25"
+                        @click="closeViewer()"
+                        aria-label="بستن نمایشگر تصویر"
+                    >
+                        &times;
+                    </button>
+
+                    <template x-if="viewerImages[viewerIndex]">
+                        <div class="flex w-full flex-col items-center gap-4 pt-8">
+                            <img
+                                :src="viewerImages[viewerIndex].url"
+                                :alt="viewerImages[viewerIndex].label"
+                                class="max-h-[70vh] w-auto max-w-full rounded-2xl bg-white object-contain shadow-2xl"
+                            >
+                            <div class="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white">
+                                <span x-text="viewerImages[viewerIndex].label"></span>
+                                <span class="mx-2 text-white/60">|</span>
+                                <span x-text="`${viewerIndex + 1} / ${viewerImages.length}`"></span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <button
+                    type="button"
+                    class="absolute right-4 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-2xl text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                    @click.stop="nextImage()"
+                    :disabled="viewerImages.length < 2"
+                    aria-label="تصویر بعدی"
+                >
+                    &#8250;
+                </button>
             </div>
         </div>
     </div>
