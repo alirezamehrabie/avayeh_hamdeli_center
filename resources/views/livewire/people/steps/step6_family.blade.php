@@ -42,7 +42,7 @@
                         <div class="border rounded-3 p-2 d-flex align-items-center gap-2" style="background: #f8fafc; border-color: #dbe3ec !important; min-height: 42px;">
                             <div class="form-check mb-0">
                                 <input class="form-check-input" type="checkbox" id="has_parent_disability" wire:model.live="has_parent_disability">
-                                <label class="form-check-label" for="has_parent_disability">والدین دارای بیماری خاص یا معلولیت هستند؟</label>
+                                <label class="form-check-label text-sm" for="has_parent_disability">والدین دارای بیماری خاص یا معلولیت هستند؟</label>
                             </div>
                         </div>
                         @error('has_parent_disability') <span class="text-danger small">{{ $message }}</span> @enderror
@@ -55,6 +55,18 @@
                             @error('parent_disability_description') <span class="text-danger small">{{ $message }}</span> @enderror
                         </div>
                     @endif
+
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold mb-1">جزئیات و شرح حال مددجـو</label>
+                        <textarea
+                            class="p-3 fw-normal form-control form-control-sm @error('client_case_history') is-invalid @enderror"
+                            wire:model.blur="client_case_history"
+                            rows="4"
+                            placeholder="خلاصه شرح حال، تاریخچه مشکلات و سوابق مددجو را اینجا وارد کنید ..."
+                            style="border-radius: 12px; background: #f8fafc; border: 1px solid #e2e8f0;"
+                        ></textarea>
+                        @error('client_case_history') <span class="text-danger small">{{ $message }}</span> @enderror
+                    </div>
                 </div>
             </div>
         </div>

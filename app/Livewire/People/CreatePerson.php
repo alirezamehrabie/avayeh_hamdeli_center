@@ -136,6 +136,7 @@ class CreatePerson extends Component
     // --- 2. تعریف متغیرهای وضعیت خانوادگی ---
     public $guardian_relation_type_id;
     public $economic_decile;
+    public $client_case_history;
     public $remarried_parent = 'none';
     public $children_from_previous_marriage;
 
@@ -330,6 +331,7 @@ class CreatePerson extends Component
                 $this->disability_description = $this->person->disability_description;
             }
             $this->skills_description = $this->person->skills_description;
+            $this->client_case_history = $this->person->client_case_history;
 
             $this->existing_photo_id_card = $this->person->photo_id_card;
             $this->existing_photo_birth_certificate = $this->person->photo_birth_certificate;
@@ -1324,6 +1326,7 @@ class CreatePerson extends Component
             'social_worker_id' => 'required|exists:social_workers,id',
             'remarried_parent' => 'nullable|in:none,father,mother,both',
             'children_from_previous_marriage' => 'nullable|integer|min:0',
+            'client_case_history' => 'nullable|string|max:5000',
             'has_parent_disability' => 'nullable|boolean',
             'parent_disability_description' => 'required_if:has_parent_disability,1|nullable|string|max:500',
             'father_left_home' => 'nullable|boolean',
@@ -1632,6 +1635,7 @@ class CreatePerson extends Component
                     'sadaat_status' => $this->sadaat_status,
                     'sadaat_relation_id' => ($this->sadaat_status === 'sadaat') ? $this->sadaat_relation_id : null,
                     'skills_description' => $this->skills_description,
+                    'client_case_history' => $this->client_case_history,
                     'has_disability' => (bool)$this->has_disability,
                     'disability_type_id' => ((bool)$this->has_disability) ? $this->disability_type_id : null,
                     'disability_description' => ((bool)$this->has_disability) ? $this->disability_description : null,
@@ -1864,6 +1868,7 @@ class CreatePerson extends Component
                     'sadaat_status' => $this->sadaat_status,
                     'sadaat_relation_id' => ($this->sadaat_status === 'sadaat') ? $this->sadaat_relation_id : null,
                     'skills_description' => $this->skills_description,
+                    'client_case_history' => $this->client_case_history,
                     'profile_photo' => $profilePhotoPath,
                     'photo_id_card' => $idCardPath,
                     'photo_birth_certificate' => $birthCertPath,
@@ -2526,6 +2531,7 @@ class CreatePerson extends Component
             case 6: // Family Status
                 return [
                     'guardian_relation_type_id' => 'required|exists:guardian_relation_types,id',
+                    'client_case_history' => 'nullable|string|max:5000',
                 ]; // Optional fields
 
             case 7: // Guardian and Livelihood
