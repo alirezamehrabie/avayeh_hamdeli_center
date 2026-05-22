@@ -3,7 +3,8 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "start": "node index.js"
     },
     "devDependencies": {
         "alpinejs": "^3.15.2",

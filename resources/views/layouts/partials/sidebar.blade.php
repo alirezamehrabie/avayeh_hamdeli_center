@@ -13,19 +13,18 @@
         <div class="text-center space-y-3">
             <!-- Logo/Icon -->
             <div class="flex justify-center">
-                <div class="w-16 h-16 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                    <svg class="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-                    </svg>
+                <div class="w-16 h-16 opacity-80 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 overflow-hidden">
+                    <!-- در اینجا آدرس تصویر لوگوی خود را وارد کنید -->
+                    <img src="{{ asset("images/logo-wh.png")  }}" alt="Logo" class="w-full h-full object-cover">
                 </div>
             </div>
 
             <!-- Title -->
             <div>
-                <p class="text-[11px] text-indigo-200/70 font-light tracking-wide mb-2">
+                <p class="text-[11px] text-indigo-100/80 font-light tracking-wide mb-2">
                     مرکز نیکوکاری تخصصی کودکان
                 </p>
-                <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-l from-indigo-200 via-purple-200 to-indigo-300">
+                <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-l from-indigo-200 via-purple-100 to-indigo-200">
                     آوای همدلی
                 </h1>
             </div>
