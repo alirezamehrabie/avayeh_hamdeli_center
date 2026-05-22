@@ -54,6 +54,8 @@ class AdvancedFilterBuilder extends Component
         'birth_date' => 'تاریخ تولد',
         'birth_year' => 'سال تولد',
         'birth_month' => 'ماه تولد',
+        'beneficiary_injury_disability_type' => 'آسیب / نوع آسیب',
+        'related_description' => 'معلولیت / نوع معلولیت',
         'created_at' => 'تاریخ ثبت',
     ];
 
@@ -664,7 +666,9 @@ class AdvancedFilterBuilder extends Component
 
     public function getPeopleProperty()
     {
-        return $this->buildQuery()->paginate(20);
+        return $this->buildQuery()
+            ->with(['disabilityType:id,name', 'harmTypes:id,title'])
+            ->paginate(20);
     }
 
     public function getSavedFiltersProperty()

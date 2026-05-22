@@ -249,6 +249,12 @@
                                         @case('birth_date')
                                             {{ $person->birth_date ?? '-' }}
                                             @break
+                                        @case('beneficiary_injury_disability_type')
+                                            {{ collect([$person->harmTypes->pluck('title')->filter()->implode('، '), $person->disabilityType?->name])->filter()->implode(' - ') ?: '-' }}
+                                            @break
+                                        @case('related_description')
+                                            {{ $person->disability_description ?: '-' }}
+                                            @break
                                         @case('created_at')
                                             {{ optional($person->created_at)->format('Y/m/d') }}
                                             @break
