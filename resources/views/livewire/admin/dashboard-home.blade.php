@@ -81,13 +81,11 @@
                         @break
 
                     @case('guardians-list')
-{{--                        <livewire:under-construction :key="'define-services'" />--}}
                         <livewire:guardians.index-guardians :embedded="true" :key="'guardians-list'" />
                         @break
 
                     @case('guardians-block-list')
-                        <livewire:under-construction :key="'define-services'" />
-{{--                        <livewire:guardians.deleted-guardians :embedded="true" :key="'guardians-block-list'" />--}}
+                        <livewire:guardians.deleted-guardians :embedded="true" :key="'guardians-block-list'" />
                         @break
 
                     @case('guardian-edit')

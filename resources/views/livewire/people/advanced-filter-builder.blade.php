@@ -326,6 +326,12 @@
                                         @case('birth_date')
                                             {{ $person->birth_date ?? '-' }}
                                             @break
+                                        @case('sadaat_status')
+                                            {{ $person->sadaat_status_label ?? '-' }}
+                                            @break
+                                        @case('gender')
+                                            {{ $person->gender_label ?? '-' }}
+                                            @break
                                         @case('beneficiary_injury_disability_type')
                                             {{ collect([$person->harmTypes->pluck('title')->filter()->implode('، '), $person->disabilityType?->name])->filter()->implode(' - ') ?: '-' }}
                                             @break

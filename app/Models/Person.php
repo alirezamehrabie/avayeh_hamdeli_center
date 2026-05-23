@@ -98,6 +98,8 @@ class Person extends Model
         'formatted_birth_date',
         'days_until_birthday',
         'is_birthday_today',
+        'gender_label',
+        'sadaat_status_label',
     ];
 
 
@@ -125,6 +127,24 @@ class Person extends Model
     public function getBirthMonthNameAttribute(): ?string
     {
         return self::$months[$this->birth_month] ?? null;
+    }
+
+    public function getGenderLabelAttribute(): ?string
+    {
+        return match ($this->gender) {
+            'male' => 'آقا / پسر',
+            'female' => 'دختر / خانم',
+            default => null,
+        };
+    }
+
+    public function getSadaatStatusLabelAttribute(): ?string
+    {
+        return match ($this->sadaat_status) {
+            'sadaat' => 'سادات',
+            'general' => 'عام',
+            default => null,
+        };
     }
 
 
