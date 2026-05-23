@@ -114,7 +114,7 @@
                             <th class="px-5 py-4 text-right font-bold">نام و نام خانوادگی</th>
                             <th class="px-5 py-4 text-center font-bold">موبایل</th>
                             <th class="px-5 py-4 text-center font-bold">تعداد مددجویان تحت نظارت</th>
-                            <th class="px-5 py-4 text-center font-bold">عملیات</th>
+                            <th class="w-40 px-3 py-4 text-center font-bold">عملیات</th>
                         </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -125,19 +125,34 @@
                                 <td class="px-5 py-4 text-right font-light text-slate-800">{{ trim($guardian->first_name . ' ' . $guardian->last_name) }}</td>
                                 <td class="px-5 py-4 text-center font-light text-slate-700">{{ $guardian->guardian_phone_number ?? '-' }}</td>
                                 <td class="px-5 py-4 text-center font-light text-slate-800">{{ $guardian->people_count }} نفر</td>
-                                <td class="px-5 py-4 text-center">
-                                    <div class="flex items-center justify-center gap-2">
-                                        <button type="button" wire:click.stop="editGuardian({{ $guardian->id }})" onclick="event.stopPropagation()" class="inline-flex items-center justify-center rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700 transition hover:border-sky-300 hover:bg-sky-100">
-                                            ویرایش
+                                <td class="px-3 py-4 text-center">
+                                    <div class="flex items-center justify-center gap-1.5">
+                                        <button type="button" wire:click.stop="editGuardian({{ $guardian->id }})" onclick="event.stopPropagation()" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-sky-200 bg-sky-50 text-sky-700 transition hover:border-sky-300 hover:bg-sky-100" title="ویرایش" aria-label="ویرایش">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 13l6.232-6.232a2.5 2.5 0 113.536 3.536L12.536 16.536A4 4 0 019.707 17.707L7 18l.293-2.707A4 4 0 018.464 12.536z"/>
+                                            </svg>
                                         </button>
-                                        <button type="button" wire:click.stop="toggleGuardian({{ $guardian->id }})" onclick="event.stopPropagation()" class="inline-flex items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:border-amber-300 hover:bg-amber-100">
-                                            {{ $expandedGuardianId === $guardian->id ? 'بستن' : 'مشاهده مددجویان' }}
+                                        <button type="button" wire:click.stop="toggleGuardian({{ $guardian->id }})" onclick="event.stopPropagation()" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 text-amber-700 transition hover:border-amber-300 hover:bg-amber-100" title="{{ $expandedGuardianId === $guardian->id ? 'بستن' : 'مشاهده مددجویان' }}" aria-label="{{ $expandedGuardianId === $guardian->id ? 'بستن' : 'مشاهده مددجویان' }}">
+                                            @if ($expandedGuardianId === $guardian->id)
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                </svg>
+                                            @else
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7s-8.268-2.943-9.542-7z"/>
+                                                </svg>
+                                            @endif
                                         </button>
-                                        <button type="button" wire:click.stop="showHouseholdInfo({{ $guardian->id }})" onclick="event.stopPropagation()" class="inline-flex items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100">
-                                            اطلاعات خانوار
+                                        <button type="button" wire:click.stop="showHouseholdInfo({{ $guardian->id }})" onclick="event.stopPropagation()" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100" title="اطلاعات خانوار" aria-label="اطلاعات خانوار">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
                                         </button>
-                                        <button type="button" wire:click.stop="openDeleteModal({{ $guardian->id }})" onclick="event.stopPropagation()" class="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100">
-                                            حذف خانوار
+                                        <button type="button" wire:click.stop="openDeleteModal({{ $guardian->id }})" onclick="event.stopPropagation()" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-700 transition hover:border-rose-300 hover:bg-rose-100" title="حذف خانوار" aria-label="حذف خانوار">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-7 0l1 12h6l1-12"/>
+                                            </svg>
                                         </button>
                                     </div>
                                 </td>

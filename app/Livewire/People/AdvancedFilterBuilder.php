@@ -2,6 +2,7 @@
 
 namespace App\Livewire\People;
 
+use App\Helpers\Morilog\Jalalian;
 use App\Models\BeneficiarySavedFilter;
 use App\Models\DisabilityType;
 use App\Models\District;
@@ -23,6 +24,8 @@ use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Exports\PeopleExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 #[Layout('layouts.app')]
 class AdvancedFilterBuilder extends Component
@@ -49,6 +52,7 @@ class AdvancedFilterBuilder extends Component
     public array $availableColumns = [
         'person_code' => 'کد مددجو',
         'full_name' => 'نام و نام خانوادگی',
+        'responsible_social_worker' => 'مددکار مسئول',
         'first_name' => 'نام',
         'last_name' => 'نام خانوادگی',
         'national_id' => 'کد ملی',
@@ -381,7 +385,36 @@ class AdvancedFilterBuilder extends Component
         $this->resetPage();
     }
 
-    public function exportToExcel(): void {}
+    public function exportToExcel()
+    {
+        // محدودیت ۵۰۰۰ رکورد برای جلوگیری از timeout
+        $maxRows = 5000;
+        $count = $this->buildQuery()->count();
+
+        if ($count === 0) {
+            session()->flash('error', 'هیچ رکوردی برای خروجی وجود ندارد.');
+            return null;
+        }
+
+        if ($count > $maxRows) {
+            session()->flash('error', "تعداد نتایج ({$count}) بیش از حد مجاز ({$maxRows}) است. لطفاً فیلترها را محدودتر کنید.");
+            return null;
+        }
+
+        $query = $this->buildQuery()->limit($maxRows);
+
+        $filename = 'Export-(مددجویان)-' . Jalalian::now()->format('Y-m-d') . '.xlsx';
+
+
+        return Excel::download(
+            new PeopleExport(
+                query: $query,
+                visibleColumns: $this->visibleColumns,
+                availableColumns: $this->availableColumns,
+            ),
+            $filename
+        );
+    }
 
     public function deleteSavedFilter(int $savedFilterId): void
     {
@@ -779,7 +812,12 @@ class AdvancedFilterBuilder extends Component
     public function getPeopleProperty()
     {
         return $this->buildQuery()
-            ->with(['disabilityType:id,name', 'harmTypes:id,title'])
+            ->with([
+                'disabilityType:id,name',
+                'harmTypes:id,title',
+                'guardian:id,social_worker_id',
+                'guardian.socialWorker:id,first_name,last_name',
+            ])
             ->paginate(20);
     }
 

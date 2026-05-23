@@ -9,15 +9,34 @@
 
             <div class="flex items-center gap-2 lg:flex-shrink-0">
                 <button wire:click="exportToExcel"
-                        class="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100">
-                    خروجی اکسل
+                        title="خروجی اکسل"
+                        class="group flex h-11 w-11 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100 hover:text-emerald-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="8" y1="13" x2="16" y2="13"/>
+                        <line x1="8" y1="17" x2="16" y2="17"/>
+                        <line x1="10" y1="9" x2="8" y2="9"/>
+                    </svg>
                 </button>
 
-                <button wire:click="exportToPdf"
-                        class="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 transition hover:bg-rose-100">
-                    خروجی PDF
-                </button>
+{{--                <button wire:click="exportToPdf"--}}
+{{--                        title="خروجی PDF"--}}
+{{--                        class="group flex h-11 w-11 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-600 transition hover:bg-rose-100 hover:text-rose-700">--}}
+{{--                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 0 24 24" fill="none"--}}
+{{--                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">--}}
+{{--                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>--}}
+{{--                        <polyline points="14 2 14 8 20 8"/>--}}
+{{--                        <path d="M9 13h1a2 2 0 0 1 0 4H9v-4z"/>--}}
+{{--                        <path d="M14 13h1.5a1.5 1.5 0 0 1 0 3H14v-3z"/>--}}
+{{--                        <line x1="17" y1="17" x2="17" y2="17"/>--}}
+{{--                    </svg>--}}
+{{--                </button>--}}
+
             </div>
+
+
         </div>
 
 
@@ -103,7 +122,7 @@
                                 <div class="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
                                     @foreach(($filter['selected'] ?? []) as $selectedWorker)
                                         <span class="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-medium text-indigo-700">
-                                            <span>{{ $selectedWorker['name'] }} - ID: {{ $selectedWorker['code'] }}</span>
+                                            <span>{{ $selectedWorker['name'] }} - کد: {{ $selectedWorker['code'] }}</span>
                                             <button type="button" wire:click="removeSocialWorker({{ $index }}, {{ (int) $selectedWorker['id'] }})" class="text-indigo-500 hover:text-rose-600">×</button>
                                         </span>
                                     @endforeach
@@ -138,7 +157,7 @@
                                                     class="flex w-full items-center justify-between px-3 py-2 text-right text-xs hover:bg-indigo-50"
                                                 >
                                                     <span>{{ $workerOption['name'] }}</span>
-                                                    <span class="text-[11px] text-slate-500">ID: {{ $workerOption['code'] }}</span>
+                                                    <span class="text-[11px] text-slate-500">کد مددکار: {{ $workerOption['code'] }}</span>
                                                 </button>
                                             @empty
                                                 <div class="px-3 py-2 text-xs text-slate-500">موردی یافت نشد.</div>
@@ -322,6 +341,9 @@
                                     @switch($columnKey)
                                         @case('full_name')
                                             {{ $person->full_name }}
+                                            @break
+                                        @case('responsible_social_worker')
+                                            {{ $person->guardian?->socialWorker?->full_name ?? '-' }}
                                             @break
                                         @case('birth_date')
                                             {{ $person->birth_date ?? '-' }}

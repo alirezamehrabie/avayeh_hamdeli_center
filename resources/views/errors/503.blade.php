@@ -197,11 +197,9 @@
 <div class="bg-glow bg-glow-2"></div>
 
 <div class="card">
-    <!-- آیکون مینیمال لوکس -->
+
     <div class="icon-box">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l-2.43-2.43M11.42 15.17L12 14.5m-2.43-2.43L3.75 6.25A2.652 2.652 0 000 10l5.878 5.878m3.112-3.628l1.69 1.69m0 0a2.003 2.003 0 011.69-1.69m0 0l-1.69-1.69M15 11.25l-1.69-1.69m0 0a2.003 2.003 0 01-1.69 1.69" />
-        </svg>
+        <img src="{{asset("images/logo-sm.png")}}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;">
     </div>
 
     <h1 style="color: #2c3e50;">بروزرسانی سامانه</h1>
@@ -246,7 +244,7 @@
 
 <script>
     // تاریخ هدف: شنبه ۲۳ می ۲۰۲۶ ساعت ۰۰:۰۰:۰۰
-    const targetDate = new Date("2026-05-23T14:00:00").getTime();
+    const targetDate = new Date("2026-05-23T19:30:00").getTime();
 
     function toPersianDigits(num) {
         const id = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
