@@ -72,6 +72,23 @@ class SocialWorker extends Model
         });
     }
 
+    public function scopeAutocompleteSearch(Builder $query, string $term): Builder
+    {
+        $term = trim($term);
+
+        if ($term === '') {
+            return $query;
+        }
+
+        return $query->where(function (Builder $workerQuery) use ($term) {
+            $workerQuery->where('first_name', 'like', "%{$term}%")
+                ->orWhere('last_name', 'like', "%{$term}%")
+                ->orWhere('worker_code', 'like', "%{$term}%")
+                ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", ["%{$term}%"])
+                ->orWhereRaw("CONCAT_WS(' ', last_name, first_name) like ?", ["%{$term}%"]);
+        });
+    }
+
 
     public static function generateNextWorkerCode(): int
     {

@@ -80,7 +80,84 @@
                             <button type="button" wire:click="removeFilter({{ $index }})" class="self-start text-xs font-semibold text-rose-600 sm:self-auto">حذف</button>
                         </div>
 
-                        @if(($filter['type'] ?? null) === 'text')
+                        @if(($filter['type'] ?? null) === 'text' && ($filter['field'] ?? null) === 'caseworker')
+                            <div
+                                x-data="{
+                                    open: false,
+                                    activeIndex: 0,
+                                    move(step) {
+                                        const items = this.$refs.options?.querySelectorAll('[data-option]') ?? [];
+                                        if (!items.length) return;
+                                        this.activeIndex = (this.activeIndex + step + items.length) % items.length;
+                                        items[this.activeIndex].scrollIntoView({ block: 'nearest' });
+                                    },
+                                    choose() {
+                                        const items = this.$refs.options?.querySelectorAll('[data-option]') ?? [];
+                                        if (!items.length) return;
+                                        items[this.activeIndex].click();
+                                    }
+                                }"
+                                @click.outside="open = false"
+                                class="space-y-2"
+                            >
+                                <div class="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
+                                    @foreach(($filter['selected'] ?? []) as $selectedWorker)
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-medium text-indigo-700">
+                                            <span>{{ $selectedWorker['name'] }} - ID: {{ $selectedWorker['code'] }}</span>
+                                            <button type="button" wire:click="removeSocialWorker({{ $index }}, {{ (int) $selectedWorker['id'] }})" class="text-indigo-500 hover:text-rose-600">×</button>
+                                        </span>
+                                    @endforeach
+
+                                    <input
+                                        type="text"
+                                        x-on:focus="open = true"
+                                        x-on:keydown.arrow-down.prevent="open = true; move(1)"
+                                        x-on:keydown.arrow-up.prevent="open = true; move(-1)"
+                                        x-on:keydown.enter.prevent="choose()"
+                                        wire:model.live.debounce.300ms="socialWorkerSearch.{{ $index }}"
+                                        class="min-w-[12rem] flex-1 border-0 bg-transparent px-0 py-1 text-xs focus:ring-0"
+                                        placeholder="نام یا کد مددکار را وارد کنید..."
+                                    >
+                                </div>
+
+                                @php
+                                    $workerOptions = $socialWorkerOptions[$index] ?? [];
+                                    $searchTerm = trim($socialWorkerSearch[$index] ?? '');
+                                @endphp
+
+                                @if(mb_strlen($searchTerm) >= 2)
+                                    <div x-show="open" class="rounded-lg border border-slate-200 bg-white shadow-sm">
+                                        <div x-ref="options" class="max-h-64 overflow-y-auto py-1">
+                                            @forelse($workerOptions as $optionIndex => $workerOption)
+                                                <button
+                                                    type="button"
+                                                    data-option
+                                                    wire:click="selectSocialWorker({{ $index }}, {{ $workerOption['id'] }})"
+                                                    x-on:mouseenter="activeIndex = {{ $optionIndex }}"
+                                                    :class="activeIndex === {{ $optionIndex }} ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700'"
+                                                    class="flex w-full items-center justify-between px-3 py-2 text-right text-xs hover:bg-indigo-50"
+                                                >
+                                                    <span>{{ $workerOption['name'] }}</span>
+                                                    <span class="text-[11px] text-slate-500">ID: {{ $workerOption['code'] }}</span>
+                                                </button>
+                                            @empty
+                                                <div class="px-3 py-2 text-xs text-slate-500">موردی یافت نشد.</div>
+                                            @endforelse
+                                        </div>
+
+                                        @if(($socialWorkerHasMore[$index] ?? false) && count($workerOptions) >= 25)
+                                            <div class="border-t border-slate-100 p-2">
+                                                <button type="button" wire:click="loadMoreSocialWorkers({{ $index }})" class="w-full rounded-md bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100">
+                                                    نمایش نتایج بیشتر
+                                                </button>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @else
+                                    <p class="text-[11px] text-slate-500">برای جستجو حداقل ۲ کاراکتر وارد کنید.</p>
+                                @endif
+                            </div>
+                        @elseif(($filter['type'] ?? null) === 'text')
                             <div class="grid gap-2 md:grid-cols-3">
                                 <select wire:model.live="filters.{{ $index }}.operator" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs">
                                     <option value="contains">شامل</option>

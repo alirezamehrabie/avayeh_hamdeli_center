@@ -15,6 +15,7 @@ use App\Models\Occupation;
 use App\Models\Person;
 use App\Models\ResidenceStatusType;
 use App\Models\Skill;
+use App\Models\SocialWorker;
 use App\Models\SupportOrganization;
 use App\Models\VehicleType;
 use Illuminate\Database\Eloquent\Builder;
@@ -33,6 +34,9 @@ class AdvancedFilterBuilder extends Component
     public string $saveFilterName = '';
     public ?int $selectedPersonId = null;
     public bool $showPersonModal = false;
+    public array $socialWorkerSearch = [];
+    public array $socialWorkerOptions = [];
+    public array $socialWorkerHasMore = [];
 
     public array $visibleColumns = [
         'person_code',
@@ -207,13 +211,17 @@ class AdvancedFilterBuilder extends Component
 
         $type = $this->filterableFields[$field]['type'];
 
-        $this->filters[] = match ($type) {
-            'text' => ['field' => $field, 'type' => $type, 'operator' => 'contains', 'value' => ''],
-            'select' => ['field' => $field, 'type' => $type, 'value' => ''],
-            'date' => ['field' => $field, 'type' => $type, 'mode' => 'exact', 'exact' => '', 'from' => '', 'to' => '', 'month' => '', 'year' => ''],
-            'number' => ['field' => $field, 'type' => $type, 'operator' => 'eq', 'value' => ''],
-            default => ['field' => $field, 'type' => $type],
-        };
+        if ($field === 'caseworker') {
+            $this->filters[] = ['field' => $field, 'type' => 'text', 'operator' => 'contains', 'value' => '', 'selected' => []];
+        } else {
+            $this->filters[] = match ($type) {
+                'text' => ['field' => $field, 'type' => $type, 'operator' => 'contains', 'value' => ''],
+                'select' => ['field' => $field, 'type' => $type, 'value' => ''],
+                'date' => ['field' => $field, 'type' => $type, 'mode' => 'exact', 'exact' => '', 'from' => '', 'to' => '', 'month' => '', 'year' => ''],
+                'number' => ['field' => $field, 'type' => $type, 'operator' => 'eq', 'value' => ''],
+                default => ['field' => $field, 'type' => $type],
+            };
+        }
 
         $this->resetPage();
     }
@@ -222,11 +230,15 @@ class AdvancedFilterBuilder extends Component
     {
         unset($this->filters[$index]);
         $this->filters = array_values($this->filters);
+        $this->socialWorkerSearch = array_values($this->socialWorkerSearch);
+        $this->socialWorkerOptions = array_values($this->socialWorkerOptions);
+        $this->socialWorkerHasMore = array_values($this->socialWorkerHasMore);
         $this->resetPage();
     }
 
     public function updatedFilters(): void
     {
+        $this->normalizeCaseworkerFilters();
         $this->resetPage();
     }
 
@@ -234,7 +246,91 @@ class AdvancedFilterBuilder extends Component
     {
         $this->filters = [];
         $this->globalSearch = '';
+        $this->socialWorkerSearch = [];
+        $this->socialWorkerOptions = [];
+        $this->socialWorkerHasMore = [];
         $this->resetPage();
+    }
+
+    public function updatedSocialWorkerSearch($value, $key): void
+    {
+        $index = (int) $key;
+        $term = trim((string) $value);
+
+        if (!isset($this->filters[$index]) || ($this->filters[$index]['field'] ?? null) !== 'caseworker') {
+            return;
+        }
+
+        if (mb_strlen($term) < 2) {
+            $this->socialWorkerOptions[$index] = [];
+            $this->socialWorkerHasMore[$index] = false;
+            return;
+        }
+
+        $this->loadSocialWorkerOptions($index, $term);
+    }
+
+    public function selectSocialWorker(int $index, int $workerId): void
+    {
+        if (!isset($this->filters[$index]) || ($this->filters[$index]['field'] ?? null) !== 'caseworker') {
+            return;
+        }
+
+        $worker = SocialWorker::query()
+            ->select(['id', 'first_name', 'last_name', 'worker_code'])
+            ->find($workerId);
+
+        if (!$worker) {
+            return;
+        }
+
+        $selected = collect($this->filters[$index]['selected'] ?? []);
+        if ($selected->contains(fn ($item) => (int) ($item['id'] ?? 0) === $worker->id)) {
+            $this->socialWorkerSearch[$index] = '';
+            $this->socialWorkerOptions[$index] = [];
+            return;
+        }
+
+        $selected->push([
+            'id' => $worker->id,
+            'name' => $worker->full_name,
+            'code' => (string) $worker->worker_code,
+        ]);
+
+        $this->filters[$index]['selected'] = $selected->values()->all();
+        $this->filters[$index]['value'] = '';
+        $this->socialWorkerSearch[$index] = '';
+        $this->socialWorkerOptions[$index] = [];
+        $this->socialWorkerHasMore[$index] = false;
+        $this->syncCaseworkerFilterState();
+    }
+
+    public function removeSocialWorker(int $index, int $workerId): void
+    {
+        if (!isset($this->filters[$index]) || ($this->filters[$index]['field'] ?? null) !== 'caseworker') {
+            return;
+        }
+
+        $this->filters[$index]['selected'] = collect($this->filters[$index]['selected'] ?? [])
+            ->reject(fn ($item) => (int) ($item['id'] ?? 0) === $workerId)
+            ->values()
+            ->all();
+
+        $this->syncCaseworkerFilterState();
+    }
+
+    public function loadMoreSocialWorkers(int $index): void
+    {
+        if (!isset($this->filters[$index]) || ($this->filters[$index]['field'] ?? null) !== 'caseworker') {
+            return;
+        }
+
+        $term = trim((string) ($this->socialWorkerSearch[$index] ?? ''));
+        if (mb_strlen($term) < 2) {
+            return;
+        }
+
+        $this->loadSocialWorkerOptions($index, $term, true);
     }
 
     public function toggleColumn(string $column): void
@@ -276,8 +372,12 @@ class AdvancedFilterBuilder extends Component
             ->findOrFail($savedFilterId);
 
         $this->filters = $saved->filters ?? [];
+        $this->normalizeCaseworkerFilters();
         $this->globalSearch = $saved->global_search ?? '';
         $this->visibleColumns = $saved->visible_columns ?: $this->visibleColumns;
+        $this->socialWorkerSearch = [];
+        $this->socialWorkerOptions = [];
+        $this->socialWorkerHasMore = [];
         $this->resetPage();
     }
 
@@ -392,6 +492,31 @@ class AdvancedFilterBuilder extends Component
             if ($type === 'text') {
                 $value = trim((string) ($filter['value'] ?? ''));
                 $operator = $filter['operator'] ?? 'contains';
+
+                if ($field === 'caseworker') {
+                    $selectedWorkerIds = collect($filter['selected'] ?? [])
+                        ->pluck('id')
+                        ->filter()
+                        ->map(fn ($id) => (int) $id)
+                        ->values();
+
+                    if ($selectedWorkerIds->isNotEmpty()) {
+                        $query->whereHas('guardian.socialWorker', function (Builder $workerQuery) use ($selectedWorkerIds) {
+                            $workerQuery->whereIn('social_workers.id', $selectedWorkerIds->all());
+                        });
+                        continue;
+                    }
+
+                    if ($value === '') {
+                        continue;
+                    }
+
+                    $query->whereHas('guardian.socialWorker', function (Builder $workerQuery) use ($value) {
+                        $workerQuery->autocompleteSearch($value);
+                    });
+                    continue;
+                }
+
                 if ($value === '') {
                     continue;
                 }
@@ -424,19 +549,6 @@ class AdvancedFilterBuilder extends Component
                         } else {
                             $guardianQuery->where('guardian_phone_number', 'like', "%{$value}%");
                         }
-                    });
-                    continue;
-                }
-
-                if ($field === 'caseworker') {
-                    $query->whereHas('guardian.socialWorker', function (Builder $workerQuery) use ($value) {
-                        $workerQuery->where(function (Builder $nameOrCodeQuery) use ($value) {
-                            $nameOrCodeQuery->where('first_name', 'like', "%{$value}%")
-                                ->orWhere('last_name', 'like', "%{$value}%")
-                                ->orWhere('worker_code', 'like', "%{$value}%")
-                                ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", ["%{$value}%"])
-                                ->orWhereRaw("CONCAT_WS(' ', last_name, first_name) like ?", ["%{$value}%"]);
-                        });
                     });
                     continue;
                 }
@@ -682,5 +794,70 @@ class AdvancedFilterBuilder extends Component
     public function render()
     {
         return view('livewire.people.advanced-filter-builder');
+    }
+
+    protected function normalizeCaseworkerFilters(): void
+    {
+        foreach ($this->filters as $index => $filter) {
+            if (($filter['field'] ?? null) !== 'caseworker') {
+                continue;
+            }
+
+            $selected = $filter['selected'] ?? [];
+            if (!is_array($selected)) {
+                $selected = [];
+            }
+
+            $this->filters[$index]['selected'] = collect($selected)
+                ->filter(fn ($item) => is_array($item) && isset($item['id']))
+                ->map(fn ($item) => [
+                    'id' => (int) $item['id'],
+                    'name' => (string) ($item['name'] ?? ''),
+                    'code' => (string) ($item['code'] ?? ''),
+                ])
+                ->values()
+                ->all();
+        }
+    }
+
+    protected function syncCaseworkerFilterState(): void
+    {
+        $this->normalizeCaseworkerFilters();
+        $this->filters = array_values($this->filters);
+        $this->resetPage();
+    }
+
+    protected function loadSocialWorkerOptions(int $index, string $term, bool $append = false): void
+    {
+        $limit = $append ? count($this->socialWorkerOptions[$index] ?? []) + 25 : 25;
+
+        $workers = SocialWorker::query()
+            ->select(['id', 'first_name', 'last_name', 'worker_code'])
+            ->autocompleteSearch($term)
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->limit($limit + 1)
+            ->get();
+
+        $selectedIds = collect($this->filters[$index]['selected'] ?? [])
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $hasMore = $workers->count() > $limit;
+
+        $this->socialWorkerOptions[$index] = $workers
+            ->take($limit)
+            ->reject(fn (SocialWorker $worker) => in_array($worker->id, $selectedIds, true))
+            ->map(fn (SocialWorker $worker) => [
+                'id' => $worker->id,
+                'name' => $worker->full_name,
+                'code' => (string) $worker->worker_code,
+                'label' => sprintf('%s - ID: %s', $worker->full_name, $worker->worker_code),
+            ])
+            ->values()
+            ->all();
+
+        $this->socialWorkerHasMore[$index] = $hasMore;
     }
 }
