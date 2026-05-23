@@ -309,7 +309,7 @@
         <div class="flex flex-col gap-2 border-b border-slate-200 px-6 py-5 md:flex-row md:items-center md:justify-between">
             <div>
                 <h2 class="text-xl font-black text-slate-800">فهرست خدمات تعریف‌شده</h2>
-                <p class="text-sm text-slate-500">نمایی جمع‌وجور از خدمات تعریف‌شده با جزئیات کامل در پنجره جداگانه</p>
+                <p class="text-sm text-slate-500">نمایش فشردهٔ خدمات با جزئیات در پنجرهٔ جداگانه</p>
             </div>
             <div class="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700">
                 {{ $services->count() }} خدمت ثبت شده

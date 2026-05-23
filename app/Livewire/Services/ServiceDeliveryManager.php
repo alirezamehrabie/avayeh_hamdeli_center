@@ -115,7 +115,6 @@ class ServiceDeliveryManager extends Component
         $service->socialWorkers()->sync($syncPayload);
 
         $this->showSavedSummary = true;
-        session()->flash('success', 'Quotas assigned');
         $this->refreshSelectedServiceState();
         $this->dispatch('quota-saved');
     }

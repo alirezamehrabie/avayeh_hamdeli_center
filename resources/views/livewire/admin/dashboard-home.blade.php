@@ -97,7 +97,8 @@
                                 <button type="button" wire:click="selectSection('guardians-list')" class="btn btn-primary">بازگشت به لیست سرپرستان</button>
                             </div>
                         @endif
-                        @break
+                     @break
+
 
                     @case('advanced-reports')
                         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -197,12 +198,13 @@
                         @break
 
                     @case('define-services')
-{{--                        <livewire:services.manage-services :key="'define-services'" />--}}
-                        <livewire:under-construction :key="'define-services'" />
+                        <livewire:services.manage-services :key="'define-services'" />
+{{--                        <livewire:under-construction :key="'define-services'" />--}}
                         @break
 
                     @case('service-delivery')
-                        <livewire:under-construction :key="'service-delivery'" />
+                        <livewire:services.service-delivery-manager :key="'service-delivery'" />
+
                         @break
 
                     @case('system-settings-user-management')
@@ -212,6 +214,12 @@
                     @case('system-settings-user-account')
                         <livewire:admin.user-account :key="'system-settings-user-account'" />
                         @break
+
+
+                    @case('child-supporter-page')
+                        <livewire:child-supporter.index  :key="'child-supporter-page'" />
+                        @break
+
 
                     @default
                         <div>

@@ -202,7 +202,6 @@
                         <div class="rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4 shadow-sm">
                             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                 <div>
-                                    <p class="text-sm font-black text-emerald-800">Quotas assigned</p>
                                     <p class="mt-1 text-xs text-slate-600">
                                         {{ $this->selectedService->service_code }} - {{ $this->selectedService->serviceName?->name ?? '-' }}
                                     </p>
