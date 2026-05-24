@@ -202,6 +202,7 @@ class SocialWorker extends Model
             ->with([
                 'harmTypes' => fn($q) => $q->select('harm_types.id'),
                 'guardian:id,national_code,first_name,last_name',
+                'familyStatus:person_id,guardian_relation_type_id',
             ])
             ->get([
                 'people.id',
@@ -236,7 +237,12 @@ class SocialWorker extends Model
             }
 
             $harmTypeIds = $person->harmTypes->pluck('id')->toArray();
-            $shouldExcludeFather = in_array(1, $harmTypeIds) || in_array(7, $harmTypeIds) || in_array(5, $harmTypeIds);
+            $guardianRelationTypeId = (int) ($person->familyStatus?->guardian_relation_type_id ?? 0);
+            $hasDivorceHarmType = in_array(7, $harmTypeIds);
+
+            $shouldExcludeFather = in_array(1, $harmTypeIds)
+                || in_array(5, $harmTypeIds)
+                || ($hasDivorceHarmType && $guardianRelationTypeId !== 1);
             $shouldExcludeMother = in_array(2, $harmTypeIds) || in_array(5, $harmTypeIds);
 
             if ($beneficiaryNationalId) {
@@ -247,7 +253,14 @@ class SocialWorker extends Model
                 $parentNationalIds->push($fatherNationalId);
                 if (!$shouldExcludeFather) {
                     $fatherName = trim((string)$person->father_name) ?: '-';
-                    $this->addCoveredDetail($detailsByNationalId, $fatherNationalId, 'father', $fatherName, $sourceLabel, $guardianLabel);
+                    $this->addCoveredDetail(
+                        $detailsByNationalId,
+                        $fatherNationalId,
+                        $this->resolveParentRelationshipRole('father', $hasDivorceHarmType, $guardianRelationTypeId),
+                        $fatherName,
+                        $sourceLabel,
+                        $guardianLabel
+                    );
                 } else {
                     $excludedNationalIds->push($fatherNationalId);
                 }
@@ -256,7 +269,14 @@ class SocialWorker extends Model
             if ($motherNationalId) {
                 $parentNationalIds->push($motherNationalId);
                 if (!$shouldExcludeMother) {
-                    $this->addCoveredDetail($detailsByNationalId, $motherNationalId, 'mother', '-', $sourceLabel, $guardianLabel);
+                    $this->addCoveredDetail(
+                        $detailsByNationalId,
+                        $motherNationalId,
+                        $this->resolveParentRelationshipRole('mother', $hasDivorceHarmType, $guardianRelationTypeId),
+                        '-',
+                        $sourceLabel,
+                        $guardianLabel
+                    );
                 } else {
                     $excludedNationalIds->push($motherNationalId);
                 }
@@ -352,12 +372,27 @@ class SocialWorker extends Model
             'beneficiary' => 'مددجو',
             'father' => 'پدر',
             'mother' => 'مادر',
+            'father_divorced' => 'پدر / طلاق',
+            'mother_divorced' => 'مادر / طلاق',
             'guardian' => 'سرپرست',
         ];
 
         return $rolesCollection
             ->map(fn(string $role) => $labels[$role] ?? $role)
             ->implode('/');
+    }
+
+    private function resolveParentRelationshipRole(string $parentRole, bool $isChildOfDivorce, int $guardianRelationTypeId): string
+    {
+        if ($isChildOfDivorce && $guardianRelationTypeId === 1 && $parentRole === 'mother') {
+            return 'mother_divorced';
+        }
+
+        if ($isChildOfDivorce && $guardianRelationTypeId === 2 && $parentRole === 'father') {
+            return 'father_divorced';
+        }
+
+        return $parentRole;
     }
 
     private function normalizeNationalId(?string $nationalId): ?string

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('guardian_relation_types', function (Blueprint $table) {
             $table->id();
-            $table->string('title'); // عنوان (مثلاً: پدر، مادر)
+            $table->string('title');
             $table->timestamps();
         });
     }
