@@ -842,7 +842,7 @@ class CreatePerson extends Component
 
             if ($relationType) {
                 // منطق برای پدر
-                if ($relationType->title === 'پدر') {
+                if ($relationType->title === GuardianRelationType::TITLE_FATHER) {
                     $this->guardian_national_code = $this->father_national_id;
                     $this->guardian_first_name = $this->father_name;
                     $this->guardian_last_name = $this->last_name;
@@ -857,7 +857,7 @@ class CreatePerson extends Component
                     }
 
                 } // منطق جدید برای مادر
-                elseif ($relationType->title === 'مادر') {
+                elseif ($relationType->title === GuardianRelationType::TITLE_MOTHER) {
                     // کد ملی مادر و نام مادر را کپی می‌کنیم
                     $this->guardian_national_code = $this->mother_national_id;
 
@@ -2354,8 +2354,8 @@ class CreatePerson extends Component
         }
 
         $relationTypeTitle = trim((string)($relationTypeTitleCache[$relationTypeId] ?? ''));
-        $isFatherGuardian = $relationTypeTitle === 'پدر';
-        $isMotherGuardian = $relationTypeTitle === 'مادر';
+        $isFatherGuardian = in_array($relationTypeTitle, GuardianRelationType::fatherLikeTitles(), true);
+        $isMotherGuardian = in_array($relationTypeTitle, GuardianRelationType::motherLikeTitles(), true);
 
         if (!$isFatherGuardian && !$isMotherGuardian) {
             return false;

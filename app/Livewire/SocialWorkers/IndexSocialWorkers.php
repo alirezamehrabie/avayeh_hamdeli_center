@@ -17,6 +17,7 @@ class IndexSocialWorkers extends Component
     public bool $embedded = false;
     public ?int $expandedSocialWorkerId = null;
     public array $coveredDetailsByWorker = [];
+    public array $coveredCountsByWorker = [];
 
     public function updatingSearch(): void
     {
@@ -60,6 +61,10 @@ class IndexSocialWorkers extends Component
                 ? $socialWorker->getCoveredPeopleDetails()
                 : [];
         }
+
+        if (!array_key_exists($socialWorkerId, $this->coveredCountsByWorker)) {
+            $this->coveredCountsByWorker[$socialWorkerId] = count($this->coveredDetailsByWorker[$socialWorkerId] ?? []);
+        }
     }
 
     public function getSocialWorkersProperty()
@@ -102,12 +107,38 @@ class IndexSocialWorkers extends Component
             };
         }
 
-        return $query->get();
+        return $query->get()->map(function (SocialWorker $socialWorker) {
+            $socialWorker->setAttribute(
+                'covered_people_count',
+                $this->getCoveredCountForWorker($socialWorker)
+            );
+
+            return $socialWorker;
+        });
     }
 
     public function getCoveredDetailsForWorker(int $socialWorkerId): array
     {
         return $this->coveredDetailsByWorker[$socialWorkerId] ?? [];
+    }
+
+    public function getCoveredCountForWorker(SocialWorker $socialWorker): int
+    {
+        if (!array_key_exists($socialWorker->id, $this->coveredCountsByWorker)) {
+            $details = $this->getOrLoadCoveredDetailsForWorker($socialWorker);
+            $this->coveredCountsByWorker[$socialWorker->id] = count($details);
+        }
+
+        return $this->coveredCountsByWorker[$socialWorker->id];
+    }
+
+    private function getOrLoadCoveredDetailsForWorker(SocialWorker $socialWorker): array
+    {
+        if (!array_key_exists($socialWorker->id, $this->coveredDetailsByWorker)) {
+            $this->coveredDetailsByWorker[$socialWorker->id] = $socialWorker->getCoveredPeopleDetails();
+        }
+
+        return $this->coveredDetailsByWorker[$socialWorker->id];
     }
 
     public function render()

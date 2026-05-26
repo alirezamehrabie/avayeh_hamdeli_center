@@ -16,10 +16,12 @@ class GuardianRelationTypeSeeder extends Seeder
             'مادر بزرگ',
             'سایر (عمو / عمه)',
             'سایر (خاله / دایی)',
+            'نا پدری',
+            'نا مادری',
         ];
 
         foreach ($types as $type) {
-            GuardianRelationType::create(['title' => $type]);
+            GuardianRelationType::updateOrCreate(['title' => $type], ['title' => $type]);
         }
     }
 }

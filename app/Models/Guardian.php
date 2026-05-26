@@ -282,8 +282,8 @@ class Guardian extends Model
             $relationTypeTitle = trim((string) ($familyStatus->guardianRelationType->title ?? ''));
             $remarriedParent = strtolower(trim((string) ($familyStatus->remarried_parent ?? '')));
 
-            $isFatherGuardian = $relationTypeTitle === 'پدر';
-            $isMotherGuardian = $relationTypeTitle === 'مادر';
+            $isFatherGuardian = in_array($relationTypeTitle, GuardianRelationType::fatherLikeTitles(), true);
+            $isMotherGuardian = in_array($relationTypeTitle, GuardianRelationType::motherLikeTitles(), true);
             $isRelevantRemarriage = ($isFatherGuardian && in_array($remarriedParent, ['father', 'both'], true))
                 || ($isMotherGuardian && in_array($remarriedParent, ['mother', 'both'], true));
 

@@ -103,7 +103,7 @@
                                 </td>
                                 <td class="px-5 py-4 text-center font-light text-slate-700">{{ $worker->national_id }}</td>
                                 <td class="px-5 py-4 text-center font-light text-slate-700">{{ $worker->mobile }}</td>
-                                <td class="px-5 py-4 text-center font-light text-slate-800">{{ $worker->covered_people_count }} نفر</td>
+                                <td class="px-5 py-4 text-center font-light text-slate-800">{{ $this->getCoveredCountForWorker($worker) }} نفر</td>
                                 <td class="px-5 py-4 text-center">
                                     <div class="flex items-center justify-center gap-2">
                                         <button type="button" wire:click.stop="toggleSocialWorker({{ $worker->id }})" onclick="event.stopPropagation()" class="inline-flex items-center justify-center rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-700 transition hover:border-cyan-300 hover:bg-cyan-100">
@@ -177,7 +177,7 @@
                                             <div class="mt-6 mb-3 flex items-center justify-between">
                                                 <h2 class="text-sm font-bold text-slate-700">جزئیات افراد مؤثر در آمار تحت پوشش</h2>
                                                 <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                                                    {{ count($this->getCoveredDetailsForWorker($worker->id)) }} نفر (بر پایه کد ملی)
+                                                    {{ $this->getCoveredCountForWorker($worker) }} نفر (بر پایه کد ملی)
                                                 </span>
                                             </div>
 

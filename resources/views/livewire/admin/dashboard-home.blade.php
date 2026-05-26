@@ -203,6 +203,7 @@
                         @break
 
                     @case('service-delivery')
+{{--                        <livewire:under-construction :key="'define-services'" />--}}
                         <livewire:services.service-delivery-manager :key="'service-delivery'" />
 
                         @break

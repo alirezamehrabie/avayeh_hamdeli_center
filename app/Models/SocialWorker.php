@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use App\Models\GuardianRelationType;
 
 class SocialWorker extends Model
 {
@@ -174,8 +175,7 @@ class SocialWorker extends Model
 
     public function calculateCoveredPeopleCount(): int
     {
-        $coveredDetails = $this->getCoveredPeopleDetails();
-        $baseCount = count($coveredDetails);
+        $baseCount = $this->calculateCoveredPeopleNationalIdCount();
 
         // ۲. دریافت اطلاعات سرپرستان (کد ملی + وضعیت فرزندان طلاق در منزل)
         $guardiansData = $this->guardians()
@@ -194,6 +194,11 @@ class SocialWorker extends Model
 
         // حاصل نهایی: افراد دارای کد ملی + افراد اظهار شده در منزل سرپرست
         return $baseCount + $extraCount;
+    }
+
+    public function calculateCoveredPeopleNationalIdCount(): int
+    {
+        return count($this->getCoveredPeopleDetails());
     }
 
     public function getCoveredPeopleDetails(): array
@@ -242,8 +247,11 @@ class SocialWorker extends Model
 
             $shouldExcludeFather = in_array(1, $harmTypeIds)
                 || in_array(5, $harmTypeIds)
-                || ($hasDivorceHarmType && $guardianRelationTypeId !== 1);
-            $shouldExcludeMother = in_array(2, $harmTypeIds) || in_array(5, $harmTypeIds);
+                || ($hasDivorceHarmType && $guardianRelationTypeId !== 1)
+                || $this->isStepFatherGuardianRelation($guardianRelationTypeId);
+            $shouldExcludeMother = in_array(2, $harmTypeIds)
+                || in_array(5, $harmTypeIds)
+                || $this->isStepMotherGuardianRelation($guardianRelationTypeId);
 
             if ($beneficiaryNationalId) {
                 $this->addCoveredDetail($detailsByNationalId, $beneficiaryNationalId, 'beneficiary', $beneficiaryFullName, $sourceLabel, $guardianLabel);
@@ -393,6 +401,33 @@ class SocialWorker extends Model
         }
 
         return $parentRole;
+    }
+
+    private function isStepFatherGuardianRelation(int $guardianRelationTypeId): bool
+    {
+        return $this->guardianRelationTypeMatchesTitle($guardianRelationTypeId, GuardianRelationType::TITLE_STEPFATHER);
+    }
+
+    private function isStepMotherGuardianRelation(int $guardianRelationTypeId): bool
+    {
+        return $this->guardianRelationTypeMatchesTitle($guardianRelationTypeId, GuardianRelationType::TITLE_STEPMOTHER);
+    }
+
+    private function guardianRelationTypeMatchesTitle(int $guardianRelationTypeId, string $expectedTitle): bool
+    {
+        if ($guardianRelationTypeId <= 0) {
+            return false;
+        }
+
+        static $relationTypeTitleCache = [];
+
+        if (!array_key_exists($guardianRelationTypeId, $relationTypeTitleCache)) {
+            $relationTypeTitleCache[$guardianRelationTypeId] = trim((string) GuardianRelationType::query()
+                ->where('id', $guardianRelationTypeId)
+                ->value('title'));
+        }
+
+        return $relationTypeTitleCache[$guardianRelationTypeId] === $expectedTitle;
     }
 
     private function normalizeNationalId(?string $nationalId): ?string
