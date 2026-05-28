@@ -708,21 +708,21 @@ class AdvancedFilterBuilder extends Component
                 }
 
                 if ($field === 'housing_status') {
-                    $query->whereHas('residenceContact', function (Builder $residenceQuery) use ($value) {
+                    $query->whereHas('guardian.residence', function (Builder $residenceQuery) use ($value) {
                         $residenceQuery->where('residence_status_id', $value);
                     });
                     continue;
                 }
 
                 if ($field === 'district') {
-                    $query->whereHas('residenceContact', function (Builder $residenceQuery) use ($value) {
+                    $query->whereHas('guardian.residence', function (Builder $residenceQuery) use ($value) {
                         $residenceQuery->where('district_id', $value);
                     });
                     continue;
                 }
 
                 if ($field === 'is_local_to_city') {
-                    $query->whereHas('residenceContact', function (Builder $residenceQuery) use ($value) {
+                    $query->whereHas('guardian.residence', function (Builder $residenceQuery) use ($value) {
                         $residenceQuery->where('is_local_to_city', (int) $value);
                     });
                     continue;
