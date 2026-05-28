@@ -11,6 +11,7 @@ class StatCard extends Component
     public $suffix = '';
     public $icon;
     public $color; // مثلا: blue, green, red, yellow
+    public array $badges = [];
 
     public function render()
     {
