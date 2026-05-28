@@ -2239,39 +2239,55 @@ class CreatePerson extends Component
             ->values()
             ->all();
 
+        // 1. ابتدا آسیب‌های خودِ فرد را سینک می‌کنیم
         $person->harmTypes()->sync($selectedHarmTypeIds);
 
-        // آسیب‌های مرتبط با والدین که باید بین فرزندان با والد مشترک همگام شوند
-        $parentRelatedHarmTypeIds = [1, 2, 5, 7]; // فوت پدر، فوت مادر، زندانی والدین، فرزند طلاق
-        $harmTypesToPropagate = array_values(array_intersect($selectedHarmTypeIds, $parentRelatedHarmTypeIds));
-        $harmTypesToRemove = array_values(array_diff($parentRelatedHarmTypeIds, $harmTypesToPropagate));
+        $fatherId = trim((string)$person->father_national_id);
+        $motherId = trim((string)$person->mother_national_id);
 
-        $fatherNationalId = trim((string)$person->father_national_id);
-        $motherNationalId = trim((string)$person->mother_national_id);
-
-        if ($fatherNationalId === '' && $motherNationalId === '') {
+        // اگر هیچ کد ملی پدری یا مادری ثبت نشده، عملاً خواهری/برادری قابل شناسایی نیست
+        if ($fatherId === '' && $motherId === '') {
             return;
         }
 
-        $siblingsQuery = Person::query()->where('id', '!=', $person->id);
-        $siblingsQuery->where(function ($query) use ($fatherNationalId, $motherNationalId) {
-            if ($fatherNationalId !== '') {
-                $query->orWhere('father_national_id', $fatherNationalId);
-            }
-            if ($motherNationalId !== '') {
-                $query->orWhere('mother_national_id', $motherNationalId);
-            }
-        });
+        // تعریف دسته‌بندی آسیب‌ها برای انتشار هوشمند
+        $harmRules = [
+            1 => ['father_national_id' => $fatherId], // فوت پدر -> فقط بر اساس کد ملی پدر
+            2 => ['mother_national_id' => $motherId], // فوت مادر -> فقط بر اساس کد ملی مادر
+            5 => ['father_national_id' => $fatherId, 'mother_national_id' => $motherId], // زندانی والدین -> ترکیب هر دو
+            7 => ['father_national_id' => $fatherId, 'mother_national_id' => $motherId], // فرزند طلاق -> ترکیب هر دو (حل مشکل شما)
+        ];
 
-        $siblings = $siblingsQuery->get(['id']);
-
-        foreach ($siblings as $sibling) {
-            if (!empty($harmTypesToPropagate)) {
-                $sibling->harmTypes()->syncWithoutDetaching($harmTypesToPropagate);
+        foreach ($harmRules as $harmId => $conditions) {
+            // بررسی اینکه آیا شرایط لازم (کد ملی‌ها) برای این قانون مهیا هست یا خیر
+            $canProcess = true;
+            foreach ($conditions as $val) {
+                if (empty($val)) $canProcess = false;
             }
 
-            if (!empty($harmTypesToRemove)) {
-                $sibling->harmTypes()->detach($harmTypesToRemove);
+            if (!$canProcess) continue;
+
+            // یافتن خواهر و برادرهایی که مشمول این قانون خاص می‌شوند
+            $targetSiblings = Person::query()
+                ->where('id', '!=', $person->id)
+                ->where($conditions)
+                ->get(['id']);
+
+            if ($targetSiblings->isEmpty()) continue;
+
+            $siblingIds = $targetSiblings->pluck('id')->toArray();
+
+            // اگر تیک این آسیب زده شده بود -> برای بقیه اضافه کن
+            if (in_array($harmId, $selectedHarmTypeIds)) {
+                foreach ($targetSiblings as $sibling) {
+                    $sibling->harmTypes()->syncWithoutDetaching([$harmId]);
+                }
+            }
+            // اگر تیک این آسیب برداشته شده بود -> از بقیه هم پاک کن
+            else {
+                foreach ($targetSiblings as $sibling) {
+                    $sibling->harmTypes()->detach([$harmId]);
+                }
             }
         }
     }
@@ -2281,8 +2297,8 @@ class CreatePerson extends Component
         $fatherNationalId = trim((string)$person->father_national_id);
         $motherNationalId = trim((string)$person->mother_national_id);
 
-        // برای جلوگیری از به‌روزرسانی اشتباه، هم‌گام‌سازی فقط وقتی انجام می‌شود
-        // که هر دو کد ملی والدین موجود باشند (خواهر/برادر واقعی با والدین یکسان).
+        // وضعیت خانوادگی (مثل ازدواج مجدد یا ترک منزل) مستقیماً به رابطه این پدر و این مادر برمی‌گردد
+        // پس حتماً باید هر دو کد ملی وجود داشته باشند تا به فرزندان "مشترک" سرایت کند
         if ($fatherNationalId === '' || $motherNationalId === '') {
             return;
         }
@@ -2309,6 +2325,7 @@ class CreatePerson extends Component
             );
         }
     }
+
 
     private function syncChildrenInHouseForParentGuardian(Guardian $guardian): void
     {
