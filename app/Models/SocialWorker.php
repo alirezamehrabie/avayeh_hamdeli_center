@@ -244,35 +244,20 @@ class SocialWorker extends Model
             $guardianRelationTypeId = (int) ($person->familyStatus?->guardian_relation_type_id ?? 0);
             $hasDivorceHarmType = in_array(7, $harmTypeIds);
 
-            $harmTypeIds = $person->harmTypes->pluck('id')->toArray();
-            $guardianRelationTypeId = (int) ($person->familyStatus?->guardian_relation_type_id ?? 0);
-            $hasDivorceHarmType = in_array(7, $harmTypeIds);
-
-            // منطق اصلاح شده برای حذف پدر:
-            // ۱. فوت کرده باشد (1) یا زندانی باشد (5)
-            // ۲. یا طلاق گرفته باشد و خودش سرپرست نباشد (طبق خواسته شما)
-            // ۳. یا ناپدری باشد
-            // منطق حذف پدر (بدون تغییر نسبت به آخرین توافق)
             $shouldExcludeFather = in_array(1, $harmTypeIds)
                 || in_array(5, $harmTypeIds)
                 || ($hasDivorceHarmType && $guardianRelationTypeId !== 1)
                 || $this->isStepFatherGuardianRelation($guardianRelationTypeId);
 
-            // منطق اصلاح شده برای حذف مادر:
-            // ۱. فوت کرده باشد (2) یا زندانی باشد (5)
-            // ۲. یا فرزند طلاق باشد (چون در این صورت این مادر، همسرِ سابق است و نباید در آمار خانوار فعلی پدر بیاید)
-            // ۳. یا نامادری باشد
             $shouldExcludeMother = in_array(2, $harmTypeIds)
                 || in_array(5, $harmTypeIds)
-                || $hasDivorceHarmType // <-- اضافه شدن این شرط: مادرِ فرزند طلاق نادیده گرفته می‌شود
+                || ($hasDivorceHarmType && $guardianRelationTypeId !== 2)
                 || $this->isStepMotherGuardianRelation($guardianRelationTypeId);
 
-            // افزودن خود توان‌جو
             if ($beneficiaryNationalId) {
                 $this->addCoveredDetail($detailsByNationalId, $beneficiaryNationalId, 'beneficiary', $beneficiaryFullName, $sourceLabel, $guardianLabel);
             }
 
-            // ۲. اضافه کردن پدر
             if ($fatherNationalId) {
                 $parentNationalIds->push($fatherNationalId);
                 if (!$shouldExcludeFather) {
@@ -289,37 +274,19 @@ class SocialWorker extends Model
                 }
             }
 
-            // بررسی و افزودن مادر (همسر فعلی یا سابق)
             if ($motherNationalId) {
                 $parentNationalIds->push($motherNationalId);
                 if (!$shouldExcludeMother) {
-                    // اگر فرزند طلاق نباشد، مادر به عنوان عضو اصلی خانواده (همسر فعلی) اضافه می‌شود
                     $this->addCoveredDetail(
                         $detailsByNationalId,
                         $motherNationalId,
                         $this->resolveParentRelationshipRole('mother', $hasDivorceHarmType, $guardianRelationTypeId),
-                        '-', // اگر نام مادر را دارید جایگزین کنید
+                        '-',
                         $sourceLabel,
                         $guardianLabel
                     );
                 } else {
-                    // اگر فرزند طلاق باشد، کدملی این مادر در لیست اخراجی‌ها قرار می‌گیرد و نادیده گرفته می‌شود
                     $excludedNationalIds->push($motherNationalId);
-                }        // ۳. اضافه کردن مادر (فقط همسر فعلی)
-                if ($motherNationalId) {
-                    $parentNationalIds->push($motherNationalId);
-                    if (!$shouldExcludeMother) {
-                        $this->addCoveredDetail(
-                            $detailsByNationalId,
-                            $motherNationalId,
-                            $this->resolveParentRelationshipRole('mother', $hasDivorceHarmType, $guardianRelationTypeId),
-                            trim((string)$person->mother_name) ?: 'مادر خانواده', // استفاده از نام واقعی مادر
-                            $sourceLabel,
-                            $guardianLabel
-                        );
-                    } else {
-                        $excludedNationalIds->push($motherNationalId);
-                    }
                 }
             }
 
