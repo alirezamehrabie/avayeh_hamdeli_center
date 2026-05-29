@@ -413,10 +413,12 @@
             $extraHouseholdMembers = is_array($selectedGuardian->extra_household_members ?? null)
                 ? $selectedGuardian->extra_household_members
                 : [];
-            $extraHouseholdMembersCount = count($extraHouseholdMembers);
-            $childrenCount = (int)($selectedGuardian->children_count ?? $selectedGuardian->people_count ?? 0);
-            $childrenInHouse = (int)($selectedGuardian->children_in_house ?? 0);
-            $childrenFromPreviousMarriageApplied = max(0, $childrenInHouse - $childrenCount - $extraHouseholdMembersCount);
+            $compositionFormula = $selectedGuardian->household_composition_formula;
+            $extraHouseholdMembersCount = (int) ($compositionFormula['non_beneficiaries'] ?? count($extraHouseholdMembers));
+            $childrenCount = (int) ($compositionFormula['beneficiaries'] ?? $selectedGuardian->children_count ?? $selectedGuardian->people_count ?? 0);
+            $childrenInHouse = (int) ($compositionFormula['final_residents'] ?? $selectedGuardian->children_in_house ?? 0);
+            $childrenFromPreviousMarriageApplied = (int) ($compositionFormula['previous_marriage_members'] ?? 0);
+            $motherResidentCount = (int) ($compositionFormula['mother'] ?? 0);
             $vehicleOwnershipLabels = [
                 'personal' => 'شخصی',
                 'company' => 'شراکتی',
@@ -554,7 +556,7 @@
                                     نشان می‌دهد.</p>
                             </div>
 
-                            <div class="grid gap-3 md:grid-cols-4">
+                            <div class="grid gap-3 md:grid-cols-5">
                                 <div class="rounded-xl border border-cyan-100 bg-white p-3">
                                     <p class="text-[11px] font-semibold text-slate-500">تحت پوشش مرکز</p>
                                     <p class="mt-1 text-lg font-extrabold text-slate-800">{{ $childrenCount }}</p>
@@ -566,6 +568,10 @@
                                 <div class="rounded-xl border border-emerald-100 bg-white p-3">
                                     <p class="text-[11px] font-semibold text-slate-500">افراد غیرمددجو</p>
                                     <p class="mt-1 text-lg font-extrabold text-emerald-700">{{ $extraHouseholdMembersCount }}</p>
+                                </div>
+                                <div class="rounded-xl border border-rose-100 bg-white p-3">
+                                    <p class="text-[11px] font-semibold text-slate-500">مادر</p>
+                                    <p class="mt-1 text-lg font-extrabold text-rose-700">{{ $motherResidentCount }}</p>
                                 </div>
                                 <div class="rounded-xl border border-amber-100 bg-white p-3">
                                     <p class="text-[11px] font-semibold text-slate-500">ساکن در منزل (نهایی)</p>
@@ -580,6 +586,8 @@
                                 <span>{{ $childrenFromPreviousMarriageApplied }}</span>
                                 <span class="mx-1">+</span>
                                 <span>{{ $extraHouseholdMembersCount }}</span>
+                                <span class="mx-1">+</span>
+                                <span>{{ $motherResidentCount }}</span>
                                 <span class="mx-1">=</span>
                                 <span class="font-extrabold text-slate-900">{{ $childrenInHouse }}</span>
                             </div>

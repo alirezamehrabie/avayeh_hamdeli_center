@@ -12,6 +12,9 @@ class Guardian extends Model
 {
     use HasFactory, SoftDeletes;
 
+    private const MOTHER_DECEASED_HARM_TYPE_ID = 2;
+    private const DIVORCE_SEPARATION_HARM_TYPE_ID = 7;
+
     protected $table = 'guardians';
 
     /**
@@ -297,8 +300,113 @@ class Guardian extends Model
             );
         }
 
-        $this->children_in_house = $childrenCount + $extraHouseholdCount + $childrenFromPreviousMarriage;
+        $this->children_in_house = $childrenCount
+            + $extraHouseholdCount
+            + $childrenFromPreviousMarriage
+            + $this->getMotherResidentCount($people);
         $this->saveQuietly();
+    }
+
+    public function getMotherResidentCountAttribute(): int
+    {
+        return $this->getMotherResidentCount();
+    }
+
+    public function getHouseholdCompositionFormulaAttribute(): array
+    {
+        $childrenCount = (int) ($this->children_count ?? 0);
+        $extraHouseholdCount = count($this->extra_household_members ?? []);
+        $childrenFromPreviousMarriage = 0;
+        $people = $this->relationLoaded('people')
+            ? $this->people
+            : $this->people()->with(['familyStatus.guardianRelationType', 'harmTypes:id'])->get();
+
+        foreach ($people as $person) {
+            $familyStatus = $person->familyStatus;
+            if (!$familyStatus || !$familyStatus->guardianRelationType) {
+                continue;
+            }
+
+            $relationTypeTitle = trim((string) ($familyStatus->guardianRelationType->title ?? ''));
+            $remarriedParent = strtolower(trim((string) ($familyStatus->remarried_parent ?? '')));
+
+            $isFatherGuardian = in_array($relationTypeTitle, GuardianRelationType::fatherLikeTitles(), true);
+            $isMotherGuardian = in_array($relationTypeTitle, GuardianRelationType::motherLikeTitles(), true);
+            $isRelevantRemarriage = ($isFatherGuardian && in_array($remarriedParent, ['father', 'both'], true))
+                || ($isMotherGuardian && in_array($remarriedParent, ['mother', 'both'], true));
+
+            if (!$isRelevantRemarriage) {
+                continue;
+            }
+
+            $childrenFromPreviousMarriage = max(
+                $childrenFromPreviousMarriage,
+                max(0, (int) ($familyStatus->children_from_previous_marriage ?? 0))
+            );
+        }
+
+        return [
+            'beneficiaries' => $childrenCount,
+            'previous_marriage_members' => $childrenFromPreviousMarriage,
+            'non_beneficiaries' => $extraHouseholdCount,
+            'mother' => $this->getMotherResidentCount($people),
+            'final_residents' => $childrenCount + $childrenFromPreviousMarriage + $extraHouseholdCount + $this->getMotherResidentCount($people),
+        ];
+    }
+
+    public function getMotherResidentCount($people = null): int
+    {
+        $people ??= $this->relationLoaded('people')
+            ? $this->people
+            : $this->people()->with(['familyStatus.guardianRelationType', 'harmTypes:id,title'])->get();
+
+        if ($people->isEmpty()) {
+            return 0;
+        }
+
+        $hasMotherDeceased = $people->contains(function ($person) {
+            return $person->harmTypes->contains(function ($harmType) {
+                $title = trim((string) ($harmType->title ?? ''));
+
+                return (int) $harmType->id === self::MOTHER_DECEASED_HARM_TYPE_ID || $title === 'فوت مادر';
+            });
+        });
+
+        if ($hasMotherDeceased) {
+            return 0;
+        }
+
+        $hasDivorceOrSeparation = $people->contains(function ($person) {
+            if ((bool) ($person->familyStatus?->mother_left_home ?? false)) {
+                return true;
+            }
+
+            return $person->harmTypes->contains(function ($harmType) {
+                $title = trim((string) ($harmType->title ?? ''));
+
+                return (int) $harmType->id === self::DIVORCE_SEPARATION_HARM_TYPE_ID || str_contains($title, 'طلاق');
+            });
+        });
+
+        if ($hasDivorceOrSeparation) {
+            return 0;
+        }
+
+        $hasMotherGuardian = $people->contains(function ($person) {
+            $relationTypeTitle = trim((string) ($person->familyStatus?->guardianRelationType?->title ?? ''));
+
+            return in_array($relationTypeTitle, GuardianRelationType::motherLikeTitles(), true);
+        });
+
+        if ($hasMotherGuardian) {
+            return 1;
+        }
+
+        $hasMotherIdentity = $people->contains(function ($person) {
+            return trim((string) $person->mother_national_id) !== '';
+        });
+
+        return $hasMotherIdentity ? 1 : 0;
     }
 
     public static function refreshAllChildrenInHouse(): void

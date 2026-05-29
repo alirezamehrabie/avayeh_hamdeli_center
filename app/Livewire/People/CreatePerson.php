@@ -2337,13 +2337,14 @@ class CreatePerson extends Component
         $childrenCount = $this->getBaseChildrenCount();
         $childrenFromPreviousMarriage = $this->getAppliedChildrenFromPreviousMarriage();
         $extraHouseholdCount = $this->getExtraHouseholdCount();
+        $motherResidentCount = $this->getMotherResidentCount();
 
         if (!$this->isParentGuardianWithRelevantRemarriage()) {
-            $this->children_in_house = $childrenCount + $extraHouseholdCount;
+            $this->children_in_house = $childrenCount + $extraHouseholdCount + $motherResidentCount;
             return;
         }
 
-        $this->children_in_house = $childrenCount + $childrenFromPreviousMarriage + $extraHouseholdCount;
+        $this->children_in_house = $childrenCount + $childrenFromPreviousMarriage + $extraHouseholdCount + $motherResidentCount;
     }
 
     public function getChildrenInHouseFormulaProperty(): array
@@ -2352,6 +2353,7 @@ class CreatePerson extends Component
             'children_count' => $this->getBaseChildrenCount(),
             'children_from_previous_marriage' => $this->getAppliedChildrenFromPreviousMarriage(),
             'extra_household_members' => $this->getExtraHouseholdCount(),
+            'mother' => $this->getMotherResidentCount(),
         ];
     }
 
@@ -2401,6 +2403,41 @@ class CreatePerson extends Component
         }
 
         return max(0, (int)($this->children_from_previous_marriage ?? 0));
+    }
+
+    private function getMotherResidentCount(): int
+    {
+        $harmTypeIds = collect($this->harm_types ?? [])
+            ->filter(fn ($value) => $value !== null && $value !== '')
+            ->map(fn ($value) => (int) $value)
+            ->all();
+
+        if (in_array(2, $harmTypeIds, true)) {
+            return 0;
+        }
+
+        if ((bool) $this->mother_left_home || in_array(7, $harmTypeIds, true)) {
+            return 0;
+        }
+
+        if ($this->guardian_relation_type_id) {
+            static $relationTypeTitleCache = [];
+            $relationTypeId = (int) $this->guardian_relation_type_id;
+
+            if (!array_key_exists($relationTypeId, $relationTypeTitleCache)) {
+                $relationTypeTitleCache[$relationTypeId] = GuardianRelationType::query()
+                    ->where('id', $relationTypeId)
+                    ->value('title');
+            }
+
+            $relationTypeTitle = trim((string) ($relationTypeTitleCache[$relationTypeId] ?? ''));
+
+            if (in_array($relationTypeTitle, GuardianRelationType::motherLikeTitles(), true)) {
+                return 1;
+            }
+        }
+
+        return trim((string) $this->mother_national_id) !== '' ? 1 : 0;
     }
 
     private function normalizeIban(string $value): string
