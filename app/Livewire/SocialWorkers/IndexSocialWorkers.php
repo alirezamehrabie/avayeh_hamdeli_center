@@ -107,14 +107,7 @@ class IndexSocialWorkers extends Component
             };
         }
 
-        return $query->get()->map(function (SocialWorker $socialWorker) {
-            $socialWorker->setAttribute(
-                'covered_people_count',
-                $this->getCoveredCountForWorker($socialWorker)
-            );
-
-            return $socialWorker;
-        });
+        return $query->get();
     }
 
     public function getCoveredDetailsForWorker(int $socialWorkerId): array
@@ -125,8 +118,7 @@ class IndexSocialWorkers extends Component
     public function getCoveredCountForWorker(SocialWorker $socialWorker): int
     {
         if (!array_key_exists($socialWorker->id, $this->coveredCountsByWorker)) {
-            $details = $this->getOrLoadCoveredDetailsForWorker($socialWorker);
-            $this->coveredCountsByWorker[$socialWorker->id] = count($details);
+            $this->coveredCountsByWorker[$socialWorker->id] = (int) $socialWorker->covered_people_count;
         }
 
         return $this->coveredCountsByWorker[$socialWorker->id];
