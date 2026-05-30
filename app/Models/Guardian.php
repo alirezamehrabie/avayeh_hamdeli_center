@@ -214,7 +214,7 @@ class Guardian extends Model
     public function getBeneficiaryWithCodeAttribute(): string
     {
         $fullName = $this->full_name;
-        $guardianCode = $this->guardian_code ? 'کد: ' . $this->guardian_code : null;
+        $guardianCode = $this->guardian_code ? 'کد خانوار: ' . $this->guardian_code : null;
 
         return implode(' - ', array_filter([$fullName, $guardianCode])) ?: '-';
     }

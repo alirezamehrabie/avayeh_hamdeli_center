@@ -60,7 +60,8 @@ class PeopleExport implements FromQuery, WithHeadings, WithMapping, WithTitle, S
         return $this->query->with([
             'disabilityType:id,name',
             'harmTypes:id,title',
-            'guardian:id,guardian_code,first_name,last_name',
+            'guardian:id,social_worker_id,guardian_code,first_name,last_name',
+            'guardian.socialWorker:id,first_name,last_name',
         ]);
     }
 

@@ -7,6 +7,7 @@ use App\Models\BeneficiarySavedFilter;
 use App\Models\DisabilityType;
 use App\Models\District;
 use App\Models\EducationLevel;
+use App\Models\Guardian;
 use App\Models\GuardianRelationType;
 use App\Models\HarmType;
 use App\Models\InsuranceType;
@@ -40,6 +41,10 @@ class AdvancedFilterBuilder extends Component
     public array $socialWorkerSearch = [];
     public array $socialWorkerOptions = [];
     public array $socialWorkerHasMore = [];
+    public array $columnFilters = [];
+    public ?string $sortColumn = null;
+    public string $sortDirection = 'desc';
+    public array $columnFilterDefinitions = [];
 
     public array $visibleColumns = [
         'person_code',
@@ -201,6 +206,22 @@ class AdvancedFilterBuilder extends Component
             ->orderBy('title')
             ->pluck('title', 'id')
             ->toArray();
+
+        $this->columnFilterDefinitions = [
+            'person_code' => ['type' => 'text', 'placeholder' => 'کد مددجو'],
+            'full_name' => ['type' => 'text', 'placeholder' => 'نام و نام خانوادگی'],
+            'responsible_social_worker' => ['type' => 'text', 'placeholder' => 'نام یا کد مددکار'],
+            'guardian_beneficiary_with_code' => ['type' => 'text', 'placeholder' => 'سرپرست یا کد خانوار'],
+            'first_name' => ['type' => 'text', 'placeholder' => 'نام'],
+            'last_name' => ['type' => 'text', 'placeholder' => 'نام خانوادگی'],
+            'national_id' => ['type' => 'text', 'placeholder' => 'کد ملی'],
+            'phone_number' => ['type' => 'text', 'placeholder' => 'موبایل'],
+            'gender' => ['type' => 'select', 'options' => $this->filterableFields['gender']['options']],
+            'sadaat_status' => ['type' => 'select', 'options' => $this->filterableFields['sadaat_status']['options']],
+            'birth_year' => ['type' => 'number', 'placeholder' => 'سال تولد'],
+            'birth_month' => ['type' => 'select', 'options' => Person::$months],
+            'related_description' => ['type' => 'text', 'placeholder' => 'شرح معلولیت'],
+        ];
     }
 
     public function updatingGlobalSearch(): void
@@ -250,10 +271,18 @@ class AdvancedFilterBuilder extends Component
     public function clearAllFilters(): void
     {
         $this->filters = [];
+        $this->columnFilters = [];
         $this->globalSearch = '';
+        $this->sortColumn = null;
+        $this->sortDirection = 'desc';
         $this->socialWorkerSearch = [];
         $this->socialWorkerOptions = [];
         $this->socialWorkerHasMore = [];
+        $this->resetPage();
+    }
+
+    public function updatedColumnFilters(): void
+    {
         $this->resetPage();
     }
 
@@ -352,6 +381,22 @@ class AdvancedFilterBuilder extends Component
         $this->visibleColumns[] = $column;
     }
 
+    public function toggleSort(string $column): void
+    {
+        if (!$this->isSortableColumn($column)) {
+            return;
+        }
+
+        if ($this->sortColumn === $column) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortColumn = $column;
+            $this->sortDirection = in_array($column, ['created_at'], true) ? 'desc' : 'asc';
+        }
+
+        $this->resetPage();
+    }
+
     public function saveCurrentFilters(): void
     {
         $this->validate([
@@ -380,6 +425,9 @@ class AdvancedFilterBuilder extends Component
         $this->normalizeCaseworkerFilters();
         $this->globalSearch = $saved->global_search ?? '';
         $this->visibleColumns = $saved->visible_columns ?: $this->visibleColumns;
+        $this->columnFilters = [];
+        $this->sortColumn = null;
+        $this->sortDirection = 'desc';
         $this->socialWorkerSearch = [];
         $this->socialWorkerOptions = [];
         $this->socialWorkerHasMore = [];
@@ -502,7 +550,7 @@ class AdvancedFilterBuilder extends Component
 
     protected function buildQuery(): Builder
     {
-        $query = Person::query()->latest();
+        $query = Person::query();
 
         if (trim($this->globalSearch) !== '') {
             $term = trim($this->globalSearch);
@@ -807,7 +855,10 @@ class AdvancedFilterBuilder extends Component
 
         }
 
-        return $query;
+        $this->applyColumnFilters($query);
+        $this->applySorting($query);
+
+        return $query->select('people.*');
     }
 
     public function getPeopleProperty()
@@ -898,5 +949,167 @@ class AdvancedFilterBuilder extends Component
             ->all();
 
         $this->socialWorkerHasMore[$index] = $hasMore;
+    }
+
+    public function isSortableColumn(string $column): bool
+    {
+        return in_array($column, [
+            'person_code',
+            'full_name',
+            'responsible_social_worker',
+            'guardian_beneficiary_with_code',
+            'first_name',
+            'last_name',
+            'national_id',
+            'phone_number',
+            'gender',
+            'sadaat_status',
+            'birth_date',
+            'birth_year',
+            'birth_month',
+            'related_description',
+            'created_at',
+        ], true);
+    }
+
+    protected function applyColumnFilters(Builder $query): void
+    {
+        foreach ($this->columnFilters as $column => $value) {
+            $value = is_string($value) ? trim($value) : $value;
+
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            switch ($column) {
+                case 'person_code':
+                case 'full_name':
+                case 'first_name':
+                case 'last_name':
+                case 'national_id':
+                case 'phone_number':
+                    $query->where($column, 'like', '%' . $value . '%');
+                    break;
+
+                case 'gender':
+                case 'sadaat_status':
+                case 'birth_month':
+                    $query->where($column, $value);
+                    break;
+
+                case 'birth_year':
+                    $query->where('birth_year', (int) $value);
+                    break;
+
+                case 'related_description':
+                    $query->where('disability_description', 'like', '%' . $value . '%');
+                    break;
+
+                case 'responsible_social_worker':
+                    $query->whereHas('guardian.socialWorker', function (Builder $workerQuery) use ($value) {
+                        $workerQuery->autocompleteSearch((string) $value);
+                    });
+                    break;
+
+                case 'guardian_beneficiary_with_code':
+                    $query->whereHas('guardian', function (Builder $guardianQuery) use ($value) {
+                        $guardianQuery->where(function (Builder $subQuery) use ($value) {
+                            $subQuery->where('first_name', 'like', '%' . $value . '%')
+                                ->orWhere('last_name', 'like', '%' . $value . '%')
+                                ->orWhere('guardian_code', 'like', '%' . $value . '%');
+                        });
+                    });
+                    break;
+            }
+        }
+    }
+
+    protected function applySorting(Builder $query): void
+    {
+        $direction = $this->sortDirection === 'asc' ? 'asc' : 'desc';
+
+        switch ($this->sortColumn) {
+            case 'person_code':
+            case 'first_name':
+            case 'last_name':
+            case 'national_id':
+            case 'phone_number':
+            case 'gender':
+            case 'sadaat_status':
+            case 'birth_year':
+            case 'birth_month':
+                $query->orderBy($this->sortColumn, $direction);
+                break;
+
+            case 'full_name':
+                $query->orderBy('last_name', $direction)
+                    ->orderBy('first_name', $direction);
+                break;
+
+            case 'birth_date':
+                $query->orderBy('birth_year', $direction)
+                    ->orderBy('birth_month', $direction)
+                    ->orderBy('birth_day', $direction);
+                break;
+
+            case 'responsible_social_worker':
+                $query->orderBy(
+                    SocialWorker::query()
+                        ->select('last_name')
+                        ->join('guardians', 'guardians.social_worker_id', '=', 'social_workers.id')
+                        ->whereColumn('guardians.id', 'people.guardian_id')
+                        ->limit(1),
+                    $direction
+                )->orderBy(
+                    SocialWorker::query()
+                        ->select('first_name')
+                        ->join('guardians', 'guardians.social_worker_id', '=', 'social_workers.id')
+                        ->whereColumn('guardians.id', 'people.guardian_id')
+                        ->limit(1),
+                    $direction
+                );
+                break;
+
+            case 'guardian_beneficiary_with_code':
+                $query->orderBy(
+                    Guardian::query()
+                        ->select('guardian_code')
+                        ->whereColumn('guardians.id', 'people.guardian_id')
+                        ->limit(1),
+                    $direction
+                )->orderBy(
+                    Guardian::query()
+                        ->select('last_name')
+                        ->whereColumn('guardians.id', 'people.guardian_id')
+                        ->limit(1),
+                    $direction
+                )->orderBy(
+                    Guardian::query()
+                        ->select('first_name')
+                        ->whereColumn('guardians.id', 'people.guardian_id')
+                        ->limit(1),
+                    $direction
+                );
+                break;
+
+            case 'related_description':
+                $query->orderBy('disability_description', $direction);
+                break;
+
+            case 'created_at':
+                $query->orderBy('created_at', $direction);
+                break;
+
+            default:
+                $query->latest();
+                break;
+        }
+
+        if ($this->sortColumn === 'guardian_beneficiary_with_code') {
+            $query->orderBy('last_name', $direction)
+                ->orderBy('first_name', $direction);
+        } elseif ($this->sortColumn !== 'full_name' && $this->sortColumn !== 'birth_date') {
+            $query->orderBy('created_at', 'desc');
+        }
     }
 }

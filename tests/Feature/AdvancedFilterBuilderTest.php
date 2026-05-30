@@ -84,7 +84,112 @@ class AdvancedFilterBuilderTest extends TestCase
         Livewire::actingAs($user)
             ->test(AdvancedFilterBuilder::class)
             ->set('visibleColumns', ['guardian_beneficiary_with_code'])
-            ->assertSee('سرپرست (مددجو) + کد سرپرست')
+            ->assertSee('سرپرست و کد خانوار')
             ->assertSee('سرپرست خانواده - کد: 1001');
+    }
+
+    public function test_guardian_household_column_sort_groups_family_members_together(): void
+    {
+        $user = User::factory()->create();
+
+        $secondGuardian = Guardian::create([
+            'guardian_code' => 1002,
+            'first_name' => 'خانواده',
+            'last_name' => 'ب',
+        ]);
+
+        Person::create([
+            'person_code' => '10000003',
+            'national_id' => '1234567892',
+            'first_name' => 'مریم',
+            'last_name' => 'ب',
+            'guardian_id' => $secondGuardian->id,
+            'gender' => 'female',
+            'role' => 'child',
+        ]);
+
+        $firstGuardian = Guardian::create([
+            'guardian_code' => 1001,
+            'first_name' => 'خانواده',
+            'last_name' => 'الف',
+        ]);
+
+        Person::create([
+            'person_code' => '10000001',
+            'national_id' => '1234567890',
+            'first_name' => 'علی',
+            'last_name' => 'الف',
+            'guardian_id' => $firstGuardian->id,
+            'gender' => 'male',
+            'role' => 'child',
+        ]);
+
+        Person::create([
+            'person_code' => '10000002',
+            'national_id' => '1234567891',
+            'first_name' => 'زهرا',
+            'last_name' => 'الف',
+            'guardian_id' => $firstGuardian->id,
+            'gender' => 'female',
+            'role' => 'child',
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(AdvancedFilterBuilder::class)
+            ->set('visibleColumns', ['guardian_beneficiary_with_code', 'full_name'])
+            ->call('toggleSort', 'guardian_beneficiary_with_code')
+            ->assertSeeInOrder([
+                'خانواده الف - کد: 1001',
+                'علی الف',
+                'خانواده الف - کد: 1001',
+                'زهرا الف',
+                'خانواده ب - کد: 1002',
+                'مریم ب',
+            ]);
+    }
+
+    public function test_guardian_household_column_filter_limits_results_by_household(): void
+    {
+        $user = User::factory()->create();
+
+        $matchingGuardian = Guardian::create([
+            'guardian_code' => 1001,
+            'first_name' => 'خانواده',
+            'last_name' => 'الف',
+        ]);
+
+        $matchingPerson = Person::create([
+            'person_code' => '10000001',
+            'national_id' => '1234567890',
+            'first_name' => 'علی',
+            'last_name' => 'الف',
+            'guardian_id' => $matchingGuardian->id,
+            'gender' => 'male',
+            'role' => 'child',
+        ]);
+
+        $otherGuardian = Guardian::create([
+            'guardian_code' => 1002,
+            'first_name' => 'خانواده',
+            'last_name' => 'ب',
+        ]);
+
+        $otherPerson = Person::create([
+            'person_code' => '10000002',
+            'national_id' => '1234567891',
+            'first_name' => 'مریم',
+            'last_name' => 'ب',
+            'guardian_id' => $otherGuardian->id,
+            'gender' => 'female',
+            'role' => 'child',
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(AdvancedFilterBuilder::class)
+            ->set('visibleColumns', ['guardian_beneficiary_with_code', 'full_name'])
+            ->set('columnFilters.guardian_beneficiary_with_code', '1001')
+            ->assertSee($matchingPerson->full_name)
+            ->assertDontSee($otherPerson->full_name)
+            ->assertSee('خانواده الف - کد: 1001');
     }
 }
