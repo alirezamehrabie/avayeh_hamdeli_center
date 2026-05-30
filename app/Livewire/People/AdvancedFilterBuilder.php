@@ -53,6 +53,7 @@ class AdvancedFilterBuilder extends Component
         'person_code' => 'کد مددجو',
         'full_name' => 'نام و نام خانوادگی',
         'responsible_social_worker' => 'مددکار مسئول',
+        'guardian_beneficiary_with_code' => 'سرپرست و کد خانوار',
         'first_name' => 'نام',
         'last_name' => 'نام خانوادگی',
         'national_id' => 'کد ملی',
@@ -64,7 +65,7 @@ class AdvancedFilterBuilder extends Component
         'birth_month' => 'ماه تولد',
         'beneficiary_injury_disability_type' => 'آسیب / نوع آسیب',
         'related_description' => 'معلولیت / نوع معلولیت',
-        'created_at' => 'تاریخ ثبت',
+//        'created_at' => 'تاریخ ثبت',
     ];
 
     public array $filterableFields = [
@@ -815,7 +816,7 @@ class AdvancedFilterBuilder extends Component
             ->with([
                 'disabilityType:id,name',
                 'harmTypes:id,title',
-                'guardian:id,social_worker_id',
+                'guardian:id,social_worker_id,guardian_code,first_name,last_name',
                 'guardian.socialWorker:id,first_name,last_name',
             ])
             ->paginate(20);

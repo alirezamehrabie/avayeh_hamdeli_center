@@ -26,6 +26,7 @@ class PeopleExport implements FromQuery, WithHeadings, WithMapping, WithTitle, S
         return [
             'person_code'                        => fn ($p) => $p->person_code,
             'full_name'                          => fn ($p) => $p->full_name,
+            'guardian_beneficiary_with_code'     => fn ($p) => $p->guardian_beneficiary_with_code,
             'first_name'                         => fn ($p) => $p->first_name,
             'last_name'                          => fn ($p) => $p->last_name,
             'national_id'                        => fn ($p) => $p->national_id,
@@ -56,7 +57,11 @@ class PeopleExport implements FromQuery, WithHeadings, WithMapping, WithTitle, S
 
     public function query(): Builder
     {
-        return $this->query->with(['disabilityType:id,name', 'harmTypes:id,title']);
+        return $this->query->with([
+            'disabilityType:id,name',
+            'harmTypes:id,title',
+            'guardian:id,guardian_code,first_name,last_name',
+        ]);
     }
 
     public function headings(): array

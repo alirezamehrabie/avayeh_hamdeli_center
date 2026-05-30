@@ -23,7 +23,7 @@
                     </div>
 
                     <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900">ورود به سامانه</h2>
-                    <p class="mt-2 text-sm text-slate-600">جهت دسترسی، نام کاربری و رمز عبور را وارد کنید. پس از ورود، سامانه پنل مناسب را به‌صورت خودکار نمایش می‌دهد.</p>
+                    <p class="mt-2 text-sm text-slate-600">جهت دسترسی، نام کاربری و رمز عبور را وارد کنید.</p>
 
                     <form class="mt-8 space-y-5" wire:submit.prevent="login" autocomplete="on" novalidate>
                         <div>

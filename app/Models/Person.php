@@ -147,6 +147,11 @@ class Person extends Model
         };
     }
 
+    public function getGuardianBeneficiaryWithCodeAttribute(): string
+    {
+        return $this->guardian?->beneficiary_with_code ?? '-';
+    }
+
 
     /**
      * ✅ Accessor برای سن ساده (فقط بر اساس سال)

@@ -60,4 +60,31 @@ class AdvancedFilterBuilderTest extends TestCase
             ->assertSee($secondBeneficiary->full_name)
             ->assertSee('2');
     }
+
+    public function test_guardian_beneficiary_with_code_column_can_be_selected(): void
+    {
+        $user = User::factory()->create();
+
+        $guardian = Guardian::create([
+            'guardian_code' => 1001,
+            'first_name' => 'سرپرست',
+            'last_name' => 'خانواده',
+        ]);
+
+        Person::create([
+            'person_code' => '10000001',
+            'national_id' => '1234567890',
+            'first_name' => 'علی',
+            'last_name' => 'رضایی',
+            'guardian_id' => $guardian->id,
+            'gender' => 'male',
+            'role' => 'child',
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(AdvancedFilterBuilder::class)
+            ->set('visibleColumns', ['guardian_beneficiary_with_code'])
+            ->assertSee('سرپرست (مددجو) + کد سرپرست')
+            ->assertSee('سرپرست خانواده - کد: 1001');
+    }
 }

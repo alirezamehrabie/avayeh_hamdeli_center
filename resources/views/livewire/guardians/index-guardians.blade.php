@@ -125,7 +125,8 @@
                             <th class="px-5 py-4 text-center font-bold">کد ملی سرپرست</th>
                             <th class="px-5 py-4 text-right font-bold">نام و نام خانوادگی</th>
                             <th class="px-5 py-4 text-center font-bold">موبایل</th>
-                            <th class="px-5 py-4 text-center font-bold">تعداد مددجویان تحت نظارت</th>
+                            <th class="px-5 py-4 text-center font-bold">تعداد مددجویان تحت پوشش</th>
+                            <th class="px-5 py-4 text-center font-bold">تعداد کل تحت پوشش</th>
                             <th class="w-40 px-3 py-4 text-center font-bold">عملیات</th>
                         </tr>
                         </thead>
@@ -139,6 +140,9 @@
                                 <td class="px-5 py-4 text-right font-light text-slate-800">{{ trim($guardian->first_name . ' ' . $guardian->last_name) }}</td>
                                 <td class="px-5 py-4 text-center font-light text-slate-700">{{ $guardian->guardian_phone_number ?? '-' }}</td>
                                 <td class="px-5 py-4 text-center font-light text-slate-800">{{ $guardian->people_count }}
+                                    نفر
+                                </td>
+                                <td class="px-5 py-4 text-center font-light text-slate-800">{{ (int) ($guardian->children_in_house ?? 0) }}
                                     نفر
                                 </td>
                                 <td class="px-3 py-4 text-center">
@@ -198,7 +202,7 @@
 
                             @if($expandedGuardianId === $guardian->id)
                                 <tr class="bg-amber-50/40" wire:key="guardian-panel-{{ $guardian->id }}">
-                                    <td colspan="6" class="px-5 py-4">
+                                    <td colspan="7" class="px-5 py-4">
                                         <div
                                             x-data="{ show: false }"
                                             x-init="$nextTick(() => show = true)"
@@ -214,8 +218,12 @@
                                             <div class="mb-3 flex items-center justify-between">
                                                 <h2 class="text-sm font-bold text-slate-700">مددجویان مرتبط
                                                     با {{ trim($guardian->first_name . ' ' . $guardian->last_name) }}</h2>
-                                                <span
-                                                    class="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">{{ $guardian->people_count }} نفر</span>
+                                                <div class="flex items-center gap-2">
+                                                    <span
+                                                        class="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">{{ $guardian->people_count }} مددجوی تحت پوشش</span>
+                                                    <span
+                                                        class="rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-700">{{ (int) ($guardian->children_in_house ?? 0) }} کل تحت پوشش</span>
+                                                </div>
                                             </div>
 
                                             <div class="overflow-x-auto">
@@ -256,7 +264,7 @@
                             @endif
                         @empty
                             <tr>
-                                <td colspan="6"
+                                <td colspan="7"
                                     class="px-5 py-10 text-center text-slate-500">{{ $search ? 'سرپرستی مطابق جستجو پیدا نشد.' : 'هنوز سرپرستی ثبت نشده است.' }}</td>
                             </tr>
                         @endforelse

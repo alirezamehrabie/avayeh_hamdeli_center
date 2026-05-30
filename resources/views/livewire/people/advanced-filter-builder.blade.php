@@ -345,6 +345,9 @@
                                         @case('responsible_social_worker')
                                             {{ $person->guardian?->socialWorker?->full_name ?? '-' }}
                                             @break
+                                        @case('guardian_beneficiary_with_code')
+                                            {{ $person->guardian_beneficiary_with_code }}
+                                            @break
                                         @case('birth_date')
                                             {{ $person->birth_date ?? '-' }}
                                             @break

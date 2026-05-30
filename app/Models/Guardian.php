@@ -203,6 +203,22 @@ class Guardian extends Model
         );
     }
 
+    public function getFullNameAttribute(): string
+    {
+        return trim(implode(' ', array_filter([
+            $this->first_name,
+            $this->last_name,
+        ])));
+    }
+
+    public function getBeneficiaryWithCodeAttribute(): string
+    {
+        $fullName = $this->full_name;
+        $guardianCode = $this->guardian_code ? 'کد: ' . $this->guardian_code : null;
+
+        return implode(' - ', array_filter([$fullName, $guardianCode])) ?: '-';
+    }
+
     // ═══════════════════════════════════════════════════════════════════
     // 🔹 Scopes - برای فیلتر و گزارش‌گیری
     // ═══════════════════════════════════════════════════════════════════
