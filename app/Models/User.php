@@ -190,6 +190,19 @@ class User extends Authenticatable
         return $this->canManagePeople() || $this->canManageSocialWorkers() || $this->isAdmin();
     }
 
+    public function getPanelRedirectPath(): string
+    {
+        if ($this->canAccessAdminPanel()) {
+            return route('admin.dashboard');
+        }
+
+        if ($this->canAccessSocialWorkerPanel()) {
+            return route('social-worker.dashboard');
+        }
+
+        return '/';
+    }
+
     public function socialWorker()
     {
         return $this->belongsTo(SocialWorker::class);
