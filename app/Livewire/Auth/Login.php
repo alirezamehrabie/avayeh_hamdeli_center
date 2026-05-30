@@ -17,12 +17,10 @@ class Login extends Component
     public $email;
     public $password;
     public $remember = false;
-    public $portal = 'admin';
 
     protected $rules = [
         'email' => 'required|string',
         'password' => 'required|min:6',
-        'portal' => 'required|in:admin,social_worker',
     ];
 
     public function login()
@@ -39,36 +37,13 @@ class Login extends Component
         if (Auth::attempt($credentials, $this->remember)) {
             session()->regenerate();
 
-            $isAdmin = auth()->user()->isAdmin();
-            $isSocialWorker = auth()->user()->canAccessSocialWorkerPanel();
-
-            if (($this->portal === 'admin' && ! $isAdmin) || ($this->portal === 'social_worker' && ! $isSocialWorker)) {
-                Auth::logout();
-                session()->regenerate();
-                RateLimiter::hit($this->throttleKey(), 120);
-                $this->addError('email', 'حساب انتخاب شده با نوع پنل همخوانی ندارد.');
-                return;
-            }
-
             RateLimiter::clear($this->throttleKey());
-            if ($isAdmin) {
-                return redirect()->intended(route('admin.dashboard'));
-            }
 
-            if ($isSocialWorker) {
-                return redirect()->intended(route('social-worker.dashboard'));
-            }
-
-            return redirect()->intended('/');
+            return redirect()->intended(auth()->user()->getPanelRedirectPath());
         }
 
         RateLimiter::hit($this->throttleKey(), 120);
         $this->addError('email', 'اطلاعات ورود صحیح نیست.');
-    }
-
-    public function updatedPortal(): void
-    {
-        $this->resetErrorBag('email');
     }
 
     public function updatedEmail(): void

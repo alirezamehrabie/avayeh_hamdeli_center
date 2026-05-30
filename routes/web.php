@@ -34,13 +34,7 @@ Route::post('/logout', function () {
 
 Route::get('/', function () {
     if (auth()->check()) {
-        if (auth()->user()->can('access-admin-panel')) {
-            return redirect()->route('admin.dashboard');
-        }
-
-        if (auth()->user()->can('access-social-worker-panel')) {
-            return redirect()->route('social-worker.dashboard');
-        }
+        return redirect()->to(auth()->user()->getPanelRedirectPath());
     }
 
     return redirect()->route('login');

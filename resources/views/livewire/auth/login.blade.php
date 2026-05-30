@@ -23,37 +23,9 @@
                     </div>
 
                     <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900">ورود به سامانه</h2>
-                    <p class="mt-2 text-sm text-slate-600">جهت دسترسی نام کاربری و رمز عبور را وارد کنید.</p>
+                    <p class="mt-2 text-sm text-slate-600">جهت دسترسی، نام کاربری و رمز عبور را وارد کنید. پس از ورود، سامانه پنل مناسب را به‌صورت خودکار نمایش می‌دهد.</p>
 
                     <form class="mt-8 space-y-5" wire:submit.prevent="login" autocomplete="on" novalidate>
-                        <div>
-                            <label class="mb-2 block text-sm font-bold text-slate-700">نوع پنل</label>
-                            <div class="relative grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1 overflow-hidden">
-                                <span aria-hidden="true"
-                                      class="pointer-events-none absolute top-1 bottom-1 w-[calc(50%-0.25rem)] rounded-lg bg-white shadow-sm transition-transform duration-300 ease-out"
-                                      style="transform: translateX({{ $portal === 'admin' ? '0%' : '-100%' }}); right: 0.25rem;"></span>
-                                <button type="button"
-                                        wire:click="$set('portal', 'admin')"
-                                        wire:loading.attr="disabled"
-                                        wire:target="login"
-                                        aria-pressed="{{ $portal === 'admin' ? 'true' : 'false' }}"
-                                        class="relative z-10 rounded-lg px-3 py-2 text-center text-sm font-semibold transition-colors duration-200 focus:outline-none disabled:opacity-60 {{ $portal === 'admin' ? 'text-[#5964AE]' : 'text-slate-600 hover:text-slate-800' }}">
-                                    اپراتور
-                                </button>
-
-
-                                <button type="button"
-                                        wire:click="$set('portal', 'social_worker')"
-                                        wire:loading.attr="disabled"
-                                        wire:target="login"
-                                        aria-pressed="{{ $portal === 'social_worker' ? 'true' : 'false' }}"
-                                        class="relative z-10 rounded-lg px-3 py-2 text-center text-sm font-semibold transition-colors duration-200 focus:outline-none disabled:opacity-60 {{ $portal === 'social_worker' ? 'text-[#5964AE]' : 'text-slate-600 hover:text-slate-800' }}">
-                                    مددکار اجتماعی
-                                </button>
-                            </div>
-                            @error('portal') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
-                        </div>
-
                         <div>
                             <label for="email" class="mb-2 block text-sm font-bold text-slate-700">نام کاربری</label>
                             <input wire:model.defer="email" id="email" type="text" required autocomplete="username" inputmode="username" autocapitalize="off" spellcheck="false" dir="ltr"
