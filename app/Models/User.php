@@ -21,6 +21,7 @@ class User extends Authenticatable
     public const ACCESS_LEVEL_ADMIN = 'admin';
     public const ACCESS_LEVEL_REGULAR = 'regular_user';
     public const ACCESS_LEVEL_SOCIAL_WORKER = 'social_worker';
+    public const ACCESS_LEVEL_DISTRIBUTION_OPERATOR = 'distribution_operator';
     public const PERMISSION_PEOPLE_REGISTER = 'people_register';
     public const PERMISSION_PEOPLE_EDIT = 'people_edit';
     public const PERMISSION_PEOPLE_DELETE = 'people_delete';
@@ -190,6 +191,12 @@ class User extends Authenticatable
         return $this->canManagePeople() || $this->canManageSocialWorkers() || $this->isAdmin();
     }
 
+    public function canAccessDistributionOperatorPanel(): bool
+    {
+        return ! $this->isAdmin()
+            && $this->access_level === self::ACCESS_LEVEL_DISTRIBUTION_OPERATOR;
+    }
+
     public function getPanelRedirectPath(): string
     {
         if ($this->canAccessAdminPanel()) {
@@ -198,6 +205,10 @@ class User extends Authenticatable
 
         if ($this->canAccessSocialWorkerPanel()) {
             return route('social-worker.dashboard');
+        }
+
+        if ($this->canAccessDistributionOperatorPanel()) {
+            return route('distribution-operator.dashboard');
         }
 
         return '/';

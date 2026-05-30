@@ -43,6 +43,7 @@ class UserManagement extends Component
                 User::ACCESS_LEVEL_MANAGER,
                 User::ACCESS_LEVEL_ADMIN,
                 User::ACCESS_LEVEL_REGULAR,
+                User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
             ])],
             'permissions' => ['array'],
             'permissions.*' => ['string', 'in:' . implode(',', array_keys(User::permissionOptions()))],
@@ -170,6 +171,7 @@ class UserManagement extends Component
                 User::ACCESS_LEVEL_ADMIN,
                 User::ACCESS_LEVEL_REGULAR,
                 User::ACCESS_LEVEL_SOCIAL_WORKER,
+                User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
             ])],
         ], [
             'edit_first_name.required' => 'نام الزامی است.',
@@ -296,6 +298,7 @@ class UserManagement extends Component
             User::ACCESS_LEVEL_ADMIN,
             User::ACCESS_LEVEL_REGULAR,
             User::ACCESS_LEVEL_SOCIAL_WORKER,
+            User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
         ], true), 422);
 
         if (auth()->id() === $userId) {

@@ -107,6 +107,7 @@
                         <option value="admin" @disabled(!$actorCanCreateAdmin)>ادمین</option>
                         <option value="regular_user">کاربر عادی</option>
                         <option value="social_worker">مددکار (سیستمی)</option>
+                        <option value="distribution_operator">اپراتور توزیع</option>
                     </select>
                     @error('edit_access_level') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
                 </div>
@@ -272,6 +273,7 @@
                     <option value="manager" disabled>مدیریت (محافظت‌شده)</option>
                     <option value="admin" @disabled(!$actorCanCreateAdmin)>ادمین</option>
                     <option value="regular_user">کاربر عادی</option>
+                    <option value="distribution_operator">اپراتور توزیع</option>
                 </select>
                 @error('access_level') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
             </div>
@@ -331,8 +333,9 @@
                                 {{ $user->access_level === 'manager' ? 'bg-indigo-100 text-indigo-700' : '' }}
                                 {{ $user->access_level === 'admin' ? 'bg-emerald-100 text-emerald-700' : '' }}
                                 {{ $user->access_level === 'regular_user' ? 'bg-slate-100 text-slate-600' : '' }}
-                                {{ $user->access_level === 'social_worker' ? 'bg-cyan-100 text-cyan-700' : '' }}">
-                                {{ $user->access_level === 'manager' ? 'Manager' : ($user->access_level === 'admin' ? 'Admin' : ($user->access_level === 'social_worker' ? 'Social Worker' : 'Regular User')) }}
+                                {{ $user->access_level === 'social_worker' ? 'bg-cyan-100 text-cyan-700' : '' }}
+                                {{ $user->access_level === 'distribution_operator' ? 'bg-violet-100 text-violet-700' : '' }}">
+                                {{ $user->access_level === 'manager' ? 'Manager' : ($user->access_level === 'admin' ? 'Admin' : ($user->access_level === 'social_worker' ? 'Social Worker' : ($user->access_level === 'distribution_operator' ? 'Distribution Operator' : 'Regular User'))) }}
                             </span>
                         </td>
                         <td class="px-4 py-3 text-right">
@@ -372,6 +375,12 @@
                                         @if($user->access_level !== 'regular_user' && !($pendingActionMap[$user->id]['downgrade_admin'] ?? false))
                                             <button type="button" wire:click="setAccessLevel({{ $user->id }}, 'regular_user')" class="inline-flex items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100">
                                                 تغییر به کاربر عادی
+                                            </button>
+                                        @endif
+
+                                        @if($user->access_level !== 'distribution_operator')
+                                            <button type="button" wire:click="setAccessLevel({{ $user->id }}, 'distribution_operator')" class="inline-flex items-center justify-center rounded-lg border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 transition hover:bg-violet-100">
+                                                تغییر به اپراتور توزیع
                                             </button>
                                         @endif
 
