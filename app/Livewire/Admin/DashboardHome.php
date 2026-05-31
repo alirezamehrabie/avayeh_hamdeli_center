@@ -22,6 +22,7 @@ class DashboardHome extends Component
     public ?int $editingPersonId = null;
     public ?int $editingSocialWorkerId = null;
     public ?int $editingGuardianId = null;
+    public ?int $editingServiceId = null;
     public string $newReminderTitle = '';
     public string $newReminderCategory = 'today_tasks';
 
@@ -39,6 +40,7 @@ class DashboardHome extends Component
         $this->editingPersonId = in_array($section, ['person-edit', 'people-fast-create'], true) ? $id : null;
         $this->editingSocialWorkerId = $section === 'social-worker-edit' ? $id : null;
         $this->editingGuardianId = $section === 'guardian-edit' ? $id : null;
+        $this->editingServiceId = $section === 'define-services' ? $id : null;
     }
 
     private function normalizeActiveSection(): void
@@ -85,6 +87,7 @@ class DashboardHome extends Component
                 'advanced-social-worker-report',
                 'system-settings-user-management',
                 'define-services',
+                'service-list',
                 'service-delivery',
                 'child-supporter-page'
             );

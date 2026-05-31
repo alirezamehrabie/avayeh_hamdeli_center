@@ -13,6 +13,7 @@ use Livewire\Component;
 
 class ManageServices extends Component
 {
+    public ?int $serviceId = null;
     public ?int $editingServiceId = null;
     public ?int $selectedServiceNameId = null;
     public ?int $selectedServiceCategoryId = null;
@@ -28,11 +29,15 @@ class ManageServices extends Component
     public string $status = 'draft';
     public string $statusNotes = '';
 
-    public function mount(): void
+    public function mount(?int $serviceId = null): void
     {
         abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         $this->bootDefaultSelections();
+
+        if ($serviceId) {
+            $this->editService($serviceId);
+        }
     }
 
     public function save(): void
@@ -167,10 +172,6 @@ class ManageServices extends Component
             'serviceNames' => ServiceName::query()->ordered()->get(),
             'serviceCategories' => $this->availableServiceCategories(),
             'districts' => District::query()->orderBy('sort_order')->orderBy('name')->get(),
-            'services' => Service::query()
-                ->with(['serviceName', 'serviceCategory', 'district', 'creator', 'socialWorkers'])
-                ->latest()
-                ->get(),
             'typeOptions' => Service::TYPE_OPTIONS,
             'unitOptions' => Service::UNIT_OPTIONS,
             'statusOptions' => Service::STATUS_OPTIONS,

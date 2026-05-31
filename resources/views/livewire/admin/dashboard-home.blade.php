@@ -198,12 +198,14 @@
                         @break
 
                     @case('define-services')
-                        <livewire:services.manage-services :key="'define-services'" />
-{{--                        <livewire:under-construction :key="'define-services'" />--}}
+                        <livewire:services.manage-services :service-id="$editingServiceId" :key="'define-services-' . ($editingServiceId ?? 'new')" />
+                        @break
+
+                    @case('service-list')
+                        <livewire:services.service-list :key="'service-list'" />
                         @break
 
                     @case('service-delivery')
-{{--                        <livewire:under-construction :key="'define-services'" />--}}
                         <livewire:services.service-delivery-manager :key="'service-delivery'" />
 
                         @break
