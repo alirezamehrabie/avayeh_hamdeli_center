@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Guardian;
 use App\Models\Person;
+use App\Models\Service;
 use App\Models\User;
 use App\Observers\GuardianObserver;
 use App\Observers\PersonObserver;
@@ -98,6 +99,10 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::define('access-distribution-operator-panel', function (User $user) {
             return $user->canAccessDistributionOperatorPanel();
+        });
+
+        Gate::define('view-distribution-operator-service', function (User $user, Service $service) {
+            return $user->canAccessDistributionOperatorService($service);
         });
     }
 }

@@ -44,6 +44,7 @@ class ServiceList extends Component
     public function startEditing(int $serviceId): void
     {
         $service = $this->operatorServicesQuery()->with('socialWorkers')->findOrFail($serviceId);
+        abort_unless(auth()->user()?->can('view-distribution-operator-service', $service), 403);
 
         $this->editingServiceId = $service->id;
         $this->serviceName = (string) ($service->serviceName?->name ?? '');
@@ -113,6 +114,7 @@ class ServiceList extends Component
         $validated = $this->validate($this->rules(), [], $this->validationAttributes());
 
         $service = $this->operatorServicesQuery()->with('socialWorkers')->findOrFail($this->editingServiceId);
+        abort_unless(auth()->user()?->can('view-distribution-operator-service', $service), 403);
 
         DB::transaction(function () use ($service, $validated): void {
             $service->update([
@@ -189,7 +191,13 @@ class ServiceList extends Component
 
     protected function operatorServicesQuery(): Builder
     {
-        return Service::query()->where('created_by', auth()->id());
+        abort_unless(auth()->check() && auth()->user()->can('access-distribution-operator-panel'), 403);
+
+        return Service::query()
+            ->where('created_by', auth()->id())
+            ->whereHas('creator', function (Builder $query): void {
+                $query->where('access_level', \App\Models\User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR);
+            });
     }
 
     protected function undefinedCategoryId(): int

@@ -197,6 +197,12 @@ class User extends Authenticatable
             && $this->access_level === self::ACCESS_LEVEL_DISTRIBUTION_OPERATOR;
     }
 
+    public function canAccessDistributionOperatorService(Service $service): bool
+    {
+        return $this->canAccessDistributionOperatorPanel()
+            && (int) $service->created_by === (int) $this->id;
+    }
+
     public function getPanelRedirectPath(): string
     {
         if ($this->canAccessAdminPanel()) {
