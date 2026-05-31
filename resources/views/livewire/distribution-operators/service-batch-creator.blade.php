@@ -19,10 +19,20 @@
     <div class="rounded-3xl border border-violet-100 bg-white p-6 shadow-sm">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
-                <p class="text-sm font-semibold text-violet-700">بلوک تعریف خدمت اپراتور</p>
-                <h1 class="mt-2 text-2xl font-black text-slate-800">تعریف خدمت</h1>
-                <p class="mt-2 text-sm leading-6 text-slate-500">در بخش می‌توانید خدمت جدید را تعریف کرده و با انتخاب مددکار، آن را در سیستم ثبت کنید.</p>
+                <h1 class="mt-2 text-2xl font-black text-slate-800">{{ $isEditing ? 'ویرایش خدمت' : 'تعریف خدمت' }}</h1>
+                <p class="mt-2 text-sm leading-6 text-slate-500">
+                    {{ $isEditing ? 'خدمت انتخاب‌شده را با همان فرم ثبت خدمات ویرایش کنید.' : 'در بخش می‌توانید خدمت جدید را تعریف کرده و با انتخاب مددکار، آن را در سیستم ثبت کنید.' }}
+                </p>
             </div>
+            @if($isEditing)
+                <button
+                    type="button"
+                    wire:click="cancelEditing"
+                    class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                >
+                    انصراف
+                </button>
+            @endif
         </div>
     </div>
 
@@ -37,7 +47,7 @@
 
                     <div class="flex items-center gap-2">
                         <span class="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700">در حال توزیع</span>
-                        @if(count($serviceBlocks) > 1)
+                        @if(!$isEditing && count($serviceBlocks) > 1)
                             <button
                                 type="button"
                                 wire:click="removeBlock({{ $index }})"
@@ -212,6 +222,7 @@
         @endforeach
 
             <div class="flex flex-col gap-3 sm:flex-row sm:justify-between">
+                @if(!$isEditing)
                 <button
                     type="button"
                     wire:click="addBlock"
@@ -219,12 +230,15 @@
                 >
                     + افزودن خدمت جدید
                 </button>
+                @else
+                    <div></div>
+                @endif
 
                 <button
                     type="submit"
                     class="inline-flex items-center justify-center rounded-2xl bg-emerald-700 px-6 py-3 text-sm font-black text-white shadow-lg shadow-violet-700/25 transition-all duration-200 hover:bg-violet-800 active:scale-[0.98]"
                 >
-                    ثبت همه خدمات
+                    {{ $isEditing ? 'ذخیره تغییرات' : 'ثبت همه خدمات' }}
                 </button>
             </div>
 

@@ -26,17 +26,26 @@ class ServiceBatchCreator extends Component
 
     public ?int $activeSocialWorkerSearchIndex = null;
 
-    public function mount(): void
+    public ?int $editingServiceId = null;
+
+    public function mount(?int $editingServiceId = null): void
     {
         abort_unless(auth()->check() && auth()->user()->can('access-distribution-operator-panel'), 403);
 
-        $this->serviceBlocks = [$this->makeBlock()];
+        $this->editingServiceId = $editingServiceId;
+        $this->serviceBlocks = $this->editingServiceId
+            ? [$this->makeBlockFromService($this->resolveEditableService($this->editingServiceId))]
+            : [$this->makeBlock()];
         $this->synchronizeBlockDates();
         $this->refreshPreviewCodes();
     }
 
     public function addBlock(): void
     {
+        if ($this->editingServiceId) {
+            return;
+        }
+
         $this->serviceBlocks[] = $this->makeBlock();
         $this->synchronizeBlockDates();
         $this->refreshPreviewCodes();
@@ -44,6 +53,10 @@ class ServiceBatchCreator extends Component
 
     public function removeBlock(int $index): void
     {
+        if ($this->editingServiceId) {
+            return;
+        }
+
         if (count($this->serviceBlocks) === 1) {
             return;
         }
@@ -117,6 +130,35 @@ class ServiceBatchCreator extends Component
         $defaultServiceName = $this->resolveDefaultServiceName();
         $defaultServiceCategory = $this->resolveDefaultServiceCategory($defaultServiceName->id);
 
+        if ($this->editingServiceId) {
+            $service = $this->resolveEditableService($this->editingServiceId);
+            $block = $validated['serviceBlocks'][0];
+
+            DB::transaction(function () use ($service, $block, $defaultServiceName, $defaultServiceCategory): void {
+                $service->update([
+                    'service_name_id' => $defaultServiceName->id,
+                    'service_category_id' => $defaultServiceCategory->id,
+                    'service_type' => $block['service_type'],
+                    'description' => $this->buildServiceDescription(
+                        $block['service_name'] ?? null,
+                        $block['description'] ?? null
+                    ),
+                    'total_quantity' => $block['total_quantity'],
+                    'service_unit' => $block['unit'],
+                    'distribution_start_date' => $this->jalaliToGregorian($block['date']),
+                    'distribution_end_date' => $this->jalaliToGregorian($block['date']),
+                ]);
+
+                $service->socialWorkers()->sync([
+                    $block['social_worker_id'] => ['allocated_quantity' => $block['total_quantity']],
+                ]);
+            });
+
+            session()->flash('success', 'خدمت با موفقیت به‌روزرسانی شد.');
+
+            return redirect()->route('distribution-operator.service-list');
+        }
+
         DB::transaction(function () use ($validated, $defaultServiceName, $defaultServiceCategory): void {
             foreach ($validated['serviceBlocks'] as $index => $block) {
                 $serviceCode = Service::generateNextCode();
@@ -163,10 +205,20 @@ class ServiceBatchCreator extends Component
         return redirect()->route('distribution-operator.service-list');
     }
 
+    public function cancelEditing()
+    {
+        if (! $this->editingServiceId) {
+            return;
+        }
+
+        return redirect()->route('distribution-operator.service-list');
+    }
+
     public function render()
     {
         return view('livewire.distribution-operators.service-batch-creator', [
             'socialWorkerSuggestions' => $this->getSocialWorkerSuggestions(),
+            'isEditing' => $this->editingServiceId !== null,
             'typeOptions' => Service::TYPE_OPTIONS,
             'unitOptions' => Service::UNIT_OPTIONS,
         ]);
@@ -232,6 +284,28 @@ class ServiceBatchCreator extends Component
         ];
     }
 
+    protected function makeBlockFromService(Service $service): array
+    {
+        [$serviceTitle, $serviceDescription] = $this->splitServiceDescription((string) $service->description);
+        $worker = $service->socialWorkers()->select(['social_workers.id', 'first_name', 'last_name', 'worker_code'])->first();
+        $jalaliDate = Jalalian::fromDateTime($service->distribution_start_date);
+
+        return [
+            'service_id_preview' => (string) $service->service_code,
+            'service_name' => $serviceTitle,
+            'service_type' => (string) $service->service_type,
+            'description' => $serviceDescription,
+            'total_quantity' => $this->formatDecimal($service->total_quantity),
+            'unit' => (string) $service->service_unit,
+            'date_day' => (string) $jalaliDate->getDay(),
+            'date_month' => (string) $jalaliDate->getMonth(),
+            'date_year' => (string) $jalaliDate->getYear(),
+            'date' => $jalaliDate->format('Y/m/d'),
+            'social_worker_id' => $worker?->id,
+            'social_worker_query' => $worker ? trim($worker->full_name . ' - کد ' . $worker->worker_code) : '',
+        ];
+    }
+
     protected function synchronizeBlockDates(): void
     {
         foreach (array_keys($this->serviceBlocks) as $index) {
@@ -253,6 +327,10 @@ class ServiceBatchCreator extends Component
 
     protected function refreshPreviewCodes(): void
     {
+        if ($this->editingServiceId) {
+            return;
+        }
+
         $lastId = (int) Service::query()->max('id');
 
         foreach (array_keys($this->serviceBlocks) as $index) {
@@ -301,6 +379,24 @@ class ServiceBatchCreator extends Component
         return implode(PHP_EOL . PHP_EOL, $parts);
     }
 
+    /**
+     * @return array{0:string,1:string}
+     */
+    protected function splitServiceDescription(string $description): array
+    {
+        $parts = preg_split("/\R{2,}/u", trim($description), 2) ?: [];
+
+        if (count($parts) === 0) {
+            return ['', ''];
+        }
+
+        if (count($parts) === 1) {
+            return ['', (string) $parts[0]];
+        }
+
+        return [(string) $parts[0], (string) $parts[1]];
+    }
+
     protected function isValidJalaliDate(string $date): bool
     {
         $parts = explode('/', trim($date));
@@ -317,6 +413,29 @@ class ServiceBatchCreator extends Component
     protected function jalaliToGregorian(string $date): string
     {
         return Jalalian::fromFormat('Y/m/d', trim($date))->toCarbon()->toDateString();
+    }
+
+    protected function resolveEditableService(int $serviceId): Service
+    {
+        $service = Service::query()
+            ->with('socialWorkers')
+            ->where('created_by', auth()->id())
+            ->findOrFail($serviceId);
+
+        abort_unless(auth()->user()?->can('view-distribution-operator-service', $service), 403);
+
+        return $service;
+    }
+
+    protected function formatDecimal(string|int|float|null $value): string
+    {
+        $number = (float) ($value ?? 0);
+
+        if (fmod($number, 1.0) === 0.0) {
+            return (string) (int) $number;
+        }
+
+        return number_format($number, 2, '.', '');
     }
 
     /**
