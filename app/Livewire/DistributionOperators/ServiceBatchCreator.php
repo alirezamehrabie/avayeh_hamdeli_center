@@ -9,11 +9,16 @@ use App\Models\ServiceName;
 use App\Models\SocialWorker;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 class ServiceBatchCreator extends Component
 {
+    protected const DEFAULT_SERVICE_NAME = 'متفرقه';
+
+    protected const DEFAULT_SERVICE_CATEGORY = 'سایر (متفرقه)';
+
     /**
      * @var array<int, array<string, mixed>>
      */
@@ -102,19 +107,22 @@ class ServiceBatchCreator extends Component
     public function saveBatch()
     {
         $validated = $this->validate($this->rules(), [], $this->validationAttributes());
+        $defaultServiceName = $this->resolveDefaultServiceName();
+        $defaultServiceCategory = $this->resolveDefaultServiceCategory($defaultServiceName->id);
 
-        DB::transaction(function () use ($validated): void {
+        DB::transaction(function () use ($validated, $defaultServiceName, $defaultServiceCategory): void {
             foreach ($validated['serviceBlocks'] as $index => $block) {
-                $nameId = $this->resolveServiceNameId($block['service_name'] ?? null);
-                $categoryId = $this->resolveServiceCategoryId($block['category_id'] ?? null);
                 $serviceCode = Service::generateNextCode();
 
                 $service = Service::query()->create([
                     'service_code' => $serviceCode,
-                    'service_name_id' => $nameId,
-                    'service_category_id' => $categoryId,
+                    'service_name_id' => $defaultServiceName->id,
+                    'service_category_id' => $defaultServiceCategory->id,
                     'service_type' => 'individual',
-                    'description' => trim((string) $block['description']),
+                    'description' => $this->buildServiceDescription(
+                        $block['service_name'] ?? null,
+                        $block['description'] ?? null
+                    ),
                     'total_quantity' => $block['total_quantity'],
                     'service_unit' => $block['unit'],
                     'value_per_unit' => 0,
@@ -150,7 +158,6 @@ class ServiceBatchCreator extends Component
     public function render()
     {
         return view('livewire.distribution-operators.service-batch-creator', [
-            'categoryOptions' => ServiceCategory::query()->orderBy('name')->get(['id', 'name']),
             'socialWorkerSuggestions' => $this->getSocialWorkerSuggestions(),
             'unitOptions' => Service::UNIT_OPTIONS,
         ]);
@@ -161,7 +168,6 @@ class ServiceBatchCreator extends Component
         return [
             'serviceBlocks' => ['required', 'array', 'min:1'],
             'serviceBlocks.*.service_name' => ['nullable', 'string', 'max:255'],
-            'serviceBlocks.*.category_id' => ['nullable', 'integer', 'exists:service_categories,id'],
             'serviceBlocks.*.description' => ['required', 'string', 'max:5000'],
             'serviceBlocks.*.total_quantity' => ['required', 'numeric', 'min:0.01'],
             'serviceBlocks.*.unit' => ['required', Rule::in(array_keys(Service::UNIT_OPTIONS))],
@@ -178,7 +184,6 @@ class ServiceBatchCreator extends Component
     {
         return [
             'serviceBlocks.*.service_name' => 'نام خدمت',
-            'serviceBlocks.*.category_id' => 'دسته‌بندی',
             'serviceBlocks.*.description' => 'توضیحات',
             'serviceBlocks.*.total_quantity' => 'تعداد کل',
             'serviceBlocks.*.unit' => 'واحد',
@@ -195,7 +200,6 @@ class ServiceBatchCreator extends Component
         return [
             'service_id_preview' => '',
             'service_name' => '',
-            'category_id' => 1,
             'description' => '',
             'total_quantity' => '',
             'unit' => 'package',
@@ -214,27 +218,45 @@ class ServiceBatchCreator extends Component
         }
     }
 
-    protected function resolveServiceNameId(?string $name): int
+    protected function resolveDefaultServiceName(): ServiceName
     {
-        $normalized = trim((string) $name);
+        $serviceName = ServiceName::query()
+            ->where('name', self::DEFAULT_SERVICE_NAME)
+            ->first();
 
-        if ($normalized === '') {
-            $normalized = 'خدمت توزیعی';
+        if ($serviceName) {
+            return $serviceName;
         }
 
-        return ServiceName::query()->firstOrCreate(
-            ['name' => $normalized],
-            ['created_by' => auth()->id()]
-        )->id;
+        throw ValidationException::withMessages([
+            'serviceBlocks' => 'نام خدمت پیش‌فرض اپراتور تنظیم نشده است. لطفاً با مدیر سیستم تماس بگیرید.',
+        ]);
     }
 
-    protected function resolveServiceCategoryId(?int $categoryId): int
+    protected function resolveDefaultServiceCategory(int $serviceNameId): ServiceCategory
     {
-        if ($categoryId) {
-            return (int) ServiceCategory::query()->findOrFail($categoryId)->id;
+        $serviceCategory = ServiceCategory::query()
+            ->where('service_name_id', $serviceNameId)
+            ->where('name', self::DEFAULT_SERVICE_CATEGORY)
+            ->first();
+
+        if ($serviceCategory) {
+            return $serviceCategory;
         }
 
-        return 1;
+        throw ValidationException::withMessages([
+            'serviceBlocks' => 'دسته‌بندی پیش‌فرض اپراتور تنظیم نشده است. لطفاً با مدیر سیستم تماس بگیرید.',
+        ]);
+    }
+
+    protected function buildServiceDescription(?string $serviceTitle, ?string $description): string
+    {
+        $parts = array_filter([
+            trim((string) $serviceTitle),
+            trim((string) $description),
+        ], fn (?string $value): bool => $value !== null && $value !== '');
+
+        return implode(PHP_EOL . PHP_EOL, $parts);
     }
 
     protected function isValidJalaliDate(string $date): bool

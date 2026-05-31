@@ -56,25 +56,9 @@
                             type="text"
                             wire:model.blur="serviceBlocks.{{ $index }}.service_name"
                             class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
-                            placeholder="اختیاری"
+                            placeholder="عنوان خدمت را تایپ کنید"
                         >
                         @error("serviceBlocks.$index.service_name") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div>
-                        <label class="mb-2 block text-sm font-bold text-slate-700">دسته‌بندی</label>
-                        <select
-                            wire:model="serviceBlocks.{{ $index }}.category_id"
-                            class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
-                        >
-                            <option value="1">تعریف نشده</option>
-                            @foreach($categoryOptions as $category)
-                                @if($category->id !== 1)
-                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                @endif
-                            @endforeach
-                        </select>
-                        @error("serviceBlocks.$index.category_id") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                     </div>
 
 
