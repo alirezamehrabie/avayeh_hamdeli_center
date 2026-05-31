@@ -208,7 +208,7 @@ class User extends Authenticatable
         }
 
         if ($this->canAccessDistributionOperatorPanel()) {
-            return route('distribution-operator.dashboard');
+            return route('distribution-operator.define-service');
         }
 
         return '/';

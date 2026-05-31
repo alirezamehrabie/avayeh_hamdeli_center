@@ -6,7 +6,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Component;
 
 #[Layout('layouts.distribution-operator')]
-class Dashboard extends Component
+class DefineService extends Component
 {
     public function mount(): void
     {
@@ -15,6 +15,6 @@ class Dashboard extends Component
 
     public function render()
     {
-        return view('livewire.distribution-operators.dashboard');
+        return view('livewire.distribution-operators.define-service');
     }
 }

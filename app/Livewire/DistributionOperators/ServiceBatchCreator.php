@@ -99,7 +99,7 @@ class ServiceBatchCreator extends Component
         $this->activeSocialWorkerSearchIndex = $index;
     }
 
-    public function saveBatch(): void
+    public function saveBatch()
     {
         $validated = $this->validate($this->rules(), [], $this->validationAttributes());
 
@@ -143,6 +143,8 @@ class ServiceBatchCreator extends Component
         $this->refreshPreviewCodes();
 
         session()->flash('success', "{$count} خدمت برای توزیع ثبت و به مددکاران تخصیص داده شد.");
+
+        return redirect()->route('distribution-operator.service-list');
     }
 
     public function render()
@@ -193,7 +195,7 @@ class ServiceBatchCreator extends Component
         return [
             'service_id_preview' => '',
             'service_name' => '',
-            'category_id' => null,
+            'category_id' => 1,
             'description' => '',
             'total_quantity' => '',
             'unit' => 'package',
@@ -232,9 +234,7 @@ class ServiceBatchCreator extends Component
             return (int) ServiceCategory::query()->findOrFail($categoryId)->id;
         }
 
-        return (int) ServiceCategory::query()
-            ->where('name', 'Undefined')
-            ->value('id');
+        return 1;
     }
 
     protected function isValidJalaliDate(string $date): bool

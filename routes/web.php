@@ -17,7 +17,8 @@ use App\Livewire\Admin\DashboardHome;
 use App\Livewire\Admin\UserAccount;
 use App\Livewire\Admin\UserManagement;
 use App\Livewire\Auth\Login;
-use App\Livewire\DistributionOperators\Dashboard as DistributionOperatorDashboard;
+use App\Livewire\DistributionOperators\DefineService;
+use App\Livewire\DistributionOperators\ServiceList;
 use App\Livewire\SocialWorkers\Dashboard as SocialWorkerDashboard;
 
 
@@ -80,6 +81,14 @@ Route::get('/social-worker/dashboard', SocialWorkerDashboard::class)
     ->middleware(['auth', 'can:access-social-worker-panel'])
     ->name('social-worker.dashboard');
 
-Route::get('/distribution-operator/dashboard', DistributionOperatorDashboard::class)
+Route::get('/distribution-operator/dashboard', fn () => redirect()->route('distribution-operator.define-service'))
     ->middleware(['auth', 'can:access-distribution-operator-panel'])
     ->name('distribution-operator.dashboard');
+
+Route::get('/distribution-operator/define-service', DefineService::class)
+    ->middleware(['auth', 'can:access-distribution-operator-panel'])
+    ->name('distribution-operator.define-service');
+
+Route::get('/distribution-operator/services', ServiceList::class)
+    ->middleware(['auth', 'can:access-distribution-operator-panel'])
+    ->name('distribution-operator.service-list');

@@ -1,4 +1,4 @@
-<div class="space-y-5">
+<div class="space-y-4">
     @if (session()->has('success'))
         <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
             {{ session('success') }}
@@ -16,22 +16,12 @@
         </div>
     @endif
 
-    <div class="rounded-3xl border border-violet-100 bg-violet-50/70 p-4">
+    <div class="rounded-3xl border border-violet-100 bg-white p-6 shadow-sm">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
-                <p class="text-sm font-semibold text-violet-700">ثبت مستقیم خدمات در حال توزیع</p>
-                <h2 class="mt-1 text-xl font-black text-slate-800">تعریف خدمت و تخصیص فوری به مددکار</h2>
-                <p class="mt-2 text-sm leading-6 text-slate-500">هر کارت یک خدمت مستقل است. با دکمه `+` چند خدمت را در یک نوبت ثبت کنید.</p>
-            </div>
-
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <button
-                    type="button"
-                    wire:click="addBlock"
-                    class="inline-flex h-12 items-center justify-center rounded-2xl bg-violet-600 px-5 text-base font-black text-white shadow-sm transition hover:bg-violet-700"
-                >
-                    +
-                </button>
+                <p class="text-sm font-semibold text-violet-700">بلوک تعریف خدمت اپراتور</p>
+                <h1 class="mt-2 text-2xl font-black text-slate-800">تعریف خدمت</h1>
+                <p class="mt-2 text-sm leading-6 text-slate-500">در بخش می‌توانید خدمت جدید را تعریف کرده و با انتخاب مددکار، آن را در سیستم ثبت کنید.</p>
             </div>
         </div>
     </div>
@@ -77,9 +67,11 @@
                             wire:model="serviceBlocks.{{ $index }}.category_id"
                             class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
                         >
-                            <option value="">انتخاب نشده</option>
+                            <option value="1">تعریف نشده</option>
                             @foreach($categoryOptions as $category)
-                                <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                @if($category->id !== 1)
+                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                @endif
                             @endforeach
                         </select>
                         @error("serviceBlocks.$index.category_id") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
