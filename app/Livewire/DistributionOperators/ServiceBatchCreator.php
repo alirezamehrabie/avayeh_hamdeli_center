@@ -31,12 +31,14 @@ class ServiceBatchCreator extends Component
         abort_unless(auth()->check() && auth()->user()->can('access-distribution-operator-panel'), 403);
 
         $this->serviceBlocks = [$this->makeBlock()];
+        $this->synchronizeBlockDates();
         $this->refreshPreviewCodes();
     }
 
     public function addBlock(): void
     {
         $this->serviceBlocks[] = $this->makeBlock();
+        $this->synchronizeBlockDates();
         $this->refreshPreviewCodes();
     }
 
@@ -75,6 +77,10 @@ class ServiceBatchCreator extends Component
                 $this->serviceBlocks[$index]['social_worker_id'] = null;
             }
         }
+
+        if (in_array($field, ['date_day', 'date_month', 'date_year'], true)) {
+            $this->serviceBlocks[$index]['date'] = $this->buildJalaliDateFromParts($this->serviceBlocks[$index]);
+        }
     }
 
     public function activateSocialWorkerSearch(int $index): void
@@ -106,6 +112,7 @@ class ServiceBatchCreator extends Component
 
     public function saveBatch()
     {
+        $this->synchronizeBlockDates();
         $validated = $this->validate($this->rules(), [], $this->validationAttributes());
         $defaultServiceName = $this->resolveDefaultServiceName();
         $defaultServiceCategory = $this->resolveDefaultServiceCategory($defaultServiceName->id);
@@ -118,7 +125,7 @@ class ServiceBatchCreator extends Component
                     'service_code' => $serviceCode,
                     'service_name_id' => $defaultServiceName->id,
                     'service_category_id' => $defaultServiceCategory->id,
-                    'service_type' => 'individual',
+                    'service_type' => $block['service_type'],
                     'description' => $this->buildServiceDescription(
                         $block['service_name'] ?? null,
                         $block['description'] ?? null
@@ -148,6 +155,7 @@ class ServiceBatchCreator extends Component
         $count = count($validated['serviceBlocks']);
         $this->resetValidation();
         $this->serviceBlocks = [$this->makeBlock()];
+        $this->synchronizeBlockDates();
         $this->refreshPreviewCodes();
 
         session()->flash('success', "{$count} خدمت برای توزیع ثبت و به مددکاران تخصیص داده شد.");
@@ -159,6 +167,7 @@ class ServiceBatchCreator extends Component
     {
         return view('livewire.distribution-operators.service-batch-creator', [
             'socialWorkerSuggestions' => $this->getSocialWorkerSuggestions(),
+            'typeOptions' => Service::TYPE_OPTIONS,
             'unitOptions' => Service::UNIT_OPTIONS,
         ]);
     }
@@ -168,9 +177,13 @@ class ServiceBatchCreator extends Component
         return [
             'serviceBlocks' => ['required', 'array', 'min:1'],
             'serviceBlocks.*.service_name' => ['nullable', 'string', 'max:255'],
+            'serviceBlocks.*.service_type' => ['required', Rule::in(array_keys(Service::TYPE_OPTIONS))],
             'serviceBlocks.*.description' => ['required', 'string', 'max:5000'],
             'serviceBlocks.*.total_quantity' => ['required', 'numeric', 'min:0.01'],
             'serviceBlocks.*.unit' => ['required', Rule::in(array_keys(Service::UNIT_OPTIONS))],
+            'serviceBlocks.*.date_day' => ['required', 'integer', 'min:1', 'max:31'],
+            'serviceBlocks.*.date_month' => ['required', 'integer', 'min:1', 'max:12'],
+            'serviceBlocks.*.date_year' => ['required', 'integer', 'min:1300', 'max:1600'],
             'serviceBlocks.*.date' => ['required', 'string', function (string $attribute, mixed $value, \Closure $fail): void {
                 if (! $this->isValidJalaliDate((string) $value)) {
                     $fail('تاریخ واردشده معتبر نیست.');
@@ -184,9 +197,13 @@ class ServiceBatchCreator extends Component
     {
         return [
             'serviceBlocks.*.service_name' => 'نام خدمت',
+            'serviceBlocks.*.service_type' => 'نوع خدمت',
             'serviceBlocks.*.description' => 'توضیحات',
             'serviceBlocks.*.total_quantity' => 'تعداد کل',
             'serviceBlocks.*.unit' => 'واحد',
+            'serviceBlocks.*.date_day' => 'روز',
+            'serviceBlocks.*.date_month' => 'ماه',
+            'serviceBlocks.*.date_year' => 'سال',
             'serviceBlocks.*.date' => 'تاریخ',
             'serviceBlocks.*.social_worker_id' => 'مددکار',
         ];
@@ -197,16 +214,41 @@ class ServiceBatchCreator extends Component
      */
     protected function makeBlock(): array
     {
+        $today = Jalalian::now();
+
         return [
             'service_id_preview' => '',
             'service_name' => '',
+            'service_type' => 'individual',
             'description' => '',
             'total_quantity' => '',
             'unit' => 'package',
-            'date' => Jalalian::now()->format('Y/m/d'),
+            'date_day' => (string) $today->getDay(),
+            'date_month' => (string) $today->getMonth(),
+            'date_year' => (string) $today->getYear(),
+            'date' => $today->format('Y/m/d'),
             'social_worker_id' => null,
             'social_worker_query' => '',
         ];
+    }
+
+    protected function synchronizeBlockDates(): void
+    {
+        foreach (array_keys($this->serviceBlocks) as $index) {
+            $this->serviceBlocks[$index]['date'] = $this->buildJalaliDateFromParts($this->serviceBlocks[$index]);
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $block
+     */
+    protected function buildJalaliDateFromParts(array $block): string
+    {
+        $year = str_pad(trim((string) ($block['date_year'] ?? '')), 4, '0', STR_PAD_LEFT);
+        $month = str_pad(trim((string) ($block['date_month'] ?? '')), 2, '0', STR_PAD_LEFT);
+        $day = str_pad(trim((string) ($block['date_day'] ?? '')), 2, '0', STR_PAD_LEFT);
+
+        return implode('/', [$year, $month, $day]);
     }
 
     protected function refreshPreviewCodes(): void

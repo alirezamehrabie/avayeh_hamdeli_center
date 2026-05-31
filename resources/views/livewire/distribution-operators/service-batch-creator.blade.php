@@ -61,6 +61,24 @@
                         @error("serviceBlocks.$index.service_name") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                     </div>
 
+                    <div>
+                        <label class="mb-2 block text-sm font-bold text-slate-700">نوع خدمت</label>
+                        <div class="flex flex-wrap gap-2 rounded-2xl border border-slate-300 bg-white p-2">
+                            @foreach($typeOptions as $value => $label)
+                                <label class="flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50">
+                                    <input
+                                        type="radio"
+                                        value="{{ $value }}"
+                                        wire:model="serviceBlocks.{{ $index }}.service_type"
+                                        class="h-4 w-4 border-slate-300 text-violet-600 focus:ring-violet-500"
+                                    >
+                                    <span>{{ $label }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                        @error("serviceBlocks.$index.service_type") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                    </div>
+
 
                     <div>
                         <label class="mb-2 block text-sm font-bold text-slate-700">مقدار <span class="text-xs fw-light text-gray-500 px-1">(بر اساس واحد)</span> </label>
@@ -96,21 +114,21 @@
                             rows="3"
                             wire:model.blur="serviceBlocks.{{ $index }}.description"
                             class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
-                            placeholder="شرح خدمت و توضیحات لازم"
+                            placeholder="شرح خدمت و توضیحات تکمیلی را بنویسید ..."
                         ></textarea>
                         @error("serviceBlocks.$index.description") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                     </div>
 
 
                     <div class="relative sm:col-span-2 xl:col-span-1">
-                        <label class="mb-2 block text-sm font-bold text-slate-700">مددکار فعال</label>
+                        <label class="mb-2 block text-sm font-bold text-slate-700">مددکار مسئول</label>
                         <div class="relative">
                             <input
                                 type="text"
                                 wire:model.live.debounce.250ms="serviceBlocks.{{ $index }}.social_worker_query"
                                 wire:focus="activateSocialWorkerSearch({{ $index }})"
                                 class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 pl-12 text-sm text-slate-700"
-                                placeholder="نام مددکار را تایپ کنید"
+                                placeholder="نام یا کد مددکار را تایپ کنید"
                                 autocomplete="off"
                             >
                             @if(!empty($block['social_worker_query']))
@@ -148,12 +166,44 @@
 
                     <div>
                         <label class="mb-2 block text-sm font-bold text-slate-700">تاریخ ثبت</label>
-                        <input
-                            type="text"
-                            wire:model.blur="serviceBlocks.{{ $index }}.date"
-                            class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
-                            placeholder="1404/01/01"
-                        >
+                        <div class="grid grid-cols-3 gap-2">
+                            <div>
+                                <label class="mb-1 px-2 block text-xs font-normal text-slate-500">روز</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="31"
+                                    wire:model.blur="serviceBlocks.{{ $index }}.date_day"
+                                    class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
+                                    placeholder="روز"
+                                >
+                            </div>
+                            <div>
+                                <label class="mb-1 px-2 block text-xs font-normal text-slate-500">ماه</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="12"
+                                    wire:model.blur="serviceBlocks.{{ $index }}.date_month"
+                                    class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
+                                    placeholder="ماه"
+                                >
+                            </div>
+                            <div>
+                                <label class="mb-1 px-2 block text-xs font-normal text-slate-500">سال</label>
+                                <input
+                                    type="number"
+                                    min="1300"
+                                    max="1600"
+                                    wire:model.blur="serviceBlocks.{{ $index }}.date_year"
+                                    class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
+                                    placeholder="سال"
+                                >
+                            </div>
+                        </div>
+                        @error("serviceBlocks.$index.date_day") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                        @error("serviceBlocks.$index.date_month") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                        @error("serviceBlocks.$index.date_year") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                         @error("serviceBlocks.$index.date") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                     </div>
 
@@ -161,21 +211,22 @@
             </div>
         @endforeach
 
-        <div class="flex flex-col gap-3 sm:flex-row sm:justify-between">
-            <button
-                type="button"
-                wire:click="addBlock"
-                class="inline-flex items-center justify-center rounded-2xl border border-violet-200 bg-white px-5 py-3 text-sm font-bold text-violet-700 transition hover:bg-violet-50"
-            >
-                + افزودن بلوک خدمت
-            </button>
+            <div class="flex flex-col gap-3 sm:flex-row sm:justify-between">
+                <button
+                    type="button"
+                    wire:click="addBlock"
+                    class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 active:scale-[0.98]"
+                >
+                    + افزودن خدمت جدید
+                </button>
 
-            <button
-                type="submit"
-                class="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-black text-white shadow-lg shadow-slate-900/15 transition hover:bg-slate-800"
-            >
-                ثبت همه خدمات
-            </button>
-        </div>
+                <button
+                    type="submit"
+                    class="inline-flex items-center justify-center rounded-2xl bg-emerald-700 px-6 py-3 text-sm font-black text-white shadow-lg shadow-violet-700/25 transition-all duration-200 hover:bg-violet-800 active:scale-[0.98]"
+                >
+                    ثبت همه خدمات
+                </button>
+            </div>
+
     </form>
 </div>

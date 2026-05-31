@@ -10,8 +10,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Service extends Model
 {
     public const TYPE_OPTIONS = [
-        'individual' => 'شخصی (مددجویان)',
-        'family' => 'خانوادگی (سرپرستان)',
+        'individual' => 'شخصی (مددجو)',
+        'family' => 'خانوادگی (سرپرست)',
     ];
 
     public const UNIT_OPTIONS = [

@@ -143,7 +143,7 @@
 
                     <div class="mt-4">
                         <button type="button" wire:click="startEditing({{ $service->id }})" class="inline-flex items-center justify-center rounded-2xl border border-violet-200 bg-white px-4 py-2 text-sm font-bold text-violet-700 transition hover:bg-violet-50">
-                            ویرایش فیلدهای مجاز
+                            ویرایش خدمت
                         </button>
                     </div>
                 </div>
