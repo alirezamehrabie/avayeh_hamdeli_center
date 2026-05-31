@@ -53,15 +53,6 @@ return new class extends Migration
             $table->unique(['service_id', 'social_worker_id']);
         });
 
-        $timestamp = now();
-
-        DB::table('service_categories')->insert([
-            ['name' => 'معیشتی', 'created_by' => null, 'created_at' => $timestamp, 'updated_at' => $timestamp],
-            ['name' => 'تحصیلی', 'created_by' => null, 'created_at' => $timestamp, 'updated_at' => $timestamp],
-            ['name' => 'پزشکی / درمانی', 'created_by' => null, 'created_at' => $timestamp, 'updated_at' => $timestamp],
-            ['name' => 'مسکن', 'created_by' => null, 'created_at' => $timestamp, 'updated_at' => $timestamp],
-            ['name' => 'پوشاک', 'created_by' => null, 'created_at' => $timestamp, 'updated_at' => $timestamp],
-        ]);
     }
 
     public function down(): void
