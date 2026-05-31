@@ -8,6 +8,7 @@ use App\Models\ServiceCategory;
 use App\Models\ServiceName;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Database\Eloquent\Collection;
 use Livewire\Component;
 
 class ManageServices extends Component
@@ -110,6 +111,21 @@ class ManageServices extends Component
         $this->resetValidation();
     }
 
+    public function updatedSelectedServiceNameId($value): void
+    {
+        if (! $value) {
+            $this->selectedServiceCategoryId = null;
+
+            return;
+        }
+
+        $categoryIds = $this->availableServiceCategories()->pluck('id')->map(fn ($id) => (int) $id);
+
+        if (! $categoryIds->contains((int) $this->selectedServiceCategoryId)) {
+            $this->selectedServiceCategoryId = $categoryIds->first();
+        }
+    }
+
     public function getPreviewServiceCodeProperty(): string
     {
         if ($this->editingServiceId) {
@@ -149,7 +165,7 @@ class ManageServices extends Component
     {
         return view('livewire.services.manage-services', [
             'serviceNames' => ServiceName::query()->ordered()->get(),
-            'serviceCategories' => ServiceCategory::query()->orderBy('name')->get(),
+            'serviceCategories' => $this->availableServiceCategories(),
             'districts' => District::query()->orderBy('sort_order')->orderBy('name')->get(),
             'services' => Service::query()
                 ->with(['serviceName', 'serviceCategory', 'district', 'creator', 'socialWorkers'])
@@ -166,7 +182,13 @@ class ManageServices extends Component
     {
         return [
             'selectedServiceNameId' => ['required', 'integer', 'exists:service_names,id'],
-            'selectedServiceCategoryId' => ['required', 'integer', 'exists:service_categories,id'],
+            'selectedServiceCategoryId' => [
+                'required',
+                'integer',
+                Rule::exists('service_categories', 'id')->where(function ($query) {
+                    $query->where('service_name_id', $this->selectedServiceNameId);
+                }),
+            ],
             'serviceType' => ['required', Rule::in(array_keys(Service::TYPE_OPTIONS))],
             'description' => ['nullable', 'string', 'max:5000'],
             'totalQuantity' => ['required', 'numeric', 'min:0.01'],
@@ -207,7 +229,9 @@ class ManageServices extends Component
 
     protected function resolveServiceCategory(): ServiceCategory
     {
-        return ServiceCategory::query()->findOrFail($this->selectedServiceCategoryId);
+        return ServiceCategory::query()
+            ->where('service_name_id', $this->selectedServiceNameId)
+            ->findOrFail($this->selectedServiceCategoryId);
     }
 
     protected function calculateTotalServiceValue(): int
@@ -262,7 +286,19 @@ class ManageServices extends Component
     protected function bootDefaultSelections(): void
     {
         $this->selectedServiceNameId = $this->selectedServiceNameId ?: ServiceName::query()->ordered()->value('id');
-        $this->selectedServiceCategoryId = $this->selectedServiceCategoryId ?: ServiceCategory::query()->orderBy('name')->value('id');
+        $this->selectedServiceCategoryId = $this->selectedServiceCategoryId ?: $this->availableServiceCategories()->value('id');
+    }
+
+    protected function availableServiceCategories(): Collection
+    {
+        if (! $this->selectedServiceNameId) {
+            return new Collection();
+        }
+
+        return ServiceCategory::query()
+            ->ordered()
+            ->where('service_name_id', $this->selectedServiceNameId)
+            ->get();
     }
 
     protected function currentDeliveredQuantity(): float

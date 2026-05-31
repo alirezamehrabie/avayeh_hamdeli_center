@@ -89,7 +89,7 @@
                             <div class="mt-4 grid gap-4 md:grid-cols-2">
                                 <div>
                                     <label class="mb-2 block text-sm font-bold text-slate-700">نام خدمت</label>
-                                    <select wire:model="selectedServiceNameId" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
+                                    <select wire:model.live="selectedServiceNameId" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
                                         <option value="">انتخاب نام خدمت</option>
                                         @foreach($serviceNames as $serviceName)
                                             <option value="{{ $serviceName->id }}" @selected((string) $selectedServiceNameId === (string) $serviceName->id)>{{ $serviceName->name }}</option>
@@ -100,12 +100,28 @@
 
                                 <div>
                                     <label class="mb-2 block text-sm font-bold text-slate-700">دسته‌بندی خدمت</label>
-                                    <select wire:model="selectedServiceCategoryId" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
-                                        <option value="">انتخاب دسته‌بندی</option>
+                                    <select
+                                        wire:model.live="selectedServiceCategoryId"
+                                        wire:key="service-category-{{ $selectedServiceNameId ?? 'none' }}"
+                                        @disabled(blank($selectedServiceNameId) || $serviceCategories->isEmpty())
+                                        wire:loading.attr="disabled"
+                                        wire:target="selectedServiceNameId"
+                                        class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
+                                    >
+                                        <option value="">
+                                            @if(blank($selectedServiceNameId))
+                                                ابتدا نام خدمت را انتخاب کنید
+                                            @elseif($serviceCategories->isEmpty())
+                                                دسته‌بندی برای این خدمت تعریف نشده است
+                                            @else
+                                                انتخاب دسته‌بندی
+                                            @endif
+                                        </option>
                                         @foreach($serviceCategories as $serviceCategory)
                                             <option value="{{ $serviceCategory->id }}">{{ $serviceCategory->name }}</option>
                                         @endforeach
                                     </select>
+                                    <p wire:loading wire:target="selectedServiceNameId" class="mt-1 text-xs text-slate-500">در حال بارگذاری دسته‌بندی‌ها...</p>
                                     @error('selectedServiceCategoryId') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                                 </div>
                             </div>
