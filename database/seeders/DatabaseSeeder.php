@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             NeedLevelTypeSeeder::class,
             DistrictSeeder::class,
             OccupationSeeder::class,
+            ServiceNameSeeder::class,
             ServiceCategorySeeder::class,
             SadaatRelationsSeeder::class,
             SkillsTableSeeder::class,

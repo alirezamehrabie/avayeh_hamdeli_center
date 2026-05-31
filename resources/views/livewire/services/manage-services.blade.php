@@ -88,51 +88,25 @@
 
                             <div class="mt-4 grid gap-4 md:grid-cols-2">
                                 <div>
-                                    <div class="mb-2 flex items-center justify-between">
-                                        <label class="block text-sm font-bold text-slate-700">نام خدمت</label>
-                                        @if($serviceNameMode === 'existing')
-                                            <button type="button" wire:click="useNewServiceName" class="text-sm font-semibold text-cyan-700">+ افزودن نام جدید</button>
-                                        @else
-                                            <button type="button" wire:click="useExistingServiceName" class="text-sm font-semibold text-slate-500">بازگشت به فهرست</button>
-                                        @endif
-                                    </div>
-
-                                    @if($serviceNameMode === 'existing')
-                                        <select wire:model="selectedServiceNameId" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
-                                            <option value="">انتخاب نام خدمت</option>
-                                            @foreach($serviceNames as $serviceName)
-                                                <option value="{{ $serviceName->id }}">{{ $serviceName->name }}</option>
-                                            @endforeach
-                                        </select>
-                                        @error('selectedServiceNameId') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
-                                    @else
-                                        <input type="text" wire:model.blur="newServiceName" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700" placeholder="مثال: بسته ارزاق ماهانه">
-                                        @error('newServiceName') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
-                                    @endif
+                                    <label class="mb-2 block text-sm font-bold text-slate-700">نام خدمت</label>
+                                    <select wire:model="selectedServiceNameId" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
+                                        <option value="">انتخاب نام خدمت</option>
+                                        @foreach($serviceNames as $serviceName)
+                                            <option value="{{ $serviceName->id }}" @selected((string) $selectedServiceNameId === (string) $serviceName->id)>{{ $serviceName->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('selectedServiceNameId') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                                 </div>
 
                                 <div>
-                                    <div class="mb-2 flex items-center justify-between">
-                                        <label class="block text-sm font-bold text-slate-700">دسته‌بندی خدمت</label>
-                                        @if($serviceCategoryMode === 'existing')
-                                            <button type="button" wire:click="useNewServiceCategory" class="text-sm font-semibold text-cyan-700">+ افزودن دسته‌بندی</button>
-                                        @else
-                                            <button type="button" wire:click="useExistingServiceCategory" class="text-sm font-semibold text-slate-500">بازگشت به فهرست</button>
-                                        @endif
-                                    </div>
-
-                                    @if($serviceCategoryMode === 'existing')
-                                        <select wire:model="selectedServiceCategoryId" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
-                                            <option value="">انتخاب دسته‌بندی</option>
-                                            @foreach($serviceCategories as $serviceCategory)
-                                                <option value="{{ $serviceCategory->id }}">{{ $serviceCategory->name }}</option>
-                                            @endforeach
-                                        </select>
-                                        @error('selectedServiceCategoryId') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
-                                    @else
-                                        <input type="text" wire:model.blur="newServiceCategory" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700" placeholder="مثال: Livelihood">
-                                        @error('newServiceCategory') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
-                                    @endif
+                                    <label class="mb-2 block text-sm font-bold text-slate-700">دسته‌بندی خدمت</label>
+                                    <select wire:model="selectedServiceCategoryId" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
+                                        <option value="">انتخاب دسته‌بندی</option>
+                                        @foreach($serviceCategories as $serviceCategory)
+                                            <option value="{{ $serviceCategory->id }}">{{ $serviceCategory->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('selectedServiceCategoryId') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                                 </div>
                             </div>
 
@@ -260,20 +234,20 @@
 
                             <div class="mt-4 grid gap-3">
                                 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                                    <p class="text-xs font-semibold text-slate-500">14. تعداد تحویل‌شده توسط مددکاران</p>
+                                    <p class="text-xs font-semibold text-slate-500">تعداد تحویل‌شده توسط مددکاران</p>
                                     <p class="mt-2 text-lg font-black text-slate-800">{{ $editingServiceId ? number_format($this->deliveredQuantity, 2) : '0' }}</p>
                                     <p class="mt-1 text-xs text-slate-500">این مقدار از روی تحویل‌های ثبت‌شده محاسبه می‌شود.</p>
                                 </div>
 
                                 <div class="rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3">
-                                    <p class="text-xs font-semibold text-cyan-700">15. تعداد باقی‌مانده</p>
+                                    <p class="text-xs font-semibold text-cyan-700">تعداد باقی‌مانده</p>
                                     <p class="mt-2 text-lg font-black text-cyan-900">{{ number_format($this->remainingQuantity, 2) }}</p>
                                 </div>
 
                                 <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
                                     <div class="flex items-center justify-between gap-4">
                                         <div>
-                                            <p class="text-xs font-semibold text-emerald-700">16. درصد پیشرفت</p>
+                                            <p class="text-xs font-semibold text-emerald-700">درصد پیشرفت</p>
                                             <p class="mt-2 text-lg font-black text-emerald-900">{{ number_format($this->progressPercentage, 2) }}%</p>
                                         </div>
                                         <div class="h-3 flex-1 overflow-hidden rounded-full bg-emerald-100">
@@ -283,7 +257,7 @@
                                 </div>
 
                                 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                                    <p class="text-xs font-semibold text-slate-500">17. ایجادکننده</p>
+                                    <p class="text-xs font-semibold text-slate-500">ایجادکننده</p>
                                     <p class="mt-2 text-sm font-bold text-slate-800">{{ auth()->user()->full_name ?: auth()->user()->name }}</p>
                                 </div>
                             </div>

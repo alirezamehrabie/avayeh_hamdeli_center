@@ -13,12 +13,8 @@ use Livewire\Component;
 class ManageServices extends Component
 {
     public ?int $editingServiceId = null;
-    public string $serviceNameMode = 'existing';
     public ?int $selectedServiceNameId = null;
-    public string $newServiceName = '';
-    public string $serviceCategoryMode = 'existing';
     public ?int $selectedServiceCategoryId = null;
-    public string $newServiceCategory = '';
     public string $serviceType = 'individual';
     public string $description = '';
     public string $totalQuantity = '';
@@ -92,12 +88,8 @@ class ManageServices extends Component
         $service = Service::query()->findOrFail($serviceId);
 
         $this->editingServiceId = $service->id;
-        $this->serviceNameMode = 'existing';
         $this->selectedServiceNameId = $service->service_name_id;
-        $this->newServiceName = '';
-        $this->serviceCategoryMode = 'existing';
         $this->selectedServiceCategoryId = $service->service_category_id;
-        $this->newServiceCategory = '';
         $this->serviceType = $service->service_type;
         $this->description = (string) $service->description;
         $this->totalQuantity = $this->formatDecimal($service->total_quantity);
@@ -116,32 +108,6 @@ class ManageServices extends Component
         $this->resetForm();
         $this->bootDefaultSelections();
         $this->resetValidation();
-    }
-
-    public function useNewServiceName(): void
-    {
-        $this->serviceNameMode = 'new';
-        $this->selectedServiceNameId = null;
-    }
-
-    public function useExistingServiceName(): void
-    {
-        $this->serviceNameMode = 'existing';
-        $this->newServiceName = '';
-        $this->selectedServiceNameId = $this->selectedServiceNameId ?: ServiceName::query()->orderBy('name')->value('id');
-    }
-
-    public function useNewServiceCategory(): void
-    {
-        $this->serviceCategoryMode = 'new';
-        $this->selectedServiceCategoryId = null;
-    }
-
-    public function useExistingServiceCategory(): void
-    {
-        $this->serviceCategoryMode = 'existing';
-        $this->newServiceCategory = '';
-        $this->selectedServiceCategoryId = $this->selectedServiceCategoryId ?: ServiceCategory::query()->orderBy('name')->value('id');
     }
 
     public function getPreviewServiceCodeProperty(): string
@@ -182,7 +148,7 @@ class ManageServices extends Component
     public function render()
     {
         return view('livewire.services.manage-services', [
-            'serviceNames' => ServiceName::query()->orderBy('name')->get(),
+            'serviceNames' => ServiceName::query()->ordered()->get(),
             'serviceCategories' => ServiceCategory::query()->orderBy('name')->get(),
             'districts' => District::query()->orderBy('sort_order')->orderBy('name')->get(),
             'services' => Service::query()
@@ -199,12 +165,8 @@ class ManageServices extends Component
     protected function rules(): array
     {
         return [
-            'serviceNameMode' => ['required', Rule::in(['existing', 'new'])],
-            'selectedServiceNameId' => [Rule::requiredIf($this->serviceNameMode === 'existing'), 'nullable', 'integer', 'exists:service_names,id'],
-            'newServiceName' => [Rule::requiredIf($this->serviceNameMode === 'new'), 'nullable', 'string', 'max:255', Rule::unique('service_names', 'name')],
-            'serviceCategoryMode' => ['required', Rule::in(['existing', 'new'])],
-            'selectedServiceCategoryId' => [Rule::requiredIf($this->serviceCategoryMode === 'existing'), 'nullable', 'integer', 'exists:service_categories,id'],
-            'newServiceCategory' => [Rule::requiredIf($this->serviceCategoryMode === 'new'), 'nullable', 'string', 'max:255', Rule::unique('service_categories', 'name')],
+            'selectedServiceNameId' => ['required', 'integer', 'exists:service_names,id'],
+            'selectedServiceCategoryId' => ['required', 'integer', 'exists:service_categories,id'],
             'serviceType' => ['required', Rule::in(array_keys(Service::TYPE_OPTIONS))],
             'description' => ['nullable', 'string', 'max:5000'],
             'totalQuantity' => ['required', 'numeric', 'min:0.01'],
@@ -223,9 +185,7 @@ class ManageServices extends Component
     {
         return [
             'selectedServiceNameId' => 'نام خدمت',
-            'newServiceName' => 'نام جدید خدمت',
             'selectedServiceCategoryId' => 'دسته‌بندی خدمت',
-            'newServiceCategory' => 'دسته‌بندی جدید',
             'serviceType' => 'نوع خدمت',
             'description' => 'توضیحات خدمت',
             'totalQuantity' => 'تعداد کل',
@@ -242,26 +202,12 @@ class ManageServices extends Component
 
     protected function resolveServiceName(): ServiceName
     {
-        if ($this->serviceNameMode === 'existing') {
-            return ServiceName::query()->findOrFail($this->selectedServiceNameId);
-        }
-
-        return ServiceName::query()->firstOrCreate(
-            ['name' => trim($this->newServiceName)],
-            ['created_by' => auth()->id()]
-        );
+        return ServiceName::query()->findOrFail($this->selectedServiceNameId);
     }
 
     protected function resolveServiceCategory(): ServiceCategory
     {
-        if ($this->serviceCategoryMode === 'existing') {
-            return ServiceCategory::query()->findOrFail($this->selectedServiceCategoryId);
-        }
-
-        return ServiceCategory::query()->firstOrCreate(
-            ['name' => trim($this->newServiceCategory)],
-            ['created_by' => auth()->id()]
-        );
+        return ServiceCategory::query()->findOrFail($this->selectedServiceCategoryId);
     }
 
     protected function calculateTotalServiceValue(): int
@@ -293,12 +239,8 @@ class ManageServices extends Component
     {
         $this->reset([
             'editingServiceId',
-            'serviceNameMode',
             'selectedServiceNameId',
-            'newServiceName',
-            'serviceCategoryMode',
             'selectedServiceCategoryId',
-            'newServiceCategory',
             'serviceType',
             'description',
             'totalQuantity',
@@ -312,8 +254,6 @@ class ManageServices extends Component
             'statusNotes',
         ]);
 
-        $this->serviceNameMode = 'existing';
-        $this->serviceCategoryMode = 'existing';
         $this->serviceType = 'individual';
         $this->serviceUnit = 'package';
         $this->status = 'draft';
@@ -321,7 +261,7 @@ class ManageServices extends Component
 
     protected function bootDefaultSelections(): void
     {
-        $this->selectedServiceNameId = $this->selectedServiceNameId ?: ServiceName::query()->orderBy('name')->value('id');
+        $this->selectedServiceNameId = $this->selectedServiceNameId ?: ServiceName::query()->ordered()->value('id');
         $this->selectedServiceCategoryId = $this->selectedServiceCategoryId ?: ServiceCategory::query()->orderBy('name')->value('id');
     }
 
