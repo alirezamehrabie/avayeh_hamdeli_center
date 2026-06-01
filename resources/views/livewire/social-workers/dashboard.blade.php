@@ -177,17 +177,56 @@
                                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                                     <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_160px_auto] md:items-start">
                                         <div>
-                                            <label class="mb-2 block text-sm font-bold text-slate-700">کد ملی</label>
-                                            <input type="text" maxlength="10"
-                                                   wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.national_id"
-                                                   class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
-                                                   placeholder="کد ملی را وارد کنید">
+                                            <label class="mb-2 block text-sm font-bold text-slate-700">جستجوی گیرنده</label>
+                                            <div class="relative">
+                                                <input
+                                                    type="text"
+                                                    wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.search"
+                                                    wire:focus="setActiveRecipientSearch({{ $index }})"
+                                                    class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
+                                                    placeholder="{{ $this->selectedService?->service_type === 'family' ? 'کد ملی یا نام و نام خانوادگی سرپرست' : 'کد ملی یا نام و نام خانوادگی مددجو' }}"
+                                                    autocomplete="off"
+                                                >
+                                                @if(!empty($this->recipientSuggestions[$index]) && $this->activeRecipientSearchIndex === $index)
+                                                    <div class="absolute z-20 mt-2 max-h-64 w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-xl">
+                                                        @foreach($this->recipientSuggestions[$index] as $suggestion)
+                                                            <button
+                                                                type="button"
+                                                                wire:click="selectRecipientSuggestion({{ $index }}, '{{ $this->selectedService?->service_type === 'family' ? 'guardian' : 'person' }}', {{ $suggestion->id }})"
+                                                                class="flex w-full items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 text-right transition hover:bg-cyan-50 last:border-b-0"
+                                                            >
+                                                                <span>
+                                                                    <span class="block text-sm font-bold text-slate-800">
+                                                                        {{ trim(($suggestion->first_name ?? '') . ' ' . ($suggestion->last_name ?? '')) ?: '-' }}
+                                                                    </span>
+                                                                    <span class="mt-1 block text-xs text-slate-500">
+                                                                        {{ $this->selectedService?->service_type === 'family' ? 'سرپرست' : 'مددجو' }}
+                                                                    </span>
+                                                                </span>
+                                                                <span class="text-xs font-semibold text-cyan-700">
+                                                                    {{ $this->selectedService?->service_type === 'family' ? $suggestion->national_code : $suggestion->national_id }}
+                                                                </span>
+                                                            </button>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
+                                            </div>
+                                            <div class="mt-3">
+                                                <label class="mb-2 block text-sm font-bold text-slate-700">کد ملی</label>
+                                                <input type="text" maxlength="10"
+                                                       wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.national_id"
+                                                       class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
+                                                       placeholder="کد ملی را وارد کنید">
+                                            </div>
                                             @error('recipientEntries.' . $index . '.national_id') <p
                                                 class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                                             @if($entry['resolved_name'])
                                                 <div
                                                     class="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
                                                     <p class="font-bold">{{ $entry['resolved_name'] }}</p>
+                                                    @if($entry['national_id'])
+                                                        <p class="mt-1 text-xs text-emerald-700">کد ملی: {{ $entry['national_id'] }}</p>
+                                                    @endif
                                                     @if($entry['resolved_meta'])
                                                         <p class="mt-1 text-xs text-emerald-700">{{ $entry['resolved_meta'] }}</p>
                                                     @endif
@@ -239,14 +278,12 @@
 
                 <div class="space-y-4">
 
-                    {{-- Quota Card --}}
                     <div class="rounded-2xl border border-slate-200 bg-white p-4">
 
                         <h2 class="text-sm font-semibold text-slate-500">سهمیه شما</h2>
 
                         @if($this->selectedService)
 
-                            {{-- Service Name --}}
                             <div class="mt-3 flex items-start justify-between gap-2">
                                 <div>
                                     <p class="font-bold text-slate-800">{{ $this->selectedService->serviceName?->name }}</p>

@@ -19,6 +19,7 @@ class Dashboard extends Component
     public array $recipientEntries = [];
     public string $deliveredAt = '';
     public string $notes = '';
+    public ?int $activeRecipientSearchIndex = null;
 
     public function mount(): void
     {
@@ -29,6 +30,7 @@ class Dashboard extends Component
     public function updatedSelectedServiceId(): void
     {
         $this->recipientEntries = [$this->blankEntry()];
+        $this->activeRecipientSearchIndex = null;
         $this->resetValidation();
     }
 
@@ -49,6 +51,20 @@ class Dashboard extends Component
 
     public function updatedRecipientEntries($value, string $key): void
     {
+        if (str_ends_with($key, '.search')) {
+            [$index] = explode('.', $key);
+            $index = (int) $index;
+            $query = trim((string) ($this->recipientEntries[$index]['search'] ?? ''));
+
+            $this->activeRecipientSearchIndex = mb_strlen($query) >= 2 ? $index : null;
+
+            if ($query === '') {
+                $this->clearResolvedEntry($index);
+            }
+
+            return;
+        }
+
         if (! str_ends_with($key, '.national_id')) {
             return;
         }
@@ -56,10 +72,8 @@ class Dashboard extends Component
         [$index] = explode('.', $key);
         $index = (int) $index;
         $nationalId = trim((string) ($this->recipientEntries[$index]['national_id'] ?? ''));
-        $this->recipientEntries[$index]['resolved_name'] = '';
-        $this->recipientEntries[$index]['resolved_meta'] = '';
-        $this->recipientEntries[$index]['person_id'] = null;
-        $this->recipientEntries[$index]['guardian_id'] = null;
+        $this->clearResolvedEntry($index, preserveSearch: false);
+        $this->activeRecipientSearchIndex = null;
 
         if ($nationalId === '' || ! $this->selectedService) {
             return;
@@ -73,9 +87,7 @@ class Dashboard extends Component
                 ->first();
 
             if ($guardian) {
-                $this->recipientEntries[$index]['guardian_id'] = $guardian->id;
-                $this->recipientEntries[$index]['resolved_name'] = trim(($guardian->first_name ?? '') . ' ' . ($guardian->last_name ?? '')) ?: '-';
-                $this->recipientEntries[$index]['resolved_meta'] = $guardian->people_count . ' نفر تحت تکفل';
+                $this->fillGuardianEntry($index, $guardian, $guardian->people_count . ' نفر تحت تکفل');
             }
 
             return;
@@ -87,10 +99,42 @@ class Dashboard extends Component
             ->first();
 
         if ($person) {
-            $this->recipientEntries[$index]['person_id'] = $person->id;
-            $this->recipientEntries[$index]['resolved_name'] = trim(($person->first_name ?? '') . ' ' . ($person->last_name ?? '')) ?: '-';
-            $this->recipientEntries[$index]['resolved_meta'] = 'مددجو';
+            $this->fillPersonEntry($index, $person, 'مددجو');
         }
+    }
+
+    public function setActiveRecipientSearch(int $index): void
+    {
+        $query = trim((string) ($this->recipientEntries[$index]['search'] ?? ''));
+        $this->activeRecipientSearchIndex = mb_strlen($query) >= 2 ? $index : null;
+    }
+
+    public function selectRecipientSuggestion(int $index, string $type, int $id): void
+    {
+        abort_unless($this->selectedService, 404);
+
+        if ($this->selectedService->service_type === 'family') {
+            abort_unless($type === 'guardian', 404);
+
+            $guardian = Guardian::query()
+                ->withCount('people')
+                ->where('social_worker_id', $this->currentSocialWorkerId())
+                ->findOrFail($id);
+
+            $this->fillGuardianEntry($index, $guardian, $guardian->people_count . ' نفر تحت تکفل');
+            $this->activeRecipientSearchIndex = null;
+
+            return;
+        }
+
+        abort_unless($type === 'person', 404);
+
+        $person = Person::query()
+            ->whereHas('guardian', fn (Builder $query) => $query->where('social_worker_id', $this->currentSocialWorkerId()))
+            ->findOrFail($id);
+
+        $this->fillPersonEntry($index, $person, 'مددجو');
+        $this->activeRecipientSearchIndex = null;
     }
 
     public function saveDelivery(): void
@@ -261,6 +305,7 @@ class Dashboard extends Component
     protected function blankEntry(): array
     {
         return [
+            'search' => '',
             'national_id' => '',
             'quantity' => '',
             'resolved_name' => '',
@@ -275,5 +320,123 @@ class Dashboard extends Component
         $service = $this->selectedService;
 
         return $service ? $service->remainingAllocationForWorker($this->currentSocialWorkerId()) : 0;
+    }
+
+    protected function clearResolvedEntry(int $index, bool $preserveSearch = true): void
+    {
+        $search = $preserveSearch ? (string) ($this->recipientEntries[$index]['search'] ?? '') : '';
+
+        $this->recipientEntries[$index]['search'] = $search;
+        $this->recipientEntries[$index]['national_id'] = $preserveSearch
+            ? (string) ($this->recipientEntries[$index]['national_id'] ?? '')
+            : '';
+        $this->recipientEntries[$index]['resolved_name'] = '';
+        $this->recipientEntries[$index]['resolved_meta'] = '';
+        $this->recipientEntries[$index]['person_id'] = null;
+        $this->recipientEntries[$index]['guardian_id'] = null;
+    }
+
+    protected function fillGuardianEntry(int $index, Guardian $guardian, string $meta = ''): void
+    {
+        $fullName = $guardian->full_name !== '' ? $guardian->full_name : '-';
+
+        $this->recipientEntries[$index]['search'] = $fullName;
+        $this->recipientEntries[$index]['national_id'] = (string) ($guardian->national_code ?? '');
+        $this->recipientEntries[$index]['guardian_id'] = $guardian->id;
+        $this->recipientEntries[$index]['person_id'] = null;
+        $this->recipientEntries[$index]['resolved_name'] = $fullName;
+        $this->recipientEntries[$index]['resolved_meta'] = $meta;
+    }
+
+    protected function fillPersonEntry(int $index, Person $person, string $meta = ''): void
+    {
+        $fullName = trim(($person->first_name ?? '') . ' ' . ($person->last_name ?? '')) ?: '-';
+
+        $this->recipientEntries[$index]['search'] = $fullName;
+        $this->recipientEntries[$index]['national_id'] = (string) ($person->national_id ?? '');
+        $this->recipientEntries[$index]['person_id'] = $person->id;
+        $this->recipientEntries[$index]['guardian_id'] = null;
+        $this->recipientEntries[$index]['resolved_name'] = $fullName;
+        $this->recipientEntries[$index]['resolved_meta'] = $meta;
+    }
+
+    public function getRecipientSuggestionsProperty(): array
+    {
+        $suggestions = [];
+
+        foreach ($this->recipientEntries as $index => $entry) {
+            if ($this->activeRecipientSearchIndex !== $index || ! $this->selectedService) {
+                $suggestions[$index] = collect();
+                continue;
+            }
+
+            $query = trim((string) ($entry['search'] ?? ''));
+
+            if (mb_strlen($query) < 2) {
+                $suggestions[$index] = collect();
+                continue;
+            }
+
+            $suggestions[$index] = $this->selectedService->service_type === 'family'
+                ? $this->guardianSuggestions($query)
+                : $this->personSuggestions($query);
+        }
+
+        return $suggestions;
+    }
+
+    protected function guardianSuggestions(string $query)
+    {
+        return Guardian::query()
+            ->withCount('people')
+            ->where('social_worker_id', $this->currentSocialWorkerId())
+            ->where(function (Builder $guardianQuery) use ($query): void {
+                $guardianQuery->where('first_name', 'like', $query . '%')
+                    ->orWhere('last_name', 'like', $query . '%')
+                    ->orWhere('national_code', 'like', $query . '%')
+                    ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", [$query . '%'])
+                    ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", ['%' . $query . '%']);
+            })
+            ->orderByRaw(
+                "CASE
+                    WHEN first_name LIKE ? THEN 1
+                    WHEN last_name LIKE ? THEN 2
+                    WHEN national_code LIKE ? THEN 3
+                    WHEN CONCAT_WS(' ', first_name, last_name) LIKE ? THEN 4
+                    ELSE 5
+                END",
+                [$query . '%', $query . '%', $query . '%', $query . '%']
+            )
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->limit(6)
+            ->get(['id', 'first_name', 'last_name', 'national_code']);
+    }
+
+    protected function personSuggestions(string $query)
+    {
+        return Person::query()
+            ->whereHas('guardian', fn (Builder $guardianQuery) => $guardianQuery->where('social_worker_id', $this->currentSocialWorkerId()))
+            ->where(function (Builder $personQuery) use ($query): void {
+                $personQuery->where('first_name', 'like', $query . '%')
+                    ->orWhere('last_name', 'like', $query . '%')
+                    ->orWhere('national_id', 'like', $query . '%')
+                    ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", [$query . '%'])
+                    ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", ['%' . $query . '%']);
+            })
+            ->orderByRaw(
+                "CASE
+                    WHEN first_name LIKE ? THEN 1
+                    WHEN last_name LIKE ? THEN 2
+                    WHEN national_id LIKE ? THEN 3
+                    WHEN CONCAT_WS(' ', first_name, last_name) LIKE ? THEN 4
+                    ELSE 5
+                END",
+                [$query . '%', $query . '%', $query . '%', $query . '%']
+            )
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->limit(6)
+            ->get(['id', 'first_name', 'last_name', 'national_id']);
     }
 }
