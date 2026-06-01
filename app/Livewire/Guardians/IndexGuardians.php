@@ -221,6 +221,7 @@ class IndexGuardians extends Component
 
         return view('livewire.guardians.index-guardians', [
             'totalGuardians' => Guardian::count(),
+            'totalCenterMembers' => (int) Guardian::query()->sum('children_in_house'),
             'householdSizeStats' => Guardian::query()
                 ->select(['id', 'national_code', 'first_name', 'last_name', 'children_in_house'])
                 ->orderBy('children_in_house')

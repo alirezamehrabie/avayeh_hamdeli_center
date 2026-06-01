@@ -317,11 +317,13 @@ class Guardian extends Model
             );
         }
 
+        $motherResidentCount = $this->getMotherResidentCount($people);
+
         $this->children_in_house = $childrenCount
             + $extraHouseholdCount
             + $childrenFromPreviousMarriage
             + $guardianCount
-            + $this->getMotherResidentCount($people);
+            + ($this->isGuardianAlsoMother($people) ? 0 : $motherResidentCount);
         $this->saveQuietly();
     }
 
@@ -364,13 +366,16 @@ class Guardian extends Model
             );
         }
 
+        $motherResidentCount = $this->getMotherResidentCount($people);
+
         return [
             'beneficiaries' => $childrenCount,
             'previous_marriage_members' => $childrenFromPreviousMarriage,
             'non_beneficiaries' => $extraHouseholdCount,
             'guardian' => $guardianCount,
-            'mother' => $this->getMotherResidentCount($people),
-            'final_residents' => $childrenCount + $childrenFromPreviousMarriage + $extraHouseholdCount + $guardianCount + $this->getMotherResidentCount($people),
+            'mother' => $motherResidentCount,
+            'mother_counted_separately' => $this->isGuardianAlsoMother($people) ? 0 : $motherResidentCount,
+            'final_residents' => $childrenCount + $childrenFromPreviousMarriage + $extraHouseholdCount + $guardianCount + ($this->isGuardianAlsoMother($people) ? 0 : $motherResidentCount),
         ];
     }
 
@@ -427,6 +432,21 @@ class Guardian extends Model
         });
 
         return $hasMotherIdentity ? 1 : 0;
+    }
+
+    private function isGuardianAlsoMother($people): bool
+    {
+        $guardianNationalId = preg_replace('/\D+/', '', trim((string) $this->national_code));
+
+        if ($guardianNationalId === '') {
+            return false;
+        }
+
+        $motherNationalId = $people
+            ->map(fn ($person) => preg_replace('/\D+/', '', trim((string) $person->mother_national_id)))
+            ->first(fn ($nationalId) => $nationalId !== '');
+
+        return $motherNationalId !== null && $motherNationalId === $guardianNationalId;
     }
 
     public static function refreshAllChildrenInHouse(): void

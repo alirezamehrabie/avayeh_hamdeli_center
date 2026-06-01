@@ -43,6 +43,19 @@
                         </div>
                     </div>
 
+                    <div class="rounded-2xl border border-cyan-100 bg-white/90 px-5 py-3 shadow-sm ring-1 ring-cyan-50 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
+                        <p class="text-xs font-semibold text-slate-500">کل اعضای مرکز</p>
+                        <div class="mt-1 flex items-center justify-center gap-3" dir="ltr">
+                            <span class="relative flex h-3 w-3" aria-label="جمع اعضای مرکز">
+                                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-60"></span>
+                                <span class="relative inline-flex h-3 w-3 animate-pulse rounded-full bg-cyan-500 shadow-sm shadow-cyan-300"></span>
+                            </span>
+                            <span class="text-xl font-extrabold tracking-tight text-cyan-600 iranyekan-bold">
+                                {{ number_format($totalCenterMembers) }}
+                            </span>
+                        </div>
+                    </div>
+
                     <!-- Actions -->
                     <div class="flex items-center gap-2">
                         <!-- Details Button -->
@@ -327,7 +340,7 @@
                 width: 100%;
             }
             to {
-                width: 0%;
+                width: 0;
             }
         }
     </style>
