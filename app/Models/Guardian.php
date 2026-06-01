@@ -289,6 +289,7 @@ class Guardian extends Model
         $childrenCount = (int) ($this->children_count ?? 0);
         $extraHouseholdCount = count($this->extra_household_members ?? []);
         $childrenFromPreviousMarriage = 0;
+        $guardianCount = 1;
 
         $people = $this->people()->with(['familyStatus.guardianRelationType'])->get();
 
@@ -319,6 +320,7 @@ class Guardian extends Model
         $this->children_in_house = $childrenCount
             + $extraHouseholdCount
             + $childrenFromPreviousMarriage
+            + $guardianCount
             + $this->getMotherResidentCount($people);
         $this->saveQuietly();
     }
@@ -333,6 +335,7 @@ class Guardian extends Model
         $childrenCount = (int) ($this->children_count ?? 0);
         $extraHouseholdCount = count($this->extra_household_members ?? []);
         $childrenFromPreviousMarriage = 0;
+        $guardianCount = 1;
         $people = $this->relationLoaded('people')
             ? $this->people
             : $this->people()->with(['familyStatus.guardianRelationType', 'harmTypes:id'])->get();
@@ -365,8 +368,9 @@ class Guardian extends Model
             'beneficiaries' => $childrenCount,
             'previous_marriage_members' => $childrenFromPreviousMarriage,
             'non_beneficiaries' => $extraHouseholdCount,
+            'guardian' => $guardianCount,
             'mother' => $this->getMotherResidentCount($people),
-            'final_residents' => $childrenCount + $childrenFromPreviousMarriage + $extraHouseholdCount + $this->getMotherResidentCount($people),
+            'final_residents' => $childrenCount + $childrenFromPreviousMarriage + $extraHouseholdCount + $guardianCount + $this->getMotherResidentCount($people),
         ];
     }
 

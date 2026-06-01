@@ -126,7 +126,7 @@
                             <th class="px-5 py-4 text-right font-bold">نام و نام خانوادگی</th>
                             <th class="px-5 py-4 text-center font-bold">موبایل</th>
                             <th class="px-5 py-4 text-center font-bold">تعداد مددجویان تحت پوشش</th>
-                            <th class="px-5 py-4 text-center font-bold">تعداد کل تحت پوشش</th>
+                            <th class="px-5 py-4 text-center font-bold">تعداد نفرات خانواده</th>
                             <th class="w-40 px-3 py-4 text-center font-bold">عملیات</th>
                         </tr>
                         </thead>
@@ -222,7 +222,7 @@
                                                     <span
                                                         class="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">{{ $guardian->people_count }} مددجوی تحت پوشش</span>
                                                     <span
-                                                        class="rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-700">{{ (int) ($guardian->children_in_house ?? 0) }} کل تحت پوشش</span>
+                                                        class="rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-700">{{ (int) ($guardian->children_in_house ?? 0) }} نفرات خانواده</span>
                                                 </div>
                                             </div>
 
