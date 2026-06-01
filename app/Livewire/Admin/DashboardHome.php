@@ -170,6 +170,7 @@ class DashboardHome extends Component
 
         return view('livewire.admin.dashboard-home', [
             'totalPeople' => $isOverview ? Person::count() : 0,
+            'totalCenterMembers' => $isOverview ? (int) Guardian::query()->sum('children_in_house') : 0,
             'totalSocialWorkers' => $isOverview ? SocialWorker::count() : 0,
             'maleCount' => $isOverview ? Person::where('gender', 'male')->count() : 0,
             'femaleCount' => $isOverview ? Person::where('gender', 'female')->count() : 0,
