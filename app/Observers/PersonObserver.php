@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Person;
 use App\Models\Guardian;
+use App\Models\ServiceDelivery;
 
 class PersonObserver
 {
@@ -12,7 +13,7 @@ class PersonObserver
      */
     public function created(Person $person): void
     {
-        //
+        ServiceDelivery::attachToPerson($person);
     }
 
     /**
@@ -20,7 +21,9 @@ class PersonObserver
      */
     public function updated(Person $person): void
     {
-        //
+        if ($person->wasChanged('national_id')) {
+            ServiceDelivery::attachToPerson($person);
+        }
     }
 
     public function saved(Person $person)

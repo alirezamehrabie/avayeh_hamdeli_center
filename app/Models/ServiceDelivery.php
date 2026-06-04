@@ -12,6 +12,9 @@ class ServiceDelivery extends Model
         'social_worker_id',
         'person_id',
         'guardian_id',
+        'national_id',
+        'full_name',
+        'mobile',
         'delivered_quantity',
         'value_per_unit_snapshot',
         'delivered_total_value',
@@ -77,7 +80,7 @@ class ServiceDelivery extends Model
             return trim(implode(' ', array_filter([$this->guardian->first_name, $this->guardian->last_name]))) ?: '-';
         }
 
-        return '-';
+        return (string) ($this->full_name ?: '-');
     }
 
     public function getRecipientNationalIdAttribute(): string
@@ -90,6 +93,35 @@ class ServiceDelivery extends Model
             return (string) ($this->guardian->national_code ?? '-');
         }
 
-        return '-';
+        return (string) ($this->national_id ?: '-');
+    }
+
+    public static function attachToPerson(Person $person): void
+    {
+        static::query()
+            ->whereHas('service', fn ($query) => $query->where('service_type', 'individual'))
+            ->whereNull('person_id')
+            ->whereNull('guardian_id')
+            ->where('national_id', (string) $person->national_id)
+            ->update([
+                'person_id' => $person->id,
+                'guardian_id' => null,
+                'full_name' => trim(implode(' ', array_filter([$person->first_name, $person->last_name]))) ?: '-',
+            ]);
+    }
+
+    public static function attachToGuardian(Guardian $guardian): void
+    {
+        static::query()
+            ->whereHas('service', fn ($query) => $query->where('service_type', 'family'))
+            ->whereNull('person_id')
+            ->whereNull('guardian_id')
+            ->where('national_id', (string) $guardian->national_code)
+            ->update([
+                'guardian_id' => $guardian->id,
+                'person_id' => null,
+                'full_name' => $guardian->full_name !== '' ? $guardian->full_name : '-',
+                'mobile' => $guardian->guardian_phone_number ?: null,
+            ]);
     }
 }

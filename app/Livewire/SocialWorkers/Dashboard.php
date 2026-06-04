@@ -51,6 +51,15 @@ class Dashboard extends Component
 
     public function updatedRecipientEntries($value, string $key): void
     {
+        if (str_ends_with($key, '.full_name') || str_ends_with($key, '.mobile')) {
+            [$index] = explode('.', $key);
+            $index = (int) $index;
+
+            $this->recipientEntries[$index]['is_unregistered'] = (bool) ($this->recipientEntries[$index]['is_unregistered'] ?? false);
+
+            return;
+        }
+
         if (! str_ends_with($key, '.national_id')) {
             return;
         }
@@ -86,7 +95,13 @@ class Dashboard extends Component
             if ($guardian) {
                 $this->fillGuardianEntry($index, $guardian, $guardian->people_count . ' نفر تحت تکفل');
                 $this->activeRecipientSearchIndex = null;
+                $this->recipientEntries[$index]['not_found_notice'] = '';
+                $this->recipientEntries[$index]['is_unregistered'] = false;
+
+                return;
             }
+
+            $this->markUnregisteredRecipient($index, $query);
 
             return;
         }
@@ -100,7 +115,13 @@ class Dashboard extends Component
         if ($person) {
             $this->fillPersonEntry($index, $person, 'مددجو');
             $this->activeRecipientSearchIndex = null;
+            $this->recipientEntries[$index]['not_found_notice'] = '';
+            $this->recipientEntries[$index]['is_unregistered'] = false;
+
+            return;
         }
+
+        $this->markUnregisteredRecipient($index, $query);
     }
 
     public function setActiveRecipientSearch(int $index): void
@@ -155,19 +176,30 @@ class Dashboard extends Component
             foreach ($validated['recipientEntries'] as $entry) {
                 $personId = null;
                 $guardianId = null;
+                $fullName = trim((string) ($entry['full_name'] ?? ''));
+                $mobile = trim((string) ($entry['mobile'] ?? '')) ?: null;
 
                 if ($service->service_type === 'family') {
                     $guardian = Guardian::query()
                         ->where('social_worker_id', $this->currentSocialWorkerId())
                         ->where('national_code', trim((string) $entry['national_id']))
-                        ->firstOrFail();
-                    $guardianId = $guardian->id;
+                        ->first();
+
+                    if ($guardian) {
+                        $guardianId = $guardian->id;
+                        $fullName = $guardian->full_name !== '' ? $guardian->full_name : $fullName;
+                        $mobile = $guardian->guardian_phone_number ?: $mobile;
+                    }
                 } else {
                     $person = Person::query()
                         ->where('national_id', trim((string) $entry['national_id']))
                         ->whereHas('guardian', fn (Builder $query) => $query->where('social_worker_id', $this->currentSocialWorkerId()))
-                        ->firstOrFail();
-                    $personId = $person->id;
+                        ->first();
+
+                    if ($person) {
+                        $personId = $person->id;
+                        $fullName = trim(($person->first_name ?? '') . ' ' . ($person->last_name ?? '')) ?: $fullName;
+                    }
                 }
 
                 ServiceDelivery::query()->create([
@@ -175,6 +207,9 @@ class Dashboard extends Component
                     'social_worker_id' => $this->currentSocialWorkerId(),
                     'person_id' => $personId,
                     'guardian_id' => $guardianId,
+                    'national_id' => trim((string) $entry['national_id']),
+                    'full_name' => $fullName,
+                    'mobile' => $mobile,
                     'delivered_quantity' => $entry['quantity'],
                     'value_per_unit_snapshot' => $service->value_per_unit,
                     'delivered_total_value' => (int) round((float) $entry['quantity'] * $service->value_per_unit),
@@ -258,29 +293,25 @@ class Dashboard extends Component
             'recipientEntries.*.national_id' => [
                 'required',
                 'digits:10',
+            ],
+            'recipientEntries.*.full_name' => [
+                'nullable',
+                'string',
+                'max:255',
                 function (string $attribute, mixed $value, \Closure $fail): void {
-                    $service = $this->selectedService;
-                    if (! $service) {
+                    [$rowIndex] = sscanf($attribute, 'recipientEntries.%d.full_name');
+                    $rowIndex = (int) $rowIndex;
+
+                    if (! ($this->recipientEntries[$rowIndex]['is_unregistered'] ?? false)) {
                         return;
                     }
 
-                    if ($service->service_type === 'family') {
-                        $exists = Guardian::query()
-                            ->where('social_worker_id', $this->currentSocialWorkerId())
-                            ->where('national_code', trim((string) $value))
-                            ->exists();
-                    } else {
-                        $exists = Person::query()
-                            ->where('national_id', trim((string) $value))
-                            ->whereHas('guardian', fn (Builder $query) => $query->where('social_worker_id', $this->currentSocialWorkerId()))
-                            ->exists();
-                    }
-
-                    if (! $exists) {
-                        $fail('کد ملی واردشده برای این خدمت و مددکار معتبر نیست.');
+                    if (trim((string) $value) === '') {
+                        $fail('نام و نام خانوادگی برای فرد ثبت‌نشده الزامی است.');
                     }
                 },
             ],
+            'recipientEntries.*.mobile' => ['nullable', 'regex:/^09[0-9]{9}$/'],
             'recipientEntries.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'deliveredAt' => ['required', 'date'],
             'notes' => ['nullable', 'string', 'max:5000'],
@@ -292,6 +323,8 @@ class Dashboard extends Component
         return [
             'selectedServiceId' => 'خدمت',
             'recipientEntries.*.national_id' => 'کد ملی گیرنده',
+            'recipientEntries.*.full_name' => 'نام و نام خانوادگی',
+            'recipientEntries.*.mobile' => 'موبایل',
             'recipientEntries.*.quantity' => 'مقدار',
             'deliveredAt' => 'تاریخ تحویل',
             'notes' => 'یادداشت',
@@ -307,7 +340,11 @@ class Dashboard extends Component
     {
         return [
             'national_id' => '',
+            'full_name' => '',
+            'mobile' => '',
             'quantity' => '',
+            'is_unregistered' => false,
+            'not_found_notice' => '',
             'resolved_name' => '',
             'resolved_meta' => '',
             'covered_dependents_count' => null,
@@ -329,6 +366,10 @@ class Dashboard extends Component
         $this->recipientEntries[$index]['national_id'] = $preserveNationalId
             ? (string) ($this->recipientEntries[$index]['national_id'] ?? '')
             : '';
+        $this->recipientEntries[$index]['full_name'] = '';
+        $this->recipientEntries[$index]['mobile'] = '';
+        $this->recipientEntries[$index]['is_unregistered'] = false;
+        $this->recipientEntries[$index]['not_found_notice'] = '';
         $this->recipientEntries[$index]['resolved_name'] = '';
         $this->recipientEntries[$index]['resolved_meta'] = '';
         $this->recipientEntries[$index]['covered_dependents_count'] = null;
@@ -342,6 +383,10 @@ class Dashboard extends Component
         $fullName = $guardian->full_name !== '' ? $guardian->full_name : '-';
 
         $this->recipientEntries[$index]['national_id'] = (string) ($guardian->national_code ?? '');
+        $this->recipientEntries[$index]['full_name'] = $fullName;
+        $this->recipientEntries[$index]['mobile'] = (string) ($guardian->guardian_phone_number ?? '');
+        $this->recipientEntries[$index]['is_unregistered'] = false;
+        $this->recipientEntries[$index]['not_found_notice'] = '';
         $this->recipientEntries[$index]['guardian_id'] = $guardian->id;
         $this->recipientEntries[$index]['person_id'] = null;
         $this->recipientEntries[$index]['resolved_name'] = $fullName;
@@ -356,6 +401,10 @@ class Dashboard extends Component
         $guardian = $person->guardian;
 
         $this->recipientEntries[$index]['national_id'] = (string) ($person->national_id ?? '');
+        $this->recipientEntries[$index]['full_name'] = $fullName;
+        $this->recipientEntries[$index]['mobile'] = '';
+        $this->recipientEntries[$index]['is_unregistered'] = false;
+        $this->recipientEntries[$index]['not_found_notice'] = '';
         $this->recipientEntries[$index]['person_id'] = $person->id;
         $this->recipientEntries[$index]['guardian_id'] = null;
         $this->recipientEntries[$index]['resolved_name'] = $fullName;
@@ -443,5 +492,13 @@ class Dashboard extends Component
             ->orderBy('last_name')
             ->limit(6)
             ->get(['id', 'first_name', 'last_name', 'national_id']);
+    }
+
+    protected function markUnregisteredRecipient(int $index, string $nationalId): void
+    {
+        $this->clearResolvedEntry($index, preserveNationalId: true);
+        $this->recipientEntries[$index]['national_id'] = $nationalId;
+        $this->recipientEntries[$index]['is_unregistered'] = true;
+        $this->recipientEntries[$index]['not_found_notice'] = 'Person not found in system.';
     }
 }

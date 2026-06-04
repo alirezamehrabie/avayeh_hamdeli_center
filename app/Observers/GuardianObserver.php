@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Models\Guardian;
+use App\Models\ServiceDelivery;
 use App\Models\SocialWorker;
 
 class GuardianObserver
@@ -12,7 +13,7 @@ class GuardianObserver
      */
     public function created(Guardian $guardian): void
     {
-        //
+        ServiceDelivery::attachToGuardian($guardian);
     }
 
     /**
@@ -20,7 +21,9 @@ class GuardianObserver
      */
     public function updated(Guardian $guardian): void
     {
-        //
+        if ($guardian->wasChanged('national_code')) {
+            ServiceDelivery::attachToGuardian($guardian);
+        }
     }
 
     public function saved(Guardian $guardian)

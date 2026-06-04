@@ -214,6 +214,32 @@
                                             </div>
                                             @error('recipientEntries.' . $index . '.national_id') <p
                                                 class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
+                                            @if($entry['is_unregistered'] ?? false)
+                                                <div class="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                                                    {{ $entry['not_found_notice'] ?: 'فردی در سیستم یافت نشد.' }}
+                                                </div>
+
+                                                <div class="mt-3 grid gap-3 md:grid-cols-2">
+                                                    <div>
+                                                        <label class="mb-2 block text-sm font-bold text-slate-700">نام و نام خانوادگی</label>
+                                                        <input type="text"
+                                                               wire:model.blur="recipientEntries.{{ $index }}.full_name"
+                                                               class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
+                                                               placeholder="نام و نام خانوادگی را وارد کنید">
+                                                        @error('recipientEntries.' . $index . '.full_name') <p
+                                                            class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
+                                                    </div>
+                                                    <div>
+                                                        <label class="mb-2 block text-sm font-bold text-slate-700">موبایل</label>
+                                                        <input type="text"
+                                                               wire:model.blur="recipientEntries.{{ $index }}.mobile"
+                                                               class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
+                                                               placeholder="اختیاری">
+                                                        @error('recipientEntries.' . $index . '.mobile') <p
+                                                            class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
+                                                    </div>
+                                                </div>
+                                            @endif
                                             @if($entry['resolved_name'])
                                                 <div
                                                     class="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">

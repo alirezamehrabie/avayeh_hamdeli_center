@@ -43,7 +43,7 @@ class ServiceDeliveryManager extends Component
     {
         $service = $this->selectedService;
 
-        if ($service && $service->deliveredQuantityForWorker($workerId) > 0) {
+        if ($service && $service->deliveries()->where('social_worker_id', $workerId)->exists()) {
             $this->addError('selectedWorkerIds', 'مددکاری که تحویل خدمت ثبت‌شده دارد قابل حذف نیست.');
             return;
         }
@@ -78,7 +78,7 @@ class ServiceDeliveryManager extends Component
             ->values();
 
         $lockedWorkerIds = $service->socialWorkers
-            ->filter(fn ($worker) => $service->deliveredQuantityForWorker($worker->id) > 0)
+            ->filter(fn ($worker) => $service->deliveries()->where('social_worker_id', $worker->id)->exists())
             ->pluck('id')
             ->diff($selectedWorkerIds);
 
