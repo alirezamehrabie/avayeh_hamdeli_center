@@ -163,8 +163,8 @@
                         <div class="mb-4 flex items-center justify-between">
                             <div>
                                 <h2 class="text-lg font-bold text-slate-800">گیرندگان خدمت</h2>
-                                <p class="mt-1 text-sm text-slate-500">کد ملی و مقدار تحویلی را برای هر گیرنده وارد
-                                    کنید.</p>
+                                <p class="mt-1 text-sm text-slate-500">کد ملی گیرنده را وارد کنید یا نام او را جستجو
+                                    کنید، سپس مقدار تحویلی را مشخص کنید.</p>
                             </div>
                             <button type="button" wire:click="addRecipientField"
                                     class="inline-flex items-center rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-2 text-sm font-bold text-cyan-700">
@@ -177,11 +177,12 @@
                                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3.5">
                                     <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_160px_auto] md:items-start">
                                         <div>
-                                            <label class="mb-2 block text-sm font-bold text-slate-700">جستجوی گیرنده</label>
+                                            <label class="mb-2 block text-sm font-bold text-slate-700">کد ملی</label>
                                             <div class="relative">
                                                 <input
                                                     type="text"
-                                                    wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.search"
+                                                    maxlength="100"
+                                                    wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.national_id"
                                                     wire:focus="setActiveRecipientSearch({{ $index }})"
                                                     class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
                                                     placeholder="{{ $this->selectedService?->service_type === 'family' ? 'کد ملی یا نام و نام خانوادگی سرپرست' : 'کد ملی یا نام و نام خانوادگی مددجو' }}"
@@ -210,13 +211,6 @@
                                                         @endforeach
                                                     </div>
                                                 @endif
-                                            </div>
-                                            <div class="mt-3">
-                                                <label class="mb-2 block text-sm font-bold text-slate-700">کد ملی</label>
-                                                <input type="text" maxlength="10"
-                                                       wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.national_id"
-                                                       class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
-                                                       placeholder="کد ملی را وارد کنید">
                                             </div>
                                             @error('recipientEntries.' . $index . '.national_id') <p
                                                 class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror

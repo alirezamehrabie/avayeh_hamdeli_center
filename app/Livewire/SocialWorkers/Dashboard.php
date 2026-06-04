@@ -51,31 +51,28 @@ class Dashboard extends Component
 
     public function updatedRecipientEntries($value, string $key): void
     {
-        if (str_ends_with($key, '.search')) {
-            [$index] = explode('.', $key);
-            $index = (int) $index;
-            $query = trim((string) ($this->recipientEntries[$index]['search'] ?? ''));
-
-            $this->activeRecipientSearchIndex = mb_strlen($query) >= 2 ? $index : null;
-
-            if ($query === '') {
-                $this->clearResolvedEntry($index);
-            }
-
-            return;
-        }
-
         if (! str_ends_with($key, '.national_id')) {
             return;
         }
 
         [$index] = explode('.', $key);
         $index = (int) $index;
-        $nationalId = trim((string) ($this->recipientEntries[$index]['national_id'] ?? ''));
-        $this->clearResolvedEntry($index, preserveSearch: false);
-        $this->activeRecipientSearchIndex = null;
+        $query = trim((string) ($this->recipientEntries[$index]['national_id'] ?? ''));
 
-        if ($nationalId === '' || ! $this->selectedService) {
+        $this->clearResolvedEntry($index, preserveNationalId: true);
+
+        if ($query === '') {
+            $this->activeRecipientSearchIndex = null;
+            return;
+        }
+
+        $this->activeRecipientSearchIndex = mb_strlen($query) >= 2 ? $index : null;
+
+        if (! $this->selectedService) {
+            return;
+        }
+
+        if (! preg_match('/^\d{10}$/', $query)) {
             return;
         }
 
@@ -83,11 +80,12 @@ class Dashboard extends Component
             $guardian = Guardian::query()
                 ->withCount('people')
                 ->where('social_worker_id', $this->currentSocialWorkerId())
-                ->where('national_code', $nationalId)
+                ->where('national_code', $query)
                 ->first();
 
             if ($guardian) {
                 $this->fillGuardianEntry($index, $guardian, $guardian->people_count . ' نفر تحت تکفل');
+                $this->activeRecipientSearchIndex = null;
             }
 
             return;
@@ -95,18 +93,19 @@ class Dashboard extends Component
 
         $person = Person::query()
             ->with('guardian:id,children_count,children_in_house')
-            ->where('national_id', $nationalId)
+            ->where('national_id', $query)
             ->whereHas('guardian', fn (Builder $query) => $query->where('social_worker_id', $this->currentSocialWorkerId()))
             ->first();
 
         if ($person) {
             $this->fillPersonEntry($index, $person, 'مددجو');
+            $this->activeRecipientSearchIndex = null;
         }
     }
 
     public function setActiveRecipientSearch(int $index): void
     {
-        $query = trim((string) ($this->recipientEntries[$index]['search'] ?? ''));
+        $query = trim((string) ($this->recipientEntries[$index]['national_id'] ?? ''));
         $this->activeRecipientSearchIndex = mb_strlen($query) >= 2 ? $index : null;
     }
 
@@ -307,7 +306,6 @@ class Dashboard extends Component
     protected function blankEntry(): array
     {
         return [
-            'search' => '',
             'national_id' => '',
             'quantity' => '',
             'resolved_name' => '',
@@ -326,12 +324,9 @@ class Dashboard extends Component
         return $service ? $service->remainingAllocationForWorker($this->currentSocialWorkerId()) : 0;
     }
 
-    protected function clearResolvedEntry(int $index, bool $preserveSearch = true): void
+    protected function clearResolvedEntry(int $index, bool $preserveNationalId = true): void
     {
-        $search = $preserveSearch ? (string) ($this->recipientEntries[$index]['search'] ?? '') : '';
-
-        $this->recipientEntries[$index]['search'] = $search;
-        $this->recipientEntries[$index]['national_id'] = $preserveSearch
+        $this->recipientEntries[$index]['national_id'] = $preserveNationalId
             ? (string) ($this->recipientEntries[$index]['national_id'] ?? '')
             : '';
         $this->recipientEntries[$index]['resolved_name'] = '';
@@ -346,7 +341,6 @@ class Dashboard extends Component
     {
         $fullName = $guardian->full_name !== '' ? $guardian->full_name : '-';
 
-        $this->recipientEntries[$index]['search'] = $fullName;
         $this->recipientEntries[$index]['national_id'] = (string) ($guardian->national_code ?? '');
         $this->recipientEntries[$index]['guardian_id'] = $guardian->id;
         $this->recipientEntries[$index]['person_id'] = null;
@@ -361,7 +355,6 @@ class Dashboard extends Component
         $fullName = trim(($person->first_name ?? '') . ' ' . ($person->last_name ?? '')) ?: '-';
         $guardian = $person->guardian;
 
-        $this->recipientEntries[$index]['search'] = $fullName;
         $this->recipientEntries[$index]['national_id'] = (string) ($person->national_id ?? '');
         $this->recipientEntries[$index]['person_id'] = $person->id;
         $this->recipientEntries[$index]['guardian_id'] = null;
@@ -381,7 +374,7 @@ class Dashboard extends Component
                 continue;
             }
 
-            $query = trim((string) ($entry['search'] ?? ''));
+            $query = trim((string) ($entry['national_id'] ?? ''));
 
             if (mb_strlen($query) < 2) {
                 $suggestions[$index] = collect();
