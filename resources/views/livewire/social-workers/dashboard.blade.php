@@ -174,7 +174,7 @@
 
                         <div class="space-y-4">
                             @foreach($recipientEntries as $index => $entry)
-                                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3.5">
                                     <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_160px_auto] md:items-start">
                                         <div>
                                             <label class="mb-2 block text-sm font-bold text-slate-700">جستجوی گیرنده</label>
@@ -223,13 +223,24 @@
                                             @if($entry['resolved_name'])
                                                 <div
                                                     class="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-                                                    <p class="font-bold">{{ $entry['resolved_name'] }}</p>
-                                                    @if($entry['national_id'])
-                                                        <p class="mt-1 text-xs text-emerald-700">کد ملی: {{ $entry['national_id'] }}</p>
-                                                    @endif
-                                                    @if($entry['resolved_meta'])
-                                                        <p class="mt-1 text-xs text-emerald-700">{{ $entry['resolved_meta'] }}</p>
-                                                    @endif
+                                                    <div class="grid gap-2 sm:grid-cols-2">
+                                                        <div>
+                                                            <p class="text-xs font-semibold text-emerald-700">نام و نام خانوادگی</p>
+                                                            <p class="mt-1 font-bold">{{ $entry['resolved_name'] }}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p class="text-xs font-semibold text-emerald-700">کد ملی</p>
+                                                            <p class="mt-1 font-bold">{{ $entry['national_id'] ?: '-' }}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p class="text-xs font-semibold text-emerald-700">تعداد افراد تحت پوشش</p>
+                                                            <p class="mt-1 font-bold">{{ $entry['covered_dependents_count'] ?? 0 }}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p class="text-xs font-semibold text-emerald-700">تعداد اعضای خانواده</p>
+                                                            <p class="mt-1 font-bold">{{ $entry['family_members_count'] ?? 0 }}</p>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             @endif
                                         </div>

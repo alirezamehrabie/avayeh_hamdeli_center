@@ -94,6 +94,7 @@ class Dashboard extends Component
         }
 
         $person = Person::query()
+            ->with('guardian:id,children_count,children_in_house')
             ->where('national_id', $nationalId)
             ->whereHas('guardian', fn (Builder $query) => $query->where('social_worker_id', $this->currentSocialWorkerId()))
             ->first();
@@ -130,6 +131,7 @@ class Dashboard extends Component
         abort_unless($type === 'person', 404);
 
         $person = Person::query()
+            ->with('guardian:id,children_count,children_in_house')
             ->whereHas('guardian', fn (Builder $query) => $query->where('social_worker_id', $this->currentSocialWorkerId()))
             ->findOrFail($id);
 
@@ -310,6 +312,8 @@ class Dashboard extends Component
             'quantity' => '',
             'resolved_name' => '',
             'resolved_meta' => '',
+            'covered_dependents_count' => null,
+            'family_members_count' => null,
             'person_id' => null,
             'guardian_id' => null,
         ];
@@ -332,6 +336,8 @@ class Dashboard extends Component
             : '';
         $this->recipientEntries[$index]['resolved_name'] = '';
         $this->recipientEntries[$index]['resolved_meta'] = '';
+        $this->recipientEntries[$index]['covered_dependents_count'] = null;
+        $this->recipientEntries[$index]['family_members_count'] = null;
         $this->recipientEntries[$index]['person_id'] = null;
         $this->recipientEntries[$index]['guardian_id'] = null;
     }
@@ -346,11 +352,14 @@ class Dashboard extends Component
         $this->recipientEntries[$index]['person_id'] = null;
         $this->recipientEntries[$index]['resolved_name'] = $fullName;
         $this->recipientEntries[$index]['resolved_meta'] = $meta;
+        $this->recipientEntries[$index]['covered_dependents_count'] = (int) ($guardian->children_count ?? $guardian->people_count ?? 0);
+        $this->recipientEntries[$index]['family_members_count'] = (int) ($guardian->children_in_house ?? 0);
     }
 
     protected function fillPersonEntry(int $index, Person $person, string $meta = ''): void
     {
         $fullName = trim(($person->first_name ?? '') . ' ' . ($person->last_name ?? '')) ?: '-';
+        $guardian = $person->guardian;
 
         $this->recipientEntries[$index]['search'] = $fullName;
         $this->recipientEntries[$index]['national_id'] = (string) ($person->national_id ?? '');
@@ -358,6 +367,8 @@ class Dashboard extends Component
         $this->recipientEntries[$index]['guardian_id'] = null;
         $this->recipientEntries[$index]['resolved_name'] = $fullName;
         $this->recipientEntries[$index]['resolved_meta'] = $meta;
+        $this->recipientEntries[$index]['covered_dependents_count'] = (int) ($guardian?->children_count ?? 0);
+        $this->recipientEntries[$index]['family_members_count'] = (int) ($guardian?->children_in_house ?? 0);
     }
 
     public function getRecipientSuggestionsProperty(): array
@@ -410,12 +421,13 @@ class Dashboard extends Component
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->limit(6)
-            ->get(['id', 'first_name', 'last_name', 'national_code']);
+            ->get(['id', 'first_name', 'last_name', 'national_code', 'children_count', 'children_in_house']);
     }
 
     protected function personSuggestions(string $query)
     {
         return Person::query()
+            ->with(['guardian:id,children_count,children_in_house'])
             ->whereHas('guardian', fn (Builder $guardianQuery) => $guardianQuery->where('social_worker_id', $this->currentSocialWorkerId()))
             ->where(function (Builder $personQuery) use ($query): void {
                 $personQuery->where('first_name', 'like', $query . '%')
