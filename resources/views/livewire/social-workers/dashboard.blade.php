@@ -181,7 +181,7 @@
                                             <div class="relative">
                                                 <input
                                                     type="text"
-                                                    maxlength="100"
+                                                    maxlength="10"
                                                     wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.national_id"
                                                     wire:focus="setActiveRecipientSearch({{ $index }})"
                                                     class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
@@ -234,6 +234,7 @@
                                                         <input type="text"
                                                                wire:model.blur="recipientEntries.{{ $index }}.mobile"
                                                                class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
+                                                               MAXLENGTH="11"
                                                                placeholder="اختیاری">
                                                         @error('recipientEntries.' . $index . '.mobile') <p
                                                             class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror

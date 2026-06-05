@@ -499,6 +499,6 @@ class Dashboard extends Component
         $this->clearResolvedEntry($index, preserveNationalId: true);
         $this->recipientEntries[$index]['national_id'] = $nationalId;
         $this->recipientEntries[$index]['is_unregistered'] = true;
-        $this->recipientEntries[$index]['not_found_notice'] = 'Person not found in system.';
+        $this->recipientEntries[$index]['not_found_notice'] = 'این شخص در سامانه ثبت نشده است';
     }
 }

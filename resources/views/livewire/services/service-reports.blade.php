@@ -10,82 +10,94 @@
 
     @if(! $selectedService)
         <div class="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
-            <div class="bg-gradient-to-l from-violet-600 via-indigo-600 to-sky-600 px-6 py-6 text-white">
-                <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div class="bg-gradient-to-l from-violet-600 via-indigo-600 to-sky-600 px-4 py-4 text-white sm:px-6 sm:py-5">
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-white/70">Service Reports</p>
-                        <h1 class="mt-2 text-2xl font-extrabold">گزارش خدمات</h1>
-                        <p class="mt-2 max-w-3xl text-sm text-indigo-50/90">
-                            ابتدا یک خدمت را انتخاب کنید تا همه تحویل‌های ثبت‌شده همان خدمت به همراه جزئیات گیرندگان نمایش داده شود.
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h1 class="text-xl font-extrabold sm:text-2xl">گزارش خدمات</h1>
+                            <span class="inline-flex items-center rounded-full border border-white/20 bg-white/15 px-2.5 py-0.5 text-xs font-semibold backdrop-blur">
+                    {{ $services->count() }} خدمت
+                </span>
+                        </div>
+                        <p class="mt-1.5 max-w-3xl text-xs text-indigo-50/90 sm:text-sm">
+                            فهرست خدمات را سریع مرور کنید، جستجو بزنید و مستقیم وارد تحویل‌های هر خدمت شوید.
                         </p>
                     </div>
 
-                    <div class="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur">
-                        <p class="text-xs text-indigo-100">تعداد خدمات تعریف‌شده</p>
-                        <p class="mt-1 text-lg font-bold">{{ $services->count() }} خدمت</p>
-                    </div>
+                    <label class="block w-full lg:max-w-md">
+                        <span class="sr-only">جستجوی خدمات</span>
+                        <input
+                            type="text"
+                            wire:model.live.debounce.300ms="search"
+                            placeholder="جستجو با شناسه، نام، دسته‌بندی و ..."
+                            class="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm text-white placeholder:text-indigo-100/70 backdrop-blur outline-none transition focus:border-white/40 focus:bg-white/15"
+                        >
+                    </label>
                 </div>
             </div>
 
-            <div class="grid gap-4 p-6 sm:grid-cols-2 xl:grid-cols-3">
+            <div class="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
                 @forelse($services as $service)
-                    <button
-                        type="button"
-                        wire:click="openService({{ $service->id }})"
-                        class="rounded-3xl border border-slate-200 bg-white p-5 text-right shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-100/60"
-                    >
+                    @php
+                        $creatorName = trim(implode(' ', array_filter([
+                            $service->creator?->first_name,
+                            $service->creator?->last_name,
+                        ]))) ?: ($service->creator?->name ?: '-');
+                    @endphp
+                    <div class="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-4 text-right shadow-sm transition-all duration-200 hover:border-indigo-200 hover:shadow-md">
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
-                                <p class="text-xs font-semibold text-slate-500">شناسه خدمت</p>
-                                <p class="mt-1 text-sm font-black text-slate-800">{{ $service->service_code }}</p>
+                                <p class="text-[11px] font-semibold text-slate-500">شناسه خدمت</p>
+                                <p class="mt-1 text-sm font-black text-slate-800">{{ $service->id }}</p>
                             </div>
-                            <span class="inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $statusBadgeClasses[$service->status] ?? 'bg-slate-100 text-slate-700' }}">
+                            <span class="inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold {{ $statusBadgeClasses[$service->status] ?? 'bg-slate-100 text-slate-700' }}">
                                 {{ $statusOptions[$service->status] ?? $service->status }}
                             </span>
                         </div>
 
-                        <div class="mt-4 rounded-2xl bg-slate-50 px-4 py-3">
-                            <p class="text-xs font-medium text-slate-500">نام خدمت</p>
-                            <p class="mt-1 text-base font-black text-slate-900">
+                        <div class="mt-3 min-h-[54px] rounded-xl bg-slate-50 px-3 py-3">
+                            <p class="text-sm font-black text-slate-900 leading-5">
                                 {{ $service->serviceName?->name ?: '-' }}
-                            </p>
-                            <p class="mt-2 text-xs text-slate-500">
-                                {{ $service->serviceCategory?->name ?: 'بدون دسته‌بندی' }}
+                                <span class="text-xs font-medium text-slate-500">
+                                    / {{ $service->serviceCategory?->name ?: 'بدون دسته‌بندی' }}
+                                </span>
                             </p>
                         </div>
 
-                        <div class="mt-4 grid grid-cols-2 gap-3">
-                            <div class="rounded-2xl bg-indigo-50 px-3 py-3">
-                                <p class="text-[10px] font-semibold text-indigo-500">کل مقدار</p>
-                                <p class="mt-1 text-sm font-black text-indigo-900">
-                                    {{ number_format((float) $service->total_quantity, 2) }}
-                                    {{ $unitOptions[$service->service_unit] ?? $service->service_unit }}
-                                </p>
-                            </div>
-                            <div class="rounded-2xl bg-emerald-50 px-3 py-3">
-                                <p class="text-[10px] font-semibold text-emerald-500">تحویل ثبت‌شده</p>
-                                <p class="mt-1 text-sm font-black text-emerald-900">
-                                    {{ number_format((float) $service->quantity_delivered, 2) }}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="mt-4 flex items-center justify-between rounded-2xl bg-slate-950 px-4 py-3 text-white">
+                        <div class="mt-3 flex-1 space-y-3">
                             <div>
-                                <p class="text-[10px] text-slate-300">مددکاران تخصیص‌گرفته</p>
-                                <p class="mt-1 text-sm font-bold">{{ $service->socialWorkers->count() }} نفر</p>
+                                <p class="text-[11px] font-semibold text-slate-500">توضیحات</p>
+                                <p class="mt-1 line-clamp-3 min-h-[54px] text-xs leading-5 text-slate-600">
+                                    {{ $service->description ?: 'بدون توضیحات' }}
+                                </p>
                             </div>
-                            <span class="inline-flex items-center gap-2 text-sm font-bold text-sky-200">
-                                مشاهده تحویل‌ها
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                </svg>
-                            </span>
+
+                            <div class="grid gap-2 rounded-xl bg-slate-50 px-3 py-3">
+                                <div class="flex items-center justify-between gap-3">
+                                    <span class="text-[11px] text-slate-500">اپراتور توزیع</span>
+                                    <span class="text-xs font-bold text-slate-800 text-left">{{ $creatorName }}</span>
+                                </div>
+                                <div class="flex items-center justify-between gap-3">
+                                    <span class="text-[11px] text-slate-500">ایجاد شده</span>
+                                    <span class="text-xs font-bold text-slate-800 text-left">{{ $jalaliDateTime($service->created_at) }}</span>
+                                </div>
+                            </div>
                         </div>
-                    </button>
+
+                        <button
+                            type="button"
+                            wire:click="openService({{ $service->id }})"
+                            class="mt-3 inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-3 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-700"
+                        >
+                            لیست تحویل
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
                 @empty
                     <div class="col-span-full rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-4 py-12 text-center text-slate-500">
-                        هنوز خدمتی تعریف نشده است.
+                        {{ trim($search ?? '') !== '' ? 'موردی برای جستجوی فعلی پیدا نشد.' : 'هنوز خدمتی تعریف نشده است.' }}
                     </div>
                 @endforelse
             </div>
@@ -106,8 +118,7 @@
                                 </svg>
                                 بازگشت به فهرست خدمات
                             </button>
-                            <p class="mt-4 text-xs font-semibold uppercase tracking-[0.3em] text-sky-200">Service Reports</p>
-                            <h1 class="mt-2 text-2xl font-extrabold">{{ $selectedService->serviceName?->name ?: 'خدمت بدون نام' }}</h1>
+                            <h1 class="mt-3 text-2xl font-extrabold">{{ $selectedService->serviceName?->name ?: 'خدمت بدون نام' }}</h1>
                             <p class="mt-2 text-sm text-slate-200">
                                 {{ $selectedService->service_code }} · {{ $selectedService->serviceCategory?->name ?: 'بدون دسته‌بندی' }}
                             </p>
