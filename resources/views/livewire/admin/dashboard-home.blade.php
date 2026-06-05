@@ -180,10 +180,7 @@
                         @break
 
                     @case('advanced-service-report')
-                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <h1 class="text-xl font-bold text-gray-800 mb-2">Service Reports</h1>
-                            <p class="text-sm text-gray-600">ساختار این بخش بعداً طبق دستور بعدی پیاده‌سازی می‌شود.</p>
-                        </div>
+                        <livewire:services.service-reports :selected-service-id="$serviceReportServiceId" :key="'advanced-service-report-'.($serviceReportServiceId ?? 'list')" />
                         @break
 
                     @case('advanced-operator-report')

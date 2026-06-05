@@ -471,6 +471,11 @@ class Person extends Model
         return $this->belongsTo(SocialWorker::class);
     }
 
+    public function serviceDeliveries()
+    {
+        return $this->hasMany(ServiceDelivery::class);
+    }
+
     public function familyStatus()
     {
         return $this->hasOne(FamilyStatus::class);

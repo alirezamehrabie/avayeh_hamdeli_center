@@ -81,6 +81,11 @@ class Guardian extends Model
         return $this->belongsTo(SocialWorker::class, 'social_worker_id');
     }
 
+    public function serviceDeliveries()
+    {
+        return $this->hasMany(ServiceDelivery::class);
+    }
+
     public function occupation()
     {
         return $this->belongsTo(Occupation::class);
