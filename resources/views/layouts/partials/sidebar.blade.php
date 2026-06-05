@@ -49,7 +49,7 @@
         $peopleOpen = $dashboardMode ? $isActive(['people-fast-create', 'people-list', 'people-block-list', 'person-create', 'person-edit']) : request()->routeIs('people.*');
         $socialWorkersOpen = $dashboardMode ? $isActive(['social-workers-list', 'social-workers-block-list', 'social-worker-create', 'social-worker-edit']) : request()->routeIs('social-workers.*');
         $guardiansOpen = $dashboardMode ? $isActive(['guardians-list', 'guardians-block-list']) : request()->routeIs('guardians.*');
-        $reportsOpen = $dashboardMode ? $isActive(['advanced-reports', 'advanced-beneficiary-report', 'advanced-operator-report', 'advanced-supervisor-report', 'advanced-social-worker-report']) : false;
+        $reportsOpen = $dashboardMode ? $isActive(['advanced-reports', 'advanced-service-report', 'advanced-beneficiary-report', 'advanced-operator-report', 'advanced-supervisor-report', 'advanced-social-worker-report']) : false;
         $servicesOpen = $dashboardMode ? $isActive(['define-services', 'service-list', 'service-delivery']) : false;
         $systemSettingsOpen = $dashboardMode ? $isActive(['system-settings-user-management', 'system-settings-user-account']) : request()->routeIs('admin.user-management') || request()->routeIs('admin.user-account');
         $defaultOpenMenu = $peopleOpen
@@ -323,7 +323,7 @@
         @if($dashboardMode && auth()->user()?->can('access-admin-panel'))
             <div>
                 <button type="button" @click="openMenu = openMenu === 'reports' ? '' : 'reports'"
-                        class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $isActive(['advanced-reports', 'advanced-beneficiary-report', 'advanced-operator-report', 'advanced-supervisor-report', 'advanced-social-worker-report']) ? 'bg-indigo-700' : '' }}">
+                        class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $isActive(['advanced-reports', 'advanced-service-report', 'advanced-beneficiary-report', 'advanced-operator-report', 'advanced-supervisor-report', 'advanced-social-worker-report']) ? 'bg-indigo-700' : '' }}">
                     <div class="flex items-center">
                         <svg class="w-5 h-5 ml-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                              stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -355,6 +355,10 @@
                             گزارش مددکاران
                         </button>
                     @endcan
+                    <button type="button" wire:click="selectSection('advanced-service-report')"
+                            class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'advanced-service-report' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
+                         گزارش خدمات
+                    </button>
                     <button type="button" wire:click="selectSection('advanced-operator-report')"
                             class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'advanced-operator-report' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                         گزارش اپراتورها

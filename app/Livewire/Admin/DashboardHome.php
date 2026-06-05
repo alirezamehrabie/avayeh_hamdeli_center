@@ -66,6 +66,7 @@ class DashboardHome extends Component
         }
 
         if ($user?->can('access-admin-panel')) {
+            $validSections[] = 'advanced-service-report';
             $validSections[] = 'advanced-operator-report';
             $validSections[] = 'child-supporter-page';
         }
@@ -81,6 +82,7 @@ class DashboardHome extends Component
                 'guardians-block-list',
                 'guardian-edit',
                 'advanced-reports',
+                'advanced-service-report',
                 'advanced-beneficiary-report',
                 'advanced-operator-report',
                 'advanced-supervisor-report',
