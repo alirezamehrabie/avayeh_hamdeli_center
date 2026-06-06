@@ -17,6 +17,7 @@ use Livewire\Component;
 #[Layout('layouts.social-worker')]
 class Dashboard extends Component
 {
+    public string $activeSection = 'service-delivery';
     public ?int $selectedServiceId = null;
     public array $quotaState = [
         'service_type' => '',
@@ -302,15 +303,7 @@ class Dashboard extends Component
 
     public function render()
     {
-        return view('livewire.social-workers.dashboard', [
-            'deliveries' => ServiceDelivery::query()
-                ->with(['service.serviceName', 'person', 'guardian'])
-                ->where('social_worker_id', $this->currentSocialWorkerId())
-                ->latest('delivered_at')
-                ->latest('id')
-                ->take(25)
-                ->get(),
-        ]);
+        return view('livewire.social-workers.dashboard');
     }
 
     protected function rules(): array

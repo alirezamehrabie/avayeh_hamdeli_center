@@ -8,42 +8,59 @@
     @livewireStyles
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-900">
-    <div class="min-h-screen">
-        <header class="border-b border-slate-200 bg-white/95 backdrop-blur">
-            <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-                <div class="flex items-center gap-3">
-                    <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-slate-200">
-                        <img src="{{ asset('images/logo-sm.png') }}" alt="لوگوی مرکز آوای همدلی" class="h-10 w-10 object-contain">
-                    </div>
-                    <div>
-                        <p class="text-xs font-semibold text-cyan-700">پنل مددکار اجتماعی</p>
-                        <h1 class="text-base font-black text-slate-800 sm:text-lg">مرکز نیکوکاری تخصصی کودکان آوای همدلی</h1>
+    <div
+        x-data="{
+            sidebarOpen: window.innerWidth >= 1024,
+            toggleSidebar() {
+                this.sidebarOpen = !this.sidebarOpen;
+            },
+            syncSidebar() {
+                if (window.innerWidth >= 1024) {
+                    this.sidebarOpen = true;
+                }
+            }
+        }"
+        x-init="syncSidebar(); window.addEventListener('resize', () => syncSidebar())"
+        class="flex h-screen overflow-hidden"
+    >
+        @include('layouts.partials.social-worker-sidebar', ['activeSection' => $activeSection ?? 'service-delivery'])
+
+        <div
+            x-show="sidebarOpen"
+            x-transition.opacity.duration.300ms
+            @click="sidebarOpen = false"
+            class="fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-sm lg:hidden"
+            style="display: none;"
+        ></div>
+
+        <div class="flex w-full flex-1 flex-col overflow-y-auto">
+            <header class="flex items-center justify-between gap-4 border-b bg-white px-6 py-4 shadow-sm">
+                <div class="flex items-center gap-4">
+                    <button type="button" @click="toggleSidebar()" class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 text-indigo-700 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-indigo-100 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-indigo-100" aria-label="نمایش یا پنهان‌سازی منو">
+                        <svg x-show="!sidebarOpen" class="h-6 w-6" viewBox="0 0 24 24" fill="none" style="display: none;"><path d="M4 6H20M4 12H20M4 18H11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                        <svg x-show="sidebarOpen" class="h-6 w-6" viewBox="0 0 24 24" fill="none"><path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    </button>
+
+                    <div class="relative">
+                        <span class="font-semibold text-gray-700">مددکار محترم ← {{ auth()->user()->first_name ?? '' }} {{ auth()->user()->last_name ?? 'کاربر' }}</span>
                     </div>
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <div class="hidden rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-600 sm:block">
-                        <span class="font-semibold text-slate-800">
-                            {{ trim((auth()->user()->first_name ?? '') . ' ' . (auth()->user()->last_name ?? '')) ?: 'کاربر' }}
-                        </span>
+                    <div class="relative">
+                        <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white ring-1 ring-amber-50">
+                            <img src="{{ asset('images/logo-sm.png') }}" alt="لوگوی مرکز آوای همدلی" class="h-10 w-10 object-contain">
+                        </div>
                     </div>
-
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button
-                            type="submit"
-                            class="inline-flex items-center rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-bold text-rose-700 transition hover:bg-rose-100"
-                        >
-                            خروج از سیستم
-                        </button>
-                    </form>
                 </div>
-            </div>
-        </header>
+            </header>
 
-        <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-            {{ $slot }}
-        </main>
+            <main class="p-4">
+                <div class="container mx-auto">
+                    {{ $slot }}
+                </div>
+            </main>
+        </div>
     </div>
 
     @livewireScriptConfig

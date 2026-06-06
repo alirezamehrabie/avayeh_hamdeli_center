@@ -413,44 +413,4 @@
         </div>
     </div>
 
-    <div class="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
-        <div class="border-b border-slate-200 px-6 py-5">
-            <h2 class="text-xl font-black text-slate-800">سوابق تحویل شما</h2>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="min-w-full text-sm">
-                <thead class="bg-slate-950 text-white">
-                <tr>
-                    <th class="px-4 py-4 text-right font-bold">خدمت</th>
-                    <th class="px-4 py-4 text-right font-bold">گیرنده</th>
-                    <th class="px-4 py-4 text-center font-bold">کد ملی</th>
-                    <th class="px-4 py-4 text-center font-bold">مقدار</th>
-                    <th class="px-4 py-4 text-center font-bold">ارزش</th>
-                    <th class="px-4 py-4 text-center font-bold">تاریخ</th>
-                </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                @forelse($deliveries as $delivery)
-                    <tr class="transition hover:bg-slate-50">
-                        <td class="px-4 py-4 text-slate-700">
-                            <p class="font-bold">{{ $delivery->service?->service_code }}</p>
-                            <p class="mt-1 text-xs text-slate-500">{{ $delivery->service?->serviceName?->name }}</p>
-                        </td>
-                        <td class="px-4 py-4 text-slate-700">{{ $delivery->recipient_name }}</td>
-                        <td class="px-4 py-4 text-center text-slate-700">{{ $delivery->recipient_national_id }}</td>
-                        <td class="px-4 py-4 text-center font-bold text-slate-800">{{ number_format((float) $delivery->delivered_quantity, 2) }}</td>
-                        <td class="px-4 py-4 text-center font-bold text-emerald-700">{{ number_format($delivery->delivered_total_value) }}
-                            IRR
-                        </td>
-                        <td class="px-4 py-4 text-center text-slate-700">{{ optional($delivery->delivered_at)->format('Y-m-d') }}</td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="6" class="px-4 py-10 text-center text-slate-500">هنوز تحویلی ثبت نکرده‌اید.</td>
-                    </tr>
-                @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
 </div>
