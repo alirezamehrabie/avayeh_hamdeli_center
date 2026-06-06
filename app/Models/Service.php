@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Service extends Model
 {
@@ -68,6 +69,13 @@ class Service extends Model
             'total_service_value' => 'integer',
             'created_by' => 'integer',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::updated(function (self $service): void {
+            $service->syncDeliveryValues();
+        });
     }
 
     public static function generateNextCode(): string
@@ -154,6 +162,21 @@ class Service extends Model
         }
 
         $this->forceFill($payload)->saveQuietly();
+    }
+
+    public function syncDeliveryValues(): void
+    {
+        if (! $this->wasChanged('value_per_unit')) {
+            return;
+        }
+
+        $valuePerUnit = (int) $this->value_per_unit;
+
+        $this->deliveries()
+            ->update([
+                'value_per_unit_snapshot' => $valuePerUnit,
+                'delivered_total_value' => DB::raw('ROUND(delivered_quantity * ' . $valuePerUnit . ')'),
+            ]);
     }
 
     public function allocatedQuantityForWorker(int $socialWorkerId): float
