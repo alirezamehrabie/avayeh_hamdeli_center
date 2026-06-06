@@ -103,6 +103,7 @@
                                             ),
                                             2
                                         );
+                                        $serviceTypeLabel = $service->service_type === 'family' ? 'خانوادگی' : 'شخصی';
                                     @endphp
 
                                     <button
@@ -122,19 +123,18 @@
                         {{ $service->service_code }} — {{ $service->serviceName?->name }}
                     </span>
 
-                                        {{-- Row 2: Description --}}
-                                        <span class="text-xs text-slate-500">
+                                        <span class="mt-1 text-xs text-slate-500">
                         {{ $service->description ?: 'بدون توضیحات' }}
                     </span>
 
                                         {{-- Row 3: Remaining Balance --}}
                                         <span
-                                            class="mt-0.5 inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
+                                            class="mt-1 inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
                         <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
-                        مانده: {{ $remaining }}
+                        مانده: {{ $remaining }} - {{$serviceTypeLabel}}
                     </span>
                                     </button>
 
@@ -158,8 +158,79 @@
 
                     </div>
 
+                    <div class="rounded-2xl border border-slate-200 bg-white p-4">
 
-                    <div class="rounded-3xl border border-slate-200 bg-white p-3.5">
+                        <h2 class="text-sm font-semibold text-slate-500">سهمیه شما</h2>
+
+                        @if($this->selectedService)
+
+                            <div class="mt-3 flex items-start justify-between gap-2">
+                                <div>
+                                    <p class="font-medium text-slate-700">
+                                        {{ $this->selectedService->serviceName?->name }}
+                                        <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-50 text-slate-500">
+        {{ $this->selectedService->service_code }}
+    </span>
+                                    </p>
+
+
+
+                                    <p class="mt-1 text-xs text-slate-400"> نوع: {{$this->selectedServiceTypeLabel }}</p>
+                                </div>
+                            </div>
+
+                            @if($this->selectedService->description)
+                                <p class="mt-2.5 rounded-full text-center border border-slate-50 p-2 text-xs text-slate-500">
+                                    {{ $this->selectedService->description }}
+                                </p>
+                            @endif
+
+                            <div class="mt-3 grid grid-cols-3 divide-x divide-x-reverse divide-slate-100">
+
+                                <div class="px-3 text-center first:pr-0 last:pl-0">
+                                    <p class="text-[11px] text-slate-400">تخصیص‌یافته</p>
+                                    <p class="mt-0.5 text-sm font-bold text-slate-700">
+                                        {{ number_format($this->currentAllocation, 2) }}
+                                    </p>
+                                </div>
+
+                                <div class="px-3 text-center">
+                                    <p class="text-[11px] text-slate-400">تحویل‌شده</p>
+                                    <p class="mt-0.5 text-sm font-bold text-slate-700">
+                                        {{ number_format($this->currentDelivered, 2) }}
+                                    </p>
+                                </div>
+
+                                <div class="px-3 text-center first:pr-0 last:pl-0">
+                                    <p class="text-[11px] text-slate-400">باقی‌مانده</p>
+                                    <p class="mt-0.5 text-sm font-bold text-emerald-600">
+                                        {{ number_format($this->currentRemainingAllocation, 2) }}
+                                    </p>
+                                </div>
+
+                            </div>
+
+
+
+                        @else
+                            <p class="mt-3 text-sm text-slate-400">ابتدا یک خدمت انتخاب کنید.</p>
+                        @endif
+
+                    </div>
+
+                    @if($serviceSelectionWarning !== '')
+                        <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+                            {{ $serviceSelectionWarning }}
+                        </div>
+                    @endif
+
+
+                    <div class="relative rounded-3xl border border-slate-200 bg-white p-3.5 {{ !$this->selectedService ? 'opacity-60' : '' }}">
+                        @if(!$this->selectedService)
+                            <button type="button" wire:click="requireServiceSelection"
+                                    class="absolute inset-0 z-10 cursor-not-allowed rounded-3xl"
+                                    aria-label="Please select a service first"></button>
+                        @endif
                         <div class="mb-4 flex items-center justify-between">
                             <div>
                                 <h2 class="text-lg font-bold text-slate-800">گیرندگان خدمت</h2>
@@ -167,6 +238,7 @@
                                     کنید، سپس مقدار تحویلی را مشخص کنید.</p>
                             </div>
                             <button type="button" wire:click="addRecipientField"
+                                    @disabled(!$this->selectedService)
                                     class="inline-flex items-center rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-2 text-sm font-bold text-cyan-700">
                                 + افزودن گیرنده
                             </button>
@@ -184,6 +256,8 @@
                                                     maxlength="10"
                                                     wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.national_id"
                                                     wire:focus="setActiveRecipientSearch({{ $index }})"
+                                                    @disabled(!$this->selectedService)
+                                                    @readonly(!$this->selectedService)
                                                     class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
                                                     placeholder="{{ $this->selectedService?->service_type === 'family' ? 'کد ملی یا نام و نام خانوادگی سرپرست' : 'کد ملی یا نام و نام خانوادگی مددجو' }}"
                                                     autocomplete="off"
@@ -224,6 +298,8 @@
                                                         <label class="mb-2 block text-sm font-bold text-slate-700">نام و نام خانوادگی</label>
                                                         <input type="text"
                                                                wire:model.blur="recipientEntries.{{ $index }}.full_name"
+                                                               @disabled(!$this->selectedService)
+                                                               @readonly(!$this->selectedService)
                                                                class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
                                                                placeholder="نام و نام خانوادگی را وارد کنید">
                                                         @error('recipientEntries.' . $index . '.full_name') <p
@@ -233,6 +309,8 @@
                                                         <label class="mb-2 block text-sm font-bold text-slate-700">موبایل</label>
                                                         <input type="text"
                                                                wire:model.blur="recipientEntries.{{ $index }}.mobile"
+                                                               @disabled(!$this->selectedService)
+                                                               @readonly(!$this->selectedService)
                                                                class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
                                                                MAXLENGTH="11"
                                                                placeholder="اختیاری">
@@ -270,6 +348,8 @@
                                             <label class="mb-2 block text-sm font-bold text-slate-700">مقدار</label>
                                             <input type="number" min="0.01" step="0.01"
                                                    wire:model.blur="recipientEntries.{{ $index }}.quantity"
+                                                   @disabled(!$this->selectedService)
+                                                   @readonly(!$this->selectedService)
                                                    class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
                                                    placeholder="0">
                                             @error('recipientEntries.' . $index . '.quantity') <p
@@ -279,6 +359,7 @@
                                         <div class="pt-8">
                                             @if(count($recipientEntries) > 1)
                                                 <button type="button" wire:click="removeRecipientField({{ $index }})"
+                                                        @disabled(!$this->selectedService)
                                                         class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
                                                     حذف
                                                 </button>
@@ -290,17 +371,27 @@
                         </div>
                     </div>
 
-                    <div class="rounded-3xl border border-slate-200 bg-white p-5">
+                    <div class="relative rounded-3xl border border-slate-200 bg-white p-5 {{ !$this->selectedService ? 'opacity-60' : '' }}">
+                        @if(!$this->selectedService)
+                            <button type="button" wire:click="requireServiceSelection"
+                                    class="absolute inset-0 z-10 cursor-not-allowed rounded-3xl"
+                                    aria-label="Please select a service first"></button>
+                        @endif
                         <div class="grid gap-4 md:grid-cols-2">
                             <div>
                                 <label class="mb-2 block text-sm font-bold text-slate-700">تاریخ تحویل</label>
-                                <input type="date" wire:model="deliveredAt"
+                                <input type="text" dir="ltr" inputmode="numeric" wire:model="deliveredAt"
+                                       @disabled(!$this->selectedService)
+                                       @readonly(!$this->selectedService)
                                        class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
+                                <p class="mt-1 text-xs text-slate-500">فرمت: 1405/03/16</p>
                                 @error('deliveredAt') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="mb-2 block text-sm font-bold text-slate-700">یادداشت</label>
                                 <textarea wire:model.blur="notes" rows="3"
+                                          @disabled(!$this->selectedService)
+                                          @readonly(!$this->selectedService)
                                           class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"></textarea>
                                 @error('notes') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                             </div>
@@ -309,59 +400,9 @@
                 </div>
 
                 <div class="space-y-4">
-
-                    <div class="rounded-2xl border border-slate-200 bg-white p-4">
-
-                        <h2 class="text-sm font-semibold text-slate-500">سهمیه شما</h2>
-
-                        @if($this->selectedService)
-
-                            <div class="mt-3 flex items-start justify-between gap-2">
-                                <div>
-                                    <p class="font-bold text-slate-800">{{ $this->selectedService->serviceName?->name }}</p>
-                                    <p class="text-xs text-slate-400">{{ $this->selectedService->service_code }}</p>
-                                </div>
-                                @if($this->selectedService->description)
-                                    <span class="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
-                        {{ $this->selectedService->description }}
-                    </span>
-                                @endif
-                            </div>
-
-                            {{-- Stats --}}
-                            <div class="mt-3 grid grid-cols-3 divide-x divide-x-reverse divide-slate-100">
-
-                                <div class="px-3 text-center first:pr-0 last:pl-0">
-                                    <p class="text-[11px] text-slate-400">تخصیص‌یافته</p>
-                                    <p class="mt-0.5 text-sm font-bold text-slate-700">
-                                        {{ number_format($this->currentAllocation, 2) }}
-                                    </p>
-                                </div>
-
-                                <div class="px-3 text-center">
-                                    <p class="text-[11px] text-slate-400">تحویل‌شده</p>
-                                    <p class="mt-0.5 text-sm font-bold text-slate-700">
-                                        {{ number_format($this->currentDelivered, 2) }}
-                                    </p>
-                                </div>
-
-                                <div class="px-3 text-center first:pr-0 last:pl-0">
-                                    <p class="text-[11px] text-slate-400">باقی‌مانده</p>
-                                    <p class="mt-0.5 text-sm font-bold text-emerald-600">
-                                        {{ number_format($this->currentRemainingAllocation, 2) }}
-                                    </p>
-                                </div>
-
-                            </div>
-
-                        @else
-                            <p class="mt-3 text-sm text-slate-400">ابتدا یک خدمت انتخاب کنید.</p>
-                        @endif
-
-                    </div>
-
                     {{-- Submit Button --}}
                     <button type="submit"
+                            @disabled(!$this->selectedService)
                             class="w-full rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition active:scale-[0.98] hover:bg-emerald-500">
                         ثبت تحویل
                     </button>

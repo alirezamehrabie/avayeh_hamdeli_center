@@ -2,6 +2,8 @@
 
 namespace App\Livewire\SocialWorkers;
 
+use App\Helpers\Morilog\CalendarUtils;
+use App\Helpers\Morilog\Jalalian;
 use App\Models\Guardian;
 use App\Models\Person;
 use App\Models\Service;
@@ -16,6 +18,10 @@ use Livewire\Component;
 class Dashboard extends Component
 {
     public ?int $selectedServiceId = null;
+    public array $quotaState = [
+        'service_type' => '',
+    ];
+    public string $serviceSelectionWarning = '';
     public array $recipientEntries = [];
     public string $deliveredAt = '';
     public string $notes = '';
@@ -25,13 +31,27 @@ class Dashboard extends Component
     {
         abort_unless(auth()->check() && auth()->user()->can('access-social-worker-panel'), 403);
         $this->recipientEntries = [$this->blankEntry()];
+        $this->deliveredAt = $this->defaultDeliveredAt();
     }
 
     public function updatedSelectedServiceId(): void
     {
         $this->recipientEntries = [$this->blankEntry()];
         $this->activeRecipientSearchIndex = null;
+        $this->syncQuotaState();
+        $this->serviceSelectionWarning = '';
         $this->resetValidation();
+    }
+
+    public function requireServiceSelection(): void
+    {
+        if ($this->selectedService) {
+            $this->serviceSelectionWarning = '';
+
+            return;
+        }
+
+        $this->serviceSelectionWarning = 'لطفاً یک خدمت انتخاب کنید';
     }
 
     public function addRecipientField(): void
@@ -213,7 +233,7 @@ class Dashboard extends Component
                     'delivered_quantity' => $entry['quantity'],
                     'value_per_unit_snapshot' => $service->value_per_unit,
                     'delivered_total_value' => (int) round((float) $entry['quantity'] * $service->value_per_unit),
-                    'delivered_at' => $validated['deliveredAt'],
+                    'delivered_at' => $this->jalaliToGregorian($validated['deliveredAt']),
                     'notes' => $validated['notes'] ?: null,
                     'created_by' => auth()->id(),
                 ]);
@@ -222,7 +242,8 @@ class Dashboard extends Component
 
         session()->flash('success', 'تحویل خدمات برای گیرندگان ثبت شد.');
         $this->recipientEntries = [$this->blankEntry()];
-        $this->reset(['deliveredAt', 'notes']);
+        $this->notes = '';
+        $this->deliveredAt = $this->defaultDeliveredAt();
     }
 
     public function getAssignedServicesProperty()
@@ -272,6 +293,13 @@ class Dashboard extends Component
         return $this->remainingAllocationForCurrentWorker();
     }
 
+    public function getSelectedServiceTypeLabelProperty(): string
+    {
+        return $this->quotaState['service_type'] !== ''
+            ? $this->quotaState['service_type']
+            : $this->serviceTypeLabel($this->selectedService?->service_type);
+    }
+
     public function render()
     {
         return view('livewire.social-workers.dashboard', [
@@ -313,7 +341,15 @@ class Dashboard extends Component
             ],
             'recipientEntries.*.mobile' => ['nullable', 'regex:/^09[0-9]{9}$/'],
             'recipientEntries.*.quantity' => ['required', 'numeric', 'min:0.01'],
-            'deliveredAt' => ['required', 'date'],
+            'deliveredAt' => [
+                'required',
+                'string',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (! $this->isValidJalaliDate((string) $value)) {
+                        $fail('تاریخ تحویل باید به فرمت شمسی معتبر مانند 1405/03/16 وارد شود.');
+                    }
+                },
+            ],
             'notes' => ['nullable', 'string', 'max:5000'],
         ];
     }
@@ -354,11 +390,50 @@ class Dashboard extends Component
         ];
     }
 
+    protected function defaultDeliveredAt(): string
+    {
+        return Jalalian::fromDateTime(now())->format('Y/m/d');
+    }
+
+    protected function isValidJalaliDate(string $date): bool
+    {
+        $parts = explode('/', trim($date));
+
+        if (count($parts) !== 3) {
+            return false;
+        }
+
+        [$year, $month, $day] = array_map('intval', $parts);
+
+        return CalendarUtils::isValidateJalaliDate($year, $month, $day);
+    }
+
+    protected function jalaliToGregorian(string $date): string
+    {
+        return Jalalian::fromFormat('Y/m/d', trim($date))->toCarbon()->toDateString();
+    }
+
     protected function remainingAllocationForCurrentWorker(): float
     {
         $service = $this->selectedService;
 
         return $service ? $service->remainingAllocationForWorker($this->currentSocialWorkerId()) : 0;
+    }
+
+    protected function syncQuotaState(): void
+    {
+        $this->quotaState = [
+            'service_type' => $this->serviceTypeLabel($this->selectedService?->service_type),
+        ];
+    }
+
+    protected function serviceTypeLabel(?string $serviceType): string
+    {
+        return match ($serviceType) {
+            'family' => 'خانوادگی',
+            'individual' => 'شخصی',
+            default => '',
+        };
     }
 
     protected function clearResolvedEntry(int $index, bool $preserveNationalId = true): void
