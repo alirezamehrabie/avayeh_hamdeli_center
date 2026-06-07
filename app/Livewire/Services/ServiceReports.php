@@ -18,6 +18,40 @@ class ServiceReports extends Component
     public string $selectedType = 'all';
     public string $selectedServiceName = 'all';
     public string $displayMode = 'list';
+    public string $deliverySearch = '';
+
+    public function getFilteredDeliveriesProperty()
+    {
+        if (! $this->selectedService) {
+            return collect();
+        }
+
+        $search = trim($this->deliverySearch);
+
+        $deliveries = $this->selectedService->deliveries->sortByDesc('delivered_at');
+
+        if ($search === '') {
+            return $deliveries;
+        }
+
+        return $deliveries->filter(function ($delivery) use ($search) {
+            $name = trim($delivery->recipient_name ?? '');
+            $nationalId = trim($delivery->recipient_national_id ?? '');
+            $socialWorker = trim($delivery->socialWorker?->full_name ?? '');
+            $creator = trim($delivery->creator?->full_name ?? $delivery->creator?->name ?? '');
+            $notes = trim($delivery->notes ?? '');
+            $mobile = trim($delivery->mobile ?? '');
+
+            $nameMatch = stripos($name, $search) !== false;
+            $nationalIdMatch = stripos($nationalId, $search) !== false;
+            $socialWorkerMatch = stripos($socialWorker, $search) !== false;
+            $creatorMatch = stripos($creator, $search) !== false;
+            $notesMatch = stripos($notes, $search) !== false;
+            $mobileMatch = stripos($mobile, $search) !== false;
+
+            return $nameMatch || $nationalIdMatch || $socialWorkerMatch || $creatorMatch || $notesMatch || $mobileMatch;
+        });
+    }
 
     public function mount(?int $selectedServiceId = null): void
     {
@@ -35,12 +69,14 @@ class ServiceReports extends Component
         }
 
         $this->selectedServiceId = $serviceId;
+        $this->deliverySearch = '';
         $this->dispatch('open-dashboard-section', section: 'advanced-service-report', id: $serviceId);
     }
 
     public function backToServices(): void
     {
         $this->selectedServiceId = null;
+        $this->deliverySearch = '';
         $this->dispatch('open-dashboard-section', section: 'advanced-service-report');
     }
 
@@ -107,6 +143,7 @@ class ServiceReports extends Component
                 ->latest()
                 ->get(),
             'selectedService' => $this->selectedService,
+            'filteredDeliveries' => $this->filteredDeliveries,
             'statusOptions' => Service::STATUS_OPTIONS,
             'typeOptions' => Service::TYPE_OPTIONS,
             'unitOptions' => Service::UNIT_OPTIONS,
@@ -119,7 +156,6 @@ class ServiceReports extends Component
 
     public function editDelivery(int $deliveryId): void
     {
-        // Dispatch event to open edit form or navigate to edit page
         $this->dispatch('open-delivery-edit', deliveryId: $deliveryId);
     }
 
@@ -136,7 +172,6 @@ class ServiceReports extends Component
 
     public function printReceipt(int $deliveryId): void
     {
-        // Dispatch event to open receipt modal
         $this->dispatch('open-delivery-receipt', deliveryId: $deliveryId);
     }
 }
