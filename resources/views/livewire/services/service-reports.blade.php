@@ -328,6 +328,9 @@
                                     ?: $delivery->guardian?->full_name;
                                 $socialWorkerName = $delivery->socialWorker?->full_name ?: '-';
                                 $creatorName = $delivery->creator?->full_name ?: $delivery->creator?->name ?: '-';
+                                $socialWorkerInitial = $socialWorkerName !== '-' ? strtoupper(mb_substr($socialWorkerName, 0, 1, 'UTF-8')) : '-';
+                                $creatorInitial = $creatorName !== '-' ? strtoupper(mb_substr($creatorName, 0, 1, 'UTF-8')) : '-';
+                                $createdDate = $jalaliDateTime($delivery->created_at) ?: '-';
                             @endphp
                             <tr class="align-top transition hover:bg-slate-50">
                                 <td class="px-4 py-4 text-slate-700">
@@ -352,12 +355,22 @@
                                     {{ number_format((float) $delivery->delivered_quantity, 2) }}
                                     {{ $unitOptions[$selectedService->service_unit] ?? $selectedService->service_unit }}
                                 </td>
-                                <td class="px-4 py-4 text-center font-bold text-emerald-700">
+                                <td class="px-4 py-4 text-center font-bold text-emerald-600">
                                     {{ number_format($delivery->delivered_total_value) }} ریال
                                 </td>
-                                <td class="px-4 py-4 text-slate-700">
-                                    <p class="font-semibold text-slate-900">مددکار: {{ $socialWorkerName }}</p>
-                                    <p class="mt-1 text-xs text-slate-500">ثبت‌کننده: {{ $creatorName }}</p>
+                                <td class="px-4 py-4 text-center">
+                                    <div class="inline-flex items-center justify-center gap-3">
+                                        {{-- Social Worker --}}
+                                        <div class="group relative cursor-default" x-data>
+                                            <div class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-indigo-700 text-sm font-bold ring-2 ring-white">
+                                                {{ $socialWorkerInitial }}
+                                            </div>
+                                            <div class="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 hidden whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 shadow-lg group-hover:block rtl:translate-x-1/2 rtl:left-auto rtl:right-1/2 rtl:mr-2">
+                                                <p class="font-semibold text-slate-900">مددکار: {{ $socialWorkerName }}</p>
+                                                <p class="mt-0.5 text-slate-500">تاریخ ثبت: {{ $createdDate }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </td>
                                 <td class="px-4 py-4 text-center text-slate-700">
                                     {{ str_replace(' ', ' - ', $jalaliDateTime($delivery->created_at)) ?: '-' }}
