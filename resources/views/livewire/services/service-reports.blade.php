@@ -308,13 +308,14 @@
                     <table class="w-full text-sm">
                         <thead>
                         <tr class="bg-slate-50 text-slate-600">
-                            <th class="px-4 py-4 text-center font-bold">نام گیرنده</th>
+                            <th class="px-4 py-4 text-right font-bold">نام گیرنده</th>
                             <th class="px-4 py-4 text-center font-bold">نوع</th>
                             <th class="px-4 py-4 text-center font-bold">کد ملی</th>
                             <th class="px-4 py-4 text-center font-bold">مقدار تحویل</th>
                             <th class="px-4 py-4 text-center font-bold">ارزش تحویل</th>
-                            <th class="px-4 py-4 text-right font-bold">مددکار / ثبت‌کننده</th>
+                            <th class="px-4 py-4 text-center font-bold">مددکار</th>
                             <th class="px-4 py-4 text-center font-bold">تاریخ تحویل</th>
+                            <th class="px-4 py-4 w-16 text-center font-bold">عملیات</th>
                         </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -361,10 +362,48 @@
                                 <td class="px-4 py-4 text-center text-slate-700">
                                     {{ str_replace(' ', ' - ', $jalaliDateTime($delivery->created_at)) ?: '-' }}
                                 </td>
+                                <td class="px-4 py-4 text-center">
+                                    <div class="inline-flex items-center justify-center gap-1">
+                                        {{-- Edit --}}
+                                        <button
+                                            type="button"
+                                            wire:click="editDelivery({{ $delivery->id }})"
+                                            class="rounded-lg border border-sky-200 bg-sky-50 p-1.5 text-sky-600 transition hover:bg-sky-100 hover:text-sky-700"
+                                            title="ویرایش"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                        </button>
+                                        {{-- Delete --}}
+                                        <button
+                                            type="button"
+                                            wire:click="deleteDelivery({{ $delivery->id }})"
+                                            onclick="return confirm('آیا از حذف این رکورد اطمینان دارید؟')"
+                                            class="rounded-lg border border-rose-200 bg-rose-50 p-1.5 text-rose-600 transition hover:bg-rose-100 hover:text-rose-700"
+                                            title="حذف"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                        {{-- Print Receipt --}}
+                                        <button
+                                            type="button"
+                                            wire:click="printReceipt({{ $delivery->id }})"
+                                            class="rounded-lg border border-emerald-200 bg-emerald-50 p-1.5 text-emerald-600 transition hover:bg-emerald-100 hover:text-emerald-700"
+                                            title="چاپ رسید"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
                             </tr>
                             @if($delivery->notes)
                                 <tr class="bg-slate-50/70">
-                                    <td colspan="7" class="px-4 pb-4 pt-0 text-xs text-slate-600">
+                                    <td colspan="8" class="px-4 pb-4 pt-0 text-xs text-slate-600">
                                         <span class="font-bold text-slate-700">توضیحات:</span>
                                         {{ $delivery->notes }}
                                     </td>
@@ -372,7 +411,7 @@
                             @endif
                         @empty
                             <tr>
-                                <td colspan="7" class="px-4 py-12 text-center text-slate-500">
+                                <td colspan="8" class="px-4 py-12 text-center text-slate-500">
                                     هنوز هیچ تحویلی برای این خدمت ثبت نشده است.
                                 </td>
                             </tr>

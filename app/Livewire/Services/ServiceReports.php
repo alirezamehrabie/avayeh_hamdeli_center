@@ -5,6 +5,7 @@ namespace App\Livewire\Services;
 use App\Helpers\Morilog\Jalalian;
 use App\Models\Service;
 use App\Models\ServiceCategory;
+use App\Models\ServiceDelivery;
 use App\Models\ServiceName;
 use Livewire\Component;
 
@@ -114,5 +115,28 @@ class ServiceReports extends Component
             'displayMode' => $this->displayMode,
             'jalaliDateTime' => fn ($dateTime) => $dateTime ? Jalalian::fromDateTime($dateTime)->format('Y/m/d H:i') : '-',
         ]);
+    }
+
+    public function editDelivery(int $deliveryId): void
+    {
+        // Dispatch event to open edit form or navigate to edit page
+        $this->dispatch('open-delivery-edit', deliveryId: $deliveryId);
+    }
+
+    public function deleteDelivery(int $deliveryId): void
+    {
+        $delivery = ServiceDelivery::query()
+            ->whereKey($deliveryId)
+            ->first();
+
+        if ($delivery) {
+            $delivery->delete();
+        }
+    }
+
+    public function printReceipt(int $deliveryId): void
+    {
+        // Dispatch event to open receipt modal
+        $this->dispatch('open-delivery-receipt', deliveryId: $deliveryId);
     }
 }
