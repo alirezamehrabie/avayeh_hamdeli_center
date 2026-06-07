@@ -16,6 +16,7 @@ class ServiceReports extends Component
     public string $selectedCategory = 'all';
     public string $selectedType = 'all';
     public string $selectedServiceName = 'all';
+    public string $displayMode = 'list';
 
     public function mount(?int $selectedServiceId = null): void
     {
@@ -110,6 +111,7 @@ class ServiceReports extends Component
             'unitOptions' => Service::UNIT_OPTIONS,
             'categoryOptions' => $categories,
             'serviceNames' => $serviceNames,
+            'displayMode' => $this->displayMode,
             'jalaliDateTime' => fn ($dateTime) => $dateTime ? Jalalian::fromDateTime($dateTime)->format('Y/m/d H:i') : '-',
         ]);
     }

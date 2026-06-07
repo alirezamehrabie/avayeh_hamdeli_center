@@ -31,7 +31,7 @@
             <div class="border-b border-slate-200 px-4 py-3 sm:px-6">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
                     {{-- Search Input --}}
-                    <div class="relative flex-1">
+                    <div class="relative w-full sm:max-w-md">
                         <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
@@ -77,11 +77,99 @@
                             <option value="family">خانوادگی</option>
                             <option value="individual">شخصی</option>
                         </select>
+
+
+                        {{-- View Toggle --}}
+                        <div class="flex items-center rounded-lg border border-slate-200 bg-white p-0.5 text-xs">
+                            <button
+                                wire:click="$set('displayMode', 'list')"
+                                class="{{ $displayMode === 'list' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700' }} flex items-center gap-1.5 rounded-md px-2.5 py-1.5 transition"
+                            >
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                                </svg>
+                                لیست
+                            </button>
+                            <button
+                                wire:click="$set('displayMode', 'card')"
+                                class="{{ $displayMode === 'card' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700' }} flex items-center gap-1.5 rounded-md px-2.5 py-1.5 transition"
+                            >
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                                </svg>
+                                کارت
+                            </button>
+                        </div>
+
                     </div>
                 </div>
             </div>
 
-            {{-- Services Grid --}}
+        @if($displayMode === 'list')
+            {{-- List View --}}
+            <div class="overflow-x-auto px-4 pb-4">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-slate-200 text-slate-500">
+                            <th class="px-3 py-3 text-center font-semibold">شناسه</th>
+                            <th class="px-3 py-3 text-center font-semibold">وضعیت</th>
+                            <th class="px-3 py-3 text-right font-semibold">خدمت</th>
+                            <th class="px-3 py-3 text-right font-semibold">دسته‌بندی</th>
+                            <th class="px-3 py-3 text-right font-semibold">نوع</th>
+                            <th class="px-3 py-3 text-right font-semibold">توضیحات</th>
+                            <th class="px-3 py-3 text-right font-semibold">اپراتور</th>
+                            <th class="px-3 py-3 text-right font-semibold">تاریخ</th>
+                            <th class="px-3 py-3 text-center font-semibold">عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                    @forelse($services as $service)
+                        @php
+                            $creatorName = trim(implode(' ', array_filter([
+                                $service->creator?->first_name,
+                                $service->creator?->last_name,
+                            ]))) ?: ($service->creator?->name ?: '-');
+                        @endphp
+                        <tr class="transition hover:bg-slate-50">
+                            <td class="px-3 py-3 text-center text-slate-700 font-bold">{{ $service->id }}</td>
+                            <td class="px-3 py-3 text-center">
+                                <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold {{ $statusBadgeClasses[$service->status] ?? 'bg-slate-100 text-slate-700' }}">
+                                    {{ $statusOptions[$service->status] ?? $service->status }}
+                                </span>
+                            </td>
+                            <td class="px-3 py-3 text-right font-semibold text-slate-900">{{ $service->serviceName?->name ?: '-' }}</td>
+                            <td class="px-3 py-3 text-right text-slate-600">{{ $service->serviceCategory?->name ?: 'بدون دسته‌بندی' }}</td>
+                            <td class="px-3 py-3 text-right text-slate-600">{{ $typeOptions[$service->service_type] ?? $service->service_type }}</td>
+                            <td class="px-3 py-3 text-right text-slate-600 max-w-[200px] truncate">{{ $service->description ?: 'بدون توضیحات' }}</td>
+                            <td class="px-3 py-3 text-right text-slate-600 text-xs">{{ $creatorName }}</td>
+                            <td class="px-3 py-3 text-right text-slate-500 text-xs">{{ $jalaliDateTime($service->created_at) }}</td>
+                            <td class="px-3 py-3 text-center">
+                                <button
+                                    type="button"
+                                    wire:click="openService({{ $service->id }})"
+                                    class="inline-flex items-center gap-1 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-indigo-700"
+                                >
+                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                    </svg>
+                                    جزئیات
+                                </button>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="9" class="px-4 py-12 text-center text-slate-500">
+                                {{ trim($search ?? '') !== '' ? 'موردی برای جستجوی فعلی پیدا نشد.' : 'هنوز خدمتی تعریف نشده است.' }}
+                            </td>
+                        </tr>
+                    @endforelse
+                    </tbody>
+                </table>
+            </div>
+        @endif
+
+        @if($displayMode === 'card')
+            {{-- Card View --}}
             <div class="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
                 @forelse($services as $service)
                     @php
@@ -147,6 +235,7 @@
                     </div>
                 @endforelse
             </div>
+            @endif
         </div>
     @else
         <div class="space-y-6">
