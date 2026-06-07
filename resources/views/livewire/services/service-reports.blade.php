@@ -283,22 +283,24 @@
                     </div>
                 </div>
 
-                <div class="grid gap-4 border-b border-slate-200 px-6 py-5 md:grid-cols-4">
-                    <div class="rounded-2xl bg-slate-50 px-4 py-3">
-                        <p class="text-xs text-slate-500">وضعیت خدمت</p>
-                        <p class="mt-1 font-bold text-slate-800">{{ $statusOptions[$selectedService->status] ?? $selectedService->status }}</p>
+                <div class="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-slate-200 px-6 py-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-medium text-slate-500">وضعیت:</span>
+                        <span class="inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-800">
+                            {{ $statusOptions[$selectedService->status] ?? $selectedService->status }}
+                        </span>
                     </div>
-                    <div class="rounded-2xl bg-slate-50 px-4 py-3">
-                        <p class="text-xs text-slate-500">منطقه</p>
-                        <p class="mt-1 font-bold text-slate-800">{{ $selectedService->district?->name ?: 'بدون منطقه' }}</p>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-medium text-slate-500">منطقه:</span>
+                        <span class="text-xs font-bold text-slate-800">{{ $selectedService->district?->name ?: 'بدون منطقه' }}</span>
                     </div>
-                    <div class="rounded-2xl bg-slate-50 px-4 py-3">
-                        <p class="text-xs text-slate-500">نوع خدمت</p>
-                        <p class="mt-1 font-bold text-slate-800">{{ $typeOptions[$selectedService->service_type] ?? $selectedService->service_type }}</p>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-medium text-slate-500">نوع:</span>
+                        <span class="text-xs font-bold text-slate-800">{{ $typeOptions[$selectedService->service_type] ?? $selectedService->service_type }}</span>
                     </div>
-                    <div class="rounded-2xl bg-slate-50 px-4 py-3">
-                        <p class="text-xs text-slate-500">واحد</p>
-                        <p class="mt-1 font-bold text-slate-800">{{ $unitOptions[$selectedService->service_unit] ?? $selectedService->service_unit }}</p>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-medium text-slate-500">واحد:</span>
+                        <span class="text-xs font-bold text-slate-800">{{ $unitOptions[$selectedService->service_unit] ?? $selectedService->service_unit }}</span>
                     </div>
                 </div>
 
@@ -357,7 +359,7 @@
                                     <p class="mt-1 text-xs text-slate-500">ثبت‌کننده: {{ $creatorName }}</p>
                                 </td>
                                 <td class="px-4 py-4 text-center text-slate-700">
-                                    {{ optional($delivery->delivered_at)->format('Y-m-d') ?: '-' }}
+                                    {{ str_replace(' ', ' - ', $jalaliDateTime($delivery->created_at)) ?: '-' }}
                                 </td>
                             </tr>
                             @if($delivery->notes)
