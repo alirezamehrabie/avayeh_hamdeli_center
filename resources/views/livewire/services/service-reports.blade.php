@@ -322,8 +322,13 @@
                         @forelse($selectedService->deliveries->sortByDesc('delivered_at') as $delivery)
                             @php
                                 $recipientType = $delivery->person
-                                    ? 'مددجو'
-                                    : ($delivery->guardian ? 'سرپرست' : 'ثبت دستی');
+                                    ? 'شخصی'
+                                    : ($delivery->guardian ? 'خانوادگی' : 'ثبت دستی');
+                                $typeBadge = match ($recipientType) {
+                                    'شخصی' => 'bg-indigo-100 text-indigo-700',
+                                    'خانوادگی' => 'bg-emerald-100 text-emerald-700',
+                                    default => 'bg-amber-100 text-amber-700',
+                                };
                                 $guardianLabel = $delivery->person?->guardian?->full_name
                                     ?: $delivery->guardian?->full_name;
                                 $socialWorkerName = $delivery->socialWorker?->full_name ?: '-';
@@ -349,7 +354,7 @@
                                         @endif
                                     </div>
                                 </td>
-                                <td class="px-4 py-4 text-right text-slate-700">{{ $recipientType }}</td>
+                                <td class="px-4 py-4 text-center"><span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold {{ $typeBadge }}">{{ $recipientType }}</span></td>
                                 <td class="px-4 py-4 text-center text-slate-700">{{ $delivery->recipient_national_id }}</td>
                                 <td class="px-4 py-4 text-center font-bold text-slate-800">
                                     {{ number_format((float) $delivery->delivered_quantity, 2) }}
@@ -416,7 +421,7 @@
                             </tr>
                             @if($delivery->notes)
                                 <tr class="bg-slate-50/70">
-                                    <td colspan="8" class="px-4 pb-4 pt-0 text-xs text-slate-600">
+                                    <td colspan="8" class="px-4 pb-2 pt-2 text-xs text-slate-600">
                                         <span class="font-bold text-slate-700">توضیحات:</span>
                                         {{ $delivery->notes }}
                                     </td>
