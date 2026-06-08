@@ -42,14 +42,30 @@
                     </button>
 
                     <div class="relative">
-                        <span class="font-semibold text-gray-700">مددکار محترم ← {{ auth()->user()->first_name ?? '' }} {{ auth()->user()->last_name ?? 'کاربر' }}</span>
+                        <div class="inline-flex items-center bg-gray-50 border border-gray-100 rounded-lg p-1 pl-3">
+                            <span class="bg-indigo-600 text-white text-[10px] px-2 py-1 rounded-md font-bold ml-2 shadow-sm">مددکار</span>
+                            <span class="text-xs font-semibold text-gray-700">
+             {{ auth()->user()->first_name ?? '' }} {{ auth()->user()->last_name ?? 'کاربر' }}
+        </span>
+                        </div>
                     </div>
+
                 </div>
 
                 <div class="flex items-center gap-3">
                     <div class="relative">
-                        <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white ring-1 ring-amber-50">
-                            <img src="{{ asset('images/logo-sm.png') }}" alt="لوگوی مرکز آوای همدلی" class="h-10 w-10 object-contain">
+                        <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white ring-2 ring-indigo-100 shadow-sm">
+                            @if (auth()->user()->profile_photo_path)
+                                <img
+                                    src="{{ asset(auth()->user()->profile_photo_path) }}"
+                                    alt="تصویر پروفایل {{ auth()->user()->name }}"
+                                    class="h-full w-full object-cover"
+                                >
+                            @else
+                                <div class="flex h-full w-full items-center justify-center bg-indigo-600 text-sm font-bold text-white">
+                                    {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>

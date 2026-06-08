@@ -1,14 +1,13 @@
 <div class="space-y-6">
     <div class="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
-        <div class="bg-gradient-to-l from-sky-700 via-cyan-700 to-teal-600 px-6 py-6 text-white">
+        <div class="bg-gradient-to-l from-sky-700  to-indigo-600 px-6 py-4 text-white">
             <h1 class="text-2xl font-extrabold">ثبت تحویل خدمت</h1>
             <p class="mt-2 max-w-3xl text-sm text-cyan-50/90">
-                برای خدمت فردی، کد ملی هر مددجو را وارد کنید. برای خدمت خانوار، کد ملی سرپرست را وارد کنید. کنار هر کد
-                ملی، مقدار تحویل را مشخص کنید.
+                تحویل خدمات توسط مددکاران
             </p>
         </div>
 
-        <div class="px-6 py-6"
+        <div class="px-3 py-6"
              x-data="{ successModalOpen: @entangle('showDeliverySuccessModal') }"
              x-on:keydown.escape.window="if (successModalOpen) { successModalOpen = false; $wire.closeDeliverySuccessModal(); }">
             @if ($errors->any())
@@ -81,7 +80,7 @@
 
             <form wire:submit.prevent="saveDelivery"
                   class="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(300px,0.85fr)]">
-                <div class="space-y-6">
+                <div class="space-y-4">
                     <div class="rounded-3xl border border-slate-200 bg-slate-50 p-3.5">
 
                         <label class="mb-3 block text-sm font-bold text-slate-700">
@@ -222,7 +221,7 @@
                                         {{ $this->selectedService->serviceName?->name }}
                                         <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-50 text-slate-500">
         {{ $this->selectedService->service_code }}
-    </span>
+            </span>
                                     </p>
 
 
@@ -277,31 +276,45 @@
                     @endif
 
 
-                    <div class="relative rounded-3xl border border-slate-200 bg-white p-3.5 {{ !$this->selectedService ? 'opacity-60' : '' }}">
+                    <div class="relative rounded-3xl border border-slate-100 bg-white p-4 shadow-sm {{ !$this->selectedService ? 'opacity-60' : '' }}">
                         @if(!$this->selectedService)
                             <button type="button" wire:click="requireServiceSelection"
                                     class="absolute inset-0 z-10 cursor-not-allowed rounded-3xl"
                                     aria-label="Please select a service first"></button>
                         @endif
-                        <div class="mb-4 flex items-center justify-between">
+
+                        <!-- Header Section -->
+                        <div class="mb-5 flex items-center justify-between gap-4">
                             <div>
-                                <h2 class="text-lg font-bold text-slate-800">گیرندگان خدمت</h2>
-                                <p class="mt-1 text-sm text-slate-500">کد ملی گیرنده را وارد کنید یا نام او را جستجو
-                                    کنید، سپس مقدار تحویلی را مشخص کنید.</p>
+                                <h2 class="text-base font-extrabold text-slate-800 md:text-lg">گیرندگان خدمت</h2>
+                                <p class="mt-0.5 text-[11px] leading-relaxed text-slate-500 md:text-xs">کد ملی را وارد کرده و مقدار را مشخص کنید.</p>
                             </div>
                             <button type="button" wire:click="addRecipientField"
                                     @disabled(!$this->selectedService)
-                                    class="inline-flex items-center rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-2 text-sm font-bold text-cyan-700">
-                                + افزودن گیرنده
+                                    class="inline-flex shrink-0 items-center gap-1 rounded-xl bg-cyan-600 px-3 py-2 text-xs font-bold text-white shadow-sm shadow-cyan-200 active:scale-95 transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
+                                افزودن
                             </button>
                         </div>
 
-                        <div class="space-y-4">
+                        <!-- Recipients List -->
+                        <div class="space-y-3">
                             @foreach($recipientEntries as $index => $entry)
-                                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3.5">
-                                    <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_160px_auto] md:items-start">
-                                        <div>
-                                            <label class="mb-2 block text-sm font-bold text-slate-700">کد ملی</label>
+                                <div class="relative rounded-2xl border border-slate-100 bg-slate-50/50 p-3 md:p-4 transition-all">
+
+                                    <!-- Remove Button (Top Left for Mobile) -->
+                                    @if(count($recipientEntries) > 1)
+                                        <button type="button" wire:click="removeRecipientField({{ $index }})"
+                                                @disabled(!$this->selectedService)
+                                                class="absolute -left-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full border border-rose-100 bg-white text-rose-500 shadow-sm hover:bg-rose-50 md:left-2 md:top-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                        </button>
+                                    @endif
+
+                                    <div class="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-end">
+                                        <!-- National ID Input -->
+                                        <div class="md:col-span-8">
+                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-500 mr-1">کد ملی یا نام</label>
                                             <div class="relative">
                                                 <input
                                                     type="text"
@@ -309,121 +322,79 @@
                                                     wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.national_id"
                                                     wire:focus="setActiveRecipientSearch({{ $index }})"
                                                     @disabled(!$this->selectedService)
-                                                    @readonly(!$this->selectedService)
-                                                    class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
-                                                    placeholder="{{ $this->selectedService?->service_type === 'family' ? 'کد ملی یا نام و نام خانوادگی سرپرست' : 'کد ملی یا نام و نام خانوادگی مددجو' }}"
+                                                    class="w-full rounded-xl border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all placeholder:text-slate-400"
+                                                    placeholder="درج و جستجوی مددجو / سرپرست"
                                                     autocomplete="off"
                                                 >
+
+                                                <!-- Search Suggestions -->
                                                 @if(!empty($this->recipientSuggestions[$index]) && $this->activeRecipientSearchIndex === $index)
-                                                    <div class="absolute z-20 mt-2 max-h-64 w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-xl">
+                                                    <div class="absolute z-20 mt-1 max-h-52 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5">
                                                         @foreach($this->recipientSuggestions[$index] as $suggestion)
-                                                            <button
-                                                                type="button"
-                                                                wire:click="selectRecipientSuggestion({{ $index }}, '{{ $this->selectedService?->service_type === 'family' ? 'guardian' : 'person' }}', {{ $suggestion->id }})"
-                                                                class="flex w-full items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 text-right transition hover:bg-cyan-50 last:border-b-0"
+                                                            <button type="button"
+                                                                    wire:click="selectRecipientSuggestion({{ $index }}, '{{ $this->selectedService?->service_type === 'family' ? 'guardian' : 'person' }}', {{ $suggestion->id }})"
+                                                                    class="flex w-full items-center justify-between gap-3 border-b border-slate-50 px-4 py-3 text-right hover:bg-slate-50 last:border-b-0"
                                                             >
-                                                                <span>
-                                                                    <span class="block text-sm font-bold text-slate-800">
-                                                                        {{ trim(($suggestion->first_name ?? '') . ' ' . ($suggestion->last_name ?? '')) ?: '-' }}
-                                                                    </span>
-                                                                    <span class="mt-1 block text-xs text-slate-500">
-                                                                        {{ $this->selectedService?->service_type === 'family' ? 'سرپرست' : 'مددجو' }}
-                                                                    </span>
-                                                                </span>
-                                                                <span class="text-xs font-semibold text-cyan-700">
-                                                                    {{ $this->selectedService?->service_type === 'family' ? $suggestion->national_code : $suggestion->national_id }}
-                                                                </span>
+                                            <span class="block">
+                                                <span class="block text-sm font-bold text-slate-800">{{ trim(($suggestion->first_name ?? '') . ' ' . ($suggestion->last_name ?? '')) ?: '-' }}</span>
+                                                <span class="text-[10px] text-slate-400">{{ $this->selectedService?->service_type === 'family' ? 'سرپرست' : 'مددجو' }}</span>
+                                            </span>
+                                                                <span class="rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-mono font-bold text-slate-600">
+                                                {{ $this->selectedService?->service_type === 'family' ? $suggestion->national_code : $suggestion->national_id }}
+                                            </span>
                                                             </button>
                                                         @endforeach
                                                     </div>
                                                 @endif
                                             </div>
-                                            @error('recipientEntries.' . $index . '.national_id') <p
-                                                class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
-                                            @if($entry['is_unregistered'] ?? false)
-                                                <div class="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                                                    {{ $entry['not_found_notice'] ?: 'فردی در سیستم یافت نشد.' }}
-                                                </div>
-
-                                                <div class="mt-3 grid gap-3 md:grid-cols-2">
-                                                    <div>
-                                                        <label class="mb-2 block text-sm font-bold text-slate-700">نام و نام خانوادگی</label>
-                                                        <input type="text"
-                                                               wire:model.blur="recipientEntries.{{ $index }}.full_name"
-                                                               @disabled(!$this->selectedService)
-                                                               @readonly(!$this->selectedService)
-                                                               class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
-                                                               placeholder="نام و نام خانوادگی را وارد کنید">
-                                                        @error('recipientEntries.' . $index . '.full_name') <p
-                                                            class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
-                                                    </div>
-                                                    <div>
-                                                        <label class="mb-2 block text-sm font-bold text-slate-700">موبایل</label>
-                                                        <input type="text"
-                                                               wire:model.blur="recipientEntries.{{ $index }}.mobile"
-                                                               @disabled(!$this->selectedService)
-                                                               @readonly(!$this->selectedService)
-                                                               class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
-                                                               MAXLENGTH="11"
-                                                               placeholder="اختیاری">
-                                                        @error('recipientEntries.' . $index . '.mobile') <p
-                                                            class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
-                                                    </div>
-                                                </div>
-                                            @endif
-                                            @if($entry['resolved_name'])
-                                                <div
-                                                    class="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-                                                    <div class="grid gap-2 sm:grid-cols-2">
-                                                        <div>
-                                                            <p class="text-xs font-semibold text-emerald-700">نام و نام خانوادگی</p>
-                                                            <p class="mt-1 font-bold">{{ $entry['resolved_name'] }}</p>
-                                                        </div>
-                                                        <div>
-                                                            <p class="text-xs font-semibold text-emerald-700">کد ملی</p>
-                                                            <p class="mt-1 font-bold">{{ $entry['national_id'] ?: '-' }}</p>
-                                                        </div>
-                                                        <div>
-                                                            <p class="text-xs font-semibold text-emerald-700">تعداد افراد تحت پوشش</p>
-                                                            <p class="mt-1 font-bold">{{ $entry['covered_dependents_count'] ?? 0 }}</p>
-                                                        </div>
-                                                        <div>
-                                                            <p class="text-xs font-semibold text-emerald-700">تعداد اعضای خانواده</p>
-                                                            <p class="mt-1 font-bold">{{ $entry['family_members_count'] ?? 0 }}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            @endif
                                         </div>
 
-                                        <div>
-                                            <label class="mb-2 block text-sm font-bold text-slate-700">مقدار</label>
+                                        <!-- Quantity Input -->
+                                        <div class="md:col-span-4">
+                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-500 mr-1">مقدار تحویلی</label>
                                             <input type="number" min="0.01" step="0.01"
                                                    wire:model.blur="recipientEntries.{{ $index }}.quantity"
                                                    @disabled(!$this->selectedService)
-                                                   @readonly(!$this->selectedService)
-                                                   class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
+                                                   class="w-full rounded-xl border-slate-200 bg-white px-3.5 py-2.5 text-sm font-bold text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all placeholder:text-slate-300"
                                                    placeholder="0">
-                                            @error('recipientEntries.' . $index . '.quantity') <p
-                                                class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
-                                        </div>
-
-                                        <div class="pt-8">
-                                            @if(count($recipientEntries) > 1)
-                                                <button type="button" wire:click="removeRecipientField({{ $index }})"
-                                                        @disabled(!$this->selectedService)
-                                                        class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
-                                                    حذف
-                                                </button>
-                                            @endif
                                         </div>
                                     </div>
+
+                                    <!-- Errors -->
+                                    @error('recipientEntries.' . $index . '.national_id') <p class="mt-1 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror
+                                    @error('recipientEntries.' . $index . '.quantity') <p class="mt-1 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror
+
+                                    <!-- Unregistered User Fields -->
+                                    @if($entry['is_unregistered'] ?? false)
+                                        <div class="mt-3 rounded-xl border border-amber-100 bg-amber-50/50 p-3">
+                                            <p class="mb-2 text-[11px] font-bold text-amber-700">{{ $entry['not_found_notice'] ?: 'فرد در سیستم یافت نشد.' }}</p>
+                                            <div class="grid grid-cols-1 gap-2">
+                                                <input type="text" wire:model.blur="recipientEntries.{{ $index }}.full_name" class="rounded-lg border-slate-200 bg-white px-3 py-2 text-xs" placeholder="نام کامل">
+                                                <input type="number" wire:model.blur="recipientEntries.{{ $index }}.mobile" class="rounded-lg border-slate-200 bg-white px-3 py-2 text-xs" placeholder="موبایل" maxlength="11">
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    <!-- Resolved Info (Result) -->
+                                    @if($entry['resolved_name'])
+                                        <div class="mt-3 grid grid-cols-2 gap-2 rounded-xl border border-emerald-100 bg-emerald-50/40 p-2.5">
+                                            <div class="flex flex-col">
+                                                <span class="text-[9px] font-bold text-emerald-600">نام و خانوادگی</span>
+                                                <span class="text-xs font-extrabold text-emerald-900">{{ $entry['resolved_name'] }}</span>
+                                            </div>
+                                            <div class="flex flex-col">
+                                                <span class="text-[9px] font-bold text-emerald-600">اعضای خانواده</span>
+                                                <span class="text-xs font-extrabold text-emerald-900">{{ $entry['family_members_count'] ?? 0 }} نفر</span>
+                                            </div>
+                                        </div>
+                                    @endif
                                 </div>
                             @endforeach
                         </div>
                     </div>
 
-                    <div class="relative rounded-3xl border border-slate-200 bg-white p-5 {{ !$this->selectedService ? 'opacity-60' : '' }}">
+
+                    <div class="relative rounded-3xl border border-slate-200 bg-white p-4 {{ !$this->selectedService ? 'opacity-60' : '' }}">
                         @if(!$this->selectedService)
                             <button type="button" wire:click="requireServiceSelection"
                                     class="absolute inset-0 z-10 cursor-not-allowed rounded-3xl"

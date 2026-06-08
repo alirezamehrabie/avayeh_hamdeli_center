@@ -1,4 +1,4 @@
-<div class="container mx-auto max-w-5xl p-4">
+<div class="container mx-auto max-w-5xl p-0">
     <div class="space-y-4">
         @if (session()->has('success'))
             <div class="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700">
@@ -21,7 +21,7 @@
                     </label>
                     <div>
                         <h1 class="text-xl font-bold text-slate-800">حساب کاربری</h1>
-                        <p class="text-xs text-slate-500">پروفایل شخصی، نام کاربری، ایمیل و رمز عبور</p>
+                        <p class="text-xs text-slate-500">پروفایل شخصی</p>
                     </div>
                 </div>
 
@@ -31,7 +31,7 @@
                     <span wire:loading wire:target="newProfilePhoto" class="text-xs font-semibold text-amber-600">در حال آپلود...</span>
                 </div>
             </div>
-            <p class="mt-2 text-xs text-slate-500">برای تغییر عکس، روی تصویر پروفایل یا دکمه انتخاب تصویر کلیک کنید. ذخیره به‌صورت خودکار انجام می‌شود.</p>
+            <p class="mt-2 text-xs text-slate-500">برای تغییر عکس، روی تصویر پروفایل یا دکمه انتخاب تصویر کلیک کنید.</p>
             @error('newProfilePhoto') <span class="mt-2 block text-xs text-red-600">{{ $message }}</span> @enderror
         </div>
 
