@@ -319,7 +319,7 @@
                         </div>
 
                         <select wire:model.live="selectedDeliveryEntryType" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 sm:w-56">
-                            <option value="all">همه نوع ثبت‌ها</option>
+                            <option value="all">انواع ثبت</option>
                             <option value="manual">ثبت دستی</option>
                             <option value="individual">شخصی (مددجو)</option>
                             <option value="guardian">خانوادگی (سرپرست)</option>
@@ -462,5 +462,114 @@
                 </div>
             </div>
         </div>
+
+        @if($showEditDeliveryModal)
+            <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4 py-6 backdrop-blur-sm" wire:click.self="closeEditDeliveryModal">
+                <div class="w-full max-w-3xl rounded-[28px] bg-white shadow-2xl">
+                    <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+                        <div>
+                            <h2 class="text-lg font-extrabold text-slate-900">ویرایش تحویل خدمت</h2>
+                            <p class="mt-1 text-xs text-slate-500">اصلاح مشخصات ثبت، مقدار تحویل و توضیحات در همین صفحه.</p>
+                        </div>
+                        <button type="button" wire:click="closeEditDeliveryModal" class="rounded-full border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700" aria-label="بستن">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <form wire:submit="saveDeliveryEdits" class="space-y-5 px-6 py-5">
+                        @php
+                            $editingDelivery = $selectedService?->deliveries?->firstWhere('id', $editingDeliveryId);
+                            $isManualEditing = $editingDelivery && ! $editingDelivery->person && ! $editingDelivery->guardian;
+                        @endphp
+
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div>
+                                <label class="mb-1 block text-xs font-bold text-slate-700">نام گیرنده</label>
+                                <input
+                                    type="text"
+                                    wire:model.defer="editRecipientName"
+                                    @disabled(! $isManualEditing)
+                                    class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                                >
+                                @error('editRecipientName') <p class="mt-1 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
+                                @unless($isManualEditing)
+                                    <p class="mt-1 text-[11px] text-slate-500">برای رکوردهای متصل به فرد یا سرپرست، نام از پرونده اصلی خوانده می‌شود.</p>
+                                @endunless
+                            </div>
+                            <div>
+                                <label class="mb-1 block text-xs font-bold text-slate-700">کد ملی گیرنده</label>
+                                <input
+                                    type="text"
+                                    wire:model.defer="editNationalId"
+                                    @disabled(! $isManualEditing)
+                                    class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                                >
+                                @error('editNationalId') <p class="mt-1 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="mb-1 block text-xs font-bold text-slate-700">موبایل</label>
+                                <input
+                                    type="text"
+                                    wire:model.defer="editMobile"
+                                    class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                                >
+                                @error('editMobile') <p class="mt-1 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="mb-1 block text-xs font-bold text-slate-700">مقدار تحویل</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0.01"
+                                    wire:model.defer="editDeliveredQuantity"
+                                    class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                                >
+                                @error('editDeliveredQuantity') <p class="mt-1 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="mb-1 block text-xs font-bold text-slate-700">تاریخ تحویل</label>
+                                <input
+                                    type="text"
+                                    dir="ltr"
+                                    wire:model.defer="editDeliveredAt"
+                                    placeholder="1405/03/16"
+                                    class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                                >
+                                @error('editDeliveredAt') <p class="mt-1 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
+                            </div>
+                            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                                <p class="text-xs font-bold text-slate-700">نوع ثبت</p>
+                                <p class="mt-2 text-sm font-semibold text-slate-800">
+                                    @if($editingDelivery?->person)
+                                        فردی
+                                    @elseif($editingDelivery?->guardian)
+                                        سرپرست خانوار
+                                    @else
+                                        ثبت دستی
+                                    @endif
+                                </p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="mb-1 block text-xs font-bold text-slate-700">توضیحات</label>
+                            <textarea
+                                wire:model.defer="editNotes"
+                                rows="4"
+                                class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                            ></textarea>
+                            @error('editNotes') <p class="mt-1 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div class="flex flex-col-reverse gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end">
+                            <button type="button" wire:click="closeEditDeliveryModal" class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-100">انصراف</button>
+                            <button type="submit" class="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-700">ذخیره تغییرات</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        @endif
     @endif
 </div>
