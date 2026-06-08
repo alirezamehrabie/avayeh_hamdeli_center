@@ -220,7 +220,7 @@ class ServiceBatchCreator extends Component
             'socialWorkerSuggestions' => $this->getSocialWorkerSuggestions(),
             'isEditing' => $this->editingServiceId !== null,
             'typeOptions' => Service::TYPE_OPTIONS,
-            'unitOptions' => Service::UNIT_OPTIONS,
+            'unitOptions' => Service::unitOptions(),
         ]);
     }
 
@@ -232,7 +232,7 @@ class ServiceBatchCreator extends Component
             'serviceBlocks.*.service_type' => ['required', Rule::in(array_keys(Service::TYPE_OPTIONS))],
             'serviceBlocks.*.description' => ['required', 'string', 'max:5000'],
             'serviceBlocks.*.total_quantity' => ['required', 'numeric', 'min:0.01'],
-            'serviceBlocks.*.unit' => ['required', Rule::in(array_keys(Service::UNIT_OPTIONS))],
+            'serviceBlocks.*.unit' => ['required', Rule::in(Service::unitKeys())],
             'serviceBlocks.*.date_day' => ['required', 'integer', 'min:1', 'max:31'],
             'serviceBlocks.*.date_month' => ['required', 'integer', 'min:1', 'max:12'],
             'serviceBlocks.*.date_year' => ['required', 'integer', 'min:1300', 'max:1600'],

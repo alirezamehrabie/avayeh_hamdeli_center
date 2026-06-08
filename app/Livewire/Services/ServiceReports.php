@@ -3,6 +3,7 @@
 namespace App\Livewire\Services;
 
 use App\Helpers\Morilog\Jalalian;
+use App\Helpers\Morilog\CalendarUtils;
 use App\Models\Guardian;
 use App\Models\Person;
 use App\Models\Service;
@@ -11,7 +12,7 @@ use App\Models\ServiceDelivery;
 use App\Models\ServiceName;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
-use App\Helpers\Morilog\CalendarUtils;
+
 
 class ServiceReports extends Component
 {
@@ -177,7 +178,7 @@ class ServiceReports extends Component
             'filteredDeliveries' => $this->filteredDeliveries,
             'statusOptions' => Service::STATUS_OPTIONS,
             'typeOptions' => Service::TYPE_OPTIONS,
-            'unitOptions' => Service::UNIT_OPTIONS,
+            'unitOptions' => Service::unitOptions(),
             'categoryOptions' => $categories,
             'serviceNames' => $serviceNames,
             'displayMode' => $this->displayMode,

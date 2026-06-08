@@ -173,7 +173,7 @@ class ManageServices extends Component
             'serviceCategories' => $this->availableServiceCategories(),
             'districts' => District::query()->orderBy('sort_order')->orderBy('name')->get(),
             'typeOptions' => Service::TYPE_OPTIONS,
-            'unitOptions' => Service::UNIT_OPTIONS,
+            'unitOptions' => Service::unitOptions(),
             'statusOptions' => Service::STATUS_OPTIONS,
             'priorityOptions' => Service::PRIORITY_OPTIONS,
         ]);
@@ -193,7 +193,7 @@ class ManageServices extends Component
             'serviceType' => ['required', Rule::in(array_keys(Service::TYPE_OPTIONS))],
             'description' => ['nullable', 'string', 'max:5000'],
             'totalQuantity' => ['required', 'numeric', 'min:0.01'],
-            'serviceUnit' => ['required', Rule::in(array_keys(Service::UNIT_OPTIONS))],
+            'serviceUnit' => ['required', Rule::in(Service::unitKeys())],
             'valuePerUnit' => ['required', 'integer', 'min:0'],
             'serviceDistrictId' => ['nullable', 'integer', 'exists:districts,id'],
             'distributionStartDate' => ['required', 'date'],
@@ -280,7 +280,7 @@ class ManageServices extends Component
         ]);
 
         $this->serviceType = 'individual';
-        $this->serviceUnit = 'package';
+        $this->serviceUnit = array_key_first(Service::unitOptions()) ?? 'package';
         $this->status = 'draft';
     }
 

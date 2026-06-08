@@ -50,7 +50,7 @@
         $socialWorkersOpen = $dashboardMode ? $isActive(['social-workers-list', 'social-workers-block-list', 'social-worker-create', 'social-worker-edit']) : request()->routeIs('social-workers.*');
         $guardiansOpen = $dashboardMode ? $isActive(['guardians-list', 'guardians-block-list']) : request()->routeIs('guardians.*');
         $reportsOpen = $dashboardMode ? $isActive(['advanced-reports', 'advanced-service-report', 'advanced-beneficiary-report', 'advanced-operator-report', 'advanced-supervisor-report', 'advanced-social-worker-report']) : false;
-        $servicesOpen = $dashboardMode ? $isActive(['define-services', 'service-list', 'service-delivery']) : false;
+        $servicesOpen = $dashboardMode ? $isActive(['define-services', 'service-management', 'service-list', 'service-delivery']) : false;
         $systemSettingsOpen = $dashboardMode ? $isActive(['system-settings-user-management', 'system-settings-user-account']) : request()->routeIs('admin.user-management') || request()->routeIs('admin.user-account');
         $defaultOpenMenu = $peopleOpen
             ? 'people'
@@ -273,7 +273,7 @@
             @if($dashboardMode)
                 <div>
                     <button type="button" @click="openMenu = openMenu === 'services' ? '' : 'services'"
-                            class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $isActive(['define-services', 'service-list', 'service-delivery']) ? 'bg-indigo-700' : '' }}">
+                            class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $isActive(['define-services', 'service-management', 'service-list', 'service-delivery']) ? 'bg-indigo-700' : '' }}">
                         <div class="flex items-center">
                             <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -291,6 +291,7 @@
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'define-services' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             تعریف خدمات
                         </button>
+
                         <button type="button" wire:click="selectSection('service-list')"
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'service-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             لیست خدمات
@@ -298,6 +299,10 @@
                         <button type="button" wire:click="selectSection('service-delivery')"
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'service-delivery' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             تحویل خدمات
+                        </button>
+                        <button type="button" wire:click="selectSection('service-management')"
+                                class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'service-management' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
+                            مدیریت خدمات
                         </button>
                     </div>
                 </div>

@@ -30,7 +30,7 @@ class ServiceList extends Component
                 ->latest()
                 ->get(),
             'typeOptions' => Service::TYPE_OPTIONS,
-            'unitOptions' => Service::UNIT_OPTIONS,
+            'unitOptions' => Service::unitOptions(),
             'statusOptions' => Service::STATUS_OPTIONS,
             'priorityOptions' => Service::PRIORITY_OPTIONS,
         ]);

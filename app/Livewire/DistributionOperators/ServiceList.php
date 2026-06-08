@@ -32,7 +32,7 @@ class ServiceList extends Component
                 ->with(['serviceName', 'serviceCategory', 'socialWorkers'])
                 ->latest()
                 ->get(),
-            'unitOptions' => Service::UNIT_OPTIONS,
+            'unitOptions' => Service::unitOptions(),
         ]);
     }
 

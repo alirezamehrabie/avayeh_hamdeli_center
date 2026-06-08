@@ -15,15 +15,6 @@ class Service extends Model
         'family' => 'خانوادگی (سرپرست)',
     ];
 
-    public const UNIT_OPTIONS = [
-        'package' => 'بسته',
-        'piece' => 'دست',
-        'count' => 'عدد',
-        'portion' => 'پرس',
-        'kilogram' => 'کیلوگرم',
-        'gram' => 'گرم',
-    ];
-
     public const STATUS_OPTIONS = [
         'draft' => 'پیش نویس',
         'approved' => 'تأیید شده',
@@ -36,6 +27,15 @@ class Service extends Model
         'normal' => 'عادی',
         'high' => 'بالا',
         'urgent' => 'فوری',
+    ];
+
+    public const FALLBACK_UNIT_OPTIONS = [
+        'package' => 'بسته',
+        'piece' => 'دست',
+        'count' => 'عدد',
+        'portion' => 'پرس',
+        'kilogram' => 'کیلوگرم',
+        'gram' => 'گرم',
     ];
 
     protected $fillable = [
@@ -83,6 +83,25 @@ class Service extends Model
         $lastId = (int) static::query()->max('id');
 
         return 'SRV-' . str_pad((string) ($lastId + 1), 5, '0', STR_PAD_LEFT);
+    }
+
+    public static function unitOptions(): array
+    {
+        if (! DB::getSchemaBuilder()->hasTable('service_units')) {
+            return static::FALLBACK_UNIT_OPTIONS;
+        }
+
+        $units = ServiceUnit::query()
+            ->ordered()
+            ->pluck('label', 'key')
+            ->all();
+
+        return $units !== [] ? $units : static::FALLBACK_UNIT_OPTIONS;
+    }
+
+    public static function unitKeys(): array
+    {
+        return array_keys(static::unitOptions());
     }
 
     public function serviceName(): BelongsTo

@@ -93,6 +93,7 @@ class DashboardHome extends Component
                 'define-services',
                 'service-list',
                 'service-delivery',
+                'service-management',
                 'child-supporter-page'
             );
         }

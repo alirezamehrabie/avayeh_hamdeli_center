@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             OccupationSeeder::class,
             ServiceNameSeeder::class,
             ServiceCategorySeeder::class,
+            ServiceUnitSeeder::class,
             SadaatRelationsSeeder::class,
             SkillsTableSeeder::class,
             GuardianRelationTypeSeeder::class,

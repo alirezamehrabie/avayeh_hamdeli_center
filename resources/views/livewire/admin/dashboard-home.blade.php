@@ -214,6 +214,10 @@
 
                         @break
 
+                    @case('service-management')
+                        <livewire:services.service-management :key="'service-management'" />
+                        @break
+
                     @case('system-settings-user-management')
                         <livewire:admin.user-management :key="'system-settings-user-management'" />
                         @break
