@@ -75,6 +75,12 @@ class ServiceDelivery extends Model
 
     public function getRecipientNameAttribute(): string
     {
+        $storedName = trim((string) ($this->full_name ?? ''));
+
+        if ($storedName !== '') {
+            return $storedName;
+        }
+
         if ($this->person) {
             return trim(implode(' ', array_filter([$this->person->first_name, $this->person->last_name]))) ?: '-';
         }
@@ -83,7 +89,7 @@ class ServiceDelivery extends Model
             return trim(implode(' ', array_filter([$this->guardian->first_name, $this->guardian->last_name]))) ?: '-';
         }
 
-        return (string) ($this->full_name ?: '-');
+        return '-';
     }
 
     public function getRecipientNationalIdAttribute(): string

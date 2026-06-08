@@ -11,7 +11,7 @@ use App\Models\ServiceDelivery;
 use App\Models\ServiceName;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
-use Morilog\Jalali\CalendarUtils;
+use App\Helpers\Morilog\CalendarUtils;
 
 class ServiceReports extends Component
 {
@@ -220,17 +220,12 @@ class ServiceReports extends Component
 
         abort_unless($delivery, 404);
 
-        if (! $this->isManualDelivery($delivery)) {
-            $this->editConnectMessage = 'این رکورد قبلاً به پرونده اصلی متصل شده است.';
-            $this->editConnectMessageType = 'info';
-
-            return;
-        }
-
         $validated = $this->validate([
             'editNationalId' => ['required', 'digits:10'],
+            'editRecipientName' => ['nullable', 'string', 'max:255'],
         ], [], [
             'editNationalId' => 'کد ملی گیرنده',
+            'editRecipientName' => 'نام گیرنده',
         ]);
 
         $nationalId = trim($validated['editNationalId']);
@@ -247,18 +242,21 @@ class ServiceReports extends Component
                 return;
             }
 
+            $profileName = $guardian->full_name !== '' ? $guardian->full_name : trim($this->editRecipientName);
+            $profileMobile = $guardian->guardian_phone_number ?: null;
+
             $delivery->update([
                 'guardian_id' => $guardian->id,
                 'person_id' => null,
                 'national_id' => (string) $guardian->national_code,
-                'full_name' => $guardian->full_name !== '' ? $guardian->full_name : trim($this->editRecipientName),
-                'mobile' => $guardian->guardian_phone_number ?: (trim($this->editMobile) !== '' ? trim($this->editMobile) : null),
+                'full_name' => $profileName,
+                'mobile' => $profileMobile,
             ]);
 
-            $this->editRecipientName = $guardian->full_name !== '' ? $guardian->full_name : $this->editRecipientName;
+            $this->editRecipientName = $profileName;
             $this->editNationalId = (string) $guardian->national_code;
-            $this->editMobile = (string) ($guardian->guardian_phone_number ?? $this->editMobile);
-            $this->editConnectMessage = 'رکورد با موفقیت به سرپرست خانوار متصل شد.';
+            $this->editMobile = (string) ($profileMobile ?? '');
+            $this->editConnectMessage = 'اطلاعات از پرونده سرپرست بازیابی و رکورد با موفقیت متصل شد.';
             $this->editConnectMessageType = 'success';
 
             return;
@@ -276,20 +274,21 @@ class ServiceReports extends Component
             return;
         }
 
-        $fullName = trim(implode(' ', array_filter([$person->first_name, $person->last_name])));
+        $profileName = trim(implode(' ', array_filter([$person->first_name, $person->last_name]))) ?: trim($this->editRecipientName);
+        $profileMobile = $person->guardian?->guardian_phone_number ?: null;
 
         $delivery->update([
             'person_id' => $person->id,
             'guardian_id' => null,
             'national_id' => (string) $person->national_id,
-            'full_name' => $fullName !== '' ? $fullName : trim($this->editRecipientName),
-            'mobile' => $person->guardian?->guardian_phone_number ?: (trim($this->editMobile) !== '' ? trim($this->editMobile) : null),
+            'full_name' => $profileName,
+            'mobile' => $profileMobile,
         ]);
 
-        $this->editRecipientName = $fullName !== '' ? $fullName : $this->editRecipientName;
+        $this->editRecipientName = $profileName;
         $this->editNationalId = (string) $person->national_id;
-        $this->editMobile = (string) ($person->guardian?->guardian_phone_number ?? $this->editMobile);
-        $this->editConnectMessage = 'رکورد با موفقیت به پرونده فرد متصل شد.';
+        $this->editMobile = (string) ($profileMobile ?? '');
+        $this->editConnectMessage = 'اطلاعات از پرونده فرد بازیابی و رکورد با موفقیت متصل شد.';
         $this->editConnectMessageType = 'success';
     }
 
@@ -331,17 +330,14 @@ class ServiceReports extends Component
         }
 
         $payload = [
+            'full_name' => trim((string) ($validated['editRecipientName'] ?? '')),
+            'national_id' => trim($validated['editNationalId']),
             'mobile' => trim($validated['editMobile']) !== '' ? trim($validated['editMobile']) : null,
             'delivered_quantity' => $newQuantity,
             'delivered_total_value' => (int) round($newQuantity * (int) $delivery->value_per_unit_snapshot),
             'delivered_at' => $this->jalaliToGregorian($validated['editDeliveredAt']),
             'notes' => trim($validated['editNotes']) !== '' ? trim($validated['editNotes']) : null,
         ];
-
-        if ($this->isManualDelivery($delivery)) {
-            $payload['full_name'] = trim($validated['editRecipientName']);
-            $payload['national_id'] = trim($validated['editNationalId']);
-        }
 
         $delivery->update($payload);
 
@@ -386,16 +382,8 @@ class ServiceReports extends Component
     protected function deliveryEditRules(): array
     {
         return [
-            'editRecipientName' => [
-                $this->currentEditingDeliveryIsManual() ? 'required' : 'nullable',
-                'string',
-                'max:255',
-            ],
-            'editNationalId' => [
-                $this->currentEditingDeliveryIsManual() ? 'required' : 'nullable',
-                'string',
-                'max:20',
-            ],
+            'editRecipientName' => ['nullable', 'string', 'max:255'],
+            'editNationalId' => ['required', 'string', 'max:20'],
             'editMobile' => ['nullable', 'regex:/^09[0-9]{9}$/'],
             'editDeliveredQuantity' => ['required', 'numeric', 'min:0.01'],
             'editDeliveredAt' => [

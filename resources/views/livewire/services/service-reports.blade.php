@@ -490,13 +490,10 @@
                                 <input
                                     type="text"
                                     wire:model.defer="editRecipientName"
-                                    @disabled(! $isManualEditing)
-                                    class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                                    class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
                                 >
                                 @error('editRecipientName') <p class="mt-1 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
-                                @unless($isManualEditing)
-                                    <p class="mt-1 text-[11px] text-slate-500">برای رکوردهای متصل به فرد یا سرپرست، نام از پرونده اصلی خوانده می‌شود.</p>
-                                @endunless
+                                <p class="mt-1 text-[11px] text-slate-500">این نام روی خود رکورد تحویل ذخیره می‌شود و در صورت نیاز می‌تواند با پرونده اصلی متفاوت باشد.</p>
                             </div>
                             <div>
                                 <label class="mb-1 block text-xs font-bold text-slate-700">کد ملی گیرنده</label>
@@ -504,17 +501,12 @@
                                     <input
                                         type="text"
                                         wire:model.defer="editNationalId"
-                                        @disabled(! $isManualEditing)
-                                        class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                                        class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
                                     >
-                                    @if($isManualEditing)
-                                        <button type="button" wire:click="connectDeliveryRecipient" class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700">اتصال</button>
-                                    @endif
+                                    <button type="button" wire:click="connectDeliveryRecipient" class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700">اتصال</button>
                                 </div>
                                 @error('editNationalId') <p class="mt-1 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
-                                @if($isManualEditing)
-                                    <p class="mt-1 text-[11px] text-slate-500">پس از تغییر کد ملی، با دکمه اتصال پرونده ثبت‌شده در سیستم پیدا و به این تحویل وصل می‌شود.</p>
-                                @endif
+                                <p class="mt-1 text-[11px] text-slate-500">در صورت تغییر کد ملی یا نیاز به اصلاح اتصال، با دکمه اتصال پرونده مناسب پیدا و دوباره به این تحویل وصل می‌شود.</p>
                                 @if($editConnectMessage !== '')
                                     <p class="mt-2 rounded-xl px-3 py-2 text-xs font-medium {{ $editConnectMessageType === 'success' ? 'bg-emerald-50 text-emerald-700' : ($editConnectMessageType === 'error' ? 'bg-rose-50 text-rose-700' : 'bg-slate-100 text-slate-700') }}">{{ $editConnectMessage }}</p>
                                 @endif
