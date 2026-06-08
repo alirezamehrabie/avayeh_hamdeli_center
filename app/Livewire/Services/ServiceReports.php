@@ -19,6 +19,7 @@ class ServiceReports extends Component
     public string $selectedServiceName = 'all';
     public string $displayMode = 'list';
     public string $deliverySearch = '';
+    public string $selectedDeliveryEntryType = 'all';
 
     public function getFilteredDeliveriesProperty()
     {
@@ -27,8 +28,20 @@ class ServiceReports extends Component
         }
 
         $search = trim($this->deliverySearch);
+        $entryType = $this->selectedDeliveryEntryType;
 
         $deliveries = $this->selectedService->deliveries->sortByDesc('delivered_at');
+
+        if ($entryType !== 'all') {
+            $deliveries = $deliveries->filter(function ($delivery) use ($entryType) {
+                return match ($entryType) {
+                    'manual' => ! $delivery->person && ! $delivery->guardian,
+                    'individual' => (bool) $delivery->person,
+                    'guardian' => ! $delivery->person && (bool) $delivery->guardian,
+                    default => true,
+                };
+            });
+        }
 
         if ($search === '') {
             return $deliveries;
@@ -70,6 +83,7 @@ class ServiceReports extends Component
 
         $this->selectedServiceId = $serviceId;
         $this->deliverySearch = '';
+        $this->selectedDeliveryEntryType = 'all';
         $this->dispatch('open-dashboard-section', section: 'advanced-service-report', id: $serviceId);
     }
 
@@ -77,6 +91,7 @@ class ServiceReports extends Component
     {
         $this->selectedServiceId = null;
         $this->deliverySearch = '';
+        $this->selectedDeliveryEntryType = 'all';
         $this->dispatch('open-dashboard-section', section: 'advanced-service-report');
     }
 

@@ -305,16 +305,25 @@
                 </div>
 
                 <div class="px-6 py-3">
-                    <div class="relative w-full sm:max-w-sm">
-                        <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                        <input
-                            type="text"
-                            wire:model.live.debounce.300ms="deliverySearch"
-                            placeholder="جستجو در تحویل‌ها (نام، کد ملی، موبایل، مددکار)"
-                            class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
-                        >
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                        <div class="relative w-full sm:max-w-sm">
+                            <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <input
+                                type="text"
+                                wire:model.live.debounce.300ms="deliverySearch"
+                                placeholder="جستجو در تحویل‌ها (نام، کد ملی، موبایل، مددکار)"
+                                class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                            >
+                        </div>
+
+                        <select wire:model.live="selectedDeliveryEntryType" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 sm:w-56">
+                            <option value="all">همه نوع ثبت‌ها</option>
+                            <option value="manual">ثبت دستی</option>
+                            <option value="individual">شخصی (مددجو)</option>
+                            <option value="guardian">خانوادگی (سرپرست)</option>
+                        </select>
                     </div>
                 </div>
 
