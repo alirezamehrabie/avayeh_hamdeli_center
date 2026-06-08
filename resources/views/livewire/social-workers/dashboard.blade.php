@@ -8,14 +8,9 @@
             </p>
         </div>
 
-        <div class="px-6 py-6">
-            @if (session()->has('success'))
-                <div
-                    class="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-                    {{ session('success') }}
-                </div>
-            @endif
-
+        <div class="px-6 py-6"
+             x-data="{ successModalOpen: @entangle('showDeliverySuccessModal') }"
+             x-on:keydown.escape.window="if (successModalOpen) { successModalOpen = false; $wire.closeDeliverySuccessModal(); }">
             @if ($errors->any())
                 <div class="mb-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                     <p class="font-bold">لطفاً خطاهای فرم را بررسی کنید.</p>
@@ -26,6 +21,63 @@
                     </ul>
                 </div>
             @endif
+
+            <div
+                x-cloak
+                x-show="successModalOpen"
+                class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 px-4 py-6"
+                style="display: none;"
+                x-transition.opacity
+            >
+                <div
+                    @click.outside="successModalOpen = false; $wire.closeDeliverySuccessModal();"
+                    class="w-full max-w-md rounded-[28px] bg-white p-6 shadow-2xl"
+                    x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0 scale-95"
+                    x-transition:enter-end="opacity-100 scale-100"
+                    x-transition:leave="transition ease-in duration-150"
+                    x-transition:leave-start="opacity-100 scale-100"
+                    x-transition:leave-end="opacity-0 scale-95"
+                >
+                    <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
+
+                    <div class="mt-4 text-center">
+                        <h2 class="text-lg font-extrabold text-slate-800">ثبت موفق تحویل</h2>
+                        <p class="mt-2 text-sm font-medium text-slate-600">
+                            {{ $deliverySuccessModalData['message'] }}
+                        </p>
+                    </div>
+
+                    <div class="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-right">
+                        <p class="text-sm font-bold text-slate-800">
+                            {{ $deliverySuccessModalData['service_name'] ?: 'خدمت انتخاب‌شده' }}
+                        </p>
+                        @if ($deliverySuccessModalData['service_code'] !== '')
+                            <p class="mt-1 text-xs font-semibold text-slate-500">
+                                کد خدمت: {{ $deliverySuccessModalData['service_code'] }}
+                            </p>
+                        @endif
+                        <div class="mt-4 rounded-2xl bg-white px-4 py-3 text-center shadow-sm">
+                            <p class="text-xs font-semibold text-slate-500">سهمیه باقی‌مانده این خدمت</p>
+                            <p class="mt-1 text-2xl font-extrabold text-emerald-600" dir="ltr">
+                                {{ $deliverySuccessModalData['remaining_quota'] }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        @click="successModalOpen = false; $wire.closeDeliverySuccessModal();"
+                        class="mt-6 w-full rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-500 active:scale-[0.98]"
+                    >
+                        متوجه شدم
+                    </button>
+                </div>
+            </div>
 
             <form wire:submit.prevent="saveDelivery"
                   class="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(300px,0.85fr)]">

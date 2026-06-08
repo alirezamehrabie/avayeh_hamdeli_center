@@ -27,6 +27,13 @@ class Dashboard extends Component
     public string $deliveredAt = '';
     public string $notes = '';
     public ?int $activeRecipientSearchIndex = null;
+    public bool $showDeliverySuccessModal = false;
+    public array $deliverySuccessModalData = [
+        'message' => '',
+        'service_name' => '',
+        'service_code' => '',
+        'remaining_quota' => '0',
+    ];
 
     public function mount(): void
     {
@@ -41,7 +48,13 @@ class Dashboard extends Component
         $this->activeRecipientSearchIndex = null;
         $this->syncQuotaState();
         $this->serviceSelectionWarning = '';
+        $this->showDeliverySuccessModal = false;
         $this->resetValidation();
+    }
+
+    public function closeDeliverySuccessModal(): void
+    {
+        $this->showDeliverySuccessModal = false;
     }
 
     public function requireServiceSelection(): void
@@ -241,7 +254,20 @@ class Dashboard extends Component
             }
         });
 
-        session()->flash('success', 'تحویل خدمات برای گیرندگان ثبت شد.');
+        $freshService = Service::query()
+            ->with(['serviceName', 'serviceCategory', 'socialWorkers'])
+            ->find($service->id);
+
+        $this->deliverySuccessModalData = [
+            'message' => 'تحویل خدمت با موفقیت ثبت شد.',
+            'service_name' => $freshService?->serviceName?->name ?? '',
+            'service_code' => $freshService?->service_code ?? '',
+            'remaining_quota' => number_format(
+                $freshService?->remainingAllocationForWorker($this->currentSocialWorkerId()) ?? 0,
+                2
+            ),
+        ];
+        $this->showDeliverySuccessModal = true;
         $this->recipientEntries = [$this->blankEntry()];
         $this->notes = '';
         $this->deliveredAt = $this->defaultDeliveredAt();
