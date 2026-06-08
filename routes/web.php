@@ -21,6 +21,7 @@ use App\Livewire\DistributionOperators\DefineService;
 use App\Livewire\DistributionOperators\ServiceList;
 use App\Livewire\SocialWorkers\DeliveryHistory as SocialWorkerDeliveryHistory;
 use App\Livewire\SocialWorkers\Dashboard as SocialWorkerDashboard;
+use App\Livewire\SocialWorkers\UserAccount as SocialWorkerUserAccount;
 
 
 // مسیر لاگین با استفاده از کامپوننت Livewire
@@ -85,6 +86,10 @@ Route::get('/social-worker/dashboard', SocialWorkerDashboard::class)
 Route::get('/social-worker/delivery-history', SocialWorkerDeliveryHistory::class)
     ->middleware(['auth', 'can:access-social-worker-panel'])
     ->name('social-worker.delivery-history');
+
+Route::get('/social-worker/system-settings/user-account', SocialWorkerUserAccount::class)
+    ->middleware(['auth', 'can:access-social-worker-panel'])
+    ->name('social-worker.user-account');
 
 Route::get('/distribution-operator/dashboard', fn () => redirect()->route('distribution-operator.define-service'))
     ->middleware(['auth', 'can:access-distribution-operator-panel'])
