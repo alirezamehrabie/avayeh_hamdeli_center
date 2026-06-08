@@ -8,6 +8,7 @@ use App\Models\Guardian;
 use App\Models\Person;
 use App\Models\Service;
 use App\Models\ServiceDelivery;
+use App\Traits\InteractsWithNotificationModal;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -17,6 +18,8 @@ use Livewire\Component;
 #[Layout('layouts.social-worker')]
 class Dashboard extends Component
 {
+    use InteractsWithNotificationModal;
+
     public string $activeSection = 'service-delivery';
     public ?int $selectedServiceId = null;
     public array $quotaState = [
@@ -27,13 +30,6 @@ class Dashboard extends Component
     public string $deliveredAt = '';
     public string $notes = '';
     public ?int $activeRecipientSearchIndex = null;
-    public bool $showDeliverySuccessModal = false;
-    public array $deliverySuccessModalData = [
-        'message' => '',
-        'service_name' => '',
-        'service_code' => '',
-        'remaining_quota' => '0',
-    ];
 
     public function mount(): void
     {
@@ -48,13 +44,8 @@ class Dashboard extends Component
         $this->activeRecipientSearchIndex = null;
         $this->syncQuotaState();
         $this->serviceSelectionWarning = '';
-        $this->showDeliverySuccessModal = false;
+        $this->closeNotificationModal();
         $this->resetValidation();
-    }
-
-    public function closeDeliverySuccessModal(): void
-    {
-        $this->showDeliverySuccessModal = false;
     }
 
     public function requireServiceSelection(): void
@@ -258,16 +249,25 @@ class Dashboard extends Component
             ->with(['serviceName', 'serviceCategory', 'socialWorkers'])
             ->find($service->id);
 
-        $this->deliverySuccessModalData = [
+        $this->openNotificationModal([
+            'type' => 'success',
+            'template' => 'service-delivery-success',
+            'title' => 'ثبت موفق تحویل',
             'message' => 'تحویل خدمت با موفقیت ثبت شد.',
-            'service_name' => $freshService?->serviceName?->name ?? '',
-            'service_code' => $freshService?->service_code ?? '',
-            'remaining_quota' => number_format(
-                $freshService?->remainingAllocationForWorker($this->currentSocialWorkerId()) ?? 0,
-                2
-            ),
-        ];
-        $this->showDeliverySuccessModal = true;
+            'buttons' => [[
+                'label' => 'متوجه شدم',
+                'action' => 'close',
+                'variant' => 'success',
+            ]],
+            'meta' => [
+                'service_name' => $freshService?->serviceName?->name ?? '',
+                'service_code' => $freshService?->service_code ?? '',
+                'remaining_quota' => number_format(
+                    $freshService?->remainingAllocationForWorker($this->currentSocialWorkerId()) ?? 0,
+                    2
+                ),
+            ],
+        ]);
         $this->recipientEntries = [$this->blankEntry()];
         $this->notes = '';
         $this->deliveredAt = $this->defaultDeliveredAt();
