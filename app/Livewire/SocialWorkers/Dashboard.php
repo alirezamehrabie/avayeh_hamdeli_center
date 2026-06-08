@@ -12,6 +12,7 @@ use App\Traits\InteractsWithNotificationModal;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -186,14 +187,24 @@ class Dashboard extends Component
 
     public function saveDelivery(): void
     {
-        $validated = $this->validate($this->rules(), [], $this->validationAttributes());
+        try {
+            $validated = $this->validate($this->rules(), [], $this->validationAttributes());
+        } catch (ValidationException $exception) {
+            $this->showValidationErrorModal($exception->validator->errors()->all());
+
+            throw $exception;
+        }
+
         $service = $this->selectedService;
         abort_unless($service, 404);
 
         $totalToDeliver = collect($validated['recipientEntries'])->sum(fn ($entry) => (float) $entry['quantity']);
 
         if ($totalToDeliver > $this->remainingAllocationForCurrentWorker()) {
-            $this->addError('recipientEntries', 'جمع مقادیر ثبت‌شده از سهمیه تخصیص‌یافته شما بیشتر است.');
+            $message = 'جمع مقادیر ثبت‌شده از سهمیه تخصیص‌یافته شما بیشتر است.';
+            $this->addError('recipientEntries', $message);
+            $this->showValidationErrorModal([$message]);
+
             return;
         }
 
@@ -330,6 +341,31 @@ class Dashboard extends Component
     public function render()
     {
         return view('livewire.social-workers.dashboard');
+    }
+
+    protected function showValidationErrorModal(array $errors): void
+    {
+        $messages = collect($errors)
+            ->filter(fn ($message) => filled($message))
+            ->values()
+            ->all();
+
+        if ($messages === []) {
+            return;
+        }
+
+        $this->openNotificationModal([
+            'type' => 'error',
+            'title' => 'خطا در اعتبارسنجی فرم',
+            'message' => "لطفاً موارد زیر را بررسی کنید:
+• " . implode("
+• ", $messages),
+            'buttons' => [[
+                'label' => 'متوجه شدم',
+                'action' => 'close',
+                'variant' => 'danger',
+            ]],
+        ]);
     }
 
     protected function rules(): array

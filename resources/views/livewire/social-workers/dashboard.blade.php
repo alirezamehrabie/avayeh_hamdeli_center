@@ -8,19 +8,6 @@
         </div>
 
         <div class="px-3 py-6">
-            @if ($errors->any())
-                <div class="mb-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                    <p class="font-bold">لطفاً خطاهای فرم را بررسی کنید.</p>
-                    <ul class="mt-2 list-disc space-y-1 pr-5">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
-
-
             <form wire:submit.prevent="saveDelivery"
                   class="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(300px,0.85fr)]">
                 <div class="space-y-4">
