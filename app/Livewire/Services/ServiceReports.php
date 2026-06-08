@@ -3,6 +3,8 @@
 namespace App\Livewire\Services;
 
 use App\Helpers\Morilog\Jalalian;
+use App\Models\Guardian;
+use App\Models\Person;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\ServiceDelivery;
@@ -30,6 +32,8 @@ class ServiceReports extends Component
     public string $editDeliveredQuantity = '';
     public string $editDeliveredAt = '';
     public string $editNotes = '';
+    public string $editConnectMessage = '';
+    public string $editConnectMessageType = 'info';
 
     public function getFilteredDeliveriesProperty()
     {
@@ -198,8 +202,95 @@ class ServiceReports extends Component
             ? Jalalian::fromDateTime($delivery->delivered_at)->format('Y/m/d')
             : Jalalian::fromDateTime(now())->format('Y/m/d');
         $this->editNotes = (string) ($delivery->notes ?? '');
+        $this->editConnectMessage = '';
+        $this->editConnectMessageType = 'info';
         $this->showEditDeliveryModal = true;
         $this->resetValidation();
+    }
+
+    public function connectDeliveryRecipient(): void
+    {
+        $service = $this->selectedService;
+        abort_unless($service, 404);
+
+        $delivery = ServiceDelivery::query()
+            ->whereKey($this->editingDeliveryId)
+            ->where('service_id', $service->id)
+            ->first();
+
+        abort_unless($delivery, 404);
+
+        if (! $this->isManualDelivery($delivery)) {
+            $this->editConnectMessage = 'این رکورد قبلاً به پرونده اصلی متصل شده است.';
+            $this->editConnectMessageType = 'info';
+
+            return;
+        }
+
+        $validated = $this->validate([
+            'editNationalId' => ['required', 'digits:10'],
+        ], [], [
+            'editNationalId' => 'کد ملی گیرنده',
+        ]);
+
+        $nationalId = trim($validated['editNationalId']);
+
+        if ($service->service_type === 'family') {
+            $guardian = Guardian::query()
+                ->where('national_code', $nationalId)
+                ->first();
+
+            if (! $guardian) {
+                $this->editConnectMessage = 'سرپرستی با این کد ملی پیدا نشد.';
+                $this->editConnectMessageType = 'error';
+
+                return;
+            }
+
+            $delivery->update([
+                'guardian_id' => $guardian->id,
+                'person_id' => null,
+                'national_id' => (string) $guardian->national_code,
+                'full_name' => $guardian->full_name !== '' ? $guardian->full_name : trim($this->editRecipientName),
+                'mobile' => $guardian->guardian_phone_number ?: (trim($this->editMobile) !== '' ? trim($this->editMobile) : null),
+            ]);
+
+            $this->editRecipientName = $guardian->full_name !== '' ? $guardian->full_name : $this->editRecipientName;
+            $this->editNationalId = (string) $guardian->national_code;
+            $this->editMobile = (string) ($guardian->guardian_phone_number ?? $this->editMobile);
+            $this->editConnectMessage = 'رکورد با موفقیت به سرپرست خانوار متصل شد.';
+            $this->editConnectMessageType = 'success';
+
+            return;
+        }
+
+        $person = Person::query()
+            ->with('guardian')
+            ->where('national_id', $nationalId)
+            ->first();
+
+        if (! $person) {
+            $this->editConnectMessage = 'فردی با این کد ملی پیدا نشد.';
+            $this->editConnectMessageType = 'error';
+
+            return;
+        }
+
+        $fullName = trim(implode(' ', array_filter([$person->first_name, $person->last_name])));
+
+        $delivery->update([
+            'person_id' => $person->id,
+            'guardian_id' => null,
+            'national_id' => (string) $person->national_id,
+            'full_name' => $fullName !== '' ? $fullName : trim($this->editRecipientName),
+            'mobile' => $person->guardian?->guardian_phone_number ?: (trim($this->editMobile) !== '' ? trim($this->editMobile) : null),
+        ]);
+
+        $this->editRecipientName = $fullName !== '' ? $fullName : $this->editRecipientName;
+        $this->editNationalId = (string) $person->national_id;
+        $this->editMobile = (string) ($person->guardian?->guardian_phone_number ?? $this->editMobile);
+        $this->editConnectMessage = 'رکورد با موفقیت به پرونده فرد متصل شد.';
+        $this->editConnectMessageType = 'success';
     }
 
     public function saveDeliveryEdits(): void
@@ -267,6 +358,8 @@ class ServiceReports extends Component
         $this->editDeliveredQuantity = '';
         $this->editDeliveredAt = '';
         $this->editNotes = '';
+        $this->editConnectMessage = '';
+        $this->editConnectMessageType = 'info';
         $this->resetValidation();
     }
 
