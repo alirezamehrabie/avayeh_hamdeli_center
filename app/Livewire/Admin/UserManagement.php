@@ -7,10 +7,13 @@ use App\Models\UserActionRequest;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
 class UserManagement extends Component
 {
+    use WithPagination;
+
     public string $first_name = '';
     public string $last_name = '';
     public string $username = '';
@@ -25,6 +28,11 @@ class UserManagement extends Component
     public string $edit_password = '';
     public string $edit_password_confirmation = '';
     public string $edit_access_level = User::ACCESS_LEVEL_REGULAR;
+    public bool $showEditModal = false;
+    public string $search = '';
+    public string $roleFilter = 'all';
+    public string $statusFilter = 'all';
+    public string $permissionFilter = 'all';
 
     public function createUser(): void
     {
@@ -119,7 +127,7 @@ class UserManagement extends Component
         $this->edit_password = '';
         $this->edit_password_confirmation = '';
         $this->edit_access_level = (string) ($user->access_level ?? User::ACCESS_LEVEL_REGULAR);
-        $this->dispatch('scroll-to-user-edit');
+        $this->showEditModal = true;
     }
 
     public function cancelEditingUser(): void
@@ -131,6 +139,7 @@ class UserManagement extends Component
         $this->edit_password = '';
         $this->edit_password_confirmation = '';
         $this->edit_access_level = User::ACCESS_LEVEL_REGULAR;
+        $this->showEditModal = false;
         $this->resetValidation([
             'edit_first_name',
             'edit_last_name',
@@ -139,6 +148,37 @@ class UserManagement extends Component
             'edit_password_confirmation',
             'edit_access_level',
         ]);
+    }
+
+    public function openEditModal(int $userId): void
+    {
+        $this->startEditingUser($userId);
+    }
+
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingRoleFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingStatusFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingPermissionFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function clearUserFilters(): void
+    {
+        $this->reset(['search', 'roleFilter', 'statusFilter', 'permissionFilter']);
+        $this->resetPage();
     }
 
     public function updateUser(): void
@@ -452,18 +492,6 @@ class UserManagement extends Component
     {
         abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
-        $columns = ['id', 'name', 'email', 'is_admin', 'created_at'];
-        if (Schema::hasColumns('users', ['first_name', 'last_name'])) {
-            $columns[] = 'first_name';
-            $columns[] = 'last_name';
-        }
-        if (Schema::hasColumn('users', 'permissions')) {
-            $columns[] = 'permissions';
-        }
-        if (Schema::hasColumn('users', 'access_level')) {
-            $columns[] = 'access_level';
-        }
-
         $actorCanCreateAdmin = auth()->user()?->isManager() ?? false;
         $isManager = auth()->user()?->isManager() ?? false;
         $pendingRequests = collect();
@@ -504,14 +532,65 @@ class UserManagement extends Component
                 ->all();
         }
 
+        $usersQuery = User::query()->latest();
+
+        if (filled($this->search)) {
+            $search = trim($this->search);
+
+            $usersQuery->where(function ($query) use ($search) {
+                $query->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('email', 'like', '%' . $search . '%');
+
+                if (Schema::hasColumns('users', ['first_name', 'last_name'])) {
+                    $query->orWhere('first_name', 'like', '%' . $search . '%')
+                        ->orWhere('last_name', 'like', '%' . $search . '%');
+                }
+            });
+        }
+
+        if ($this->roleFilter !== 'all' && Schema::hasColumn('users', 'access_level')) {
+            $usersQuery->where('access_level', $this->roleFilter);
+        }
+
+        if ($this->statusFilter === 'admin') {
+            $usersQuery->where('is_admin', true);
+        } elseif ($this->statusFilter === 'regular') {
+            $usersQuery->where('is_admin', false);
+        } elseif ($this->statusFilter === 'protected') {
+            $usersQuery->where(function ($query) {
+                $query->where('name', User::PRIMARY_ADMIN_USERNAME)
+                    ->orWhere('email', User::PRIMARY_ADMIN_EMAIL);
+            });
+        }
+
+        if ($this->permissionFilter !== 'all' && Schema::hasColumn('users', 'permissions')) {
+            $permission = $this->permissionFilter;
+
+            $usersQuery->where(function ($query) use ($permission) {
+                $query->whereJsonContains('permissions', $permission)
+                    ->orWhere('permissions', 'like', '%"'.$permission.'"%');
+            });
+        }
+
         return view('livewire.admin.user-management', [
-            'users' => User::query()->latest()->take(50)->get($columns),
+            'users' => $usersQuery->paginate(12),
             'actorCanCreateAdmin' => $actorCanCreateAdmin,
             'permissionOptions' => User::permissionOptions(),
             'pendingRequests' => $pendingRequests,
             'pendingActionMap' => $pendingActionMap,
             'pendingUserNames' => $pendingUserNames,
             'isManager' => $isManager,
+            'userStats' => [
+                'total' => User::count(),
+                'admins' => User::query()->where('is_admin', true)->count(),
+                'regular' => User::query()->where('is_admin', false)->count(),
+                'protected' => User::query()
+                    ->where(function ($query) {
+                        $query->where('name', User::PRIMARY_ADMIN_USERNAME)
+                            ->orWhere('email', User::PRIMARY_ADMIN_EMAIL);
+                    })
+                    ->count(),
+            ],
         ]);
     }
 }
