@@ -1,31 +1,39 @@
 <div class="min-h-screen bg-slate-50/60">
     <div class="container mx-auto max-w-7xl px-3 py-4 sm:px-4 sm:py-6 lg:px-8">
         <div class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_20px_80px_-30px_rgba(15,23,42,0.35)] sm:rounded-[2rem]">
-            <div class="border-b border-slate-200 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-5 text-white sm:px-5 sm:py-6 lg:px-8">
-                <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div class="border-b border-slate-200 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-4 text-white sm:px-5 sm:py-5 lg:px-6 lg:py-3.5">
+                <div class="flex flex-col gap-4 sm:gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div class="max-w-3xl">
-                        <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-300">System Settings</p>
-                        <h1 class="mt-2 text-3xl font-black tracking-tight sm:text-4xl">مدیریت کاربران</h1>
-                        <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
-                            نمای سبک و سریع برای بررسی کاربران، جستجو، فیلتر و انجام تغییرات مدیریتی بدون شلوغی بصری.
+                        <div class="mt-1 flex flex-wrap items-center gap-2">
+                            <h1 class="text-2xl font-black tracking-tight text-white lg:text-[1.75rem]">مدیریت کاربران</h1>
+                            <span class="hidden rounded-full border border-white/10 bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-slate-200 lg:inline-flex">
+                                سریع
+                            </span>
+                        </div>
+                        <p class="mt-1.5 max-w-2xl text-xs leading-5 text-slate-300 sm:text-sm sm:leading-6 lg:max-w-xl">
+                            بررسی کاربران، جستجو، فیلتر و انجام تغییرات مدیریتی.
                         </p>
                     </div>
-                    <div class="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-                        <div class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur">
-                            <div class="text-xs text-slate-300">کل کاربران</div>
-                            <div class="mt-1 text-2xl font-black">{{ $userStats['total'] }}</div>
+                    <div class="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:w-auto lg:min-w-[30rem] lg:gap-2">
+                        <div class="inline-flex min-h-10 items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/8 px-2.5 py-1.5 backdrop-blur sm:min-h-11 sm:rounded-xl sm:px-3 sm:py-2">
+                            <span class="text-[10px] font-medium tracking-wide text-slate-300 sm:text-[11px]">کل</span>
+                            <span class="text-sm font-black text-white sm:text-base">{{ $userStats['total'] }}</span>
                         </div>
-                        <div class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur">
-                            <div class="text-xs text-slate-300">ادمین‌ها</div>
-                            <div class="mt-1 text-2xl font-black">{{ $userStats['admins'] }}</div>
+                        <div class="inline-flex min-h-10 items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/8 px-2.5 py-1.5 backdrop-blur sm:min-h-11 sm:rounded-xl sm:px-3 sm:py-2">
+                            <span class="text-[10px] font-medium tracking-wide text-slate-300 sm:text-[11px]">ادمین</span>
+                            <span class="text-sm font-black text-white sm:text-base">{{ $userStats['admins'] }}</span>
                         </div>
-                        <div class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur">
-                            <div class="text-xs text-slate-300">کاربران عادی</div>
-                            <div class="mt-1 text-2xl font-black">{{ $userStats['regular'] }}</div>
+                        <div class="inline-flex min-h-10 items-center justify-between gap-2 rounded-lg border border-cyan-400/20 bg-cyan-300/10 px-2.5 py-1.5 backdrop-blur sm:min-h-11 sm:rounded-xl sm:px-3 sm:py-2">
+                            <span class="text-[10px] font-medium tracking-wide text-cyan-100 sm:text-[11px]">توزیع</span>
+                            <span class="text-sm font-black text-cyan-100 sm:text-base">{{ $userStats['distributionOperators'] }}</span>
                         </div>
-                        <div class="rounded-2xl border border-amber-400/20 bg-amber-300/10 px-4 py-3 backdrop-blur">
-                            <div class="text-xs text-amber-100">حساب محافظت‌شده</div>
-                            <div class="mt-1 text-2xl font-black text-amber-100">{{ $userStats['protected'] }}</div>
+                        <div class="inline-flex min-h-10 items-center justify-between gap-2 rounded-lg border border-violet-400/20 bg-violet-300/10 px-2.5 py-1.5 backdrop-blur sm:min-h-11 sm:rounded-xl sm:px-3 sm:py-2">
+                            <span class="text-[10px] font-medium tracking-wide text-violet-100 sm:text-[11px]">مددکار</span>
+                            <span class="text-sm font-black text-violet-100 sm:text-base">{{ $userStats['socialWorkers'] }}</span>
+                        </div>
+                        <div class="inline-flex min-h-10 items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/8 px-2.5 py-1.5 backdrop-blur sm:min-h-11 sm:rounded-xl sm:px-3 sm:py-2">
+                            <span class="text-[10px] font-medium tracking-wide text-slate-300 sm:text-[11px]">عادی</span>
+                            <span class="text-sm font-black text-white sm:text-base">{{ $userStats['regular'] }}</span>
                         </div>
                     </div>
                 </div>

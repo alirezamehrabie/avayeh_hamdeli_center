@@ -584,12 +584,14 @@ class UserManagement extends Component
             'userStats' => [
                 'total' => User::count(),
                 'admins' => User::query()->where('is_admin', true)->count(),
-                'regular' => User::query()->where('is_admin', false)->count(),
-                'protected' => User::query()
-                    ->where(function ($query) {
-                        $query->where('name', User::PRIMARY_ADMIN_USERNAME)
-                            ->orWhere('email', User::PRIMARY_ADMIN_EMAIL);
-                    })
+                'distributionOperators' => User::query()
+                    ->where('access_level', User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR)
+                    ->count(),
+                'socialWorkers' => User::query()
+                    ->where('access_level', User::ACCESS_LEVEL_SOCIAL_WORKER)
+                    ->count(),
+                'regular' => User::query()
+                    ->where('access_level', User::ACCESS_LEVEL_REGULAR)
                     ->count(),
             ],
         ]);
