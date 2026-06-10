@@ -1,39 +1,39 @@
 <div class="min-h-screen bg-slate-50/80">
     <div class="container mx-auto p-0">
         <div class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_20px_80px_-30px_rgba(15,23,42,0.35)] sm:rounded-[2rem]">
-            <div class="border-b border-slate-200 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-4 text-white sm:px-5 sm:py-5 lg:px-6 lg:py-3.5">
+            <div class="border-b border-slate-200 bg-gradient-to-br from-slate-700 via-slate-650 to-stone-600 px-4 py-4 text-white sm:px-5 sm:py-5 lg:px-6 lg:py-3.5">
                 <div class="flex flex-col gap-4 sm:gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div class="max-w-3xl">
                         <div class="mt-1 flex flex-wrap items-center gap-2">
                             <h1 class="text-2xl font-black tracking-tight text-white lg:text-[1.75rem]">مدیریت کاربران</h1>
-                            <span class="hidden rounded-full border border-white/10 bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-slate-200 lg:inline-flex">
+                            <span class="hidden rounded-full border border-white/15 bg-white/12 px-2 py-0.5 text-[10px] font-semibold text-slate-100 lg:inline-flex">
                                 سریع
                             </span>
                         </div>
-                        <p class="mt-1.5 max-w-2xl text-xs leading-5 text-slate-300 sm:text-sm sm:leading-6 lg:max-w-xl">
+                        <p class="mt-1.5 max-w-2xl text-xs leading-5 text-slate-200/90 sm:text-sm sm:leading-6 lg:max-w-xl">
                             بررسی کاربران، جستجو، فیلتر و انجام تغییرات مدیریتی.
                         </p>
                     </div>
-                    <div class="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:w-auto lg:min-w-[30rem] lg:gap-2">
-                        <div class="inline-flex min-h-10 items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/8 px-2.5 py-1.5 backdrop-blur sm:min-h-11 sm:rounded-xl sm:px-3 sm:py-2">
-                            <span class="text-[10px] font-medium tracking-wide text-slate-300 sm:text-[11px]">کل</span>
-                            <span class="text-sm font-black text-white sm:text-base">{{ $userStats['total'] }}</span>
+                    <div class="grid grid-cols-5 gap-1 lg:w-auto lg:min-w-[18rem] lg:gap-1.5">
+                        <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-md border border-white/10 bg-white/5 px-1.5 py-1 backdrop-blur">
+                            <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300/90">کل</span>
+                            <span class="mt-0.5 text-xs font-semibold leading-4 text-white">{{ $userStats['total'] }}</span>
                         </div>
-                        <div class="inline-flex min-h-10 items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/8 px-2.5 py-1.5 backdrop-blur sm:min-h-11 sm:rounded-xl sm:px-3 sm:py-2">
-                            <span class="text-[10px] font-medium tracking-wide text-slate-300 sm:text-[11px]">ادمین</span>
-                            <span class="text-sm font-black text-white sm:text-base">{{ $userStats['admins'] }}</span>
+                        <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-md border border-white/10 bg-white/5 px-1.5 py-1 backdrop-blur">
+                            <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300/90">ادمین</span>
+                            <span class="mt-0.5 text-xs font-semibold leading-4 text-white">{{ $userStats['admins'] }}</span>
                         </div>
-                        <div class="inline-flex min-h-10 items-center justify-between gap-2 rounded-lg border border-cyan-400/20 bg-cyan-300/10 px-2.5 py-1.5 backdrop-blur sm:min-h-11 sm:rounded-xl sm:px-3 sm:py-2">
-                            <span class="text-[10px] font-medium tracking-wide text-cyan-100 sm:text-[11px]">توزیع</span>
-                            <span class="text-sm font-black text-cyan-100 sm:text-base">{{ $userStats['distributionOperators'] }}</span>
+                        <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-md border border-sky-200/15 bg-sky-100/8 px-1.5 py-1 backdrop-blur">
+                            <span class="max-w-full truncate text-[9px] font-medium leading-3 text-sky-100/90">توزیع</span>
+                            <span class="mt-0.5 text-xs font-semibold leading-4 text-sky-50">{{ $userStats['distributionOperators'] }}</span>
                         </div>
-                        <div class="inline-flex min-h-10 items-center justify-between gap-2 rounded-lg border border-violet-400/20 bg-violet-300/10 px-2.5 py-1.5 backdrop-blur sm:min-h-11 sm:rounded-xl sm:px-3 sm:py-2">
-                            <span class="text-[10px] font-medium tracking-wide text-violet-100 sm:text-[11px]">مددکار</span>
-                            <span class="text-sm font-black text-violet-100 sm:text-base">{{ $userStats['socialWorkers'] }}</span>
+                        <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-md border border-stone-200/15 bg-stone-100/8 px-1.5 py-1 backdrop-blur">
+                            <span class="max-w-full truncate text-[9px] font-medium leading-3 text-stone-100/90">مددکار</span>
+                            <span class="mt-0.5 text-xs font-semibold leading-4 text-stone-50">{{ $userStats['socialWorkers'] }}</span>
                         </div>
-                        <div class="inline-flex min-h-10 items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/8 px-2.5 py-1.5 backdrop-blur sm:min-h-11 sm:rounded-xl sm:px-3 sm:py-2">
-                            <span class="text-[10px] font-medium tracking-wide text-slate-300 sm:text-[11px]">عادی</span>
-                            <span class="text-sm font-black text-white sm:text-base">{{ $userStats['regular'] }}</span>
+                        <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-md border border-white/10 bg-white/5 px-1.5 py-1 backdrop-blur">
+                            <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300/90">عادی</span>
+                            <span class="mt-0.5 text-xs font-semibold leading-4 text-white">{{ $userStats['regular'] }}</span>
                         </div>
                     </div>
                 </div>
