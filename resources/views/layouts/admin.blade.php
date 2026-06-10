@@ -15,6 +15,8 @@
 
 {{ $slot }}
 
+<x-notification-modal />
+
 @livewireScriptConfig
 @stack('scripts')
 </body>

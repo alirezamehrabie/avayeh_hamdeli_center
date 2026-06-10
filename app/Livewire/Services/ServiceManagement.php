@@ -5,17 +5,22 @@ namespace App\Livewire\Services;
 use App\Models\ServiceCategory;
 use App\Models\ServiceName;
 use App\Models\ServiceUnit;
+use App\Traits\InteractsWithNotificationModal;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class ServiceManagement extends Component
 {
+    use InteractsWithNotificationModal;
+
     public ?int $selectedServiceNameId = null;
     public string $serviceNameSearch = '';
 
     public ?int $editingServiceNameId = null;
     public string $serviceName = '';
+    public string $pendingServiceName = '';
 
     public ?int $editingCategoryId = null;
     public string $categoryName = '';
@@ -39,10 +44,50 @@ class ServiceManagement extends Component
             'serviceName' => 'نام خدمت',
         ]);
 
+        if ($this->editingServiceNameId) {
+            $this->persistServiceName($validated['serviceName']);
+
+            return;
+        }
+
+        $this->pendingServiceName = trim($validated['serviceName']);
+
+        $this->openNotificationModal([
+            'type' => 'warning',
+            'title' => 'Confirm Service Name',
+            'message' => "Are you sure you want to add {$this->pendingServiceName}?",
+            'buttons' => [
+                [
+                    'label' => 'OK',
+                    'action' => 'event',
+                    'event' => 'confirm-service-name-save',
+                    'variant' => 'primary',
+                ],
+                [
+                    'label' => 'Cancel',
+                    'action' => 'close',
+                    'variant' => 'secondary',
+                ],
+            ],
+        ]);
+    }
+
+    #[On('confirm-service-name-save')]
+    public function confirmServiceNameSave(): void
+    {
+        if ($this->pendingServiceName === '') {
+            return;
+        }
+
+        $this->persistServiceName($this->pendingServiceName);
+    }
+
+    protected function persistServiceName(string $serviceNameInput): void
+    {
         $serviceName = ServiceName::query()->updateOrCreate(
             ['id' => $this->editingServiceNameId],
             [
-                'name' => trim($validated['serviceName']),
+                'name' => trim($serviceNameInput),
                 'sort_id' => $this->editingServiceNameId
                     ? ServiceName::query()->whereKey($this->editingServiceNameId)->value('sort_id')
                     : $this->getNextSortId(ServiceName::query()),
@@ -54,6 +99,8 @@ class ServiceManagement extends Component
 
         $this->selectedServiceNameId = $serviceName->id;
         $this->resetServiceNameForm();
+        $this->pendingServiceName = '';
+        $this->closeNotificationModal();
         session()->flash('management-success', 'نام خدمت با موفقیت ذخیره شد.');
     }
 
@@ -157,7 +204,7 @@ class ServiceManagement extends Component
 
     public function resetServiceNameForm(): void
     {
-        $this->reset(['editingServiceNameId', 'serviceName']);
+        $this->reset(['editingServiceNameId', 'serviceName', 'pendingServiceName']);
         $this->resetValidation(['serviceName']);
     }
 

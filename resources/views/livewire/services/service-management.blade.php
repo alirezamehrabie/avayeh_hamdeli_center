@@ -46,7 +46,7 @@
                     </div>
 
                     <form wire:submit.prevent="saveServiceName" class="space-y-2.5">
-                        <input type="text" wire:model.blur="serviceName" placeholder="مثلاً ارزاق" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-700">
+                        <input type="text" wire:model.blur="serviceName" placeholder="مثال سفرۀ ام‌البنین (س)" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-700">
                         @error('serviceName') <p class="text-sm text-rose-600">{{ $message }}</p> @enderror
                         <button type="submit" class="w-full rounded-xl bg-indigo-700 px-3.5 py-2.5 text-sm font-bold text-white">
                             {{ $editingServiceNameId ? 'به‌روزرسانی نام خدمت' : 'ثبت نام خدمت' }}
