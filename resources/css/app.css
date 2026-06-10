@@ -97,3 +97,12 @@
 * {
     font-family: 'iransans', sans-serif;
 }
+
+html {
+    scrollbar-gutter: stable;
+}
+
+body {
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
+}

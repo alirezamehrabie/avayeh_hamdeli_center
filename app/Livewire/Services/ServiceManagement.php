@@ -20,7 +20,6 @@ class ServiceManagement extends Component
 
     public ?int $editingServiceNameId = null;
     public string $serviceName = '';
-    public string $pendingServiceName = '';
 
     public ?int $editingCategoryId = null;
     public string $categoryName = '';
@@ -46,40 +45,19 @@ class ServiceManagement extends Component
 
         if ($this->editingServiceNameId) {
             $this->persistServiceName($validated['serviceName']);
-
-            return;
         }
-
-        $this->pendingServiceName = trim($validated['serviceName']);
-
-        $this->openNotificationModal([
-            'type' => 'warning',
-            'title' => 'Confirm Service Name',
-            'message' => "Are you sure you want to add {$this->pendingServiceName}?",
-            'buttons' => [
-                [
-                    'label' => 'OK',
-                    'action' => 'event',
-                    'event' => 'confirm-service-name-save',
-                    'variant' => 'primary',
-                ],
-                [
-                    'label' => 'Cancel',
-                    'action' => 'close',
-                    'variant' => 'secondary',
-                ],
-            ],
-        ]);
     }
 
     #[On('confirm-service-name-save')]
-    public function confirmServiceNameSave(): void
+    public function confirmServiceNameSave(string $serviceNameInput): void
     {
-        if ($this->pendingServiceName === '') {
-            return;
-        }
+        $validated = $this->validate([
+            'serviceName' => ['required', 'string', 'max:255', Rule::unique('service_names', 'name')->ignore($this->editingServiceNameId)],
+        ], [], [
+            'serviceName' => 'نام خدمت',
+        ]);
 
-        $this->persistServiceName($this->pendingServiceName);
+        $this->persistServiceName($serviceNameInput);
     }
 
     protected function persistServiceName(string $serviceNameInput): void
@@ -204,7 +182,7 @@ class ServiceManagement extends Component
 
     public function resetServiceNameForm(): void
     {
-        $this->reset(['editingServiceNameId', 'serviceName', 'pendingServiceName']);
+        $this->reset(['editingServiceNameId', 'serviceName']);
         $this->resetValidation(['serviceName']);
     }
 

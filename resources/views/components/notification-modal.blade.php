@@ -141,7 +141,11 @@
                     },
                     handleButton(button) {
                         if (button.action === 'event' && button.event) {
-                            window.dispatchEvent(new CustomEvent(button.event, { detail: button.payload || {} }));
+                            if (window.Livewire?.dispatch) {
+                                window.Livewire.dispatch(button.event, button.payload || {});
+                            } else {
+                                window.dispatchEvent(new CustomEvent(button.event, { detail: button.payload || {} }));
+                            }
                         }
 
                         if (button.action === 'close' || !button.action || button.action === 'event') {
