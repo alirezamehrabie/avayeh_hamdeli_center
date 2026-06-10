@@ -44,7 +44,7 @@
                     </div>
 
                     <div class="rounded-2xl border border-cyan-100 bg-white/90 px-5 py-3 shadow-sm ring-1 ring-cyan-50 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
-                        <p class="text-xs font-semibold text-slate-500">کل اعضای مرکز</p>
+                        <p class="text-xs font-semibold text-slate-500 mb-1">کل اعضای مرکز</p>
                         <div class="mt-1 flex items-center justify-center gap-3" dir="ltr">
                             <span class="relative flex h-3 w-3" aria-label="جمع اعضای مرکز">
                                 <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-60"></span>
@@ -138,8 +138,8 @@
                             <th class="px-5 py-4 text-center font-bold">کد ملی سرپرست</th>
                             <th class="px-5 py-4 text-right font-bold">نام و نام خانوادگی</th>
                             <th class="px-5 py-4 text-center font-bold">موبایل</th>
-                            <th class="px-5 py-4 text-center font-bold">تعداد مددجویان تحت پوشش</th>
-                            <th class="px-5 py-4 text-center font-bold">تعداد نفرات خانواده</th>
+                            <th class="px-5 py-4 text-center font-bold">تحت پوشش</th>
+                            <th class="px-5 py-4 text-center font-bold">تعداد نهایی</th>
                             <th class="w-40 px-3 py-4 text-center font-bold">عملیات</th>
                         </tr>
                         </thead>
@@ -157,6 +157,7 @@
                                 </td>
                                 <td class="px-5 py-4 text-center font-light text-slate-800">{{ (int) ($guardian->children_in_house ?? 0) }}
                                     نفر
+                                    <span class="mt-1 block text-[11px] font-medium text-slate-500">با احتساب سرپرست</span>
                                 </td>
                                 <td class="px-3 py-4 text-center">
                                     <div class="flex items-center justify-center gap-1.5">
@@ -235,7 +236,7 @@
                                                     <span
                                                         class="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">{{ $guardian->people_count }} مددجوی تحت پوشش</span>
                                                     <span
-                                                        class="rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-700">{{ (int) ($guardian->children_in_house ?? 0) }} نفرات خانواده</span>
+                                                        class="rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-700">{{ (int) ($guardian->children_in_house ?? 0) }} عضو خانوار با احتساب سرپرست</span>
                                                 </div>
                                             </div>
 
@@ -439,7 +440,10 @@
             $childrenCount = (int) ($compositionFormula['beneficiaries'] ?? $selectedGuardian->children_count ?? $selectedGuardian->people_count ?? 0);
             $childrenInHouse = (int) ($compositionFormula['final_residents'] ?? $selectedGuardian->children_in_house ?? 0);
             $childrenFromPreviousMarriageApplied = (int) ($compositionFormula['previous_marriage_members'] ?? 0);
-            $motherResidentCount = (int) ($compositionFormula['mother'] ?? 0);
+            $guardianResidentCount = (int) ($compositionFormula['guardian'] ?? 1);
+            $motherResidentCount = (int) ($compositionFormula['mother_counted_separately'] ?? ($compositionFormula['mother'] ?? 0));
+            $motherResidentRawCount = (int) ($compositionFormula['mother'] ?? 0);
+            $guardianIsMother = $motherResidentRawCount > 0 && $motherResidentCount === 0;
             $vehicleOwnershipLabels = [
                 'personal' => 'شخصی',
                 'company' => 'شراکتی',
@@ -573,11 +577,15 @@
                         <div class="rounded-2xl border border-cyan-100 bg-cyan-50/60 p-4 md:col-span-2">
                             <div class="mb-3">
                                 <p class="text-sm font-bold text-cyan-800">ترکیب اعضای خانوار</p>
-                                <p class="mt-1 text-xs text-slate-600">این بخش مبنای عدد «فرزندان ساکن در منزل» را شفاف
-                                    نشان می‌دهد.</p>
+                                <p class="mt-1 text-xs text-slate-600">این بخش مبنای تعداد نهایی اعضای ساکن در خانوار را
+                                    شفاف نشان می‌دهد و خود سرپرست نیز در این عدد لحاظ شده است.</p>
                             </div>
 
-                            <div class="grid gap-3 md:grid-cols-5">
+                            <div class="grid gap-3 md:grid-cols-6">
+                                <div class="rounded-xl border border-sky-100 bg-white p-3">
+                                    <p class="text-[11px] font-semibold text-slate-500">سرپرست</p>
+                                    <p class="mt-1 text-lg font-extrabold text-sky-700">{{ $guardianResidentCount }}</p>
+                                </div>
                                 <div class="rounded-xl border border-cyan-100 bg-white p-3">
                                     <p class="text-[11px] font-semibold text-slate-500">تحت پوشش مرکز</p>
                                     <p class="mt-1 text-lg font-extrabold text-slate-800">{{ $childrenCount }}</p>
@@ -595,14 +603,16 @@
                                     <p class="mt-1 text-lg font-extrabold text-rose-700">{{ $motherResidentCount }}</p>
                                 </div>
                                 <div class="rounded-xl border border-amber-100 bg-white p-3">
-                                    <p class="text-[11px] font-semibold text-slate-500">ساکن در منزل (نهایی)</p>
+                                    <p class="text-[11px] font-semibold text-slate-500">جمع نهایی</p>
                                     <p class="mt-1 text-lg font-extrabold text-amber-700">{{ $childrenInHouse }}</p>
                                 </div>
                             </div>
 
                             <div class="mt-3 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-700">
                                 <span class="font-semibold">فرمول:</span>
-                                <span class="ms-1">{{ $childrenCount }}</span>
+                                <span class="ms-1">{{ $guardianResidentCount }}</span>
+                                <span class="mx-1">+</span>
+                                <span>{{ $childrenCount }}</span>
                                 <span class="mx-1">+</span>
                                 <span>{{ $childrenFromPreviousMarriageApplied }}</span>
                                 <span class="mx-1">+</span>
@@ -612,6 +622,12 @@
                                 <span class="mx-1">=</span>
                                 <span class="font-extrabold text-slate-900">{{ $childrenInHouse }}</span>
                             </div>
+
+                            @if($guardianIsMother)
+                                <div class="mt-3 rounded-xl border border-sky-100 bg-sky-50 px-3 py-2 text-xs text-sky-800">
+                                    در این خانوار، سرپرست همان مادر است؛ بنابراین «مادر» جداگانه به عدد نهایی اضافه نشده و در سهم سرپرست محاسبه شده است.
+                                </div>
+                            @endif
 
                             <div class="mt-3 rounded-xl border border-cyan-100 bg-white p-3">
                                 <p class="mb-2 text-xs font-semibold text-slate-600">شرح افراد غیرمددجو ساکن در منزل</p>
@@ -690,6 +706,10 @@
                                 class="flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition {{ $householdStatsTab === 'coverage_count' ? 'bg-white text-violet-700 shadow-sm' : 'text-slate-600' }}">
                             بر اساس مددجویان تحت پوشش
                         </button>
+                    </div>
+
+                    <div class="mb-4 rounded-2xl border border-violet-100 bg-violet-50 px-4 py-3 text-xs text-violet-800">
+                        اندازه هر خانوار در این بخش بر مبنای تعداد کل اعضای ساکن، با احتساب خود سرپرست، نمایش داده می‌شود.
                     </div>
 
                     <div class="space-y-3">
