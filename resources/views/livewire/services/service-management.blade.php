@@ -19,7 +19,7 @@
             @endif
 
             <div class="grid gap-6 xl:grid-cols-3">
-                <section class="rounded-3xl border border-slate-200 bg-slate-50/80 p-5">
+                <section class="flex flex-col rounded-3xl border border-slate-200 bg-slate-50/80 p-5">
                     <div class="mb-4 flex items-center justify-between gap-3">
                         <div>
                             <h2 class="text-lg font-bold text-slate-800">نام خدمت</h2>
@@ -38,17 +38,40 @@
                         </button>
                     </form>
 
-                    <div class="mt-5 space-y-2">
-                        @foreach($serviceNames as $item)
-                            <button type="button" wire:click="editServiceName({{ $item->id }})" class="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-right hover:border-indigo-300">
-                                <span class="font-semibold text-slate-800">{{ $item->name }}</span>
-                                <span class="text-xs text-slate-500">{{ $item->categories_count }} دسته</span>
-                            </button>
-                        @endforeach
+                    <div
+                        x-data="{
+                            showFade: false,
+                            updateFade() {
+                                const el = this.$refs.scroller;
+                                this.showFade = !!el && (el.scrollHeight - el.clientHeight - el.scrollTop > 8);
+                            }
+                        }"
+                        x-init="$nextTick(() => updateFade())"
+                        @resize.window="updateFade()"
+                        class="relative mt-5"
+                    >
+                        <div
+                            x-ref="scroller"
+                            @scroll="updateFade()"
+                            class="max-h-[28rem] space-y-2 overflow-y-auto scroll-smooth pr-1"
+                        >
+                            @foreach($serviceNames as $item)
+                                <button type="button" wire:click="editServiceName({{ $item->id }})" class="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-right transition hover:border-indigo-300">
+                                    <span class="font-semibold text-slate-800">{{ $item->name }}</span>
+                                    <span class="text-xs text-slate-500">{{ $item->categories_count }} دسته</span>
+                                </button>
+                            @endforeach
+                        </div>
+                        <div
+                            x-cloak
+                            x-show="showFade"
+                            x-transition.opacity.duration.200ms
+                            class="pointer-events-none absolute inset-x-0 bottom-0 h-12 rounded-b-3xl bg-gradient-to-t from-slate-50/95 via-slate-50/80 to-slate-50/0"
+                        ></div>
                     </div>
                 </section>
 
-                <section class="rounded-3xl border border-slate-200 bg-white p-5">
+                <section class="flex flex-col rounded-3xl border border-slate-200 bg-white p-5">
                     <div class="mb-4 flex items-center justify-between gap-3">
                         <div>
                             <h2 class="text-lg font-bold text-slate-800">دسته‌بندی خدمت</h2>
@@ -74,19 +97,42 @@
                         </button>
                     </form>
 
-                    <div class="mt-5 space-y-2">
-                        @forelse($serviceCategories as $item)
-                            <button type="button" wire:click="editCategory({{ $item->id }})" class="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-right hover:border-sky-300">
-                                <span class="font-semibold text-slate-800">{{ $item->name }}</span>
-                                <span class="text-xs text-slate-500">{{ $item->serviceName?->name }}</span>
-                            </button>
-                        @empty
-                            <div class="rounded-2xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-500">برای این خدمت هنوز دسته‌بندی ثبت نشده است.</div>
-                        @endforelse
+                    <div
+                        x-data="{
+                            showFade: false,
+                            updateFade() {
+                                const el = this.$refs.scroller;
+                                this.showFade = !!el && (el.scrollHeight - el.clientHeight - el.scrollTop > 8);
+                            }
+                        }"
+                        x-init="$nextTick(() => updateFade())"
+                        @resize.window="updateFade()"
+                        class="relative mt-5"
+                    >
+                        <div
+                            x-ref="scroller"
+                            @scroll="updateFade()"
+                            class="max-h-[28rem] space-y-2 overflow-y-auto scroll-smooth pr-1"
+                        >
+                            @forelse($serviceCategories as $item)
+                                <button type="button" wire:click="editCategory({{ $item->id }})" class="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-right transition hover:border-sky-300">
+                                    <span class="font-semibold text-slate-800">{{ $item->name }}</span>
+                                    <span class="text-xs text-slate-500">{{ $item->serviceName?->name }}</span>
+                                </button>
+                            @empty
+                                <div class="rounded-2xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-500">برای این خدمت هنوز دسته‌بندی ثبت نشده است.</div>
+                            @endforelse
+                        </div>
+                        <div
+                            x-cloak
+                            x-show="showFade"
+                            x-transition.opacity.duration.200ms
+                            class="pointer-events-none absolute inset-x-0 bottom-0 h-12 rounded-b-3xl bg-gradient-to-t from-white via-white/85 to-white/0"
+                        ></div>
                     </div>
                 </section>
 
-                <section class="rounded-3xl border border-slate-200 bg-slate-50/80 p-5">
+                <section class="flex flex-col rounded-3xl border border-slate-200 bg-slate-50/80 p-5">
                     <div class="mb-4 flex items-center justify-between gap-3">
                         <div>
                             <h2 class="text-lg font-bold text-slate-800">واحد خدمت</h2>
@@ -107,13 +153,36 @@
                         </button>
                     </form>
 
-                    <div class="mt-5 space-y-2">
-                        @foreach($serviceUnits as $item)
-                            <button type="button" wire:click="editUnit({{ $item->id }})" class="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-right hover:border-cyan-300">
-                                <span class="font-semibold text-slate-800">{{ $item->label }}</span>
-                                <span class="text-xs text-slate-500">{{ $item->key }}</span>
-                            </button>
-                        @endforeach
+                    <div
+                        x-data="{
+                            showFade: false,
+                            updateFade() {
+                                const el = this.$refs.scroller;
+                                this.showFade = !!el && (el.scrollHeight - el.clientHeight - el.scrollTop > 8);
+                            }
+                        }"
+                        x-init="$nextTick(() => updateFade())"
+                        @resize.window="updateFade()"
+                        class="relative mt-5"
+                    >
+                        <div
+                            x-ref="scroller"
+                            @scroll="updateFade()"
+                            class="max-h-[28rem] space-y-2 overflow-y-auto scroll-smooth pr-1"
+                        >
+                            @foreach($serviceUnits as $item)
+                                <button type="button" wire:click="editUnit({{ $item->id }})" class="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-right transition hover:border-cyan-300">
+                                    <span class="font-semibold text-slate-800">{{ $item->label }}</span>
+                                    <span class="text-xs text-slate-500">{{ $item->key }}</span>
+                                </button>
+                            @endforeach
+                        </div>
+                        <div
+                            x-cloak
+                            x-show="showFade"
+                            x-transition.opacity.duration.200ms
+                            class="pointer-events-none absolute inset-x-0 bottom-0 h-12 rounded-b-3xl bg-gradient-to-t from-slate-50/95 via-slate-50/80 to-slate-50/0"
+                        ></div>
                     </div>
                 </section>
             </div>
