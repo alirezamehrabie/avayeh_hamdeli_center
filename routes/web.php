@@ -19,6 +19,7 @@ use App\Livewire\Admin\UserManagement;
 use App\Livewire\Auth\Login;
 use App\Livewire\DistributionOperators\DefineService;
 use App\Livewire\DistributionOperators\ServiceList;
+use App\Livewire\ChildSupporters\Dashboard as ChildSupporterDashboard;
 use App\Livewire\SocialWorkers\DeliveryHistory as SocialWorkerDeliveryHistory;
 use App\Livewire\SocialWorkers\Dashboard as SocialWorkerDashboard;
 use App\Livewire\SocialWorkers\UserAccount as SocialWorkerUserAccount;
@@ -102,3 +103,7 @@ Route::get('/distribution-operator/define-service', DefineService::class)
 Route::get('/distribution-operator/services', ServiceList::class)
     ->middleware(['auth', 'can:access-distribution-operator-panel'])
     ->name('distribution-operator.service-list');
+
+Route::get('/child-supporter/dashboard', ChildSupporterDashboard::class)
+    ->middleware(['auth'])
+    ->name('child-supporter.dashboard');

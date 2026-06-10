@@ -198,6 +198,12 @@ class User extends Authenticatable
             && $this->access_level === self::ACCESS_LEVEL_DISTRIBUTION_OPERATOR;
     }
 
+    public function canAccessChildSupporterPanel(): bool
+    {
+        return ! $this->isAdmin()
+            && $this->access_level === self::ACCESS_LEVEL_CHILD_SUPPORTER;
+    }
+
     public function canAccessDistributionOperatorService(Service $service): bool
     {
         return $this->canAccessDistributionOperatorPanel()
@@ -206,6 +212,10 @@ class User extends Authenticatable
 
     public function getPanelRedirectPath(): string
     {
+        if ($this->canAccessChildSupporterPanel()) {
+            return route('child-supporter.dashboard');
+        }
+
         if ($this->canAccessAdminPanel()) {
             return route('admin.dashboard');
         }
