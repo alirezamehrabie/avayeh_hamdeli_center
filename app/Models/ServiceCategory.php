@@ -19,9 +19,8 @@ class ServiceCategory extends Model
     public function scopeOrdered(Builder $query): Builder
     {
         return $query->orderByRaw('CASE WHEN sort_id IS NULL THEN 1 ELSE 0 END')
-            ->orderBy('sort_id')
-            ->orderBy('name')
-            ->orderBy('id');
+            ->orderByDesc('sort_id')
+            ->orderByDesc('id');
     }
 
     public function serviceName(): BelongsTo

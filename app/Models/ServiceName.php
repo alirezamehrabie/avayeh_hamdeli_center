@@ -17,7 +17,7 @@ class ServiceName extends Model
 
     public function scopeOrdered(Builder $query): Builder
     {
-        return $query->orderBy('sort_id')->orderBy('id');
+        return $query->orderByDesc('sort_id')->orderByDesc('id');
     }
 
     public function creator(): BelongsTo

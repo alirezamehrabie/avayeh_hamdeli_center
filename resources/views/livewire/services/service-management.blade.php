@@ -1,7 +1,7 @@
 <div class="space-y-4">
     <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div class="bg-gradient-to-l from-indigo-700 via-sky-700 to-cyan-700 px-5 py-4 text-white">
-            <h1 class="text-xl font-extrabold">مدیریت خدمات</h1>
+            <h1 class="text-2xl font-extrabold">مدیریت خدمات</h1>
             <p class="mt-1.5 text-xs text-sky-50/90">در این بخش نام خدمت، دسته‌بندی‌ها و واحدهای قابل استفاده را تعریف و ویرایش کنید.</p>
         </div>
 
@@ -84,7 +84,14 @@
                     >
                         <input type="text" wire:model.live="serviceName" x-ref="serviceNameInput" placeholder="مثال سفره ام‌البنین (س)" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-700">
                         @error('serviceName') <p class="text-sm text-rose-600">{{ $message }}</p> @enderror
-                        <button type="submit" class="w-full rounded-xl bg-indigo-700 px-3.5 py-2.5 text-sm font-bold text-white">
+                        <button
+                            type="submit"
+                            @class([
+                                'w-full rounded-xl px-3.5 py-2.5 text-sm font-bold text-white transition',
+                                'bg-indigo-700 hover:bg-indigo-600 shadow-sm' => ! $editingServiceNameId,
+                                'bg-amber-600 hover:bg-amber-500 shadow-sm ring-1 ring-amber-300' => (bool) $editingServiceNameId,
+                            ])
+                        >
                             {{ $editingServiceNameId ? 'به‌روزرسانی نام خدمت' : 'ثبت نام خدمت' }}
                         </button>
                     </form>
@@ -107,9 +114,15 @@
                             class="max-h-[22rem] space-y-1.5 overflow-y-auto scroll-smooth pb-12 pr-1"
                         >
                             @foreach($serviceNames as $item)
-                                <button type="button" wire:click="editServiceName({{ $item->id }})" class="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-right transition hover:border-indigo-300">
+                                <button type="button" wire:click="editServiceName({{ $item->id }})" class="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-right transition hover:border-indigo-300">
                                     <span class="text-sm font-semibold text-slate-800">{{ $item->name }}</span>
-                                    <span class="text-[11px] text-slate-500">{{ $item->categories_count }} دسته</span>
+                                    <span class="flex items-center gap-1.5">
+                                        <span class="text-[11px] text-slate-500">{{ $item->categories_count }} دسته</span>
+                                        <svg class="h-3.5 w-3.5 text-slate-300 transition group-hover:text-slate-400" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                            <path d="M4 20h4l10.5-10.5a1.5 1.5 0 0 0 0-2.1l-1.9-1.9a1.5 1.5 0 0 0-2.1 0L4 16v4Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+                                            <path d="M13.5 6.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                                        </svg>
+                                    </span>
                                 </button>
                             @endforeach
                         </div>
@@ -166,9 +179,15 @@
                             class="max-h-[22rem] space-y-1.5 overflow-y-auto scroll-smooth pb-12 pr-1"
                         >
                             @forelse($serviceCategories as $item)
-                                <button type="button" wire:click="editCategory({{ $item->id }})" class="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-right transition hover:border-sky-300">
+                                <button type="button" wire:click="editCategory({{ $item->id }})" class="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-right transition hover:border-sky-300">
                                     <span class="text-sm font-semibold text-slate-800">{{ $item->name }}</span>
-                                    <span class="text-[11px] text-slate-500">{{ $item->serviceName?->name }}</span>
+                                    <span class="flex items-center gap-1.5">
+                                        <span class="text-[11px] text-slate-500">{{ $item->serviceName?->name }}</span>
+                                        <svg class="h-3.5 w-3.5 text-slate-300 transition group-hover:text-slate-400" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                            <path d="M4 20h4l10.5-10.5a1.5 1.5 0 0 0 0-2.1l-1.9-1.9a1.5 1.5 0 0 0-2.1 0L4 16v4Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+                                            <path d="M13.5 6.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                                        </svg>
+                                    </span>
                                 </button>
                             @empty
                                 <div class="rounded-xl border border-dashed border-slate-300 px-3.5 py-5 text-center text-xs text-slate-500">برای این خدمت هنوز دسته‌بندی ثبت نشده است.</div>
@@ -222,9 +241,15 @@
                             class="max-h-[22rem] space-y-1.5 overflow-y-auto scroll-smooth pb-12 pr-1"
                         >
                             @foreach($serviceUnits as $item)
-                                <button type="button" wire:click="editUnit({{ $item->id }})" class="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-right transition hover:border-cyan-300">
+                                <button type="button" wire:click="editUnit({{ $item->id }})" class="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-right transition hover:border-cyan-300">
                                     <span class="text-sm font-semibold text-slate-800">{{ $item->label }}</span>
-                                    <span class="text-[11px] text-slate-500">{{ $item->key }}</span>
+                                    <span class="flex items-center gap-1.5">
+                                        <span class="text-[11px] text-slate-500">{{ $item->key }}</span>
+                                        <svg class="h-3.5 w-3.5 text-slate-300 transition group-hover:text-slate-400" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                            <path d="M4 20h4l10.5-10.5a1.5 1.5 0 0 0 0-2.1l-1.9-1.9a1.5 1.5 0 0 0-2.1 0L4 16v4Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+                                            <path d="M13.5 6.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                                        </svg>
+                                    </span>
                                 </button>
                             @endforeach
                         </div>
