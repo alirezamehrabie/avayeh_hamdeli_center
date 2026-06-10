@@ -11,10 +11,10 @@
                             </span>
                         </div>
                         <p class="mt-1.5 max-w-2xl text-xs leading-5 text-slate-200/90 sm:text-sm sm:leading-6 lg:max-w-xl">
-                            ایجاد کاربران، جستجو، فیلتر و انجام تغییرات مدیریتی
+                            ایجاد و بررسی کاربران، جستجو، فیلتر و انجام تغییرات مدیریتی
                         </p>
                     </div>
-                    <div class="grid grid-cols-6 gap-1 lg:w-auto lg:min-w-[21rem] lg:gap-1.5">
+                    <div class="grid grid-cols-7 gap-1 lg:w-auto lg:min-w-[24rem] lg:gap-1.5">
                         <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-md border border-white/10 bg-white/5 px-1.5 py-1 backdrop-blur">
                             <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300/90">کاربران</span>
                             <span class="mt-0.5 text-xs font-semibold leading-4 text-white">{{ $userStats['total'] }}</span>
@@ -80,6 +80,7 @@
                     </div>
                 @endif
 
+                @unless($viewingDeletedUsers)
                 <form wire:submit.prevent="createUser" class="rounded-2xl border border-slate-200 bg-slate-50/70 p-3 shadow-sm sm:p-4 sm:rounded-3xl">
                     <div class="mb-3 flex flex-col gap-2 border-b border-slate-200 pb-3 sm:flex-row sm:items-end sm:justify-between">
                         <div>
@@ -182,6 +183,7 @@
                         </div>
                     </div>
                 </form>
+                @endunless
 
                 <div class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4 sm:rounded-3xl">
                     <div class="mb-4 flex flex-col gap-3 border-b border-slate-200 pb-4 lg:flex-row lg:items-end lg:justify-between">
@@ -189,9 +191,19 @@
                             <h2 class="text-lg font-black text-slate-900">فهرست کاربران</h2>
                             <p class="mt-1 text-sm text-slate-600">جستجو، فیلتر و تغییر نقش‌های سریع. ویرایش‌های جزئی در یک مودال جدا انجام می‌شود.</p>
                         </div>
+                        <div class="flex flex-wrap gap-2">
+                            <a href="{{ route('admin.user-management') }}" class="inline-flex items-center justify-center rounded-xl border px-4 py-2 text-sm font-semibold transition {{ $viewingDeletedUsers ? 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50' : 'border-indigo-200 bg-indigo-50 text-indigo-700' }}">
+                                کاربران فعال
+                            </a>
+                            <a href="{{ route('admin.user-management.deleted') }}" class="inline-flex items-center justify-center rounded-xl border px-4 py-2 text-sm font-semibold transition {{ $viewingDeletedUsers ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50' }}">
+                                کاربران غیرفعال
+                            </a>
+                            @unless($viewingDeletedUsers)
                         <button type="button" wire:click="clearUserFilters" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
                             پاک کردن فیلترها
                         </button>
+                            @endunless
+                        </div>
                     </div>
 
                     <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -265,12 +277,23 @@
                                         <span class="rounded-full bg-slate-50 px-2 py-0.5">دسترسی: {{ $permissionCount > 0 ? ($permissionSummary !== '' ? $permissionSummary : '۱ مورد') : 'ندارد' }}</span>
                                     </div>
 
+                                    @if($viewingDeletedUsers)
+                                        <div class="mt-2 flex flex-wrap gap-1.5 text-[10px] text-slate-500">
+                                            <span class="rounded-full bg-rose-50 px-2 py-0.5 text-rose-700">Deleted: {{ $user->deleted_at ? \App\Helpers\Morilog\Jalalian::fromDateTime($user->deleted_at)->format('Y/m/d') : '-' }}</span>
+                                        </div>
+                                    @endif
+
                                     @if($hasPendingAction)
                                         <div class="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[11px] font-semibold text-amber-800">
                                             در انتظار تایید مدیریتی
                                         </div>
                                     @endif
 
+                                    @if($viewingDeletedUsers)
+                                        <div class="mt-2 rounded-xl border border-rose-100 bg-rose-50 px-2.5 py-1.5 text-[11px] font-semibold text-rose-700">
+                                            رکورد کاربر حذف شده برای حسابرسی نگه داشته شد.
+                                        </div>
+                                    @else
                                     <div class="mt-2 flex flex-wrap gap-2">
                                         @if(! $isCurrentUser)
                                             @if(! $isProtected)
@@ -327,6 +350,7 @@
                                             <span class="rounded-xl bg-slate-100 px-2.5 py-1.5 text-[11px] font-semibold text-slate-500">حساب فعلی</span>
                                         @endif
                                     </div>
+                                    @endif
                                 </div>
                             </article>
                         @empty

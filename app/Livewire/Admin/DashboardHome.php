@@ -24,12 +24,19 @@ class DashboardHome extends Component
     public ?int $editingGuardianId = null;
     public ?int $editingServiceId = null;
     public ?int $serviceReportServiceId = null;
+    public bool $showDeletedUsers = false;
     public string $newReminderTitle = '';
     public string $newReminderCategory = 'today_tasks';
 
     public function mount(): void
     {
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        if (request()->routeIs('admin.user-management*')) {
+            $this->activeSection = 'system-settings-user-management';
+            $this->showDeletedUsers = request()->routeIs('admin.user-management.deleted');
+        } elseif (request()->routeIs('admin.user-account')) {
+            $this->activeSection = 'system-settings-user-account';
+        }
         $this->normalizeActiveSection();
     }
 

@@ -33,6 +33,17 @@ class UserManagement extends Component
     public string $roleFilter = 'all';
     public string $statusFilter = 'all';
     public string $permissionFilter = 'all';
+    public bool $viewingDeletedUsersState = false;
+
+    public function mount(bool $showDeletedUsers = false): void
+    {
+        $this->viewingDeletedUsersState = $showDeletedUsers || request()->routeIs('admin.user-management.deleted');
+    }
+
+    private function viewingDeletedUsers(): bool
+    {
+        return $this->viewingDeletedUsersState;
+    }
 
     public function createUser(): void
     {
@@ -327,6 +338,7 @@ class UserManagement extends Component
         }
 
         $user->delete();
+        $this->resetPage();
         session()->flash('success', 'کاربر با موفقیت حذف شد.');
     }
 
@@ -408,6 +420,7 @@ class UserManagement extends Component
 
         if ($request->action_type === UserActionRequest::ACTION_DELETE) {
             $target->delete();
+            $this->resetPage();
         } elseif ($request->action_type === UserActionRequest::ACTION_DOWNGRADE) {
             $target->update([
                 'access_level' => User::ACCESS_LEVEL_REGULAR,
@@ -497,6 +510,7 @@ class UserManagement extends Component
 
         $actorCanCreateAdmin = auth()->user()?->isManager() ?? false;
         $isManager = auth()->user()?->isManager() ?? false;
+        $viewingDeletedUsers = $this->viewingDeletedUsers();
         $pendingRequests = collect();
         $pendingActionMap = [];
         $pendingUserNames = [];
@@ -526,7 +540,7 @@ class UserManagement extends Component
                 $pendingUserNameColumns[] = 'last_name';
             }
 
-            $pendingUserNames = User::query()
+            $pendingUserNames = User::withTrashed()
                 ->whereIn('id', $pendingUserIds)
                 ->get($pendingUserNameColumns)
                 ->mapWithKeys(fn (User $user) => [
@@ -535,7 +549,9 @@ class UserManagement extends Component
                 ->all();
         }
 
-        $usersQuery = User::query()->latest();
+        $usersQuery = $viewingDeletedUsers
+            ? User::onlyTrashed()->orderByDesc('deleted_at')
+            : User::query()->latest();
 
         if (filled($this->search)) {
             $search = trim($this->search);
@@ -577,6 +593,7 @@ class UserManagement extends Component
 
         return view('livewire.admin.user-management', [
             'users' => $usersQuery->paginate(12),
+            'viewingDeletedUsers' => $viewingDeletedUsers,
             'actorCanCreateAdmin' => $actorCanCreateAdmin,
             'permissionOptions' => User::permissionOptions(),
             'pendingRequests' => $pendingRequests,
@@ -586,6 +603,7 @@ class UserManagement extends Component
             'isManager' => $isManager,
             'userStats' => [
                 'total' => User::count(),
+                'deleted' => User::onlyTrashed()->count(),
                 'admins' => User::query()->where('is_admin', true)->count(),
                 'distributionOperators' => User::query()
                     ->where('access_level', User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR)

@@ -8,6 +8,7 @@ use App\Models\Service;
 use App\Models\User;
 use App\Observers\GuardianObserver;
 use App\Observers\PersonObserver;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
@@ -51,14 +52,20 @@ class AppServiceProvider extends ServiceProvider
             }
 
             // اطمینان از وجود و سطح دسترسی حساب مدیریت اصلی
-            User::query()->firstOrCreate(
+            $adminQuery = Schema::hasColumn('users', 'deleted_at')
+                ? User::withTrashed()
+                : User::withoutGlobalScope(SoftDeletingScope::class);
+
+            $admin = $adminQuery->firstOrCreate(
                 ['email' => User::PRIMARY_ADMIN_EMAIL],
                 $createPayload
             );
 
-            User::query()
-                ->where('email', User::PRIMARY_ADMIN_EMAIL)
-                ->update($updatePayload);
+            if (Schema::hasColumn('users', 'deleted_at') && $admin->trashed()) {
+                $admin->restore();
+            }
+
+            $admin->update($updatePayload);
         }
 
         Guardian::observe(GuardianObserver::class);

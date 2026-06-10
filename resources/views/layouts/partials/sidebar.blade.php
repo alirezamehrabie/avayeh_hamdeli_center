@@ -416,7 +416,7 @@
         @else
             <div>
                 <button type="button" @click="openMenu = openMenu === 'system-settings' ? '' : 'system-settings'"
-                        class="flex items-center justify-between w-full px-4 py-3 rounded-lg hover:bg-indigo-800 {{ request()->routeIs('admin.user-management') || request()->routeIs('admin.user-account') ? 'bg-indigo-700' : '' }}">
+                        class="flex items-center justify-between w-full px-4 py-3 rounded-lg hover:bg-indigo-800 {{ request()->routeIs('admin.user-management*') || request()->routeIs('admin.user-account') ? 'bg-indigo-700' : '' }}">
                     <div class="flex items-center">
                         <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -434,7 +434,7 @@
                 <div x-show="openMenu === 'system-settings'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
                     @can('full-access')
                         <a href="{{ route('admin.user-management') }}"
-                           class="block px-4 py-2 text-sm {{ request()->routeIs('admin.user-management') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
+                           class="block px-4 py-2 text-sm {{ request()->routeIs('admin.user-management*') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             مدیریت کاربران
                         </a>
                     @endcan

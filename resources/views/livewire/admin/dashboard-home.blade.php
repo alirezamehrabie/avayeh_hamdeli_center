@@ -219,7 +219,7 @@
                         @break
 
                     @case('system-settings-user-management')
-                        <livewire:admin.user-management :key="'system-settings-user-management'" />
+                        <livewire:admin.user-management :key="'system-settings-user-management'" :show-deleted-users="$showDeletedUsers" />
                         @break
 
                     @case('system-settings-user-account')
