@@ -13,10 +13,20 @@
         </div>
     </div>
 
-    <div class="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center">
-        <h2 class="text-base font-bold text-slate-800">داشبورد اولیه فعال است</h2>
-        <p class="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
-            قابلیت‌های اختصاصی این نقش در مرحله بعد به این فضای جداگانه اضافه می‌شود.
-        </p>
+    <div class="mt-6 grid gap-4 lg:grid-cols-2">
+        <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center">
+            <h2 class="text-base font-bold text-slate-800">داشبورد اولیه فعال است</h2>
+            <p class="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
+                قابلیت‌های اختصاصی این نقش در مرحله بعد به این فضای جداگانه اضافه می‌شود.
+            </p>
+        </div>
+
+        <a href="{{ route('child-supporter.user-account') }}" class="flex min-h-40 flex-col justify-center rounded-2xl border border-indigo-100 bg-indigo-50 px-5 py-6 transition hover:border-indigo-200 hover:bg-indigo-100">
+            <span class="text-xs font-semibold text-indigo-600">تنظیمات سیستم</span>
+            <h2 class="mt-2 text-base font-bold text-slate-900">حساب کاربری</h2>
+            <p class="mt-2 text-sm leading-6 text-slate-600">
+                مشاهده و ویرایش اطلاعات پایه حساب، تصویر پروفایل، ایمیل و رمز عبور.
+            </p>
+        </a>
     </div>
 </div>
