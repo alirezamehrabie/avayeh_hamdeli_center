@@ -33,8 +33,6 @@
                     <form wire:submit.prevent="saveServiceName" class="space-y-3">
                         <input type="text" wire:model.blur="serviceName" placeholder="مثلاً ارزاق" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
                         @error('serviceName') <p class="text-sm text-rose-600">{{ $message }}</p> @enderror
-                        <input type="number" min="1" wire:model.blur="serviceNameSortId" placeholder="ترتیب نمایش" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
-                        @error('serviceNameSortId') <p class="text-sm text-rose-600">{{ $message }}</p> @enderror
                         <button type="submit" class="w-full rounded-2xl bg-indigo-700 px-4 py-3 text-sm font-bold text-white">
                             {{ $editingServiceNameId ? 'به‌روزرسانی نام خدمت' : 'ثبت نام خدمت' }}
                         </button>
@@ -71,8 +69,6 @@
                         @error('selectedServiceNameId') <p class="text-sm text-rose-600">{{ $message }}</p> @enderror
                         <input type="text" wire:model.blur="categoryName" placeholder="مثلاً غذای گرم" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
                         @error('categoryName') <p class="text-sm text-rose-600">{{ $message }}</p> @enderror
-                        <input type="number" min="1" wire:model.blur="categorySortId" placeholder="ترتیب نمایش" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
-                        @error('categorySortId') <p class="text-sm text-rose-600">{{ $message }}</p> @enderror
                         <button type="submit" class="w-full rounded-2xl bg-sky-700 px-4 py-3 text-sm font-bold text-white">
                             {{ $editingCategoryId ? 'به‌روزرسانی دسته‌بندی' : 'ثبت دسته‌بندی' }}
                         </button>
@@ -106,8 +102,6 @@
                         @error('unitLabel') <p class="text-sm text-rose-600">{{ $message }}</p> @enderror
                         <input type="text" wire:model.blur="unitKey" placeholder="کلید اختیاری، مثل kilogram" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
                         @error('unitKey') <p class="text-sm text-rose-600">{{ $message }}</p> @enderror
-                        <input type="number" min="1" wire:model.blur="unitSortId" placeholder="ترتیب نمایش" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
-                        @error('unitSortId') <p class="text-sm text-rose-600">{{ $message }}</p> @enderror
                         <button type="submit" class="w-full rounded-2xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white">
                             {{ $editingUnitId ? 'به‌روزرسانی واحد' : 'ثبت واحد' }}
                         </button>

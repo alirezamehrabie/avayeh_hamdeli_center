@@ -15,16 +15,13 @@ class ServiceManagement extends Component
 
     public ?int $editingServiceNameId = null;
     public string $serviceName = '';
-    public string $serviceNameSortId = '';
 
     public ?int $editingCategoryId = null;
     public string $categoryName = '';
-    public string $categorySortId = '';
 
     public ?int $editingUnitId = null;
     public string $unitLabel = '';
     public string $unitKey = '';
-    public string $unitSortId = '';
 
     public function mount(): void
     {
@@ -37,17 +34,17 @@ class ServiceManagement extends Component
     {
         $validated = $this->validate([
             'serviceName' => ['required', 'string', 'max:255', Rule::unique('service_names', 'name')->ignore($this->editingServiceNameId)],
-            'serviceNameSortId' => ['nullable', 'integer', 'min:1'],
         ], [], [
             'serviceName' => 'نام خدمت',
-            'serviceNameSortId' => 'ترتیب نمایش خدمت',
         ]);
 
         $serviceName = ServiceName::query()->updateOrCreate(
             ['id' => $this->editingServiceNameId],
             [
                 'name' => trim($validated['serviceName']),
-                'sort_id' => $validated['serviceNameSortId'] === '' ? 999 : (int) $validated['serviceNameSortId'],
+                'sort_id' => $this->editingServiceNameId
+                    ? ServiceName::query()->whereKey($this->editingServiceNameId)->value('sort_id')
+                    : $this->getNextSortId(ServiceName::query()),
                 'created_by' => $this->editingServiceNameId
                     ? ServiceName::query()->whereKey($this->editingServiceNameId)->value('created_by')
                     : auth()->id(),
@@ -65,7 +62,6 @@ class ServiceManagement extends Component
 
         $this->editingServiceNameId = $serviceName->id;
         $this->serviceName = $serviceName->name;
-        $this->serviceNameSortId = (string) $serviceName->sort_id;
         $this->selectedServiceNameId = $serviceName->id;
     }
 
@@ -81,11 +77,9 @@ class ServiceManagement extends Component
                     ->where(fn ($query) => $query->where('service_name_id', $this->selectedServiceNameId))
                     ->ignore($this->editingCategoryId),
             ],
-            'categorySortId' => ['nullable', 'integer', 'min:1'],
         ], [], [
             'selectedServiceNameId' => 'نام خدمت',
             'categoryName' => 'دسته‌بندی خدمت',
-            'categorySortId' => 'ترتیب نمایش دسته‌بندی',
         ]);
 
         ServiceCategory::query()->updateOrCreate(
@@ -93,7 +87,9 @@ class ServiceManagement extends Component
             [
                 'service_name_id' => (int) $validated['selectedServiceNameId'],
                 'name' => trim($validated['categoryName']),
-                'sort_id' => $validated['categorySortId'] === '' ? 999 : (int) $validated['categorySortId'],
+                'sort_id' => $this->editingCategoryId
+                    ? ServiceCategory::query()->whereKey($this->editingCategoryId)->value('sort_id')
+                    : $this->getNextSortId(ServiceCategory::query()),
                 'created_by' => $this->editingCategoryId
                     ? ServiceCategory::query()->whereKey($this->editingCategoryId)->value('created_by')
                     : auth()->id(),
@@ -111,7 +107,6 @@ class ServiceManagement extends Component
         $this->editingCategoryId = $category->id;
         $this->selectedServiceNameId = $category->service_name_id;
         $this->categoryName = $category->name;
-        $this->categorySortId = (string) $category->sort_id;
     }
 
     public function saveUnit(): void
@@ -119,11 +114,9 @@ class ServiceManagement extends Component
         $validated = $this->validate([
             'unitLabel' => ['required', 'string', 'max:255'],
             'unitKey' => ['nullable', 'string', 'max:255', Rule::unique('service_units', 'key')->ignore($this->editingUnitId)],
-            'unitSortId' => ['nullable', 'integer', 'min:1'],
         ], [], [
             'unitLabel' => 'واحد خدمت',
             'unitKey' => 'کلید واحد',
-            'unitSortId' => 'ترتیب نمایش واحد',
         ]);
 
         $unitKey = trim($validated['unitKey']) !== ''
@@ -139,7 +132,9 @@ class ServiceManagement extends Component
             [
                 'key' => $unitKey,
                 'label' => trim($validated['unitLabel']),
-                'sort_id' => $validated['unitSortId'] === '' ? 999 : (int) $validated['unitSortId'],
+                'sort_id' => $this->editingUnitId
+                    ? ServiceUnit::query()->whereKey($this->editingUnitId)->value('sort_id')
+                    : $this->getNextSortId(ServiceUnit::query()),
                 'created_by' => $this->editingUnitId
                     ? ServiceUnit::query()->whereKey($this->editingUnitId)->value('created_by')
                     : auth()->id(),
@@ -157,25 +152,29 @@ class ServiceManagement extends Component
         $this->editingUnitId = $unit->id;
         $this->unitLabel = $unit->label;
         $this->unitKey = $unit->key;
-        $this->unitSortId = (string) $unit->sort_id;
     }
 
     public function resetServiceNameForm(): void
     {
-        $this->reset(['editingServiceNameId', 'serviceName', 'serviceNameSortId']);
-        $this->resetValidation(['serviceName', 'serviceNameSortId']);
+        $this->reset(['editingServiceNameId', 'serviceName']);
+        $this->resetValidation(['serviceName']);
     }
 
     public function resetCategoryForm(): void
     {
-        $this->reset(['editingCategoryId', 'categoryName', 'categorySortId']);
-        $this->resetValidation(['categoryName', 'categorySortId']);
+        $this->reset(['editingCategoryId', 'categoryName']);
+        $this->resetValidation(['categoryName']);
     }
 
     public function resetUnitForm(): void
     {
-        $this->reset(['editingUnitId', 'unitLabel', 'unitKey', 'unitSortId']);
-        $this->resetValidation(['unitLabel', 'unitKey', 'unitSortId']);
+        $this->reset(['editingUnitId', 'unitLabel', 'unitKey']);
+        $this->resetValidation(['unitLabel', 'unitKey']);
+    }
+
+    protected function getNextSortId($query): int
+    {
+        return ((int) $query->max('sort_id')) + 1;
     }
 
     public function render()
