@@ -30,6 +30,21 @@
                         @endif
                     </div>
 
+                    <div class="mb-3">
+                        <div class="relative">
+                            <svg class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                                <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="1.8" />
+                            </svg>
+                            <input
+                                type="text"
+                                wire:model.live.debounce.200ms="serviceNameSearch"
+                                placeholder="نام خدمت را جستجو کنید ..."
+                                class="w-full rounded-2xl border border-slate-200 bg-slate-100/80 py-3 pl-12 pr-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-100"
+                            >
+                        </div>
+                    </div>
+
                     <form wire:submit.prevent="saveServiceName" class="space-y-3">
                         <input type="text" wire:model.blur="serviceName" placeholder="مثلاً ارزاق" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
                         @error('serviceName') <p class="text-sm text-rose-600">{{ $message }}</p> @enderror
@@ -53,7 +68,7 @@
                         <div
                             x-ref="scroller"
                             @scroll="updateFade()"
-                            class="max-h-[28rem] space-y-2 overflow-y-auto scroll-smooth pr-1"
+                            class="max-h-[28rem] space-y-2 overflow-y-auto scroll-smooth pb-14 pr-1"
                         >
                             @foreach($serviceNames as $item)
                                 <button type="button" wire:click="editServiceName({{ $item->id }})" class="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-right transition hover:border-indigo-300">
@@ -112,7 +127,7 @@
                         <div
                             x-ref="scroller"
                             @scroll="updateFade()"
-                            class="max-h-[28rem] space-y-2 overflow-y-auto scroll-smooth pr-1"
+                            class="max-h-[28rem] space-y-2 overflow-y-auto scroll-smooth pb-14 pr-1"
                         >
                             @forelse($serviceCategories as $item)
                                 <button type="button" wire:click="editCategory({{ $item->id }})" class="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-right transition hover:border-sky-300">
@@ -168,7 +183,7 @@
                         <div
                             x-ref="scroller"
                             @scroll="updateFade()"
-                            class="max-h-[28rem] space-y-2 overflow-y-auto scroll-smooth pr-1"
+                            class="max-h-[28rem] space-y-2 overflow-y-auto scroll-smooth pb-14 pr-1"
                         >
                             @foreach($serviceUnits as $item)
                                 <button type="button" wire:click="editUnit({{ $item->id }})" class="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-right transition hover:border-cyan-300">

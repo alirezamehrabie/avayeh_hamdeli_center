@@ -12,6 +12,7 @@ use Livewire\Component;
 class ServiceManagement extends Component
 {
     public ?int $selectedServiceNameId = null;
+    public string $serviceNameSearch = '';
 
     public ?int $editingServiceNameId = null;
     public string $serviceName = '';
@@ -179,8 +180,12 @@ class ServiceManagement extends Component
 
     public function render()
     {
+        $serviceNamesQuery = ServiceName::query()
+            ->when($this->serviceNameSearch !== '', fn ($query) => $query->where('name', 'like', '%' . trim($this->serviceNameSearch) . '%'))
+            ->ordered();
+
         return view('livewire.services.service-management', [
-            'serviceNames' => ServiceName::query()->ordered()->withCount('categories')->get(),
+            'serviceNames' => $serviceNamesQuery->withCount('categories')->get(),
             'serviceCategories' => ServiceCategory::query()
                 ->with('serviceName')
                 ->when($this->selectedServiceNameId, fn ($query) => $query->where('service_name_id', $this->selectedServiceNameId))
