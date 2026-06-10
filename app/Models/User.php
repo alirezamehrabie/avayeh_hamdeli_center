@@ -22,6 +22,7 @@ class User extends Authenticatable
     public const ACCESS_LEVEL_REGULAR = 'regular_user';
     public const ACCESS_LEVEL_SOCIAL_WORKER = 'social_worker';
     public const ACCESS_LEVEL_DISTRIBUTION_OPERATOR = 'distribution_operator';
+    public const ACCESS_LEVEL_CHILD_SUPPORTER = 'child_supporter';
     public const PERMISSION_PEOPLE_REGISTER = 'people_register';
     public const PERMISSION_PEOPLE_EDIT = 'people_edit';
     public const PERMISSION_PEOPLE_DELETE = 'people_delete';

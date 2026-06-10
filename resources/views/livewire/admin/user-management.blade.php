@@ -14,7 +14,7 @@
                             ایجاد کاربران، جستجو، فیلتر و انجام تغییرات مدیریتی
                         </p>
                     </div>
-                    <div class="grid grid-cols-5 gap-1 lg:w-auto lg:min-w-[18rem] lg:gap-1.5">
+                    <div class="grid grid-cols-6 gap-1 lg:w-auto lg:min-w-[21rem] lg:gap-1.5">
                         <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-md border border-white/10 bg-white/5 px-1.5 py-1 backdrop-blur">
                             <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300/90">کاربران</span>
                             <span class="mt-0.5 text-xs font-semibold leading-4 text-white">{{ $userStats['total'] }}</span>
@@ -30,6 +30,10 @@
                         <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-md border border-stone-200/15 bg-white/5 px-1.5 py-1 backdrop-blur">
                             <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300/90">مددکار</span>
                             <span class="mt-0.5 text-xs font-semibold leading-4 text-stone-50">{{ $userStats['socialWorkers'] }}</span>
+                        </div>
+                        <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-md border border-teal-200/15 bg-white/5 px-1.5 py-1 backdrop-blur">
+                            <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300/90">حامی</span>
+                            <span class="mt-0.5 text-xs font-semibold leading-4 text-teal-50">{{ $userStats['childSupporters'] }}</span>
                         </div>
                         <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-md border border-white/10 bg-white/5 px-1.5 py-1 backdrop-blur">
                             <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300/90">عادی</span>
@@ -129,8 +133,9 @@
                             <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                 @foreach ([
                                     'regular_user' => ['label' => 'کاربر عادی', 'desc' => 'پیش‌فرض'],
-                                    'distribution_operator' => ['label' => 'اپراتور توزیع', 'desc' => 'دسترسی عملیاتی'],
-                                    'admin' => ['label' => 'ادمین', 'desc' => 'نیازمند تایید'],
+                                    'child_supporter' => ['label' => 'حامی کودک', 'desc' => 'نقش حمایتی'],
+                                    'distribution_operator' => ['label' => 'اپراتور توزیع', 'desc' => 'تعریف خدمات'],
+                                    'admin' => ['label' => 'ادمین', 'desc' => 'اپراتور ثبت'],
                                     'manager' => ['label' => 'مدیریت', 'desc' => 'محافظت‌شده', 'disabled' => true],
                                 ] as $roleValue => $roleMeta)
                                     <label class="cursor-pointer">
@@ -201,6 +206,7 @@
                                 <option value="manager">مدیریت</option>
                                 <option value="admin">ادمین</option>
                                 <option value="regular_user">کاربر عادی</option>
+                                <option value="child_supporter">حامی کودک</option>
                                 <option value="social_worker">مددکار</option>
                                 <option value="distribution_operator">اپراتور توزیع</option>
                             </select>
@@ -228,8 +234,8 @@
                     <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                         @forelse($users as $user)
                             @php
-                                $roleLabel = $user->access_level === 'manager' ? 'مدیریت' : ($user->access_level === 'admin' ? 'ادمین' : ($user->access_level === 'social_worker' ? 'مددکار' : ($user->access_level === 'distribution_operator' ? 'اپراتور توزیع' : 'کاربر عادی')));
-                                $roleClasses = $user->access_level === 'manager' ? 'bg-indigo-100 text-indigo-700 ring-indigo-200' : ($user->access_level === 'admin' ? 'bg-emerald-100 text-emerald-700 ring-emerald-200' : ($user->access_level === 'social_worker' ? 'bg-cyan-100 text-cyan-700 ring-cyan-200' : ($user->access_level === 'distribution_operator' ? 'bg-violet-100 text-violet-700 ring-violet-200' : 'bg-slate-100 text-slate-700 ring-slate-200')));
+                                $roleLabel = $user->access_level === 'manager' ? 'مدیریت' : ($user->access_level === 'admin' ? 'ادمین' : ($user->access_level === 'social_worker' ? 'مددکار' : ($user->access_level === \App\Models\User::ACCESS_LEVEL_CHILD_SUPPORTER ? 'حامی کودک' : ($user->access_level === 'distribution_operator' ? 'اپراتور توزیع' : 'کاربر عادی'))));
+                                $roleClasses = $user->access_level === 'manager' ? 'bg-indigo-100 text-indigo-700 ring-indigo-200' : ($user->access_level === 'admin' ? 'bg-emerald-100 text-emerald-700 ring-emerald-200' : ($user->access_level === 'social_worker' ? 'bg-cyan-100 text-cyan-700 ring-cyan-200' : ($user->access_level === \App\Models\User::ACCESS_LEVEL_CHILD_SUPPORTER ? 'bg-teal-100 text-teal-700 ring-teal-200' : ($user->access_level === 'distribution_operator' ? 'bg-violet-100 text-violet-700 ring-violet-200' : 'bg-slate-100 text-slate-700 ring-slate-200'))));
                                 $isCurrentUser = auth()->id() === $user->id;
                                 $isProtected = $user->isProtectedManagerAccount();
                                 $hasPendingAction = ($pendingActionMap[$user->id]['downgrade_admin'] ?? false) || ($pendingActionMap[$user->id]['delete_user'] ?? false) || ($pendingActionMap[$user->id]['promote_to_admin'] ?? false);
@@ -295,6 +301,14 @@
                                                     <button type="button" wire:click="setAccessLevel({{ $user->id }}, 'distribution_operator')" title="تنظیم به اپراتور توزیع" aria-label="تنظیم به اپراتور توزیع" class="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-violet-200 bg-violet-50 text-violet-700 transition hover:bg-violet-100">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12h16M12 4l8 8-8 8" />
+                                                        </svg>
+                                                    </button>
+                                                @endif
+
+                                                @if($user->access_level !== \App\Models\User::ACCESS_LEVEL_CHILD_SUPPORTER)
+                                                    <button type="button" wire:click="setAccessLevel({{ $user->id }}, '{{ \App\Models\User::ACCESS_LEVEL_CHILD_SUPPORTER }}')" title="تنظیم به حامی کودک" aria-label="تنظیم به حامی کودک" class="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-teal-200 bg-teal-50 text-teal-700 transition hover:bg-teal-100">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 21s-7-4.35-7-10a4 4 0 017-2.65A4 4 0 0119 11c0 5.65-7 10-7 10z" />
                                                         </svg>
                                                     </button>
                                                 @endif
@@ -369,6 +383,7 @@
                                 <option value="manager" disabled>مدیریت (محافظت‌شده)</option>
                                 <option value="admin" @disabled(!$actorCanCreateAdmin)>ادمین</option>
                                 <option value="regular_user">کاربر عادی</option>
+                                <option value="child_supporter">حامی کودک</option>
                                 <option value="social_worker">مددکار</option>
                                 <option value="distribution_operator">اپراتور توزیع</option>
                             </select>
