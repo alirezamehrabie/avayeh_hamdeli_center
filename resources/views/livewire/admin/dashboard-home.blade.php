@@ -27,7 +27,7 @@
     <div class="flex flex-col flex-1 w-full overflow-y-auto">
         @include('layouts.partials.header')
 
-        <main class="p-4">
+        <main class="px-2 py-4 lg:px-4">
             <div class="container mx-auto">
                 @switch($activeSection)
                     @case('people-fast-create')
