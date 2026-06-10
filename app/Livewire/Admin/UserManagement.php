@@ -577,6 +577,7 @@ class UserManagement extends Component
             'actorCanCreateAdmin' => $actorCanCreateAdmin,
             'permissionOptions' => User::permissionOptions(),
             'pendingRequests' => $pendingRequests,
+            'hasPendingRequests' => $pendingRequests->isNotEmpty(),
             'pendingActionMap' => $pendingActionMap,
             'pendingUserNames' => $pendingUserNames,
             'isManager' => $isManager,
