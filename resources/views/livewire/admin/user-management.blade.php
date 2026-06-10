@@ -1,5 +1,5 @@
-<div class="min-h-screen bg-slate-50/60">
-    <div class="container mx-auto max-w-7xl px-3 py-4 sm:px-4 sm:py-6 lg:px-8">
+<div class="min-h-screen bg-slate-50/80">
+    <div class="container mx-auto p-0">
         <div class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_20px_80px_-30px_rgba(15,23,42,0.35)] sm:rounded-[2rem]">
             <div class="border-b border-slate-200 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-4 text-white sm:px-5 sm:py-5 lg:px-6 lg:py-3.5">
                 <div class="flex flex-col gap-4 sm:gap-3 lg:flex-row lg:items-center lg:justify-between">
