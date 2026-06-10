@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Traits;
+use Illuminate\Support\Facades\File;
 use Illuminate\Validation\Rule;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
@@ -117,7 +118,18 @@ trait SocialWorkerFormTrait
     public function uploadPhoto(): ?string
     {
         if ($this->photo instanceof TemporaryUploadedFile) {
-            return $this->photo->store('social_workers_photos', 'public');
+            $uploadDirectory = public_path('uploads/profile-photos');
+            if (! File::exists($uploadDirectory)) {
+                File::makeDirectory($uploadDirectory, 0755, true);
+            }
+
+            $extension = strtolower((string) $this->photo->getClientOriginalExtension());
+            $fileName = 'social-worker-'.uniqid().'-'.time().'.'.$extension;
+            $targetPath = $uploadDirectory.DIRECTORY_SEPARATOR.$fileName;
+
+            File::copy($this->photo->getRealPath(), $targetPath);
+
+            return 'uploads/profile-photos/'.$fileName;
         }
         return null;
     }

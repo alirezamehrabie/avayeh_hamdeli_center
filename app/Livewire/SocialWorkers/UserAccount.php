@@ -137,6 +137,10 @@ class UserAccount extends Component
             }
 
             $user->update(['profile_photo_path' => $relativePath]);
+
+            if ($user->socialWorker) {
+                $user->socialWorker->update(['photo_path' => $relativePath]);
+            }
         } catch (\Throwable $e) {
             report($e);
             $this->addError('newProfilePhoto', 'آپلود تصویر با خطا مواجه شد. لطفا دوباره تلاش کنید.');

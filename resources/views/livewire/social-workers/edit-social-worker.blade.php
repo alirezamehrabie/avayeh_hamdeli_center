@@ -142,7 +142,7 @@
                                             @if ($photo)
                                                 <img src="{{ $photo->temporaryUrl() }}" class="img-thumbnail" style="max-height: 120px;">
                                             @elseif ($existingPhoto)
-                                                <img src="{{ asset('storage/' . $existingPhoto) }}" class="img-thumbnail" style="max-height: 120px;">
+                                                <img src="{{ asset(\Illuminate\Support\Str::startsWith($existingPhoto, ['uploads/', 'images/']) ? $existingPhoto : 'storage/' . $existingPhoto) }}" class="img-thumbnail" style="max-height: 120px;">
                                             @else
                                                 <div class="text-muted small border rounded p-3 bg-white">تصویر انتخاب نشده است</div>
                                             @endif

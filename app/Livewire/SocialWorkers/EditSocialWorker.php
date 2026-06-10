@@ -34,7 +34,7 @@ class EditSocialWorker extends Component
             [$this->start_year, $this->start_month, $this->start_day] = explode('/', $socialWorker->start_date_full);
         }
 
-        $this->existingPhoto = $socialWorker->photo_path;
+        $this->existingPhoto = $socialWorker->user?->profile_photo_path ?: $socialWorker->photo_path;
         $this->account_username = (string) optional($socialWorker->user)->name;
     }
 
@@ -47,7 +47,9 @@ class EditSocialWorker extends Component
 
         DB::beginTransaction();
         try {
-            $photoPath = $this->photo ? $this->uploadPhoto() : $this->socialWorker->photo_path;
+            $photoPath = $this->photo
+                ? $this->uploadPhoto()
+                : ($this->socialWorker->user?->profile_photo_path ?: $this->socialWorker->photo_path);
 
             $this->socialWorker->update([
                 'first_name' => $this->first_name,
@@ -82,6 +84,7 @@ class EditSocialWorker extends Component
                 'first_name' => trim((string) $this->first_name),
                 'last_name' => trim((string) $this->last_name),
                 'email' => $username . '@local.system',
+                'profile_photo_path' => $photoPath,
                 'access_level' => User::ACCESS_LEVEL_SOCIAL_WORKER,
                 'is_admin' => false,
                 'permissions' => [],

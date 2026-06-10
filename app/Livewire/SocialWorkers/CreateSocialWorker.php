@@ -74,6 +74,7 @@ class CreateSocialWorker extends Component
                 'last_name' => trim((string) $this->last_name),
                 'email' => $username . '@local.system',
                 'password' => $this->account_password,
+                'profile_photo_path' => $photoPath,
                 'access_level' => User::ACCESS_LEVEL_SOCIAL_WORKER,
                 'is_admin' => false,
                 'permissions' => [],
