@@ -2,7 +2,7 @@
     <div class="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
         <div class="bg-gradient-to-l from-sky-700  to-indigo-600 px-6 py-4 text-white">
             <h1 class="text-2xl font-extrabold">ثبت تحویل خدمت</h1>
-            <p class="mt-2 max-w-3xl text-sm text-cyan-50/90">
+            <p class="mt-1 max-w-3xl text-xs text-cyan-50/90">
                 تحویل خدمات توسط مددکاران
             </p>
         </div>

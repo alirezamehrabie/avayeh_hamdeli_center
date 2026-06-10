@@ -51,7 +51,7 @@
                             <button
                                 type="button"
                                 wire:click="removeBlock({{ $index }})"
-                                class="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100"
+                                class="rounded-2xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100"
                             >
                                 حذف
                             </button>
@@ -124,7 +124,7 @@
                             rows="3"
                             wire:model.blur="serviceBlocks.{{ $index }}.description"
                             class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
-                            placeholder="شرح خدمت و توضیحات تکمیلی را بنویسید ..."
+                            placeholder="شرح و توضیحات تکمیلی را بنویسید ..."
                         ></textarea>
                         @error("serviceBlocks.$index.description") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                     </div>

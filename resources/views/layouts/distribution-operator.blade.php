@@ -123,11 +123,13 @@
                         </svg>
                     </button>
 
-                    <div class="block">
-                        <span class="font-semibold text-gray-700">
-                            اپراتور محترم ← {{ auth()->user()->first_name ?? '' }} {{ auth()->user()->last_name ?? 'کاربر' }}
-                        </span>
+                    <div class="relative">
+                        <div class="inline-flex items-center bg-gray-50 border border-gray-100 rounded-lg p-1 pl-3">
+                            <span class="bg-indigo-600 text-white text-[10px] px-2 py-1 rounded-md font-bold ml-2 shadow-sm">اپراتور توزیع</span>
+                            <span class="text-xs font-semibold text-gray-700">{{ auth()->user()->first_name ?? '' }} {{ auth()->user()->last_name ?? 'کاربر' }}</span>
+                        </div>
                     </div>
+
                 </div>
 
                 <div class="hidden items-center lg:flex">

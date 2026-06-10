@@ -230,7 +230,7 @@ class ServiceBatchCreator extends Component
             'serviceBlocks' => ['required', 'array', 'min:1'],
             'serviceBlocks.*.service_name' => ['nullable', 'string', 'max:255'],
             'serviceBlocks.*.service_type' => ['required', Rule::in(array_keys(Service::TYPE_OPTIONS))],
-            'serviceBlocks.*.description' => ['required', 'string', 'max:5000'],
+            'serviceBlocks.*.description' => ['nullable', 'string', 'max:5000'],
             'serviceBlocks.*.total_quantity' => ['required', 'numeric', 'min:0.01'],
             'serviceBlocks.*.unit' => ['required', Rule::in(Service::unitKeys())],
             'serviceBlocks.*.date_day' => ['required', 'integer', 'min:1', 'max:31'],

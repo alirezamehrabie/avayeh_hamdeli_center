@@ -10,7 +10,7 @@
                 </div>
 
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <div wire:poll.5s class="rounded-2xl border bg-white/90 px-5 py-3 shadow-sm ring-1 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md" style="border-color: #cfeefb; ring-color: #e8f8fe;">
+                    <div wire:poll.5s class="rounded-2xl border bg-white/90 px-5 py-3 shadow-sm ring-1 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md" style="border-color: #cfeefb;">
                         <p class="text-xs font-semibold text-slate-500">تعداد مددکاران</p>
                         <div class="mt-1 flex items-center justify-center gap-3" dir="ltr">
                             <span class="relative flex h-3 w-3" aria-label="به‌روزرسانی زنده">
@@ -22,11 +22,11 @@
                     </div>
 
                 @if($embedded)
-                    <button type="button" wire:click="createSocialWorker" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition focus:outline-none focus:ring-2" style="background-color: #53BEEA; focus:ring-color: #bfe9f8;">
+                    <button type="button" wire:click="createSocialWorker" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition focus:outline-none focus:ring-2" style="background-color: #53BEEA;">
                         ثبت مددکار جدید
                     </button>
                 @else
-                    <a href="{{ route('social-workers.create') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition focus:outline-none focus:ring-2" style="background-color: #53BEEA; focus:ring-color: #bfe9f8;">
+                    <a href="{{ route('social-workers.create') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition focus:outline-none focus:ring-2" style="background-color: #53BEEA;">
                         ثبت مددکار جدید
                     </a>
                 @endif
