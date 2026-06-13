@@ -218,8 +218,8 @@
                         <livewire:services.service-management :key="'service-management'" />
                         @break
 
-                    @case('system-settings-user-management')
-                        <livewire:admin.user-management :key="'system-settings-user-management'" />
+                    @case('system-settings-user-definition')
+                        <livewire:admin.user-management :key="'system-settings-user-definition'" />
                         @break
 
                     @case('system-settings-user-list')

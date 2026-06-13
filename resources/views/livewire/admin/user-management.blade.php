@@ -6,11 +6,11 @@
                     <div class="max-w-3xl">
                         <div class="mt-1 flex flex-wrap items-center gap-2">
                             <h1 class="text-2xl font-black tracking-tight text-white lg:text-[1.75rem]">
-                                {{ $listOnly ? 'لیست کاربران' : 'مدیریت کاربران' }}
+                                {{ $listOnly ? 'لیست کاربران' : 'تعریف کاربر' }}
                             </h1>
                         </div>
                         <p class="mt-1.5 max-w-2xl text-xs leading-5 text-slate-200/90 sm:text-sm sm:leading-6 lg:max-w-xl">
-                            {{ $listOnly ? 'مشاهده، جستجو و فیلتر کاربران با همان ظاهر فعلی سیستم' : 'ایجاد و بررسی کاربران، جستجو، فیلتر و انجام تغییرات مدیریتی' }}
+                            {{ $listOnly ? 'مشاهده، جستجو و فیلتر کاربران با همان ظاهر فعلی سیستم' : 'ایجاد و تعریف حساب کاربری جدید با نقش و دسترسی مشخص' }}
                         </p>
                     </div>
                     <div class="grid grid-cols-7 gap-1 lg:w-auto lg:min-w-[24rem] lg:gap-1.5">
@@ -185,7 +185,7 @@
                             <p class="mt-1 text-sm text-slate-600">جستجو، فیلتر و تغییر نقش‌های سریع. ویرایش‌های جزئی در یک مودال جدا انجام می‌شود.</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
-                            <a href="{{ route('admin.user-management') }}" class="inline-flex items-center justify-center rounded-xl border px-4 py-2 text-sm font-semibold transition {{ $viewingDeletedUsers ? 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50' : 'border-indigo-200 bg-indigo-50 text-indigo-700' }}">
+                            <a href="{{ route('admin.user-definition') }}" class="inline-flex items-center justify-center rounded-xl border px-4 py-2 text-sm font-semibold transition {{ $viewingDeletedUsers ? 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50' : 'border-indigo-200 bg-indigo-50 text-indigo-700' }}">
                                 کاربران فعال
                             </a>
                             <a href="{{ route('admin.user-list.deleted') }}" class="inline-flex items-center justify-center rounded-xl border px-4 py-2 text-sm font-semibold transition {{ $viewingDeletedUsers ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50' }}">

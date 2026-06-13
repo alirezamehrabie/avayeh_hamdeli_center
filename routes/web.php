@@ -72,7 +72,11 @@ Route::get('/admin/dashboard', DashboardHome::class)
     ->middleware(['auth', 'can:access-admin-panel'])
     ->name('admin.dashboard');
 
-Route::get('/admin/system-settings/users', DashboardHome::class)
+Route::get('/admin/system-settings/user-definition', DashboardHome::class)
+    ->middleware(['auth', 'can:full-access'])
+    ->name('admin.user-definition');
+
+Route::redirect('/admin/system-settings/users', '/admin/system-settings/user-definition')
     ->middleware(['auth', 'can:full-access'])
     ->name('admin.user-management');
 

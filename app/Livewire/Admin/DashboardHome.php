@@ -34,8 +34,8 @@ class DashboardHome extends Component
         if (request()->routeIs('admin.user-list*')) {
             $this->activeSection = 'system-settings-user-list';
             $this->showDeletedUsers = request()->routeIs('admin.user-list.deleted');
-        } elseif (request()->routeIs('admin.user-management*')) {
-            $this->activeSection = 'system-settings-user-management';
+        } elseif (request()->routeIs('admin.user-definition') || request()->routeIs('admin.user-management*')) {
+            $this->activeSection = 'system-settings-user-definition';
         } elseif (request()->routeIs('admin.user-account')) {
             $this->activeSection = 'system-settings-user-account';
         }
@@ -57,6 +57,10 @@ class DashboardHome extends Component
 
     private function normalizeActiveSection(): void
     {
+        if ($this->activeSection === 'system-settings-user-management') {
+            $this->activeSection = 'system-settings-user-definition';
+        }
+
         $user = auth()->user();
         $validSections = ['overview', 'system-settings-user-account'];
 
@@ -99,7 +103,7 @@ class DashboardHome extends Component
                 'advanced-operator-report',
                 'advanced-supervisor-report',
                 'advanced-social-worker-report',
-                'system-settings-user-management',
+                'system-settings-user-definition',
                 'system-settings-user-list',
                 'define-services',
                 'service-list',
