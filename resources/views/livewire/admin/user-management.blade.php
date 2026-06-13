@@ -131,6 +131,9 @@
                             <div class="grid grid-cols-1 gap-2 rounded-2xl border border-slate-200 bg-white p-2 sm:grid-cols-2 lg:grid-cols-5">
                                 @foreach ([
                                     'admin' => ['label' => 'ادمین', 'desc' => 'اپراتور ثبت'],
+                                    'distribution_operator' => ['label' => 'اپراتور توزیع', 'desc' => 'تعریف خدمات'],
+                                    'child_supporter' => ['label' => 'حامی کودک', 'desc' => 'نقش حمایتی'],
+                                    'regular_user' => ['label' => 'کاربر عادی', 'desc' => 'پیش‌فرض'],
                                     'manager' => ['label' => 'مدیریت', 'desc' => 'محافظت‌شده', 'disabled' => true],
                                 ] as $roleValue => $roleMeta)
                                     <label class="min-w-0 cursor-pointer">
