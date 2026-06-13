@@ -132,7 +132,7 @@ class ServiceDeliveryManager extends Component
         }
 
         return Service::query()
-            ->with(['serviceName', 'serviceCategory', 'socialWorkers'])
+            ->with(['serviceName', 'categories', 'socialWorkers'])
             ->find($this->selectedServiceId);
     }
 
@@ -140,7 +140,7 @@ class ServiceDeliveryManager extends Component
     {
         return view('livewire.services.service-delivery-manager', [
             'services' => Service::query()
-                ->with(['serviceName', 'serviceCategory', 'socialWorkers'])
+                ->with(['serviceName', 'categories', 'socialWorkers'])
                 ->whereIn('status', ['approved', 'in_distribution', 'completed'])
                 ->latest()
                 ->get(),

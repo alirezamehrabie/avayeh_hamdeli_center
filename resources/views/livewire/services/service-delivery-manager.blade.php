@@ -45,7 +45,7 @@
                             <option value="">انتخاب خدمت</option>
                             @foreach($services as $service)
                                 <option value="{{ $service->id }}">
-                                    {{ $service->service_code }} | {{ $service->serviceName?->name ?? '-' }} | {{ $service->serviceCategory?->name ?? 'بدون دسته‌بندی' }}
+                                    {{ $service->code }} | {{ $service->serviceName?->name ?? '-' }} | {{ $service->serviceCategory?->name ?? 'بدون دسته‌بندی' }}
                                 </option>
                             @endforeach
                         </select>
@@ -72,7 +72,7 @@
                             <div class="min-w-0">
                                 <div class="flex flex-wrap items-center gap-2">
                                     <span class="rounded-full bg-cyan-50 px-3 py-1 text-[11px] font-bold text-cyan-700">خدمت انتخاب‌شده</span>
-                                    <span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-600">{{ $this->selectedService->service_code }}</span>
+                                    <span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-600">{{ $this->selectedService->code }}</span>
                                 </div>
                                 <h2 class="mt-3 text-base font-black text-slate-800">{{ $this->selectedService->serviceName?->name ?? '-' }}</h2>
                                 <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-slate-500">
@@ -130,7 +130,7 @@
                                     <div class="flex items-start justify-between gap-3 px-4 pb-2 pt-3">
                                         <div class="min-w-0">
                                             <p class="truncate text-sm font-black text-slate-800">{{ $service->serviceName?->name ?? '-' }}</p>
-                                            <p class="mt-1 text-[11px] font-semibold text-slate-500">{{ $service->service_code }} - {{ \App\Models\Service::TYPE_OPTIONS[$service->service_type] ?? '-' }}</p>
+                                            <p class="mt-1 text-[11px] font-semibold text-slate-500">{{ $service->code }} - {{ \App\Models\Service::TYPE_OPTIONS[$service->service_type] ?? '-' }}</p>
                                         </div>
                                         <span class="shrink-0 rounded-full px-3 py-1 text-[11px] font-bold
                                             {{ $service->status === 'completed' ? 'bg-emerald-100 text-emerald-700' : ($service->status === 'in_distribution' ? 'bg-amber-100 text-amber-700' : 'bg-cyan-100 text-cyan-700') }}">
@@ -203,7 +203,7 @@
                             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                 <div>
                                     <p class="mt-1 text-xs text-slate-600">
-                                        {{ $this->selectedService->service_code }} - {{ $this->selectedService->serviceName?->name ?? '-' }}
+                                        {{ $this->selectedService->code }} - {{ $this->selectedService->serviceName?->name ?? '-' }}
                                     </p>
                                 </div>
                                 <button

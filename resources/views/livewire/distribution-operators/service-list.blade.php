@@ -32,7 +32,7 @@
                 <div class="rounded-3xl border border-slate-200 bg-slate-50/70 p-4">
                     <div class="flex items-start justify-between gap-3">
                         <div>
-                            <p class="text-xs font-semibold text-violet-700">{{ $service->service_code }}</p>
+                            <p class="text-xs font-semibold text-violet-700">{{ $service->code }}</p>
                             <h3 class="mt-1 text-base font-black text-slate-800">{{ $service->serviceName?->name ?? '—' }}</h3>
                         </div>
                         <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">در حال توزیع</span>
@@ -40,7 +40,7 @@
 
                     <div class="mt-4 space-y-2 text-sm text-slate-600">
                         <p><span class="font-bold text-slate-800">دسته‌بندی:</span> {{ $service->serviceCategory?->name ?? 'Undefined' }}</p>
-                        <p><span class="font-bold text-slate-800">تعداد:</span> {{ number_format((float) $service->total_quantity, 2) }} {{ $unitOptions[$service->service_unit] ?? $service->service_unit }}</p>
+                        <p><span class="font-bold text-slate-800">تعداد:</span> {{ number_format((float) $service->total_quantity, 2) }} {{ $unitOptions[$service->service_unit] ?? ($service->service_unit ?? '-') }}</p>
                         <p><span class="font-bold text-slate-800">مددکار:</span> {{ $service->socialWorkers->first()?->full_name ?? '—' }}</p>
                         <p><span class="font-bold text-slate-800">تاریخ:</span> {{ \App\Helpers\Morilog\Jalalian::fromDateTime($service->distribution_start_date)->format('Y/m/d') }}</p>
                     </div>

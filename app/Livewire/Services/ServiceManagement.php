@@ -100,7 +100,9 @@ class ServiceManagement extends Component
                 'string',
                 'max:255',
                 Rule::unique('service_categories', 'name')
-                    ->where(fn ($query) => $query->where('service_name_id', $this->selectedServiceNameId))
+                    ->where(fn ($query) => $query
+                        ->where('service_name_id', $this->selectedServiceNameId)
+                        ->whereNull('deleted_at'))
                     ->ignore($this->editingCategoryId),
             ],
         ], [], [

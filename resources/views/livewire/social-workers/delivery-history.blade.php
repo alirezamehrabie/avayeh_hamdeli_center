@@ -21,14 +21,14 @@
                                 <div class="flex items-start justify-between gap-2">
                                     <div class="min-w-0">
                                         <span class="inline-block text-[10px] font-bold tracking-widest text-cyan-500 uppercase">خدمت</span>
-                                        <h2 class="mt-0.5 truncate text-base font-black text-slate-800">{{ $service->service_code }}</h2>
+                                        <h2 class="mt-0.5 truncate text-base font-black text-slate-800">{{ $service->code }}</h2>
                                         <p class="truncate text-xs text-slate-400">{{ $service->serviceName?->name ?: '—' }}</p>
                                     </div>
                                     <button
                                         type="button"
                                         wire:click="selectService({{ $service->id }})"
                                         class="shrink-0 flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-50 text-cyan-600 hover:bg-cyan-100 transition"
-                                        aria-label="مشاهده تحویل‌های خدمت {{ $service->service_code }}"
+                                        aria-label="مشاهده تحویل‌های خدمت {{ $service->code }}"
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
@@ -83,7 +83,7 @@
                         >
                             بازگشت به خدمات
                         </button>
-                        <h2 class="text-xl font-black text-slate-800">{{ $selectedService->service_code }} - {{ $selectedService->serviceName?->name }}</h2>
+                        <h2 class="text-xl font-black text-slate-800">{{ $selectedService->code }} - {{ $selectedService->serviceName?->name }}</h2>
                         <p class="mt-1 text-sm text-slate-500">
                             {{ $selectedService->serviceCategory?->name ?: '-' }} | {{ \App\Models\Service::TYPE_OPTIONS[$selectedService->service_type] ?? '-' }}
                         </p>

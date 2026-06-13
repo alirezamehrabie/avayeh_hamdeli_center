@@ -65,9 +65,9 @@
             <template x-if="modal.template === 'service-delivery-success'">
                 <div class="mt-5 rounded-2xl border p-4 text-right" :class="typeClasses(modal.type).panel">
                     <p class="text-sm font-bold text-slate-800" x-text="modal.meta.service_name || 'خدمت انتخاب‌شده'"></p>
-                    <template x-if="modal.meta.service_code">
+                    <template x-if="modal.meta.code">
                         <p class="mt-1 text-xs font-semibold text-slate-500">
-                            کد خدمت: <span x-text="modal.meta.service_code"></span>
+                            کد خدمت: <span x-text="modal.meta.code"></span>
                         </p>
                     </template>
                     <div class="mt-4 rounded-2xl bg-white px-4 py-3 text-center shadow-sm">

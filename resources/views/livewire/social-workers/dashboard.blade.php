@@ -91,7 +91,7 @@
                                         type="button"
                                         @click="
                         selected     = '{{ $service->id }}';
-                        selectedText = '{{ $service->service_code }} - {{ $service->serviceName?->name }}';
+                        selectedText = '{{ $service->code }} - {{ $service->serviceName?->name }}';
                         open         = false;
                         $wire.set('selectedServiceId', '{{ $service->id }}')
                     "
@@ -101,7 +101,7 @@
                                     >
                                         {{-- Row 1: Code & Name --}}
                                         <span class="text-sm font-semibold text-slate-800">
-                        {{ $service->service_code }} — {{ $service->serviceName?->name }}
+                        {{ $service->code }} — {{ $service->serviceName?->name }}
                     </span>
 
                                         <span class="mt-1 text-xs text-slate-500">
@@ -150,7 +150,7 @@
                                     <p class="font-medium text-slate-700">
                                         {{ $this->selectedService->serviceName?->name }}
                                         <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-50 text-slate-500">
-        {{ $this->selectedService->service_code }}
+        {{ $this->selectedService->code }}
             </span>
                                     </p>
 

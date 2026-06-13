@@ -29,7 +29,7 @@ class ServiceList extends Component
     {
         return view('livewire.distribution-operators.service-list', [
             'services' => $this->operatorServicesQuery()
-                ->with(['serviceName', 'serviceCategory', 'socialWorkers'])
+                ->with(['serviceName', 'categories', 'socialWorkers'])
                 ->latest()
                 ->get(),
             'unitOptions' => Service::unitOptions(),

@@ -257,7 +257,7 @@ class Dashboard extends Component
         });
 
         $freshService = Service::query()
-            ->with(['serviceName', 'serviceCategory', 'socialWorkers'])
+            ->with(['serviceName', 'categories', 'socialWorkers'])
             ->find($service->id);
 
         $this->openNotificationModal([
@@ -272,7 +272,7 @@ class Dashboard extends Component
             ]],
             'meta' => [
                 'service_name' => $freshService?->serviceName?->name ?? '',
-                'service_code' => $freshService?->service_code ?? '',
+                'code' => $freshService?->code ?? '',
                 'remaining_quota' => number_format(
                     $freshService?->remainingAllocationForWorker($this->currentSocialWorkerId()) ?? 0,
                     2
@@ -287,7 +287,7 @@ class Dashboard extends Component
     public function getAssignedServicesProperty()
     {
         return Service::query()
-            ->with(['serviceName', 'serviceCategory', 'socialWorkers'])
+            ->with(['serviceName', 'categories', 'socialWorkers'])
             ->whereHas('socialWorkers', function (Builder $query) {
                 $query->where('social_workers.id', $this->currentSocialWorkerId())
                     ->where('service_social_worker.allocated_quantity', '>', 0);
@@ -304,7 +304,7 @@ class Dashboard extends Component
         }
 
         return Service::query()
-            ->with(['serviceName', 'serviceCategory', 'socialWorkers'])
+            ->with(['serviceName', 'categories', 'socialWorkers'])
             ->whereHas('socialWorkers', function (Builder $query) {
                 $query->where('social_workers.id', $this->currentSocialWorkerId())
                     ->where('service_social_worker.allocated_quantity', '>', 0);

@@ -53,7 +53,7 @@
                 <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                             <p class="text-xs font-semibold text-slate-500">شناسه</p>
-                            <p class="mt-1 text-sm font-black text-slate-800">{{ $service->service_code }}</p>
+                            <p class="mt-1 text-sm font-black text-slate-800">{{ $service->code }}</p>
                         </div>
                         <span class="inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $badgeClasses[$service->status] ?? 'bg-slate-100 text-slate-700' }}">
                             {{ $statusOptions[$service->status] ?? $service->status }}
@@ -118,13 +118,13 @@
                         <button
                             type="button"
                             @click="details = @js([
-                                'code' => $service->service_code,
+                                'code' => $service->code,
                                 'name' => $service->serviceName?->name ?: '-',
                                 'category' => $service->serviceCategory?->name ?: '-',
                                 'type' => $typeOptions[$service->service_type] ?? $service->service_type,
                                 'status' => $statusOptions[$service->status] ?? $service->status,
                                 'priority' => $service->priority ? ($priorityOptions[$service->priority] ?? $service->priority) : 'بدون اولویت',
-                                'quantity' => number_format((float) $service->total_quantity, 2) . ' ' . ($unitOptions[$service->service_unit] ?? $service->service_unit),
+                                'quantity' => number_format((float) $service->total_quantity, 2) . ' ' . ($unitOptions[$service->service_unit] ?? ($service->service_unit ?? '-')),
                                 'delivered' => number_format((float) $service->quantity_delivered, 2),
                                 'remaining' => number_format($service->remaining_quantity, 2),
                                 'value' => number_format($service->total_service_value) . ' ریال',

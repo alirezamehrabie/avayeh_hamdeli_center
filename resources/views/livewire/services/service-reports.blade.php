@@ -255,7 +255,7 @@
                             </button>
                             <h1 class="mt-3 text-2xl font-extrabold">{{ $selectedService->serviceName?->name ?: 'خدمت بدون نام' }}</h1>
                             <p class="mt-2 text-sm text-slate-200">
-                                {{ $selectedService->service_code }} · {{ $selectedService->serviceCategory?->name ?: 'بدون دسته‌بندی' }}
+                                {{ $selectedService->code }} · {{ $selectedService->serviceCategory?->name ?: 'بدون دسته‌بندی' }}
                             </p>
                         </div>
 
@@ -268,7 +268,7 @@
                                 <p class="text-[10px] text-slate-300">کل مقدار</p>
                                 <p class="mt-1 text-sm font-bold">
                                     {{ number_format((float) $selectedService->total_quantity, 2) }}
-                                    {{ $unitOptions[$selectedService->service_unit] ?? $selectedService->service_unit }}
+                                    {{ $unitOptions[$selectedService->service_unit] ?? ($selectedService->service_unit ?? '-') }}
                                 </p>
                             </div>
                             <div class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur">
@@ -300,7 +300,7 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="text-xs font-medium text-slate-500">واحد:</span>
-                        <span class="text-xs font-bold text-slate-800">{{ $unitOptions[$selectedService->service_unit] ?? $selectedService->service_unit }}</span>
+                        <span class="text-xs font-bold text-slate-800">{{ $unitOptions[$selectedService->service_unit] ?? ($selectedService->service_unit ?? '-') }}</span>
                     </div>
                 </div>
 
@@ -381,7 +381,7 @@
                                 <td class="px-4 py-4 text-center text-slate-700">{{ $delivery->recipient_national_id }}</td>
                                 <td class="px-4 py-4 text-center font-bold text-slate-800">
                                     {{ number_format((float) $delivery->delivered_quantity, 2) }}
-                                    {{ $unitOptions[$selectedService->service_unit] ?? $selectedService->service_unit }}
+                                    {{ $unitOptions[$selectedService->service_unit] ?? ($selectedService->service_unit ?? '-') }}
                                 </td>
                                 <td class="px-4 py-4 text-center font-bold text-emerald-600">
                                     {{ number_format($delivery->delivered_total_value) }} ریال

@@ -137,21 +137,38 @@ class ServiceBatchCreator extends Component
             DB::transaction(function () use ($service, $block, $defaultServiceName, $defaultServiceCategory): void {
                 $service->update([
                     'service_name_id' => $defaultServiceName->id,
-                    'service_category_id' => $defaultServiceCategory->id,
                     'service_type' => $block['service_type'],
                     'description' => $this->buildServiceDescription(
                         $block['service_name'] ?? null,
                         $block['description'] ?? null
                     ),
                     'total_quantity' => $block['total_quantity'],
-                    'service_unit' => $block['unit'],
                     'distribution_start_date' => $this->jalaliToGregorian($block['date']),
                     'distribution_end_date' => $this->jalaliToGregorian($block['date']),
                 ]);
 
+                $category = $service->categories()->ordered()->first() ?? $service->categories()->create([
+                    'service_name_id' => $defaultServiceName->id,
+                    'name' => trim((string) ($block['service_name'] ?? '')) !== '' ? trim((string) $block['service_name']) : $defaultServiceCategory->name,
+                    'quantity' => (float) $block['total_quantity'],
+                    'unit' => $block['unit'],
+                    'value' => 0,
+                    'sort_id' => 1,
+                    'created_by' => $service->created_by ?? auth()->id(),
+                ]);
+
+                $category->fill([
+                    'service_name_id' => $defaultServiceName->id,
+                    'name' => trim((string) ($block['service_name'] ?? '')) !== '' ? trim((string) $block['service_name']) : $category->name,
+                    'quantity' => (float) $block['total_quantity'],
+                    'unit' => $block['unit'],
+                ])->save();
+
                 $service->socialWorkers()->sync([
                     $block['social_worker_id'] => ['allocated_quantity' => $block['total_quantity']],
                 ]);
+
+                $service->refreshFinancialTotals();
             });
 
             session()->flash('success', 'خدمت با موفقیت به‌روزرسانی شد.');
@@ -164,16 +181,14 @@ class ServiceBatchCreator extends Component
                 $serviceCode = Service::generateNextCode();
 
                 $service = Service::query()->create([
-                    'service_code' => $serviceCode,
+                    'code' => $serviceCode,
                     'service_name_id' => $defaultServiceName->id,
-                    'service_category_id' => $defaultServiceCategory->id,
                     'service_type' => $block['service_type'],
                     'description' => $this->buildServiceDescription(
                         $block['service_name'] ?? null,
                         $block['description'] ?? null
                     ),
                     'total_quantity' => $block['total_quantity'],
-                    'service_unit' => $block['unit'],
                     'value_per_unit' => 0,
                     'total_service_value' => 0,
                     'district_id' => null,
@@ -186,10 +201,21 @@ class ServiceBatchCreator extends Component
                     'created_by' => auth()->id(),
                 ]);
 
+                $service->categories()->create([
+                    'service_name_id' => $defaultServiceName->id,
+                    'name' => trim((string) ($block['service_name'] ?? '')) !== '' ? trim((string) $block['service_name']) : $defaultServiceCategory->name,
+                    'quantity' => (float) $block['total_quantity'],
+                    'unit' => $block['unit'],
+                    'value' => 0,
+                    'sort_id' => 1,
+                    'created_by' => auth()->id(),
+                ]);
+
                 $service->socialWorkers()->attach($block['social_worker_id'], [
                     'allocated_quantity' => $block['total_quantity'],
                 ]);
 
+                $service->refreshFinancialTotals();
                 $this->serviceBlocks[$index]['service_id_preview'] = $serviceCode;
             }
         });
@@ -291,12 +317,12 @@ class ServiceBatchCreator extends Component
         $jalaliDate = Jalalian::fromDateTime($service->distribution_start_date);
 
         return [
-            'service_id_preview' => (string) $service->service_code,
+            'service_id_preview' => (string) $service->code,
             'service_name' => $serviceTitle,
             'service_type' => (string) $service->service_type,
             'description' => $serviceDescription,
             'total_quantity' => $this->formatDecimal($service->total_quantity),
-            'unit' => (string) $service->service_unit,
+            'unit' => (string) ($service->serviceCategory?->unit ?? $service->categories()->ordered()->value('unit') ?? array_key_first(Service::unitOptions()) ?? 'package'),
             'date_day' => (string) $jalaliDate->getDay(),
             'date_month' => (string) $jalaliDate->getMonth(),
             'date_year' => (string) $jalaliDate->getYear(),
@@ -334,7 +360,7 @@ class ServiceBatchCreator extends Component
         $lastId = (int) Service::query()->max('id');
 
         foreach (array_keys($this->serviceBlocks) as $index) {
-            $this->serviceBlocks[$index]['service_id_preview'] = 'SRV-' . str_pad((string) ($lastId + $index + 1), 5, '0', STR_PAD_LEFT);
+            $this->serviceBlocks[$index]['service_id_preview'] = 'SN-' . str_pad((string) ($lastId + $index + 1), 5, '0', STR_PAD_LEFT);
         }
     }
 

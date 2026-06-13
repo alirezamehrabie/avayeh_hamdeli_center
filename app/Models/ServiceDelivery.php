@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class ServiceDelivery extends Model
 {
@@ -12,6 +13,7 @@ class ServiceDelivery extends Model
 
     protected $fillable = [
         'service_id',
+        'service_category_id',
         'social_worker_id',
         'person_id',
         'guardian_id',
@@ -34,16 +36,34 @@ class ServiceDelivery extends Model
             'delivered_total_value' => 'integer',
             'delivered_at' => 'date',
             'created_by' => 'integer',
+            'service_category_id' => 'integer',
         ];
     }
 
     protected static function booted(): void
     {
-        static::saved(function (self $delivery): void {
+        static::created(function (self $delivery): void {
+            $delivery->adjustCategoryQuantity(-1 * (float) $delivery->delivered_quantity);
+            $delivery->service?->refreshDeliveryProgress();
+        });
+
+        static::updated(function (self $delivery): void {
+            $originalQuantity = (float) $delivery->getOriginal('delivered_quantity');
+            $originalCategoryId = (int) $delivery->getOriginal('service_category_id');
+
+            if ($delivery->wasChanged('service_category_id') && $originalCategoryId > 0) {
+                $delivery->adjustCategoryQuantity($originalQuantity, $originalCategoryId);
+                $delivery->adjustCategoryQuantity(-1 * (float) $delivery->delivered_quantity);
+            } elseif ($delivery->wasChanged('delivered_quantity')) {
+                $delivery->adjustCategoryQuantity($originalQuantity);
+                $delivery->adjustCategoryQuantity(-1 * (float) $delivery->delivered_quantity);
+            }
+
             $delivery->service?->refreshDeliveryProgress();
         });
 
         static::deleted(function (self $delivery): void {
+            $delivery->adjustCategoryQuantity((float) $delivery->delivered_quantity);
             $delivery->service?->refreshDeliveryProgress();
         });
     }
@@ -51,6 +71,11 @@ class ServiceDelivery extends Model
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class);
+    }
+
+    public function serviceCategory(): BelongsTo
+    {
+        return $this->belongsTo(ServiceCategory::class)->withTrashed();
     }
 
     public function socialWorker(): BelongsTo
@@ -108,7 +133,7 @@ class ServiceDelivery extends Model
     public static function attachToPerson(Person $person): void
     {
         static::query()
-            ->whereHas('service', fn ($query) => $query->where('service_type', 'individual'))
+            ->whereHas('serviceCategory.service', fn ($query) => $query->where('service_type', 'individual'))
             ->whereNull('person_id')
             ->whereNull('guardian_id')
             ->where('national_id', (string) $person->national_id)
@@ -122,7 +147,7 @@ class ServiceDelivery extends Model
     public static function attachToGuardian(Guardian $guardian): void
     {
         static::query()
-            ->whereHas('service', fn ($query) => $query->where('service_type', 'family'))
+            ->whereHas('serviceCategory.service', fn ($query) => $query->where('service_type', 'family'))
             ->whereNull('person_id')
             ->whereNull('guardian_id')
             ->where('national_id', (string) $guardian->national_code)
@@ -132,5 +157,26 @@ class ServiceDelivery extends Model
                 'full_name' => $guardian->full_name !== '' ? $guardian->full_name : '-',
                 'mobile' => $guardian->guardian_phone_number ?: null,
             ]);
+    }
+
+    protected function adjustCategoryQuantity(float $delta, ?int $categoryId = null): void
+    {
+        $targetCategoryId = $categoryId ?: (int) $this->service_category_id;
+
+        if ($targetCategoryId <= 0 || $delta === 0.0) {
+            return;
+        }
+
+        DB::transaction(function () use ($targetCategoryId, $delta): void {
+            $category = ServiceCategory::query()->lockForUpdate()->find($targetCategoryId);
+
+            if (! $category) {
+                return;
+            }
+
+            $nextQuantity = max(0, (float) $category->quantity + $delta);
+            $category->forceFill(['quantity' => $nextQuantity])->saveQuietly();
+            $category->service?->refreshFinancialTotals();
+        });
     }
 }

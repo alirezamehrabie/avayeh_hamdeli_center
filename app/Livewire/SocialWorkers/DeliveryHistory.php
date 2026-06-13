@@ -59,7 +59,7 @@ class DeliveryHistory extends Component
     protected function services(int $socialWorkerId)
     {
         return Service::query()
-            ->with(['serviceName', 'serviceCategory'])
+            ->with(['serviceName', 'categories'])
             ->whereHas('deliveries', fn ($query) => $query->where('social_worker_id', $socialWorkerId))
             ->withMax([
                 'deliveries as last_delivery_at' => fn ($query) => $query->where('social_worker_id', $socialWorkerId),
@@ -75,7 +75,7 @@ class DeliveryHistory extends Component
     protected function selectedService(int $socialWorkerId): ?Service
     {
         return Service::query()
-            ->with(['serviceName', 'serviceCategory'])
+            ->with(['serviceName', 'categories'])
             ->whereKey($this->selectedServiceId)
             ->whereHas('deliveries', fn ($query) => $query->where('social_worker_id', $socialWorkerId))
             ->first();

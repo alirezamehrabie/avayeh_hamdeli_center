@@ -6,7 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class Service extends Model
 {
@@ -39,15 +41,15 @@ class Service extends Model
     ];
 
     protected $fillable = [
-        'service_code',
+        'code',
+        'name',
         'service_name_id',
-        'service_category_id',
         'service_type',
         'description',
         'total_quantity',
-        'service_unit',
         'value_per_unit',
         'total_service_value',
+        'total_financial_value',
         'district_id',
         'distribution_start_date',
         'distribution_end_date',
@@ -67,12 +69,24 @@ class Service extends Model
             'quantity_delivered' => 'decimal:2',
             'value_per_unit' => 'integer',
             'total_service_value' => 'integer',
+            'total_financial_value' => 'integer',
             'created_by' => 'integer',
         ];
     }
 
     protected static function booted(): void
     {
+        static::creating(function (self $service): void {
+            if (blank($service->code)) {
+                $service->code = static::generateNextCode();
+            }
+
+
+            if (Schema::hasColumn($service->getTable(), 'total_financial_value') && blank($service->total_financial_value)) {
+                $service->total_financial_value = 0;
+            }
+        });
+
         static::updated(function (self $service): void {
             $service->syncDeliveryValues();
         });
@@ -80,9 +94,17 @@ class Service extends Model
 
     public static function generateNextCode(): string
     {
-        $lastId = (int) static::query()->max('id');
+        $lastSequence = (int) static::query()
+            ->selectRaw('MAX(CAST(SUBSTRING_INDEX(code, "-", -1) AS UNSIGNED)) as sequence')
+            ->value('sequence');
 
-        return 'SRV-' . str_pad((string) ($lastId + 1), 5, '0', STR_PAD_LEFT);
+        if ($lastSequence <= 0) {
+            $lastSequence = (int) static::query()
+                ->selectRaw('MAX(id) as sequence')
+                ->value('sequence');
+        }
+
+        return 'SN-' . str_pad((string) ($lastSequence + 1), 5, '0', STR_PAD_LEFT);
     }
 
     public static function unitOptions(): array
@@ -109,9 +131,9 @@ class Service extends Model
         return $this->belongsTo(ServiceName::class);
     }
 
-    public function serviceCategory(): BelongsTo
+    public function serviceCategory(): HasOne
     {
-        return $this->belongsTo(ServiceCategory::class);
+        return $this->hasOne(ServiceCategory::class)->withTrashed()->ordered();
     }
 
     public function district(): BelongsTo
@@ -129,9 +151,37 @@ class Service extends Model
         return $this->belongsToMany(SocialWorker::class)->withPivot('allocated_quantity')->withTimestamps();
     }
 
+    public function categories(): HasMany
+    {
+        return $this->hasMany(ServiceCategory::class);
+    }
+
     public function deliveries(): HasMany
     {
         return $this->hasMany(ServiceDelivery::class);
+    }
+
+    public function getServiceUnitAttribute(): ?string
+    {
+        $category = $this->serviceCategory;
+
+        return $category?->unit ? (string) $category->unit : null;
+    }
+
+    public function getNameAttribute($value): string
+    {
+        $name = trim((string) $value);
+
+        if ($name !== '') {
+            return $name;
+        }
+
+        return (string) ($this->serviceName?->name ?? '');
+    }
+
+    public function getServiceNameIdAttribute($value): ?int
+    {
+        return $value !== null ? (int) $value : null;
     }
 
     public function getRemainingQuantityAttribute(): float
@@ -183,6 +233,26 @@ class Service extends Model
         $this->forceFill($payload)->saveQuietly();
     }
 
+    public function refreshFinancialTotals(): void
+    {
+        if (! Schema::hasColumn($this->getTable(), 'total_financial_value')) {
+            return;
+        }
+
+        $totalQuantity = (float) $this->categories()
+            ->selectRaw('COALESCE(SUM(quantity), 0) as total')
+            ->value('total');
+        $totalFinancialValue = (int) $this->categories()
+            ->selectRaw('COALESCE(SUM(quantity * value), 0) as total')
+            ->value('total');
+
+        $this->forceFill([
+            'total_quantity' => $totalQuantity,
+            'total_financial_value' => $totalFinancialValue,
+            'total_service_value' => $totalFinancialValue,
+        ])->saveQuietly();
+    }
+
     public function syncDeliveryValues(): void
     {
         if (! $this->wasChanged('value_per_unit')) {
@@ -216,4 +286,5 @@ class Service extends Model
     {
         return max(0, $this->allocatedQuantityForWorker($socialWorkerId) - $this->deliveredQuantityForWorker($socialWorkerId));
     }
+
 }

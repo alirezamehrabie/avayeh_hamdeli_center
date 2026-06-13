@@ -26,7 +26,7 @@ class ServiceList extends Component
     {
         return view('livewire.services.service-list', [
             'services' => Service::query()
-                ->with(['serviceName', 'serviceCategory', 'district', 'creator', 'socialWorkers'])
+                ->with(['serviceName', 'categories', 'district', 'creator', 'socialWorkers'])
                 ->latest()
                 ->get(),
             'typeOptions' => Service::TYPE_OPTIONS,

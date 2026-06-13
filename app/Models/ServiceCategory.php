@@ -6,15 +6,66 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class ServiceCategory extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'service_name_id',
+        'service_id',
+        'code',
         'name',
+        'quantity',
+        'unit',
+        'value',
         'sort_id',
         'created_by',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'quantity' => 'decimal:2',
+            'value' => 'integer',
+            'created_by' => 'integer',
+            'service_id' => 'integer',
+            'deleted_at' => 'datetime',
+        ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $category): void {
+            if (blank($category->service_name_id) && $category->service?->service_name_id) {
+                $category->service_name_id = $category->service->service_name_id;
+            }
+
+            if (blank($category->sort_id)) {
+                $category->sort_id = static::nextSortId((int) $category->service_id);
+            }
+
+            if (blank($category->code)) {
+                $category->code = static::generateNextCode((int) $category->service_id);
+            }
+        });
+
+        static::saved(function (self $category): void {
+            $category->service?->refreshFinancialTotals();
+        });
+
+        static::deleted(function (self $category): void {
+            $category->service?->refreshFinancialTotals();
+        });
+
+        static::forceDeleting(function (self $category): void {
+            if (app()->isProduction()) {
+                throw new \RuntimeException('Service categories cannot be permanently deleted in production.');
+            }
+        });
+    }
 
     public function scopeOrdered(Builder $query): Builder
     {
@@ -23,9 +74,40 @@ class ServiceCategory extends Model
             ->orderByDesc('id');
     }
 
-    public function serviceName(): BelongsTo
+    public static function generateNextCode(int $serviceId): string
     {
-        return $this->belongsTo(ServiceName::class);
+        $service = Service::query()->find($serviceId);
+
+        if (! $service) {
+            return 'SN-00000-CAT001';
+        }
+
+        $nextIndex = (int) static::query()
+            ->where('service_id', $serviceId)
+            ->selectRaw('MAX(CAST(SUBSTRING_INDEX(code, "CAT", -1) AS UNSIGNED)) as sequence')
+            ->value('sequence');
+
+        if ($nextIndex <= 0) {
+            $nextIndex = (int) static::query()
+                ->where('service_id', $serviceId)
+                ->count();
+        }
+
+        return $service->code . '-CAT' . str_pad((string) ($nextIndex + 1), 3, '0', STR_PAD_LEFT);
+    }
+
+    public static function nextSortId(int $serviceId): int
+    {
+        $nextSortId = (int) static::query()
+            ->where('service_id', $serviceId)
+            ->max('sort_id');
+
+        return $nextSortId > 0 ? $nextSortId + 1 : 1;
+    }
+
+    public function service(): BelongsTo
+    {
+        return $this->belongsTo(Service::class);
     }
 
     public function creator(): BelongsTo
@@ -33,8 +115,23 @@ class ServiceCategory extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function services(): HasMany
+    public function deliveries(): HasMany
     {
-        return $this->hasMany(Service::class);
+        return $this->hasMany(ServiceDelivery::class);
+    }
+
+    public function getUnitLabelAttribute(): string
+    {
+        return (string) ($this->attributes['unit'] ?? '');
+    }
+
+    public function getAvailableQuantityAttribute(): float
+    {
+        return (float) $this->quantity;
+    }
+
+    public function recalculateServiceTotals(): void
+    {
+        $this->service?->refreshFinancialTotals();
     }
 }

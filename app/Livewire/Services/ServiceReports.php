@@ -121,7 +121,7 @@ class ServiceReports extends Component
         return Service::query()
             ->with([
                 'serviceName',
-                'serviceCategory',
+                'categories',
                 'district',
                 'socialWorkers',
                 'deliveries.person.guardian',
@@ -154,7 +154,7 @@ class ServiceReports extends Component
 
         return view('livewire.services.service-reports', [
             'services' => Service::query()
-                ->with(['serviceName', 'serviceCategory', 'district', 'socialWorkers', 'creator'])
+                ->with(['serviceName', 'categories', 'district', 'socialWorkers', 'creator'])
                 ->when($status, fn ($q) => $q->where('status', $status))
                 ->when($category, fn ($q) => $q->whereHas('serviceCategory', fn ($q) => $q->where('name', $category)))
                 ->when($type, fn ($q) => $q->where('service_type', $type))
@@ -164,7 +164,7 @@ class ServiceReports extends Component
                         $inner->orWhere('id', (int) $search);
                     }
                     $inner
-                        ->orWhere('service_code', 'like', '%' . $search . '%')
+                        ->orWhere('code', 'like', '%' . $search . '%')
                         ->orWhere('description', 'like', '%' . $search . '%')
                         ->orWhereHas('serviceName', fn ($q) => $q->where('name', 'like', '%' . $search . '%'))
                         ->orWhereHas('serviceCategory', fn ($q) => $q->where('name', 'like', '%' . $search . '%'))
