@@ -87,9 +87,6 @@
                             <h2 class="text-lg font-black text-slate-900">ایجاد کاربر جدید</h2>
                             <p class="mt-1 text-sm text-slate-600">افزودن کاربر جدید و تنظیم نقش کاربری</p>
                         </div>
-                        <div class="rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-slate-500 shadow-sm">
-                            سریع و سبک
-                        </div>
                     </div>
 
                     <div class="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-6">
@@ -250,7 +247,7 @@
                                 $roleClasses = $user->access_level === 'manager' ? 'bg-indigo-100 text-indigo-700 ring-indigo-200' : ($user->access_level === 'admin' ? 'bg-emerald-100 text-emerald-700 ring-emerald-200' : ($user->access_level === 'social_worker' ? 'bg-cyan-100 text-cyan-700 ring-cyan-200' : ($user->access_level === \App\Models\User::ACCESS_LEVEL_CHILD_SUPPORTER ? 'bg-teal-100 text-teal-700 ring-teal-200' : ($user->access_level === 'distribution_operator' ? 'bg-violet-100 text-violet-700 ring-violet-200' : 'bg-slate-100 text-slate-700 ring-slate-200'))));
                                 $isCurrentUser = auth()->id() === $user->id;
                                 $isProtected = $user->isProtectedManagerAccount();
-                                $hasPendingAction = ($pendingActionMap[$user->id]['downgrade_admin'] ?? false) || ($pendingActionMap[$user->id]['delete_user'] ?? false) || ($pendingActionMap[$user->id]['promote_to_admin'] ?? false);
+                                $hasPendingAction = ($pendingActionMap[$user->id]['delete_user'] ?? false);
                                 $permissionSummary = collect($user->permission_labels)->take(1)->implode('، ');
                                 $permissionCount = count($user->permission_labels);
                             @endphp
@@ -294,53 +291,27 @@
                                             رکورد کاربر حذف شده برای حسابرسی نگه داشته شد.
                                         </div>
                                     @else
-                                    <div class="mt-2 flex flex-wrap gap-2">
+                                    <div class="mt-3 flex flex-wrap items-center gap-2">
                                         @if(! $isCurrentUser)
                                             @if(! $isProtected)
-                                                <button type="button" wire:click="openEditModal({{ $user->id }})" title="ویرایش" aria-label="ویرایش" class="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-sky-200 bg-sky-50 text-sky-700 transition hover:bg-sky-100">
+                                                <button type="button" wire:click="openEditModal({{ $user->id }})" title="ویرایش" aria-label="ویرایش" class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50">
                                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4" />
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.5 2.5a2.121 2.121 0 113 3L12 15l-4 1 1-4 9.5-9.5z" />
                                                     </svg>
+                                                    <span>ویرایش</span>
                                                 </button>
 
-                                                @if($user->access_level !== 'admin' && !($pendingActionMap[$user->id]['promote_to_admin'] ?? false))
-                                                    <button type="button" wire:click="setAccessLevel({{ $user->id }}, 'admin')" title="ارتقا به ادمین" aria-label="ارتقا به ادمین" class="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                                                        </svg>
-                                                    </button>
-                                                @endif
-
-                                                @if($user->access_level !== 'regular_user' && !($pendingActionMap[$user->id]['downgrade_admin'] ?? false))
-                                                    <button type="button" wire:click="setAccessLevel({{ $user->id }}, 'regular_user')" title="تبدیل به کاربر عادی" aria-label="تبدیل به کاربر عادی" class="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-amber-700 transition hover:bg-amber-100">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                                        </svg>
-                                                    </button>
-                                                @endif
-
-                                                @if($user->access_level !== 'distribution_operator')
-                                                    <button type="button" wire:click="setAccessLevel({{ $user->id }}, 'distribution_operator')" title="تنظیم به اپراتور توزیع" aria-label="تنظیم به اپراتور توزیع" class="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-violet-200 bg-violet-50 text-violet-700 transition hover:bg-violet-100">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12h16M12 4l8 8-8 8" />
-                                                        </svg>
-                                                    </button>
-                                                @endif
-
-                                                @if($user->access_level !== \App\Models\User::ACCESS_LEVEL_CHILD_SUPPORTER)
-                                                    <button type="button" wire:click="setAccessLevel({{ $user->id }}, '{{ \App\Models\User::ACCESS_LEVEL_CHILD_SUPPORTER }}')" title="تنظیم به حامی کودک" aria-label="تنظیم به حامی کودک" class="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-teal-200 bg-teal-50 text-teal-700 transition hover:bg-teal-100">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 21s-7-4.35-7-10a4 4 0 017-2.65A4 4 0 0119 11c0 5.65-7 10-7 10z" />
-                                                        </svg>
-                                                    </button>
-                                                @endif
-
                                                 @if(!($pendingActionMap[$user->id]['delete_user'] ?? false))
-                                                    <button type="button" wire:click="deleteUser({{ $user->id }})" wire:confirm="آیا از حذف این کاربر مطمئن هستید؟" title="حذف" aria-label="حذف" class="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 text-rose-700 transition hover:bg-rose-100">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0l1 14h6l1-14" />
+                                                    <button type="button" wire:click="deleteUser({{ $user->id }})" wire:confirm="آیا از حذف این کاربر مطمئن هستید؟" title="حذف" aria-label="حذف" class="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-rose-200 bg-white/80 text-rose-600 border border-slate-200 transition duration-150 ease-out hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-rose-200 focus-visible:ring-offset-2 focus-visible:ring-offset-white active:translate-y-px">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                            <path d="M4 7h16" />
+                                                            <path d="M9 7V5.8c0-.99.8-1.8 1.8-1.8h2.4c.99 0 1.8.8 1.8 1.8V7" />
+                                                            <path d="M7 7.5 7.8 19c.08.98.89 1.75 1.88 1.75h4.64c.99 0 1.8-.77 1.88-1.75L17 7.5" />
+                                                            <path d="M10 10.5v5" />
+                                                            <path d="M14 10.5v5" />
                                                         </svg>
+                                                        <span class="sr-only">حذف</span>
                                                     </button>
                                                 @endif
                                             @else
