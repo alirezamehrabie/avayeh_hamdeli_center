@@ -125,17 +125,17 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="sm:col-span-2 xl:col-span-2">
+                        <div class="sm:col-span-2 xl:col-span-6">
                             <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">نقش پایه</label>
-                            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            <div class="flex flex-nowrap gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-2">
                                 @foreach ([
-                                    'regular_user' => ['label' => 'کاربر عادی', 'desc' => 'پیش‌فرض'],
-                                    'child_supporter' => ['label' => 'حامی کودک', 'desc' => 'نقش حمایتی'],
-                                    'distribution_operator' => ['label' => 'اپراتور توزیع', 'desc' => 'تعریف خدمات'],
                                     'admin' => ['label' => 'ادمین', 'desc' => 'اپراتور ثبت'],
+                                    'distribution_operator' => ['label' => 'اپراتور توزیع', 'desc' => 'تعریف خدمات'],
+                                    'child_supporter' => ['label' => 'حامی کودک', 'desc' => 'نقش حمایتی'],
+                                    'regular_user' => ['label' => 'کاربر عادی', 'desc' => 'پیش‌فرض'],
                                     'manager' => ['label' => 'مدیریت', 'desc' => 'محافظت‌شده', 'disabled' => true],
                                 ] as $roleValue => $roleMeta)
-                                    <label class="cursor-pointer">
+                                    <label class="min-w-[9.5rem] flex-1 cursor-pointer">
                                         <input
                                             type="radio"
                                             class="peer sr-only"
@@ -143,9 +143,9 @@
                                             value="{{ $roleValue }}"
                                             @disabled(($roleMeta['disabled'] ?? false) || ($roleValue === 'admin' && ! $actorCanCreateAdmin))
                                         >
-                                        <div class="rounded-xl border border-slate-200 bg-white px-3 py-2 transition peer-checked:border-indigo-300 peer-checked:bg-indigo-50 peer-checked:ring-4 peer-checked:ring-indigo-100 peer-disabled:cursor-not-allowed peer-disabled:opacity-50">
-                                            <div class="text-xs font-bold text-slate-900">{{ $roleMeta['label'] }}</div>
-                                            <div class="mt-0.5 text-[11px] text-slate-500">{{ $roleMeta['desc'] }}</div>
+                                        <div class="flex h-full min-h-14 flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-center text-slate-700 transition peer-checked:border-indigo-600 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:shadow-sm peer-checked:ring-2 peer-checked:ring-indigo-100 peer-disabled:cursor-not-allowed peer-disabled:opacity-50">
+                                            <div class="truncate text-xs font-bold text-current">{{ $roleMeta['label'] }}</div>
+                                            <div class="mt-0.5 truncate text-[11px] text-current opacity-70">{{ $roleMeta['desc'] }}</div>
                                         </div>
                                     </label>
                                 @endforeach
