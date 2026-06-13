@@ -23,8 +23,8 @@ class ManageServices extends Component
     public ?int $serviceDistrictId = null;
     public ?string $distributionStartDate = null;
     public ?string $distributionEndDate = null;
-    public string $priority = '';
-    public string $status = 'draft';
+    public string $priority = 'normal';
+    public string $status = 'in_distribution';
     public string $statusNotes = '';
 
     /**
@@ -308,7 +308,7 @@ class ManageServices extends Component
         }
 
         $this->serviceType = $this->serviceType ?: 'individual';
-        $this->status = $this->status ?: 'draft';
+        $this->status = $this->status ?: 'in_distribution';
     }
 
     protected function resetForm(): void
@@ -328,7 +328,7 @@ class ManageServices extends Component
         ]);
 
         $this->serviceType = 'individual';
-        $this->status = 'draft';
+        $this->status = 'in_distribution';
         $this->categories = [$this->emptyCategory()];
     }
 

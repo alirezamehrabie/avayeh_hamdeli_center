@@ -1,27 +1,23 @@
 <div class="space-y-6">
     <div class="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
-        <div class="bg-gradient-to-l from-teal-600 via-cyan-600 to-sky-700 px-6 py-6 text-white">
-            <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <div class="bg-gradient-to-l from-teal-600 via-cyan-600 to-sky-700 px-4 py-4 text-white sm:px-6 sm:py-6">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between sm:gap-5">
                 <div>
-                    <h1 class="mt-2 text-2xl font-extrabold">تعریف و مدیریت خدمات</h1>
-                    <p class="mt-2 max-w-3xl text-sm text-cyan-50/90">
+                    <h1 class="text-lg font-extrabold leading-tight sm:mt-2 sm:text-2xl">تعریف و مدیریت خدمات</h1>
+                    <p class="mt-1 hidden max-w-3xl text-sm text-cyan-50/90 sm:mt-2 sm:block">
                         یک خدمت والد بسازید و برای آن چند دسته با مقدار، واحد و ارزش مستقل تعریف کنید.
                     </p>
                 </div>
 
-                <div class="grid gap-3 sm:grid-cols-3">
-                    <div class="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur">
-                        <p class="text-xs text-cyan-100">شناسه خدمت</p>
-                        <p class="mt-1 text-lg font-bold tracking-wide">{{ $this->previewServiceCode }}</p>
-                    </div>
-                    <div class="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur">
-                        <p class="text-xs text-cyan-100">تعداد کل</p>
-                        <p class="mt-1 text-lg font-bold">{{ number_format($this->totalQuantity, 2) }}</p>
-                    </div>
-                    <div class="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur">
-                        <p class="text-xs text-cyan-100">ارزش کل</p>
-                        <p class="mt-1 text-lg font-bold">{{ number_format($this->totalServiceValue) }} ریال</p>
-                    </div>
+                <div class="flex flex-wrap gap-2 sm:gap-3">
+                    <span class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white/95 backdrop-blur">
+                        <span class="text-xs text-cyan-100">تعداد کل</span>
+                        <span class="font-semibold">{{ number_format($this->totalQuantity, 2) }}</span>
+                    </span>
+                    <span class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white/95 backdrop-blur">
+                        <span class="text-xs text-cyan-100">ارزش کل</span>
+                        <span class="font-semibold">{{ number_format($this->totalServiceValue) }} ریال</span>
+                    </span>
                 </div>
             </div>
         </div>
@@ -49,9 +45,14 @@
                     <div class="space-y-6">
                         <div class="rounded-3xl border border-slate-200 bg-slate-50/80 p-5">
                             <div class="mb-4 flex items-center justify-between">
-                                <div>
+                                <div class="flex items-center gap-3">
+                                    <div>
                                     <h2 class="text-lg font-bold text-slate-800">اطلاعات پایه خدمت</h2>
                                     <p class="text-sm text-slate-500">کد، نام، نوع و وضعیت خدمت والد</p>
+                                    </div>
+                                    <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-bold tracking-wide text-slate-600 shadow-sm">
+                                        {{ $this->previewServiceCode }}
+                                    </span>
                                 </div>
                                 @if($editingServiceId)
                                     <button type="button" wire:click="startNewService" class="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700">
@@ -61,12 +62,14 @@
                             </div>
 
                             <div class="grid gap-4 md:grid-cols-2">
-                                <div>
-                                    <label class="mb-2 block text-sm font-bold text-slate-700">شناسه خدمت</label>
-                                    <input type="text" value="{{ $this->previewServiceCode }}" disabled class="w-full rounded-2xl border border-slate-300 bg-slate-100 px-4 py-3 text-sm font-bold text-slate-700">
+
+                                <div class="md:col-span-1">
+                                    <label class="mb-2 block text-sm font-bold text-slate-700">نام خدمت</label>
+                                    <input type="text" wire:model.blur="serviceName" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700" placeholder="مثال: سفره ام‌البنین (س)">
+                                    @error('serviceName') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                                 </div>
 
-                                <div>
+                                <div class="md:col-span-1">
                                     <label class="mb-2 block text-sm font-bold text-slate-700">نوع خدمت</label>
                                     <select wire:model="serviceType" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
                                         @foreach($typeOptions as $value => $label)
@@ -74,12 +77,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                            </div>
 
-                            <div class="mt-4">
-                                <label class="mb-2 block text-sm font-bold text-slate-700">نام خدمت</label>
-                                <input type="text" wire:model.blur="serviceName" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700" placeholder="مثال: سفره ام البنین">
-                                @error('serviceName') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                             </div>
 
                             <div class="mt-4">
@@ -94,9 +92,6 @@
                                     <h2 class="text-lg font-bold text-slate-800">دسته‌های خدمت</h2>
                                     <p class="text-sm text-slate-500">برای هر دسته مقدار، واحد و ارزش واحد را ثبت کنید</p>
                                 </div>
-                                <button type="button" wire:click="addCategory" class="rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-2 text-sm font-bold text-cyan-700">
-                                    افزودن دسته
-                                </button>
                             </div>
 
                             <div class="space-y-4">
@@ -141,6 +136,15 @@
                                         </div>
                                     </div>
                                 @endforeach
+                            </div>
+
+                            <div class="sticky bottom-4 z-20 mt-5 flex justify-end">
+                                <button type="button" wire:click="addCategory" class="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-700">
+                                    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" class="h-4 w-4 shrink-0">
+                                        <path d="M10 4.5V15.5M4.5 10H15.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                    </svg>
+                                    افزودن دسته
+                                </button>
                             </div>
                         </div>
                     </div>
