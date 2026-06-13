@@ -2,8 +2,8 @@
     <div class="{{ $listOnly ? 'w-full p-0' : 'container mx-auto p-0' }}">
         <div class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_20px_80px_-30px_rgba(15,23,42,0.35)] sm:rounded-[2rem] {{ $listOnly ? 'flex min-h-0 flex-col' : '' }}">
             <div class="border-b border-slate-200 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 px-4 py-4 text-white sm:px-5 sm:py-5 lg:px-6 lg:py-3.5">
-                <div class="flex flex-col gap-4 sm:gap-3 lg:flex-row lg:items-center lg:justify-between">
-                    <div class="max-w-3xl">
+                <div class="flex min-w-0 flex-col gap-4 sm:gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div class="min-w-0 max-w-3xl">
                         <div class="mt-1 flex flex-wrap items-center gap-2">
                             <h1 class="text-2xl font-black tracking-tight text-white lg:text-[1.75rem]">
                                 {{ $listOnly ? 'لیست کاربران' : 'تعریف کاربر' }}
@@ -13,7 +13,7 @@
                             {{ $listOnly ? 'مشاهده، جستجو و فیلتر کاربران با همان ظاهر فعلی سیستم' : 'ایجاد و تعریف حساب کاربری جدید با نقش و دسترسی مشخص' }}
                         </p>
                     </div>
-                    <div class="flex items-center gap-2 lg:min-w-[18rem] lg:justify-end">
+                    <div class="flex w-full min-w-0 items-stretch gap-2 sm:items-center lg:w-auto lg:min-w-[18rem] lg:justify-end">
                         <div class="flex min-h-12 min-w-0 flex-1 items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur lg:flex-none lg:min-w-52">
                             <div class="min-w-0">
                                 <span class="block truncate text-[10px] font-semibold text-slate-300">خلاصه کاربران</span>
@@ -81,7 +81,7 @@
                 @endif
 
                 @unless($listOnly || $viewingDeletedUsers)
-                <form wire:submit.prevent="createUser" class="rounded-2xl border border-slate-200 bg-slate-50/70 p-3 shadow-sm sm:p-4 sm:rounded-3xl">
+                <form wire:submit.prevent="createUser" class="rounded-2xl border border-slate-200 bg-slate-50/70 p-3 shadow-sm sm:rounded-3xl sm:p-4">
                     <div class="mb-3 flex flex-col gap-2 border-b border-slate-200 pb-3 sm:flex-row sm:items-end sm:justify-between">
                         <div>
                             <h2 class="text-lg font-black text-slate-900">ایجاد کاربر جدید</h2>
@@ -89,23 +89,23 @@
                         </div>
                     </div>
 
-                    <div class="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-6">
-                        <div class="sm:col-span-1">
+                    <div class="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-6">
+                        <div class="min-w-0 sm:col-span-1">
                             <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">نام</label>
                             <input type="text" wire:model.blur="first_name" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm leading-5 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100">
                             @error('first_name') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
                         </div>
-                        <div class="sm:col-span-1">
+                        <div class="min-w-0 sm:col-span-1">
                             <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">نام خانوادگی</label>
                             <input type="text" wire:model.blur="last_name" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm leading-5 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100">
                             @error('last_name') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
                         </div>
-                        <div class="sm:col-span-2 xl:col-span-2">
+                        <div class="min-w-0 sm:col-span-2 xl:col-span-2">
                             <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">نام کاربری</label>
                             <input type="text" wire:model.blur="username" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm leading-5 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100">
                             @error('username') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
                         </div>
-                        <div class="sm:col-span-1 xl:col-span-1">
+                        <div class="min-w-0 sm:col-span-1 xl:col-span-1">
                             <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">رمز عبور</label>
                             <div x-data="{ showPassword: false }" class="relative">
                                 <input x-bind:type="showPassword ? 'text' : 'password'" wire:model.blur="password" class="h-10 w-full rounded-xl border border-slate-200 bg-white pr-9 text-sm leading-5 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100">
@@ -116,7 +116,7 @@
                             </div>
                             @error('password') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
                         </div>
-                        <div class="sm:col-span-1 xl:col-span-1">
+                        <div class="min-w-0 sm:col-span-1 xl:col-span-1">
                             <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">تکرار رمز</label>
                             <div x-data="{ showPassword: false }" class="relative">
                                 <input x-bind:type="showPassword ? 'text' : 'password'" wire:model.blur="password_confirmation" class="h-10 w-full rounded-xl border border-slate-200 bg-white pr-9 text-sm leading-5 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100">
@@ -126,9 +126,9 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="sm:col-span-2 xl:col-span-6">
+                        <div class="min-w-0 sm:col-span-2 xl:col-span-6">
                             <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">نقش پایه</label>
-                            <div class="flex flex-nowrap gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-2">
+                            <div class="grid grid-cols-1 gap-2 rounded-2xl border border-slate-200 bg-white p-2 sm:grid-cols-2 lg:grid-cols-5">
                                 @foreach ([
                                     'admin' => ['label' => 'ادمین', 'desc' => 'اپراتور ثبت'],
                                     'distribution_operator' => ['label' => 'اپراتور توزیع', 'desc' => 'تعریف خدمات'],
@@ -136,7 +136,7 @@
                                     'regular_user' => ['label' => 'کاربر عادی', 'desc' => 'پیش‌فرض'],
                                     'manager' => ['label' => 'مدیریت', 'desc' => 'محافظت‌شده', 'disabled' => true],
                                 ] as $roleValue => $roleMeta)
-                                    <label class="min-w-[9.5rem] flex-1 cursor-pointer">
+                                    <label class="min-w-0 cursor-pointer">
                                         <input
                                             type="radio"
                                             class="peer sr-only"
@@ -153,13 +153,13 @@
                             </div>
                             @error('access_level') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
                         </div>
-                        <div class="sm:col-span-2 xl:col-span-6">
+                        <div class="min-w-0 sm:col-span-2 xl:col-span-6">
                             <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">دسترسی‌های اختیاری</label>
                             <div class="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-3">
                                 @foreach($permissionOptions as $permissionKey => $permissionLabel)
-                                    <label class="cursor-pointer">
+                                    <label class="w-full cursor-pointer sm:w-auto">
                                         <input type="checkbox" value="{{ $permissionKey }}" wire:model="permissions" class="peer sr-only">
-                                        <span class="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 transition peer-checked:border-indigo-300 peer-checked:bg-indigo-50 peer-checked:text-indigo-700">
+                                        <span class="inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-center text-xs font-semibold text-slate-600 transition peer-checked:border-indigo-300 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 sm:w-auto sm:justify-start sm:rounded-full">
                                             <span class="h-1.5 w-1.5 rounded-full bg-current opacity-40"></span>
                                             {{ $permissionLabel }}
                                         </span>
@@ -169,8 +169,8 @@
                             @error('permissions') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
                             @error('permissions.*') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
                         </div>
-                        <div class="sm:col-span-2 xl:col-span-6">
-                            <button type="submit" class="inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100">
+                        <div class="min-w-0 sm:col-span-2 xl:col-span-6">
+                            <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100 sm:w-auto">
                                 ایجاد کاربر
                             </button>
                         </div>
