@@ -144,7 +144,12 @@
                                             value="{{ $roleValue }}"
                                             @disabled(($roleMeta['disabled'] ?? false) || ($roleValue === 'admin' && ! $actorCanCreateAdmin))
                                         >
-                                        <div class="flex h-full min-h-14 flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-center text-slate-700 transition peer-checked:border-teal-700 peer-checked:bg-teal-500 peer-checked:text-white peer-checked:shadow-sm peer-checked:ring-2 peer-checked:ring-teal-100 peer-disabled:cursor-not-allowed peer-disabled:opacity-50">
+                                        <div class="relative flex h-full min-h-14 flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-center text-slate-700 transition duration-200 ease-out peer-checked:border-green-600 peer-checked:bg-green-50 peer-checked:text-green-900 peer-checked:shadow-sm peer-checked:ring-2 peer-checked:ring-green-100 peer-disabled:cursor-not-allowed peer-disabled:opacity-50">
+                                            <span class="pointer-events-none absolute right-2 top-2 inline-flex h-5 w-5 items-center justify-center rounded-full border border-green-600 bg-white text-green-600 opacity-0 shadow-sm transition duration-200 ease-out peer-checked:scale-100 peer-checked:opacity-100 peer-checked:animate-[ping_0.35s_ease-out_1]">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.25 7.25a1 1 0 01-1.415 0l-3-3a1 1 0 111.414-1.42l2.293 2.294 6.543-6.544a1 1 0 011.415 0z" clip-rule="evenodd" />
+                                                </svg>
+                                            </span>
                                             <div class="truncate text-xs font-bold text-current">{{ $roleMeta['label'] }}</div>
                                             <div class="mt-0.5 truncate text-[11px] text-current opacity-70">{{ $roleMeta['desc'] }}</div>
                                         </div>
@@ -170,9 +175,17 @@
                             @error('permissions.*') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
                         </div>
                         <div class="min-w-0 sm:col-span-2 xl:col-span-6">
-                            <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100 sm:w-auto">
-                                ایجاد کاربر
-                            </button>
+                            <div class="flex justify-end">
+                                <button
+                                    type="submit"
+                                    class="inline-flex min-h-12 items-center gap-2 rounded-xl border border-emerald-800/40 bg-gradient-to-b from-emerald-700 to-emerald-800 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:from-emerald-600 hover:to-emerald-700 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-emerald-200"
+                                    aria-label="ثبت کاربر"
+                                    title="ثبت کاربر"
+                                >
+                                    <i class="bi bi-person-plus text-base leading-none" aria-hidden="true"></i>
+                                    <span>ثبت کاربر</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </form>
