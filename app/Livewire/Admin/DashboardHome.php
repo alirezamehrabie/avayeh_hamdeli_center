@@ -31,9 +31,11 @@ class DashboardHome extends Component
     public function mount(): void
     {
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
-        if (request()->routeIs('admin.user-management*')) {
+        if (request()->routeIs('admin.user-list*')) {
+            $this->activeSection = 'system-settings-user-list';
+            $this->showDeletedUsers = request()->routeIs('admin.user-list.deleted');
+        } elseif (request()->routeIs('admin.user-management*')) {
             $this->activeSection = 'system-settings-user-management';
-            $this->showDeletedUsers = request()->routeIs('admin.user-management.deleted');
         } elseif (request()->routeIs('admin.user-account')) {
             $this->activeSection = 'system-settings-user-account';
         }
@@ -50,6 +52,7 @@ class DashboardHome extends Component
         $this->editingGuardianId = $section === 'guardian-edit' ? $id : null;
         $this->editingServiceId = $section === 'define-services' ? $id : null;
         $this->serviceReportServiceId = $section === 'advanced-service-report' ? $id : null;
+        $this->showDeletedUsers = false;
     }
 
     private function normalizeActiveSection(): void
@@ -97,6 +100,7 @@ class DashboardHome extends Component
                 'advanced-supervisor-report',
                 'advanced-social-worker-report',
                 'system-settings-user-management',
+                'system-settings-user-list',
                 'define-services',
                 'service-list',
                 'service-delivery',

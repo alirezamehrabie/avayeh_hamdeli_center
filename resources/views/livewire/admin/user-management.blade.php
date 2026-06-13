@@ -5,10 +5,12 @@
                 <div class="flex flex-col gap-4 sm:gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div class="max-w-3xl">
                         <div class="mt-1 flex flex-wrap items-center gap-2">
-                            <h1 class="text-2xl font-black tracking-tight text-white lg:text-[1.75rem]">مدیریت کاربران</h1>
+                            <h1 class="text-2xl font-black tracking-tight text-white lg:text-[1.75rem]">
+                                {{ $listOnly ? 'لیست کاربران' : 'مدیریت کاربران' }}
+                            </h1>
                         </div>
                         <p class="mt-1.5 max-w-2xl text-xs leading-5 text-slate-200/90 sm:text-sm sm:leading-6 lg:max-w-xl">
-                            ایجاد و بررسی کاربران، جستجو، فیلتر و انجام تغییرات مدیریتی
+                            {{ $listOnly ? 'مشاهده، جستجو و فیلتر کاربران با همان ظاهر فعلی سیستم' : 'ایجاد و بررسی کاربران، جستجو، فیلتر و انجام تغییرات مدیریتی' }}
                         </p>
                     </div>
                     <div class="grid grid-cols-7 gap-1 lg:w-auto lg:min-w-[24rem] lg:gap-1.5">
@@ -47,7 +49,7 @@
                     </div>
                 @endif
 
-                @if($isManager && $hasPendingRequests)
+                @if(! $listOnly && $isManager && $hasPendingRequests)
                     <div class="rounded-2xl border border-indigo-200 bg-indigo-50/80 p-3 shadow-sm sm:p-4">
                         <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
                             <div>
@@ -77,7 +79,7 @@
                     </div>
                 @endif
 
-                @unless($viewingDeletedUsers)
+                @unless($listOnly || $viewingDeletedUsers)
                 <form wire:submit.prevent="createUser" class="rounded-2xl border border-slate-200 bg-slate-50/70 p-3 shadow-sm sm:p-4 sm:rounded-3xl">
                     <div class="mb-3 flex flex-col gap-2 border-b border-slate-200 pb-3 sm:flex-row sm:items-end sm:justify-between">
                         <div>
@@ -175,6 +177,7 @@
                 </form>
                 @endunless
 
+                @if($listOnly)
                 <div class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4 sm:rounded-3xl">
                     <div class="mb-4 flex flex-col gap-3 border-b border-slate-200 pb-4 lg:flex-row lg:items-end lg:justify-between">
                         <div>
@@ -185,7 +188,7 @@
                             <a href="{{ route('admin.user-management') }}" class="inline-flex items-center justify-center rounded-xl border px-4 py-2 text-sm font-semibold transition {{ $viewingDeletedUsers ? 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50' : 'border-indigo-200 bg-indigo-50 text-indigo-700' }}">
                                 کاربران فعال
                             </a>
-                            <a href="{{ route('admin.user-management.deleted') }}" class="inline-flex items-center justify-center rounded-xl border px-4 py-2 text-sm font-semibold transition {{ $viewingDeletedUsers ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50' }}">
+                            <a href="{{ route('admin.user-list.deleted') }}" class="inline-flex items-center justify-center rounded-xl border px-4 py-2 text-sm font-semibold transition {{ $viewingDeletedUsers ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50' }}">
                                 کاربران غیرفعال
                             </a>
                             @unless($viewingDeletedUsers)
@@ -329,6 +332,7 @@
                         {{ $users->links() }}
                     </div>
                 </div>
+                @endif
             </div>
         </div>
     </div>

@@ -34,10 +34,14 @@ class UserManagement extends Component
     public string $statusFilter = 'all';
     public string $permissionFilter = 'all';
     public bool $viewingDeletedUsersState = false;
+    public bool $listOnly = false;
 
-    public function mount(bool $showDeletedUsers = false): void
+    public function mount(bool $showDeletedUsers = false, bool $listOnly = false): void
     {
-        $this->viewingDeletedUsersState = $showDeletedUsers || request()->routeIs('admin.user-management.deleted');
+        $this->listOnly = $listOnly;
+        $this->viewingDeletedUsersState = $showDeletedUsers
+            || request()->routeIs('admin.user-management.deleted')
+            || request()->routeIs('admin.user-list.deleted');
     }
 
     private function viewingDeletedUsers(): bool

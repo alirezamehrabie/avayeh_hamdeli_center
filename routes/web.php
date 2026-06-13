@@ -76,7 +76,15 @@ Route::get('/admin/system-settings/users', DashboardHome::class)
     ->middleware(['auth', 'can:full-access'])
     ->name('admin.user-management');
 
-Route::get('/admin/system-settings/users/deleted', DashboardHome::class)
+Route::get('/admin/system-settings/user-list', DashboardHome::class)
+    ->middleware(['auth', 'can:full-access'])
+    ->name('admin.user-list');
+
+Route::get('/admin/system-settings/user-list/deleted', DashboardHome::class)
+    ->middleware(['auth', 'can:full-access'])
+    ->name('admin.user-list.deleted');
+
+Route::redirect('/admin/system-settings/users/deleted', '/admin/system-settings/user-list/deleted')
     ->middleware(['auth', 'can:full-access'])
     ->name('admin.user-management.deleted');
 
