@@ -166,10 +166,6 @@
                                     </label>
                                 @endforeach
                             </div>
-                            <div class="mt-1 flex flex-wrap gap-3 text-[11px] text-slate-500">
-                                <span>فقط دسترسی‌های لازم را فعال کنید.</span>
-                                <span>دسترسی کامل، سایر گزینه‌ها را پوشش می‌دهد.</span>
-                            </div>
                             @error('permissions') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
                             @error('permissions.*') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
                         </div>
@@ -264,7 +260,7 @@
                                                     <span class="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">محافظت‌شده</span>
                                                 @endif
                                             </div>
-                                            <p class="mt-0.5 truncate text-[11px] text-slate-500">{{ $user->name }} · {{ $user->email }}</p>
+                                            <p class="mt-0.5 truncate text-[11px] text-slate-500">{{ $user->name }}</p>
                                         </div>
                                         <span class="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 {{ $roleClasses }}">{{ $roleLabel }}</span>
                                     </div>
