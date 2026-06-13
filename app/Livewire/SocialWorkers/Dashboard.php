@@ -41,7 +41,7 @@ class Dashboard extends Component
 
     public function updatedSelectedServiceId(): void
     {
-        $this->recipientEntries = [$this->blankEntry()];
+        $this->recipientEntries = [$this->blankEntry($this->defaultServiceCategoryId())];
         $this->activeRecipientSearchIndex = null;
         $this->syncQuotaState();
         $this->serviceSelectionWarning = '';
@@ -62,7 +62,7 @@ class Dashboard extends Component
 
     public function addRecipientField(): void
     {
-        $this->recipientEntries[] = $this->blankEntry();
+        $this->recipientEntries[] = $this->blankEntry($this->defaultServiceCategoryId());
     }
 
     public function removeRecipientField(int $index): void
@@ -71,7 +71,7 @@ class Dashboard extends Component
         $this->recipientEntries = array_values($this->recipientEntries);
 
         if ($this->recipientEntries === []) {
-            $this->recipientEntries = [$this->blankEntry()];
+            $this->recipientEntries = [$this->blankEntry($this->defaultServiceCategoryId())];
         }
     }
 
@@ -216,6 +216,7 @@ class Dashboard extends Component
                 $guardianId = null;
                 $fullName = trim((string) ($entry['full_name'] ?? ''));
                 $mobile = trim((string) ($entry['mobile'] ?? '')) ?: null;
+                $serviceCategoryId = (int) $entry['service_category_id'];
 
                 if ($service->service_type === 'family') {
                     $guardian = Guardian::query()
@@ -249,6 +250,7 @@ class Dashboard extends Component
                     'full_name' => $fullName,
                     'mobile' => $mobile,
                     'delivered_quantity' => $entry['quantity'],
+                    'service_category_id' => $serviceCategoryId,
                     'value_per_unit_snapshot' => $deliveryUnitValue,
                     'delivered_total_value' => (int) round((float) $entry['quantity'] * $deliveryUnitValue),
                     'delivered_at' => $this->jalaliToGregorian($validated['deliveredAt']),
@@ -281,7 +283,7 @@ class Dashboard extends Component
                 ),
             ],
         ]);
-        $this->recipientEntries = [$this->blankEntry()];
+        $this->recipientEntries = [$this->blankEntry($this->defaultServiceCategoryId())];
         $this->notes = '';
         $this->deliveredAt = $this->defaultDeliveredAt();
     }
@@ -398,6 +400,11 @@ class Dashboard extends Component
             ],
             'recipientEntries.*.mobile' => ['nullable', 'regex:/^09[0-9]{9}$/'],
             'recipientEntries.*.quantity' => ['required', 'numeric', 'min:0.01'],
+            'recipientEntries.*.service_category_id' => [
+                'required',
+                'integer',
+                Rule::exists('service_categories', 'id')->where(fn ($query) => $query->where('service_id', $this->selectedServiceId)),
+            ],
             'deliveredAt' => [
                 'required',
                 'string',
@@ -429,13 +436,14 @@ class Dashboard extends Component
         return (int) auth()->user()->social_worker_id;
     }
 
-    protected function blankEntry(): array
+    protected function blankEntry(?int $categoryId = null): array
     {
         return [
             'national_id' => '',
             'full_name' => '',
             'mobile' => '',
             'quantity' => '',
+            'service_category_id' => $categoryId,
             'is_unregistered' => false,
             'not_found_notice' => '',
             'resolved_name' => '',
@@ -482,6 +490,11 @@ class Dashboard extends Component
         $this->quotaState = [
             'service_type' => $this->serviceTypeLabel($this->selectedService?->service_type),
         ];
+    }
+
+    protected function defaultServiceCategoryId(): ?int
+    {
+        return $this->selectedService?->categories()->ordered()->value('id');
     }
 
     protected function serviceTypeLabel(?string $serviceType): string

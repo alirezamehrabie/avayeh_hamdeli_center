@@ -279,8 +279,24 @@
                                             </div>
                                         </div>
 
+                                        <!-- Category Select -->
+                                        <div class="md:col-span-6">
+                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-500 mr-1">دسته‌بندی خدمت</label>
+                                            <select
+                                                wire:model.live="recipientEntries.{{ $index }}.service_category_id"
+                                                @disabled(!$this->selectedService)
+                                                class="w-full rounded-xl border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all"
+                                            >
+                                                <option value="">انتخاب دسته‌بندی</option>
+                                                @foreach(($this->selectedService?->categories ?? collect())->sortBy('sort_id') as $category)
+                                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            @error('recipientEntries.' . $index . '.service_category_id') <p class="mt-1 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror
+                                        </div>
+
                                         <!-- Quantity Input -->
-                                        <div class="md:col-span-4">
+                                        <div class="md:col-span-6">
                                             <label class="mb-1.5 block text-[11px] font-bold text-slate-500 mr-1">مقدار تحویلی</label>
                                             <input type="number" min="0.01" step="0.01"
                                                    wire:model.blur="recipientEntries.{{ $index }}.quantity"

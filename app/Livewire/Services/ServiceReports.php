@@ -30,6 +30,7 @@ class ServiceReports extends Component
     public string $editRecipientName = '';
     public string $editNationalId = '';
     public string $editMobile = '';
+    public ?int $editServiceCategoryId = null;
     public string $editDeliveredQuantity = '';
     public string $editDeliveredAt = '';
     public string $editNotes = '';
@@ -124,6 +125,7 @@ class ServiceReports extends Component
                 'categories',
                 'district',
                 'socialWorkers',
+                'deliveries.serviceCategory',
                 'deliveries.person.guardian',
                 'deliveries.guardian',
                 'deliveries.socialWorker',
@@ -198,6 +200,9 @@ class ServiceReports extends Component
         $this->editRecipientName = (string) ($delivery->full_name ?? '');
         $this->editNationalId = (string) ($delivery->national_id ?? '');
         $this->editMobile = (string) ($delivery->mobile ?? '');
+        $this->editServiceCategoryId = $delivery->service_category_id
+            ? (int) $delivery->service_category_id
+            : ($this->selectedService?->categories()->ordered()->value('id') ? (int) $this->selectedService->categories()->ordered()->value('id') : null);
         $this->editDeliveredQuantity = $this->formatDecimal($delivery->delivered_quantity);
         $this->editDeliveredAt = $delivery->delivered_at
             ? Jalalian::fromDateTime($delivery->delivered_at)->format('Y/m/d')
@@ -334,6 +339,7 @@ class ServiceReports extends Component
             'full_name' => trim((string) ($validated['editRecipientName'] ?? '')),
             'national_id' => trim($validated['editNationalId']),
             'mobile' => trim($validated['editMobile']) !== '' ? trim($validated['editMobile']) : null,
+            'service_category_id' => (int) $validated['editServiceCategoryId'],
             'delivered_quantity' => $newQuantity,
             'delivered_total_value' => (int) round($newQuantity * (int) $delivery->value_per_unit_snapshot),
             'delivered_at' => $this->jalaliToGregorian($validated['editDeliveredAt']),
@@ -352,6 +358,7 @@ class ServiceReports extends Component
         $this->editRecipientName = '';
         $this->editNationalId = '';
         $this->editMobile = '';
+        $this->editServiceCategoryId = null;
         $this->editDeliveredQuantity = '';
         $this->editDeliveredAt = '';
         $this->editNotes = '';
@@ -386,6 +393,11 @@ class ServiceReports extends Component
             'editRecipientName' => ['nullable', 'string', 'max:255'],
             'editNationalId' => ['required', 'string', 'max:20'],
             'editMobile' => ['nullable', 'regex:/^09[0-9]{9}$/'],
+            'editServiceCategoryId' => [
+                'required',
+                'integer',
+                Rule::exists('service_categories', 'id')->where(fn ($query) => $query->where('service_id', $this->selectedServiceId)),
+            ],
             'editDeliveredQuantity' => ['required', 'numeric', 'min:0.01'],
             'editDeliveredAt' => [
                 'required',
@@ -406,6 +418,7 @@ class ServiceReports extends Component
             'editRecipientName' => 'نام گیرنده',
             'editNationalId' => 'کد ملی گیرنده',
             'editMobile' => 'موبایل',
+            'editServiceCategoryId' => 'دسته‌بندی خدمت',
             'editDeliveredQuantity' => 'مقدار تحویل',
             'editDeliveredAt' => 'تاریخ تحویل',
             'editNotes' => 'توضیحات',

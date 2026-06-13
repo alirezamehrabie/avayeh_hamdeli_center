@@ -117,7 +117,7 @@
                                 <button type="button" wire:click="editServiceName({{ $item->id }})" class="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-right transition hover:border-indigo-300">
                                     <span class="text-sm font-semibold text-slate-800">{{ $item->name }}</span>
                                     <span class="flex items-center gap-1.5">
-                                        <span class="text-[11px] text-slate-500">{{ $item->categories_count }} دسته</span>
+                                        <span class="text-[11px] text-slate-500">{{ $item->category_templates_count }} دسته</span>
                                         <svg class="h-3.5 w-3.5 text-slate-300 transition group-hover:text-slate-400" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                             <path d="M4 20h4l10.5-10.5a1.5 1.5 0 0 0 0-2.1l-1.9-1.9a1.5 1.5 0 0 0-2.1 0L4 16v4Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
                                             <path d="M13.5 6.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />

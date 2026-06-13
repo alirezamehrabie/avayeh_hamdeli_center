@@ -375,6 +375,7 @@
                                         @if($delivery->mobile)
                                             <p>موبایل: {{ $delivery->mobile }}</p>
                                         @endif
+                                        <p>دسته‌بندی: {{ $delivery->serviceCategory?->name ?: '-' }}</p>
                                     </div>
                                 </td>
                                 <td class="px-4 py-4 text-center"><span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold {{ $typeBadge }}">{{ $recipientType }}</span></td>
@@ -519,6 +520,19 @@
                                     class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
                                 >
                                 @error('editMobile') <p class="mt-1 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="mb-1 block text-xs font-bold text-slate-700">دسته‌بندی خدمت</label>
+                                <select
+                                    wire:model.defer="editServiceCategoryId"
+                                    class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                                >
+                                    <option value="">انتخاب دسته‌بندی</option>
+                                    @foreach($selectedService?->categories?->sortBy('sort_id') ?? [] as $category)
+                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                    @endforeach
+                                </select>
+                                @error('editServiceCategoryId') <p class="mt-1 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="mb-1 block text-xs font-bold text-slate-700">مقدار تحویل</label>

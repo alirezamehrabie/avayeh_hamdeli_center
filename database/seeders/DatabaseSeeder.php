@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
             DistrictSeeder::class,
             OccupationSeeder::class,
             ServiceNameSeeder::class,
-            ServiceCategorySeeder::class,
+            ServiceCategoryTemplateSeeder::class,
             ServiceUnitSeeder::class,
             SadaatRelationsSeeder::class,
             SkillsTableSeeder::class,

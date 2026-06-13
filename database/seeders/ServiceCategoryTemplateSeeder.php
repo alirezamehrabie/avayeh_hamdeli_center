@@ -3,10 +3,10 @@
 namespace Database\Seeders;
 
 use App\Models\ServiceName;
-use App\Models\ServiceCategory;
+use App\Models\ServiceCategoryTemplate;
 use Illuminate\Database\Seeder;
 
-class ServiceCategorySeeder extends Seeder
+class ServiceCategoryTemplateSeeder extends Seeder
 {
     public function run(): void
     {
@@ -77,7 +77,7 @@ class ServiceCategorySeeder extends Seeder
             ],
         ];
 
-        ServiceCategory::query()->whereNull('service_name_id')->delete();
+        ServiceCategoryTemplate::query()->whereNull('service_name_id')->delete();
 
         foreach ($scopedCategories as $serviceName => $categories) {
             $serviceNameId = ServiceName::query()->where('name', $serviceName)->value('id');
@@ -87,7 +87,7 @@ class ServiceCategorySeeder extends Seeder
             }
 
             foreach ($categories as $sortId => $name) {
-                ServiceCategory::query()->updateOrCreate(
+                ServiceCategoryTemplate::query()->updateOrCreate(
                     [
                         'service_name_id' => $serviceNameId,
                         'name' => $name,

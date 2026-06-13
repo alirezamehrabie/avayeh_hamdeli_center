@@ -34,4 +34,9 @@ class ServiceName extends Model
     {
         return $this->hasMany(ServiceCategory::class);
     }
+
+    public function categoryTemplates(): HasMany
+    {
+        return $this->hasMany(ServiceCategoryTemplate::class);
+    }
 }

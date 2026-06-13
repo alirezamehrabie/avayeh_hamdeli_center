@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Services;
 
-use App\Models\ServiceCategory;
+use App\Models\ServiceCategoryTemplate;
 use App\Models\ServiceName;
 use App\Models\ServiceUnit;
 use App\Traits\InteractsWithNotificationModal;
@@ -99,7 +99,7 @@ class ServiceManagement extends Component
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('service_categories', 'name')
+                Rule::unique('service_category_templates', 'name')
                     ->where(fn ($query) => $query
                         ->where('service_name_id', $this->selectedServiceNameId)
                         ->whereNull('deleted_at'))
@@ -110,16 +110,16 @@ class ServiceManagement extends Component
             'categoryName' => 'دسته‌بندی خدمت',
         ]);
 
-        ServiceCategory::query()->updateOrCreate(
+        ServiceCategoryTemplate::query()->updateOrCreate(
             ['id' => $this->editingCategoryId],
             [
                 'service_name_id' => (int) $validated['selectedServiceNameId'],
                 'name' => trim($validated['categoryName']),
                 'sort_id' => $this->editingCategoryId
-                    ? ServiceCategory::query()->whereKey($this->editingCategoryId)->value('sort_id')
-                    : $this->getNextSortId(ServiceCategory::query()),
+                    ? ServiceCategoryTemplate::query()->whereKey($this->editingCategoryId)->value('sort_id')
+                    : $this->getNextSortId(ServiceCategoryTemplate::query()),
                 'created_by' => $this->editingCategoryId
-                    ? ServiceCategory::query()->whereKey($this->editingCategoryId)->value('created_by')
+                    ? ServiceCategoryTemplate::query()->whereKey($this->editingCategoryId)->value('created_by')
                     : auth()->id(),
             ]
         );
@@ -130,7 +130,7 @@ class ServiceManagement extends Component
 
     public function editCategory(int $categoryId): void
     {
-        $category = ServiceCategory::query()->findOrFail($categoryId);
+        $category = ServiceCategoryTemplate::query()->findOrFail($categoryId);
 
         $this->editingCategoryId = $category->id;
         $this->selectedServiceNameId = $category->service_name_id;
@@ -212,8 +212,8 @@ class ServiceManagement extends Component
             ->ordered();
 
         return view('livewire.services.service-management', [
-            'serviceNames' => $serviceNamesQuery->withCount('categories')->get(),
-            'serviceCategories' => ServiceCategory::query()
+            'serviceNames' => $serviceNamesQuery->withCount('categoryTemplates')->get(),
+            'serviceCategories' => ServiceCategoryTemplate::query()
                 ->with('serviceName')
                 ->when($this->selectedServiceNameId, fn ($query) => $query->where('service_name_id', $this->selectedServiceNameId))
                 ->ordered()

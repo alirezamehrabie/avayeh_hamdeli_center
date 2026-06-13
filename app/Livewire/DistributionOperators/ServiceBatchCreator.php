@@ -5,6 +5,7 @@ namespace App\Livewire\DistributionOperators;
 use App\Helpers\Morilog\Jalalian;
 use App\Models\Service;
 use App\Models\ServiceCategory;
+use App\Models\ServiceCategoryTemplate;
 use App\Models\ServiceName;
 use App\Models\SocialWorker;
 use Illuminate\Database\Eloquent\Builder;
@@ -378,9 +379,9 @@ class ServiceBatchCreator extends Component
         ]);
     }
 
-    protected function resolveDefaultServiceCategory(int $serviceNameId): ServiceCategory
+    protected function resolveDefaultServiceCategory(int $serviceNameId): ServiceCategoryTemplate
     {
-        $serviceCategory = ServiceCategory::query()
+        $serviceCategory = ServiceCategoryTemplate::query()
             ->where('service_name_id', $serviceNameId)
             ->where('name', self::DEFAULT_SERVICE_CATEGORY)
             ->first();
