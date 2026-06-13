@@ -1,4 +1,4 @@
-<div class="bg-slate-50/80">
+<div class="bg-slate-50/80" x-data="{ statsModalOpen: false }" x-on:keydown.escape.window="statsModalOpen = false">
     <div class="{{ $listOnly ? 'w-full p-0' : 'container mx-auto p-0' }}">
         <div class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_20px_80px_-30px_rgba(15,23,42,0.35)] sm:rounded-[2rem] {{ $listOnly ? 'flex min-h-0 flex-col' : '' }}">
             <div class="border-b border-slate-200 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 px-4 py-4 text-white sm:px-5 sm:py-5 lg:px-6 lg:py-3.5">
@@ -13,31 +13,32 @@
                             {{ $listOnly ? 'مشاهده، جستجو و فیلتر کاربران با همان ظاهر فعلی سیستم' : 'ایجاد و تعریف حساب کاربری جدید با نقش و دسترسی مشخص' }}
                         </p>
                     </div>
-                    <div class="grid grid-cols-7 gap-1 lg:w-auto lg:min-w-[24rem] lg:gap-1.5">
-                        <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-lg border border-white/10 bg-white/5 px-1.5 py-1 backdrop-blur">
-                            <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300">کاربران</span>
-                            <span class="mt-0.5 text-xs font-semibold leading-4 text-white">{{ $userStats['total'] }}</span>
+                    <div class="flex items-center gap-2 lg:min-w-[18rem] lg:justify-end">
+                        <div class="flex min-h-12 min-w-0 flex-1 items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur lg:flex-none lg:min-w-52">
+                            <div class="min-w-0">
+                                <span class="block truncate text-[10px] font-semibold text-slate-300">خلاصه کاربران</span>
+                                <span class="mt-0.5 block truncate text-xs text-slate-400">فعال و غیرفعال</span>
+                            </div>
+                            <div class="shrink-0 text-left">
+                                <span class="block text-lg font-black leading-5 text-white">{{ $userStats['total'] }}</span>
+                            </div>
                         </div>
-                        <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-lg border border-white/10 bg-white/5 px-1.5 py-1 backdrop-blur">
-                            <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300">ادمین</span>
-                            <span class="mt-0.5 text-xs font-semibold leading-4 text-white">{{ $userStats['admins'] }}</span>
-                        </div>
-                        <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-lg border border-cyan-200/15 bg-cyan-500/10 px-1.5 py-1 backdrop-blur">
-                            <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300">توزیع</span>
-                            <span class="mt-0.5 text-xs font-semibold leading-4 text-cyan-50">{{ $userStats['distributionOperators'] }}</span>
-                        </div>
-                        <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-lg border border-emerald-200/15 bg-emerald-500/10 px-1.5 py-1 backdrop-blur">
-                            <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300">مددکار</span>
-                            <span class="mt-0.5 text-xs font-semibold leading-4 text-emerald-50">{{ $userStats['socialWorkers'] }}</span>
-                        </div>
-                        <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-lg border border-teal-200/15 bg-teal-500/10 px-1.5 py-1 backdrop-blur">
-                            <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300">حامی</span>
-                            <span class="mt-0.5 text-xs font-semibold leading-4 text-teal-50">{{ $userStats['childSupporters'] }}</span>
-                        </div>
-                        <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-lg border border-white/10 bg-white/5 px-1.5 py-1 backdrop-blur">
-                            <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300">عادی</span>
-                            <span class="mt-0.5 text-xs font-semibold leading-4 text-white">{{ $userStats['regular'] }}</span>
-                        </div>
+
+                        <button
+                            type="button"
+                            x-on:click="statsModalOpen = true"
+                            class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/10 text-white transition hover:bg-white/15 focus:outline-none focus-visible:ring-4 focus-visible:ring-white/20"
+                            aria-label="نمایش آمار نقش‌های کاربران"
+                            title="آمار نقش‌ها"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M4 19V5" />
+                                <path d="M4 19h16" />
+                                <path d="M8 16v-5" />
+                                <path d="M12 16V8" />
+                                <path d="M16 16v-9" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -333,6 +334,60 @@
                     </div>
                 </div>
                 @endif
+            </div>
+        </div>
+    </div>
+
+    <div
+        x-cloak
+        x-show="statsModalOpen"
+        x-transition.opacity.duration.150ms
+        class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 px-3 py-3 backdrop-blur-sm sm:items-center sm:px-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="user-role-stats-title"
+    >
+        <div class="absolute inset-0" x-on:click="statsModalOpen = false" aria-hidden="true"></div>
+
+        <div
+            x-show="statsModalOpen"
+            x-transition.scale.origin.bottom.duration.150ms
+            class="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl"
+        >
+            <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 sm:px-5">
+                <div>
+                    <h2 id="user-role-stats-title" class="text-base font-black text-slate-900">آمار نقش‌های کاربران</h2>
+                    <p class="mt-1 text-xs text-slate-500">نمای خلاصه از توزیع نقش‌ها و وضعیت کاربران سیستم.</p>
+                </div>
+
+                <button
+                    type="button"
+                    x-on:click="statsModalOpen = false"
+                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-slate-200"
+                    aria-label="بستن آمار نقش‌ها"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M18 6 6 18" />
+                        <path d="M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="grid gap-2 px-4 py-4 sm:grid-cols-2 sm:px-5">
+                @foreach ([
+                    ['label' => 'کل کاربران', 'value' => $userStats['total'], 'class' => 'bg-slate-50 text-slate-700 ring-slate-200'],
+                    ['label' => 'ادمین', 'value' => $userStats['admins'], 'class' => 'bg-indigo-50 text-indigo-700 ring-indigo-200'],
+                    ['label' => 'اپراتور توزیع', 'value' => $userStats['distributionOperators'], 'class' => 'bg-cyan-50 text-cyan-700 ring-cyan-200'],
+                    ['label' => 'مددکار', 'value' => $userStats['socialWorkers'], 'class' => 'bg-emerald-50 text-emerald-700 ring-emerald-200'],
+                    ['label' => 'حامی کودک', 'value' => $userStats['childSupporters'], 'class' => 'bg-teal-50 text-teal-700 ring-teal-200'],
+                    ['label' => 'کاربر عادی', 'value' => $userStats['regular'], 'class' => 'bg-slate-50 text-slate-700 ring-slate-200'],
+                    ['label' => 'غیرفعال', 'value' => $userStats['deleted'], 'class' => 'bg-rose-50 text-rose-700 ring-rose-200'],
+                ] as $stat)
+                    <div class="flex items-center justify-between rounded-2xl px-3 py-3 ring-1 {{ $stat['class'] }}">
+                        <span class="text-xs font-bold">{{ $stat['label'] }}</span>
+                        <span class="text-lg font-black">{{ $stat['value'] }}</span>
+                    </div>
+                @endforeach
             </div>
         </div>
     </div>
