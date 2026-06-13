@@ -2,6 +2,8 @@
 
 namespace App\Livewire\Services;
 
+use App\Helpers\Morilog\CalendarUtils;
+use App\Helpers\Morilog\Jalalian;
 use App\Models\District;
 use App\Models\Service;
 use App\Models\ServiceCategory;
@@ -19,8 +21,8 @@ class ManageServices extends Component
     public string $serviceType = 'individual';
     public string $description = '';
     public ?int $serviceDistrictId = null;
-    public string $distributionStartDate = '';
-    public string $distributionEndDate = '';
+    public ?string $distributionStartDate = null;
+    public ?string $distributionEndDate = null;
     public string $priority = '';
     public string $status = 'draft';
     public string $statusNotes = '';
@@ -81,8 +83,10 @@ class ManageServices extends Component
                 'service_type' => $validated['serviceType'],
                 'description' => $validated['description'] ?: null,
                 'district_id' => $validated['serviceDistrictId'] ?: null,
-                'distribution_start_date' => $validated['distributionStartDate'],
-                'distribution_end_date' => $validated['distributionEndDate'],
+                'distribution_start_date' => $this->jalaliToGregorian($validated['distributionStartDate']),
+                'distribution_end_date' => blank($validated['distributionEndDate'])
+                    ? null
+                    : $this->jalaliToGregorian($validated['distributionEndDate']),
                 'priority' => $validated['priority'] ?: null,
                 'status' => $validated['status'],
                 'status_notes' => $validated['statusNotes'] ?: null,
@@ -159,8 +163,12 @@ class ManageServices extends Component
         $this->serviceType = $service->service_type;
         $this->description = (string) $service->description;
         $this->serviceDistrictId = $service->district_id;
-        $this->distributionStartDate = optional($service->distribution_start_date)->format('Y-m-d') ?? '';
-        $this->distributionEndDate = optional($service->distribution_end_date)->format('Y-m-d') ?? '';
+        $this->distributionStartDate = $service->distribution_start_date
+            ? Jalalian::fromDateTime($service->distribution_start_date)->format('Y/m/d')
+            : null;
+        $this->distributionEndDate = $service->distribution_end_date
+            ? Jalalian::fromDateTime($service->distribution_end_date)->format('Y/m/d')
+            : null;
         $this->priority = (string) $service->priority;
         $this->status = (string) $service->status;
         $this->statusNotes = (string) $service->status_notes;
@@ -225,8 +233,38 @@ class ManageServices extends Component
             'serviceType' => ['required', Rule::in(array_keys(Service::TYPE_OPTIONS))],
             'description' => ['nullable', 'string', 'max:5000'],
             'serviceDistrictId' => ['nullable', 'integer', 'exists:districts,id'],
-            'distributionStartDate' => ['required', 'date'],
-            'distributionEndDate' => ['required', 'date', 'after_or_equal:distributionStartDate'],
+            'distributionStartDate' => [
+                'required',
+                'string',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (! $this->isValidJalaliDate((string) $value)) {
+                        $fail('تاریخ شروع توزیع شمسی معتبر نیست.');
+                    }
+                },
+            ],
+            'distributionEndDate' => [
+                'nullable',
+                'string',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (blank($value)) {
+                        return;
+                    }
+
+                    if (! $this->isValidJalaliDate((string) $value)) {
+                        $fail('تاریخ پایان توزیع شمسی معتبر نیست.');
+                        return;
+                    }
+
+                    if (
+                        filled($this->distributionStartDate)
+                        && $this->isValidJalaliDate((string) $this->distributionStartDate)
+                        && Jalalian::fromFormat('Y/m/d', trim((string) $value))
+                            ->lessThan(Jalalian::fromFormat('Y/m/d', trim((string) $this->distributionStartDate)))
+                    ) {
+                        $fail('تاریخ پایان توزیع باید برابر یا بعد از تاریخ شروع توزیع باشد.');
+                    }
+                },
+            ],
             'priority' => ['nullable', Rule::in(array_keys(Service::PRIORITY_OPTIONS))],
             'status' => ['required', Rule::in(array_keys(Service::STATUS_OPTIONS))],
             'statusNotes' => ['nullable', 'string', 'max:5000'],
@@ -246,8 +284,8 @@ class ManageServices extends Component
             'serviceType' => 'نوع خدمت',
             'description' => 'توضیحات خدمت',
             'serviceDistrictId' => 'منطقه خدمت',
-            'distributionStartDate' => 'تاریخ شروع توزیع',
-            'distributionEndDate' => 'تاریخ پایان توزیع',
+            'distributionStartDate' => 'تاریخ شروع توزیع شمسی',
+            'distributionEndDate' => 'تاریخ پایان توزیع شمسی',
             'priority' => 'اولویت',
             'status' => 'وضعیت خدمت',
             'statusNotes' => 'یادداشت وضعیت',
@@ -263,6 +301,10 @@ class ManageServices extends Component
     {
         if ($this->categories === []) {
             $this->categories[] = $this->emptyCategory();
+        }
+
+        if (blank($this->distributionStartDate)) {
+            $this->distributionStartDate = Jalalian::now()->format('Y/m/d');
         }
 
         $this->serviceType = $this->serviceType ?: 'individual';
@@ -362,5 +404,23 @@ class ManageServices extends Component
         return fmod($number, 1.0) === 0.0
             ? (string) (int) $number
             : number_format($number, 2, '.', '');
+    }
+
+    protected function isValidJalaliDate(string $date): bool
+    {
+        $parts = explode('/', trim($date));
+
+        if (count($parts) !== 3) {
+            return false;
+        }
+
+        [$year, $month, $day] = array_map('intval', $parts);
+
+        return CalendarUtils::isValidateJalaliDate($year, $month, $day);
+    }
+
+    protected function jalaliToGregorian(string $date): string
+    {
+        return Jalalian::fromFormat('Y/m/d', trim($date))->toCarbon()->toDateString();
     }
 }

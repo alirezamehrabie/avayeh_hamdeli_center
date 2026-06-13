@@ -160,12 +160,26 @@
                                 </div>
                                 <div class="grid gap-3 sm:grid-cols-2">
                                     <div>
-                                        <label class="mb-2 block text-sm font-bold text-slate-700">شروع توزیع</label>
-                                        <input type="date" wire:model="distributionStartDate" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
+                                        <label class="mb-2 block text-sm font-bold text-slate-700">شروع توزیع (شمسی)</label>
+                                        <input
+                                            type="text"
+                                            wire:model.blur="distributionStartDate"
+                                            inputmode="numeric"
+                                            dir="ltr"
+                                            placeholder="1405/03/23"
+                                            class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
+                                        >
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-bold text-slate-700">پایان توزیع</label>
-                                        <input type="date" wire:model="distributionEndDate" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
+                                        <label class="mb-2 block text-sm font-bold text-slate-700">پایان توزیع (شمسی، اختیاری)</label>
+                                        <input
+                                            type="text"
+                                            wire:model.blur="distributionEndDate"
+                                            inputmode="numeric"
+                                            dir="ltr"
+                                            placeholder="1405/03/30"
+                                            class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
+                                        >
                                     </div>
                                 </div>
                                 <div>
