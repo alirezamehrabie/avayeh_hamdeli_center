@@ -8,7 +8,6 @@ use App\Models\ServiceCategory;
 use App\Models\ServiceName;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 
@@ -88,14 +87,9 @@ class ManageServices extends Component
                 'status' => $validated['status'],
                 'status_notes' => $validated['statusNotes'] ?: null,
                 'total_quantity' => collect($validated['categories'])->sum(fn (array $category) => (float) $category['quantity']),
-                'value_per_unit' => 0,
                 'total_service_value' => 0,
                 'quantity_delivered' => $this->editingServiceId ? (float) $service->quantity_delivered : 0,
             ]);
-
-            if (Schema::hasColumn($service->getTable(), 'total_financial_value')) {
-                $service->total_financial_value = 0;
-            }
             $service->save();
 
             $service->categories()->withTrashed()->whereNotNull('deleted_at')->restore();

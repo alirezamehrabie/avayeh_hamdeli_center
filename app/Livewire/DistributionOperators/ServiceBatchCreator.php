@@ -189,7 +189,6 @@ class ServiceBatchCreator extends Component
                         $block['description'] ?? null
                     ),
                     'total_quantity' => $block['total_quantity'],
-                    'value_per_unit' => 0,
                     'total_service_value' => 0,
                     'district_id' => null,
                     'distribution_start_date' => $this->jalaliToGregorian($block['date']),

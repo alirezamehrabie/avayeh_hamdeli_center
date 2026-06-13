@@ -209,6 +209,8 @@ class Dashboard extends Component
         }
 
         DB::transaction(function () use ($service, $validated): void {
+            $deliveryUnitValue = $service->deliveryUnitValue();
+
             foreach ($validated['recipientEntries'] as $entry) {
                 $personId = null;
                 $guardianId = null;
@@ -247,8 +249,8 @@ class Dashboard extends Component
                     'full_name' => $fullName,
                     'mobile' => $mobile,
                     'delivered_quantity' => $entry['quantity'],
-                    'value_per_unit_snapshot' => $service->value_per_unit,
-                    'delivered_total_value' => (int) round((float) $entry['quantity'] * $service->value_per_unit),
+                    'value_per_unit_snapshot' => $deliveryUnitValue,
+                    'delivered_total_value' => (int) round((float) $entry['quantity'] * $deliveryUnitValue),
                     'delivered_at' => $this->jalaliToGregorian($validated['deliveredAt']),
                     'notes' => $validated['notes'] ?: null,
                     'created_by' => auth()->id(),

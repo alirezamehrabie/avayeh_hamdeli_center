@@ -47,9 +47,7 @@ class Service extends Model
         'service_type',
         'description',
         'total_quantity',
-        'value_per_unit',
         'total_service_value',
-        'total_financial_value',
         'district_id',
         'distribution_start_date',
         'distribution_end_date',
@@ -67,9 +65,7 @@ class Service extends Model
             'distribution_end_date' => 'date',
             'total_quantity' => 'decimal:2',
             'quantity_delivered' => 'decimal:2',
-            'value_per_unit' => 'integer',
             'total_service_value' => 'integer',
-            'total_financial_value' => 'integer',
             'created_by' => 'integer',
         ];
     }
@@ -80,15 +76,6 @@ class Service extends Model
             if (blank($service->code)) {
                 $service->code = static::generateNextCode();
             }
-
-
-            if (Schema::hasColumn($service->getTable(), 'total_financial_value') && blank($service->total_financial_value)) {
-                $service->total_financial_value = 0;
-            }
-        });
-
-        static::updated(function (self $service): void {
-            $service->syncDeliveryValues();
         });
     }
 
@@ -235,7 +222,7 @@ class Service extends Model
 
     public function refreshFinancialTotals(): void
     {
-        if (! Schema::hasColumn($this->getTable(), 'total_financial_value')) {
+        if (! Schema::hasColumn($this->getTable(), 'total_service_value')) {
             return;
         }
 
@@ -248,18 +235,32 @@ class Service extends Model
 
         $this->forceFill([
             'total_quantity' => $totalQuantity,
-            'total_financial_value' => $totalFinancialValue,
             'total_service_value' => $totalFinancialValue,
         ])->saveQuietly();
+
+        $this->syncDeliveryValues();
+    }
+
+    public function deliveryUnitValue(): int
+    {
+        $totalQuantity = (float) $this->total_quantity;
+
+        if ($totalQuantity <= 0) {
+            return 0;
+        }
+
+        $totalValue = (float) ($this->total_service_value ?: 0);
+
+        return (int) round($totalValue / $totalQuantity);
     }
 
     public function syncDeliveryValues(): void
     {
-        if (! $this->wasChanged('value_per_unit')) {
+        if (! Schema::hasTable('service_deliveries')) {
             return;
         }
 
-        $valuePerUnit = (int) $this->value_per_unit;
+        $valuePerUnit = $this->deliveryUnitValue();
 
         $this->deliveries()
             ->update([
