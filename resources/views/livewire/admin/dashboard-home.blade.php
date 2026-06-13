@@ -11,7 +11,7 @@
         }
     }"
     x-init="syncSidebar(); window.addEventListener('resize', () => syncSidebar())"
-    class="flex h-screen overflow-hidden"
+    class="flex h-full overflow-hidden"
     dir="rtl"
 >
     @include('layouts.partials.sidebar', ['dashboardMode' => true, 'activeSection' => $activeSection])
@@ -24,11 +24,11 @@
         style="display: none;"
     ></div>
 
-    <div class="flex flex-col flex-1 w-full overflow-y-auto">
+    <div class="flex min-w-0 min-h-0 flex-1 w-full flex-col overflow-y-auto">
         @include('layouts.partials.header')
 
-        <main class="px-2 py-4 lg:px-4">
-            <div class="container mx-auto">
+        <main class="min-h-0 px-2 py-4 lg:px-4">
+            <div class="container mx-auto min-h-0">
                 @switch($activeSection)
                     @case('people-fast-create')
                         <livewire:people.fast-create-person :person="$editingPerson" :embedded="true" :key="'people-fast-create-'.($editingPerson?->id ?? 'new')" />
