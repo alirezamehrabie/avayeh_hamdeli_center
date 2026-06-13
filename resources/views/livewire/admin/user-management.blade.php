@@ -1,6 +1,6 @@
-<div class="min-h-screen bg-slate-50/80">
-    <div class="container mx-auto p-0">
-        <div class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_20px_80px_-30px_rgba(15,23,42,0.35)] sm:rounded-[2rem]">
+<div class="{{ $listOnly ? 'bg-slate-50/80' : 'min-h-screen bg-slate-50/80' }}">
+    <div class="{{ $listOnly ? 'w-full p-0' : 'container mx-auto p-0' }}">
+        <div class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_20px_80px_-30px_rgba(15,23,42,0.35)] sm:rounded-[2rem] {{ $listOnly ? 'flex min-h-0 flex-col' : '' }}">
             <div class="border-b border-slate-200 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 px-4 py-4 text-white sm:px-5 sm:py-5 lg:px-6 lg:py-3.5">
                 <div class="flex flex-col gap-4 sm:gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div class="max-w-3xl">
@@ -42,7 +42,7 @@
                 </div>
             </div>
 
-            <div class="space-y-5 px-3 py-4 sm:px-5 sm:py-5 lg:px-8">
+            <div class="space-y-5 px-3 py-4 sm:px-5 sm:py-5 lg:px-8 {{ $listOnly ? 'min-h-0' : '' }}">
                 @if (session()->has('success'))
                     <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 shadow-sm">
                         {{ session('success') }}
@@ -178,7 +178,7 @@
                 @endunless
 
                 @if($listOnly)
-                <div class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4 sm:rounded-3xl">
+                <div class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:rounded-3xl sm:p-4">
                     <div class="mb-4 flex flex-col gap-3 border-b border-slate-200 pb-4 lg:flex-row lg:items-end lg:justify-between">
                         <div>
                             <h2 class="text-lg font-black text-slate-900">فهرست کاربران</h2>
