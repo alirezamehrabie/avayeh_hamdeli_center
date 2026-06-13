@@ -1,7 +1,7 @@
 <div class="bg-slate-50/80" x-data="{ statsModalOpen: false }" x-on:keydown.escape.window="statsModalOpen = false">
-    <div class="{{ $listOnly ? 'w-full p-0' : 'container mx-auto p-0' }}">
-        <div class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_20px_80px_-30px_rgba(15,23,42,0.35)] sm:rounded-[2rem] {{ $listOnly ? 'flex min-h-0 flex-col' : '' }}">
-            <div class="border-b border-slate-200 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 px-4 py-4 text-white sm:px-5 sm:py-5 lg:px-6 lg:py-3.5">
+    <div class="{{ $listOnly ? 'w-full p-0' : 'mx-auto w-full max-w-full p-0' }}">
+        <div class="w-full max-w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_20px_80px_-30px_rgba(15,23,42,0.35)] sm:rounded-[2rem] {{ $listOnly ? 'flex min-h-0 flex-col' : '' }}">
+            <div class="border-b border-slate-200 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 px-3 py-4 text-white sm:px-5 sm:py-5 lg:px-6 lg:py-3.5">
                 <div class="flex min-w-0 flex-col gap-4 sm:gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div class="min-w-0 max-w-3xl">
                         <div class="mt-1 flex flex-wrap items-center gap-2">
@@ -27,7 +27,7 @@
                         <button
                             type="button"
                             x-on:click="statsModalOpen = true"
-                            class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/10 text-white transition hover:bg-white/15 focus:outline-none focus-visible:ring-4 focus-visible:ring-white/20"
+                            class="inline-flex h-auto min-h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/10 text-white transition hover:bg-white/15 focus:outline-none focus-visible:ring-4 focus-visible:ring-white/20"
                             aria-label="نمایش آمار نقش‌های کاربران"
                             title="آمار نقش‌ها"
                         >
