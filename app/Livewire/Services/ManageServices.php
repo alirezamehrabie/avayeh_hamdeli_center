@@ -8,7 +8,6 @@ use App\Models\District;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\ServiceName;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -24,11 +23,12 @@ class ManageServices extends Component
     public ?string $distributionStartDate = null;
     public ?string $distributionEndDate = null;
     public string $priority = 'normal';
+
     public string $status = 'in_distribution';
     public string $statusNotes = '';
 
     /**
-     * @var array<int, array{ id:?int, code:string, name:string, quantity:string, unit:string, value:string }>
+     * @var array<int, array{id: ?int, code: string, name: string, quantity: string, unit: string, value: string}>
      */
     public array $categories = [];
 
