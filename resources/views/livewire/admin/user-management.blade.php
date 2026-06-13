@@ -131,6 +131,9 @@
                             <div class="grid grid-cols-1 gap-2 rounded-2xl border border-slate-200 bg-white p-2 sm:grid-cols-2 lg:grid-cols-5">
                                 @foreach ([
                                     'admin' => ['label' => 'ادمین', 'desc' => 'اپراتور ثبت'],
+                                    'distribution_operator' => ['label' => 'اپراتور توزیع', 'desc' => 'تعریف خدمات'],
+                                    'child_supporter' => ['label' => 'حامی کودک', 'desc' => 'نقش حمایتی'],
+                                    'regular_user' => ['label' => 'کاربر عادی', 'desc' => 'پیش‌فرض'],
                                     'manager' => ['label' => 'مدیریت', 'desc' => 'محافظت‌شده', 'disabled' => true],
                                 ] as $roleValue => $roleMeta)
                                     <label class="min-w-0 cursor-pointer">
@@ -154,7 +157,7 @@
                             <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">دسترسی‌های اختیاری</label>
                             <div class="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-3">
                                 @foreach($permissionOptions as $permissionKey => $permissionLabel)
-                                    <label class="cursor-pointer">
+                                    <label class="w-full cursor-pointer sm:w-auto">
                                         <input type="checkbox" value="{{ $permissionKey }}" wire:model="permissions" class="peer sr-only">
                                         <span class="inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-center text-xs font-semibold text-slate-600 transition peer-checked:border-indigo-300 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 sm:w-auto sm:justify-start sm:rounded-full">
                                             <span class="h-1.5 w-1.5 rounded-full bg-current opacity-40"></span>
