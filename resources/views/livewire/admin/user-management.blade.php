@@ -1,42 +1,39 @@
 <div class="min-h-screen bg-slate-50/80">
     <div class="container mx-auto p-0">
         <div class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_20px_80px_-30px_rgba(15,23,42,0.35)] sm:rounded-[2rem]">
-            <div class="border-b border-slate-200 bg-gradient-to-br from-slate-700 via-slate-650 to-stone-600 px-4 py-4 text-white sm:px-5 sm:py-5 lg:px-6 lg:py-3.5">
+            <div class="border-b border-slate-200 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 px-4 py-4 text-white sm:px-5 sm:py-5 lg:px-6 lg:py-3.5">
                 <div class="flex flex-col gap-4 sm:gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div class="max-w-3xl">
                         <div class="mt-1 flex flex-wrap items-center gap-2">
                             <h1 class="text-2xl font-black tracking-tight text-white lg:text-[1.75rem]">مدیریت کاربران</h1>
-                            <span class="hidden rounded-full border border-white/15 bg-white/12 px-2 py-0.5 text-[10px] font-semibold text-slate-100 lg:inline-flex">
-                                سریع
-                            </span>
                         </div>
                         <p class="mt-1.5 max-w-2xl text-xs leading-5 text-slate-200/90 sm:text-sm sm:leading-6 lg:max-w-xl">
                             ایجاد و بررسی کاربران، جستجو، فیلتر و انجام تغییرات مدیریتی
                         </p>
                     </div>
                     <div class="grid grid-cols-7 gap-1 lg:w-auto lg:min-w-[24rem] lg:gap-1.5">
-                        <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-md border border-white/10 bg-white/5 px-1.5 py-1 backdrop-blur">
-                            <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300/90">کاربران</span>
+                        <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-lg border border-white/10 bg-white/5 px-1.5 py-1 backdrop-blur">
+                            <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300">کاربران</span>
                             <span class="mt-0.5 text-xs font-semibold leading-4 text-white">{{ $userStats['total'] }}</span>
                         </div>
-                        <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-md border border-white/10 bg-white/5 px-1.5 py-1 backdrop-blur">
-                            <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300/90">ادمین</span>
+                        <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-lg border border-white/10 bg-white/5 px-1.5 py-1 backdrop-blur">
+                            <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300">ادمین</span>
                             <span class="mt-0.5 text-xs font-semibold leading-4 text-white">{{ $userStats['admins'] }}</span>
                         </div>
-                        <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-md border border-sky-200/15 bg-white/5 px-1.5 py-1 backdrop-blur">
-                            <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300/90">توزیع</span>
-                            <span class="mt-0.5 text-xs font-semibold leading-4 text-sky-50">{{ $userStats['distributionOperators'] }}</span>
+                        <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-lg border border-cyan-200/15 bg-cyan-500/10 px-1.5 py-1 backdrop-blur">
+                            <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300">توزیع</span>
+                            <span class="mt-0.5 text-xs font-semibold leading-4 text-cyan-50">{{ $userStats['distributionOperators'] }}</span>
                         </div>
-                        <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-md border border-stone-200/15 bg-white/5 px-1.5 py-1 backdrop-blur">
-                            <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300/90">مددکار</span>
-                            <span class="mt-0.5 text-xs font-semibold leading-4 text-stone-50">{{ $userStats['socialWorkers'] }}</span>
+                        <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-lg border border-emerald-200/15 bg-emerald-500/10 px-1.5 py-1 backdrop-blur">
+                            <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300">مددکار</span>
+                            <span class="mt-0.5 text-xs font-semibold leading-4 text-emerald-50">{{ $userStats['socialWorkers'] }}</span>
                         </div>
-                        <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-md border border-teal-200/15 bg-white/5 px-1.5 py-1 backdrop-blur">
-                            <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300/90">حامی</span>
+                        <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-lg border border-teal-200/15 bg-teal-500/10 px-1.5 py-1 backdrop-blur">
+                            <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300">حامی</span>
                             <span class="mt-0.5 text-xs font-semibold leading-4 text-teal-50">{{ $userStats['childSupporters'] }}</span>
                         </div>
-                        <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-md border border-white/10 bg-white/5 px-1.5 py-1 backdrop-blur">
-                            <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300/90">عادی</span>
+                        <div class="flex h-12 min-w-0 flex-col items-center justify-center rounded-lg border border-white/10 bg-white/5 px-1.5 py-1 backdrop-blur">
+                            <span class="max-w-full truncate text-[9px] font-medium leading-3 text-slate-300">عادی</span>
                             <span class="mt-0.5 text-xs font-semibold leading-4 text-white">{{ $userStats['regular'] }}</span>
                         </div>
                     </div>
@@ -337,22 +334,26 @@
     </div>
 
     @if($showEditModal && $editing_user_id)
-        <div class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 px-3 py-3 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6" wire:keydown.escape.window="cancelEditingUser">
-            <div class="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl sm:rounded-3xl">
-                <div class="border-b border-slate-200 px-5 py-4 sm:px-6">
+        <div class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 px-2 py-2 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6" wire:keydown.escape.window="cancelEditingUser">
+            <div class="flex w-full max-w-none flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl max-h-[92vh] sm:max-w-2xl sm:rounded-3xl sm:max-h-[90vh]">
+                <div class="border-b border-slate-200 px-4 py-4 sm:px-6">
                     <div class="flex items-start justify-between gap-4">
                         <div>
                             <h2 class="text-lg font-black text-slate-900">ویرایش کاربر</h2>
                             <p class="mt-1 text-sm text-slate-600">ویرایش سریع نام، نام کاربری، رمز عبور و سطح دسترسی.</p>
                         </div>
-                        <button type="button" wire:click="cancelEditingUser" class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-50">
-                            بستن
+                        <button type="button" wire:click="cancelEditingUser" aria-label="بستن" title="بستن" class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-slate-200 focus-visible:ring-offset-2 focus-visible:ring-offset-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M18 6 6 18" />
+                                <path d="M6 6l12 12" />
+                            </svg>
                         </button>
                     </div>
                 </div>
 
-                <form wire:submit.prevent="updateUser" class="space-y-4 px-4 py-4 sm:px-5 sm:py-5">
-                    <div class="grid gap-3 sm:grid-cols-2">
+                <form wire:submit.prevent="updateUser" class="flex min-h-0 flex-1 flex-col">
+                    <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
+                        <div class="grid gap-3 sm:grid-cols-2">
                         <div>
                             <label class="mb-2 block text-sm font-semibold text-slate-700">نام</label>
                             <input type="text" wire:model.blur="edit_first_name" class="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm leading-5 focus:border-amber-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-100">
@@ -401,15 +402,18 @@
                                 </button>
                             </div>
                         </div>
+                        </div>
                     </div>
 
-                    <div class="flex flex-col gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:flex-wrap sm:items-center">
-                        <button type="submit" class="inline-flex min-h-10 items-center justify-center rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600 focus:outline-none focus:ring-4 focus:ring-amber-100">
+                    <div class="shrink-0 border-t border-slate-200 bg-white px-4 py-4 sm:px-6">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                        <button type="submit" class="inline-flex min-h-10 w-full items-center justify-center rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600 focus:outline-none focus:ring-4 focus:ring-amber-100 sm:w-auto">
                             ذخیره تغییرات
                         </button>
-                        <button type="button" wire:click="cancelEditingUser" class="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
+                        <button type="button" wire:click="cancelEditingUser" class="inline-flex min-h-10 w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 sm:w-auto">
                             انصراف
                         </button>
+                        </div>
                     </div>
                 </form>
             </div>
