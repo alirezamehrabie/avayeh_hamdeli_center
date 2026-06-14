@@ -201,8 +201,8 @@
                         </div>
                         @break
 
-                    @case('define-services')
-                        <livewire:services.manage-services :service-id="$editingServiceId" :key="'define-services-' . ($editingServiceId ?? 'new')" />
+                    @case('service-definition')
+                        <livewire:services.service-definition :service-id="$editingServiceId" :key="'service-definition-' . ($editingServiceId ?? 'new')" />
                         @break
 
                     @case('service-list')

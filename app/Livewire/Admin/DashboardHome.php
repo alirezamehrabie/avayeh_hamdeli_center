@@ -38,6 +38,14 @@ class DashboardHome extends Component
             $this->activeSection = 'system-settings-user-definition';
         } elseif (request()->routeIs('admin.user-account')) {
             $this->activeSection = 'system-settings-user-account';
+        } elseif (request()->routeIs('admin.service-definition')) {
+            $this->activeSection = 'service-definition';
+        } elseif (request()->routeIs('admin.service-management')) {
+            $this->activeSection = 'service-management';
+        } elseif (request()->routeIs('admin.service-list')) {
+            $this->activeSection = 'service-list';
+        } elseif (request()->routeIs('admin.service-delivery')) {
+            $this->activeSection = 'service-delivery';
         }
         $this->normalizeActiveSection();
     }
@@ -50,7 +58,7 @@ class DashboardHome extends Component
         $this->editingPersonId = in_array($section, ['person-edit', 'people-fast-create'], true) ? $id : null;
         $this->editingSocialWorkerId = $section === 'social-worker-edit' ? $id : null;
         $this->editingGuardianId = $section === 'guardian-edit' ? $id : null;
-        $this->editingServiceId = $section === 'define-services' ? $id : null;
+        $this->editingServiceId = $this->activeSection === 'service-definition' ? $id : null;
         $this->serviceReportServiceId = $section === 'advanced-service-report' ? $id : null;
         $this->showDeletedUsers = false;
     }
@@ -59,6 +67,10 @@ class DashboardHome extends Component
     {
         if ($this->activeSection === 'system-settings-user-management') {
             $this->activeSection = 'system-settings-user-definition';
+        }
+
+        if ($this->activeSection === 'define-services') {
+            $this->activeSection = 'service-definition';
         }
 
         $user = auth()->user();
@@ -106,7 +118,7 @@ class DashboardHome extends Component
                 'advanced-social-worker-report',
                 'system-settings-user-definition',
                 'system-settings-user-list',
-                'define-services',
+                'service-definition',
                 'service-list',
                 'service-delivery',
                 'service-management',

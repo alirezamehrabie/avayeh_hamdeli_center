@@ -18,12 +18,12 @@ class ServiceList extends Component
 
     public function editService(int $serviceId): void
     {
-        $this->dispatch('open-dashboard-section', section: 'define-services', id: $serviceId);
+        $this->dispatch('open-dashboard-section', section: 'service-definition', id: $serviceId);
     }
 
     public function createService(): void
     {
-        $this->dispatch('open-dashboard-section', section: 'define-services');
+        $this->dispatch('open-dashboard-section', section: 'service-definition');
     }
 
     public function render()

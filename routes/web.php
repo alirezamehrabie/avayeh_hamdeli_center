@@ -74,6 +74,26 @@ Route::get('/admin/dashboard', DashboardHome::class)
     ->middleware(['auth', 'can:access-admin-panel'])
     ->name('admin.dashboard');
 
+Route::get('/admin/services/service-definition', DashboardHome::class)
+    ->middleware(['auth', 'can:full-access'])
+    ->name('admin.service-definition');
+
+Route::redirect('/admin/services/define-services', '/admin/services/service-definition')
+    ->middleware(['auth', 'can:full-access'])
+    ->name('admin.define-services');
+
+Route::get('/admin/services/service-management', DashboardHome::class)
+    ->middleware(['auth', 'can:full-access'])
+    ->name('admin.service-management');
+
+Route::get('/admin/services/service-list', DashboardHome::class)
+    ->middleware(['auth', 'can:full-access'])
+    ->name('admin.service-list');
+
+Route::get('/admin/services/service-delivery', DashboardHome::class)
+    ->middleware(['auth', 'can:full-access'])
+    ->name('admin.service-delivery');
+
 Route::get('/admin/system-settings/user-definition', DashboardHome::class)
     ->middleware(['auth', 'can:full-access'])
     ->name('admin.user-definition');

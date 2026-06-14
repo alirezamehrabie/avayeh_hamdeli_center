@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 
-class ManageServices extends Component
+class ServiceDefinition extends Component
 {
     public ?int $serviceId = null;
 
@@ -228,7 +228,7 @@ class ManageServices extends Component
 
     public function render()
     {
-        return view('livewire.services.manage-services', [
+        return view('livewire.services.service-definition', [
             'districts' => District::query()->orderBy('sort_order')->orderBy('name')->get(),
             'serviceNames' => ServiceName::query()->ordered()->get(['id', 'name']),
             'categoryTemplates' => ServiceCategoryTemplate::query()
