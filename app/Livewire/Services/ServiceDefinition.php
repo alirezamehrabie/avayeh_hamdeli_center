@@ -74,6 +74,13 @@ class ServiceDefinition extends Component
     public function save(): void
     {
         $validated = $this->validate($this->rules(), [], $this->validationAttributes());
+        $validated['categories'] = collect($validated['categories'])
+            ->map(function (array $category): array {
+                $category['value'] = $this->digitsOnly((string) ($category['value'] ?? ''));
+
+                return $category;
+            })
+            ->all();
 
         if ($this->hasDuplicateCategoryNames($validated['categories'])) {
             $this->addError('categories', 'هر دسته خدمت برای یک خدمت فقط یک‌بار قابل انتخاب است.');
@@ -295,7 +302,15 @@ class ServiceDefinition extends Component
             'categories.*.name' => ['required', 'string', 'max:255'],
             'categories.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'categories.*.unit' => ['required', Rule::in(Service::unitKeys())],
-            'categories.*.value' => ['required', 'integer', 'min:0'],
+            'categories.*.value' => [
+                'required',
+                'regex:/^[\d,\s]+$/',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if ($this->digitsOnly((string) $value) === '') {
+                        $fail('ارزش واحد معتبر نیست.');
+                    }
+                },
+            ],
         ];
     }
 
@@ -370,8 +385,13 @@ class ServiceDefinition extends Component
     protected function calculateTotalServiceValue(): int
     {
         return (int) collect($this->categories)->sum(function (array $category): float {
-            return (float) ($category['quantity'] ?? 0) * (float) ($category['value'] ?? 0);
+            return (float) ($category['quantity'] ?? 0) * (float) $this->digitsOnly((string) ($category['value'] ?? 0));
         });
+    }
+
+    protected function digitsOnly(string $value): string
+    {
+        return preg_replace('/\D+/', '', $value) ?: '';
     }
 
     protected function hasDuplicateCategoryNames(array $categories): bool

@@ -231,23 +231,57 @@
                             </div>
                         </div>
 
-                        <div class="rounded-3xl border border-slate-200 bg-white p-4">
-                            <div class="mb-4 flex items-center justify-between">
+                        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/40">
+                            <div class="mb-4 flex flex-col gap-1 border-b border-slate-100 pb-4 sm:flex-row sm:items-end sm:justify-between">
                                 <div>
-                                    <h2 class="text-lg font-bold text-slate-800">دسته‌های خدمت</h2>
-                                    <p class="text-sm text-slate-500">برای هر دسته مقدار، واحد و ارزش واحد را ثبت کنید</p>
+                                    <h2 class="text-base font-bold text-slate-800">دسته‌های خدمت</h2>
+                                    <p class="mt-0.5 text-xs text-slate-500">برای هر دسته مقدار، واحد و ارزش واحد را ثبت کنید</p>
                                 </div>
+                                <span class="inline-flex w-fit items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500">
+                                    {{ count($categories) }} دسته
+                                </span>
                             </div>
 
-                            <div class="space-y-4">
+                            <div class="space-y-3">
                                 @foreach($categories as $index => $category)
-                                    <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                                        <div class="mb-3 flex items-center justify-between">
-                                            <div class="text-sm font-bold text-slate-700">
+                                    <div
+                                        x-data="{
+                                            quantity: @entangle('categories.' . $index . '.quantity').live,
+                                            value: @entangle('categories.' . $index . '.value').live,
+                                            numberValue(raw) {
+                                                const value = Number.parseFloat(String(raw ?? '').replace(/,/g, ''));
+
+                                                return Number.isFinite(value) ? value : 0;
+                                            },
+                                            formatGrouped(raw) {
+                                                return String(raw ?? '')
+                                                    .replace(/[^\d]/g, '')
+                                                    .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                                            },
+                                            formatValueInput(event) {
+                                                const formatted = this.formatGrouped(event.target.value);
+
+                                                event.target.value = formatted;
+                                                this.value = formatted;
+                                            },
+                                            get lineTotal() {
+                                                return this.numberValue(this.quantity) * this.numberValue(this.value);
+                                            },
+                                            get hasLineTotal() {
+                                                return this.numberValue(this.quantity) > 0 && this.numberValue(this.value) > 0;
+                                            },
+                                            get formattedLineTotal() {
+                                                return new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 0 }).format(Math.round(this.lineTotal));
+                                            }
+                                        }"
+                                        class="rounded-2xl border border-slate-200 bg-white p-3.5 transition-colors focus-within:border-cyan-200 focus-within:bg-cyan-50/20"
+                                    >
+                                        <div class="mb-3 flex items-center justify-between gap-3">
+                                            <div class="inline-flex items-center rounded-full bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-500 ring-1 ring-inset ring-slate-200">
                                                 {{ $category['code'] ?: 'CAT-' . str_pad((string) ($index + 1), 3, '0', STR_PAD_LEFT) }}
                                             </div>
                                             @if(count($categories) > 1)
-                                                <button type="button" wire:click="removeCategory({{ $index }})" class="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700">
+                                                <button type="button" wire:click="removeCategory({{ $index }})" class="rounded-full px-2.5 py-1 text-xs font-semibold text-rose-600 transition hover:bg-rose-50">
                                                     حذف
                                                 </button>
                                             @endif
@@ -431,12 +465,17 @@
                                             </div>
                                             <div>
                                                 <label class="mb-2 block text-sm font-bold text-slate-700">تعداد</label>
-                                                <input type="number" min="0.01" step="0.01" wire:model.live="categories.{{ $index }}.quantity" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700" placeholder="0">
+                                                <input type="number" min="0.01" step="0.01" x-model="quantity" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-700 transition focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100" placeholder="0">
                                                 @error("categories.$index.quantity") <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                                             </div>
                                             <div>
                                                 <label class="mb-2 block text-sm font-bold text-slate-700">ارزش واحد</label>
-                                                <input type="number" min="0" step="1" wire:model.live="categories.{{ $index }}.value" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700" placeholder="0">
+                                                <input type="text" inputmode="numeric" x-model="value" x-on:input="formatValueInput($event)" x-init="value = formatGrouped(value)" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-700 transition ltr:text-left focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100" placeholder="0">
+                                                <p x-cloak x-show="hasLineTotal" class="mt-1.5 text-xs font-medium text-slate-400">
+                                                    جمع این دسته:
+                                                    <span class="font-semibold text-slate-500" x-text="formattedLineTotal"></span>
+                                                    ریال
+                                                </p>
                                                 @error("categories.$index.value") <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                                             </div>
                                         </div>
