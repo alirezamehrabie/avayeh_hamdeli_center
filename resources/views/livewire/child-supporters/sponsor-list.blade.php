@@ -43,7 +43,10 @@
 
                         <div class="mt-2 flex items-center justify-between gap-3 md:mt-0 md:block">
                             <span class="text-xs font-bold text-slate-400 md:hidden">مبلغ ماهیانه</span>
-                            <span class="text-sm font-black text-emerald-700">{{ $this->persianNumber(number_format((int) $sponsor->monthly_donation_amount)) }} ریال</span>
+                            <div class="min-w-0 text-left md:text-right">
+                                <span class="block text-sm font-black text-emerald-700">{{ $this->persianNumber(number_format((int) $sponsor->monthly_donation_amount)) }} ریال</span>
+                                <span class="mt-0.5 block truncate text-[11px] font-semibold leading-5 text-teal-700">{{ $this->donationAmountInTomanWords((int) $sponsor->monthly_donation_amount) }}</span>
+                            </div>
                         </div>
 
                         <div class="mt-3 md:mt-0">
@@ -95,7 +98,10 @@
                     </div>
                     <div class="grid grid-cols-[7rem_1fr] items-center gap-3 px-3 py-2.5">
                         <span class="text-xs font-bold text-slate-400">مبلغ ماهیانه</span>
-                        <span class="truncate text-sm font-black text-emerald-700">{{ $selectedSponsor['monthlyDonationAmount'] }}</span>
+                        <div class="min-w-0">
+                            <span class="block truncate text-sm font-black text-emerald-700">{{ $selectedSponsor['monthlyDonationAmount'] }}</span>
+                            <span class="mt-0.5 block truncate text-[11px] font-semibold leading-5 text-teal-700">{{ $selectedSponsor['monthlyDonationAmountInWords'] }}</span>
+                        </div>
                     </div>
                     <div class="px-3 py-2.5">
                         <span class="text-xs font-bold text-slate-400">روش یادآوری</span>

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\ChildSupporters;
 
+use App\Helpers\PersianNumber;
 use App\Models\SponsorProfile;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -33,6 +34,11 @@ class SponsorList extends Component
         ]);
     }
 
+    public function donationAmountInTomanWords(int $rialAmount): string
+    {
+        return PersianNumber::rialToTomanWords($rialAmount);
+    }
+
     public function mount(bool $embedded = false): void
     {
         $this->embedded = $embedded;
@@ -52,6 +58,7 @@ class SponsorList extends Component
             'fullName' => trim(($sponsor->user?->first_name ?? '') . ' ' . ($sponsor->user?->last_name ?? '')) ?: '-',
             'mobile' => $this->persianNumber($sponsor->user?->mobile ?: $sponsor->user?->name ?: '-'),
             'monthlyDonationAmount' => $this->persianNumber(number_format((int) $sponsor->monthly_donation_amount)) . ' ریال',
+            'monthlyDonationAmountInWords' => $this->donationAmountInTomanWords((int) $sponsor->monthly_donation_amount),
             'reminderMethods' => collect((array) $sponsor->monthly_payment_reminder_methods)
                 ->map(fn (string $method): string => SponsorProfile::reminderMethodOptions()[$method] ?? $method)
                 ->values()
