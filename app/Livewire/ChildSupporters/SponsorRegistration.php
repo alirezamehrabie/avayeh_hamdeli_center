@@ -97,6 +97,7 @@ class SponsorRegistration extends Component
             ],
             'mobile' => [
                 'required',
+                'digits:11',
                 'regex:/^09\d{9}$/',
             ],
             'childPreferences' => ['nullable', 'string', 'max:1000'],
@@ -121,7 +122,8 @@ class SponsorRegistration extends Component
             'monthlyDonationAmount.required' => 'مبلغ واریزی ماهیانه الزامی است.',
             'monthlyDonationAmount.regex' => 'مبلغ را فقط با عدد وارد کنید.',
             'mobile.required' => 'شماره موبایل الزامی است.',
-            'mobile.regex' => 'شماره موبایل باید با فرمت 09xxxxxxxxx باشد.',
+            'mobile.digits' => 'شماره موبایل باید دقیقاً ۱۱ رقم باشد.',
+            'mobile.regex' => 'شماره موبایل باید با ۰۹ شروع شود و دقیقاً ۱۱ رقم باشد.',
             'mobile.unique' => 'برای این شماره موبایل قبلا حساب کاربری ثبت شده است.',
             'childPreferences.max' => 'توضیحات کودک حداکثر ۱۰۰۰ کاراکتر باشد.',
             'monthlyPaymentReminderMethods.required' => 'حداقل یک روش یادآوری را انتخاب کنید.',

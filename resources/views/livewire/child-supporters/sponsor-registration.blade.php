@@ -7,10 +7,6 @@
                     <h1 class="mt-1 text-xl font-black text-slate-900 sm:text-2xl">ثبت نام حامی</h1>
                     <p class="mt-2 text-sm leading-6 text-slate-500">اطلاعات حامی جدید را با حداقل مراحل ثبت کنید.</p>
                 </div>
-
-                <div class="inline-flex w-fit items-center rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
-                    ثبت بدون بارگذاری مجدد صفحه
-                </div>
             </div>
         </div>
 
@@ -82,10 +78,14 @@
                         <input
                             id="sponsor-mobile"
                             type="tel"
-                            inputmode="tel"
+                            inputmode="numeric"
                             dir="ltr"
-                            wire:model.live.debounce.400ms="mobile"
+                            x-data="{ mobile: $wire.entangle('mobile').live }"
+                            x-model="mobile"
+                            x-on:input="mobile = $el.value.replace(/\D/g, '').slice(0, 11)"
                             autocomplete="tel"
+                            maxlength="11"
+                            pattern="[0-9]{11}"
                             placeholder="شماره موبایل"
                             class="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-left text-sm text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
                         >
@@ -100,17 +100,37 @@
                     </div>
 
                     <div>
-                        <fieldset>
+                        <fieldset x-data="{ active: $wire.entangle('isSocialMediaActive').live }">
                             <legend class="mb-1.5 block text-sm font-bold text-slate-700">آیا با همین شماره در فضای مجازی فعال هستید؟ <span class="text-rose-500">*</span></legend>
-                            <div class="grid grid-cols-2 gap-2">
-                                <label class="flex h-12 cursor-pointer items-center justify-center rounded-xl border px-3 text-sm font-bold transition {{ $isSocialMediaActive === 'yes' ? 'border-indigo-500 bg-indigo-50 text-indigo-700 ring-4 ring-indigo-100' : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-200' }}">
-                                    <input type="radio" wire:model.live="isSocialMediaActive" value="yes" class="sr-only">
-                                    بله
-                                </label>
-                                <label class="flex h-12 cursor-pointer items-center justify-center rounded-xl border px-3 text-sm font-bold transition {{ $isSocialMediaActive === 'no' ? 'border-indigo-500 bg-indigo-50 text-indigo-700 ring-4 ring-indigo-100' : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-200' }}">
-                                    <input type="radio" wire:model.live="isSocialMediaActive" value="no" class="sr-only">
-                                    خیر
-                                </label>
+                            <div class="grid grid-cols-2 gap-1.5">
+                                @foreach(['yes' => 'بله', 'no' => 'خیر'] as $value => $label)
+                                    <label
+                                        class="flex min-h-11 cursor-pointer select-none items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold transition duration-150 ease-out active:scale-[0.99]"
+                                        x-bind:class="active === @js($value) ? 'border-teal-300 bg-teal-50 text-teal-800 shadow-[inset_0_0_0_1px_rgba(20,184,166,0.12)]' : 'border-slate-200 bg-white text-slate-600 hover:border-teal-200 hover:bg-teal-50/40'"
+                                    >
+                                        <input
+                                            type="radio"
+                                            value="{{ $value }}"
+                                            x-model="active"
+                                            class="sr-only"
+                                        >
+                                        <span
+                                            class="grid size-5 shrink-0 place-items-center rounded-full border transition duration-150"
+                                            x-bind:class="active === @js($value) ? 'border-teal-500 bg-teal-500' : 'border-slate-300 bg-white'"
+                                            aria-hidden="true"
+                                        >
+                                            <svg
+                                                viewBox="0 0 16 16"
+                                                fill="none"
+                                                class="size-3.5 text-white transition-all duration-200 ease-out [stroke-dasharray:16]"
+                                                x-bind:class="active === @js($value) ? 'scale-100 opacity-100 [stroke-dashoffset:0]' : 'scale-75 opacity-0 [stroke-dashoffset:16]'"
+                                            >
+                                                <path d="M3.5 8.2 6.6 11 12.5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                        </span>
+                                        <span>{{ $label }}</span>
+                                    </label>
+                                @endforeach
                             </div>
                             @error('isSocialMediaActive') <p class="mt-1.5 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
                         </fieldset>
@@ -123,26 +143,48 @@
                     <h2 class="text-base font-black text-slate-900">ترجیحات و یادآوری</h2>
                 </div>
 
-                <div class="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+                <div class="grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
                     <div>
                         <label for="sponsor-child-preferences" class="mb-1.5 block text-sm font-bold text-slate-700">مشخصات خاص کودک</label>
                         <textarea
                             id="sponsor-child-preferences"
                             wire:model.blur="childPreferences"
-                            rows="4"
+                            rows="3"
                             placeholder="مشخصات خاصی از کودک تحت پوشش مدنظر دارید؟"
-                            class="min-h-28 w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm leading-6 text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+                            class="min-h-32 w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm leading-6 text-slate-800 outline-none transition focus:border-teal-300 focus:ring-4 focus:ring-teal-100"
                         ></textarea>
                         @error('childPreferences') <p class="mt-1.5 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
                     </div>
 
-                    <fieldset>
-                        <legend class="mb-2 block text-sm font-bold text-slate-700">روش یادآوری واریز ماهیانه <span class="text-rose-500">*</span></legend>
-                        <div class="grid gap-2 sm:grid-cols-3 lg:grid-cols-1">
+                    <fieldset x-data="{ selected: $wire.entangle('monthlyPaymentReminderMethods').live }">
+                        <legend class="mb-1.5 block text-sm font-bold text-slate-700">روش یادآوری واریز ماهیانه <span class="text-rose-500">*</span></legend>
+                        <div class="grid gap-1.5 sm:grid-cols-3 lg:grid-cols-1">
                             @foreach($reminderMethods as $value => $label)
-                                <label class="flex h-12 cursor-pointer items-center justify-center rounded-xl border px-3 text-center text-sm font-bold transition {{ in_array($value, $monthlyPaymentReminderMethods, true) ? 'border-indigo-500 bg-indigo-50 text-indigo-700 ring-4 ring-indigo-100' : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-200' }}">
-                                    <input type="checkbox" wire:model.live="monthlyPaymentReminderMethods" value="{{ $value }}" class="sr-only">
-                                    {{ $label }}
+                                <label
+                                    class="flex min-h-11 cursor-pointer select-none items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold transition duration-150 ease-out active:scale-[0.99]"
+                                    x-bind:class="selected.includes(@js($value)) ? 'border-teal-300 bg-teal-50 text-teal-800 shadow-[inset_0_0_0_1px_rgba(20,184,166,0.12)]' : 'border-slate-200 bg-white text-slate-600 hover:border-teal-200 hover:bg-teal-50/40'"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        value="{{ $value }}"
+                                        x-model="selected"
+                                        class="sr-only"
+                                    >
+                                    <span
+                                        class="grid size-5 shrink-0 place-items-center rounded-md border transition duration-150"
+                                        x-bind:class="selected.includes(@js($value)) ? 'border-teal-500 bg-teal-500' : 'border-slate-300 bg-white'"
+                                        aria-hidden="true"
+                                    >
+                                        <svg
+                                            viewBox="0 0 16 16"
+                                            fill="none"
+                                            class="size-3.5 text-white transition-all duration-200 ease-out [stroke-dasharray:16]"
+                                            x-bind:class="selected.includes(@js($value)) ? 'scale-100 opacity-100 [stroke-dashoffset:0]' : 'scale-75 opacity-0 [stroke-dashoffset:16]'"
+                                        >
+                                            <path d="M3.5 8.2 6.6 11 12.5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                    </span>
+                                    <span class="truncate">{{ $label }}</span>
                                 </label>
                             @endforeach
                         </div>
