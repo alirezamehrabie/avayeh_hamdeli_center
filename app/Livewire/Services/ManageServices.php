@@ -15,17 +15,27 @@ use Livewire\Component;
 class ManageServices extends Component
 {
     public ?int $serviceId = null;
+
     public ?int $editingServiceId = null;
+
+    public ?int $selectedServiceNameId = null;
+
     public string $serviceName = '';
+
     public string $serviceType = 'individual';
+
     public string $description = '';
+
     public ?int $serviceDistrictId = null;
+
     public ?string $distributionStartDate = null;
+
     public ?string $distributionEndDate = null;
+
     public string $priority = 'normal';
 
     public string $status = 'in_distribution';
-    
+
     public string $statusNotes = '';
 
     /**
@@ -67,11 +77,8 @@ class ManageServices extends Component
         DB::transaction(function () use ($validated): void {
             $service = $this->editingServiceId
                 ? Service::query()->findOrFail($this->editingServiceId)
-                : new Service();
-            $serviceName = $this->persistServiceNameRecord(
-                trim($validated['serviceName']),
-                $service->service_name_id ? (int) $service->service_name_id : null
-            );
+                : new Service;
+            $serviceName = $this->persistServiceNameRecord(trim($validated['serviceName']));
 
             if (! $this->editingServiceId) {
                 $service->code = Service::generateNextCode();
@@ -124,7 +131,7 @@ class ManageServices extends Component
 
                 $category = ! empty($categoryData['id'])
                     ? ServiceCategory::query()->where('service_id', $service->id)->findOrFail((int) $categoryData['id'])
-                    : new ServiceCategory();
+                    : new ServiceCategory;
 
                 if (blank($category->code)) {
                     $category->code = $this->editingServiceId
@@ -160,6 +167,7 @@ class ManageServices extends Component
             ->findOrFail($serviceId);
 
         $this->editingServiceId = $service->id;
+        $this->selectedServiceNameId = $service->service_name_id;
         $this->serviceName = $service->name;
         $this->serviceType = $service->service_type;
         $this->description = (string) $service->description;
@@ -215,6 +223,7 @@ class ManageServices extends Component
     {
         return view('livewire.services.manage-services', [
             'districts' => District::query()->orderBy('sort_order')->orderBy('name')->get(),
+            'serviceNames' => ServiceName::query()->ordered()->get(['id', 'name']),
             'typeOptions' => Service::TYPE_OPTIONS,
             'unitOptions' => Service::unitOptions(),
             'statusOptions' => Service::STATUS_OPTIONS,
@@ -231,6 +240,7 @@ class ManageServices extends Component
                 'max:255',
                 Rule::unique('services', 'name')->ignore($this->editingServiceId),
             ],
+            'selectedServiceNameId' => ['nullable', 'integer', 'exists:service_names,id'],
             'serviceType' => ['required', Rule::in(array_keys(Service::TYPE_OPTIONS))],
             'description' => ['nullable', 'string', 'max:5000'],
             'serviceDistrictId' => ['nullable', 'integer', 'exists:districts,id'],
@@ -253,6 +263,7 @@ class ManageServices extends Component
 
                     if (! $this->isValidJalaliDate((string) $value)) {
                         $fail('تاریخ پایان توزیع شمسی معتبر نیست.');
+
                         return;
                     }
 
@@ -316,6 +327,7 @@ class ManageServices extends Component
     {
         $this->reset([
             'editingServiceId',
+            'selectedServiceNameId',
             'serviceName',
             'serviceType',
             'description',
@@ -352,20 +364,14 @@ class ManageServices extends Component
         });
     }
 
-    protected function persistServiceNameRecord(string $serviceNameInput, ?int $serviceNameId = null): ServiceName
+    protected function persistServiceNameRecord(string $serviceNameInput): ServiceName
     {
         $name = trim($serviceNameInput);
 
-        if ($serviceNameId) {
-            $serviceName = ServiceName::query()->find($serviceNameId);
+        if ($this->selectedServiceNameId) {
+            $serviceName = ServiceName::query()->find($this->selectedServiceNameId);
 
-            if ($serviceName) {
-                $serviceName->update([
-                    'name' => $name,
-                    'sort_id' => $serviceName->sort_id ?: $this->nextServiceNameSortId(),
-                    'created_by' => $serviceName->created_by ?: auth()->id(),
-                ]);
-
+            if ($serviceName && $serviceName->name === $name) {
                 return $serviceName;
             }
         }
@@ -383,7 +389,7 @@ class ManageServices extends Component
     {
         $suffix = $existingCount + $index + 1;
 
-        return $service->code . '-CAT' . str_pad((string) $suffix, 3, '0', STR_PAD_LEFT);
+        return $service->code.'-CAT'.str_pad((string) $suffix, 3, '0', STR_PAD_LEFT);
     }
 
     protected function nextServiceNameSortId(): int
@@ -394,8 +400,8 @@ class ManageServices extends Component
     protected function nextCategorySortId(int $serviceId): int
     {
         return ((int) ServiceCategory::query()
-                ->where('service_id', $serviceId)
-                ->max('sort_id')) + 1;
+            ->where('service_id', $serviceId)
+            ->max('sort_id')) + 1;
     }
 
     protected function formatDecimal(string|int|float|null $value): string

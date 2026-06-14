@@ -3,7 +3,7 @@
         <div class="bg-gradient-to-l from-teal-600 via-cyan-600 to-sky-700 px-4 py-4 text-white sm:px-6 sm:py-6">
             <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between sm:gap-5">
                 <div>
-                    <h1 class="text-lg font-extrabold leading-tight sm:mt-2 sm:text-2xl">تعریف و مدیریت خدمات</h1>
+                    <h1 class="text-lg font-extrabold leading-tight sm:mt-2 sm:text-2xl">افزودن خدمت / پویش</h1>
                     <p class="mt-1 hidden max-w-3xl text-sm text-cyan-50/90 sm:mt-2 sm:block">
                         یک خدمت والد بسازید و برای آن چند دسته با مقدار، واحد و ارزش مستقل تعریف کنید.
                     </p>
@@ -43,12 +43,12 @@
             <form wire:submit.prevent="save" class="space-y-6">
                 <div class="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.8fr)]">
                     <div class="space-y-6">
-                        <div class="rounded-3xl border border-slate-200 bg-slate-50/80 p-5">
+                        <div class="rounded-3xl border border-slate-200 bg-slate-50/80 p-4">
                             <div class="mb-4 flex items-center justify-between">
-                                <div class="flex items-center gap-3">
+                                <div class="flex items-center gap-5">
                                     <div>
                                     <h2 class="text-lg font-bold text-slate-800">اطلاعات پایه خدمت</h2>
-                                    <p class="text-sm text-slate-500">کد، نام، نوع و وضعیت خدمت والد</p>
+                                    <p class="text-sm text-slate-500">نام، نوع و وضعیت خدمت</p>
                                     </div>
                                     <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-bold tracking-wide text-slate-600 shadow-sm">
                                         {{ $this->previewServiceCode }}
@@ -64,18 +64,163 @@
                             <div class="grid gap-4 md:grid-cols-2">
 
                                 <div class="md:col-span-1">
-                                    <label class="mb-2 block text-sm font-bold text-slate-700">نام خدمت</label>
-                                    <input type="text" wire:model.blur="serviceName" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700" placeholder="مثال: سفره ام‌البنین (س)">
+                                    <label class="mb-2 block text-sm font-bold text-slate-700">نام خدمت / پویش</label>
+                                    <div
+                                        x-data="{
+                                            open: false,
+                                            selectedId: @entangle('selectedServiceNameId').live,
+                                            serviceName: @entangle('serviceName').live,
+                                            serviceNames: @js($serviceNames->map(fn ($serviceName) => [
+                                                'id' => $serviceName->id,
+                                                'name' => $serviceName->name,
+                                            ])->values()),
+                                            filterText: @entangle('serviceName').live,
+                                            get filteredServiceNames() {
+                                                const query = this.filterText.trim().toLowerCase();
+
+                                                if (!query) {
+                                                    return this.serviceNames;
+                                                }
+
+                                                return this.serviceNames.filter((item) => item.name.toLowerCase().includes(query));
+                                            },
+                                            selectServiceName(item) {
+                                                this.selectedId = item.id;
+                                                this.serviceName = item.name;
+                                                this.filterText = item.name;
+                                                this.open = false;
+                                            },
+                                            clearServiceName() {
+                                                this.selectedId = null;
+                                                this.serviceName = '';
+                                                this.filterText = '';
+                                                this.open = false;
+                                            }
+                                        }"
+                                        x-on:click.outside="open = false"
+                                        class="relative"
+                                    >
+                                        <input
+                                            type="text"
+                                            x-model="filterText"
+                                            x-on:focus="open = true"
+                                            x-on:input="selectedId = null; serviceName = filterText"
+                                            x-on:keydown.escape="open = false"
+                                            class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 pe-20 text-sm text-slate-700"
+                                            placeholder="مثال: سفره ام‌البنین (س)"
+                                            autocomplete="off"
+                                        >
+                                        <button
+                                            type="button"
+                                            x-cloak
+                                            x-show="filterText"
+                                            x-on:click.stop.prevent="clearServiceName()"
+                                            class="absolute inset-y-0 end-8 flex items-center px-2 text-slate-400 transition hover:text-rose-600"
+                                            aria-label="پاک کردن نام خدمت"
+                                        >
+                                            <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4">
+                                                <path d="M5.5 5.5L14.5 14.5M14.5 5.5L5.5 14.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                            </svg>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            x-on:click.stop.prevent="open = !open"
+                                            class="absolute inset-y-0 end-0 flex items-center px-3 text-slate-400"
+                                            aria-label="باز کردن فهرست نام خدمات"
+                                        >
+                                            <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4">
+                                                <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </button>
+
+                                        <div
+                                            x-cloak
+                                            x-show="open"
+                                            x-transition.origin.top.left
+                                            class="absolute z-30 mt-2 max-h-60 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
+                                        >
+                                            <div class="border-b border-slate-100 px-3 py-2 text-xs font-semibold text-slate-400">
+                                                برای ثبت مورد جدید تایپ کنید
+                                            </div>
+                                            <div class="max-h-56 overflow-y-auto py-1">
+                                                <template x-for="item in filteredServiceNames" :key="item.id">
+                                                    <button
+                                                        type="button"
+                                                        x-on:click="selectServiceName(item)"
+                                                        class="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-right text-sm text-slate-700 transition hover:bg-slate-50"
+                                                    >
+                                                        <span x-text="item.name" class="font-medium"></span>
+                                                        <span class="text-xs text-slate-400" x-show="selectedId === item.id">انتخاب شده</span>
+                                                    </button>
+                                                </template>
+                                                <div x-show="filteredServiceNames.length === 0" class="px-4 py-3 text-sm text-slate-500">
+                                                    موردی پیدا نشد. می‌توانید همین نام را به عنوان مورد جدید ثبت کنید.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                     @error('serviceName') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                                 </div>
 
                                 <div class="md:col-span-1">
                                     <label class="mb-2 block text-sm font-bold text-slate-700">نوع خدمت</label>
-                                    <select wire:model="serviceType" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
-                                        @foreach($typeOptions as $value => $label)
-                                            <option value="{{ $value }}">{{ $label }}</option>
-                                        @endforeach
-                                    </select>
+                                    <div
+                                        x-data="{
+                                            open: false,
+                                            serviceType: @entangle('serviceType').live,
+                                            typeOptions: @js($typeOptions),
+                                            get options() {
+                                                return Object.entries(this.typeOptions).map(([value, label]) => ({ value, label }));
+                                            },
+                                            get selectedLabel() {
+                                                return this.typeOptions[this.serviceType] ?? 'انتخاب نوع خدمت';
+                                            },
+                                            selectServiceType(value) {
+                                                this.serviceType = value;
+                                                this.open = false;
+                                            }
+                                        }"
+                                        x-on:click.outside="open = false"
+                                        class="relative"
+                                    >
+                                        <button
+                                            type="button"
+                                            x-on:click.stop.prevent="open = !open"
+                                            x-on:keydown.escape="open = false"
+                                            class="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-right text-sm text-slate-700 transition focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                                            aria-haspopup="listbox"
+                                            x-bind:aria-expanded="open.toString()"
+                                        >
+                                            <span x-text="selectedLabel" class="font-medium"></span>
+                                            <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4 shrink-0 text-slate-400 transition" x-bind:class="{ 'rotate-180': open }">
+                                                <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </button>
+
+                                        <div
+                                            x-cloak
+                                            x-show="open"
+                                            x-transition.origin.top.left
+                                            class="absolute z-30 mt-2 max-h-60 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
+                                            role="listbox"
+                                        >
+                                            <div class="max-h-56 overflow-y-auto py-1">
+                                                <template x-for="item in options" :key="item.value">
+                                                    <button
+                                                        type="button"
+                                                        x-on:click="selectServiceType(item.value)"
+                                                        class="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-right text-sm text-slate-700 transition hover:bg-slate-50"
+                                                        role="option"
+                                                        x-bind:aria-selected="serviceType === item.value"
+                                                    >
+                                                        <span x-text="item.label" class="font-medium"></span>
+                                                        <span class="text-xs text-slate-400" x-show="serviceType === item.value">انتخاب شده</span>
+                                                    </button>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @error('serviceType') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                                 </div>
 
                             </div>
@@ -86,7 +231,7 @@
                             </div>
                         </div>
 
-                        <div class="rounded-3xl border border-slate-200 bg-white p-5">
+                        <div class="rounded-3xl border border-slate-200 bg-white p-4">
                             <div class="mb-4 flex items-center justify-between">
                                 <div>
                                     <h2 class="text-lg font-bold text-slate-800">دسته‌های خدمت</h2>
