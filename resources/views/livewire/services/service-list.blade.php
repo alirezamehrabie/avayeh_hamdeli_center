@@ -22,24 +22,68 @@
         ];
     @endphp
 
-    <div class="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
-        <div class="bg-gradient-to-l from-cyan-600 via-sky-600 to-blue-600 px-6 py-6 text-white">
-            <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                <div>
-                    <h1 class="mt-2 text-2xl font-extrabold">لیست خدمات</h1>
-                    <p class="mt-2 max-w-3xl text-sm text-cyan-50/90">
+    <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm sm:rounded-[32px]">
+        <div class="bg-gradient-to-l from-cyan-600 via-sky-600 to-blue-600 px-4 py-3 text-white sm:px-5 sm:py-4 xl:px-6 xl:py-5">
+            <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div class="flex min-w-0 flex-col gap-2 md:flex-row md:items-center md:gap-3">
+                    <h1 class="text-lg font-extrabold leading-7 sm:text-xl xl:text-2xl">لیست خدمات</h1>
+                    <div class="inline-flex w-fit items-center gap-2 rounded-full border border-white/20 bg-white/12 px-3 py-1 text-white shadow-sm shadow-cyan-950/10 backdrop-blur">
+                        <span class="h-1.5 w-1.5 rounded-full bg-cyan-200"></span>
+                        <span class="text-[11px] font-semibold leading-none text-cyan-50/90 sm:text-xs">تعداد کل</span>
+                        <span class="text-xs font-extrabold leading-none sm:text-sm">{{ $services->count() }}</span>
+                    </div>
+                    <p class="mt-1 hidden max-w-3xl text-xs leading-6 text-cyan-50/90 md:line-clamp-1 xl:block xl:text-sm">
                         خدمات تعریف شده را یکجا مشاهده کنید، جزئیات را بررسی کنید و برای ویرایش به فرم تعریف خدمات بروید.
                     </p>
                 </div>
 
-                <div class="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur">
-                    <p class="text-xs text-cyan-100">تعداد کل خدمات</p>
-                    <p class="mt-1 text-lg font-bold">{{ $services->count() }} خدمت</p>
+                <div class="flex items-center gap-2 sm:justify-end">
+                    <button
+                        type="button"
+                        wire:click="createService"
+                        class="group inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-gradient-to-l from-cyan-600 via-sky-600 to-blue-600 px-3 text-xs font-bold text-white shadow-lg shadow-cyan-950/20 ring-1 ring-white/10 transition duration-200 hover:-translate-y-0.5 hover:border-white/30 hover:from-cyan-500 hover:via-sky-500 hover:to-blue-500 hover:shadow-xl hover:shadow-cyan-950/25 focus:outline-none focus:ring-4 focus:ring-white/25 active:translate-y-0 active:scale-[0.98] sm:flex-none sm:px-4 sm:text-sm"
+                    >
+                        <span class="flex h-6 w-6 ml-1 items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/20 transition duration-200 group-hover:scale-110 group-hover:bg-white/20 group-active:scale-95">
+                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m-7-7h14"/>
+                            </svg>
+                        </span>
+                        <span>افزودن خدمت</span>
+                    </button>
+
                 </div>
             </div>
         </div>
 
         <div class="space-y-3 p-4 sm:p-6">
+            <div class="flex flex-col gap-3 rounded-[26px] border border-slate-200 bg-slate-50/80 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-3.5">
+                <div class="flex flex-col gap-3 sm:flex-1 sm:flex-row sm:items-center">
+                    <div class="relative flex-1">
+                        <svg class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m21 21-4.35-4.35m1.35-5.15a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"/>
+                        </svg>
+                        <input
+                            type="text"
+                            wire:model.live.debounce.300ms="search"
+                            placeholder="جستجو با کد، نام خدمت، زیر‌دسته یا ایجادکننده ..."
+                            class="h-10 w-full rounded-2xl border border-slate-200 bg-white py-2 pl-4 pr-10 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-4 focus:ring-sky-100 sm:h-9"
+                        >
+                    </div>
+
+                    <div class="relative sm:w-52">
+                        <select
+                            wire:model.live="statusFilter"
+                            class="h-10 w-full rounded-2xl border border-slate-200 bg-white py-2 pl-4 pr-4 text-sm font-medium text-slate-700 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100 sm:h-9"
+                        >
+                            <option value="all">همه وضعیت‌ها</option>
+                            @foreach($statusOptions as $value => $label)
+                                <option value="{{ $value }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>
+
             @forelse($services as $service)
                 @php
                     $creator = $service->creator;
@@ -140,12 +184,12 @@
                         </div>
 
                         <div class="flex items-center justify-end gap-2 border-t border-slate-100 pt-3 xl:border-t-0 xl:pt-0">
-                                <button
-                                    type="button"
-                                    @click.stop
-                                    wire:click="editService({{ $service->id }})"
-                                    class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100"
-                                    title="ویرایش"
+                            <button
+                                type="button"
+                                @click.stop
+                                wire:click="editService({{ $service->id }})"
+                                class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100"
+                                title="ویرایش"
                                 aria-label="ویرایش"
                             >
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -199,7 +243,7 @@
                 </article>
             @empty
                 <div class="rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-4 py-12 text-center text-slate-500">
-                    هنوز خدمتی تعریف نشده است.
+                    {{ trim($search ?? '') !== '' ? 'هیچ خدمتی برای جستجوی فعلی یافت نشد.' : 'هنوز خدمتی تعریف نشده است.' }}
                 </div>
             @endforelse
         </div>

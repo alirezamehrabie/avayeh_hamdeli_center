@@ -3,10 +3,14 @@
 namespace App\Livewire\Services;
 
 use App\Models\Service;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 class ServiceList extends Component
 {
+    public string $search = '';
+    public string $statusFilter = 'all';
+
     public function mount(): void
     {
         abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
@@ -24,6 +28,9 @@ class ServiceList extends Component
 
     public function render()
     {
+        $search = trim($this->search);
+        $statusFilter = $this->statusFilter;
+
         return view('livewire.services.service-list', [
             'services' => Service::query()
                 ->with([
@@ -34,6 +41,22 @@ class ServiceList extends Component
                     'creator',
                     'socialWorkers',
                 ])
+                ->when($search !== '', function ($query) use ($search) {
+                    $query->where(function ($nestedQuery) use ($search) {
+                        $nestedQuery
+                            ->where('code', 'like', "%{$search}%")
+                            ->orWhereHas('serviceName', fn ($serviceNameQuery) => $serviceNameQuery->where('name', 'like', "%{$search}%"))
+                            ->orWhereHas('categories', fn ($categoryQuery) => $categoryQuery->where('name', 'like', "%{$search}%"))
+                            ->orWhereHas('creator', function ($creatorQuery) use ($search) {
+                                $creatorQuery
+                                    ->where('name', 'like', "%{$search}%")
+                                    ->orWhere('first_name', 'like', "%{$search}%")
+                                    ->orWhere('last_name', 'like', "%{$search}%")
+                                    ->orWhere(DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, ''))"), 'like', "%{$search}%");
+                        });
+                    });
+                })
+                ->when($statusFilter !== 'all', fn ($query) => $query->where('status', $statusFilter))
                 ->latest()
                 ->get(),
             'typeOptions' => Service::TYPE_OPTIONS,
