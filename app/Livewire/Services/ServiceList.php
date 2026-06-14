@@ -26,6 +26,17 @@ class ServiceList extends Component
         $this->dispatch('open-dashboard-section', section: 'service-definition');
     }
 
+    public function formatReadableNumber(string|int|float|null $value): string
+    {
+        $number = (float) ($value ?? 0);
+
+        if (fmod($number, 1.0) === 0.0) {
+            return number_format((int) $number);
+        }
+
+        return rtrim(rtrim(number_format($number, 2, '.', ','), '0'), '.');
+    }
+
     public function render()
     {
         $search = trim($this->search);

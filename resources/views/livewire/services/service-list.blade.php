@@ -101,9 +101,9 @@
                         'type' => $typeOptions[$service->service_type] ?? $service->service_type,
                         'status' => $statusOptions[$service->status] ?? $service->status,
                         'priority' => $service->priority ? ($priorityOptions[$service->priority] ?? $service->priority) : 'بدون اولویت',
-                        'quantity' => number_format((float) $service->total_quantity, 2) . ' ' . ($unitOptions[$service->service_unit] ?? ($service->service_unit ?? '-')),
-                        'delivered' => number_format((float) $service->quantity_delivered, 2),
-                        'remaining' => number_format($service->remaining_quantity, 2),
+                        'quantity' => $this->formatReadableNumber($service->total_quantity) . ' ' . ($unitOptions[$service->service_unit] ?? ($service->service_unit ?? '-')),
+                        'delivered' => $this->formatReadableNumber($service->quantity_delivered),
+                        'remaining' => $this->formatReadableNumber($service->remaining_quantity),
                         'value' => number_format($service->total_service_value) . ' ریال',
                         'district' => $service->district?->name ?: 'بدون منطقه',
                         'start' => $service->distribution_start_date ? \App\Helpers\Morilog\Jalalian::fromDateTime($service->distribution_start_date)->format('Y/m/d') : '-',
@@ -115,7 +115,7 @@
                         'created_at' => $service->created_at ? \App\Helpers\Morilog\Jalalian::fromDateTime($service->created_at)->format('Y/m/d') : '-',
                         'categories' => $service->categories->map(fn ($category) => [
                             'name' => $category->name,
-                            'summary' => number_format((float) $category->quantity, 2)
+                            'summary' => $this->formatReadableNumber($category->quantity)
                                 . ' × '
                                 . number_format((int) ($category->value ?? 0))
                                 . ' ریال = '
@@ -206,9 +206,9 @@
                                     'type' => $typeOptions[$service->service_type] ?? $service->service_type,
                                     'status' => $statusOptions[$service->status] ?? $service->status,
                                     'priority' => $service->priority ? ($priorityOptions[$service->priority] ?? $service->priority) : 'بدون اولویت',
-                                    'quantity' => number_format((float) $service->total_quantity, 2) . ' ' . ($unitOptions[$service->service_unit] ?? ($service->service_unit ?? '-')),
-                                    'delivered' => number_format((float) $service->quantity_delivered, 2),
-                                    'remaining' => number_format($service->remaining_quantity, 2),
+                                    'quantity' => $this->formatReadableNumber($service->total_quantity) . ' ' . ($unitOptions[$service->service_unit] ?? ($service->service_unit ?? '-')),
+                                    'delivered' => $this->formatReadableNumber($service->quantity_delivered),
+                                    'remaining' => $this->formatReadableNumber($service->remaining_quantity),
                                     'value' => number_format($service->total_service_value) . ' ریال',
                                     'district' => $service->district?->name ?: 'بدون منطقه',
                                     'start' => $service->distribution_start_date ? \App\Helpers\Morilog\Jalalian::fromDateTime($service->distribution_start_date)->format('Y/m/d') : '-',
@@ -220,7 +220,7 @@
                                     'created_at' => $service->created_at ? \App\Helpers\Morilog\Jalalian::fromDateTime($service->created_at)->format('Y/m/d') : '-',
                                     'categories' => $service->categories->map(fn ($category) => [
                                         'name' => $category->name,
-                                        'summary' => number_format((float) $category->quantity, 2)
+                                        'summary' => $this->formatReadableNumber($category->quantity)
                                             . ' × '
                                             . number_format((int) ($category->value ?? 0))
                                             . ' ریال = '
@@ -308,7 +308,7 @@
                     <div class="flex flex-wrap items-center gap-2">
                         <h3 class="text-base font-black text-slate-800">جزئیات خدمت</h3>
                         <span class="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600 ring-1 ring-slate-200" x-text="details?.code"></span>
-                        <span class="rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-bold text-violet-700 ring-1 ring-violet-100" x-text="details?.status"></span>
+                        <span class="rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-bold text-violet-700 ring-1 ring-violet-100" x-text="`${details?.status ?? '-'} / ${details?.priority ?? '-'}`"></span>
                     </div>
                     <p class="mt-1 truncate text-sm font-semibold text-slate-600" x-text="details?.name"></p>
                 </div>
@@ -324,7 +324,6 @@
                     <div class="space-y-3">
                         <div class="grid gap-2 sm:grid-cols-2">
                             <div class="rounded-2xl border border-sky-100 bg-sky-50/70 px-3 py-2.5"><p class="text-[11px] text-sky-700/70">نوع</p><p class="mt-1 text-sm font-bold text-slate-800" x-text="details?.type"></p></div>
-                            <div class="rounded-2xl border border-violet-100 bg-violet-50/60 px-3 py-2.5"><p class="text-[11px] text-violet-700/70">اولویت</p><p class="mt-1 text-sm font-bold text-slate-800" x-text="details?.priority"></p></div>
                             <div class="rounded-2xl border border-emerald-100 bg-emerald-50/60 px-3 py-2.5"><p class="text-[11px] text-emerald-700/70">تعداد مددکار</p><p class="mt-1 text-sm font-bold text-slate-800" x-text="details?.workers_count"></p></div>
                             <div class="rounded-2xl border border-amber-100 bg-amber-50/60 px-3 py-2.5"><p class="text-[11px] text-amber-800/70">مقدار کل</p><p class="mt-1 text-sm font-bold text-slate-800" x-text="details?.quantity"></p></div>
                             <div class="rounded-2xl border border-rose-100 bg-rose-50/60 px-3 py-2.5"><p class="text-[11px] text-rose-700/70">ارزش کل</p><p class="mt-1 text-sm font-bold text-slate-800" x-text="details?.value"></p></div>
@@ -356,10 +355,10 @@
                                     </div>
                                 </template>
 
-                                <div class="rounded-2xl border border-rose-100 bg-rose-50/70 px-4 py-3">
-                                    <p class="text-xs font-medium text-rose-700/80">جمع کل ارزش خدمت</p>
-                                    <p class="mt-1 text-sm font-black text-rose-900" x-text="details?.categories_total"></p>
-                                    <p class="mt-1 break-words text-[11px] leading-5 text-rose-800/75 sm:max-w-[24rem]" x-text="details?.categories_total_words"></p>
+                                <div class="rounded-2xl border border-sky-100 bg-sky-50/80 px-4 py-3">
+                                    <p class="text-xs font-medium text-sky-700/80">جمع کل ارزش خدمت</p>
+                                    <p class="mt-1 text-sm font-black text-sky-900" x-text="details?.categories_total"></p>
+                                    <p class="mt-1 break-words text-[11px] leading-5 text-sky-800/75 sm:max-w-[24rem]" x-text="details?.categories_total_words"></p>
                                 </div>
                             </div>
                         </div>
