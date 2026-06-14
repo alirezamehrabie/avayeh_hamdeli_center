@@ -32,12 +32,21 @@ class Service extends Model
     ];
 
     public const FALLBACK_UNIT_OPTIONS = [
-        'package' => 'بسته',
-        'piece' => 'دست',
         'count' => 'عدد',
         'portion' => 'پرس',
+        'pack' => 'بسته',
+        'dast' => 'دست',
         'kilogram' => 'کیلوگرم',
         'gram' => 'گرم',
+    ];
+
+    public const UNIT_OPTION_ORDER = [
+        'count',
+        'portion',
+        'pack',
+        'dast',
+        'kilogram',
+        'gram',
     ];
 
     protected $fillable = [
@@ -105,12 +114,27 @@ class Service extends Model
             ->pluck('label', 'key')
             ->all();
 
-        return $units !== [] ? $units : static::FALLBACK_UNIT_OPTIONS;
+        return $units !== []
+            ? static::sortUnitOptions($units + static::FALLBACK_UNIT_OPTIONS)
+            : static::FALLBACK_UNIT_OPTIONS;
     }
 
     public static function unitKeys(): array
     {
         return array_keys(static::unitOptions());
+    }
+
+    protected static function sortUnitOptions(array $units): array
+    {
+        $orderedUnits = [];
+
+        foreach (static::UNIT_OPTION_ORDER as $key) {
+            if (array_key_exists($key, $units)) {
+                $orderedUnits[$key] = $units[$key];
+            }
+        }
+
+        return $orderedUnits + array_diff_key($units, $orderedUnits);
     }
 
     public function serviceName(): BelongsTo

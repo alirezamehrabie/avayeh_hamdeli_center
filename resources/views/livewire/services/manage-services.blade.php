@@ -371,11 +371,62 @@
                                             </div>
                                             <div>
                                                 <label class="mb-2 block text-sm font-bold text-slate-700">واحد</label>
-                                                <select wire:model="categories.{{ $index }}.unit" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
-                                                    @foreach($unitOptions as $value => $label)
-                                                        <option value="{{ $value }}">{{ $label }}</option>
-                                                    @endforeach
-                                                </select>
+                                                <div
+                                                    x-data="{
+                                                        open: false,
+                                                        unit: @entangle('categories.' . $index . '.unit').live,
+                                                        unitOptions: @js($unitOptions),
+                                                        get options() {
+                                                            return Object.entries(this.unitOptions).map(([value, label]) => ({ value, label }));
+                                                        },
+                                                        get selectedLabel() {
+                                                            return this.unitOptions[this.unit] ?? 'انتخاب واحد';
+                                                        },
+                                                        selectUnit(value) {
+                                                            this.unit = value;
+                                                            this.open = false;
+                                                        }
+                                                    }"
+                                                    x-on:click.outside="open = false"
+                                                    class="relative"
+                                                >
+                                                    <button
+                                                        type="button"
+                                                        x-on:click.stop.prevent="open = !open"
+                                                        x-on:keydown.escape="open = false"
+                                                        class="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-right text-sm text-slate-700 transition focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                                                        aria-haspopup="listbox"
+                                                        x-bind:aria-expanded="open.toString()"
+                                                    >
+                                                        <span x-text="selectedLabel" class="font-medium"></span>
+                                                        <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4 shrink-0 text-slate-400 transition" x-bind:class="{ 'rotate-180': open }">
+                                                            <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                                        </svg>
+                                                    </button>
+
+                                                    <div
+                                                        x-cloak
+                                                        x-show="open"
+                                                        x-transition.origin.top.left
+                                                        class="absolute z-30 mt-2 max-h-60 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
+                                                        role="listbox"
+                                                    >
+                                                        <div class="max-h-56 overflow-y-auto py-1">
+                                                            <template x-for="item in options" :key="item.value">
+                                                                <button
+                                                                    type="button"
+                                                                    x-on:click="selectUnit(item.value)"
+                                                                    class="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-right text-sm text-slate-700 transition hover:bg-slate-50"
+                                                                    role="option"
+                                                                    x-bind:aria-selected="unit === item.value"
+                                                                >
+                                                                    <span x-text="item.label" class="font-medium"></span>
+                                                                    <span class="text-xs text-slate-400" x-show="unit === item.value">انتخاب شده</span>
+                                                                </button>
+                                                            </template>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                                 @error("categories.$index.unit") <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                                             </div>
                                             <div>
