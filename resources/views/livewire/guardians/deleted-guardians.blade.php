@@ -18,6 +18,33 @@
                 </div>
             @endif
 
+            <div class="mb-5 rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+                <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
+                    <div class="w-full lg:max-w-sm">
+                        <label for="guardian-national-id-search" class="mb-2 block text-sm font-semibold text-slate-700">جستجو با کد ملی سرپرست</label>
+                        <input
+                            id="guardian-national-id-search"
+                            type="text"
+                            wire:model.defer="nationalIdSearch"
+                            wire:keydown.enter="searchByNationalId"
+                            inputmode="numeric"
+                            dir="ltr"
+                            placeholder="مثلاً 12345678910"
+                            class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-rose-300 focus:ring focus:ring-rose-100"
+                        >
+                    </div>
+                    <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                        <button
+                            type="button"
+                            wire:click="searchByNationalId"
+                            class="inline-flex min-h-11 items-center justify-center rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700"
+                        >
+                            جستجو
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100">
                 <div class="overflow-x-auto">
                     <table class="min-w-full border-collapse text-sm">
@@ -53,7 +80,13 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-5 py-10 text-center text-slate-500">هیچ سرپرست حذف‌شده‌ای وجود ندارد.</td>
+                                    <td colspan="7" class="px-5 py-10 text-center text-slate-500">
+                                        @if ($appliedNationalIdSearch !== '')
+                                            سرپرستی با این کد ملی یافت نشد.
+                                        @else
+                                            هیچ سرپرست حذف‌شده‌ای وجود ندارد.
+                                        @endif
+                                    </td>
                                 </tr>
                             @endforelse
                         </tbody>

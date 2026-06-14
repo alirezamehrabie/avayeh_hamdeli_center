@@ -13,18 +13,31 @@ class DeletedGuardians extends Component
     use WithPagination;
 
     public bool $embedded = false;
+    public string $nationalIdSearch = '';
+    public string $appliedNationalIdSearch = '';
 
     public function mount(): void
     {
         abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
     }
 
+    public function searchByNationalId(): void
+    {
+        $this->appliedNationalIdSearch = preg_replace('/\D+/', '', trim($this->nationalIdSearch));
+        $this->resetPage();
+    }
+
     public function getDeletedGuardiansProperty()
     {
-        return Guardian::onlyTrashed()
+        $query = Guardian::onlyTrashed()
             ->withCount(['people' => fn ($query) => $query->onlyTrashed()])
-            ->orderBy('deleted_at', 'desc')
-            ->paginate(20);
+            ->orderBy('deleted_at', 'desc');
+
+        if ($this->appliedNationalIdSearch !== '') {
+            $query->where('national_code', 'LIKE', '%' . $this->appliedNationalIdSearch . '%');
+        }
+
+        return $query->paginate(20);
     }
 
     public function restoreFamily(int $guardianId): void
