@@ -106,7 +106,7 @@
                                 <p class="text-[11px] font-medium text-slate-400">زیر‌دسته‌ها</p>
                                 <button
                                     type="button"
-                                    @click="categoryTitle = @js($service->serviceName?->name ?: 'خدمت'); categories = @js($service->categories->map(fn ($category) => [
+                                    @click.stop="categoryTitle = @js($service->serviceName?->name ?: 'خدمت'); categories = @js($service->categories->map(fn ($category) => [
                                         'name' => $category->name,
                                         'quantity' => number_format((float) $category->quantity, 2),
                                         'unit' => $unitOptions[$category->unit] ?? ($category->unit ?? '-'),
@@ -264,6 +264,7 @@
                     <div class="flex flex-wrap items-center gap-2">
                         <h3 class="text-base font-black text-slate-800">جزئیات خدمت</h3>
                         <span class="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600 ring-1 ring-slate-200" x-text="details?.code"></span>
+                        <span class="rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-bold text-violet-700 ring-1 ring-violet-100" x-text="details?.status"></span>
                     </div>
                     <p class="mt-1 truncate text-sm font-semibold text-slate-600" x-text="details?.name"></p>
                 </div>
@@ -279,7 +280,7 @@
                     <div class="space-y-3">
                         <div class="grid gap-2 sm:grid-cols-2">
                             <div class="rounded-2xl border border-sky-100 bg-sky-50/70 px-3 py-2.5"><p class="text-[11px] text-sky-700/70">نوع</p><p class="mt-1 text-sm font-bold text-slate-800" x-text="details?.type"></p></div>
-                            <div class="rounded-2xl border border-violet-100 bg-violet-50/60 px-3 py-2.5"><p class="text-[11px] text-violet-700/70">وضعیت / اولویت</p><p class="mt-1 text-sm font-bold text-slate-800"><span x-text="details?.status"></span> - <span x-text="details?.priority"></span></p></div>
+                            <div class="rounded-2xl border border-violet-100 bg-violet-50/60 px-3 py-2.5"><p class="text-[11px] text-violet-700/70">اولویت</p><p class="mt-1 text-sm font-bold text-slate-800" x-text="details?.priority"></p></div>
                             <div class="rounded-2xl border border-emerald-100 bg-emerald-50/60 px-3 py-2.5"><p class="text-[11px] text-emerald-700/70">تعداد مددکار</p><p class="mt-1 text-sm font-bold text-slate-800" x-text="details?.workers_count"></p></div>
                             <div class="rounded-2xl border border-amber-100 bg-amber-50/60 px-3 py-2.5"><p class="text-[11px] text-amber-800/70">مقدار کل</p><p class="mt-1 text-sm font-bold text-slate-800" x-text="details?.quantity"></p></div>
                             <div class="rounded-2xl border border-rose-100 bg-rose-50/60 px-3 py-2.5"><p class="text-[11px] text-rose-700/70">ارزش کل</p><p class="mt-1 text-sm font-bold text-slate-800" x-text="details?.value"></p></div>
@@ -322,8 +323,7 @@
 
                     <div class="space-y-3">
                         <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
-                            <div class="rounded-2xl border border-slate-200 bg-slate-50/80 px-3 py-2.5"><p class="text-[11px] text-slate-500">ایجادکننده</p><p class="mt-1 text-sm font-bold text-slate-800" x-text="details?.creator"></p></div>
-                            <div class="rounded-2xl border border-slate-200 bg-slate-50/80 px-3 py-2.5"><p class="text-[11px] text-slate-500">تاریخ ایجاد</p><p class="mt-1 text-sm font-bold text-slate-800" x-text="details?.created_at"></p></div>
+                            <div class="rounded-2xl border border-slate-200 bg-slate-50/80 px-3 py-2.5"><p class="text-[11px] text-slate-500">ایجاد شده توسط</p><p class="mt-1 text-sm font-bold text-slate-800"><span x-text="details?.creator"></span> <span class="text-slate-400">-</span> <span x-text="details?.created_at"></span></p></div>
                             <div class="rounded-2xl border border-slate-200 bg-slate-50/80 px-3 py-2.5"><p class="text-[11px] text-slate-500">شروع / پایان</p><p class="mt-1 text-sm font-bold text-slate-800"><span x-text="details?.start"></span> - <span x-text="details?.end"></span></p></div>
                         </div>
 
