@@ -4,9 +4,11 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Schema;
 
 class User extends Authenticatable
@@ -41,6 +43,7 @@ class User extends Authenticatable
         'email',
         'password',
         'profile_photo_path',
+        'mobile',
         'is_admin',
         'access_level',
         'permissions',
@@ -84,6 +87,57 @@ class User extends Authenticatable
             self::PERMISSION_PEOPLE_DELETE => 'حذف مددجو (انتقال به بلاک‌لیست)',
             self::PERMISSION_FULL_ACCESS => 'دسترسی کامل',
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     * @param  list<string>  $permissions
+     */
+    public static function createRoleAccount(array $attributes, array $permissions = []): self
+    {
+        $username = mb_strtolower(trim((string) $attributes['name']));
+        $accessLevel = (string) ($attributes['access_level'] ?? self::ACCESS_LEVEL_REGULAR);
+
+        return self::create(array_merge(
+            [
+                'name' => $username,
+                'first_name' => trim((string) ($attributes['first_name'] ?? '')),
+                'last_name' => trim((string) ($attributes['last_name'] ?? '')),
+                'email' => $attributes['email'] ?? $username . '@local.system',
+                'password' => $attributes['password'],
+                'access_level' => $accessLevel,
+                'is_admin' => in_array($accessLevel, [self::ACCESS_LEVEL_MANAGER, self::ACCESS_LEVEL_ADMIN], true),
+                'permissions' => self::normalizePermissionKeys($permissions),
+            ],
+            Arr::except($attributes, [
+                'name',
+                'first_name',
+                'last_name',
+                'email',
+                'password',
+                'access_level',
+                'is_admin',
+                'permissions',
+            ])
+        ));
+    }
+
+    /**
+     * @param  list<string>  $permissions
+     * @return list<string>
+     */
+    public static function normalizePermissionKeys(array $permissions): array
+    {
+        $permissions = array_values(array_unique(array_intersect(
+            $permissions,
+            array_keys(self::permissionOptions())
+        )));
+
+        if (in_array(self::PERMISSION_FULL_ACCESS, $permissions, true)) {
+            return [self::PERMISSION_FULL_ACCESS];
+        }
+
+        return $permissions;
     }
 
     public function isAdmin(): bool
@@ -235,6 +289,11 @@ class User extends Authenticatable
     public function socialWorker()
     {
         return $this->belongsTo(SocialWorker::class);
+    }
+
+    public function sponsorProfile(): HasOne
+    {
+        return $this->hasOne(SponsorProfile::class);
     }
 
     /**

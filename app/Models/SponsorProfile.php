@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Sponsor extends Model
+class SponsorProfile extends Model
 {
     use HasFactory;
 
@@ -15,9 +15,8 @@ class Sponsor extends Model
     public const REMINDER_MESSAGING_APPS = 'messaging_apps';
 
     protected $fillable = [
-        'full_name',
+        'user_id',
         'monthly_donation_amount',
-        'mobile',
         'child_preferences',
         'monthly_payment_reminder_methods',
         'is_social_media_active',
@@ -44,6 +43,11 @@ class Sponsor extends Model
             self::REMINDER_SMS => 'ارسال پیامک',
             self::REMINDER_MESSAGING_APPS => 'ایتا / واتس اپ',
         ];
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function creator(): BelongsTo

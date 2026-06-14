@@ -29,16 +29,29 @@
 
                 <div class="grid gap-4 md:grid-cols-2">
                     <div>
-                        <label for="sponsor-full-name" class="mb-1.5 block text-sm font-bold text-slate-700">نام و نام خانوادگی <span class="text-rose-500">*</span></label>
+                        <label for="sponsor-first-name" class="mb-1.5 block text-sm font-bold text-slate-700">نام <span class="text-rose-500">*</span></label>
                         <input
-                            id="sponsor-full-name"
+                            id="sponsor-first-name"
                             type="text"
-                            wire:model.live.debounce.400ms="fullName"
-                            autocomplete="name"
-                            placeholder="نام و نام خانوادگی"
+                            wire:model.live.debounce.400ms="firstName"
+                            autocomplete="given-name"
+                            placeholder="نام"
                             class="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
                         >
-                        @error('fullName') <p class="mt-1.5 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                        @error('firstName') <p class="mt-1.5 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label for="sponsor-last-name" class="mb-1.5 block text-sm font-bold text-slate-700">نام خانوادگی <span class="text-rose-500">*</span></label>
+                        <input
+                            id="sponsor-last-name"
+                            type="text"
+                            wire:model.live.debounce.400ms="lastName"
+                            autocomplete="family-name"
+                            placeholder="نام خانوادگی"
+                            class="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+                        >
+                        @error('lastName') <p class="mt-1.5 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
                     </div>
 
                     <div>
@@ -77,6 +90,13 @@
                             class="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-left text-sm text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
                         >
                         @error('mobile') <p class="mt-1.5 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <div class="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                            <span class="text-xs font-bold text-slate-500">نام کامل یکپارچه</span>
+                            <span class="truncate text-sm font-black text-slate-800">{{ $this->fullName !== '' ? $this->fullName : '-' }}</span>
+                        </div>
                     </div>
 
                     <div>

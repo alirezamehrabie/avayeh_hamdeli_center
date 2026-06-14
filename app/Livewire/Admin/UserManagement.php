@@ -95,18 +95,14 @@ class UserManagement extends Component
             return;
         }
 
-        $permissions = $this->normalizePermissions($validated['permissions'] ?? []);
-
-        User::create([
+        User::createRoleAccount([
             'name' => $username,
             'first_name' => trim($validated['first_name']),
             'last_name' => trim($validated['last_name']),
             'email' => $username . '@local.system',
             'password' => $validated['password'],
             'access_level' => $validated['access_level'],
-            'is_admin' => in_array($validated['access_level'], [User::ACCESS_LEVEL_MANAGER, User::ACCESS_LEVEL_ADMIN], true),
-            'permissions' => $permissions,
-        ]);
+        ], $validated['permissions'] ?? []);
 
         $this->reset(['first_name', 'last_name', 'username', 'password', 'password_confirmation', 'access_level', 'permissions']);
         $this->access_level = User::ACCESS_LEVEL_REGULAR;
@@ -309,7 +305,7 @@ class UserManagement extends Component
         }
 
         $user->update([
-            'permissions' => $this->normalizePermissions($permissions),
+            'permissions' => User::normalizePermissionKeys($permissions),
         ]);
 
         session()->flash('success', 'دسترسی‌های کاربر به‌روزرسانی شد.');
@@ -490,24 +486,6 @@ class UserManagement extends Component
         ]);
     }
 
-    /**
-     * @param  list<string>  $permissions
-     * @return list<string>
-     */
-    private function normalizePermissions(array $permissions): array
-    {
-        $permissions = array_values(array_unique(array_intersect(
-            $permissions,
-            array_keys(User::permissionOptions())
-        )));
-
-        if (in_array(User::PERMISSION_FULL_ACCESS, $permissions, true)) {
-            return [User::PERMISSION_FULL_ACCESS];
-        }
-
-        return $permissions;
-    }
-
     public function render()
     {
         abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
@@ -567,6 +545,10 @@ class UserManagement extends Component
                 if (Schema::hasColumns('users', ['first_name', 'last_name'])) {
                     $query->orWhere('first_name', 'like', '%' . $search . '%')
                         ->orWhere('last_name', 'like', '%' . $search . '%');
+                }
+
+                if (Schema::hasColumn('users', 'mobile')) {
+                    $query->orWhere('mobile', 'like', '%' . $search . '%');
                 }
             });
         }

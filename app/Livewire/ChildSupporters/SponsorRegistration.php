@@ -2,7 +2,11 @@
 
 namespace App\Livewire\ChildSupporters;
 
-use App\Models\Sponsor;
+use App\Models\SponsorProfile;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -12,7 +16,8 @@ class SponsorRegistration extends Component
 {
     public bool $embedded = false;
 
-    public string $fullName = '';
+    public string $firstName = '';
+    public string $lastName = '';
     public string $monthlyDonationAmount = '';
     public string $mobile = '';
     public string $childPreferences = '';
@@ -28,7 +33,8 @@ class SponsorRegistration extends Component
     public function updated(string $property): void
     {
         if (in_array($property, [
-            'fullName',
+            'firstName',
+            'lastName',
             'monthlyDonationAmount',
             'mobile',
             'monthlyPaymentReminderMethods',
@@ -43,19 +49,33 @@ class SponsorRegistration extends Component
         $this->authorizeAccess();
 
         $validated = $this->validate($this->rules(), $this->messages());
+        $mobile = $this->normalizeMobile($validated['mobile']);
+        $firstName = $this->normalizeNamePart($validated['firstName']);
+        $lastName = $this->normalizeNamePart($validated['lastName']);
 
-        Sponsor::create([
-            'full_name' => trim($validated['fullName']),
-            'monthly_donation_amount' => (int) preg_replace('/\D+/', '', $validated['monthlyDonationAmount']),
-            'mobile' => $this->normalizeMobile($validated['mobile']),
-            'child_preferences' => filled($validated['childPreferences'] ?? null) ? trim($validated['childPreferences']) : null,
-            'monthly_payment_reminder_methods' => array_values($validated['monthlyPaymentReminderMethods']),
-            'is_social_media_active' => $validated['isSocialMediaActive'] === 'yes',
-            'created_by' => auth()->id(),
-        ]);
+        DB::transaction(function () use ($validated, $mobile, $firstName, $lastName): void {
+            $user = User::createRoleAccount([
+                'name' => $mobile,
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+                'email' => $mobile . '@local.system',
+                'password' => Str::random(16),
+                'access_level' => User::ACCESS_LEVEL_CHILD_SUPPORTER,
+                'mobile' => $mobile,
+            ]);
+
+            $user->sponsorProfile()->create([
+                'monthly_donation_amount' => (int) preg_replace('/\D+/', '', $validated['monthlyDonationAmount']),
+                'child_preferences' => filled($validated['childPreferences'] ?? null) ? trim($validated['childPreferences']) : null,
+                'monthly_payment_reminder_methods' => array_values($validated['monthlyPaymentReminderMethods']),
+                'is_social_media_active' => $validated['isSocialMediaActive'] === 'yes',
+                'created_by' => auth()->id(),
+            ]);
+        });
 
         $this->reset([
-            'fullName',
+            'firstName',
+            'lastName',
             'monthlyDonationAmount',
             'mobile',
             'childPreferences',
@@ -71,10 +91,11 @@ class SponsorRegistration extends Component
      */
     protected function rules(): array
     {
-        $reminderKeys = array_keys(Sponsor::reminderMethodOptions());
+        $reminderKeys = array_keys(SponsorProfile::reminderMethodOptions());
 
         return [
-            'fullName' => ['required', 'string', 'min:3', 'max:150'],
+            'firstName' => ['required', 'string', 'min:2', 'max:100'],
+            'lastName' => ['required', 'string', 'min:2', 'max:100'],
             'monthlyDonationAmount' => [
                 'required',
                 'regex:/^[\d,\s]+$/',
@@ -86,7 +107,12 @@ class SponsorRegistration extends Component
                     }
                 },
             ],
-            'mobile' => ['required', 'regex:/^09\d{9}$/'],
+            'mobile' => [
+                'required',
+                'regex:/^09\d{9}$/',
+                Rule::unique('users', 'name'),
+                Schema::hasColumn('users', 'mobile') ? Rule::unique('users', 'mobile') : 'nullable',
+            ],
             'childPreferences' => ['nullable', 'string', 'max:1000'],
             'monthlyPaymentReminderMethods' => ['required', 'array', 'min:1'],
             'monthlyPaymentReminderMethods.*' => ['string', Rule::in($reminderKeys)],
@@ -100,13 +126,17 @@ class SponsorRegistration extends Component
     protected function messages(): array
     {
         return [
-            'fullName.required' => 'نام و نام خانوادگی الزامی است.',
-            'fullName.min' => 'نام وارد شده کوتاه است.',
-            'fullName.max' => 'نام وارد شده بیش از حد طولانی است.',
+            'firstName.required' => 'نام الزامی است.',
+            'firstName.min' => 'نام وارد شده کوتاه است.',
+            'firstName.max' => 'نام وارد شده بیش از حد طولانی است.',
+            'lastName.required' => 'نام خانوادگی الزامی است.',
+            'lastName.min' => 'نام خانوادگی وارد شده کوتاه است.',
+            'lastName.max' => 'نام خانوادگی وارد شده بیش از حد طولانی است.',
             'monthlyDonationAmount.required' => 'مبلغ واریزی ماهیانه الزامی است.',
             'monthlyDonationAmount.regex' => 'مبلغ را فقط با عدد وارد کنید.',
             'mobile.required' => 'شماره موبایل الزامی است.',
             'mobile.regex' => 'شماره موبایل باید با فرمت 09xxxxxxxxx باشد.',
+            'mobile.unique' => 'برای این شماره موبایل قبلا حساب کاربری ثبت شده است.',
             'childPreferences.max' => 'توضیحات کودک حداکثر ۱۰۰۰ کاراکتر باشد.',
             'monthlyPaymentReminderMethods.required' => 'حداقل یک روش یادآوری را انتخاب کنید.',
             'monthlyPaymentReminderMethods.min' => 'حداقل یک روش یادآوری را انتخاب کنید.',
@@ -130,6 +160,21 @@ class SponsorRegistration extends Component
         return preg_replace('/\D+/', '', $mobile) ?: $mobile;
     }
 
+    private function normalizeNamePart(string $value): string
+    {
+        return preg_replace('/\s+/u', ' ', trim($value)) ?: trim($value);
+    }
+
+    private function combineFullName(string $firstName, string $lastName): string
+    {
+        return trim($this->normalizeNamePart($firstName) . ' ' . $this->normalizeNamePart($lastName));
+    }
+
+    public function getFullNameProperty(): string
+    {
+        return $this->combineFullName($this->firstName, $this->lastName);
+    }
+
     public function getFormattedDonationProperty(): string
     {
         $amount = (int) preg_replace('/\D+/', '', $this->monthlyDonationAmount);
@@ -142,7 +187,7 @@ class SponsorRegistration extends Component
         $this->authorizeAccess();
 
         return view('livewire.child-supporters.sponsor-registration', [
-            'reminderMethods' => Sponsor::reminderMethodOptions(),
+            'reminderMethods' => SponsorProfile::reminderMethodOptions(),
         ]);
     }
 }
