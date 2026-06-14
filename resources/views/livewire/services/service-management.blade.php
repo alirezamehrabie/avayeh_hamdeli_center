@@ -120,21 +120,21 @@
                             @foreach($serviceNames as $item)
                                 <div
                                     @class([
-                                        'group flex w-full items-center gap-2 rounded-xl border bg-white p-1.5 text-right transition',
+                                        'group relative flex w-full items-center gap-2 rounded-xl border bg-white p-1.5 text-right transition',
                                         'border-slate-300 bg-slate-100/80' => (int) $selectedServiceNameId === (int) $item->id,
                                         'border-slate-200 hover:border-indigo-300' => (int) $selectedServiceNameId !== (int) $item->id,
                                     ])
                                 >
-                                    <button type="button" wire:click="selectServiceName({{ $item->id }})" class="min-w-0 flex-1 rounded-lg px-2 py-1.5 text-right transition hover:bg-indigo-50/70">
+                                    @if((int) $selectedServiceNameId === (int) $item->id)
+                                        <span class="pointer-events-none absolute left-12 top-1/2 z-10 hidden -translate-y-1/2 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-bold text-slate-600 shadow-sm sm:inline-flex">در حال مدیریت</span>
+                                    @endif
+                                    <button type="button" wire:click="selectServiceName({{ $item->id }})" class="min-w-0 flex-1 rounded-lg px-2 py-1.5 text-right transition hover:bg-indigo-50/70 sm:pe-28">
                                         <span class="block truncate text-sm font-semibold text-slate-800">{{ $item->name }}</span>
-                                        <span class="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-500">
+                                        <span class="mt-0.5 block truncate text-[11px] text-slate-500">
                                             <span>{{ $item->category_templates_count }} دسته</span>
-                                            @if((int) $selectedServiceNameId === (int) $item->id)
-                                                <span class="rounded-full border border-slate-200 bg-white px-2 py-0.5 font-bold text-slate-600">در حال مدیریت</span>
-                                            @endif
                                         </span>
                                     </button>
-                                    <button type="button" wire:click="editServiceName({{ $item->id }})" class="shrink-0 rounded-lg border border-slate-200 bg-slate-50 p-2 text-slate-400 transition hover:border-indigo-200 hover:bg-white hover:text-indigo-700" aria-label="ویرایش نام خدمت {{ $item->name }}">
+                                    <button type="button" wire:click="editServiceName({{ $item->id }})" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-400 transition hover:border-indigo-200 hover:bg-white hover:text-indigo-700" aria-label="ویرایش نام خدمت {{ $item->name }}">
                                         <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                             <path d="M4 20h4l10.5-10.5a1.5 1.5 0 0 0 0-2.1l-1.9-1.9a1.5 1.5 0 0 0-2.1 0L4 16v4Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
                                             <path d="M13.5 6.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
@@ -332,26 +332,63 @@
                             @forelse($serviceCategories as $item)
                                 <div
                                     @class([
-                                        'flex w-full items-center gap-2 rounded-xl border bg-slate-50 p-1.5 text-right transition',
+                                        'relative flex w-full items-center gap-2 rounded-xl border bg-slate-50 p-1.5 text-right transition',
                                         'border-slate-300 bg-white' => (int) $editingCategoryId === (int) $item->id,
                                         'border-slate-200 hover:border-sky-300' => (int) $editingCategoryId !== (int) $item->id,
                                     ])
                                 >
-                                    <div class="min-w-0 flex-1 rounded-lg px-2 py-1.5">
+                                    @if((int) $editingCategoryId === (int) $item->id)
+                                        <span class="pointer-events-none absolute left-20 top-1/2 z-10 hidden -translate-y-1/2 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-bold text-slate-600 shadow-sm sm:inline-flex">در حال ویرایش</span>
+                                    @endif
+                                    <div class="min-w-0 flex-1 rounded-lg px-2 py-1.5 sm:pe-28">
                                         <span class="block truncate text-sm font-semibold text-slate-800">{{ $item->name }}</span>
-                                        <span class="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-500">
+                                        <span class="mt-0.5 block truncate text-[11px] text-slate-500">
                                             <span>{{ $item->serviceName?->name }}</span>
-                                            @if((int) $editingCategoryId === (int) $item->id)
-                                                <span class="rounded-full border border-slate-200 bg-white px-2 py-0.5 font-bold text-slate-600">در حال ویرایش</span>
-                                            @endif
                                         </span>
                                     </div>
-                                    <button type="button" wire:click="editCategory({{ $item->id }})" class="shrink-0 rounded-lg border border-slate-200 bg-white p-2 text-slate-400 transition hover:border-sky-200 hover:text-sky-700" aria-label="ویرایش دسته‌بندی {{ $item->name }}">
-                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                            <path d="M4 20h4l10.5-10.5a1.5 1.5 0 0 0 0-2.1l-1.9-1.9a1.5 1.5 0 0 0-2.1 0L4 16v4Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
-                                            <path d="M13.5 6.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-                                        </svg>
-                                    </button>
+                                    <div x-data="{ open: false }" x-on:click.outside="open = false" class="relative flex w-[78px] shrink-0 items-center justify-end gap-1">
+                                        <button type="button" wire:click="editCategory({{ $item->id }})" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 transition hover:border-sky-200 hover:text-sky-700" aria-label="ویرایش دسته‌بندی {{ $item->name }}">
+                                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                <path d="M4 20h4l10.5-10.5a1.5 1.5 0 0 0 0-2.1l-1.9-1.9a1.5 1.5 0 0 0-2.1 0L4 16v4Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+                                                <path d="M13.5 6.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                                            </svg>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            x-on:click.stop="open = !open"
+                                            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-transparent bg-transparent text-slate-400 transition hover:border-slate-200 hover:bg-white hover:text-slate-700"
+                                            aria-label="گزینه‌های دسته‌بندی {{ $item->name }}"
+                                            aria-haspopup="menu"
+                                            x-bind:aria-expanded="open.toString()"
+                                        >
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                <circle cx="12" cy="5" r="1.8" />
+                                                <circle cx="12" cy="12" r="1.8" />
+                                                <circle cx="12" cy="19" r="1.8" />
+                                            </svg>
+                                        </button>
+
+                                        <div
+                                            x-cloak
+                                            x-show="open"
+                                            x-transition.origin.top.left
+                                            class="absolute left-0 top-11 z-40 w-44 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1 shadow-xl"
+                                            role="menu"
+                                        >
+                                            <button
+                                                type="button"
+                                                wire:click="openDeleteCategoryConfirmation({{ $item->id }})"
+                                                x-on:click="open = false"
+                                                class="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-right text-sm font-bold text-rose-600 transition hover:bg-rose-50"
+                                                role="menuitem"
+                                            >
+                                                <span>حذف دسته‌بندی</span>
+                                                <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                    <path d="M6 7h12M10 11v6M14 11v6M9 7l1-2h4l1 2M8 7l.5 12h7L16 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             @empty
                                 <div class="rounded-xl border border-dashed border-slate-300 px-3.5 py-5 text-center text-xs text-slate-500">برای این خدمت هنوز دسته‌بندی ثبت نشده است.</div>

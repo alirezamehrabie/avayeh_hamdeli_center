@@ -3,6 +3,7 @@
 namespace App\Livewire\Services;
 
 use App\Models\ServiceCategoryTemplate;
+use App\Models\ServiceCategory;
 use App\Models\ServiceName;
 use App\Models\ServiceUnit;
 use App\Traits\InteractsWithNotificationModal;
@@ -143,6 +144,77 @@ class ServiceManagement extends Component
         $this->editingCategoryId = $category->id;
         $this->selectedServiceNameId = $category->service_name_id;
         $this->categoryName = $category->name;
+    }
+
+    public function openDeleteCategoryConfirmation(int $categoryId): void
+    {
+        $category = ServiceCategoryTemplate::query()
+            ->with('serviceName')
+            ->findOrFail($categoryId);
+
+        $usedServicesCount = ServiceCategory::query()
+            ->where('service_name_id', $category->service_name_id)
+            ->where('name', $category->name)
+            ->count();
+
+        $usageMessage = $usedServicesCount > 0
+            ? "\n\nاین دسته در {$usedServicesCount} خدمت ثبت‌شده استفاده شده است. حذف فقط از فهرست انتخاب‌های جدید انجام می‌شود و اطلاعات خدمات قبلی حفظ می‌گردد."
+            : '';
+
+        $this->openNotificationModal([
+            'type' => 'warning',
+            'title' => 'حذف دسته‌بندی',
+            'message' => "آیا از حذف دسته‌بندی «{$category->name}» مطمئن هستید؟{$usageMessage}",
+            'buttons' => [
+                [
+                    'label' => 'حذف دسته‌بندی',
+                    'action' => 'event',
+                    'event' => 'confirm-category-delete',
+                    'payload' => ['categoryId' => $category->id],
+                    'variant' => 'danger',
+                ],
+                [
+                    'label' => 'انصراف',
+                    'action' => 'close',
+                    'variant' => 'secondary',
+                ],
+            ],
+        ]);
+    }
+
+    #[On('confirm-category-delete')]
+    public function deleteCategory(int $categoryId): void
+    {
+        $category = ServiceCategoryTemplate::query()->findOrFail($categoryId);
+
+        $activeCategoryCount = ServiceCategoryTemplate::query()
+            ->where('service_name_id', $category->service_name_id)
+            ->count();
+
+        if ($activeCategoryCount <= 1) {
+            $this->openNotificationModal([
+                'type' => 'error',
+                'title' => 'حذف امکان‌پذیر نیست',
+                'message' => 'برای هر نام خدمت باید حداقل یک دسته‌بندی فعال باقی بماند.',
+                'buttons' => [[
+                    'label' => 'متوجه شدم',
+                    'action' => 'close',
+                    'variant' => 'danger',
+                ]],
+            ]);
+
+            return;
+        }
+
+        $deletedCategoryName = $category->name;
+        $category->delete();
+
+        if ((int) $this->editingCategoryId === (int) $categoryId) {
+            $this->resetCategoryForm();
+        }
+
+        $this->closeNotificationModal();
+        session()->flash('management-success', "دسته‌بندی «{$deletedCategoryName}» حذف شد. اطلاعات خدمات قبلی حفظ شده است.");
     }
 
     public function saveUnit(): void
