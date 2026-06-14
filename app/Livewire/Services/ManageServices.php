@@ -7,6 +7,7 @@ use App\Helpers\Morilog\Jalalian;
 use App\Models\District;
 use App\Models\Service;
 use App\Models\ServiceCategory;
+use App\Models\ServiceCategoryTemplate;
 use App\Models\ServiceName;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -73,6 +74,12 @@ class ManageServices extends Component
     public function save(): void
     {
         $validated = $this->validate($this->rules(), [], $this->validationAttributes());
+
+        if ($this->hasDuplicateCategoryNames($validated['categories'])) {
+            $this->addError('categories', 'هر دسته خدمت برای یک خدمت فقط یک‌بار قابل انتخاب است.');
+
+            return;
+        }
 
         DB::transaction(function () use ($validated): void {
             $service = $this->editingServiceId
@@ -224,6 +231,9 @@ class ManageServices extends Component
         return view('livewire.services.manage-services', [
             'districts' => District::query()->orderBy('sort_order')->orderBy('name')->get(),
             'serviceNames' => ServiceName::query()->ordered()->get(['id', 'name']),
+            'categoryTemplates' => ServiceCategoryTemplate::query()
+                ->ordered()
+                ->get(['id', 'service_name_id', 'name']),
             'typeOptions' => Service::TYPE_OPTIONS,
             'unitOptions' => Service::unitOptions(),
             'statusOptions' => Service::STATUS_OPTIONS,
@@ -362,6 +372,16 @@ class ManageServices extends Component
         return (int) collect($this->categories)->sum(function (array $category): float {
             return (float) ($category['quantity'] ?? 0) * (float) ($category['value'] ?? 0);
         });
+    }
+
+    protected function hasDuplicateCategoryNames(array $categories): bool
+    {
+        $names = collect($categories)
+            ->map(fn (array $category) => mb_strtolower(trim((string) ($category['name'] ?? ''))))
+            ->filter()
+            ->values();
+
+        return $names->unique()->count() !== $names->count();
     }
 
     protected function persistServiceNameRecord(string $serviceNameInput): ServiceName

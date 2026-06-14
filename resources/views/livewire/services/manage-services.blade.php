@@ -256,7 +256,117 @@
                                         <div class="grid gap-3 md:grid-cols-2">
                                             <div>
                                                 <label class="mb-2 block text-sm font-bold text-slate-700">نام دسته</label>
-                                                <input type="text" wire:model.blur="categories.{{ $index }}.name" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700" placeholder="مثال: چلو کباب کوبیده">
+                                                <div
+                                                    x-data="{
+                                                        open: false,
+                                                        selectedServiceNameId: @entangle('selectedServiceNameId').live,
+                                                        categoryName: @entangle('categories.' . $index . '.name').live,
+                                                        categories: @entangle('categories').live,
+                                                        currentIndex: {{ $index }},
+                                                        categoryTemplates: @js($categoryTemplates->map(fn ($template) => [
+                                                            'id' => $template->id,
+                                                            'serviceNameId' => $template->service_name_id,
+                                                            'name' => $template->name,
+                                                        ])->values()),
+                                                        filterText: @entangle('categories.' . $index . '.name').live,
+                                                        get filteredCategoryTemplates() {
+                                                            const serviceNameId = Number(this.selectedServiceNameId);
+                                                            const query = this.filterText.trim().toLowerCase();
+
+                                                            if (!serviceNameId) {
+                                                                return [];
+                                                            }
+
+                                                            return this.categoryTemplates.filter((item) => {
+                                                                const belongsToSelectedService = Number(item.serviceNameId) === serviceNameId;
+                                                                const matchesQuery = !query || item.name.toLowerCase().includes(query);
+                                                                const alreadySelected = this.categories.some((category, index) => {
+                                                                    if (Number(index) === Number(this.currentIndex)) {
+                                                                        return false;
+                                                                    }
+
+                                                                    return (category.name || '').trim().toLowerCase() === item.name.trim().toLowerCase();
+                                                                });
+
+                                                                return belongsToSelectedService && matchesQuery && !alreadySelected;
+                                                            });
+                                                        },
+                                                        selectCategoryTemplate(item) {
+                                                            this.categoryName = item.name;
+                                                            this.filterText = item.name;
+                                                            this.open = false;
+                                                        },
+                                                        clearCategoryName() {
+                                                            this.categoryName = '';
+                                                            this.filterText = '';
+                                                            this.open = false;
+                                                        }
+                                                    }"
+                                                    x-on:click.outside="open = false"
+                                                    class="relative"
+                                                >
+                                                    <input
+                                                        type="text"
+                                                        x-model="filterText"
+                                                        x-on:focus="open = true"
+                                                        x-on:input="categoryName = filterText"
+                                                        x-on:keydown.escape="open = false"
+                                                        class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 pe-20 text-sm text-slate-700 transition focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                                                        placeholder="مثال: چلو کباب کوبیده"
+                                                        autocomplete="off"
+                                                    >
+                                                    <button
+                                                        type="button"
+                                                        x-cloak
+                                                        x-show="filterText"
+                                                        x-on:click.stop.prevent="clearCategoryName()"
+                                                        class="absolute inset-y-0 end-8 flex items-center px-2 text-slate-400 transition hover:text-rose-600"
+                                                        aria-label="پاک کردن نام دسته"
+                                                    >
+                                                        <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4">
+                                                            <path d="M5.5 5.5L14.5 14.5M14.5 5.5L5.5 14.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        x-on:click.stop.prevent="open = !open"
+                                                        class="absolute inset-y-0 end-0 flex items-center px-3 text-slate-400"
+                                                        aria-label="باز کردن فهرست دسته‌های خدمت"
+                                                    >
+                                                        <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4 transition" x-bind:class="{ 'rotate-180': open }">
+                                                            <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                                        </svg>
+                                                    </button>
+
+                                                    <div
+                                                        x-cloak
+                                                        x-show="open"
+                                                        x-transition.origin.top.left
+                                                        class="absolute z-30 mt-2 max-h-60 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
+                                                    >
+                                                        <div class="border-b border-slate-100 px-3 py-2 text-xs font-semibold text-slate-500">
+                                                            دسته‌های مرتبط با نام خدمت انتخاب‌شده
+                                                        </div>
+                                                        <div class="max-h-56 overflow-y-auto py-1">
+                                                            <template x-for="item in filteredCategoryTemplates" :key="item.id">
+                                                                <button
+                                                                    type="button"
+                                                                    x-on:click="selectCategoryTemplate(item)"
+                                                                    class="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-right text-sm text-slate-700 transition hover:bg-slate-50"
+                                                                >
+                                                                    <span x-text="item.name" class="font-medium"></span>
+                                                                    <span class="text-xs text-slate-400" x-show="categoryName === item.name">انتخاب شده</span>
+                                                                </button>
+                                                            </template>
+                                                            <div x-show="!selectedServiceNameId" class="px-4 py-3 text-sm text-slate-500">
+                                                                ابتدا نام خدمت را انتخاب کنید تا دسته‌های مرتبط نمایش داده شوند.
+                                                            </div>
+                                                            <div x-show="selectedServiceNameId && filteredCategoryTemplates.length === 0" class="px-4 py-3 text-sm text-slate-500">
+                                                                دسته‌ای برای این نام خدمت پیدا نشد. می‌توانید همین نام را به عنوان دسته جدید ثبت کنید.
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                                 @error("categories.$index.name") <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                                             </div>
                                             <div>
