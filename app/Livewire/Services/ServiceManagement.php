@@ -91,6 +91,14 @@ class ServiceManagement extends Component
         $this->selectedServiceNameId = $serviceName->id;
     }
 
+    public function selectServiceName(int $serviceNameId): void
+    {
+        $serviceName = ServiceName::query()->findOrFail($serviceNameId);
+
+        $this->selectedServiceNameId = $serviceName->id;
+        $this->resetCategoryForm();
+    }
+
     public function saveCategory(): void
     {
         $validated = $this->validate([
@@ -212,6 +220,7 @@ class ServiceManagement extends Component
             ->ordered();
 
         return view('livewire.services.service-management', [
+            'allServiceNames' => ServiceName::query()->withCount('categoryTemplates')->ordered()->get(),
             'serviceNames' => $serviceNamesQuery->withCount('categoryTemplates')->get(),
             'serviceCategories' => ServiceCategoryTemplate::query()
                 ->with('serviceName')

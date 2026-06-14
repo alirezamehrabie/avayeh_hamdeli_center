@@ -18,6 +18,10 @@
                 </div>
             @endif
 
+            @php
+                $selectedServiceName = $allServiceNames->firstWhere('id', (int) $selectedServiceNameId);
+            @endphp
+
             <div class="grid gap-4 xl:grid-cols-3">
                 <section class="flex flex-col rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
                     <div class="mb-3 flex items-center justify-between gap-2.5">
@@ -114,16 +118,29 @@
                             class="max-h-[22rem] space-y-1.5 overflow-y-auto scroll-smooth pb-12 pr-1"
                         >
                             @foreach($serviceNames as $item)
-                                <button type="button" wire:click="editServiceName({{ $item->id }})" class="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-right transition hover:border-indigo-300">
-                                    <span class="text-sm font-semibold text-slate-800">{{ $item->name }}</span>
-                                    <span class="flex items-center gap-1.5">
-                                        <span class="text-[11px] text-slate-500">{{ $item->category_templates_count }} دسته</span>
-                                        <svg class="h-3.5 w-3.5 text-slate-300 transition group-hover:text-slate-400" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <div
+                                    @class([
+                                        'group flex w-full items-center gap-2 rounded-xl border bg-white p-1.5 text-right transition',
+                                        'border-slate-300 bg-slate-100/80' => (int) $selectedServiceNameId === (int) $item->id,
+                                        'border-slate-200 hover:border-indigo-300' => (int) $selectedServiceNameId !== (int) $item->id,
+                                    ])
+                                >
+                                    <button type="button" wire:click="selectServiceName({{ $item->id }})" class="min-w-0 flex-1 rounded-lg px-2 py-1.5 text-right transition hover:bg-indigo-50/70">
+                                        <span class="block truncate text-sm font-semibold text-slate-800">{{ $item->name }}</span>
+                                        <span class="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-500">
+                                            <span>{{ $item->category_templates_count }} دسته</span>
+                                            @if((int) $selectedServiceNameId === (int) $item->id)
+                                                <span class="rounded-full border border-slate-200 bg-white px-2 py-0.5 font-bold text-slate-600">در حال مدیریت</span>
+                                            @endif
+                                        </span>
+                                    </button>
+                                    <button type="button" wire:click="editServiceName({{ $item->id }})" class="shrink-0 rounded-lg border border-slate-200 bg-slate-50 p-2 text-slate-400 transition hover:border-indigo-200 hover:bg-white hover:text-indigo-700" aria-label="ویرایش نام خدمت {{ $item->name }}">
+                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                             <path d="M4 20h4l10.5-10.5a1.5 1.5 0 0 0 0-2.1l-1.9-1.9a1.5 1.5 0 0 0-2.1 0L4 16v4Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
                                             <path d="M13.5 6.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
                                         </svg>
-                                    </span>
-                                </button>
+                                    </button>
+                                </div>
                             @endforeach
                         </div>
                         <div
@@ -146,15 +163,149 @@
                         @endif
                     </div>
 
+                    <div class="mb-3 rounded-2xl border border-sky-100 bg-sky-50/70 p-3">
+                        <p class="text-[11px] font-bold uppercase tracking-wide text-sky-700">خدمت انتخاب‌شده</p>
+                        <div class="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <div class="min-w-0">
+                                <p class="truncate text-sm font-extrabold text-slate-800">{{ $selectedServiceName?->name ?? 'هنوز انتخاب نشده' }}</p>
+                                <p class="mt-0.5 text-xs text-slate-500">
+                                    {{ $selectedServiceName ? $selectedServiceName->category_templates_count . ' دسته ثبت‌شده' : 'برای تعریف دسته ابتدا نام خدمت را انتخاب کنید.' }}
+                                </p>
+                            </div>
+                            @if($selectedServiceName)
+                                <button type="button" wire:click="editServiceName({{ $selectedServiceName->id }})" class="w-full rounded-xl border border-sky-200 bg-white px-3 py-2 text-xs font-bold text-sky-700 transition hover:border-sky-300 sm:w-auto">
+                                    ویرایش نام خدمت
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+
                     <form wire:submit.prevent="saveCategory" class="space-y-2.5">
-                        <select wire:model.live="selectedServiceNameId" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-700">
-                            <option value="">انتخاب نام خدمت</option>
-                            @foreach($serviceNames as $item)
-                                <option value="{{ $item->id }}">{{ $item->name }}</option>
-                            @endforeach
-                        </select>
+                        <div
+                            x-data="{
+                                open: false,
+                                selectedId: @entangle('selectedServiceNameId').live,
+                                serviceNames: @js($allServiceNames->map(fn ($serviceName) => [
+                                    'id' => $serviceName->id,
+                                    'name' => $serviceName->name,
+                                    'count' => $serviceName->category_templates_count,
+                                ])->values()),
+                                query: '',
+                                isTyping: false,
+                                init() {
+                                    this.syncQuery();
+
+                                    this.$watch('selectedId', () => {
+                                        if (!this.isTyping) {
+                                            this.syncQuery();
+                                        }
+                                    });
+                                },
+                                get filteredServiceNames() {
+                                    const term = this.query.trim().toLowerCase();
+
+                                    if (!term) {
+                                        return this.serviceNames;
+                                    }
+
+                                    return this.serviceNames.filter((item) => item.name.toLowerCase().includes(term));
+                                },
+                                get selectedServiceName() {
+                                    return this.serviceNames.find((item) => Number(item.id) === Number(this.selectedId)) || null;
+                                },
+                                syncQuery() {
+                                    this.query = this.selectedServiceName?.name || '';
+                                },
+                                selectServiceName(item) {
+                                    this.isTyping = false;
+                                    this.selectedId = item.id;
+                                    this.query = item.name;
+                                    this.open = false;
+                                },
+                                searchServiceName() {
+                                    this.isTyping = true;
+                                    this.selectedId = null;
+                                    this.open = true;
+                                    this.$nextTick(() => this.isTyping = false);
+                                },
+                                clearServiceName() {
+                                    this.isTyping = false;
+                                    this.selectedId = null;
+                                    this.query = '';
+                                    this.open = false;
+                                }
+                            }"
+                            x-on:click.outside="open = false"
+                            class="relative"
+                        >
+                            <label class="mb-1.5 block text-xs font-bold text-slate-600">انتخاب نام خدمت</label>
+                            <input
+                                type="text"
+                                x-model="query"
+                                x-on:focus="open = true"
+                                x-on:input="searchServiceName()"
+                                x-on:keydown.escape="open = false"
+                                placeholder="جستجو یا انتخاب نام خدمت"
+                                autocomplete="off"
+                                class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 pe-20 text-sm text-slate-700 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                            >
+                            <button
+                                type="button"
+                                x-cloak
+                                x-show="query"
+                                x-on:click.stop.prevent="clearServiceName()"
+                                class="absolute bottom-0 end-8 flex h-[42px] items-center px-2 text-slate-400 transition hover:text-rose-600"
+                                aria-label="پاک کردن نام خدمت"
+                            >
+                                <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4">
+                                    <path d="M5.5 5.5L14.5 14.5M14.5 5.5L5.5 14.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                </svg>
+                            </button>
+                            <button
+                                type="button"
+                                x-on:click.stop.prevent="open = !open"
+                                class="absolute bottom-0 end-0 flex h-[42px] items-center px-3 text-slate-400"
+                                aria-label="باز کردن فهرست نام خدمات"
+                            >
+                                <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4 transition" x-bind:class="{ 'rotate-180': open }">
+                                    <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+
+                            <div
+                                x-cloak
+                                x-show="open"
+                                x-transition.origin.top.left
+                                class="absolute z-30 mt-2 max-h-72 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
+                            >
+                                <div class="border-b border-slate-100 px-3 py-2 text-xs font-semibold text-slate-500">
+                                    انتخاب یک خدمت، فهرست دسته‌های همان خدمت را نمایش می‌دهد.
+                                </div>
+                                <div class="max-h-60 overflow-y-auto py-1">
+                                    <template x-for="item in filteredServiceNames" :key="item.id">
+                                        <button
+                                            type="button"
+                                            x-on:click="selectServiceName(item)"
+                                            class="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-right text-sm text-slate-700 transition hover:bg-sky-50"
+                                        >
+                                            <span x-text="item.name" class="min-w-0 truncate font-medium"></span>
+                                            <span class="flex shrink-0 items-center gap-2 text-xs text-slate-400">
+                                                <span x-text="`${item.count} دسته`"></span>
+                                                <span x-show="Number(selectedId) === Number(item.id)" class="font-bold text-sky-700">انتخاب شده</span>
+                                            </span>
+                                        </button>
+                                    </template>
+                                    <div x-show="filteredServiceNames.length === 0" class="px-4 py-3 text-sm text-slate-500">
+                                        نام خدمتی با این عبارت پیدا نشد.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         @error('selectedServiceNameId') <p class="text-sm text-rose-600">{{ $message }}</p> @enderror
-                        <input type="text" wire:model.blur="categoryName" placeholder="مثلاً غذای گرم" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-700">
+                        <div>
+                            <label class="mb-1.5 block text-xs font-bold text-slate-600">نام دسته‌بندی</label>
+                            <input type="text" wire:model.blur="categoryName" placeholder="مثلاً غذای گرم" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-700 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100">
+                        </div>
                         @error('categoryName') <p class="text-sm text-rose-600">{{ $message }}</p> @enderror
                         <button type="submit" class="w-full rounded-xl bg-sky-700 px-3.5 py-2.5 text-sm font-bold text-white">
                             {{ $editingCategoryId ? 'به‌روزرسانی دسته‌بندی' : 'ثبت دسته‌بندی' }}
@@ -179,16 +330,29 @@
                             class="max-h-[22rem] space-y-1.5 overflow-y-auto scroll-smooth pb-12 pr-1"
                         >
                             @forelse($serviceCategories as $item)
-                                <button type="button" wire:click="editCategory({{ $item->id }})" class="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-right transition hover:border-sky-300">
-                                    <span class="text-sm font-semibold text-slate-800">{{ $item->name }}</span>
-                                    <span class="flex items-center gap-1.5">
-                                        <span class="text-[11px] text-slate-500">{{ $item->serviceName?->name }}</span>
-                                        <svg class="h-3.5 w-3.5 text-slate-300 transition group-hover:text-slate-400" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <div
+                                    @class([
+                                        'flex w-full items-center gap-2 rounded-xl border bg-slate-50 p-1.5 text-right transition',
+                                        'border-slate-300 bg-white' => (int) $editingCategoryId === (int) $item->id,
+                                        'border-slate-200 hover:border-sky-300' => (int) $editingCategoryId !== (int) $item->id,
+                                    ])
+                                >
+                                    <div class="min-w-0 flex-1 rounded-lg px-2 py-1.5">
+                                        <span class="block truncate text-sm font-semibold text-slate-800">{{ $item->name }}</span>
+                                        <span class="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-500">
+                                            <span>{{ $item->serviceName?->name }}</span>
+                                            @if((int) $editingCategoryId === (int) $item->id)
+                                                <span class="rounded-full border border-slate-200 bg-white px-2 py-0.5 font-bold text-slate-600">در حال ویرایش</span>
+                                            @endif
+                                        </span>
+                                    </div>
+                                    <button type="button" wire:click="editCategory({{ $item->id }})" class="shrink-0 rounded-lg border border-slate-200 bg-white p-2 text-slate-400 transition hover:border-sky-200 hover:text-sky-700" aria-label="ویرایش دسته‌بندی {{ $item->name }}">
+                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                             <path d="M4 20h4l10.5-10.5a1.5 1.5 0 0 0 0-2.1l-1.9-1.9a1.5 1.5 0 0 0-2.1 0L4 16v4Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
                                             <path d="M13.5 6.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
                                         </svg>
-                                    </span>
-                                </button>
+                                    </button>
+                                </div>
                             @empty
                                 <div class="rounded-xl border border-dashed border-slate-300 px-3.5 py-5 text-center text-xs text-slate-500">برای این خدمت هنوز دسته‌بندی ثبت نشده است.</div>
                             @endforelse
