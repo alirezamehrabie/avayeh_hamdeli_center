@@ -19,6 +19,7 @@ use App\Livewire\Auth\Login;
 use App\Livewire\DistributionOperators\DefineService;
 use App\Livewire\DistributionOperators\ServiceList;
 use App\Livewire\ChildSupporters\Dashboard as ChildSupporterDashboard;
+use App\Livewire\ChildSupporters\SponsorList;
 use App\Livewire\ChildSupporters\SponsorRegistration;
 use App\Livewire\ChildSupporters\UserAccount as ChildSupporterUserAccount;
 use App\Livewire\SocialWorkers\DeliveryHistory as SocialWorkerDeliveryHistory;
@@ -128,6 +129,10 @@ Route::get('/child-supporter/dashboard', ChildSupporterDashboard::class)
 Route::get('/child-supporter/sponsor-registration', SponsorRegistration::class)
     ->middleware(['auth'])
     ->name('child-supporter.sponsor-registration');
+
+Route::get('/child-supporter/sponsors', SponsorList::class)
+    ->middleware(['auth'])
+    ->name('child-supporter.sponsor-list');
 
 Route::get('/child-supporter/system-settings/user-account', ChildSupporterUserAccount::class)
     ->middleware(['auth', 'can:access-child-supporter-panel'])

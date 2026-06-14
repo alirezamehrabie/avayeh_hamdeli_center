@@ -235,6 +235,10 @@
                         <livewire:child-supporters.sponsor-registration :embedded="true" :key="'child-supporter-sponsor-registration'" />
                         @break
 
+                    @case('child-supporter-sponsor-list')
+                        <livewire:child-supporters.sponsor-list :embedded="true" :key="'child-supporter-sponsor-list'" />
+                        @break
+
 
                     @default
                         <div>

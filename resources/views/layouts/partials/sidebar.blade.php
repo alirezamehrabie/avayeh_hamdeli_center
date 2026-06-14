@@ -51,7 +51,7 @@
         $guardiansOpen = $dashboardMode ? $isActive(['guardians-list', 'guardians-block-list']) : request()->routeIs('guardians.*');
         $reportsOpen = $dashboardMode ? $isActive(['advanced-reports', 'advanced-service-report', 'advanced-beneficiary-report', 'advanced-operator-report', 'advanced-supervisor-report', 'advanced-social-worker-report']) : false;
         $servicesOpen = $dashboardMode ? $isActive(['define-services', 'service-management', 'service-list', 'service-delivery']) : false;
-        $childSupporterOpen = $dashboardMode ? $isActive(['child-supporter-sponsor-registration']) : false;
+        $childSupporterOpen = $dashboardMode ? $isActive(['child-supporter-sponsor-registration', 'child-supporter-sponsor-list']) : false;
         $systemSettingsOpen = $dashboardMode ? $isActive(['system-settings-user-definition', 'system-settings-user-list', 'system-settings-user-account']) : request()->routeIs('admin.user-definition') || request()->routeIs('admin.user-management') || request()->routeIs('admin.user-list') || request()->routeIs('admin.user-account');
         $defaultOpenMenu = $peopleOpen
             ? 'people'
@@ -332,6 +332,10 @@
                     <button type="button" wire:click="selectSection('child-supporter-sponsor-registration')"
                             class="block w-full rounded px-4 py-2 text-right text-sm {{ $activeSection === 'child-supporter-sponsor-registration' ? 'bg-indigo-800 text-white' : 'text-indigo-200 hover:text-white' }}">
                         ثبت نام حامی
+                    </button>
+                    <button type="button" wire:click="selectSection('child-supporter-sponsor-list')"
+                            class="block w-full rounded px-4 py-2 text-right text-sm {{ $activeSection === 'child-supporter-sponsor-list' ? 'bg-indigo-800 text-white' : 'text-indigo-200 hover:text-white' }}">
+                        لیست حامیان
                     </button>
                 </div>
             </div>

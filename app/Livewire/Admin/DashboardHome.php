@@ -85,6 +85,7 @@ class DashboardHome extends Component
             $validSections[] = 'advanced-service-report';
             $validSections[] = 'advanced-operator-report';
             $validSections[] = 'child-supporter-sponsor-registration';
+            $validSections[] = 'child-supporter-sponsor-list';
         }
 
         if ($user?->can('full-access')) {
@@ -109,7 +110,8 @@ class DashboardHome extends Component
                 'service-list',
                 'service-delivery',
                 'service-management',
-                'child-supporter-sponsor-registration'
+                'child-supporter-sponsor-registration',
+                'child-supporter-sponsor-list'
             );
         }
 
