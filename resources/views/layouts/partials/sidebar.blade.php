@@ -276,7 +276,7 @@
             @if($dashboardMode)
                 <div>
                     <button type="button" @click="openMenu = openMenu === 'services' ? '' : 'services'"
-                            class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $isActive(['define-services', 'service-management', 'service-list', 'service-delivery']) ? 'bg-indigo-700' : '' }}">
+                            class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $isActive(['service-management', 'service-list', 'service-delivery']) ? 'bg-indigo-700' : '' }}">
                         <div class="flex items-center">
                             <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -290,14 +290,9 @@
                         </svg>
                     </button>
                     <div x-show="openMenu === 'services'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
-                        <button type="button" wire:click="selectSection('define-services')"
-                                class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'define-services' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            تعریف خدمات
-                        </button>
-
                         <button type="button" wire:click="selectSection('service-list')"
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'service-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            لیست خدمات
+                            مدیریت خدمات
                         </button>
                         <button type="button" wire:click="selectSection('service-delivery')"
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'service-delivery' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
@@ -305,7 +300,7 @@
                         </button>
                         <button type="button" wire:click="selectSection('service-management')"
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'service-management' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            مدیریت خدمات
+                            تعریف خدمت
                         </button>
                     </div>
                 </div>
