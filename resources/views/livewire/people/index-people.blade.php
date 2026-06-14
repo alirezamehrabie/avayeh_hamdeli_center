@@ -62,6 +62,7 @@
                         <option value="last_name">نام خانوادگی</option>
                         <option value="national_id">کد ملی</option>
                         <option value="mother_national_id">کد ملی مادر</option>
+                        <option value="father_national_id">کد ملی پدر</option>
                     </select>
 
                     <input

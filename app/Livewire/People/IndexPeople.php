@@ -54,11 +54,13 @@ class IndexPeople extends Component
                 'last_name' => $query->where('last_name', 'LIKE', "%{$search}%"),
                 'national_id' => $query->where('national_id', 'LIKE', "%{$search}%"),
                 'mother_national_id' => $query->where('mother_national_id', 'LIKE', "%{$search}%"),
+                'father_national_id' => $query->where('father_national_id', 'LIKE', "%{$search}%"),
                 default => $query->where(function ($q) use ($search, $fullNameExpression) {
                     $q->where('first_name', 'LIKE', "%{$search}%")
                         ->orWhere('last_name', 'LIKE', "%{$search}%")
                         ->orWhere('national_id', 'LIKE', "%{$search}%")
                         ->orWhere('mother_national_id', 'LIKE', "%{$search}%")
+                        ->orWhere('father_national_id', 'LIKE', "%{$search}%")
                         ->orWhere('person_code', 'LIKE', "%{$search}%")
                         ->orWhereRaw("{$fullNameExpression} LIKE ?", ["%{$search}%"]);
                 }),
