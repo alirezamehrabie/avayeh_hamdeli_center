@@ -9,7 +9,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -120,6 +122,77 @@ class User extends Authenticatable
                 'permissions',
             ])
         ));
+    }
+
+    /**
+     * @param  array{
+     *     mobile: string,
+     *     first_name: string,
+     *     last_name: string,
+     *     monthly_donation_amount: int,
+     *     child_preferences?: ?string,
+     *     monthly_payment_reminder_methods: list<string>,
+     *     is_social_media_active: bool,
+     *     created_by?: ?int
+     * }  $attributes
+     */
+    public static function registerSponsorAccount(array $attributes): self
+    {
+        return DB::transaction(function () use ($attributes): self {
+            $mobile = preg_replace('/\D+/', '', (string) $attributes['mobile']) ?: (string) $attributes['mobile'];
+            $firstName = trim((string) $attributes['first_name']);
+            $lastName = trim((string) $attributes['last_name']);
+
+            $query = self::query()->where('name', $mobile);
+
+            if (Schema::hasColumn('users', 'mobile')) {
+                $query->orWhere('mobile', $mobile);
+            }
+
+            $user = $query->first();
+
+            if ($user) {
+                if (! in_array($user->access_level, [self::ACCESS_LEVEL_REGULAR, self::ACCESS_LEVEL_CHILD_SUPPORTER], true)) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'mobile' => 'This mobile number belongs to another role-based user account.',
+                    ]);
+                }
+
+                $user->update([
+                    'name' => $mobile,
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'email' => $mobile . '@local.system',
+                    'access_level' => self::ACCESS_LEVEL_CHILD_SUPPORTER,
+                    'is_admin' => false,
+                    'permissions' => [],
+                    'mobile' => $mobile,
+                ]);
+            } else {
+                $user = self::createRoleAccount([
+                    'name' => $mobile,
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'email' => $mobile . '@local.system',
+                    'password' => Str::random(32),
+                    'access_level' => self::ACCESS_LEVEL_CHILD_SUPPORTER,
+                    'mobile' => $mobile,
+                ]);
+            }
+
+            $user->sponsorProfile()->updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'monthly_donation_amount' => (int) $attributes['monthly_donation_amount'],
+                    'child_preferences' => $attributes['child_preferences'] ?? null,
+                    'monthly_payment_reminder_methods' => array_values($attributes['monthly_payment_reminder_methods']),
+                    'is_social_media_active' => (bool) $attributes['is_social_media_active'],
+                    'created_by' => $attributes['created_by'] ?? null,
+                ]
+            );
+
+            return $user->refresh();
+        });
     }
 
     /**

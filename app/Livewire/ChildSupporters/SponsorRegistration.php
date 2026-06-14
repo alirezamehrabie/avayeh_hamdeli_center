@@ -4,9 +4,6 @@ namespace App\Livewire\ChildSupporters;
 
 use App\Models\SponsorProfile;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -53,25 +50,16 @@ class SponsorRegistration extends Component
         $firstName = $this->normalizeNamePart($validated['firstName']);
         $lastName = $this->normalizeNamePart($validated['lastName']);
 
-        DB::transaction(function () use ($validated, $mobile, $firstName, $lastName): void {
-            $user = User::createRoleAccount([
-                'name' => $mobile,
-                'first_name' => $firstName,
-                'last_name' => $lastName,
-                'email' => $mobile . '@local.system',
-                'password' => Str::random(16),
-                'access_level' => User::ACCESS_LEVEL_CHILD_SUPPORTER,
-                'mobile' => $mobile,
-            ]);
-
-            $user->sponsorProfile()->create([
-                'monthly_donation_amount' => (int) preg_replace('/\D+/', '', $validated['monthlyDonationAmount']),
-                'child_preferences' => filled($validated['childPreferences'] ?? null) ? trim($validated['childPreferences']) : null,
-                'monthly_payment_reminder_methods' => array_values($validated['monthlyPaymentReminderMethods']),
-                'is_social_media_active' => $validated['isSocialMediaActive'] === 'yes',
-                'created_by' => auth()->id(),
-            ]);
-        });
+        User::registerSponsorAccount([
+            'mobile' => $mobile,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'monthly_donation_amount' => (int) preg_replace('/\D+/', '', $validated['monthlyDonationAmount']),
+            'child_preferences' => filled($validated['childPreferences'] ?? null) ? trim($validated['childPreferences']) : null,
+            'monthly_payment_reminder_methods' => array_values($validated['monthlyPaymentReminderMethods']),
+            'is_social_media_active' => $validated['isSocialMediaActive'] === 'yes',
+            'created_by' => auth()->id(),
+        ]);
 
         $this->reset([
             'firstName',
@@ -110,8 +98,6 @@ class SponsorRegistration extends Component
             'mobile' => [
                 'required',
                 'regex:/^09\d{9}$/',
-                Rule::unique('users', 'name'),
-                Schema::hasColumn('users', 'mobile') ? Rule::unique('users', 'mobile') : 'nullable',
             ],
             'childPreferences' => ['nullable', 'string', 'max:1000'],
             'monthlyPaymentReminderMethods' => ['required', 'array', 'min:1'],

@@ -132,7 +132,6 @@
                                 @foreach ([
                                     'admin' => ['label' => 'ادمین', 'desc' => 'اپراتور ثبت'],
                                     'distribution_operator' => ['label' => 'اپراتور توزیع', 'desc' => 'تعریف خدمات'],
-                                    'child_supporter' => ['label' => 'حامی کودک', 'desc' => 'نقش حمایتی'],
                                     'regular_user' => ['label' => 'کاربر عادی', 'desc' => 'پیش‌فرض'],
                                     'manager' => ['label' => 'مدیریت', 'desc' => 'محافظت‌شده', 'disabled' => true],
                                 ] as $roleValue => $roleMeta)
@@ -447,7 +446,6 @@
                                 <option value="manager" disabled>مدیریت (محافظت‌شده)</option>
                                 <option value="admin" @disabled(!$actorCanCreateAdmin)>ادمین</option>
                                 <option value="regular_user">کاربر عادی</option>
-                                <option value="child_supporter">حامی کودک</option>
                                 <option value="social_worker">مددکار</option>
                                 <option value="distribution_operator">اپراتور توزیع</option>
                             </select>

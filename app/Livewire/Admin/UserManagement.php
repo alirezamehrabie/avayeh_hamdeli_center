@@ -66,7 +66,6 @@ class UserManagement extends Component
                 User::ACCESS_LEVEL_MANAGER,
                 User::ACCESS_LEVEL_ADMIN,
                 User::ACCESS_LEVEL_REGULAR,
-                User::ACCESS_LEVEL_CHILD_SUPPORTER,
                 User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
             ])],
             'permissions' => ['array'],
@@ -223,7 +222,6 @@ class UserManagement extends Component
                 User::ACCESS_LEVEL_ADMIN,
                 User::ACCESS_LEVEL_REGULAR,
                 User::ACCESS_LEVEL_SOCIAL_WORKER,
-                User::ACCESS_LEVEL_CHILD_SUPPORTER,
                 User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
             ])],
         ], [
@@ -352,7 +350,6 @@ class UserManagement extends Component
             User::ACCESS_LEVEL_ADMIN,
             User::ACCESS_LEVEL_REGULAR,
             User::ACCESS_LEVEL_SOCIAL_WORKER,
-            User::ACCESS_LEVEL_CHILD_SUPPORTER,
             User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
         ], true), 422);
 

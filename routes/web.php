@@ -126,7 +126,7 @@ Route::get('/child-supporter/dashboard', ChildSupporterDashboard::class)
     ->name('child-supporter.dashboard');
 
 Route::get('/child-supporter/sponsor-registration', SponsorRegistration::class)
-    ->middleware(['auth', 'can:access-child-supporter-panel'])
+    ->middleware(['auth'])
     ->name('child-supporter.sponsor-registration');
 
 Route::get('/child-supporter/system-settings/user-account', ChildSupporterUserAccount::class)
