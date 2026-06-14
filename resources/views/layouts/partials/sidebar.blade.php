@@ -51,6 +51,7 @@
         $guardiansOpen = $dashboardMode ? $isActive(['guardians-list', 'guardians-block-list']) : request()->routeIs('guardians.*');
         $reportsOpen = $dashboardMode ? $isActive(['advanced-reports', 'advanced-service-report', 'advanced-beneficiary-report', 'advanced-operator-report', 'advanced-supervisor-report', 'advanced-social-worker-report']) : false;
         $servicesOpen = $dashboardMode ? $isActive(['define-services', 'service-management', 'service-list', 'service-delivery']) : false;
+        $childSupporterOpen = $dashboardMode ? $isActive(['child-supporter-sponsor-registration']) : false;
         $systemSettingsOpen = $dashboardMode ? $isActive(['system-settings-user-definition', 'system-settings-user-list', 'system-settings-user-account']) : request()->routeIs('admin.user-definition') || request()->routeIs('admin.user-management') || request()->routeIs('admin.user-list') || request()->routeIs('admin.user-account');
         $defaultOpenMenu = $peopleOpen
             ? 'people'
@@ -62,7 +63,9 @@
                         ? 'services'
                         : ($reportsOpen
                             ? 'reports'
-                            : ($systemSettingsOpen ? 'system-settings' : '')))));
+                            : ($childSupporterOpen
+                                ? 'child-supporter'
+                                : ($systemSettingsOpen ? 'system-settings' : ''))))));
     @endphp
 
     <nav x-data="{ openMenu: '{{ $defaultOpenMenu }}' }" class="flex-1 space-y-2">
@@ -311,8 +314,8 @@
 
         @if($dashboardMode)
             <div>
-                <button type="button" wire:click="selectSection('child-supporter-page')"
-                        class="flex items-center w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $activeSection === 'child-supporter-page' ? 'bg-indigo-700' : '' }}">
+                <button type="button" @click="openMenu = openMenu === 'child-supporter' ? '' : 'child-supporter'"
+                        class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $childSupporterOpen ? 'bg-indigo-700' : '' }}">
                     <div class="flex items-center">
                         <svg class="w-5 h-5 ml-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                              stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -320,7 +323,17 @@
                         </svg>
                         <span>حامی کودکان</span>
                     </div>
+                    <svg :class="openMenu === 'child-supporter' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 9l-7 7-7-7"></path>
+                    </svg>
                 </button>
+                <div x-show="openMenu === 'child-supporter'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
+                    <button type="button" wire:click="selectSection('child-supporter-sponsor-registration')"
+                            class="block w-full rounded px-4 py-2 text-right text-sm {{ $activeSection === 'child-supporter-sponsor-registration' ? 'bg-indigo-800 text-white' : 'text-indigo-200 hover:text-white' }}">
+                        ثبت نام حامی
+                    </button>
+                </div>
             </div>
         @endif
 

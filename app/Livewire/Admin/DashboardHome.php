@@ -84,7 +84,7 @@ class DashboardHome extends Component
         if ($user?->can('access-admin-panel')) {
             $validSections[] = 'advanced-service-report';
             $validSections[] = 'advanced-operator-report';
-            $validSections[] = 'child-supporter-page';
+            $validSections[] = 'child-supporter-sponsor-registration';
         }
 
         if ($user?->can('full-access')) {
@@ -109,7 +109,7 @@ class DashboardHome extends Component
                 'service-list',
                 'service-delivery',
                 'service-management',
-                'child-supporter-page'
+                'child-supporter-sponsor-registration'
             );
         }
 

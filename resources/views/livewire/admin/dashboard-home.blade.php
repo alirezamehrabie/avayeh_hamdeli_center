@@ -231,8 +231,8 @@
                         @break
 
 
-                    @case('child-supporter-page')
-                        <livewire:child-supporter.index  :key="'child-supporter-page'" />
+                    @case('child-supporter-sponsor-registration')
+                        <livewire:child-supporters.sponsor-registration :embedded="true" :key="'child-supporter-sponsor-registration'" />
                         @break
 
 

@@ -37,6 +37,7 @@
 
     @php
         $isDashboardActive = request()->routeIs('child-supporter.dashboard');
+        $isSponsorRegistrationActive = request()->routeIs('child-supporter.sponsor-registration');
         $isUserAccountActive = request()->routeIs('child-supporter.user-account');
         $isSystemSettingsActive = $isUserAccountActive;
     @endphp
@@ -47,6 +48,14 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M3 12l9-8 9 8-2 1.75V20a1 1 0 01-1 1h-4v-6h-4v6H6a1 1 0 01-1-1v-6.25L3 12z"/>
             </svg>
             <span>پیشخوان</span>
+        </a>
+
+        <a href="{{ route('child-supporter.sponsor-registration') }}" class="flex items-center rounded-lg px-4 py-2.5 transition-all duration-200 {{ $isSponsorRegistrationActive ? 'bg-indigo-700 text-white shadow-sm' : 'text-indigo-100 hover:bg-indigo-800 hover:text-white' }}">
+            <svg class="ml-3 h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l7.78-8.84a5.5 5.5 0 0 0 1.06-7.78z"/>
+                <path d="M12 8v6M9 11h6"/>
+            </svg>
+            <span>ثبت نام حامی</span>
         </a>
 
         <button type="button" @click="openMenu = openMenu === 'system-settings' ? '' : 'system-settings'"
