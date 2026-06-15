@@ -5,39 +5,92 @@ namespace App\Livewire\Services;
 use App\Models\Service;
 use App\Models\ServiceWorkerAllocation;
 use App\Models\SocialWorker;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 class ServiceDeliveryManager extends Component
 {
     public ?int $selectedServiceId = null;
-    public array $selectedWorkerIds = [];
+
+    /**
+     * @var array<int, array<int, string|int|float|null>>
+     */
     public array $allocations = [];
+
     public string $socialWorkerSearch = '';
+
     public bool $showSavedSummary = false;
+
+    public bool $confirmingAllocationSave = false;
+
+    public function mount(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+    }
 
     public function updatedSelectedServiceId(): void
     {
-        $this->refreshSelectedServiceState();
+        $this->syncSelectedServiceState();
         $this->showSavedSummary = false;
         $this->resetValidation();
     }
 
+    public function updatedSocialWorkerSearch(): void
+    {
+        $this->resetValidation();
+    }
+
+    public function updatedAllocations(): void
+    {
+        $this->confirmingAllocationSave = false;
+        $this->resetValidation();
+    }
+
+    public function syncSelectedServiceState(): void
+    {
+        unset($this->selectedService);
+
+        $this->allocations = [];
+        $this->socialWorkerSearch = '';
+
+        if (! $this->selectedServiceId) {
+            return;
+        }
+
+        $service = $this->selectedService;
+
+        if (! $service) {
+            $this->selectedServiceId = null;
+
+            return;
+        }
+
+        $workerAllocations = $service->workerAllocations
+            ->groupBy('social_worker_id');
+
+        foreach ($workerAllocations as $workerId => $rows) {
+            foreach ($rows as $row) {
+                $categoryId = (int) $row->service_category_id;
+                $this->allocations[(int) $workerId][$categoryId] = $this->formatDecimal($row->allocated_quantity);
+            }
+        }
+    }
+
     public function addSocialWorker(int $workerId): void
     {
+        if (! $this->selectedService) {
+            return;
+        }
+
         $worker = SocialWorker::query()->find($workerId);
 
         if (! $worker) {
             return;
         }
 
-        if (! in_array($workerId, $this->selectedWorkerIds, true)) {
-            $this->selectedWorkerIds[] = $workerId;
-        }
-
         foreach ($this->selectedServiceCategories as $category) {
-            $this->allocations[$workerId][(int) $category->id] = $this->allocations[$workerId][(int) $category->id] ?? $this->formatDecimal(0);
+            $this->allocations[$workerId][(int) $category->id] = $this->allocations[$workerId][(int) $category->id] ?? '0';
         }
 
         $this->socialWorkerSearch = '';
@@ -46,20 +99,38 @@ class ServiceDeliveryManager extends Component
 
     public function removeSocialWorker(int $workerId): void
     {
-        $service = $this->selectedService;
+        unset($this->allocations[$workerId]);
+        $this->confirmingAllocationSave = false;
+        $this->resetValidation();
+    }
 
-        if ($service && $service->deliveries()->where('social_worker_id', $workerId)->exists()) {
-            $this->addError('selectedWorkerIds', 'مددکاری که تحویل خدمت ثبت‌شده دارد قابل حذف نیست.');
+    public function requestSaveConfirmation(): void
+    {
+        $this->validateAllocationPayload();
+
+        if ($this->getErrorBag()->isNotEmpty()) {
+            $this->confirmingAllocationSave = false;
+
             return;
         }
 
-        $this->selectedWorkerIds = array_values(array_filter(
-            $this->selectedWorkerIds,
-            fn (int $selectedId) => $selectedId !== $workerId
-        ));
+        $this->confirmingAllocationSave = true;
+    }
 
-        unset($this->allocations[$workerId]);
-        $this->resetValidation();
+    public function cancelSaveConfirmation(): void
+    {
+        $this->confirmingAllocationSave = false;
+    }
+
+    public function confirmSaveAllocations(): void
+    {
+        if (! $this->confirmingAllocationSave) {
+            $this->requestSaveConfirmation();
+
+            return;
+        }
+
+        $this->saveAllocations();
     }
 
     public function saveAllocations(): void
@@ -67,98 +138,107 @@ class ServiceDeliveryManager extends Component
         $service = $this->selectedService;
         abort_unless($service, 404);
 
-        $categoryIds = $this->selectedServiceCategories->pluck('id')->map(fn ($id) => (int) $id);
-        $rules = [
-            'selectedWorkerIds' => ['array'],
-            'selectedWorkerIds.*' => ['integer', Rule::exists('social_workers', 'id')],
-        ];
+        $workerRows = $this->validateAllocationPayload();
 
-        foreach ($this->selectedWorkerIds as $workerId) {
-            foreach ($categoryIds as $categoryId) {
-                $rules['allocations.' . $workerId . '.' . $categoryId] = ['nullable', 'numeric', 'min:0'];
-            }
-        }
-
-        $validated = $this->validate($rules, [], $this->validationAttributes());
-        $selectedWorkerIds = collect($validated['selectedWorkerIds'] ?? [])
-            ->map(fn ($workerId) => (int) $workerId)
-            ->unique()
-            ->values();
-
-        $lockedWorkerIds = $service->deliveries()
-            ->pluck('social_worker_id')
-            ->unique()
-            ->diff($selectedWorkerIds);
-
-        if ($lockedWorkerIds->isNotEmpty()) {
-            $this->addError('selectedWorkerIds', 'مددکارانی که تحویل ثبت‌شده دارند باید در فهرست باقی بمانند.');
+        if ($this->getErrorBag()->isNotEmpty()) {
             return;
         }
 
-        $totalAllocated = $selectedWorkerIds
-            ->sum(fn ($workerId) => collect($categoryIds)
-                ->sum(fn ($categoryId) => (float) ($validated['allocations'][$workerId][$categoryId] ?? 0)));
+        DB::transaction(function () use ($service, $workerRows): void {
+            $service->workerAllocations()->delete();
 
-        if ($totalAllocated > (float) $service->total_quantity) {
-            $this->addError('allocations_total', 'مجموع سهمیه مددکاران نمی‌تواند از تعداد کل خدمت بیشتر باشد.');
-            return;
-        }
-
-        foreach ($categoryIds as $categoryId) {
-            $categoryAllocated = $selectedWorkerIds
-                ->sum(fn ($workerId) => (float) ($validated['allocations'][$workerId][$categoryId] ?? 0));
-
-            if ($categoryAllocated > $this->categoryDefinedQuantity((int) $categoryId)) {
-                $this->addError('allocations_total', 'مجموع سهمیه یک آیتم از موجودی کل همان آیتم بیشتر است.');
-                return;
-            }
-
-            foreach ($selectedWorkerIds as $workerId) {
-                $allocated = (float) ($validated['allocations'][$workerId][$categoryId] ?? 0);
-                $alreadyDelivered = $service->deliveredQuantityForWorkerCategory($workerId, (int) $categoryId);
-
-                if ($allocated < $alreadyDelivered) {
-                    $this->addError('allocations.' . $workerId . '.' . $categoryId, 'سهمیه نمی‌تواند کمتر از مقدار تحویل‌شده فعلی این مددکار برای این آیتم باشد.');
-                    return;
-                }
-            }
-        }
-
-        DB::transaction(function () use ($service, $selectedWorkerIds, $categoryIds, $validated): void {
-            $service->workerAllocations()
-                ->whereNotIn('social_worker_id', $selectedWorkerIds->all())
-                ->delete();
-
-            $service->workerAllocations()
-                ->whereIn('social_worker_id', $selectedWorkerIds->all())
-                ->whereNotIn('service_category_id', $categoryIds->all())
-                ->delete();
-
-            foreach ($selectedWorkerIds as $workerId) {
-                foreach ($categoryIds as $categoryId) {
-                    ServiceWorkerAllocation::query()->updateOrCreate(
-                        [
-                            'service_id' => $service->id,
-                            'social_worker_id' => $workerId,
-                            'service_category_id' => $categoryId,
-                        ],
-                        [
-                            'allocated_quantity' => (float) ($validated['allocations'][$workerId][$categoryId] ?? 0),
-                        ]
-                    );
-                }
+            foreach ($workerRows as $row) {
+                ServiceWorkerAllocation::query()->create([
+                    'service_id' => $service->id,
+                    'social_worker_id' => $row['worker_id'],
+                    'service_category_id' => $row['category_id'],
+                    'allocated_quantity' => $row['quantity'],
+                ]);
             }
         });
 
+        $this->confirmingAllocationSave = false;
         $this->showSavedSummary = true;
-        $this->refreshSelectedServiceState();
+        $this->syncSelectedServiceState();
         $this->dispatch('quota-saved');
+    }
+
+    protected function validateAllocationPayload(): Collection
+    {
+        $service = $this->selectedService;
+        abort_unless($service, 404);
+
+        $workerIds = collect(array_keys($this->allocations))
+            ->map(fn ($id) => (int) $id)
+            ->values();
+
+        $categoryIds = $this->selectedServiceCategories->pluck('id')->map(fn ($id) => (int) $id)->values();
+
+        $rules = [
+            'allocations' => ['array'],
+            'allocations.*' => ['array'],
+            'allocations.*.*' => ['nullable', 'numeric', 'min:0'],
+        ];
+
+        foreach ($workerIds as $workerId) {
+            $rules['allocations.'.$workerId] = ['array'];
+
+            foreach ($categoryIds as $categoryId) {
+                $rules['allocations.'.$workerId.'.'.$categoryId] = ['nullable', 'numeric', 'min:0'];
+            }
+        }
+
+        $this->validate($rules, [], $this->validationAttributes());
+
+        $workerRows = collect($this->allocations)
+            ->map(function (array $workerAllocations, int $workerId) use ($categoryIds): Collection {
+                return collect($categoryIds)->mapWithKeys(function (int $categoryId) use ($workerAllocations, $workerId): array {
+                    return [
+                        $categoryId => [
+                            'worker_id' => $workerId,
+                            'category_id' => $categoryId,
+                            'quantity' => (float) ($workerAllocations[$categoryId] ?? 0),
+                        ],
+                    ];
+                });
+            })
+            ->flatten(1)
+            ->filter(fn (array $row): bool => $row['quantity'] > 0)
+            ->values();
+
+        $validWorkerCount = SocialWorker::query()
+            ->whereIn('id', $workerRows->pluck('worker_id')->unique()->all())
+            ->count();
+
+        if ($validWorkerCount !== $workerRows->pluck('worker_id')->unique()->count()) {
+            $this->addError('allocations', 'یکی از مددکاران انتخاب‌شده معتبر نیست.');
+
+            return collect();
+        }
+
+        foreach ($categoryIds as $categoryId) {
+            $categoryDefined = $this->categoryDefinedQuantity($categoryId);
+            $categoryTotal = $workerRows
+                ->where('category_id', $categoryId)
+                ->sum('quantity');
+
+            if ($categoryTotal > $categoryDefined) {
+                $this->addError(
+                    'allocations',
+                    'مجموع سهمیه مددکاران برای هر آیتم نمی‌تواند از مقدار تعریف‌شده همان آیتم بیشتر باشد.'
+                );
+
+                return collect();
+            }
+        }
+
+        return $workerRows;
     }
 
     public function enableEditing(): void
     {
-        $this->refreshSelectedServiceState();
         $this->showSavedSummary = false;
+        $this->syncSelectedServiceState();
     }
 
     public function getSelectedServiceProperty(): ?Service
@@ -168,122 +248,107 @@ class ServiceDeliveryManager extends Component
         }
 
         return Service::query()
-            ->with(['serviceName', 'categories', 'workerAllocations.serviceCategory', 'workerAllocations.socialWorker'])
+            ->with([
+                'serviceName',
+                'categories' => fn ($query) => $query->orderBy('sort_id')->orderBy('id'),
+                'workerAllocations.socialWorker',
+                'workerAllocations.serviceCategory',
+            ])
             ->find($this->selectedServiceId);
     }
 
-    public function render()
+    public function getSelectedServiceCategoriesProperty(): Collection
     {
-        return view('livewire.services.service-delivery-manager', [
-            'services' => Service::query()
-                ->with(['serviceName', 'categories', 'workerAllocations.socialWorker'])
-                ->whereIn('status', ['approved', 'in_distribution', 'completed'])
-                ->latest()
-                ->get(),
-            'availableSocialWorkers' => $this->availableSocialWorkers,
-            'selectedWorkers' => $this->selectedWorkers,
-        ]);
+        return $this->selectedService?->categories?->values() ?? collect();
     }
 
-    protected function loadAllocations(): void
+    public function getSelectedWorkersProperty(): Collection
     {
-        $service = $this->selectedService;
-        $this->allocations = [];
-        $this->selectedWorkerIds = [];
-        $this->socialWorkerSearch = '';
+        $workerIds = collect(array_keys($this->allocations))
+            ->map(fn ($id) => (int) $id)
+            ->values();
 
-        if (! $service) {
-            return;
-        }
-
-        foreach ($service->workerAllocations->groupBy('social_worker_id') as $workerId => $workerAllocations) {
-            $this->selectedWorkerIds[] = (int) $workerId;
-
-            foreach ($this->selectedServiceCategories as $category) {
-                $allocation = $workerAllocations->firstWhere('service_category_id', (int) $category->id);
-                $this->allocations[(int) $workerId][(int) $category->id] = $this->formatDecimal($allocation?->allocated_quantity ?? 0);
-            }
-        }
-    }
-
-    protected function refreshSelectedServiceState(): void
-    {
-        unset($this->selectedService);
-        $this->loadAllocations();
-    }
-
-    public function getSelectedWorkersProperty()
-    {
-        if ($this->selectedWorkerIds === []) {
+        if ($workerIds->isEmpty()) {
             return collect();
         }
 
         $workers = SocialWorker::query()
-            ->whereIn('id', $this->selectedWorkerIds)
+            ->whereIn('id', $workerIds)
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get();
 
-        return collect($this->selectedWorkerIds)
+        return $workerIds
             ->map(fn (int $workerId) => $workers->firstWhere('id', $workerId))
-            ->filter();
+            ->filter()
+            ->values();
     }
 
-    public function getAvailableSocialWorkersProperty()
+    public function getAvailableSocialWorkersProperty(): Collection
     {
         $search = trim($this->socialWorkerSearch);
 
         return SocialWorker::query()
-            ->whereNotIn('id', $this->selectedWorkerIds)
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($innerQuery) use ($search) {
-                    $innerQuery->where('first_name', 'like', '%' . $search . '%')
-                        ->orWhere('last_name', 'like', '%' . $search . '%')
-                        ->orWhere('worker_code', 'like', '%' . $search . '%');
+            ->when($search !== '', function ($query) use ($search): void {
+                $query->where(function ($workerQuery) use ($search): void {
+                    $workerQuery->where('first_name', 'like', '%'.$search.'%')
+                        ->orWhere('last_name', 'like', '%'.$search.'%')
+                        ->orWhere('worker_code', 'like', '%'.$search.'%');
                 });
             })
+            ->whereNotIn('id', array_keys($this->allocations))
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->limit(8)
             ->get();
     }
 
-    public function getSelectedServiceCategoriesProperty()
-    {
-        return $this->selectedService?->categories?->sortBy('sort_id')->values() ?? collect();
-    }
-
     public function getCurrentAllocatedTotalProperty(): float
     {
-        return collect($this->selectedWorkerIds)
-            ->sum(fn (int $workerId) => $this->allocationForWorker($workerId));
+        return collect($this->allocations)
+            ->sum(fn (array $workerAllocations) => collect($workerAllocations)->sum(fn ($quantity) => (float) $quantity));
     }
 
     public function getRemainingAssignableQuantityProperty(): float
     {
-        $service = $this->selectedService;
-
-        if (! $service) {
-            return 0;
-        }
-
-        return max(0, (float) $service->total_quantity - $this->currentAllocatedTotal);
+        return max(0, (float) ($this->selectedService?->total_quantity ?? 0) - $this->currentAllocatedTotal);
     }
 
     public function allocationForWorker(int $workerId): float
     {
-        return collect($this->allocations[$workerId] ?? [])->sum(fn ($quantity) => (float) $quantity);
+        return collect($this->allocations[$workerId] ?? [])
+            ->sum(fn ($quantity) => (float) $quantity);
     }
 
     public function allocationForCategory(int $categoryId): float
     {
-        return collect($this->selectedWorkerIds)
-            ->sum(fn (int $workerId) => (float) ($this->allocations[$workerId][$categoryId] ?? 0));
+        return collect($this->allocations)
+            ->sum(fn (array $workerAllocations) => (float) ($workerAllocations[$categoryId] ?? 0));
     }
 
     public function remainingAssignableForCategory(int $categoryId): float
     {
         return max(0, $this->categoryDefinedQuantity($categoryId) - $this->allocationForCategory($categoryId));
+    }
+
+    protected function categoryDefinedQuantity(int $categoryId): float
+    {
+        $category = $this->selectedServiceCategories->firstWhere('id', $categoryId);
+
+        return $category ? (float) $category->quantity : 0;
+    }
+
+    protected function validationAttributes(): array
+    {
+        $attributes = [];
+
+        foreach ($this->selectedWorkers as $worker) {
+            foreach ($this->selectedServiceCategories as $category) {
+                $attributes['allocations.'.$worker->id.'.'.$category->id] = $worker->full_name.' - '.$category->name;
+            }
+        }
+
+        return $attributes;
     }
 
     protected function formatDecimal(string|int|float|null $value): string
@@ -297,32 +362,21 @@ class ServiceDeliveryManager extends Component
         return number_format($number, 2, '.', '');
     }
 
-    protected function validationAttributes(): array
+    public function render()
     {
-        $service = $this->selectedService;
-        $attributes = [];
-
-        if (! $service) {
-            return $attributes;
-        }
-
-        foreach ($this->selectedWorkers as $worker) {
-            foreach ($this->selectedServiceCategories as $category) {
-                $attributes['allocations.' . $worker->id . '.' . $category->id] = 'سهمیه ' . $worker->full_name . ' - ' . $category->name;
-            }
-        }
-
-        return $attributes;
-    }
-
-    protected function categoryDefinedQuantity(int $categoryId): float
-    {
-        $category = $this->selectedServiceCategories->firstWhere('id', $categoryId);
-
-        if (! $category) {
-            return 0;
-        }
-
-        return (float) $category->quantity;
+        return view('livewire.services.service-delivery-manager', [
+            'services' => Service::query()
+                ->with([
+                    'serviceName',
+                    'categories' => fn ($query) => $query->orderBy('sort_id')->orderBy('id'),
+                    'workerAllocations.socialWorker',
+                    'workerAllocations.serviceCategory',
+                ])
+                ->whereIn('status', ['approved', 'in_distribution', 'completed'])
+                ->latest()
+                ->get(),
+            'availableSocialWorkers' => $this->availableSocialWorkers,
+            'selectedWorkers' => $this->selectedWorkers,
+        ]);
     }
 }
