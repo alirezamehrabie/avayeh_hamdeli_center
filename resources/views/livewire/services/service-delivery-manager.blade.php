@@ -115,18 +115,19 @@
                             </div>
                             <div class="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
                                 @foreach($this->selectedService->categories->sortBy('sort_id') as $category)
+                                    @php($remainingStock = $this->selectedService->remainingStockForCategory((int) $category->id))
                                     <div class="rounded-xl border border-slate-200 bg-white px-3 py-2">
                                         <div class="flex items-start justify-between gap-3">
                                             <div class="min-w-0">
                                                 <p class="truncate text-xs font-black text-slate-800">{{ $category->name }}</p>
                                                 <p class="mt-1 text-[10px] font-semibold text-slate-500">{{ $category->code }}</p>
                                             </div>
-                                            <span class="rounded-full {{ (float) $category->quantity > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }} px-2 py-1 text-[10px] font-bold">
-                                                {{ (float) $category->quantity > 0 ? 'موجود' : 'ناموجود' }}
+                                            <span class="rounded-full {{ $remainingStock > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }} px-2 py-1 text-[10px] font-bold">
+                                                {{ $remainingStock > 0 ? 'موجود' : 'ناموجود' }}
                                             </span>
                                         </div>
                                         <div class="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] font-bold text-slate-600">
-                                            <span class="rounded-full bg-slate-50 px-2 py-1">موجودی: {{ number_format((float) $category->quantity, 2) }} {{ \App\Models\Service::unitOptions()[$category->unit] ?? $category->unit }}</span>
+                                            <span class="rounded-full bg-slate-50 px-2 py-1">موجودی: {{ number_format($remainingStock, 2) }} {{ \App\Models\Service::unitOptions()[$category->unit] ?? $category->unit }}</span>
                                             <span class="rounded-full bg-slate-50 px-2 py-1">ارزش واحد: {{ number_format((int) $category->value) }}</span>
                                         </div>
                                     </div>

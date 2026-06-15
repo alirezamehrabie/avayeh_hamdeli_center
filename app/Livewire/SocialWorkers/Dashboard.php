@@ -231,7 +231,7 @@ class Dashboard extends Component
                 foreach ($categoryQuantities as $categoryId => $quantity) {
                     $category = $lockedCategories->get((int) $categoryId);
 
-                    if (! $category || (float) $category->quantity < (float) $quantity) {
+                    if (! $category || $service->remainingStockForCategory((int) $categoryId) < (float) $quantity) {
                         throw ValidationException::withMessages([
                             'recipientEntries' => 'مقدار تحویل برای یکی از دسته‌بندی‌ها از موجودی همان دسته‌بندی بیشتر است.',
                         ]);
@@ -550,7 +550,7 @@ class Dashboard extends Component
         }
 
         return $this->assignableCategories
-            ->first(fn ($category) => (float) $category->quantity > 0)?->id
+            ->first(fn ($category) => $service->remainingStockForCategory((int) $category->id) > 0)?->id
             ?: $this->assignableCategories->first()?->id;
     }
 

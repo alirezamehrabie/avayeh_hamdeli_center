@@ -529,8 +529,9 @@
                                 >
                                     <option value="">انتخاب دسته‌بندی</option>
                                     @foreach($selectedService?->categories?->sortBy('sort_id') ?? [] as $category)
+                                        @php($remainingStock = $selectedService?->remainingStockForCategory((int) $category->id) ?? 0)
                                         <option value="{{ $category->id }}">
-                                            {{ $category->name }} - موجودی: {{ number_format((float) $category->quantity, 2) }} {{ $unitOptions[$category->unit] ?? $category->unit }} - ارزش واحد: {{ number_format((int) $category->value) }}
+                                            {{ $category->name }} - موجودی: {{ number_format($remainingStock, 2) }} {{ $unitOptions[$category->unit] ?? $category->unit }} - ارزش واحد: {{ number_format((int) $category->value) }}
                                         </option>
                                     @endforeach
                                 </select>

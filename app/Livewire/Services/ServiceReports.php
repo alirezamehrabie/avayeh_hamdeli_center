@@ -348,11 +348,13 @@ class ServiceReports extends Component
             ]);
         }
 
-        $availableInTargetCategory = (float) $targetCategory->quantity;
+        $otherDeliveredInTargetCategory = max(
+            0,
+            $service->deliveredQuantityForCategory($newCategoryId)
+                - ((int) $delivery->service_category_id === $newCategoryId ? (float) $delivery->delivered_quantity : 0)
+        );
 
-        if ((int) $delivery->service_category_id === $newCategoryId) {
-            $availableInTargetCategory += (float) $delivery->delivered_quantity;
-        }
+        $availableInTargetCategory = max(0, (float) $targetCategory->quantity - $otherDeliveredInTargetCategory);
 
         if ($newQuantity > $availableInTargetCategory) {
             throw ValidationException::withMessages([

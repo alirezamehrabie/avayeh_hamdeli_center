@@ -108,7 +108,7 @@ class ServiceDeliveryManager extends Component
             $categoryAllocated = $selectedWorkerIds
                 ->sum(fn ($workerId) => (float) ($validated['allocations'][$workerId][$categoryId] ?? 0));
 
-            if ($categoryAllocated > $this->categoryTotalQuantity((int) $categoryId)) {
+            if ($categoryAllocated > $this->categoryDefinedQuantity((int) $categoryId)) {
                 $this->addError('allocations_total', 'مجموع سهمیه یک آیتم از موجودی کل همان آیتم بیشتر است.');
                 return;
             }
@@ -283,7 +283,7 @@ class ServiceDeliveryManager extends Component
 
     public function remainingAssignableForCategory(int $categoryId): float
     {
-        return max(0, $this->categoryTotalQuantity($categoryId) - $this->allocationForCategory($categoryId));
+        return max(0, $this->categoryDefinedQuantity($categoryId) - $this->allocationForCategory($categoryId));
     }
 
     protected function formatDecimal(string|int|float|null $value): string
@@ -315,16 +315,14 @@ class ServiceDeliveryManager extends Component
         return $attributes;
     }
 
-    protected function categoryTotalQuantity(int $categoryId): float
+    protected function categoryDefinedQuantity(int $categoryId): float
     {
         $category = $this->selectedServiceCategories->firstWhere('id', $categoryId);
 
-        if (! $category || ! $this->selectedService) {
+        if (! $category) {
             return 0;
         }
 
-        return (float) $category->quantity + (float) $this->selectedService->deliveries()
-            ->where('service_category_id', $categoryId)
-            ->sum('delivered_quantity');
+        return (float) $category->quantity;
     }
 }

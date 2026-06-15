@@ -289,8 +289,9 @@
                                             >
                                                 <option value="">انتخاب دسته‌بندی</option>
                                                 @foreach($this->assignableCategories as $category)
-                                                    <option value="{{ $category->id }}" @disabled((float) $category->quantity <= 0)>
-                                                        {{ $category->name }} - مانده سهمیه: {{ number_format($this->selectedService->remainingAllocationForWorkerCategory(auth()->user()->social_worker_id, $category->id), 2) }} - موجودی: {{ number_format((float) $category->quantity, 2) }} {{ \App\Models\Service::unitOptions()[$category->unit] ?? $category->unit }} - ارزش واحد: {{ number_format((int) $category->value) }}
+                                                    @php($remainingStock = $this->selectedService->remainingStockForCategory((int) $category->id))
+                                                    <option value="{{ $category->id }}" @disabled($remainingStock <= 0)>
+                                                        {{ $category->name }} - مانده سهمیه: {{ number_format($this->selectedService->remainingAllocationForWorkerCategory(auth()->user()->social_worker_id, $category->id), 2) }} - موجودی: {{ number_format($remainingStock, 2) }} {{ \App\Models\Service::unitOptions()[$category->unit] ?? $category->unit }} - ارزش واحد: {{ number_format((int) $category->value) }}
                                                     </option>
                                                 @endforeach
                                             </select>

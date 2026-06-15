@@ -102,8 +102,6 @@
                         'status' => $statusOptions[$service->status] ?? $service->status,
                         'priority' => $service->priority ? ($priorityOptions[$service->priority] ?? $service->priority) : 'بدون اولویت',
                         'quantity' => $this->formatReadableNumber($service->total_quantity) . ' ' . ($unitOptions[$service->service_unit] ?? ($service->service_unit ?? '-')),
-                        'delivered' => $this->formatReadableNumber($service->quantity_delivered),
-                        'remaining' => $this->formatReadableNumber($service->remaining_quantity),
                         'value' => number_format($service->total_service_value) . ' ریال',
                         'district' => $service->district?->name ?: 'بدون منطقه',
                         'start' => $service->distribution_start_date ? \App\Helpers\Morilog\Jalalian::fromDateTime($service->distribution_start_date)->format('Y/m/d') : '-',
@@ -207,8 +205,6 @@
                                     'status' => $statusOptions[$service->status] ?? $service->status,
                                     'priority' => $service->priority ? ($priorityOptions[$service->priority] ?? $service->priority) : 'بدون اولویت',
                                     'quantity' => $this->formatReadableNumber($service->total_quantity) . ' ' . ($unitOptions[$service->service_unit] ?? ($service->service_unit ?? '-')),
-                                    'delivered' => $this->formatReadableNumber($service->quantity_delivered),
-                                    'remaining' => $this->formatReadableNumber($service->remaining_quantity),
                                     'value' => number_format($service->total_service_value) . ' ریال',
                                     'district' => $service->district?->name ?: 'بدون منطقه',
                                     'start' => $service->distribution_start_date ? \App\Helpers\Morilog\Jalalian::fromDateTime($service->distribution_start_date)->format('Y/m/d') : '-',
@@ -327,7 +323,6 @@
                             <div class="rounded-2xl border border-emerald-100 bg-emerald-50/60 px-3 py-2.5"><p class="text-[11px] text-emerald-700/70">تعداد مددکار</p><p class="mt-1 text-sm font-bold text-slate-800" x-text="details?.workers_count"></p></div>
                             <div class="rounded-2xl border border-amber-100 bg-amber-50/60 px-3 py-2.5"><p class="text-[11px] text-amber-800/70">مقدار کل</p><p class="mt-1 text-sm font-bold text-slate-800" x-text="details?.quantity"></p></div>
                             <div class="rounded-2xl border border-rose-100 bg-rose-50/60 px-3 py-2.5"><p class="text-[11px] text-rose-700/70">ارزش کل</p><p class="mt-1 text-sm font-bold text-slate-800" x-text="details?.value"></p></div>
-                            <div class="rounded-2xl border border-cyan-100 bg-cyan-50/60 px-3 py-2.5"><p class="text-[11px] text-cyan-700/70">تحویل / باقی‌مانده</p><p class="mt-1 text-sm font-bold text-slate-800"><span x-text="details?.delivered"></span> / <span x-text="details?.remaining"></span></p></div>
                             <div class="rounded-2xl border border-slate-200 bg-slate-50/80 px-3 py-2.5"><p class="text-[11px] text-slate-500">منطقه</p><p class="mt-1 text-sm font-bold text-slate-800" x-text="details?.district"></p></div>
                         </div>
 

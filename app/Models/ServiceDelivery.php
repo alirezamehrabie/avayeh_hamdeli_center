@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class ServiceDelivery extends Model
@@ -48,27 +47,14 @@ class ServiceDelivery extends Model
         });
 
         static::created(function (self $delivery): void {
-            $delivery->adjustCategoryQuantity(-1 * (float) $delivery->delivered_quantity);
             $delivery->service?->refreshDeliveryProgress();
         });
 
         static::updated(function (self $delivery): void {
-            $originalQuantity = (float) $delivery->getOriginal('delivered_quantity');
-            $originalCategoryId = (int) $delivery->getOriginal('service_category_id');
-
-            if ($delivery->wasChanged('service_category_id') && $originalCategoryId > 0) {
-                $delivery->adjustCategoryQuantity($originalQuantity, $originalCategoryId);
-                $delivery->adjustCategoryQuantity(-1 * (float) $delivery->delivered_quantity);
-            } elseif ($delivery->wasChanged('delivered_quantity')) {
-                $delivery->adjustCategoryQuantity($originalQuantity);
-                $delivery->adjustCategoryQuantity(-1 * (float) $delivery->delivered_quantity);
-            }
-
             $delivery->service?->refreshDeliveryProgress();
         });
 
         static::deleted(function (self $delivery): void {
-            $delivery->adjustCategoryQuantity((float) $delivery->delivered_quantity);
             $delivery->service?->refreshDeliveryProgress();
         });
     }
@@ -164,33 +150,6 @@ class ServiceDelivery extends Model
             ]);
     }
 
-    protected function adjustCategoryQuantity(float $delta, ?int $categoryId = null): void
-    {
-        $targetCategoryId = $categoryId ?: (int) $this->service_category_id;
-
-        if ($targetCategoryId <= 0 || $delta === 0.0) {
-            return;
-        }
-
-        DB::transaction(function () use ($targetCategoryId, $delta): void {
-            $category = ServiceCategory::query()->lockForUpdate()->find($targetCategoryId);
-
-            if (! $category) {
-                return;
-            }
-
-            $nextQuantity = (float) $category->quantity + $delta;
-
-            if ($nextQuantity < -0.00001) {
-                throw ValidationException::withMessages([
-                    'delivered_quantity' => 'مقدار تحویل از موجودی دسته‌بندی خدمت بیشتر است.',
-                ]);
-            }
-
-            $nextQuantity = max(0, $nextQuantity);
-            $category->forceFill(['quantity' => $nextQuantity])->saveQuietly();
-        });
-    }
 
     protected function assertServiceCategoryBelongsToService(): void
     {

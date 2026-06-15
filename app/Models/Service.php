@@ -210,11 +210,7 @@ class Service extends Model
 
     public function getRemainingStockQuantityAttribute(): float
     {
-        if ($this->relationLoaded('categories')) {
-            return (float) $this->categories->sum(fn ($category) => (float) $category->quantity);
-        }
-
-        return (float) $this->categories()->sum('quantity');
+        return max(0, (float) $this->total_quantity - (float) $this->quantity_delivered);
     }
 
     public function getAllocatedQuantityAttribute(): float
@@ -354,6 +350,26 @@ class Service extends Model
             ->where('social_worker_id', $socialWorkerId)
             ->where('service_category_id', $serviceCategoryId)
             ->sum('delivered_quantity');
+    }
+
+    public function deliveredQuantityForCategory(int $serviceCategoryId): float
+    {
+        return (float) $this->deliveries()
+            ->where('service_category_id', $serviceCategoryId)
+            ->sum('delivered_quantity');
+    }
+
+    public function remainingStockForCategory(int $serviceCategoryId): float
+    {
+        $category = $this->relationLoaded('categories')
+            ? $this->categories->firstWhere('id', $serviceCategoryId)
+            : $this->categories()->whereKey($serviceCategoryId)->first();
+
+        if (! $category) {
+            return 0;
+        }
+
+        return max(0, (float) $category->quantity - $this->deliveredQuantityForCategory($serviceCategoryId));
     }
 
     public function remainingAllocationForWorkerCategory(int $socialWorkerId, int $serviceCategoryId): float
