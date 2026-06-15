@@ -555,17 +555,52 @@
                             </div>
                         </div>
 
-                        <div class="rounded-3xl border border-cyan-100 bg-cyan-50 p-5">
-                            <h2 class="text-lg font-bold text-cyan-900">خلاصه مالی</h2>
-                            <div class="mt-4 grid gap-3">
-                                <div class="rounded-2xl bg-white px-4 py-3">
-                                    <p class="text-xs text-slate-500">جمع مقدار دسته‌ها</p>
-                                    <p class="mt-1 text-lg font-black text-slate-800">{{ number_format($this->totalQuantity, 2) }}</p>
+                        @php
+                            $categoryCount = count($categories);
+                            $averageUnitValue = $categoryCount > 0
+                                ? collect($categories)->avg(fn (array $category) => (int) preg_replace('/\D+/', '', (string) ($category['value'] ?? 0)))
+                                : 0;
+                            $activeUnits = collect($categories)
+                                ->pluck('unit')
+                                ->filter()
+                                ->unique()
+                                ->values();
+                        @endphp
+
+                        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/40">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <h2 class="text-base font-bold text-slate-800">خلاصه مالی</h2>
+                                    <p class="mt-0.5 text-xs text-slate-500">جمع‌بندی فشرده مقدار و ارزش دسته‌ها</p>
                                 </div>
-                                <div class="rounded-2xl bg-white px-4 py-3">
-                                    <p class="text-xs text-slate-500">ارزش کل</p>
-                                    <p class="mt-1 text-lg font-black text-cyan-800">{{ number_format($this->totalServiceValue) }} ریال</p>
+                                <span class="inline-flex shrink-0 items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500">
+                                    {{ $categoryCount }} دسته
+                                </span>
+                            </div>
+
+                            <div class="mt-4 divide-y divide-slate-100 rounded-xl border border-slate-100 bg-slate-50/70">
+                                <div class="flex items-center justify-between gap-4 px-3 py-2.5">
+                                    <span class="text-xs font-medium text-slate-500">جمع مقدار دسته‌ها</span>
+                                    <span class="text-sm font-black text-slate-800">{{ number_format($this->totalQuantity, 2) }}</span>
                                 </div>
+                                <div class="flex items-center justify-between gap-4 px-3 py-2.5">
+                                    <span class="text-xs font-medium text-slate-500">ارزش کل</span>
+                                    <span class="text-sm font-black text-teal-700">{{ number_format($this->totalServiceValue) }} ریال</span>
+                                </div>
+                                <div class="flex items-center justify-between gap-4 px-3 py-2.5">
+                                    <span class="text-xs font-medium text-slate-500">میانگین ارزش واحد</span>
+                                    <span class="text-sm font-bold text-slate-700">{{ number_format((int) $averageUnitValue) }} ریال</span>
+                                </div>
+                            </div>
+
+                            <div class="mt-3 flex flex-wrap gap-1.5">
+                                @forelse($activeUnits as $unit)
+                                    <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-500">
+                                        {{ $unitOptions[$unit] ?? $unit }}
+                                    </span>
+                                @empty
+                                    <span class="text-xs text-slate-400">هنوز واحدی انتخاب نشده است.</span>
+                                @endforelse
                             </div>
                         </div>
 
