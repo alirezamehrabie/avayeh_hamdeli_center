@@ -2,6 +2,8 @@
 
 namespace App\Traits;
 
+use Illuminate\Support\Arr;
+
 trait InteractsWithNotificationModal
 {
     protected function openNotificationModal(array $config): void
@@ -12,6 +14,58 @@ trait InteractsWithNotificationModal
     protected function closeNotificationModal(): void
     {
         $this->dispatch('close-notification-modal');
+    }
+
+    protected function openValidationErrorModal(array $messages, string $title = 'لطفاً خطاهای فرم را برطرف کنید'): void
+    {
+        $errors = collect(Arr::flatten($messages))
+            ->map(fn ($message) => trim((string) $message))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        $this->openNotificationModal([
+            'type' => 'error',
+            'title' => $title,
+            'message' => $errors === []
+                ? 'ورودی‌های فرم معتبر نیستند. لطفاً موارد مشخص‌شده را بررسی کنید.'
+                : implode(PHP_EOL, array_map(fn (string $message) => '• ' . $message, $errors)),
+            'icon' => 'error',
+            'buttons' => [
+                [
+                    'label' => 'اصلاح اطلاعات',
+                    'action' => 'close',
+                    'variant' => 'danger',
+                ],
+            ],
+        ]);
+    }
+
+    protected function openSystemErrorModal(string $message = 'در ثبت اطلاعات مشکلی رخ داد. لطفاً دوباره تلاش کنید.', ?string $retryEvent = null): void
+    {
+        $buttons = [[
+            'label' => 'بستن',
+            'action' => 'close',
+            'variant' => 'secondary',
+        ]];
+
+        if ($retryEvent) {
+            array_unshift($buttons, [
+                'label' => 'تلاش دوباره',
+                'action' => 'event',
+                'event' => $retryEvent,
+                'variant' => 'danger',
+            ]);
+        }
+
+        $this->openNotificationModal([
+            'type' => 'error',
+            'title' => 'خطای سیستمی',
+            'message' => $message,
+            'icon' => 'error',
+            'buttons' => $buttons,
+        ]);
     }
 
     protected function normalizeNotificationModalConfig(array $config): array

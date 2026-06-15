@@ -145,6 +145,8 @@
         </div>
     </div>
 
+    <x-notification-modal />
+
     @livewireScriptConfig
     @stack('scripts')
 </body>

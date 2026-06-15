@@ -9,12 +9,17 @@ use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\ServiceCategoryTemplate;
 use App\Models\ServiceName;
+use App\Traits\InteractsWithNotificationModal;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class ServiceDefinition extends Component
 {
+    use InteractsWithNotificationModal;
+
     public ?int $serviceId = null;
 
     public ?int $editingServiceId = null;
@@ -73,105 +78,144 @@ class ServiceDefinition extends Component
 
     public function save(): void
     {
-        $validated = $this->validate($this->rules(), [], $this->validationAttributes());
-        $validated['categories'] = collect($validated['categories'])
-            ->map(function (array $category): array {
-                $category['value'] = $this->digitsOnly((string) ($category['value'] ?? ''));
+        try {
+            $validated = $this->validate($this->rules(), [], $this->validationAttributes());
+            $validated['categories'] = collect($validated['categories'])
+                ->map(function (array $category): array {
+                    $category['value'] = $this->digitsOnly((string) ($category['value'] ?? ''));
 
-                return $category;
-            })
-            ->all();
+                    return $category;
+                })
+                ->all();
 
-        if ($this->hasDuplicateCategoryNames($validated['categories'])) {
-            $this->addError('categories', 'هر دسته خدمت برای یک خدمت فقط یک‌بار قابل انتخاب است.');
-
-            return;
-        }
-
-        DB::transaction(function () use ($validated): void {
-            $service = $this->editingServiceId
-                ? Service::query()->findOrFail($this->editingServiceId)
-                : new Service;
-            $serviceName = $this->persistServiceNameRecord(trim($validated['serviceName']));
-
-            if (! $this->editingServiceId) {
-                $service->code = Service::generateNextCode();
-                $service->created_by = auth()->id();
+            if ($this->hasDuplicateCategoryNames($validated['categories'])) {
+                throw ValidationException::withMessages([
+                    'categories' => 'هر دسته خدمت برای یک خدمت فقط یک‌بار قابل انتخاب است.',
+                ]);
             }
 
-            $service->fill([
-                'service_name_id' => $serviceName->id,
-                'name' => trim($validated['serviceName']),
-                'service_type' => $validated['serviceType'],
-                'description' => $validated['description'] ?: null,
-                'district_id' => $validated['serviceDistrictId'] ?: null,
-                'distribution_start_date' => $this->jalaliToGregorian($validated['distributionStartDate']),
-                'distribution_end_date' => blank($validated['distributionEndDate'])
-                    ? null
-                    : $this->jalaliToGregorian($validated['distributionEndDate']),
-                'priority' => $validated['priority'] ?: null,
-                'status' => $validated['status'],
-                'status_notes' => $validated['statusNotes'] ?: null,
-                'total_quantity' => collect($validated['categories'])->sum(fn (array $category) => (float) $category['quantity']),
-                'total_service_value' => 0,
-                'quantity_delivered' => $this->editingServiceId ? (float) $service->quantity_delivered : 0,
+            DB::transaction(function () use ($validated): void {
+                $service = $this->editingServiceId
+                    ? Service::query()->findOrFail($this->editingServiceId)
+                    : new Service;
+                $serviceName = $this->persistServiceNameRecord(trim($validated['serviceName']));
+
+                if (! $this->editingServiceId) {
+                    $service->code = Service::generateNextCode();
+                    $service->created_by = auth()->id();
+                }
+
+                $service->fill([
+                    'service_name_id' => $serviceName->id,
+                    'name' => trim($validated['serviceName']),
+                    'service_type' => $validated['serviceType'],
+                    'description' => $validated['description'] ?: null,
+                    'district_id' => $validated['serviceDistrictId'] ?: null,
+                    'distribution_start_date' => $this->jalaliToGregorian($validated['distributionStartDate']),
+                    'distribution_end_date' => blank($validated['distributionEndDate'])
+                        ? null
+                        : $this->jalaliToGregorian($validated['distributionEndDate']),
+                    'priority' => $validated['priority'] ?: null,
+                    'status' => $validated['status'],
+                    'status_notes' => $validated['statusNotes'] ?: null,
+                    'total_quantity' => collect($validated['categories'])->sum(fn (array $category) => (float) $category['quantity']),
+                    'total_service_value' => 0,
+                    'quantity_delivered' => $this->editingServiceId ? (float) $service->quantity_delivered : 0,
+                ]);
+                $service->save();
+
+                $service->categories()->withTrashed()->whereNotNull('deleted_at')->restore();
+
+                $existingCategoryIds = collect($validated['categories'])
+                    ->pluck('id')
+                    ->filter()
+                    ->map(fn ($id) => (int) $id)
+                    ->values();
+
+                if ($this->editingServiceId) {
+                    $service->categories()->whereNotIn('id', $existingCategoryIds)->delete();
+                }
+
+                foreach ($validated['categories'] as $index => $categoryData) {
+                    $payload = [
+                        'service_name_id' => $service->service_name_id,
+                        'service_id' => $service->id,
+                        'name' => trim($categoryData['name']),
+                        'quantity' => (float) $categoryData['quantity'],
+                        'unit' => trim($categoryData['unit']),
+                        'value' => (int) $categoryData['value'],
+                        'created_by' => $this->editingServiceId
+                            ? (int) (ServiceCategory::query()->whereKey($categoryData['id'] ?? null)->value('created_by') ?? auth()->id())
+                            : auth()->id(),
+                    ];
+
+                    $category = ! empty($categoryData['id'])
+                        ? ServiceCategory::query()->where('service_id', $service->id)->findOrFail((int) $categoryData['id'])
+                        : new ServiceCategory;
+
+                    if (blank($category->code)) {
+                        $category->code = $this->editingServiceId
+                            ? $this->generateCategoryCode($service, $index, $existingCategoryIds->count())
+                            : $this->generateCategoryCode($service, $index, 0);
+                    }
+
+                    if (blank($category->sort_id)) {
+                        $category->sort_id = $this->editingServiceId
+                            ? $this->nextCategorySortId($service->id)
+                            : ($index + 1);
+                    }
+
+                    $category->fill($payload);
+                    $category->save();
+                }
+
+                $service->refreshFinancialTotals();
+            });
+
+            $this->resetForm();
+            $this->bootDefaults();
+
+            $this->openNotificationModal([
+                'type' => 'success',
+                'title' => 'ثبت موفق',
+                'message' => 'خدمت جدید با موفقیت ثبت شد.',
+                'icon' => 'success',
+                'closable' => false,
+                'buttons' => [[
+                    'label' => 'مشاهده فهرست خدمات',
+                    'action' => 'event',
+                    'event' => 'service-save-success-dismissed',
+                    'variant' => 'success',
+                ]],
             ]);
-            $service->save();
+        } catch (ValidationException $e) {
+            $this->resetValidation();
+            $this->openValidationErrorModal($e->errors());
 
-            $service->categories()->withTrashed()->whereNotNull('deleted_at')->restore();
-
-            $existingCategoryIds = collect($validated['categories'])
-                ->pluck('id')
-                ->filter()
-                ->map(fn ($id) => (int) $id)
-                ->values();
-
-            if ($this->editingServiceId) {
-                $service->categories()->whereNotIn('id', $existingCategoryIds)->delete();
-            }
-
-            foreach ($validated['categories'] as $index => $categoryData) {
-                $payload = [
-                    'service_name_id' => $service->service_name_id,
-                    'service_id' => $service->id,
-                    'name' => trim($categoryData['name']),
-                    'quantity' => (float) $categoryData['quantity'],
-                    'unit' => trim($categoryData['unit']),
-                    'value' => (int) $categoryData['value'],
-                    'created_by' => $this->editingServiceId
-                        ? (int) (ServiceCategory::query()->whereKey($categoryData['id'] ?? null)->value('created_by') ?? auth()->id())
-                        : auth()->id(),
-                ];
-
-                $category = ! empty($categoryData['id'])
-                    ? ServiceCategory::query()->where('service_id', $service->id)->findOrFail((int) $categoryData['id'])
-                    : new ServiceCategory;
-
-                if (blank($category->code)) {
-                    $category->code = $this->editingServiceId
-                        ? $this->generateCategoryCode($service, $index, $existingCategoryIds->count())
-                        : $this->generateCategoryCode($service, $index, 0);
+            foreach ($e->errors() as $field => $messages) {
+                foreach ((array) $messages as $message) {
+                    $this->addError($field, $message);
                 }
-
-                if (blank($category->sort_id)) {
-                    $category->sort_id = $this->editingServiceId
-                        ? $this->nextCategorySortId($service->id)
-                        : ($index + 1);
-                }
-
-                $category->fill($payload);
-                $category->save();
             }
+        } catch (\Throwable $e) {
+            report($e);
+            $this->openSystemErrorModal(
+                'ثبت خدمت با خطا مواجه شد. لطفاً اطلاعات واردشده را بررسی کنید و دوباره تلاش کنید.',
+                'retry-service-save'
+            );
+        }
+    }
 
-            $service->refreshFinancialTotals();
-        });
+    #[On('retry-service-save')]
+    public function retryServiceSave(): void
+    {
+        $this->save();
+    }
 
-        session()->flash('success', $this->editingServiceId
-            ? 'خدمت با موفقیت به‌روزرسانی شد.'
-            : 'خدمت جدید با موفقیت ثبت شد.');
-
-        $this->resetForm();
-        $this->bootDefaults();
+    #[On('service-save-success-dismissed')]
+    public function redirectAfterSuccessfulSave(): mixed
+    {
+        return redirect()->to('/admin/dashboard?section=service-list');
     }
 
     public function editService(int $serviceId): void

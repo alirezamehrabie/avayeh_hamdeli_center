@@ -29,17 +29,6 @@
                 </div>
             @endif
 
-            @if ($errors->any())
-                <div class="mb-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                    <p class="font-bold">لطفاً خطاهای فرم را بررسی کنید.</p>
-                    <ul class="mt-2 list-disc space-y-1 pr-5">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
             <form wire:submit.prevent="save" class="space-y-6">
                 <div class="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.8fr)]">
                     <div class="space-y-6">
@@ -345,7 +334,7 @@
                                                         x-on:focus="open = true"
                                                         x-on:input="categoryName = filterText"
                                                         x-on:keydown.escape="open = false"
-                                                        class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 pe-20 text-sm text-slate-700 transition focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                                                        class="h-[50px] w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 pe-20 text-sm text-slate-700 transition focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100"
                                                         placeholder="مثال: چلو کباب کوبیده"
                                                         autocomplete="off"
                                                     >
@@ -404,6 +393,11 @@
                                                 @error("categories.$index.name") <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                                             </div>
                                             <div>
+                                                <label class="mb-2 block text-sm font-bold text-slate-700">تعداد / مقدار</label>
+                                                <input type="number" min="0.01" step="0.01" x-model="quantity" class="h-[50px] w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 transition focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100" placeholder="0">
+                                                @error("categories.$index.quantity") <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
+                                            </div>
+                                            <div>
                                                 <label class="mb-2 block text-sm font-bold text-slate-700">واحد</label>
                                                 <div
                                                     x-data="{
@@ -428,7 +422,7 @@
                                                         type="button"
                                                         x-on:click.stop.prevent="open = !open"
                                                         x-on:keydown.escape="open = false"
-                                                        class="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-right text-sm text-slate-700 transition focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                                                        class="flex h-[50px] w-full items-center justify-between gap-3 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-right text-sm text-slate-700 transition focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100"
                                                         aria-haspopup="listbox"
                                                         x-bind:aria-expanded="open.toString()"
                                                     >
@@ -464,13 +458,8 @@
                                                 @error("categories.$index.unit") <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                                             </div>
                                             <div>
-                                                <label class="mb-2 block text-sm font-bold text-slate-700">تعداد</label>
-                                                <input type="number" min="0.01" step="0.01" x-model="quantity" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-700 transition focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100" placeholder="0">
-                                                @error("categories.$index.quantity") <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
-                                            </div>
-                                            <div>
                                                 <label class="mb-2 block text-sm font-bold text-slate-700">ارزش واحد</label>
-                                                <input type="text" inputmode="numeric" x-model="value" x-on:input="formatValueInput($event)" x-init="value = formatGrouped(value)" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-700 transition ltr:text-left focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100" placeholder="0">
+                                                <input type="text" inputmode="numeric" x-model="value" x-on:input="formatValueInput($event)" x-init="value = formatGrouped(value)" class="h-[50px] w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 transition ltr:text-left focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100" placeholder="0">
                                                 <p x-cloak x-show="hasLineTotal" class="mt-1.5 text-xs font-medium text-slate-400">
                                                     جمع این دسته:
                                                     <span class="font-semibold text-slate-500" x-text="formattedLineTotal"></span>
