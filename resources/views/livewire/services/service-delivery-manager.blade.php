@@ -150,6 +150,13 @@
 
                         <div class="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-2 lg:overflow-visible lg:pb-0">
                             @forelse($services as $service)
+                                @php
+                                    $cardWorkers = $service->workerAllocations
+                                        ->pluck('socialWorker')
+                                        ->filter()
+                                        ->unique('id')
+                                        ->values();
+                                @endphp
                                 <button
                                     type="button"
                                     wire:click="$set('selectedServiceId', {{ $service->id }})"
@@ -185,7 +192,7 @@
                                             <div class="min-w-0">
                                                 <p class="text-[10px] font-semibold text-slate-500">مددکار / تخصیص</p>
                                                 <p class="mt-1 truncate text-xs font-bold text-slate-700">
-                                                    {{ $service->socialWorkers->count() }} مددکار - {{ number_format((float) $service->allocated_quantity, 2) }}
+                                                    {{ $cardWorkers->count() }} مددکار - {{ number_format((float) $service->allocated_quantity, 2) }}
                                                 </p>
                                             </div>
                                             <div class="h-2.5 w-24 overflow-hidden rounded-full bg-slate-100">
@@ -195,7 +202,7 @@
 
                                         <div class="mt-3 border-t border-slate-100 pt-3">
                                             <div class="mt-2 flex flex-wrap gap-1.5">
-                                                @forelse($service->socialWorkers->take(4) as $socialWorker)
+                                                @forelse($cardWorkers->take(4) as $socialWorker)
                                                     <span class="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600">
                                                         {{ $socialWorker->full_name }}
                                                     </span>
@@ -205,9 +212,9 @@
                                                     </span>
                                                 @endforelse
 
-                                                @if($service->socialWorkers->count() > 4)
+                                                @if($cardWorkers->count() > 4)
                                                     <span class="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600">
-                                                        +{{ $service->socialWorkers->count() - 4 }} نفر دیگر
+                                                        +{{ $cardWorkers->count() - 4 }} نفر دیگر
                                                     </span>
                                                 @endif
                                             </div>
@@ -269,7 +276,7 @@
                             <div class="mt-4 space-y-2">
                                 @foreach($selectedWorkers as $worker)
                                     @php
-                                        $summaryAllocated = (float) ($this->allocations[$worker->id] ?? 0);
+                                        $summaryAllocated = $this->allocationForWorker($worker->id);
                                         $summaryDelivered = $this->selectedService->deliveredQuantityForWorker($worker->id);
                                     @endphp
                                     <div class="flex items-center justify-between gap-3 rounded-2xl border border-white/80 bg-white/85 px-3 py-2">
@@ -374,13 +381,13 @@
                             <div class="mt-5 space-y-3">
                                 @forelse($selectedWorkers as $worker)
                                     @php
-                                        $allocated = (float) ($this->allocations[$worker->id] ?? 0);
+                                        $allocated = $this->allocationForWorker($worker->id);
                                         $delivered = $this->selectedService->deliveredQuantityForWorker($worker->id);
                                         $remaining = max(0, $allocated - $delivered);
                                     @endphp
 
                                     <div class="rounded-[24px] border border-slate-200 bg-slate-50/80 p-3 shadow-sm">
-                                        <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                                        <div class="flex flex-col gap-3">
                                             <div class="min-w-0 flex-1">
                                                 <div class="flex items-start justify-between gap-3">
                                                     <div class="min-w-0">
@@ -409,19 +416,40 @@
                                                 </div>
                                             </div>
 
-                                            <div class="w-full lg:w-[170px]">
-                                                <label class="mb-1 block text-xs font-bold text-slate-700">مقدار سهمیه</label>
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    step="1"
-                                                    wire:model.live.debounce.200ms="allocations.{{ $worker->id }}"
-                                                    class="w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-center text-sm font-bold text-slate-800 shadow-sm focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-100"
-                                                    placeholder="0"
-                                                >
-                                                @error('allocations.' . $worker->id)
-                                                    <p class="mt-1 text-[11px] font-semibold text-rose-600">{{ $message }}</p>
-                                                @enderror
+                                            <div class="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                                                @foreach($this->selectedServiceCategories as $category)
+                                                    @php
+                                                        $categoryDelivered = $this->selectedService->deliveredQuantityForWorkerCategory($worker->id, $category->id);
+                                                        $categoryAllocated = (float) ($this->allocations[$worker->id][$category->id] ?? 0);
+                                                    @endphp
+                                                    <div class="rounded-2xl border border-slate-200 bg-white px-3 py-3">
+                                                        <div class="mb-2 flex items-start justify-between gap-2">
+                                                            <div class="min-w-0">
+                                                                <p class="truncate text-xs font-black text-slate-800">{{ $category->name }}</p>
+                                                                <p class="mt-1 text-[10px] font-semibold text-slate-500">{{ $category->code }}</p>
+                                                            </div>
+                                                            <span class="rounded-full bg-slate-50 px-2 py-1 text-[10px] font-bold text-slate-600">
+                                                                {{ number_format($this->remainingAssignableForCategory($category->id), 2) }}
+                                                            </span>
+                                                        </div>
+                                                        <label class="mb-1 block text-xs font-bold text-slate-700">مقدار سهمیه</label>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            step="1"
+                                                            wire:model.live.debounce.200ms="allocations.{{ $worker->id }}.{{ $category->id }}"
+                                                            class="w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-center text-sm font-bold text-slate-800 shadow-sm focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-100"
+                                                            placeholder="0"
+                                                        >
+                                                        <div class="mt-2 flex items-center justify-between text-[10px] font-bold text-slate-500">
+                                                            <span>تخصیص: {{ number_format($categoryAllocated, 2) }}</span>
+                                                            <span>تحویل: {{ number_format($categoryDelivered, 2) }}</span>
+                                                        </div>
+                                                        @error('allocations.' . $worker->id . '.' . $category->id)
+                                                            <p class="mt-1 text-[11px] font-semibold text-rose-600">{{ $message }}</p>
+                                                        @enderror
+                                                    </div>
+                                                @endforeach
                                             </div>
                                         </div>
                                     </div>

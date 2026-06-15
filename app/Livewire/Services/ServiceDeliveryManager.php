@@ -3,7 +3,9 @@
 namespace App\Livewire\Services;
 
 use App\Models\Service;
+use App\Models\ServiceWorkerAllocation;
 use App\Models\SocialWorker;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 
@@ -34,7 +36,10 @@ class ServiceDeliveryManager extends Component
             $this->selectedWorkerIds[] = $workerId;
         }
 
-        $this->allocations[$workerId] = $this->allocations[$workerId] ?? $this->formatDecimal(0);
+        foreach ($this->selectedServiceCategories as $category) {
+            $this->allocations[$workerId][(int) $category->id] = $this->allocations[$workerId][(int) $category->id] ?? $this->formatDecimal(0);
+        }
+
         $this->socialWorkerSearch = '';
         $this->resetValidation();
     }
@@ -62,13 +67,16 @@ class ServiceDeliveryManager extends Component
         $service = $this->selectedService;
         abort_unless($service, 404);
 
+        $categoryIds = $this->selectedServiceCategories->pluck('id')->map(fn ($id) => (int) $id);
         $rules = [
             'selectedWorkerIds' => ['array'],
             'selectedWorkerIds.*' => ['integer', Rule::exists('social_workers', 'id')],
         ];
 
         foreach ($this->selectedWorkerIds as $workerId) {
-            $rules['allocations.' . $workerId] = ['nullable', 'numeric', 'min:0'];
+            foreach ($categoryIds as $categoryId) {
+                $rules['allocations.' . $workerId . '.' . $categoryId] = ['nullable', 'numeric', 'min:0'];
+            }
         }
 
         $validated = $this->validate($rules, [], $this->validationAttributes());
@@ -77,9 +85,9 @@ class ServiceDeliveryManager extends Component
             ->unique()
             ->values();
 
-        $lockedWorkerIds = $service->socialWorkers
-            ->filter(fn ($worker) => $service->deliveries()->where('social_worker_id', $worker->id)->exists())
-            ->pluck('id')
+        $lockedWorkerIds = $service->deliveries()
+            ->pluck('social_worker_id')
+            ->unique()
             ->diff($selectedWorkerIds);
 
         if ($lockedWorkerIds->isNotEmpty()) {
@@ -88,31 +96,59 @@ class ServiceDeliveryManager extends Component
         }
 
         $totalAllocated = $selectedWorkerIds
-            ->sum(fn ($workerId) => (float) ($validated['allocations'][$workerId] ?? 0));
+            ->sum(fn ($workerId) => collect($categoryIds)
+                ->sum(fn ($categoryId) => (float) ($validated['allocations'][$workerId][$categoryId] ?? 0)));
 
         if ($totalAllocated > (float) $service->total_quantity) {
             $this->addError('allocations_total', 'مجموع سهمیه مددکاران نمی‌تواند از تعداد کل خدمت بیشتر باشد.');
             return;
         }
 
-        foreach ($selectedWorkerIds as $workerId) {
-            $allocated = (float) ($validated['allocations'][$workerId] ?? 0);
-            $alreadyDelivered = $service->deliveredQuantityForWorker($workerId);
+        foreach ($categoryIds as $categoryId) {
+            $categoryAllocated = $selectedWorkerIds
+                ->sum(fn ($workerId) => (float) ($validated['allocations'][$workerId][$categoryId] ?? 0));
 
-            if ($allocated < $alreadyDelivered) {
-                $this->addError('allocations.' . $workerId, 'سهمیه نمی‌تواند کمتر از مقدار تحویل‌شده فعلی این مددکار باشد.');
+            if ($categoryAllocated > $this->categoryTotalQuantity((int) $categoryId)) {
+                $this->addError('allocations_total', 'مجموع سهمیه یک آیتم از موجودی کل همان آیتم بیشتر است.');
                 return;
+            }
+
+            foreach ($selectedWorkerIds as $workerId) {
+                $allocated = (float) ($validated['allocations'][$workerId][$categoryId] ?? 0);
+                $alreadyDelivered = $service->deliveredQuantityForWorkerCategory($workerId, (int) $categoryId);
+
+                if ($allocated < $alreadyDelivered) {
+                    $this->addError('allocations.' . $workerId . '.' . $categoryId, 'سهمیه نمی‌تواند کمتر از مقدار تحویل‌شده فعلی این مددکار برای این آیتم باشد.');
+                    return;
+                }
             }
         }
 
-        $syncPayload = [];
-        foreach ($selectedWorkerIds as $workerId) {
-            $syncPayload[$workerId] = [
-                'allocated_quantity' => (float) ($validated['allocations'][$workerId] ?? 0),
-            ];
-        }
+        DB::transaction(function () use ($service, $selectedWorkerIds, $categoryIds, $validated): void {
+            $service->workerAllocations()
+                ->whereNotIn('social_worker_id', $selectedWorkerIds->all())
+                ->delete();
 
-        $service->socialWorkers()->sync($syncPayload);
+            $service->workerAllocations()
+                ->whereIn('social_worker_id', $selectedWorkerIds->all())
+                ->whereNotIn('service_category_id', $categoryIds->all())
+                ->delete();
+
+            foreach ($selectedWorkerIds as $workerId) {
+                foreach ($categoryIds as $categoryId) {
+                    ServiceWorkerAllocation::query()->updateOrCreate(
+                        [
+                            'service_id' => $service->id,
+                            'social_worker_id' => $workerId,
+                            'service_category_id' => $categoryId,
+                        ],
+                        [
+                            'allocated_quantity' => (float) ($validated['allocations'][$workerId][$categoryId] ?? 0),
+                        ]
+                    );
+                }
+            }
+        });
 
         $this->showSavedSummary = true;
         $this->refreshSelectedServiceState();
@@ -132,7 +168,7 @@ class ServiceDeliveryManager extends Component
         }
 
         return Service::query()
-            ->with(['serviceName', 'categories', 'socialWorkers'])
+            ->with(['serviceName', 'categories', 'workerAllocations.serviceCategory', 'workerAllocations.socialWorker'])
             ->find($this->selectedServiceId);
     }
 
@@ -140,7 +176,7 @@ class ServiceDeliveryManager extends Component
     {
         return view('livewire.services.service-delivery-manager', [
             'services' => Service::query()
-                ->with(['serviceName', 'categories', 'socialWorkers'])
+                ->with(['serviceName', 'categories', 'workerAllocations.socialWorker'])
                 ->whereIn('status', ['approved', 'in_distribution', 'completed'])
                 ->latest()
                 ->get(),
@@ -160,9 +196,13 @@ class ServiceDeliveryManager extends Component
             return;
         }
 
-        foreach ($service->socialWorkers as $worker) {
-            $this->selectedWorkerIds[] = (int) $worker->id;
-            $this->allocations[$worker->id] = $this->formatDecimal($worker->pivot->allocated_quantity ?? 0);
+        foreach ($service->workerAllocations->groupBy('social_worker_id') as $workerId => $workerAllocations) {
+            $this->selectedWorkerIds[] = (int) $workerId;
+
+            foreach ($this->selectedServiceCategories as $category) {
+                $allocation = $workerAllocations->firstWhere('service_category_id', (int) $category->id);
+                $this->allocations[(int) $workerId][(int) $category->id] = $this->formatDecimal($allocation?->allocated_quantity ?? 0);
+            }
         }
     }
 
@@ -208,10 +248,15 @@ class ServiceDeliveryManager extends Component
             ->get();
     }
 
+    public function getSelectedServiceCategoriesProperty()
+    {
+        return $this->selectedService?->categories?->sortBy('sort_id')->values() ?? collect();
+    }
+
     public function getCurrentAllocatedTotalProperty(): float
     {
         return collect($this->selectedWorkerIds)
-            ->sum(fn (int $workerId) => (float) ($this->allocations[$workerId] ?? 0));
+            ->sum(fn (int $workerId) => $this->allocationForWorker($workerId));
     }
 
     public function getRemainingAssignableQuantityProperty(): float
@@ -223,6 +268,22 @@ class ServiceDeliveryManager extends Component
         }
 
         return max(0, (float) $service->total_quantity - $this->currentAllocatedTotal);
+    }
+
+    public function allocationForWorker(int $workerId): float
+    {
+        return collect($this->allocations[$workerId] ?? [])->sum(fn ($quantity) => (float) $quantity);
+    }
+
+    public function allocationForCategory(int $categoryId): float
+    {
+        return collect($this->selectedWorkerIds)
+            ->sum(fn (int $workerId) => (float) ($this->allocations[$workerId][$categoryId] ?? 0));
+    }
+
+    public function remainingAssignableForCategory(int $categoryId): float
+    {
+        return max(0, $this->categoryTotalQuantity($categoryId) - $this->allocationForCategory($categoryId));
     }
 
     protected function formatDecimal(string|int|float|null $value): string
@@ -246,9 +307,24 @@ class ServiceDeliveryManager extends Component
         }
 
         foreach ($this->selectedWorkers as $worker) {
-            $attributes['allocations.' . $worker->id] = 'سهمیه ' . $worker->full_name;
+            foreach ($this->selectedServiceCategories as $category) {
+                $attributes['allocations.' . $worker->id . '.' . $category->id] = 'سهمیه ' . $worker->full_name . ' - ' . $category->name;
+            }
         }
 
         return $attributes;
+    }
+
+    protected function categoryTotalQuantity(int $categoryId): float
+    {
+        $category = $this->selectedServiceCategories->firstWhere('id', $categoryId);
+
+        if (! $category || ! $this->selectedService) {
+            return 0;
+        }
+
+        return (float) $category->quantity + (float) $this->selectedService->deliveries()
+            ->where('service_category_id', $categoryId)
+            ->sum('delivered_quantity');
     }
 }

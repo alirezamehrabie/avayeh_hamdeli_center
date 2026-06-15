@@ -159,7 +159,15 @@ class Service extends Model
 
     public function socialWorkers(): BelongsToMany
     {
-        return $this->belongsToMany(SocialWorker::class)->withPivot('allocated_quantity')->withTimestamps();
+        return $this->belongsToMany(SocialWorker::class)
+            ->withPivot('service_category_id', 'allocated_quantity')
+            ->withTimestamps()
+            ->distinct();
+    }
+
+    public function workerAllocations(): HasMany
+    {
+        return $this->hasMany(ServiceWorkerAllocation::class);
     }
 
     public function categories(): HasMany
@@ -211,11 +219,11 @@ class Service extends Model
 
     public function getAllocatedQuantityAttribute(): float
     {
-        if ($this->relationLoaded('socialWorkers')) {
-            return (float) $this->socialWorkers->sum(fn ($worker) => (float) ($worker->pivot->allocated_quantity ?? 0));
+        if ($this->relationLoaded('workerAllocations')) {
+            return (float) $this->workerAllocations->sum(fn ($allocation) => (float) $allocation->allocated_quantity);
         }
 
-        return (float) $this->socialWorkers()->sum('service_social_worker.allocated_quantity');
+        return (float) $this->workerAllocations()->sum('allocated_quantity');
     }
 
     public function getRemainingAssignableQuantityAttribute(): float
@@ -302,9 +310,15 @@ class Service extends Model
 
     public function allocatedQuantityForWorker(int $socialWorkerId): float
     {
-        $worker = $this->socialWorkers->firstWhere('id', $socialWorkerId);
+        if ($this->relationLoaded('workerAllocations')) {
+            return (float) $this->workerAllocations
+                ->where('social_worker_id', $socialWorkerId)
+                ->sum(fn ($allocation) => (float) $allocation->allocated_quantity);
+        }
 
-        return (float) ($worker?->pivot?->allocated_quantity ?? 0);
+        return (float) $this->workerAllocations()
+            ->where('social_worker_id', $socialWorkerId)
+            ->sum('allocated_quantity');
     }
 
     public function deliveredQuantityForWorker(int $socialWorkerId): float
@@ -317,6 +331,38 @@ class Service extends Model
     public function remainingAllocationForWorker(int $socialWorkerId): float
     {
         return max(0, $this->allocatedQuantityForWorker($socialWorkerId) - $this->deliveredQuantityForWorker($socialWorkerId));
+    }
+
+    public function allocatedQuantityForWorkerCategory(int $socialWorkerId, int $serviceCategoryId): float
+    {
+        if ($this->relationLoaded('workerAllocations')) {
+            return (float) $this->workerAllocations
+                ->where('social_worker_id', $socialWorkerId)
+                ->where('service_category_id', $serviceCategoryId)
+                ->sum(fn ($allocation) => (float) $allocation->allocated_quantity);
+        }
+
+        return (float) $this->workerAllocations()
+            ->where('social_worker_id', $socialWorkerId)
+            ->where('service_category_id', $serviceCategoryId)
+            ->sum('allocated_quantity');
+    }
+
+    public function deliveredQuantityForWorkerCategory(int $socialWorkerId, int $serviceCategoryId): float
+    {
+        return (float) $this->deliveries()
+            ->where('social_worker_id', $socialWorkerId)
+            ->where('service_category_id', $serviceCategoryId)
+            ->sum('delivered_quantity');
+    }
+
+    public function remainingAllocationForWorkerCategory(int $socialWorkerId, int $serviceCategoryId): float
+    {
+        return max(
+            0,
+            $this->allocatedQuantityForWorkerCategory($socialWorkerId, $serviceCategoryId)
+                - $this->deliveredQuantityForWorkerCategory($socialWorkerId, $serviceCategoryId)
+        );
     }
 
 }

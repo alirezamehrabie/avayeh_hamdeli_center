@@ -288,9 +288,9 @@
                                                 class="w-full rounded-xl border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all"
                                             >
                                                 <option value="">انتخاب دسته‌بندی</option>
-                                                @foreach(($this->selectedService?->categories ?? collect())->sortBy('sort_id') as $category)
+                                                @foreach($this->assignableCategories as $category)
                                                     <option value="{{ $category->id }}" @disabled((float) $category->quantity <= 0)>
-                                                        {{ $category->name }} - موجودی: {{ number_format((float) $category->quantity, 2) }} {{ \App\Models\Service::unitOptions()[$category->unit] ?? $category->unit }} - ارزش واحد: {{ number_format((int) $category->value) }}
+                                                        {{ $category->name }} - مانده سهمیه: {{ number_format($this->selectedService->remainingAllocationForWorkerCategory(auth()->user()->social_worker_id, $category->id), 2) }} - موجودی: {{ number_format((float) $category->quantity, 2) }} {{ \App\Models\Service::unitOptions()[$category->unit] ?? $category->unit }} - ارزش واحد: {{ number_format((int) $category->value) }}
                                                     </option>
                                                 @endforeach
                                             </select>

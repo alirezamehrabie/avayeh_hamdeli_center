@@ -199,10 +199,16 @@ class Dashboard extends Component
         $service = $this->selectedService;
         abort_unless($service, 404);
 
-        $totalToDeliver = collect($validated['recipientEntries'])->sum(fn ($entry) => (float) $entry['quantity']);
+        $entryQuantitiesByCategory = collect($validated['recipientEntries'])
+            ->groupBy(fn (array $entry) => (int) $entry['service_category_id'])
+            ->map(fn ($entries) => $entries->sum(fn (array $entry) => (float) $entry['quantity']));
 
-        if ($totalToDeliver > $this->remainingAllocationForCurrentWorker()) {
-            $message = 'جمع مقادیر ثبت‌شده از سهمیه تخصیص‌یافته شما بیشتر است.';
+        foreach ($entryQuantitiesByCategory as $categoryId => $quantity) {
+            if ((float) $quantity <= $service->remainingAllocationForWorkerCategory($this->currentSocialWorkerId(), (int) $categoryId)) {
+                continue;
+            }
+
+            $message = 'جمع مقادیر ثبت‌شده از سهمیه تخصیص‌یافته شما برای این آیتم بیشتر است.';
             $this->addError('recipientEntries', $message);
             $this->showValidationErrorModal([$message]);
 
@@ -289,7 +295,7 @@ class Dashboard extends Component
         }
 
         $freshService = Service::query()
-            ->with(['serviceName', 'categories', 'socialWorkers'])
+            ->with(['serviceName', 'categories', 'workerAllocations'])
             ->find($service->id);
 
         $this->openNotificationModal([
@@ -319,7 +325,7 @@ class Dashboard extends Component
     public function getAssignedServicesProperty()
     {
         return Service::query()
-            ->with(['serviceName', 'categories', 'socialWorkers'])
+            ->with(['serviceName', 'categories', 'workerAllocations'])
             ->whereHas('socialWorkers', function (Builder $query) {
                 $query->where('social_workers.id', $this->currentSocialWorkerId())
                     ->where('service_social_worker.allocated_quantity', '>', 0);
@@ -336,7 +342,7 @@ class Dashboard extends Component
         }
 
         return Service::query()
-            ->with(['serviceName', 'categories', 'socialWorkers'])
+            ->with(['serviceName', 'categories', 'workerAllocations'])
             ->whereHas('socialWorkers', function (Builder $query) {
                 $query->where('social_workers.id', $this->currentSocialWorkerId())
                     ->where('service_social_worker.allocated_quantity', '>', 0);
@@ -362,6 +368,20 @@ class Dashboard extends Component
     public function getCurrentRemainingAllocationProperty(): float
     {
         return $this->remainingAllocationForCurrentWorker();
+    }
+
+    public function getAssignableCategoriesProperty()
+    {
+        $service = $this->selectedService;
+
+        if (! $service) {
+            return collect();
+        }
+
+        return $service->categories
+            ->filter(fn ($category) => $service->allocatedQuantityForWorkerCategory($this->currentSocialWorkerId(), (int) $category->id) > 0)
+            ->sortBy('sort_id')
+            ->values();
     }
 
     public function getSelectedServiceTypeLabelProperty(): string
@@ -432,9 +452,7 @@ class Dashboard extends Component
             'recipientEntries.*.service_category_id' => [
                 'required',
                 'integer',
-                Rule::exists('service_categories', 'id')->where(fn ($query) => $query
-                    ->where('service_id', $this->selectedServiceId)
-                    ->whereNull('deleted_at')),
+                Rule::in($this->assignableCategories->pluck('id')->all()),
             ],
             'deliveredAt' => [
                 'required',
@@ -531,11 +549,9 @@ class Dashboard extends Component
             return null;
         }
 
-        return $service->categories()
-            ->where('quantity', '>', 0)
-            ->ordered()
-            ->value('id')
-            ?: $service->categories()->ordered()->value('id');
+        return $this->assignableCategories
+            ->first(fn ($category) => (float) $category->quantity > 0)?->id
+            ?: $this->assignableCategories->first()?->id;
     }
 
     protected function serviceTypeLabel(?string $serviceType): string

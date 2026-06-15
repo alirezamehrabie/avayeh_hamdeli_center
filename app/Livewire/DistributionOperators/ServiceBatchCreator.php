@@ -165,9 +165,15 @@ class ServiceBatchCreator extends Component
                     'unit' => $block['unit'],
                 ])->save();
 
-                $service->socialWorkers()->sync([
-                    $block['social_worker_id'] => ['allocated_quantity' => $block['total_quantity']],
-                ]);
+                $service->workerAllocations()->updateOrCreate(
+                    [
+                        'social_worker_id' => $block['social_worker_id'],
+                        'service_category_id' => $category->id,
+                    ],
+                    [
+                        'allocated_quantity' => $block['total_quantity'],
+                    ]
+                );
 
                 $service->refreshFinancialTotals();
             });
@@ -201,7 +207,7 @@ class ServiceBatchCreator extends Component
                     'created_by' => auth()->id(),
                 ]);
 
-                $service->categories()->create([
+                $category = $service->categories()->create([
                     'service_name_id' => $defaultServiceName->id,
                     'name' => trim((string) ($block['service_name'] ?? '')) !== '' ? trim((string) $block['service_name']) : $defaultServiceCategory->name,
                     'quantity' => (float) $block['total_quantity'],
@@ -211,7 +217,9 @@ class ServiceBatchCreator extends Component
                     'created_by' => auth()->id(),
                 ]);
 
-                $service->socialWorkers()->attach($block['social_worker_id'], [
+                $service->workerAllocations()->create([
+                    'social_worker_id' => $block['social_worker_id'],
+                    'service_category_id' => $category->id,
                     'allocated_quantity' => $block['total_quantity'],
                 ]);
 

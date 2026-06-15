@@ -1,0 +1,43 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class ServiceWorkerAllocation extends Model
+{
+    protected $table = 'service_social_worker';
+
+    protected $fillable = [
+        'service_id',
+        'service_category_id',
+        'social_worker_id',
+        'allocated_quantity',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'service_id' => 'integer',
+            'service_category_id' => 'integer',
+            'social_worker_id' => 'integer',
+            'allocated_quantity' => 'decimal:2',
+        ];
+    }
+
+    public function service(): BelongsTo
+    {
+        return $this->belongsTo(Service::class);
+    }
+
+    public function serviceCategory(): BelongsTo
+    {
+        return $this->belongsTo(ServiceCategory::class);
+    }
+
+    public function socialWorker(): BelongsTo
+    {
+        return $this->belongsTo(SocialWorker::class);
+    }
+}
