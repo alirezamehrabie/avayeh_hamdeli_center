@@ -227,7 +227,7 @@
 
                             <div class="mt-4">
                                 <label class="mb-2 block text-sm font-bold text-slate-700">توضیحات خدمت</label>
-                                <textarea wire:model.blur="description" rows="4" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"></textarea>
+                                <textarea wire:model.blur="description" rows="2" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"></textarea>
                             </div>
                         </div>
 
@@ -495,21 +495,121 @@
                     </div>
 
                     <div class="space-y-6">
-                        <div class="rounded-3xl border border-slate-200 bg-white p-5">
-                            <h2 class="text-lg font-bold text-slate-800">زمان‌بندی و وضعیت</h2>
+                        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/40">
+                            <h2 class="text-base font-bold text-slate-800">زمان‌بندی و وضعیت</h2>
                             <div class="mt-4 grid gap-3">
                                 <div>
                                     <label class="mb-2 block text-sm font-bold text-slate-700">منطقه خدمت</label>
-                                    <select wire:model="serviceDistrictId" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
-                                        <option value="">بدون منطقه مشخص</option>
-                                        @foreach($districts as $district)
-                                            <option value="{{ $district->id }}">{{ $district->name }}</option>
-                                        @endforeach
-                                    </select>
+                                    <div
+                                        x-data="{
+                                            open: false,
+                                            selectedDistrictId: @entangle('serviceDistrictId').live,
+                                            filterText: '',
+                                            districts: @js($districts->map(fn ($district) => [
+                                                'id' => $district->id,
+                                                'name' => $district->name,
+                                            ])->values()),
+                                            get selectedLabel() {
+                                                const selected = this.districts.find((item) => Number(item.id) === Number(this.selectedDistrictId));
+
+                                                return selected ? selected.name : 'بدون منطقه مشخص';
+                                            },
+                                            get filteredDistricts() {
+                                                const query = this.filterText.trim().toLowerCase();
+
+                                                if (!query || query === this.selectedLabel.toLowerCase()) {
+                                                    return this.districts;
+                                                }
+
+                                                return this.districts.filter((item) => item.name.toLowerCase().includes(query));
+                                            },
+                                            selectDistrict(item) {
+                                                this.selectedDistrictId = item.id;
+                                                this.filterText = item.name;
+                                                this.open = false;
+                                            },
+                                            clearDistrict() {
+                                                this.selectedDistrictId = null;
+                                                this.filterText = '';
+                                                this.open = false;
+                                            }
+                                        }"
+                                        x-init="
+                                            filterText = selectedLabel;
+                                            $watch('selectedDistrictId', () => filterText = selectedLabel);
+                                        "
+                                        x-on:click.outside="open = false"
+                                        class="relative"
+                                    >
+                                        <input
+                                            type="text"
+                                            x-model="filterText"
+                                            x-on:focus="open = true"
+                                            x-on:input="selectedDistrictId = null"
+                                            x-on:keydown.escape="open = false"
+                                            class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 pe-20 text-sm text-slate-700 transition focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                                            placeholder="نام منطقه را جستجو کنید"
+                                            autocomplete="off"
+                                        >
+                                        <button
+                                            type="button"
+                                            x-cloak
+                                            x-show="selectedDistrictId || filterText"
+                                            x-on:click.stop.prevent="clearDistrict()"
+                                            class="absolute inset-y-0 end-8 flex items-center px-2 text-slate-400 transition hover:text-rose-600"
+                                            aria-label="پاک کردن منطقه خدمت"
+                                        >
+                                            <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4">
+                                                <path d="M5.5 5.5L14.5 14.5M14.5 5.5L5.5 14.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                            </svg>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            x-on:click.stop.prevent="open = !open; filterText = selectedDistrictId ? selectedLabel : filterText"
+                                            class="absolute inset-y-0 end-0 flex items-center px-3 text-slate-400"
+                                            aria-label="باز کردن فهرست مناطق"
+                                        >
+                                            <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4 transition" x-bind:class="{ 'rotate-180': open }">
+                                                <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </button>
+
+                                        <div
+                                            x-cloak
+                                            x-show="open"
+                                            x-transition.origin.top.left
+                                            class="absolute z-30 mt-2 max-h-60 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
+                                        >
+                                            <button
+                                                type="button"
+                                                x-on:click="clearDistrict()"
+                                                class="flex w-full items-center justify-between gap-3 border-b border-slate-100 px-4 py-2.5 text-right text-sm text-slate-700 transition hover:bg-slate-50"
+                                            >
+                                                <span class="font-medium">بدون منطقه مشخص</span>
+                                                <span class="text-xs text-slate-400" x-show="!selectedDistrictId">انتخاب شده</span>
+                                            </button>
+                                            <div class="max-h-52 overflow-y-auto py-1">
+                                                <template x-for="item in filteredDistricts" :key="item.id">
+                                                    <button
+                                                        type="button"
+                                                        x-on:click="selectDistrict(item)"
+                                                        class="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-right text-sm text-slate-700 transition hover:bg-slate-50"
+                                                    >
+                                                        <span x-text="item.name" class="font-medium"></span>
+                                                        <span class="text-xs text-slate-400" x-show="Number(selectedDistrictId) === Number(item.id)">انتخاب شده</span>
+                                                    </button>
+                                                </template>
+                                                <div x-show="filteredDistricts.length === 0" class="px-4 py-3 text-sm text-slate-500">
+                                                    منطقه‌ای پیدا نشد.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @error('serviceDistrictId') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                                 </div>
                                 <div class="grid gap-3 sm:grid-cols-2">
                                     <div>
-                                        <label class="mb-2 block text-sm font-bold text-slate-700">شروع توزیع (شمسی)</label>
+                                        <label class="mb-2 block text-sm font-bold text-slate-700">شروع توزیع</label>
                                         <input
                                             type="text"
                                             wire:model.blur="distributionStartDate"
@@ -520,7 +620,7 @@
                                         >
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-bold text-slate-700">پایان توزیع (شمسی، اختیاری)</label>
+                                        <label class="mb-2 block text-sm font-bold text-slate-700">پایان توزیع</label>
                                         <input
                                             type="text"
                                             wire:model.blur="distributionEndDate"
@@ -531,26 +631,137 @@
                                         >
                                     </div>
                                 </div>
-                                <div>
-                                    <label class="mb-2 block text-sm font-bold text-slate-700">اولویت</label>
-                                    <select wire:model="priority" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
-                                        <option value="">بدون اولویت</option>
-                                        @foreach($priorityOptions as $value => $label)
-                                            <option value="{{ $value }}">{{ $label }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="mb-2 block text-sm font-bold text-slate-700">وضعیت</label>
-                                    <select wire:model="status" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
-                                        @foreach($statusOptions as $value => $label)
-                                            <option value="{{ $value }}">{{ $label }}</option>
-                                        @endforeach
-                                    </select>
+                                <div class="grid gap-3 sm:grid-cols-2">
+                                    <div>
+                                        <label class="mb-2 block text-sm font-bold text-slate-700">اولویت</label>
+                                        <div
+                                            x-data="{
+                                                open: false,
+                                                priority: @entangle('priority').live,
+                                                priorityOptions: @js($priorityOptions),
+                                                get options() {
+                                                    return Object.entries(this.priorityOptions).map(([value, label]) => ({ value, label }));
+                                                },
+                                                get selectedLabel() {
+                                                    return this.priorityOptions[this.priority] ?? 'بدون اولویت';
+                                                },
+                                                selectPriority(value) {
+                                                    this.priority = value;
+                                                    this.open = false;
+                                                }
+                                            }"
+                                            x-on:click.outside="open = false"
+                                            class="relative"
+                                        >
+                                            <button
+                                                type="button"
+                                                x-on:click.stop.prevent="open = !open"
+                                                x-on:keydown.escape="open = false"
+                                                class="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-right text-sm text-slate-700 transition focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                                                aria-haspopup="listbox"
+                                                x-bind:aria-expanded="open.toString()"
+                                            >
+                                                <span x-text="selectedLabel" class="font-medium"></span>
+                                                <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4 shrink-0 text-slate-400 transition" x-bind:class="{ 'rotate-180': open }">
+                                                    <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                                </svg>
+                                            </button>
+
+                                            <div
+                                                x-cloak
+                                                x-show="open"
+                                                x-transition.origin.top.left
+                                                class="absolute z-30 mt-2 max-h-60 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
+                                                role="listbox"
+                                            >
+                                                <button
+                                                    type="button"
+                                                    x-on:click="selectPriority('')"
+                                                    class="flex w-full items-center justify-between gap-3 border-b border-slate-100 px-4 py-2.5 text-right text-sm text-slate-700 transition hover:bg-slate-50"
+                                                >
+                                                    <span class="font-medium">بدون اولویت</span>
+                                                    <span class="text-xs text-slate-400" x-show="priority === ''">انتخاب شده</span>
+                                                </button>
+                                                <div class="max-h-52 overflow-y-auto py-1">
+                                                    <template x-for="item in options" :key="item.value">
+                                                        <button
+                                                            type="button"
+                                                            x-on:click="selectPriority(item.value)"
+                                                            class="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-right text-sm text-slate-700 transition hover:bg-slate-50"
+                                                            role="option"
+                                                            x-bind:aria-selected="priority === item.value"
+                                                        >
+                                                            <span x-text="item.label" class="font-medium"></span>
+                                                            <span class="text-xs text-slate-400" x-show="priority === item.value">انتخاب شده</span>
+                                                        </button>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-bold text-slate-700">وضعیت</label>
+                                        <div
+                                            x-data="{
+                                                open: false,
+                                                status: @entangle('status').live,
+                                                statusOptions: @js($statusOptions),
+                                                get options() {
+                                                    return Object.entries(this.statusOptions).map(([value, label]) => ({ value, label }));
+                                                },
+                                                get selectedLabel() {
+                                                    return this.statusOptions[this.status] ?? 'انتخاب وضعیت';
+                                                },
+                                                selectStatus(value) {
+                                                    this.status = value;
+                                                    this.open = false;
+                                                }
+                                            }"
+                                            x-on:click.outside="open = false"
+                                            class="relative"
+                                        >
+                                            <button
+                                                type="button"
+                                                x-on:click.stop.prevent="open = !open"
+                                                x-on:keydown.escape="open = false"
+                                                class="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-right text-sm text-slate-700 transition focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                                                aria-haspopup="listbox"
+                                                x-bind:aria-expanded="open.toString()"
+                                            >
+                                                <span x-text="selectedLabel" class="font-medium"></span>
+                                                <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4 shrink-0 text-slate-400 transition" x-bind:class="{ 'rotate-180': open }">
+                                                    <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                                </svg>
+                                            </button>
+
+                                            <div
+                                                x-cloak
+                                                x-show="open"
+                                                x-transition.origin.top.left
+                                                class="absolute z-30 mt-2 max-h-60 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
+                                                role="listbox"
+                                            >
+                                                <div class="max-h-56 overflow-y-auto py-1">
+                                                    <template x-for="item in options" :key="item.value">
+                                                        <button
+                                                            type="button"
+                                                            x-on:click="selectStatus(item.value)"
+                                                            class="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-right text-sm text-slate-700 transition hover:bg-slate-50"
+                                                            role="option"
+                                                            x-bind:aria-selected="status === item.value"
+                                                        >
+                                                            <span x-text="item.label" class="font-medium"></span>
+                                                            <span class="text-xs text-slate-400" x-show="status === item.value">انتخاب شده</span>
+                                                        </button>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div>
                                     <label class="mb-2 block text-sm font-bold text-slate-700">یادداشت وضعیت</label>
-                                    <textarea wire:model.blur="statusNotes" rows="4" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"></textarea>
+                                    <textarea wire:model.blur="statusNotes" rows="3" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-700 transition focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100"></textarea>
                                 </div>
                             </div>
                         </div>
@@ -605,8 +816,26 @@
                         </div>
 
                         <div class="flex justify-end">
-                            <button type="submit" class="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/15">
-                                {{ $editingServiceId ? 'به‌روزرسانی خدمت' : 'ثبت خدمت جدید' }}
+                            <button
+                                type="submit"
+                                wire:loading.attr="disabled"
+                                wire:target="save"
+                                class="inline-flex items-center gap-2 rounded-2xl border border-emerald-700/10 bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-3.5 text-sm font-bold text-white shadow-sm shadow-emerald-900/10 transition duration-200 ease-out hover:-translate-y-0.5 hover:from-emerald-500 hover:to-teal-500 hover:shadow-md hover:shadow-emerald-900/15 focus:outline-none focus:ring-4 focus:ring-emerald-200 active:translate-y-0 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-80 disabled:hover:translate-y-0 disabled:hover:shadow-sm"
+                            >
+                                <span wire:loading.remove wire:target="save" class="inline-flex items-center gap-2">
+                                    <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4 shrink-0" aria-hidden="true">
+                                        <path d="M4.5 10.5L8.5 14.5L15.5 6.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M10 2.5C5.86 2.5 2.5 5.86 2.5 10C2.5 14.14 5.86 17.5 10 17.5C14.14 17.5 17.5 14.14 17.5 10C17.5 5.86 14.14 2.5 10 2.5Z" stroke="currentColor" stroke-width="1.4" opacity="0.7"/>
+                                    </svg>
+                                    <span>ثبت نهایی خدمت</span>
+                                </span>
+                                <span wire:loading.flex wire:target="save" class="inline-flex items-center gap-2">
+                                    <svg class="h-4 w-4 animate-spin shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                        <circle class="opacity-25" cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"></circle>
+                                        <path class="opacity-90" d="M21 12a9 9 0 0 1-9 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                                    </svg>
+                                    <span>در حال ثبت نهایی</span>
+                                </span>
                             </button>
                         </div>
                     </div>
