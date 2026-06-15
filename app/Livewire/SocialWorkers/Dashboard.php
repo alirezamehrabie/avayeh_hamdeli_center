@@ -7,6 +7,7 @@ use App\Helpers\Morilog\Jalalian;
 use App\Models\Guardian;
 use App\Models\Person;
 use App\Models\Service;
+use App\Models\ServiceCategory;
 use App\Models\ServiceDelivery;
 use App\Traits\InteractsWithNotificationModal;
 use Illuminate\Database\Eloquent\Builder;
@@ -208,57 +209,84 @@ class Dashboard extends Component
             return;
         }
 
-        DB::transaction(function () use ($service, $validated): void {
-            $deliveryUnitValue = $service->deliveryUnitValue();
+        try {
+            DB::transaction(function () use ($service, $validated): void {
+                $categoryQuantities = collect($validated['recipientEntries'])
+                    ->groupBy(fn (array $entry) => (int) $entry['service_category_id'])
+                    ->map(fn ($entries) => $entries->sum(fn (array $entry) => (float) $entry['quantity']));
 
-            foreach ($validated['recipientEntries'] as $entry) {
-                $personId = null;
-                $guardianId = null;
-                $fullName = trim((string) ($entry['full_name'] ?? ''));
-                $mobile = trim((string) ($entry['mobile'] ?? '')) ?: null;
-                $serviceCategoryId = (int) $entry['service_category_id'];
+                $lockedCategories = ServiceCategory::query()
+                    ->where('service_id', $service->id)
+                    ->whereIn('id', $categoryQuantities->keys()->all())
+                    ->lockForUpdate()
+                    ->get()
+                    ->keyBy('id');
 
-                if ($service->service_type === 'family') {
-                    $guardian = Guardian::query()
-                        ->where('social_worker_id', $this->currentSocialWorkerId())
-                        ->where('national_code', trim((string) $entry['national_id']))
-                        ->first();
+                foreach ($categoryQuantities as $categoryId => $quantity) {
+                    $category = $lockedCategories->get((int) $categoryId);
 
-                    if ($guardian) {
-                        $guardianId = $guardian->id;
-                        $fullName = $guardian->full_name !== '' ? $guardian->full_name : $fullName;
-                        $mobile = $guardian->guardian_phone_number ?: $mobile;
-                    }
-                } else {
-                    $person = Person::query()
-                        ->where('national_id', trim((string) $entry['national_id']))
-                        ->whereHas('guardian', fn (Builder $query) => $query->where('social_worker_id', $this->currentSocialWorkerId()))
-                        ->first();
-
-                    if ($person) {
-                        $personId = $person->id;
-                        $fullName = trim(($person->first_name ?? '') . ' ' . ($person->last_name ?? '')) ?: $fullName;
+                    if (! $category || (float) $category->quantity < (float) $quantity) {
+                        throw ValidationException::withMessages([
+                            'recipientEntries' => 'مقدار تحویل برای یکی از دسته‌بندی‌ها از موجودی همان دسته‌بندی بیشتر است.',
+                        ]);
                     }
                 }
 
-                ServiceDelivery::query()->create([
-                    'service_id' => $service->id,
-                    'social_worker_id' => $this->currentSocialWorkerId(),
-                    'person_id' => $personId,
-                    'guardian_id' => $guardianId,
-                    'national_id' => trim((string) $entry['national_id']),
-                    'full_name' => $fullName,
-                    'mobile' => $mobile,
-                    'delivered_quantity' => $entry['quantity'],
-                    'service_category_id' => $serviceCategoryId,
-                    'value_per_unit_snapshot' => $deliveryUnitValue,
-                    'delivered_total_value' => (int) round((float) $entry['quantity'] * $deliveryUnitValue),
-                    'delivered_at' => $this->jalaliToGregorian($validated['deliveredAt']),
-                    'notes' => $validated['notes'] ?: null,
-                    'created_by' => auth()->id(),
-                ]);
-            }
-        });
+                foreach ($validated['recipientEntries'] as $entry) {
+                    $personId = null;
+                    $guardianId = null;
+                    $fullName = trim((string) ($entry['full_name'] ?? ''));
+                    $mobile = trim((string) ($entry['mobile'] ?? '')) ?: null;
+                    $serviceCategoryId = (int) $entry['service_category_id'];
+                    $category = $lockedCategories->get($serviceCategoryId);
+                    $deliveryUnitValue = (int) ($category?->value ?? 0);
+
+                    if ($service->service_type === 'family') {
+                        $guardian = Guardian::query()
+                            ->where('social_worker_id', $this->currentSocialWorkerId())
+                            ->where('national_code', trim((string) $entry['national_id']))
+                            ->first();
+
+                        if ($guardian) {
+                            $guardianId = $guardian->id;
+                            $fullName = $guardian->full_name !== '' ? $guardian->full_name : $fullName;
+                            $mobile = $guardian->guardian_phone_number ?: $mobile;
+                        }
+                    } else {
+                        $person = Person::query()
+                            ->where('national_id', trim((string) $entry['national_id']))
+                            ->whereHas('guardian', fn (Builder $query) => $query->where('social_worker_id', $this->currentSocialWorkerId()))
+                            ->first();
+
+                        if ($person) {
+                            $personId = $person->id;
+                            $fullName = trim(($person->first_name ?? '') . ' ' . ($person->last_name ?? '')) ?: $fullName;
+                        }
+                    }
+
+                    ServiceDelivery::query()->create([
+                        'service_id' => $service->id,
+                        'social_worker_id' => $this->currentSocialWorkerId(),
+                        'person_id' => $personId,
+                        'guardian_id' => $guardianId,
+                        'national_id' => trim((string) $entry['national_id']),
+                        'full_name' => $fullName,
+                        'mobile' => $mobile,
+                        'delivered_quantity' => $entry['quantity'],
+                        'service_category_id' => $serviceCategoryId,
+                        'value_per_unit_snapshot' => $deliveryUnitValue,
+                        'delivered_total_value' => (int) round((float) $entry['quantity'] * $deliveryUnitValue),
+                        'delivered_at' => $this->jalaliToGregorian($validated['deliveredAt']),
+                        'notes' => $validated['notes'] ?: null,
+                        'created_by' => auth()->id(),
+                    ]);
+                }
+            });
+        } catch (ValidationException $exception) {
+            $this->showValidationErrorModal($exception->validator->errors()->all());
+
+            throw $exception;
+        }
 
         $freshService = Service::query()
             ->with(['serviceName', 'categories', 'socialWorkers'])
@@ -296,7 +324,7 @@ class Dashboard extends Component
                 $query->where('social_workers.id', $this->currentSocialWorkerId())
                     ->where('service_social_worker.allocated_quantity', '>', 0);
             })
-            ->whereIn('status', ['approved', 'in_distribution', 'completed'])
+            ->whereIn('status', ['approved', 'in_distribution'])
             ->latest()
             ->get();
     }
@@ -313,6 +341,7 @@ class Dashboard extends Component
                 $query->where('social_workers.id', $this->currentSocialWorkerId())
                     ->where('service_social_worker.allocated_quantity', '>', 0);
             })
+            ->whereIn('status', ['approved', 'in_distribution'])
             ->find($this->selectedServiceId);
     }
 
@@ -403,7 +432,9 @@ class Dashboard extends Component
             'recipientEntries.*.service_category_id' => [
                 'required',
                 'integer',
-                Rule::exists('service_categories', 'id')->where(fn ($query) => $query->where('service_id', $this->selectedServiceId)),
+                Rule::exists('service_categories', 'id')->where(fn ($query) => $query
+                    ->where('service_id', $this->selectedServiceId)
+                    ->whereNull('deleted_at')),
             ],
             'deliveredAt' => [
                 'required',
@@ -494,7 +525,17 @@ class Dashboard extends Component
 
     protected function defaultServiceCategoryId(): ?int
     {
-        return $this->selectedService?->categories()->ordered()->value('id');
+        $service = $this->selectedService;
+
+        if (! $service) {
+            return null;
+        }
+
+        return $service->categories()
+            ->where('quantity', '>', 0)
+            ->ordered()
+            ->value('id')
+            ?: $service->categories()->ordered()->value('id');
     }
 
     protected function serviceTypeLabel(?string $serviceType): string

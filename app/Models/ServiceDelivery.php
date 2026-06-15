@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class ServiceDelivery extends Model
 {
@@ -42,6 +43,10 @@ class ServiceDelivery extends Model
 
     protected static function booted(): void
     {
+        static::saving(function (self $delivery): void {
+            $delivery->assertServiceCategoryBelongsToService();
+        });
+
         static::created(function (self $delivery): void {
             $delivery->adjustCategoryQuantity(-1 * (float) $delivery->delivered_quantity);
             $delivery->service?->refreshDeliveryProgress();
@@ -174,9 +179,39 @@ class ServiceDelivery extends Model
                 return;
             }
 
-            $nextQuantity = max(0, (float) $category->quantity + $delta);
+            $nextQuantity = (float) $category->quantity + $delta;
+
+            if ($nextQuantity < -0.00001) {
+                throw ValidationException::withMessages([
+                    'delivered_quantity' => 'مقدار تحویل از موجودی دسته‌بندی خدمت بیشتر است.',
+                ]);
+            }
+
+            $nextQuantity = max(0, $nextQuantity);
             $category->forceFill(['quantity' => $nextQuantity])->saveQuietly();
-            $category->service?->refreshFinancialTotals();
         });
+    }
+
+    protected function assertServiceCategoryBelongsToService(): void
+    {
+        $serviceId = (int) $this->service_id;
+        $categoryId = (int) $this->service_category_id;
+
+        if ($serviceId <= 0 || $categoryId <= 0) {
+            throw ValidationException::withMessages([
+                'service_category_id' => 'انتخاب دسته‌بندی خدمت الزامی است.',
+            ]);
+        }
+
+        $categoryBelongsToService = ServiceCategory::query()
+            ->whereKey($categoryId)
+            ->where('service_id', $serviceId)
+            ->exists();
+
+        if (! $categoryBelongsToService) {
+            throw ValidationException::withMessages([
+                'service_category_id' => 'دسته‌بندی انتخاب‌شده متعلق به این خدمت نیست.',
+            ]);
+        }
     }
 }

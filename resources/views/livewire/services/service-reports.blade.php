@@ -529,7 +529,9 @@
                                 >
                                     <option value="">انتخاب دسته‌بندی</option>
                                     @foreach($selectedService?->categories?->sortBy('sort_id') ?? [] as $category)
-                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                        <option value="{{ $category->id }}">
+                                            {{ $category->name }} - موجودی: {{ number_format((float) $category->quantity, 2) }} {{ $unitOptions[$category->unit] ?? $category->unit }} - ارزش واحد: {{ number_format((int) $category->value) }}
+                                        </option>
                                     @endforeach
                                 </select>
                                 @error('editServiceCategoryId') <p class="mt-1 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror

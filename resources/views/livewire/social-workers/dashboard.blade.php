@@ -289,7 +289,9 @@
                                             >
                                                 <option value="">انتخاب دسته‌بندی</option>
                                                 @foreach(($this->selectedService?->categories ?? collect())->sortBy('sort_id') as $category)
-                                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                                    <option value="{{ $category->id }}" @disabled((float) $category->quantity <= 0)>
+                                                        {{ $category->name }} - موجودی: {{ number_format((float) $category->quantity, 2) }} {{ \App\Models\Service::unitOptions()[$category->unit] ?? $category->unit }} - ارزش واحد: {{ number_format((int) $category->value) }}
+                                                    </option>
                                                 @endforeach
                                             </select>
                                             @error('recipientEntries.' . $index . '.service_category_id') <p class="mt-1 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror

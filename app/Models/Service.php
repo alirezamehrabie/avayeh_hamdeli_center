@@ -200,6 +200,15 @@ class Service extends Model
         return max(0, (float) $this->total_quantity - (float) $this->quantity_delivered);
     }
 
+    public function getRemainingStockQuantityAttribute(): float
+    {
+        if ($this->relationLoaded('categories')) {
+            return (float) $this->categories->sum(fn ($category) => (float) $category->quantity);
+        }
+
+        return (float) $this->categories()->sum('quantity');
+    }
+
     public function getAllocatedQuantityAttribute(): float
     {
         if ($this->relationLoaded('socialWorkers')) {
@@ -250,19 +259,13 @@ class Service extends Model
             return;
         }
 
-        $totalQuantity = (float) $this->categories()
-            ->selectRaw('COALESCE(SUM(quantity), 0) as total')
-            ->value('total');
         $totalFinancialValue = (int) $this->categories()
             ->selectRaw('COALESCE(SUM(quantity * value), 0) as total')
             ->value('total');
 
         $this->forceFill([
-            'total_quantity' => $totalQuantity,
             'total_service_value' => $totalFinancialValue,
         ])->saveQuietly();
-
-        $this->syncDeliveryValues();
     }
 
     public function deliveryUnitValue(): int
@@ -284,13 +287,17 @@ class Service extends Model
             return;
         }
 
-        $valuePerUnit = $this->deliveryUnitValue();
-
         $this->deliveries()
-            ->update([
-                'value_per_unit_snapshot' => $valuePerUnit,
-                'delivered_total_value' => DB::raw('ROUND(delivered_quantity * ' . $valuePerUnit . ')'),
-            ]);
+            ->with('serviceCategory')
+            ->get()
+            ->each(function (ServiceDelivery $delivery): void {
+                $valuePerUnit = (int) ($delivery->serviceCategory?->value ?? $this->deliveryUnitValue());
+
+                $delivery->forceFill([
+                    'value_per_unit_snapshot' => $valuePerUnit,
+                    'delivered_total_value' => (int) round((float) $delivery->delivered_quantity * $valuePerUnit),
+                ])->saveQuietly();
+            });
     }
 
     public function allocatedQuantityForWorker(int $socialWorkerId): float

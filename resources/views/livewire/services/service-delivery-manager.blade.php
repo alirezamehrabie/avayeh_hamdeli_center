@@ -45,7 +45,7 @@
                             <option value="">انتخاب خدمت</option>
                             @foreach($services as $service)
                                 <option value="{{ $service->id }}">
-                                    {{ $service->code }} | {{ $service->serviceName?->name ?? '-' }} | {{ $service->serviceCategory?->name ?? 'بدون دسته‌بندی' }}
+                                    {{ $service->code }} | {{ $service->serviceName?->name ?? '-' }} | {{ $service->categories->count() }} آیتم
                                 </option>
                             @endforeach
                         </select>
@@ -81,7 +81,7 @@
                                     <span>{{ $selectedWorkers->count() }} مددکار</span>
                                     @if($this->selectedService->serviceCategory?->name)
                                         <span class="hidden sm:inline text-slate-300">•</span>
-                                        <span>{{ $this->selectedService->serviceCategory->name }}</span>
+                                        <span>{{ $this->selectedService->categories->count() }} آیتم خدمت</span>
                                     @endif
                                 </div>
                             </div>
@@ -100,9 +100,37 @@
                                     <p class="mt-1 text-sm font-black text-slate-800">{{ number_format($this->currentAllocatedTotal, 2) }}</p>
                                 </div>
                                 <div class="rounded-2xl bg-cyan-50 px-3 py-2.5">
-                                    <p class="text-[10px] font-semibold text-cyan-700">باقی‌مانده</p>
+                                    <p class="text-[10px] font-semibold text-cyan-700">باقی سهمیه</p>
                                     <p class="mt-1 text-sm font-black text-cyan-800">{{ number_format($this->remainingAssignableQuantity, 2) }}</p>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-3">
+                            <div class="mb-2 flex items-center justify-between gap-3">
+                                <p class="text-xs font-black text-slate-700">آیتم‌های قابل تحویل</p>
+                                <p class="text-[11px] font-bold text-cyan-700">
+                                    موجودی کل: {{ number_format((float) $this->selectedService->remaining_stock_quantity, 2) }}
+                                </p>
+                            </div>
+                            <div class="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                                @foreach($this->selectedService->categories->sortBy('sort_id') as $category)
+                                    <div class="rounded-xl border border-slate-200 bg-white px-3 py-2">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div class="min-w-0">
+                                                <p class="truncate text-xs font-black text-slate-800">{{ $category->name }}</p>
+                                                <p class="mt-1 text-[10px] font-semibold text-slate-500">{{ $category->code }}</p>
+                                            </div>
+                                            <span class="rounded-full {{ (float) $category->quantity > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }} px-2 py-1 text-[10px] font-bold">
+                                                {{ (float) $category->quantity > 0 ? 'موجود' : 'ناموجود' }}
+                                            </span>
+                                        </div>
+                                        <div class="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] font-bold text-slate-600">
+                                            <span class="rounded-full bg-slate-50 px-2 py-1">موجودی: {{ number_format((float) $category->quantity, 2) }} {{ \App\Models\Service::unitOptions()[$category->unit] ?? $category->unit }}</span>
+                                            <span class="rounded-full bg-slate-50 px-2 py-1">ارزش واحد: {{ number_format((int) $category->value) }}</span>
+                                        </div>
+                                    </div>
+                                @endforeach
                             </div>
                         </div>
                     </div>
@@ -148,8 +176,8 @@
                                                 </p>
                                             </div>
                                             <div class="rounded-2xl bg-slate-50 px-3 py-2">
-                                                <p class="text-[10px] font-semibold text-cyan-700">باقی مانده</p>
-                                                <p class="mt-1 text-sm font-black text-cyan-800">{{ number_format((float) $service->remaining_assignable_quantity, 2) }}</p>
+                                                <p class="text-[10px] font-semibold text-cyan-700">موجودی / سهمیه</p>
+                                                <p class="mt-1 text-sm font-black text-cyan-800">{{ number_format((float) $service->remaining_stock_quantity, 2) }} / {{ number_format((float) $service->remaining_assignable_quantity, 2) }}</p>
                                             </div>
                                         </div>
 

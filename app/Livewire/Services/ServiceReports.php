@@ -10,6 +10,7 @@ use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\ServiceDelivery;
 use App\Models\ServiceName;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
@@ -313,6 +314,7 @@ class ServiceReports extends Component
         $validated = $this->validate($this->deliveryEditRules(), [], $this->deliveryEditAttributes());
 
         $newQuantity = (float) $validated['editDeliveredQuantity'];
+        $newCategoryId = (int) $validated['editServiceCategoryId'];
         $otherDeliveredForService = max(0, (float) $service->quantity_delivered - (float) $delivery->delivered_quantity);
 
         if (($otherDeliveredForService + $newQuantity) > (float) $service->total_quantity) {
@@ -335,13 +337,37 @@ class ServiceReports extends Component
             }
         }
 
+        $targetCategory = ServiceCategory::query()
+            ->where('service_id', $service->id)
+            ->whereKey($newCategoryId)
+            ->first();
+
+        if (! $targetCategory) {
+            throw ValidationException::withMessages([
+                'editServiceCategoryId' => 'دسته‌بندی انتخاب‌شده متعلق به این خدمت نیست.',
+            ]);
+        }
+
+        $availableInTargetCategory = (float) $targetCategory->quantity;
+
+        if ((int) $delivery->service_category_id === $newCategoryId) {
+            $availableInTargetCategory += (float) $delivery->delivered_quantity;
+        }
+
+        if ($newQuantity > $availableInTargetCategory) {
+            throw ValidationException::withMessages([
+                'editDeliveredQuantity' => 'مقدار جدید از موجودی دسته‌بندی انتخاب‌شده بیشتر است.',
+            ]);
+        }
+
         $payload = [
             'full_name' => trim((string) ($validated['editRecipientName'] ?? '')),
             'national_id' => trim($validated['editNationalId']),
             'mobile' => trim($validated['editMobile']) !== '' ? trim($validated['editMobile']) : null,
-            'service_category_id' => (int) $validated['editServiceCategoryId'],
+            'service_category_id' => $newCategoryId,
             'delivered_quantity' => $newQuantity,
-            'delivered_total_value' => (int) round($newQuantity * (int) $delivery->value_per_unit_snapshot),
+            'value_per_unit_snapshot' => (int) $targetCategory->value,
+            'delivered_total_value' => (int) round($newQuantity * (int) $targetCategory->value),
             'delivered_at' => $this->jalaliToGregorian($validated['editDeliveredAt']),
             'notes' => trim($validated['editNotes']) !== '' ? trim($validated['editNotes']) : null,
         ];
@@ -396,7 +422,9 @@ class ServiceReports extends Component
             'editServiceCategoryId' => [
                 'required',
                 'integer',
-                Rule::exists('service_categories', 'id')->where(fn ($query) => $query->where('service_id', $this->selectedServiceId)),
+                Rule::exists('service_categories', 'id')->where(fn ($query) => $query
+                    ->where('service_id', $this->selectedServiceId)
+                    ->whereNull('deleted_at')),
             ],
             'editDeliveredQuantity' => ['required', 'numeric', 'min:0.01'],
             'editDeliveredAt' => [
