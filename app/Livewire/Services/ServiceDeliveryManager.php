@@ -157,10 +157,20 @@ class ServiceDeliveryManager extends Component
             }
         });
 
+        $this->resetAfterSuccessfulSave();
+        $this->dispatch('quota-assigned-success', message: 'سهمیه‌ها با موفقیت برای مددکاران ثبت شد.');
+    }
+
+    public function resetAfterSuccessfulSave(): void
+    {
+        $this->selectedServiceId = null;
+        $this->allocations = [];
+        $this->socialWorkerSearch = '';
+        $this->showSavedSummary = false;
         $this->confirmingAllocationSave = false;
-        $this->showSavedSummary = true;
-        $this->syncSelectedServiceState();
-        $this->dispatch('quota-saved');
+        $this->resetValidation();
+
+        unset($this->selectedService);
     }
 
     protected function validateAllocationPayload(): Collection

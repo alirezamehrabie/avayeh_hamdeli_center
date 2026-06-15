@@ -1,6 +1,67 @@
 <div
-    x-data="{ saved: false }"
-    x-on:quota-saved.window="saved = true; setTimeout(() => saved = false, 2600)"
+    x-data="{
+        successOpen: false,
+        successMessage: 'سهمیه‌ها با موفقیت برای مددکاران ثبت شد.',
+        dropdownOpen: false,
+        dropdownQuery: '',
+        selectedServiceId: @entangle('selectedServiceId').live,
+        serviceOptions: @js($services->map(fn ($service) => [
+            'id' => (int) $service->id,
+            'name' => $service->name ?: ($service->serviceName?->name ?? '-'),
+            'items' => (int) $service->categories->count(),
+        ])->values()),
+        get selectedServiceOption() {
+            return this.serviceOptions.find((service) => Number(service.id) === Number(this.selectedServiceId)) ?? null;
+        },
+        get filteredServiceOptions() {
+            const query = this.dropdownQuery.trim().toLowerCase();
+
+            if (! query) {
+                return this.serviceOptions.slice(0, 80);
+            }
+
+            return this.serviceOptions
+                .filter((service) => {
+                    return this.serviceOptionSearchText(service).toLowerCase().includes(query);
+                })
+                .slice(0, 80);
+        },
+        serviceOptionTitle(service) {
+            return service.name || 'خدمت بدون عنوان';
+        },
+        serviceOptionMeta(service) {
+            return `شناسه ${service.id} · ${service.items} آیتم`;
+        },
+        serviceOptionSearchText(service) {
+            return [
+                service.id,
+                service.name,
+                service.items,
+                this.serviceOptionTitle(service),
+                this.serviceOptionMeta(service),
+            ].join(' ');
+        },
+        openDropdown() {
+            this.dropdownOpen = true;
+            this.$nextTick(() => this.$refs.serviceSearch?.focus());
+        },
+        closeDropdown() {
+            this.dropdownOpen = false;
+            this.dropdownQuery = '';
+        },
+        selectService(serviceId) {
+            this.selectedServiceId = serviceId;
+            this.closeDropdown();
+        },
+        openSuccess(message) {
+            this.successMessage = message || this.successMessage;
+            this.successOpen = true;
+        },
+        closeSuccess() {
+            this.successOpen = false;
+        },
+    }"
+    x-on:quota-assigned-success.window="openSuccess($event.detail?.message)"
     class="space-y-6"
 >
     <div class="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
@@ -32,15 +93,6 @@
         </div>
 
         <div class="px-4 py-5 sm:px-6">
-            <div
-                x-show="saved"
-                x-transition.opacity.duration.200ms
-                x-cloak
-                class="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700"
-            >
-                سهمیه‌ها با موفقیت ذخیره شدند.
-            </div>
-
             @if ($errors->any())
                 <div class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                     <p class="font-bold">لطفا خطاهای فرم را بررسی کنید.</p>
@@ -52,21 +104,120 @@
                 </div>
             @endif
 
+            <div
+                x-show="successOpen"
+                x-transition.opacity.duration.180ms
+                x-cloak
+                class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="quota-success-title"
+                x-on:click.self="closeSuccess()"
+                x-on:keydown.escape.window="closeSuccess()"
+            >
+                <div class="w-full max-w-md rounded-3xl border border-emerald-100 bg-white p-6 shadow-2xl shadow-emerald-100/40">
+                    <div class="flex items-start gap-4">
+                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                            <svg viewBox="0 0 24 24" fill="none" class="h-6 w-6" aria-hidden="true">
+                                <path d="M20 7L10 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </div>
+
+                        <div class="min-w-0">
+                            <p class="text-xs font-bold uppercase tracking-[0.24em] text-emerald-600">موفقیت</p>
+                            <h3 id="quota-success-title" class="mt-1 text-lg font-black text-slate-900">
+                                <span class="block">ثبت سهمیه انجام شد</span>
+                            </h3>
+                            <p class="mt-2 text-sm leading-6 text-slate-500" x-text="successMessage"></p>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 flex justify-end">
+                        <button
+                            type="button"
+                            x-on:click="closeSuccess()"
+                            class="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700"
+                        >
+                            تایید
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
                 <aside class="space-y-4">
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                         <label class="mb-2 block text-sm font-black text-slate-800">انتخاب خدمت / پویش</label>
-                        <select
-                            wire:model.live="selectedServiceId"
-                            class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700 focus:border-cyan-400 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                        <div
+                            class="relative"
+                            x-on:click.outside="closeDropdown()"
+                            x-on:keydown.escape.window="closeDropdown()"
                         >
-                            <option value="">انتخاب کنید</option>
-                            @foreach($services as $service)
-                                <option value="{{ $service->id }}">
-                                    {{ $service->code }} - {{ $service->name ?: ($service->serviceName?->name ?? '-') }}
-                                </option>
-                            @endforeach
-                        </select>
+                            <button
+                                type="button"
+                                x-on:click="dropdownOpen ? closeDropdown() : openDropdown()"
+                                class="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-right text-slate-700 shadow-sm transition hover:border-slate-400 focus:border-cyan-400 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                            >
+                                <span class="min-w-0 text-right">
+                                    <span class="block truncate text-sm font-bold text-slate-900" x-text="selectedServiceOption ? serviceOptionTitle(selectedServiceOption) : 'انتخاب کنید'"></span>
+                                    <span class="mt-0.5 block truncate text-xs font-medium text-slate-500" x-show="selectedServiceOption" x-text="selectedServiceOption ? serviceOptionMeta(selectedServiceOption) : ''"></span>
+                                </span>
+                                <svg class="h-4 w-4 shrink-0 text-slate-400 transition" x-bind:class="dropdownOpen ? 'rotate-180' : ''" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.51a.75.75 0 0 1-1.08 0l-4.25-4.51a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+
+                            <div
+                                x-show="dropdownOpen"
+                                x-transition.opacity.duration.120ms
+                                x-cloak
+                                class="absolute right-0 z-30 mt-2 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
+                            >
+                                <div class="border-b border-slate-100 p-3">
+                                    <input
+                                        x-ref="serviceSearch"
+                                        x-model.debounce.150ms="dropdownQuery"
+                                        type="text"
+                                        class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-cyan-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                                        placeholder="جستجو با شناسه، نام یا تعداد آیتم"
+                                    >
+                                </div>
+
+                                <div class="max-h-72 overflow-y-auto p-2">
+                                    <template x-if="filteredServiceOptions.length">
+                                        <div class="space-y-2">
+                                            <template x-for="service in filteredServiceOptions" :key="service.id">
+                                                <button
+                                                    type="button"
+                                                    x-on:click="selectService(service.id)"
+                                                    class="w-full rounded-2xl border px-3 py-3 text-right transition"
+                                                    x-bind:class="Number(selectedServiceId) === Number(service.id) ? 'border-cyan-400 bg-cyan-50 shadow-sm' : 'border-slate-200 bg-white hover:border-cyan-300 hover:bg-cyan-50/60'"
+                                                >
+                                                    <div class="flex items-start justify-between gap-3">
+                                                        <div class="min-w-0">
+                                                            <span class="block truncate text-sm font-bold text-slate-900" x-text="serviceOptionTitle(service)"></span>
+                                                            <span class="mt-0.5 block truncate text-xs font-medium text-slate-500" x-text="serviceOptionMeta(service)"></span>
+                                                        </div>
+
+                                                        <span
+                                                            class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold"
+                                                            x-bind:class="Number(selectedServiceId) === Number(service.id) ? 'bg-cyan-100 text-cyan-800' : 'bg-slate-100 text-slate-600'"
+                                                            x-text="`#${service.id}`"
+                                                        ></span>
+                                                    </div>
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </template>
+
+                                    <template x-if="! filteredServiceOptions.length">
+                                        <div class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-800">
+                                            موردی پیدا نشد.
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="rounded-2xl border border-slate-200 bg-white p-4">
@@ -284,7 +435,7 @@
                                                             </span>
                                                         </div>
                                                         <label class="sr-only" for="allocation-{{ $worker->id }}-{{ $category->id }}">
-                                                            Quantity allocation for {{ $worker->full_name }} / {{ $category->name }}
+                                                            مقدار سهمیه {{ $worker->full_name }} برای {{ $category->name }}
                                                         </label>
                                                         <input
                                                             id="allocation-{{ $worker->id }}-{{ $category->id }}"
@@ -311,21 +462,18 @@
                                 </div>
                             </section>
 
-                            <div class="sticky bottom-3 z-10 rounded-3xl border border-cyan-200 bg-cyan-50/95 p-4 shadow-lg shadow-cyan-100 backdrop-blur sm:static sm:shadow-none">
-                                <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                                    <div class="grid gap-2 sm:grid-cols-3 lg:min-w-[540px]">
-                                        <div class="rounded-2xl bg-white px-3 py-2">
-                                            <p class="text-[11px] font-bold text-slate-500">مددکاران</p>
-                                            <p class="mt-1 text-sm font-black text-slate-900">{{ $selectedWorkers->count() }}</p>
-                                        </div>
-                                        <div class="rounded-2xl bg-white px-3 py-2">
-                                            <p class="text-[11px] font-bold text-slate-500">تخصیص کل</p>
-                                            <p class="mt-1 text-sm font-black text-slate-900">{{ number_format($this->currentAllocatedTotal, 2) }}</p>
-                                        </div>
-                                        <div class="rounded-2xl bg-white px-3 py-2">
-                                            <p class="text-[11px] font-bold text-cyan-700">باقی قابل تخصیص</p>
-                                            <p class="mt-1 text-sm font-black text-cyan-800">{{ number_format($this->remainingAssignableQuantity, 2) }}</p>
-                                        </div>
+                            <div class="sticky bottom-3 z-10 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur-sm sm:static">
+                                <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                                    <div class="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-600">
+                                        <span class="rounded-full bg-slate-100 px-3 py-1">
+                                            مددکاران: <span class="font-black text-slate-900">{{ $selectedWorkers->count() }}</span>
+                                        </span>
+                                        <span class="rounded-full bg-slate-100 px-3 py-1">
+                                            تخصیص کل: <span class="font-black text-slate-900">{{ number_format($this->currentAllocatedTotal, 2) }}</span>
+                                        </span>
+                                        <span class="rounded-full bg-cyan-50 px-3 py-1 text-cyan-700">
+                                            باقی قابل تخصیص: <span class="font-black text-cyan-800">{{ number_format($this->remainingAssignableQuantity, 2) }}</span>
+                                        </span>
                                     </div>
 
                                     <div class="flex flex-col gap-2 sm:flex-row">
@@ -333,7 +481,7 @@
                                             <button
                                                 type="button"
                                                 wire:click="enableEditing"
-                                                class="rounded-2xl border border-cyan-300 bg-white px-5 py-3 text-sm font-black text-cyan-700 transition hover:bg-cyan-50"
+                                                class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
                                             >
                                                 ادامه ویرایش
                                             </button>
@@ -341,9 +489,15 @@
                                         <button
                                             type="submit"
                                             wire:loading.attr="disabled"
-                                            class="rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-black text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-70"
+                                            wire:target="requestSaveConfirmation"
+                                            class="group inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition duration-200 hover:bg-cyan-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-70"
                                         >
-                                            ذخیره سهمیه‌ها
+                                            <svg wire:loading wire:target="requestSaveConfirmation" class="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                <circle class="opacity-25" cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"></circle>
+                                                <path class="opacity-90" d="M21 12a9 9 0 0 1-9 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                                            </svg>
+                                            <span wire:loading.remove wire:target="requestSaveConfirmation">ذخیره سهمیه‌ها</span>
+                                            <span wire:loading wire:target="requestSaveConfirmation">در حال ذخیره...</span>
                                         </button>
                                     </div>
                                 </div>
@@ -355,9 +509,9 @@
                                 <div class="w-full max-w-3xl rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl">
                                     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                         <div>
-                                            <h3 class="text-lg font-black text-slate-900">Confirm quota allocation</h3>
+                                            <h3 class="text-lg font-black text-slate-900">تایید نهایی تخصیص سهمیه</h3>
                                             <p class="mt-1 text-sm leading-6 text-slate-500">
-                                                Review worker and item totals before replacing this service's saved quotas.
+                                                پیش از ثبت نهایی، مجموع سهمیه هر مددکار و هر آیتم را بررسی کنید. با تایید این مرحله، سهمیه‌های ذخیره‌شده این خدمت با مقادیر جدید جایگزین می‌شوند.
                                             </p>
                                         </div>
                                         <button
@@ -365,13 +519,13 @@
                                             wire:click="cancelSaveConfirmation"
                                             class="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-black text-slate-600 transition hover:bg-slate-50"
                                         >
-                                            Close
+                                            بستن
                                         </button>
                                     </div>
 
                                     <div class="mt-4 grid gap-3 md:grid-cols-2">
                                         <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                                            <p class="mb-2 text-sm font-black text-slate-800">Worker totals</p>
+                                            <p class="mb-2 text-sm font-black text-slate-800">جمع سهمیه مددکاران</p>
                                             <div class="max-h-56 space-y-2 overflow-y-auto">
                                                 @foreach($selectedWorkers as $worker)
                                                     <div class="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2 text-sm">
@@ -383,7 +537,7 @@
                                         </div>
 
                                         <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                                            <p class="mb-2 text-sm font-black text-slate-800">Item totals</p>
+                                            <p class="mb-2 text-sm font-black text-slate-800">جمع سهمیه آیتم‌ها</p>
                                             <div class="max-h-56 space-y-2 overflow-y-auto">
                                                 @foreach($this->selectedServiceCategories as $category)
                                                     <div class="rounded-xl bg-white px-3 py-2 text-sm">
@@ -392,7 +546,7 @@
                                                             <span class="font-black text-cyan-700">{{ number_format($this->allocationForCategory((int) $category->id), 2) }}</span>
                                                         </div>
                                                         <p class="mt-1 text-[11px] font-bold text-slate-400">
-                                                            Defined capacity: {{ number_format((float) $category->quantity, 2) }}
+                                                            ظرفیت تعریف‌شده: {{ number_format((float) $category->quantity, 2) }}
                                                         </p>
                                                     </div>
                                                 @endforeach
@@ -406,15 +560,21 @@
                                             wire:click="cancelSaveConfirmation"
                                             class="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-50"
                                         >
-                                            Back to edit
+                                            بازگشت به ویرایش
                                         </button>
                                         <button
                                             type="button"
                                             wire:click="confirmSaveAllocations"
                                             wire:loading.attr="disabled"
-                                            class="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
+                                            wire:target="confirmSaveAllocations"
+                                            class="group inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black text-white shadow-sm transition duration-200 hover:bg-emerald-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-70"
                                         >
-                                            Confirm final save
+                                            <svg wire:loading wire:target="confirmSaveAllocations" class="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                <circle class="opacity-25" cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"></circle>
+                                                <path class="opacity-90" d="M21 12a9 9 0 0 1-9 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                                            </svg>
+                                            <span wire:loading.remove wire:target="confirmSaveAllocations">تایید و ذخیره نهایی</span>
+                                            <span wire:loading wire:target="confirmSaveAllocations">در حال ثبت نهایی...</span>
                                         </button>
                                     </div>
                                 </div>
