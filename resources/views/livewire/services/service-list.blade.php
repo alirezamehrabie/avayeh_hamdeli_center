@@ -10,7 +10,7 @@
             this.detailsOpen = true;
         }
     }"
-    class="space-y-6"
+    class="space-y-4"
     dir="rtl"
 >
     @php
@@ -22,40 +22,34 @@
         ];
     @endphp
 
-    <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm sm:rounded-[32px]">
-        <div class="bg-gradient-to-l from-cyan-600 via-sky-600 to-blue-600 px-4 py-3 text-white sm:px-5 sm:py-4 xl:px-6 xl:py-5">
-            <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div class="flex min-w-0 flex-col gap-2 md:flex-row md:items-center md:gap-3">
-                    <h1 class="text-lg font-extrabold leading-7 sm:text-xl xl:text-2xl">لیست خدمات</h1>
-                    <div class="inline-flex w-fit items-center gap-2 rounded-full border border-white/20 bg-white/12 px-3 py-1 text-white shadow-sm shadow-cyan-950/10 backdrop-blur">
-                        <span class="h-1.5 w-1.5 rounded-full bg-cyan-200"></span>
-                        <span class="text-[11px] font-semibold leading-none text-cyan-50/90 sm:text-xs">تعداد کل</span>
-                        <span class="text-xs font-extrabold leading-none sm:text-sm">{{ $services->count() }}</span>
-                    </div>
-                    <p class="mt-1 hidden max-w-3xl text-xs leading-6 text-cyan-50/90 md:line-clamp-1 xl:block xl:text-sm">
+    <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div class="bg-gradient-to-l from-cyan-600 via-sky-600 to-blue-600 px-5 py-4 text-white">
+            <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0">
+                    <h1 class="truncate text-2xl font-extrabold leading-7 text-white">لیست خدمات</h1>
+                    <p class="mt-1.5 hidden max-w-3xl text-xs leading-6 text-cyan-50/90 lg:block">
                         خدمات تعریف شده را یکجا مشاهده کنید، جزئیات را بررسی کنید و برای ویرایش به فرم تعریف خدمات بروید.
                     </p>
                 </div>
 
-                <div class="flex items-center gap-2 sm:justify-end">
+                <div class="flex shrink-0 items-center">
                     <button
                         type="button"
                         wire:click="createService"
-                        class="group inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-gradient-to-l from-cyan-600 via-sky-600 to-blue-600 px-3 text-xs font-bold text-white shadow-lg shadow-cyan-950/20 ring-1 ring-white/10 transition duration-200 hover:-translate-y-0.5 hover:border-white/30 hover:from-cyan-500 hover:via-sky-500 hover:to-blue-500 hover:shadow-xl hover:shadow-cyan-950/25 focus:outline-none focus:ring-4 focus:ring-white/25 active:translate-y-0 active:scale-[0.98] sm:flex-none sm:px-4 sm:text-sm"
+                        class="group inline-flex h-9 items-center justify-center gap-2 rounded-full border border-white/15 bg-white/12 px-3.5 text-xs font-semibold text-cyan-50/90 shadow-sm shadow-cyan-950/10 ring-1 ring-white/10 transition duration-200 hover:-translate-y-0.5 hover:bg-white/18 hover:text-white focus:outline-none focus:ring-4 focus:ring-white/25 active:translate-y-0 active:scale-[0.98] sm:h-10 sm:px-4 sm:text-sm"
                     >
-                        <span class="flex h-6 w-6 ml-1 items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/20 transition duration-200 group-hover:scale-110 group-hover:bg-white/20 group-active:scale-95">
-                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/20 transition duration-200 group-hover:scale-110 group-hover:bg-white/20 group-active:scale-95">
+                            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m-7-7h14"/>
                             </svg>
                         </span>
                         <span>افزودن خدمت</span>
                     </button>
-
                 </div>
             </div>
         </div>
 
-        <div class="space-y-3 p-4 sm:p-6">
+        <div class="space-y-4 px-4 py-4">
             <div class="flex flex-col gap-3 rounded-[26px] border border-slate-200 bg-slate-50/80 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-3.5">
                 <div class="flex flex-col gap-3 sm:flex-1 sm:flex-row sm:items-center">
                     <div class="relative flex-1">

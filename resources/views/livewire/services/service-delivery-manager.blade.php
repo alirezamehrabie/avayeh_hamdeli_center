@@ -62,37 +62,46 @@
         },
     }"
     x-on:quota-assigned-success.window="openSuccess($event.detail?.message)"
-    class="space-y-6"
+    class="space-y-4"
 >
-    <div class="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-        <div class="border-b border-slate-200 bg-slate-900 px-5 py-5 text-white sm:px-6">
-            <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                <div>
-                    <p class="text-xs font-bold uppercase tracking-[0.25em] text-cyan-200">Service Delivery</p>
-                    <h1 class="mt-2 text-2xl font-black">تخصیص سهمیه خدمات به مددکاران</h1>
-                    <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
-                        در این بخش فقط سهمیه مددکاران برای هر آیتم خدمت مشخص می‌شود. تعریف خدمت و مصرف/تحویل نهایی در جریان‌های جداگانه مدیریت می‌شوند.
+    <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div class="bg-gradient-to-l from-cyan-600 via-sky-600 to-blue-600 px-5 py-4 text-white">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
+                <div class="min-w-0">
+                    <h1 class="mt-1 truncate text-2xl font-extrabold leading-7 text-white">مدیریت سهمیه خدمات</h1>
+                    <p class="mt-1.5 hidden max-w-2xl text-xs leading-6 text-cyan-50/90 lg:block">
+                        در این بخش فقط سهمیه مددکاران برای هر آیتم خدمت یا پویش مشخص می‌شود.
                     </p>
                 </div>
 
-                <div class="grid grid-cols-3 gap-2 text-center sm:min-w-[360px]">
-                    <div class="rounded-2xl border border-white/10 bg-white/10 px-3 py-2">
-                        <p class="text-[11px] text-slate-300">خدمات</p>
-                        <p class="mt-1 text-base font-black">{{ $services->count() }}</p>
-                    </div>
-                    <div class="rounded-2xl border border-white/10 bg-white/10 px-3 py-2">
-                        <p class="text-[11px] text-slate-300">مددکار</p>
-                        <p class="mt-1 text-base font-black">{{ $selectedWorkers->count() }}</p>
-                    </div>
-                    <div class="rounded-2xl border border-white/10 bg-cyan-500/20 px-3 py-2">
-                        <p class="text-[11px] text-cyan-100">سهمیه</p>
-                        <p class="mt-1 text-base font-black">{{ number_format($this->currentAllocatedTotal, 2) }}</p>
-                    </div>
+                <div class="flex flex-wrap items-center gap-1.5 sm:justify-end">
+                    <span class="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/12 px-2 py-1 text-[10px] font-semibold text-cyan-50/90 shadow-sm shadow-cyan-950/10 backdrop-blur">
+                        <svg viewBox="0 0 24 24" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
+                            <path d="M4 7.5h16M7 4v7m10-7v7M6 20h12a2 2 0 0 0 2-2V9H4v9a2 2 0 0 0 2 2Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <span>خدمات</span>
+                        <span class="font-black text-white">{{ $services->count() }}</span>
+                    </span>
+                    <span class="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/12 px-2 py-1 text-[10px] font-semibold text-cyan-50/90 shadow-sm shadow-cyan-950/10 backdrop-blur">
+                        <svg viewBox="0 0 24 24" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
+                            <path d="M16 19a4 4 0 0 0-8 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                            <circle cx="12" cy="10" r="4" stroke="currentColor" stroke-width="1.8" />
+                        </svg>
+                        <span>مددکار</span>
+                        <span class="font-black text-white">{{ $selectedWorkers->count() }}</span>
+                    </span>
+                    <span class="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/12 px-2 py-1 text-[10px] font-semibold text-cyan-50/90 shadow-sm shadow-cyan-950/10 backdrop-blur">
+                        <svg viewBox="0 0 24 24" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
+                            <path d="M12 3v18M7.5 7.5h6.75a2.75 2.75 0 1 1 0 5.5H9.75a2.75 2.75 0 1 0 0 5.5H17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <span>سهمیه</span>
+                        <span class="font-black text-white">{{ number_format($this->currentAllocatedTotal, 2) }}</span>
+                    </span>
                 </div>
             </div>
         </div>
 
-        <div class="px-4 py-5 sm:px-6">
+        <div class="space-y-4 px-4 py-4">
             @if ($errors->any())
                 <div class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                     <p class="font-bold">لطفا خطاهای فرم را بررسی کنید.</p>
@@ -381,13 +390,15 @@
                                                         <button
                                                             type="button"
                                                             wire:click="addSocialWorker({{ $socialWorker->id }})"
-                                                            class="mb-2 flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-right transition hover:border-cyan-300 hover:bg-cyan-50"
+                                                            class="mb-2 flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-right transition hover:border-cyan-300 hover:bg-cyan-50 relative isolate"
                                                         >
+                                                            <span aria-hidden="true" class="pointer-events-none absolute -inset-1 rounded-xl bg-[conic-gradient(from_0deg,rgba(34,211,238,0),rgba(34,211,238,0.18),rgba(16,185,129,0.12),rgba(59,130,246,0.18),rgba(34,211,238,0))] opacity-70 blur-md motion-safe:animate-[spin_8s_linear_infinite]"></span>
+                                                            <span aria-hidden="true" class="pointer-events-none absolute inset-[1px] rounded-[11px] bg-slate-50/85 transition group-hover:bg-cyan-50/70"></span>
                                                             <span class="min-w-0">
-                                                                <span class="block truncate text-sm font-black text-slate-800">{{ $socialWorker->full_name }}</span>
-                                                                <span class="mt-1 block text-xs font-bold text-slate-500">کد مددکاری: {{ $socialWorker->worker_code }}</span>
+                                                                <span class="relative z-10 block truncate text-sm font-black text-slate-800">{{ $socialWorker->full_name }}</span>
+                                                                <span class="relative z-10 mt-1 block text-xs font-bold text-slate-500">کد مددکاری: {{ $socialWorker->worker_code }}</span>
                                                             </span>
-                                                            <span class="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-cyan-700">افزودن</span>
+                                                            <span class="relative z-10 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-bold text-cyan-700 shadow-sm shadow-cyan-500/10">افزودن</span>
                                                         </button>
                                                     @empty
                                                         <div class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-800">
