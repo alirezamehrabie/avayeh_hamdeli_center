@@ -401,13 +401,13 @@
                     }
                 }"
                 x-show="open"
-                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter="transition-opacity ease-out duration-150"
                 x-transition:enter-start="opacity-0"
                 x-transition:enter-end="opacity-100"
-                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave="transition-opacity ease-in duration-100"
                 x-transition:leave-start="opacity-100"
                 x-transition:leave-end="opacity-0"
-                class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+                class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/35 p-0 sm:items-center sm:p-4"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="person-tracking-modal-title"
@@ -418,96 +418,80 @@
 
                 <div
                     x-show="open"
-                    x-transition:enter="transition ease-out duration-200"
-                    x-transition:enter-start="opacity-0 translate-y-4 scale-95"
-                    x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-                    x-transition:leave="transition ease-in duration-150"
-                    x-transition:leave-start="opacity-100 translate-y-0 scale-100"
-                    x-transition:leave-end="opacity-0 translate-y-4 scale-95"
-                    class="relative w-full overflow-hidden rounded-t-3xl border border-cyan-100 bg-white shadow-2xl shadow-slate-950/20 sm:max-w-xl sm:rounded-3xl"
+                    x-transition:enter="transition ease-out duration-150"
+                    x-transition:enter-start="translate-y-3 opacity-0 sm:translate-y-0"
+                    x-transition:enter-end="translate-y-0 opacity-100"
+                    x-transition:leave="transition ease-in duration-100"
+                    x-transition:leave-start="translate-y-0 opacity-100"
+                    x-transition:leave-end="translate-y-3 opacity-0 sm:translate-y-0"
+                    class="relative w-full overflow-hidden rounded-t-2xl border border-slate-200 bg-white shadow-xl sm:max-w-lg sm:rounded-2xl"
                     @click.stop
                 >
-                    <div class="bg-gradient-to-l from-cyan-700 via-sky-600 to-cyan-600 px-5 py-5 text-white sm:px-6">
-                        <div class="flex items-start justify-between gap-4">
-                            <div class="min-w-0">
-                                <div class="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-bold text-white/90 ring-1 ring-white/20">
+                    <div class="flex items-start justify-between gap-4 border-b border-slate-100 px-4 py-4 sm:px-5">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2 text-xs font-bold text-cyan-700">
+                                <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-cyan-50 text-cyan-700">
                                     <i class="bi bi-file-earmark-check"></i>
-                                    رهگیری ثبت نام
-                                </div>
-                                <h2 id="person-tracking-modal-title" class="mt-3 truncate text-xl font-extrabold">
-                                    {{ $trackingPerson->full_name ?: 'مددجوی بدون نام' }}
-                                </h2>
-                                <p class="mt-1 text-sm font-semibold text-white/80" dir="ltr">
-                                    {{ $trackingPerson->person_code ?: '-' }}
-                                </p>
+                                </span>
+                                رهگیری ثبت نام
                             </div>
-                            <button
-                                type="button"
-                                @click="close()"
-                                class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-2xl leading-none text-white transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40"
-                                aria-label="بستن"
-                            >
-                                &times;
-                            </button>
+                            <h2 id="person-tracking-modal-title" class="mt-2 truncate text-base font-extrabold text-slate-900 sm:text-lg">
+                                {{ $trackingPerson->full_name ?: 'مددجوی بدون نام' }}
+                            </h2>
+                            <p class="mt-1 text-xs font-bold text-slate-500" dir="ltr">
+                                {{ $trackingPerson->person_code ?: '-' }}
+                            </p>
                         </div>
+                        <button
+                            type="button"
+                            @click="close()"
+                            class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-2xl leading-none text-slate-400 transition hover:bg-slate-50 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                            aria-label="بستن"
+                        >
+                            &times;
+                        </button>
                     </div>
 
-                    <div class="space-y-4 p-4 sm:p-6">
-                        <div class="grid gap-3 sm:grid-cols-2">
-                            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                                <p class="flex items-center gap-2 text-xs font-bold text-slate-500">
-                                    <i class="bi bi-person-plus text-cyan-600"></i>
-                                    ایجادکننده
-                                </p>
-                                <p class="mt-2 break-words text-base font-extrabold text-slate-900">
+                    <div class="px-4 py-2 sm:px-5">
+                        <dl class="divide-y divide-slate-100">
+                            <div class="grid grid-cols-[7.5rem_minmax(0,1fr)] items-center gap-3 py-3">
+                                <dt class="text-xs font-bold text-slate-500">ایجادکننده</dt>
+                                <dd class="min-w-0 break-words text-sm font-bold text-slate-900">
                                     {{ $trackingPerson->creator?->name ?? 'مدیریت' }}
-                                </p>
+                                </dd>
                             </div>
 
-                            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                                <p class="flex items-center gap-2 text-xs font-bold text-slate-500">
-                                    <i class="bi bi-calendar2-plus text-cyan-600"></i>
-                                    زمان ایجاد
-                                </p>
-                                <p class="mt-2 text-base font-extrabold text-slate-900" dir="ltr">
+                            <div class="grid grid-cols-[7.5rem_minmax(0,1fr)] items-center gap-3 py-3">
+                                <dt class="text-xs font-bold text-slate-500">زمان ایجاد</dt>
+                                <dd class="text-sm font-bold text-slate-900" dir="ltr">
                                     {{ optional($trackingPerson->created_at)->format('Y/m/d H:i') ?? '-' }}
-                                </p>
+                                </dd>
                             </div>
 
-                            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                                <p class="flex items-center gap-2 text-xs font-bold text-slate-500">
-                                    <i class="bi bi-person-check text-indigo-600"></i>
-                                    آخرین ویرایش توسط
-                                </p>
-                                <p class="mt-2 break-words text-base font-extrabold text-slate-900">
+                            <div class="grid grid-cols-[7.5rem_minmax(0,1fr)] items-center gap-3 py-3">
+                                <dt class="text-xs font-bold text-slate-500">آخرین ویرایش</dt>
+                                <dd class="min-w-0 break-words text-sm font-bold text-slate-900">
                                     {{ $trackingPerson->updater?->name ?? $trackingPerson->creator?->name ?? 'مدیریت' }}
-                                </p>
+                                </dd>
                             </div>
 
-                            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                                <p class="flex items-center gap-2 text-xs font-bold text-slate-500">
-                                    <i class="bi bi-calendar2-check text-indigo-600"></i>
-                                    زمان آخرین ویرایش
-                                </p>
-                                <p class="mt-2 text-base font-extrabold text-slate-900" dir="ltr">
+                            <div class="grid grid-cols-[7.5rem_minmax(0,1fr)] items-center gap-3 py-3">
+                                <dt class="text-xs font-bold text-slate-500">زمان ویرایش</dt>
+                                <dd class="text-sm font-bold text-slate-900" dir="ltr">
                                     {{ optional($trackingPerson->updated_at)->format('Y/m/d H:i') ?? '-' }}
-                                </p>
+                                </dd>
                             </div>
-                        </div>
+                        </dl>
+                    </div>
 
-                        <div class="rounded-2xl border border-cyan-100 bg-cyan-50/70 px-4 py-3 text-xs leading-6 text-cyan-900">
-                            این اطلاعات برای پیگیری داخلی ثبت و تغییرات پرونده نمایش داده می‌شود.
-                        </div>
-
-                        <div class="flex justify-end">
-                            <button
-                                type="button"
-                                @click="close()"
-                                class="inline-flex min-h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100"
-                            >
-                                بستن
-                            </button>
-                        </div>
+                    <div class="flex justify-end border-t border-slate-100 px-4 py-3 sm:px-5">
+                        <button
+                            type="button"
+                            @click="close()"
+                            class="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                        >
+                            بستن
+                        </button>
                     </div>
                 </div>
             </div>
