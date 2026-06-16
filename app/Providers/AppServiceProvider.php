@@ -2,10 +2,28 @@
 
 namespace App\Providers;
 
+use App\Models\AcademicLevel;
+use App\Models\AccountOwnerRelation;
+use App\Models\Bank;
+use App\Models\DisabilityType;
+use App\Models\District;
+use App\Models\EducationLevel;
 use App\Models\Guardian;
+use App\Models\GuardianRelationType;
+use App\Models\HarmType;
+use App\Models\InsuranceType;
+use App\Models\JobType;
+use App\Models\NeedLevelType;
+use App\Models\Occupation;
 use App\Models\Person;
+use App\Models\SadaatRelation;
 use App\Models\Service;
+use App\Models\Skill;
+use App\Models\SocialWorker;
+use App\Models\SupportOrganization;
 use App\Models\User;
+use App\Models\VehicleType;
+use App\Models\ResidenceStatusType;
 use App\Observers\GuardianObserver;
 use App\Observers\PersonObserver;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -75,6 +93,24 @@ class AppServiceProvider extends ServiceProvider
         Relation::enforceMorphMap([
             'person' => Person::class,
             'guardian' => Guardian::class,
+            'social_worker' => SocialWorker::class,
+            'sadaat_relation' => SadaatRelation::class,
+            'skill' => Skill::class,
+            'disability_type' => DisabilityType::class,
+            'guardian_relation_type' => GuardianRelationType::class,
+            'occupation' => Occupation::class,
+            'job_type' => JobType::class,
+            'insurance_type' => InsuranceType::class,
+            'vehicle_type' => VehicleType::class,
+            'residence_status_type' => ResidenceStatusType::class,
+            'district' => District::class,
+            'account_owner_relation' => AccountOwnerRelation::class,
+            'bank' => Bank::class,
+            'education_level' => EducationLevel::class,
+            'academic_level' => AcademicLevel::class,
+            'need_level_type' => NeedLevelType::class,
+            'harm_type' => HarmType::class,
+            'support_organization' => SupportOrganization::class,
         ]);
 
         Gate::define('manage-people', function (User $user) {
