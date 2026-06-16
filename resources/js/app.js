@@ -200,11 +200,11 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
         return {
             fps: 30,
             qrbox: (viewfinderWidth, viewfinderHeight) => {
-                const boxSize = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.84);
+                const boxSize = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.92);
 
                 return {
-                    width: Math.max(280, boxSize),
-                    height: Math.max(280, boxSize),
+                    width: Math.min(viewfinderWidth, Math.max(320, boxSize)),
+                    height: Math.min(viewfinderHeight, Math.max(320, boxSize)),
                 };
             },
             disableFlip: false,

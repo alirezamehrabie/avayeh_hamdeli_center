@@ -43,6 +43,10 @@ class IdCardScanner extends Component
         $identity = app(QrIdentityService::class)->resolveToken($token, 'admin-id-card-scanner');
 
         if (! $identity) {
+            $identity = $this->resolvePublicCode($token);
+        }
+
+        if (! $identity) {
             $this->setInlineError('QR نامعتبر، ابطال‌شده یا غیرقابل دسترس است.');
 
             return $this->scanResponse(false);
@@ -235,6 +239,28 @@ class IdCardScanner extends Component
         ];
     }
 
+    private function resolvePublicCode(string $token): ?QrIdentity
+    {
+        $identity = QrIdentity::query()
+            ->where('public_code', strtoupper(trim($token)))
+            ->where('status', QrIdentity::STATUS_ACTIVE)
+            ->first();
+
+        if (! $identity) {
+            return null;
+        }
+
+        $subject = $identity->subject;
+
+        if (! $subject || method_exists($subject, 'trashed') && $subject->trashed()) {
+            return null;
+        }
+
+        $identity->forceFill(['last_scanned_at' => now()])->save();
+
+        return $identity->setRelation('subject', $subject);
+    }
+
     private function extractQrToken(string $payload): ?string
     {
         $value = trim($payload);
@@ -247,18 +273,12 @@ class IdCardScanner extends Component
             return $value;
         }
 
-        $appUrlHost = parse_url(config('app.url'), PHP_URL_HOST);
-        $payloadHost = parse_url($value, PHP_URL_HOST);
-        $payloadPath = parse_url($value, PHP_URL_PATH);
+        $payloadPath = parse_url($value, PHP_URL_PATH) ?: $value;
 
-        if (! $payloadHost || ! $appUrlHost || ! hash_equals((string) $appUrlHost, (string) $payloadHost)) {
+        if (! preg_match('/\/qr\/r\/([^\/?#]+)/', (string) $payloadPath, $matches)) {
             return null;
         }
 
-        if (! preg_match('#/qr/r/([^/?#]+)#', (string) $payloadPath, $matches)) {
-            return null;
-        }
-
-        return $matches[1] ?? null;
+        return isset($matches[1]) ? urldecode($matches[1]) : null;
     }
 }
