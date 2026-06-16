@@ -239,6 +239,13 @@
                         <livewire:child-supporters.sponsor-list :embedded="true" :key="'child-supporter-sponsor-list'" />
                         @break
 
+                    @case('special-features-id-card-scanner')
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <h1 class="text-xl font-bold text-gray-800 mb-2">اسکنر کارت شناسایی</h1>
+                            <p class="text-sm text-gray-600">این بخش در حال آماده‌سازی است.</p>
+                        </div>
+                        @break
+
 
                     @default
                         <div>

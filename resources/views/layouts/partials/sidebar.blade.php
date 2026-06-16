@@ -52,20 +52,27 @@
         $reportsOpen = $dashboardMode ? $isActive(['advanced-reports', 'advanced-service-report', 'advanced-beneficiary-report', 'advanced-operator-report', 'advanced-supervisor-report', 'advanced-social-worker-report']) : false;
         $servicesOpen = $dashboardMode ? $isActive(['service-definition', 'service-management', 'service-list', 'service-delivery']) : false;
         $childSupporterOpen = $dashboardMode ? $isActive(['child-supporter-sponsor-registration', 'child-supporter-sponsor-list']) : false;
+        $specialFeaturesOpen = $dashboardMode ? $isActive(['special-features-id-card-scanner']) : false;
         $systemSettingsOpen = $dashboardMode ? $isActive(['system-settings-user-definition', 'system-settings-user-list', 'system-settings-user-account']) : request()->routeIs('admin.user-definition') || request()->routeIs('admin.user-management') || request()->routeIs('admin.user-list') || request()->routeIs('admin.user-account');
-        $defaultOpenMenu = $peopleOpen
-            ? 'people'
-            : ($socialWorkersOpen
-                ? 'social-workers'
-                : ($guardiansOpen
-                    ? 'guardians'
-                    : ($servicesOpen
-                        ? 'services'
-                        : ($reportsOpen
-                            ? 'reports'
-                            : ($childSupporterOpen
-                                ? 'child-supporter'
-                                : ($systemSettingsOpen ? 'system-settings' : ''))))));
+        $defaultOpenMenu = '';
+
+        if ($peopleOpen) {
+            $defaultOpenMenu = 'people';
+        } elseif ($socialWorkersOpen) {
+            $defaultOpenMenu = 'social-workers';
+        } elseif ($guardiansOpen) {
+            $defaultOpenMenu = 'guardians';
+        } elseif ($servicesOpen) {
+            $defaultOpenMenu = 'services';
+        } elseif ($reportsOpen) {
+            $defaultOpenMenu = 'reports';
+        } elseif ($childSupporterOpen) {
+            $defaultOpenMenu = 'child-supporter';
+        } elseif ($specialFeaturesOpen) {
+            $defaultOpenMenu = 'special-features';
+        } elseif ($systemSettingsOpen) {
+            $defaultOpenMenu = 'system-settings';
+        }
     @endphp
 
     <nav x-data="{ openMenu: '{{ $defaultOpenMenu }}' }" class="flex-1 space-y-2">
@@ -331,6 +338,32 @@
                     <button type="button" wire:click="selectSection('child-supporter-sponsor-list')"
                             class="block w-full rounded px-4 py-2 text-right text-sm {{ $activeSection === 'child-supporter-sponsor-list' ? 'bg-indigo-800 text-white' : 'text-indigo-200 hover:text-white' }}">
                         لیست حامیان
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <button type="button" @click="openMenu = openMenu === 'special-features' ? '' : 'special-features'"
+                        class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $specialFeaturesOpen ? 'bg-indigo-700' : '' }}">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 ml-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+                            <path d="M8 9h4"></path>
+                            <path d="M8 13h2.5"></path>
+                            <circle cx="16.5" cy="12" r="2"></circle>
+                        </svg>
+                        <span>امکانات ویژه</span>
+                    </div>
+                    <svg :class="openMenu === 'special-features' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div x-show="openMenu === 'special-features'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
+                    <button type="button" wire:click="selectSection('special-features-id-card-scanner')"
+                            class="block w-full rounded px-4 py-2 text-right text-sm {{ $activeSection === 'special-features-id-card-scanner' ? 'bg-indigo-800 text-white' : 'text-indigo-200 hover:text-white' }}">
+                        اسکن کارت شناسایی
                     </button>
                 </div>
             </div>

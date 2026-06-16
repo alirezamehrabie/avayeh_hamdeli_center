@@ -46,6 +46,8 @@ class DashboardHome extends Component
             $this->activeSection = 'service-list';
         } elseif (request()->routeIs('admin.service-delivery')) {
             $this->activeSection = 'service-delivery';
+        } elseif (request()->routeIs('admin.special-features.id-card-scanner')) {
+            $this->activeSection = 'special-features-id-card-scanner';
         }
         $this->normalizeActiveSection();
     }
@@ -98,6 +100,7 @@ class DashboardHome extends Component
             $validSections[] = 'advanced-operator-report';
             $validSections[] = 'child-supporter-sponsor-registration';
             $validSections[] = 'child-supporter-sponsor-list';
+            $validSections[] = 'special-features-id-card-scanner';
         }
 
         if ($user?->can('full-access')) {
@@ -123,7 +126,8 @@ class DashboardHome extends Component
                 'service-delivery',
                 'service-management',
                 'child-supporter-sponsor-registration',
-                'child-supporter-sponsor-list'
+                'child-supporter-sponsor-list',
+                'special-features-id-card-scanner'
             );
         }
 
