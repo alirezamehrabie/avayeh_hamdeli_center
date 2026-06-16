@@ -26,6 +26,7 @@ class QrIdentity extends Model
         'issued_at',
         'revoked_at',
         'last_scanned_at',
+        'lifecycle_reason',
         'created_by',
         'revoked_by',
     ];

@@ -694,9 +694,36 @@
                         </div>
                     @endif
 
+                    <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-6 text-amber-900">
+                        این کارت به عنوان کارت هویتی بلندمدت چاپ می‌شود. صدور مجدد یا ابطال فقط در شرایط کنترل‌شده، با دسترسی کامل و ثبت علت مجاز است.
+                    </div>
+
+                    @if($confirmingQrLifecycleAction)
+                        <div class="rounded-2xl border border-rose-200 bg-rose-50 p-4">
+                            <p class="text-sm font-black text-rose-800">
+                                {{ $qrLifecycleAction === 'reissue' ? 'تایید صدور مجدد QR' : 'تایید ابطال QR' }}
+                            </p>
+                            <label class="mt-3 block text-xs font-bold text-slate-700" for="guardian-qr-lifecycle-reason">علت اقدام</label>
+                            <textarea
+                                id="guardian-qr-lifecycle-reason"
+                                wire:model.defer="qrLifecycleReason"
+                                rows="3"
+                                class="mt-1 w-full rounded-xl border border-rose-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-rose-400 focus:outline-none focus:ring-4 focus:ring-rose-100"
+                                placeholder="علت دقیق ابطال یا صدور مجدد کارت را ثبت کنید..."
+                            ></textarea>
+                            @error('qrLifecycleReason') <p class="mt-1 text-xs font-bold text-rose-700">{{ $message }}</p> @enderror
+                            <div class="mt-3 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                                <button type="button" wire:click="cancelQrLifecycleAction" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700">انصراف</button>
+                                <button type="button" wire:click="confirmQrLifecycleAction" class="rounded-xl bg-rose-700 px-4 py-2 text-sm font-bold text-white">تایید نهایی</button>
+                            </div>
+                        </div>
+                    @endif
+
                     <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                        <button type="button" wire:click="revokeQrCode" @disabled(!$this->selectedQrIdentity) class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-bold text-rose-700 disabled:opacity-50">ابطال</button>
-                        <button type="button" wire:click="reissueQrCode" class="rounded-2xl bg-cyan-700 px-4 py-2 text-sm font-bold text-white">صدور مجدد</button>
+                        @can('full-access')
+                            <button type="button" wire:click="requestQrLifecycleAction('revoke')" @disabled(!$this->selectedQrIdentity) class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-bold text-rose-700 disabled:opacity-50">ابطال کنترل‌شده</button>
+                            <button type="button" wire:click="requestQrLifecycleAction('reissue')" class="rounded-2xl bg-cyan-700 px-4 py-2 text-sm font-bold text-white">صدور مجدد کنترل‌شده</button>
+                        @endcan
                         <button type="button" wire:click="closeQrModal" class="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700">بستن</button>
                     </div>
                 </div>

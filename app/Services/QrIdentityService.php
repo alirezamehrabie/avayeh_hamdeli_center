@@ -13,11 +13,11 @@ use Illuminate\Support\Str;
 
 class QrIdentityService
 {
-    public function issueFor(Model $subject, ?int $actorId = null, bool $replaceExisting = false): array
+    public function issueFor(Model $subject, ?int $actorId = null, bool $replaceExisting = false, ?string $reason = null): array
     {
         $subjectType = $this->subjectTypeFor($subject);
 
-        return DB::transaction(function () use ($subject, $subjectType, $actorId, $replaceExisting): array {
+        return DB::transaction(function () use ($subject, $subjectType, $actorId, $replaceExisting, $reason): array {
             $activeQuery = QrIdentity::query()
                 ->where('subject_type', $subjectType)
                 ->where('subject_id', $subject->getKey())
@@ -35,6 +35,7 @@ class QrIdentityService
                     'status' => QrIdentity::STATUS_REPLACED,
                     'revoked_at' => now(),
                     'revoked_by' => $actorId,
+                    'lifecycle_reason' => $reason,
                 ]);
             }
 
@@ -51,6 +52,7 @@ class QrIdentityService
                 'public_code' => $this->nextPublicCode($subjectType),
                 'status' => QrIdentity::STATUS_ACTIVE,
                 'issued_at' => now(),
+                'lifecycle_reason' => $reason,
                 'created_by' => $actorId,
             ]);
 
@@ -65,12 +67,12 @@ class QrIdentityService
         return $issued['identity'];
     }
 
-    public function replaceFor(Model $subject, ?int $actorId = null): array
+    public function replaceFor(Model $subject, ?int $actorId = null, ?string $reason = null): array
     {
-        return $this->issueFor($subject, $actorId, true);
+        return $this->issueFor($subject, $actorId, true, $reason);
     }
 
-    public function revoke(QrIdentity $identity, ?int $actorId = null): void
+    public function revoke(QrIdentity $identity, ?int $actorId = null, ?string $reason = null): void
     {
         if (! $identity->isActive()) {
             return;
@@ -80,6 +82,7 @@ class QrIdentityService
             'status' => QrIdentity::STATUS_REVOKED,
             'revoked_at' => now(),
             'revoked_by' => $actorId,
+            'lifecycle_reason' => $reason,
         ]);
     }
 

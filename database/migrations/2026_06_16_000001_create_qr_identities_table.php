@@ -19,6 +19,7 @@ return new class extends Migration
             $table->timestamp('issued_at')->nullable();
             $table->timestamp('revoked_at')->nullable();
             $table->timestamp('last_scanned_at')->nullable();
+            $table->text('lifecycle_reason')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('revoked_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();

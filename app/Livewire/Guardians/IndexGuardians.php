@@ -32,6 +32,9 @@ class IndexGuardians extends Component
     public ?int $deletingGuardianId = null;
     public ?int $qrGuardianId = null;
     public ?string $issuedQrToken = null;
+    public bool $confirmingQrLifecycleAction = false;
+    public string $qrLifecycleAction = '';
+    public string $qrLifecycleReason = '';
 
     public function mount(): void
     {
@@ -109,6 +112,9 @@ class IndexGuardians extends Component
 
         $this->qrGuardianId = $guardian->id;
         $this->issuedQrToken = null;
+        $this->confirmingQrLifecycleAction = false;
+        $this->qrLifecycleAction = '';
+        $this->qrLifecycleReason = '';
         $this->showQrModal = true;
     }
 
@@ -117,33 +123,62 @@ class IndexGuardians extends Component
         $this->showQrModal = false;
         $this->qrGuardianId = null;
         $this->issuedQrToken = null;
+        $this->confirmingQrLifecycleAction = false;
+        $this->qrLifecycleAction = '';
+        $this->qrLifecycleReason = '';
+        $this->resetValidation(['qrLifecycleReason']);
     }
 
-    public function reissueQrCode(): void
+    public function requestQrLifecycleAction(string $action): void
     {
         abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
+        abort_unless(in_array($action, ['reissue', 'revoke'], true), 422);
 
-        $guardian = Guardian::query()->findOrFail($this->qrGuardianId);
-        $qrIdentityService = app(QrIdentityService::class);
-        $issued = $qrIdentityService->replaceFor($guardian, auth()->id());
-
-        $this->issuedQrToken = $issued['token'];
-        session()->flash('success', 'QR سرپرست با موفقیت دوباره صادر شد.');
+        $this->qrLifecycleAction = $action;
+        $this->qrLifecycleReason = '';
+        $this->confirmingQrLifecycleAction = true;
+        $this->resetValidation(['qrLifecycleReason']);
     }
 
-    public function revokeQrCode(): void
+    public function cancelQrLifecycleAction(): void
+    {
+        $this->confirmingQrLifecycleAction = false;
+        $this->qrLifecycleAction = '';
+        $this->qrLifecycleReason = '';
+        $this->resetValidation(['qrLifecycleReason']);
+    }
+
+    public function confirmQrLifecycleAction(): void
     {
         abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
+        abort_unless(in_array($this->qrLifecycleAction, ['reissue', 'revoke'], true), 422);
 
-        $identity = $this->selectedQrIdentity;
+        $validated = $this->validate([
+            'qrLifecycleReason' => ['required', 'string', 'min:10', 'max:1000'],
+        ], [
+            'qrLifecycleReason.required' => 'ثبت علت برای تغییر وضعیت QR الزامی است.',
+            'qrLifecycleReason.min' => 'علت تغییر وضعیت QR باید حداقل ۱۰ کاراکتر باشد.',
+        ]);
 
-        if ($identity) {
-            $qrIdentityService = app(QrIdentityService::class);
-            $qrIdentityService->revoke($identity, auth()->id());
+        $reason = trim($validated['qrLifecycleReason']);
+
+        if ($this->qrLifecycleAction === 'reissue') {
+            $guardian = Guardian::query()->findOrFail($this->qrGuardianId);
+            $issued = app(QrIdentityService::class)->replaceFor($guardian, auth()->id(), $reason);
+            $this->issuedQrToken = $issued['token'];
+            session()->flash('success', 'QR سرپرست با ثبت علت، دوباره صادر شد.');
+        } else {
+            $identity = $this->selectedQrIdentity;
+
+            if ($identity) {
+                app(QrIdentityService::class)->revoke($identity, auth()->id(), $reason);
+            }
+
+            $this->issuedQrToken = null;
+            session()->flash('success', 'QR سرپرست با ثبت علت، ابطال شد.');
         }
 
-        $this->issuedQrToken = null;
-        session()->flash('success', 'QR سرپرست با موفقیت ابطال شد.');
+        $this->cancelQrLifecycleAction();
     }
 
     public function getSelectedQrIdentityProperty(): ?QrIdentity
