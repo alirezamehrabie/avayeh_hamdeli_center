@@ -6,6 +6,7 @@
         $supportOrganizationName = $supportOrganization?->slug === 'other'
             ? ($selectedPerson->supportCoverage?->other_organization_name ?: ($supportOrganization?->name ?? '-'))
             : ($supportOrganization?->name ?? '-');
+        $creatorName = $selectedPerson->creator?->full_name ?: $selectedPerson->creator?->name ?: 'نامشخص';
         $harmTypes = $selectedPerson->harmTypes->pluck('title')->filter()->implode('، ');
         $skills = $selectedPerson->skills->pluck('name')->filter()->implode('، ');
         $birthDateValue = $selectedPerson->formatted_birth_date ?? $selectedPerson->birth_date ?? '-';
@@ -46,10 +47,16 @@
         };
         $educationStatus = match (true) {
             !$selectedPerson->education => '-',
-            $selectedPerson->education->is_studying => trim('در حال تحصیل' . ($selectedPerson->education->educationLevel?->name ? ' - ' . $selectedPerson->education->educationLevel->name : '')),
-            filled($reasonForNotStudying) => trim($reasonForNotStudying . ($selectedPerson->education->educationDegreeLevel?->title ? ' - ' . $selectedPerson->education->educationDegreeLevel->title : '')),
+            $selectedPerson->education->is_studying => 'در حال تحصیل',
+            filled($reasonForNotStudying) => $reasonForNotStudying,
             filled($selectedPerson->education->drop_reason) => 'ترک تحصیل - ' . $selectedPerson->education->drop_reason,
             default => 'در حال تحصیل نیست',
+        };
+        $educationLevelGrade = match (true) {
+            !$selectedPerson->education => '-',
+            $selectedPerson->education->is_studying => $selectedPerson->education->educationLevel?->name ?: '-',
+            filled($selectedPerson->education->educationDegreeLevel?->title) => $selectedPerson->education->educationDegreeLevel->title,
+            default => '-',
         };
         $employmentStatus = !$selectedPerson->education
             ? '-'
@@ -66,25 +73,78 @@
         if ($guardianFullName !== '') {
             $guardianStatus .= ' - ' . $guardianFullName;
         }
-        $detailItems = [
-            ['label' => 'نام و نام خانوادگی', 'value' => $selectedPerson->full_name ?: '-'],
-            ['label' => 'کد ملی', 'value' => $selectedPerson->national_id ?: '-'],
-            ['label' => 'نام پدر', 'value' => $selectedPerson->father_name ?: '-'],
-            'birthDateValue' => ['label' => 'تاریخ تولد', 'value' => $birthDateValue],
-            ['label' => 'نوع آسیب', 'value' => $harmTypes ?: '-'],
-            ['label' => 'وضعیت سادات', 'value' => $selectedPerson->sadaat_status === 'sadaat' ? 'سادات' : 'عام'],
-            ['label' => 'شماره موبایل', 'value' => $selectedPerson->phone_number ?: '-'],
-            ['label' => 'وضعیت تحصیلی', 'value' => $educationStatus],
-            ['label' => 'مهارت‌ها', 'value' => $skills ?: ($selectedPerson->skills_description ?: '-')],
-            ['label' => 'نهاد حامی', 'value' => $supportOrganizationName],
-            ['label' => 'توضیحات نهاد حامی', 'value' => $selectedPerson->supportCoverage?->description ?: '-'],
-            ['label' => 'نوع معلولیت', 'value' => $selectedPerson->has_disability ? (($selectedPerson->disabilityType?->name ?? '') . ($selectedPerson->disability_description ? ' - ' . $selectedPerson->disability_description : '')) : 'ندارد'],
-            ['label' => 'وضعیت سرپرست', 'value' => $guardianStatus],
-            ['label' => 'شغل سرپرست', 'value' => $guardianJob ?: '-'],
-            ['label' => 'اشتغال مددجو', 'value' => $employmentStatus],
-            ['label' => 'آدرس منزل سرپرست', 'value' => $selectedPerson->guardian?->residence?->address ?: '-'],
-            ['label' => 'مددکار اختصاص‌یافته', 'value' => $selectedPerson->guardian?->socialWorker?->full_name ?: '-'],
-            ['label' => 'سطح نیاز', 'value' => $selectedPerson->needsLevel?->levelType?->title ?: '-'],
+        $disabilityValue = $selectedPerson->has_disability
+            ? ($selectedPerson->disabilityType?->name ?: 'دارد')
+            : 'ندارد';
+        $disabilityDescription = $selectedPerson->has_disability
+            ? ($selectedPerson->disability_description ?: '-')
+            : '-';
+        $identityItems = [
+            ['label' => 'نام و نام خانوادگی', 'value' => $selectedPerson->full_name ?: '-', 'icon' => 'bi-person'],
+            ['label' => 'نام پدر', 'value' => $selectedPerson->father_name ?: '-', 'icon' => 'bi-person-heart'],
+            ['label' => 'کد ملی', 'value' => $selectedPerson->national_id ?: '-', 'icon' => 'bi-credit-card-2-front', 'dir' => 'ltr'],
+            ['label' => 'تاریخ تولد', 'value' => $birthDateValue, 'icon' => 'bi-calendar3', 'age' => $ageBreakdown],
+            ['label' => 'وضعیت سادات', 'value' => $selectedPerson->sadaat_status === 'sadaat' ? 'سادات' : 'عام', 'icon' => 'bi-patch-check'],
+            ['label' => 'شماره موبایل', 'value' => $selectedPerson->phone_number ?: '-', 'icon' => 'bi-phone', 'dir' => 'ltr'],
+        ];
+        $educationWorkItems = [
+            ['label' => 'وضعیت تحصیلی', 'value' => $educationStatus, 'icon' => 'bi-mortarboard', 'meta_label' => 'مقطع', 'meta_value' => $educationLevelGrade],
+            ['label' => 'مهارت‌ها', 'value' => $skills ?: ($selectedPerson->skills_description ?: '-'), 'icon' => 'bi-stars'],
+            ['label' => 'اشتغال مددجو', 'value' => $employmentStatus, 'icon' => 'bi-briefcase'],
+        ];
+        $householdGuardianItems = [
+            ['label' => 'وضعیت سرپرست', 'value' => $guardianStatus, 'icon' => 'bi-person-badge'],
+            ['label' => 'کد ملی سرپرست', 'value' => $selectedPerson->guardian?->national_code ?: '-', 'icon' => 'bi-credit-card', 'dir' => 'ltr'],
+            ['label' => 'شغل سرپرست', 'value' => $guardianJob ?: '-', 'icon' => 'bi-tools'],
+            ['label' => 'تعداد اعضای خانوار', 'value' => filled($selectedPerson->guardian?->children_in_house) ? number_format((int) $selectedPerson->guardian->children_in_house) . ' نفر' : '-', 'icon' => 'bi-people'],
+            ['label' => 'آدرس منزل سرپرست', 'value' => $selectedPerson->guardian?->residence?->address ?: '-', 'icon' => 'bi-house-door'],
+            ['label' => 'مددکار اختصاص‌یافته', 'value' => $selectedPerson->guardian?->socialWorker?->full_name ?: '-', 'icon' => 'bi-person-check'],
+        ];
+        $healthSupportItems = [
+            ['label' => 'نوع آسیب', 'value' => $harmTypes ?: '-', 'icon' => 'bi-shield-exclamation'],
+            ['label' => 'نوع بیماری / معلولیت', 'value' => $disabilityValue, 'icon' => 'bi-heart-pulse'],
+            ['label' => 'توضیحات بیماری / معلولیت', 'value' => $disabilityDescription, 'icon' => 'bi-clipboard2-pulse'],
+            ['label' => 'نهاد حامی', 'value' => $supportOrganizationName, 'icon' => 'bi-diagram-3'],
+            ['label' => 'سطح نیاز', 'value' => $selectedPerson->needsLevel?->levelType?->title ?: '-', 'icon' => 'bi-bar-chart-steps'],
+            ['label' => 'شرح وضعیت مددجو', 'value' => $selectedPerson->client_case_history ?: '-', 'icon' => 'bi-journal-text'],
+        ];
+        $detailSections = [
+            [
+                'title' => 'اطلاعات هویتی',
+                'subtitle' => 'مشخصات اصلی مددجو',
+                'icon' => 'bi-person-vcard',
+                'accent' => 'text-cyan-700 bg-cyan-50 ring-cyan-100',
+                'metaAccent' => 'text-cyan-700 bg-cyan-50 ring-cyan-100',
+                'items' => $identityItems,
+                'grid' => 'sm:grid-cols-2 xl:grid-cols-3',
+            ],
+            [
+                'title' => 'تحصیل و مهارت',
+                'subtitle' => 'وضعیت آموزشی، توانمندی و اشتغال',
+                'icon' => 'bi-journal-check',
+                'accent' => 'text-emerald-700 bg-emerald-50 ring-emerald-100',
+                'metaAccent' => 'text-emerald-700 bg-emerald-50 ring-emerald-100',
+                'items' => $educationWorkItems,
+                'grid' => 'md:grid-cols-3',
+            ],
+            [
+                'title' => 'خانوار و سرپرست',
+                'subtitle' => 'اطلاعات سرپرست، خانوار و مددکار',
+                'icon' => 'bi-people-fill',
+                'accent' => 'text-amber-700 bg-amber-50 ring-amber-100',
+                'metaAccent' => 'text-amber-700 bg-amber-50 ring-amber-100',
+                'items' => $householdGuardianItems,
+                'grid' => 'sm:grid-cols-2 xl:grid-cols-3',
+            ],
+            [
+                'title' => 'سلامت و حمایت',
+                'subtitle' => 'آسیب‌پذیری، نیاز و پوشش حمایتی',
+                'icon' => 'bi-heart-pulse',
+                'accent' => 'text-rose-700 bg-rose-50 ring-rose-100',
+                'metaAccent' => 'text-rose-700 bg-rose-50 ring-rose-100',
+                'items' => $healthSupportItems,
+                'grid' => 'sm:grid-cols-2 xl:grid-cols-3',
+            ],
         ];
         $personImages = collect([
             [
@@ -113,6 +173,7 @@
             viewerOpen: false,
             viewerImages: @js($personImages),
             viewerIndex: 0,
+            copiedField: null,
             openViewer(index = 0) {
                 if (! this.viewerImages.length) return;
                 this.viewerIndex = index;
@@ -129,6 +190,21 @@
                 if (this.viewerImages.length < 2) return;
                 this.viewerIndex = (this.viewerIndex - 1 + this.viewerImages.length) % this.viewerImages.length;
             },
+            async copyText(value, field) {
+                if (! value || value === '-') return;
+
+                try {
+                    await navigator.clipboard.writeText(value);
+                    this.copiedField = field;
+                    setTimeout(() => {
+                        if (this.copiedField === field) {
+                            this.copiedField = null;
+                        }
+                    }, 1400);
+                } catch (error) {
+                    this.copiedField = null;
+                }
+            },
             close() {
                 this.closeViewer();
                 this.open = false;
@@ -142,13 +218,13 @@
         x-transition:leave="transition ease-in duration-200"
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0"
-        class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 p-0 backdrop-blur-md sm:items-center sm:p-4"
+        class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
         @keydown.escape.window="viewerOpen ? closeViewer() : close()"
         @keydown.arrow-right.window="if (viewerOpen) nextImage()"
         @keydown.arrow-left.window="if (viewerOpen) previousImage()"
         style="display: none;"
     >
-        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.18),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(15,23,42,0.22),transparent_36%)]" @click="close()"></div>
+        <div class="absolute inset-0" @click="close()"></div>
 
         <div
             x-show="open"
@@ -158,23 +234,22 @@
             x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
             x-transition:leave-end="opacity-0 translate-y-4 scale-95"
-            class="relative flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-t-[2rem] border border-white/70 bg-white shadow-2xl shadow-slate-950/30 ring-1 ring-slate-950/5 sm:max-h-[90vh] sm:rounded-[2rem]"
+            class="relative flex h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-t-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/20 sm:h-auto sm:max-h-[90vh] sm:rounded-3xl"
             @click.stop
         >
-            <div class="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-slate-50 via-white to-transparent"></div>
-
-            <div class="relative flex items-start justify-between gap-3 border-b border-slate-100 bg-white/90 px-4 py-4 backdrop-blur-xl sm:px-6 sm:py-5">
+            <div class="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-slate-100 bg-white px-4 py-3 sm:px-5 sm:py-4">
                 <div class="min-w-0">
-                    <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-black text-slate-500">
+                    <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
                         <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
                         <span>پرونده مددجو</span>
                     </div>
-                    <h2 class="mt-3 truncate text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
+                    <h2 class="mt-2 truncate text-lg font-extrabold text-slate-900 sm:text-xl">
                         {{ $selectedPerson->full_name ?: 'بدون نام' }}
                     </h2>
-                    <div class="mt-2 flex flex-wrap items-center gap-2 text-xs font-bold text-slate-500">
-                        <span class="rounded-full bg-slate-100 px-3 py-1" dir="ltr">{{ $selectedPerson->formatted_person_code ?: ($selectedPerson->person_code ?: '-') }}</span>
-                        <span class="rounded-full bg-slate-100 px-3 py-1" dir="ltr">{{ $selectedPerson->national_id ?: '-' }}</span>
+                    <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-slate-500">
+                        <span dir="ltr">{{ $selectedPerson->formatted_person_code ?: ($selectedPerson->person_code ?: '-') }}</span>
+                        <span class="h-1 w-1 rounded-full bg-slate-300"></span>
+                        <span dir="ltr">{{ $selectedPerson->national_id ?: '-' }}</span>
                     </div>
                 </div>
 
@@ -183,18 +258,16 @@
                         <button
                             type="button"
                             wire:click="editPerson({{ $selectedPerson->id }})"
-                            class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                            class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-4 focus:ring-slate-200"
                             aria-label="ویرایش"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a4 4 0 01-1.414.95L7 17l1.514-4.122a4 4 0 01.95-1.414z"/>
-                            </svg>
+                            <i class="bi bi-pencil-square text-base"></i>
                         </button>
                     @endif
                     <button
                         type="button"
                         @click="close()"
-                        class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-2xl leading-none text-slate-500 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                        class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-2xl leading-none text-slate-500 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-4 focus:ring-slate-200"
                         aria-label="بستن"
                     >
                         &times;
@@ -202,97 +275,136 @@
                 </div>
             </div>
 
-            <div class="relative grid min-h-0 flex-1 overflow-y-auto bg-slate-50/60 p-4 sm:p-6 lg:grid-cols-[17rem_minmax(0,1fr)] lg:gap-6">
-                <aside class="mb-4 rounded-[1.75rem] border border-white bg-white p-4 shadow-sm ring-1 ring-slate-950/5 lg:sticky lg:top-0 lg:mb-0 lg:self-start">
-                    <div class="overflow-hidden rounded-[1.5rem] bg-slate-100 shadow-inner ring-1 ring-slate-200" style="aspect-ratio: 3 / 4;">
+            <div class="grid min-h-0 flex-1 gap-4 overflow-y-auto bg-slate-50 p-3 sm:p-5 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-5">
+                <aside class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm lg:sticky lg:top-0 lg:self-start">
+                    <div class="overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-slate-200" style="aspect-ratio: 4 / 5;">
                         <img
                             src="{{ $selectedPerson->profile_photo ? asset($selectedPerson->profile_photo) : asset('images/no-image-profile.png?v=2') }}"
                             alt="تصویر مددجو"
-                            class="h-full w-full cursor-zoom-in object-cover transition duration-300 hover:scale-105"
+                            class="h-full w-full cursor-zoom-in object-cover transition duration-200 hover:scale-[1.02]"
                             @click="openViewer(0)"
                         >
                     </div>
 
-                    <div class="mt-4 space-y-3">
+                    <div class="mt-3 space-y-3">
                         <div>
-                            <p class="text-xs font-bold text-slate-400">نام کامل</p>
-                            <p class="mt-1 text-base font-black text-slate-950">{{ $selectedPerson->full_name ?: '-' }}</p>
+                            <p class="text-xs font-semibold text-slate-500">نام کامل</p>
+                            <p class="mt-1 break-words text-base font-extrabold leading-7 text-slate-900">{{ $selectedPerson->full_name ?: '-' }}</p>
                         </div>
                         <div class="grid grid-cols-2 gap-2">
-                            <div class="rounded-2xl bg-slate-50 p-3">
-                                <p class="text-[11px] font-bold text-slate-400">کد مددجو</p>
-                                <p class="mt-1 truncate text-sm font-black text-slate-900" dir="ltr">{{ $selectedPerson->formatted_person_code ?: ($selectedPerson->person_code ?: '-') }}</p>
+                            <div class="rounded-xl bg-slate-50 p-3">
+                                <p class="text-[11px] font-semibold text-slate-500">کد مددجو</p>
+                                <p class="mt-1 truncate text-sm font-bold text-slate-900" dir="ltr">{{ $selectedPerson->formatted_person_code ?: ($selectedPerson->person_code ?: '-') }}</p>
                             </div>
-                            <div class="rounded-2xl bg-slate-50 p-3">
-                                <p class="text-[11px] font-bold text-slate-400">سطح نیاز</p>
-                                <p class="mt-1 truncate text-sm font-black text-slate-900">{{ $selectedPerson->needsLevel?->levelType?->title ?: '-' }}</p>
+                            <div class="rounded-xl bg-slate-50 p-3">
+                                <p class="text-[11px] font-semibold text-slate-500">سطح نیاز</p>
+                                <p class="mt-1 truncate text-sm font-bold text-slate-900">{{ $selectedPerson->needsLevel?->levelType?->title ?: '-' }}</p>
                             </div>
                         </div>
                     </div>
 
                     @if($personImages->count() > 1)
-                        <div class="mt-4 grid grid-cols-3 gap-2">
+                        <div class="mt-3 grid grid-cols-4 gap-2 lg:grid-cols-3">
                             @foreach($personImages->take(4) as $imageIndex => $image)
                                 <button
                                     type="button"
-                                    class="group relative overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-slate-200"
+                                    class="group relative overflow-hidden rounded-xl bg-slate-100 ring-1 ring-slate-200"
                                     style="aspect-ratio: 1 / 1;"
                                     @click="openViewer({{ $imageIndex }})"
                                     aria-label="{{ $image['label'] }}"
                                 >
-                                    <img src="{{ $image['url'] }}" alt="{{ $image['label'] }}" class="h-full w-full object-cover transition duration-300 group-hover:scale-110">
+                                    <img src="{{ $image['url'] }}" alt="{{ $image['label'] }}" class="h-full w-full object-cover transition duration-200 group-hover:scale-105">
                                 </button>
                             @endforeach
                         </div>
                     @endif
                 </aside>
 
-                <section class="min-w-0">
-                    <div class="mb-4 rounded-[1.5rem] border border-cyan-100 bg-gradient-to-l from-cyan-50 via-white to-white p-4 shadow-sm">
-                        <p class="text-sm font-black text-slate-900">اطلاعات پرونده</p>
-                        <p class="mt-1 text-xs leading-6 text-slate-500">جزئیات فردی، خانوادگی، آموزشی و حمایتی مددجو در یک نمای خلاصه و قابل مرور.</p>
+                <section class="min-w-0 space-y-3">
+                    <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <p class="text-sm font-extrabold text-slate-900">اطلاعات پرونده</p>
+                        <p class="mt-1 text-xs leading-6 text-slate-500">جزئیات فردی، خانوادگی، آموزشی و حمایتی مددجو</p>
+                        <div class="mt-2 inline-flex max-w-full items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-medium text-slate-600">
+                            <span class="text-slate-400">اپراتور ثبت:</span>
+                            <span class="truncate text-slate-700">{{ $creatorName }}</span>
+                        </div>
                     </div>
 
-                    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                    @foreach($detailItems as $key => $item)
+                    @foreach($detailSections as $section)
+                        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                            <div class="mb-3 flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-extrabold text-slate-900">{{ $section['title'] }}</p>
+                                    <p class="mt-1 text-xs leading-5 text-slate-500">{{ $section['subtitle'] }}</p>
+                                </div>
+                                <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ring-1 {{ $section['accent'] }}">
+                                    <i class="bi {{ $section['icon'] }} text-base"></i>
+                                </span>
+                            </div>
 
-                        @switch($key)
-                            @case('birthDateValue')
-                                <div class="group rounded-[1.35rem] border border-white bg-white p-4 shadow-sm ring-1 ring-slate-950/5 transition hover:-translate-y-0.5 hover:shadow-md">
-                                    <p class="text-[11px] font-black uppercase tracking-wide text-slate-400">
-                                        {{ $item['label'] }}
-                                    </p>
-                                    <div class="mt-2 flex flex-col items-start gap-2">
-                                        <p class="break-words text-sm font-black leading-7 text-slate-900">
-                                            {{ $item['value'] }}
-                                        </p>
-                                        @if($ageBreakdown)
-                                            <div class="inline-flex items-center rounded-full bg-cyan-50 px-3 py-1 text-xs font-black text-cyan-700 ring-1 ring-cyan-100">
-                                                {{ $ageBreakdown }}
-                                            </div>
-                                        @endif
+                            <div class="grid gap-2 {{ $section['grid'] }}">
+                                @foreach($section['items'] as $item)
+                                    @php
+                                        $isAssignedSocialWorker = $item['label'] === 'مددکار اختصاص‌یافته';
+                                    @endphp
+                                    <div class="flex min-h-[4.75rem] items-start gap-3 rounded-xl border p-3 {{ $isAssignedSocialWorker ? 'border-cyan-200 bg-cyan-50/70 shadow-sm' : 'border-slate-100 bg-slate-50' }}">
+                                        <span class="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 {{ $isAssignedSocialWorker ? 'bg-white text-cyan-700 ring-cyan-200' : 'bg-white text-slate-500 ring-slate-200' }}">
+                                            <i class="bi {{ $item['icon'] }} text-sm"></i>
+                                        </span>
+                                        <div class="min-w-0 flex-1">
+                                            <p class="text-[11px] font-semibold {{ $isAssignedSocialWorker ? 'text-cyan-700' : 'text-slate-500' }}">{{ $item['label'] }}</p>
+                                            @if($item['label'] === 'کد ملی')
+                                                <div class="mt-1 flex items-center gap-2">
+                                                    <p class="min-w-0 break-words text-sm font-bold leading-6 text-slate-900" @if(isset($item['dir'])) dir="{{ $item['dir'] }}" @endif>
+                                                        {{ $item['value'] }}
+                                                    </p>
+                                                    <button
+                                                        type="button"
+                                                        class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                                                        @click="copyText(@js($item['value']), 'national-id')"
+                                                        aria-label="کپی کد ملی"
+                                                    >
+                                                        <i class="bi bi-copy text-xs" x-show="copiedField !== 'national-id'"></i>
+                                                        <i class="bi bi-check2 text-sm text-emerald-600" x-show="copiedField === 'national-id'" style="display: none;"></i>
+                                                    </button>
+                                                    <span
+                                                        x-show="copiedField === 'national-id'"
+                                                        x-transition.opacity.duration.150ms
+                                                        class="shrink-0 text-[11px] font-medium text-emerald-600"
+                                                        style="display: none;"
+                                                    >
+                                                        کپی شد
+                                                    </span>
+                                                </div>
+                                            @else
+                                                <p class="mt-1 break-words text-sm font-bold leading-6 {{ $isAssignedSocialWorker ? 'text-cyan-950' : 'text-slate-900' }}" @if(isset($item['dir'])) dir="{{ $item['dir'] }}" @endif>
+                                                    {{ $item['value'] }}
+                                                </p>
+                                            @endif
+                                            @if(!empty($item['age']))
+                                                <span class="mt-1 inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ring-1 {{ $section['metaAccent'] }}">
+                                                    {{ $item['age'] }}
+                                                </span>
+                                            @endif
+                                            @if(isset($item['meta_label']))
+                                                <div class="mt-2 inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold ring-1 {{ $section['metaAccent'] }}">
+                                                    <span class="shrink-0 opacity-75">{{ $item['meta_label'] }}:</span>
+                                                    <span class="truncate">{{ $item['meta_value'] }}</span>
+                                                </div>
+                                            @endif
+                                            @if(!empty($item['note']))
+                                                <span class="mt-1 inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ring-1 {{ $section['metaAccent'] }}">
+                                                    {{ $item['note'] }}
+                                                </span>
+                                            @endif
+                                        </div>
                                     </div>
-                                </div>
-                                @break
-
-
-                            @default
-                                <div class="group rounded-[1.35rem] border border-white bg-white p-4 shadow-sm ring-1 ring-slate-950/5 transition hover:-translate-y-0.5 hover:shadow-md">
-                                    <p class="text-[11px] font-black uppercase tracking-wide text-slate-400">
-                                        {{ $item['label'] }}
-                                    </p>
-
-                                    <p class="mt-2 break-words text-sm font-black leading-7 text-slate-900">
-                                        {{ $item['value'] }}
-                                    </p>
-                                </div>
-                        @endswitch
-
+                                @endforeach
+                            </div>
+                        </div>
                     @endforeach
-
-                    </div>
                 </section>
-                </div>
+            </div>
 
             <div
                 x-show="viewerOpen"
@@ -302,13 +414,13 @@
                 x-transition:leave="transition ease-in duration-150"
                 x-transition:leave-start="opacity-100"
                 x-transition:leave-end="opacity-0"
-                class="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/90 p-4 backdrop-blur-sm"
+                class="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/90 p-3 sm:p-4"
                 @click.self="closeViewer()"
                 style="display: none;"
             >
                 <button
                     type="button"
-                    class="absolute left-3 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-white/10 text-2xl text-white shadow-lg backdrop-blur transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40 sm:left-6"
+                    class="absolute left-3 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/10 text-2xl text-white shadow-lg transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40 sm:left-6"
                     @click.stop="previousImage()"
                     :disabled="viewerImages.length < 2"
                     aria-label="تصویر قبلی"
@@ -316,10 +428,10 @@
                     &#8249;
                 </button>
 
-                <div class="relative flex w-full max-w-4xl flex-col items-center gap-4" @click.stop>
+                <div class="relative flex w-full max-w-4xl flex-col items-center gap-3" @click.stop>
                     <button
                         type="button"
-                        class="absolute right-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/10 text-2xl leading-none text-white shadow-lg backdrop-blur transition hover:bg-white/20"
+                        class="absolute right-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-2xl leading-none text-white shadow-lg transition hover:bg-white/20"
                         @click="closeViewer()"
                         aria-label="بستن نمایشگر تصویر"
                     >
@@ -327,13 +439,13 @@
                     </button>
 
                     <template x-if="viewerImages[viewerIndex]">
-                        <div class="flex w-full flex-col items-center gap-4 pt-8">
+                        <div class="flex w-full flex-col items-center gap-3 pt-8">
                             <img
                                 :src="viewerImages[viewerIndex].url"
                                 :alt="viewerImages[viewerIndex].label"
-                                class="max-h-[70vh] w-auto max-w-full rounded-[1.5rem] bg-white object-contain shadow-2xl ring-1 ring-white/10"
+                                class="max-h-[72vh] w-auto max-w-full rounded-2xl bg-white object-contain shadow-2xl ring-1 ring-white/10"
                             >
-                            <div class="rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-bold text-white shadow-lg backdrop-blur">
+                            <div class="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold text-white shadow-lg">
                                 <span x-text="viewerImages[viewerIndex].label"></span>
                                 <span class="mx-2 text-white/60">|</span>
                                 <span x-text="`${viewerIndex + 1} / ${viewerImages.length}`"></span>
@@ -344,7 +456,7 @@
 
                 <button
                     type="button"
-                    class="absolute right-3 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-white/10 text-2xl text-white shadow-lg backdrop-blur transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40 sm:right-6"
+                    class="absolute right-3 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/10 text-2xl text-white shadow-lg transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40 sm:right-6"
                     @click.stop="nextImage()"
                     :disabled="viewerImages.length < 2"
                     aria-label="تصویر بعدی"
