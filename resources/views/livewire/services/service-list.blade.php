@@ -103,7 +103,7 @@
                         'creator' => $service->creator?->full_name ?: $service->creator?->name ?: '-',
                         'description' => $service->description ?: 'توضیحی ثبت نشده است.',
                         'status_notes' => $service->status_notes ?: 'یادداشتی ثبت نشده است.',
-                        'workers_count' => $service->socialWorkers->count(),
+                        'workers_count' => $service->uniqueSocialWorkersCount(),
                         'created_at' => $service->created_at ? \App\Helpers\Morilog\Jalalian::fromDateTime($service->created_at)->format('Y/m/d') : '-',
                         'categories' => $service->categories->map(fn ($category) => [
                             'name' => $category->name,
@@ -165,7 +165,7 @@
 
                             <div class="xl:flex-[0.7]">
                                 <p class="text-[11px] font-medium text-slate-400">مددکاران</p>
-                                <p class="mt-1 text-sm font-bold text-slate-800">{{ $service->socialWorkers->count() }} نفر</p>
+                                <p class="mt-1 text-sm font-bold text-slate-800">{{ $service->uniqueSocialWorkersCount() }} نفر</p>
                             </div>
 
                             <div class="min-w-0 xl:min-w-[12rem] xl:flex-1">
@@ -206,7 +206,7 @@
                                     'creator' => $service->creator?->full_name ?: $service->creator?->name ?: '-',
                                     'description' => $service->description ?: 'توضیحی ثبت نشده است.',
                                     'status_notes' => $service->status_notes ?: 'یادداشتی ثبت نشده است.',
-                                    'workers_count' => $service->socialWorkers->count(),
+                                    'workers_count' => $service->uniqueSocialWorkersCount(),
                                     'created_at' => $service->created_at ? \App\Helpers\Morilog\Jalalian::fromDateTime($service->created_at)->format('Y/m/d') : '-',
                                     'categories' => $service->categories->map(fn ($category) => [
                                         'name' => $category->name,

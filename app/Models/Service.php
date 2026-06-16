@@ -165,6 +165,18 @@ class Service extends Model
             ->distinct();
     }
 
+    public function uniqueSocialWorkersCount(): int
+    {
+        if ($this->relationLoaded('socialWorkers')) {
+            return (int) $this->socialWorkers->unique('id')->count();
+        }
+
+        return (int) $this->socialWorkers()
+            ->getQuery()
+            ->distinct()
+            ->count('social_workers.id');
+    }
+
     public function workerAllocations(): HasMany
     {
         return $this->hasMany(ServiceWorkerAllocation::class);
