@@ -3,6 +3,8 @@
         @php
             $people = $this->people;
             $hasSearch = trim($search) !== '' || $searchField !== 'all';
+            $searchNeedsMoreInput = $this->searchNeedsMoreInput();
+            $peopleCountLabel = method_exists($people, 'total') ? number_format($people->total()) . ' مددجو' : 'نتایج جستجو';
         @endphp
 
         <div class="rounded-2xl border bg-gradient-to-br from-white via-rose-50/30 to-white p-3 shadow-sm sm:p-5" style="border-color: #f5d0e1;">
@@ -18,7 +20,7 @@
                             <h1 class="text-lg font-extrabold text-slate-800 sm:text-xl lg:text-2xl">لیست مددجویان</h1>
                             <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-extrabold"
                                   style="border-color: #f3d2df; color: #9D174D; background-color: #fff7fb;">
-                                {{ number_format($people->total()) }} مددجو
+                                {{ $peopleCountLabel }}
                             </span>
                         </div>
                         <p class="mt-1 hidden text-sm text-slate-500 sm:block">جستجو، مشاهده و مدیریت افراد ثبت‌شده در سامانه</p>
@@ -44,39 +46,88 @@
                 @endcan
             </div>
 
-            <div class="mb-4 rounded-2xl border bg-white/70 p-3 sm:mb-5 sm:p-4" style="border-color: #f5d0e1;">
-                <label for="beneficiary-search" class="mb-2 block text-sm font-semibold text-slate-700">جستجوی سریع</label>
-                <div class="grid gap-3 md:grid-cols-[minmax(180px,240px)_1fr]">
-                    <select
-                        id="beneficiary-search-field"
-                        wire:model.live="searchField"
-                        class="w-full rounded-2xl border bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition focus:outline-none focus:ring-4 sm:py-3"
-                        style="border-color: #f5d0e1;"
-                        aria-label="معیار جستجو"
-                    >
-                        <option value="all">همه فیلدها</option>
-                        <option value="person_code">کد مددجو</option>
-                        <option value="full_name">نام و نام خانوادگی</option>
-                        <option value="first_name">نام</option>
-                        <option value="last_name">نام خانوادگی</option>
-                        <option value="national_id">کد ملی</option>
-                        <option value="mother_national_id">کد ملی مادر</option>
-                        <option value="father_national_id">کد ملی پدر</option>
-                    </select>
-
-                    <input
-                        id="beneficiary-search"
-                        type="text"
-                        wire:model.live.debounce.300ms="search"
-                        class="w-full rounded-2xl border bg-white px-4 py-2.5 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:outline-none focus:ring-4 sm:py-3"
-                        style="border-color: #f5d0e1;"
-                        placeholder="عبارت جستجو را وارد کنید..."
-                    >
+            <div class="mb-4 rounded-2xl border bg-white/80 p-2.5 sm:mb-5 sm:p-4" style="border-color: #f5d0e1;">
+                <div class="flex items-center justify-between gap-3">
+                    <label for="beneficiary-search" class="text-sm font-semibold text-slate-700">جستجوی سریع</label>
+                    @if($hasSearch)
+                        <button
+                            type="button"
+                            wire:click="clearSearch"
+                            wire:loading.attr="disabled"
+                            wire:target="clearSearch"
+                            class="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-rose-700 transition hover:bg-rose-50 focus:outline-none focus:ring-2 focus:ring-rose-100 disabled:opacity-60"
+                        >
+                            پاک کردن
+                        </button>
+                    @endif
                 </div>
+
+                <div class="mt-2.5 space-y-2.5">
+                    <div class="relative">
+                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
+                            <i class="bi bi-search text-sm"></i>
+                        </span>
+                        <input
+                            id="beneficiary-search"
+                            type="text"
+                            wire:model.live.debounce.600ms="search"
+                            class="w-full rounded-xl border bg-white py-2.5 pr-9 pl-4 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:outline-none focus:ring-4 sm:rounded-2xl sm:py-3"
+                            style="border-color: #f5d0e1;"
+                            placeholder="نام، کد ملی یا کد مددجو..."
+                        >
+                    </div>
+
+                    <div class="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 sm:hidden">
+                        <span class="shrink-0 text-[11px] font-bold text-slate-500">در</span>
+                        <select
+                            id="beneficiary-search-field"
+                            wire:model.live="searchField"
+                            class="min-w-0 flex-1 bg-transparent text-xs font-bold text-slate-700 focus:outline-none"
+                            aria-label="معیار جستجو"
+                        >
+                            <option value="all">همه فیلدها</option>
+                            <option value="person_code">کد مددجو</option>
+                            <option value="full_name">نام و نام خانوادگی</option>
+                            <option value="first_name">نام</option>
+                            <option value="last_name">نام خانوادگی</option>
+                            <option value="national_id">کد ملی</option>
+                            <option value="mother_national_id">کد ملی مادر</option>
+                            <option value="father_national_id">کد ملی پدر</option>
+                        </select>
+                    </div>
+
+                    <div class="hidden md:grid md:grid-cols-[minmax(180px,240px)_1fr] md:gap-3">
+                        <select
+                            wire:model.live="searchField"
+                            class="w-full rounded-2xl border bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition focus:outline-none focus:ring-4"
+                            style="border-color: #f5d0e1;"
+                            aria-label="معیار جستجو"
+                        >
+                            <option value="all">همه فیلدها</option>
+                            <option value="person_code">کد مددجو</option>
+                            <option value="full_name">نام و نام خانوادگی</option>
+                            <option value="first_name">نام</option>
+                            <option value="last_name">نام خانوادگی</option>
+                            <option value="national_id">کد ملی</option>
+                            <option value="mother_national_id">کد ملی مادر</option>
+                            <option value="father_national_id">کد ملی پدر</option>
+                        </select>
+
+                        <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-500">
+                            برای سرعت بیشتر، جستجو با کد ملی یا کد مددجو دقیق‌تر است.
+                        </div>
+                    </div>
+                </div>
+
+                @if($searchNeedsMoreInput)
+                    <div class="mt-2.5 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800 sm:text-xs">
+                        برای جستجوی متنی حداقل ۲ کاراکتر وارد کنید.
+                    </div>
+                @endif
                 <div
                     wire:loading.flex
                     wire:target="search,searchField,clearSearch,previousPage,nextPage,gotoPage"
-                    class="mt-3 items-center gap-2 rounded-xl border border-rose-100 bg-rose-50/70 px-3 py-2 text-xs font-semibold text-rose-700"
+                    class="mt-2.5 items-center gap-2 rounded-xl border border-rose-100 bg-rose-50/70 px-3 py-2 text-[11px] font-semibold text-rose-700 sm:mt-3 sm:text-xs"
                 >
                     <span class="h-2 w-2 animate-pulse rounded-full bg-rose-600"></span>
                     در حال به‌روزرسانی لیست...
@@ -96,10 +147,16 @@
                         <i class="bi {{ $hasSearch ? 'bi-search' : 'bi-people' }} text-2xl"></i>
                     </div>
                     <h2 class="mt-4 text-base font-extrabold text-slate-800">
-                        {{ $hasSearch ? 'نتیجه‌ای برای جستجوی شما پیدا نشد' : 'هنوز مددجویی ثبت نشده است' }}
+                        @if($searchNeedsMoreInput)
+                            برای شروع جستجو حداقل ۲ کاراکتر وارد کنید
+                        @else
+                            {{ $hasSearch ? 'نتیجه‌ای برای جستجوی شما پیدا نشد' : 'هنوز مددجویی ثبت نشده است' }}
+                        @endif
                     </h2>
                     <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
-                        @if($hasSearch)
+                        @if($searchNeedsMoreInput)
+                            برای جلوگیری از کند شدن سیستم، جستجوی متنی با ورودی کوتاه اجرا نمی‌شود.
+                        @elseif($hasSearch)
                             عبارت جستجو یا معیار انتخاب‌شده را تغییر دهید، یا فیلترها را پاک کنید.
                         @else
                             پس از ثبت اولین مددجو، اطلاعات اصلی و عملیات سریع در این بخش نمایش داده می‌شود.

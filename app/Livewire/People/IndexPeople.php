@@ -6,8 +6,10 @@ use Livewire\Component;
 use Livewire\Attributes\Layout;
 use App\Models\Person;
 use App\Models\QrIdentity;
+use App\Queries\People\PeopleIndexSearchQuery;
 use App\Services\QrIdentityService;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Contracts\Pagination\Paginator;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
@@ -54,37 +56,24 @@ class IndexPeople extends Component
         $this->resetPage();
     }
 
-    public function getPeopleProperty()
+    public function getPeopleProperty(): LengthAwarePaginator|Paginator
     {
-        $query = Person::with(['creator:id,name', 'updater:id,name'])->orderBy('created_at', 'desc');
+        return app(PeopleIndexSearchQuery::class)->paginate(
+            search: $this->search,
+            searchField: $this->searchField,
+        );
+    }
 
-        if (trim($this->search) !== '') {
-            $search = trim($this->search);
-            $fullNameExpression = DB::connection()->getDriverName() === 'sqlite'
-                ? "COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')"
-                : "CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, ''))";
+    public function normalizedSearchTerm(): string
+    {
+        return app(PeopleIndexSearchQuery::class)->normalizeSearchTerm((string) $this->search);
+    }
 
-            match ($this->searchField) {
-                'person_code' => $query->where('person_code', 'LIKE', "%{$search}%"),
-                'full_name' => $query->whereRaw("{$fullNameExpression} LIKE ?", ["%{$search}%"]),
-                'first_name' => $query->where('first_name', 'LIKE', "%{$search}%"),
-                'last_name' => $query->where('last_name', 'LIKE', "%{$search}%"),
-                'national_id' => $query->where('national_id', 'LIKE', "%{$search}%"),
-                'mother_national_id' => $query->where('mother_national_id', 'LIKE', "%{$search}%"),
-                'father_national_id' => $query->where('father_national_id', 'LIKE', "%{$search}%"),
-                default => $query->where(function ($q) use ($search, $fullNameExpression) {
-                    $q->where('first_name', 'LIKE', "%{$search}%")
-                        ->orWhere('last_name', 'LIKE', "%{$search}%")
-                        ->orWhere('national_id', 'LIKE', "%{$search}%")
-                        ->orWhere('mother_national_id', 'LIKE', "%{$search}%")
-                        ->orWhere('father_national_id', 'LIKE', "%{$search}%")
-                        ->orWhere('person_code', 'LIKE', "%{$search}%")
-                        ->orWhereRaw("{$fullNameExpression} LIKE ?", ["%{$search}%"]);
-                }),
-            };
-        }
+    public function searchNeedsMoreInput(?string $search = null): bool
+    {
+        $search ??= $this->normalizedSearchTerm();
 
-        return $query->paginate(20);
+        return app(PeopleIndexSearchQuery::class)->needsMoreInput($search, $this->searchField);
     }
 
     public function editPerson(Person $person)

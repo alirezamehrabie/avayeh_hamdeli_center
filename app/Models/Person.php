@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Helpers\Morilog\Jalalian;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -38,10 +39,16 @@ class Person extends Model
     ];
 
     use SoftDeletes;
+
+    protected static ?bool $hasNormalizedSearchColumns = null;
+
     protected $fillable = [
         'guardian_id',
         'first_name',
         'last_name',
+        'normalized_first_name',
+        'normalized_last_name',
+        'normalized_full_name',
         'national_id',
         'shenasnameh_serial',
         'shenasnameh_series_number',
@@ -241,6 +248,14 @@ class Person extends Model
         });
     }
 
+    public static function normalizeSearchText(?string $value): string
+    {
+        $value = str_replace(['ي', 'ى', 'ك', 'ۀ', 'ة'], ['ی', 'ی', 'ک', 'ه', 'ه'], (string) $value);
+        $value = str_replace(["\u{200C}", "\u{200D}"], ' ', $value);
+
+        return preg_replace('/\s+/u', ' ', trim($value)) ?? '';
+    }
+
 
     /**
      * ✅ Scope برای فیلتر بر اساس سال تولد
@@ -395,6 +410,8 @@ class Person extends Model
 
         static::creating(function ($model) {
             $actorId = Auth::id();
+            $model->syncNormalizedSearchFields();
+
             if (empty($model->person_code)) {
                 // دیگر نیازی به ارسال social_worker_id نیست
                 $model->person_code = self::generateUniqueCode();
@@ -411,6 +428,8 @@ class Person extends Model
 
         static::updating(function ($model) {
             $actorId = Auth::id();
+            $model->syncNormalizedSearchFields();
+
             if ($actorId) {
                 $model->updated_by = $actorId;
             }
@@ -567,5 +586,24 @@ class Person extends Model
             'ip_address' => Request::ip(),
             'user_agent' => Request::userAgent(),
         ]);
+    }
+
+    private function syncNormalizedSearchFields(): void
+    {
+        if (! self::hasNormalizedSearchColumns()) {
+            return;
+        }
+
+        $firstName = self::normalizeSearchText($this->first_name);
+        $lastName = self::normalizeSearchText($this->last_name);
+
+        $this->normalized_first_name = $firstName;
+        $this->normalized_last_name = $lastName;
+        $this->normalized_full_name = trim($firstName . ' ' . $lastName);
+    }
+
+    public static function hasNormalizedSearchColumns(): bool
+    {
+        return self::$hasNormalizedSearchColumns ??= Schema::hasColumn('people', 'normalized_full_name');
     }
 }
