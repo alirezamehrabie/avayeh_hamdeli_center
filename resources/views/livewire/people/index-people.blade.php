@@ -175,127 +175,164 @@
                     @endif
                 </div>
             @else
-                <div class="space-y-3 md:hidden">
+                <div class="space-y-2.5 md:hidden">
                     @foreach($people as $person)
-                        <article wire:key="person-card-{{ $person->id }}" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm ring-1 ring-slate-100">
+                        <article wire:key="person-card-{{ $person->id }}" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100">
                             <button
                                 type="button"
                                 wire:click="showPersonInfo({{ $person->id }})"
                                 wire:loading.attr="disabled"
                                 wire:target="showPersonInfo({{ $person->id }})"
-                                class="block w-full rounded-xl text-right focus:outline-none focus:ring-4 focus:ring-rose-100 disabled:opacity-60"
+                                class="block w-full px-3 py-3 text-right focus:outline-none focus:ring-4 focus:ring-rose-100 disabled:opacity-60"
                             >
                                 <div class="flex items-start justify-between gap-3">
-                                    <div class="min-w-0">
-                                        <h2 class="truncate text-base font-extrabold text-slate-900">{{ $person->full_name ?: 'بدون نام' }}</h2>
-                                        <div class="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
-                                            <span class="rounded-full bg-slate-100 px-2.5 py-1" dir="ltr">{{ $person->person_code }}</span>
-                                            <span class="rounded-full bg-slate-100 px-2.5 py-1" dir="ltr">{{ $person->national_id }}</span>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <h2 class="truncate text-sm font-extrabold text-slate-900">{{ $person->full_name ?: 'بدون نام' }}</h2>
+                                        </div>
+                                        <div class="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] font-semibold text-slate-500">
+                                            <span class="rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-rose-700" dir="ltr">{{ $person->person_code }}</span>
+                                            <span class="rounded-full bg-slate-100 px-2 py-0.5" dir="ltr">{{ $person->national_id }}</span>
                                         </div>
                                     </div>
-                                    <span class="shrink-0 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700">
-                                        #{{ $people->firstItem() + $loop->index }}
-                                    </span>
-                                </div>
-                                <dl class="mt-4 grid grid-cols-2 gap-2 text-right">
-                                    <div class="rounded-xl bg-slate-50 p-3">
-                                        <dt class="text-[11px] font-semibold text-slate-500">تاریخ تولد</dt>
-                                        <dd class="mt-1 text-sm font-bold text-slate-800">{{ $person->birth_date ?? 'نامشخص' }}</dd>
+                                    <div class="shrink-0 text-left">
+                                        <p class="text-[10px] font-semibold text-slate-400">ویرایش</p>
+                                        <p class="mt-0.5 text-[11px] font-bold text-slate-700" dir="ltr">{{ optional($person->updated_at)->format('Y/m/d') ?? '-' }}</p>
                                     </div>
-                                    <div class="rounded-xl bg-slate-50 p-3">
-                                        <dt class="text-[11px] font-semibold text-slate-500">آخرین ویرایش</dt>
-                                        <dd class="mt-1 text-sm font-bold text-slate-800">{{ optional($person->updated_at)->format('Y/m/d') ?? '-' }}</dd>
+                                </div>
+
+                                <dl class="mt-3 flex items-center gap-4 text-right">
+                                    <div class="min-w-0">
+                                        <dt class="text-[10px] font-semibold text-slate-400">تولد</dt>
+                                        <dd class="mt-0.5 truncate text-xs font-bold text-slate-700">{{ $person->birth_date ?? 'نامشخص' }}</dd>
                                     </div>
                                 </dl>
                             </button>
 
-                            <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
-                                <button
+                            <div class="border-t border-slate-100 bg-slate-50/70 px-3 py-2">
+                                <div class="flex items-center gap-1.5">
+                                    <button
                                     type="button"
                                     wire:click="showRegistrationTracking({{ $person->id }})"
                                     wire:loading.attr="disabled"
                                     wire:target="showRegistrationTracking({{ $person->id }})"
-                                    class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-100 bg-gradient-to-br from-cyan-50 to-white text-cyan-700 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-cyan-100 disabled:opacity-60"
+                                    class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-cyan-100 bg-white text-cyan-700 transition hover:border-cyan-200 hover:bg-cyan-50 focus:outline-none focus:ring-2 focus:ring-cyan-100 disabled:opacity-60"
                                     aria-label="رهگیری ثبت"
                                 >
-                                    <i class="bi bi-file-earmark-check text-lg"></i>
-                                </button>
+                                    <i class="bi bi-file-earmark-check text-sm"></i>
+                                    </button>
 
-                                <button
+                                    <button
                                     type="button"
                                     wire:click="showPersonInfo({{ $person->id }})"
                                     wire:loading.attr="disabled"
                                     wire:target="showPersonInfo({{ $person->id }})"
-                                    class="inline-flex min-h-11 flex-1 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:opacity-60"
+                                    class="inline-flex min-h-8 flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:opacity-60"
                                 >
                                     مشاهده
-                                </button>
+                                    </button>
 
-                                @canany(['people-edit', 'people-delete'])
-                                    <div class="relative" x-data="{ open: false }" @click.stop @keydown.escape.window="open = false">
-                                        <button
-                                            type="button"
-                                            class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
-                                            aria-label="اقدامات بیشتر"
-                                            aria-haspopup="menu"
-                                            :aria-expanded="open.toString()"
-                                            @click="open = ! open"
-                                        >
-                                            <i class="bi bi-three-dots-vertical"></i>
-                                        </button>
-
+                                    @canany(['people-edit', 'people-delete'])
                                         <div
-                                            x-show="open"
-                                            x-transition.origin.top.right
-                                            @click.away="open = false"
-                                            class="absolute left-0 z-30 mt-2 w-48 overflow-hidden rounded-2xl border border-slate-200 bg-white py-1 text-right shadow-xl ring-1 ring-slate-100"
-                                            style="display: none;"
-                                            role="menu"
+                                            class="relative"
+                                            x-data="{ open: false }"
+                                            @click.stop
+                                            @keydown.escape.window="open = false"
                                         >
-                                            @can('people-edit')
-                                                <button
-                                                    type="button"
-                                                    wire:click="quickEditPerson({{ $person->id }})"
-                                                    wire:loading.attr="disabled"
-                                                    wire:target="quickEditPerson({{ $person->id }})"
-                                                    class="flex w-full items-center gap-2 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-amber-50 hover:text-amber-700 focus:bg-amber-50 focus:outline-none disabled:opacity-60"
-                                                    role="menuitem"
-                                                    @click="open = false"
-                                                >
-                                                    <i class="bi bi-lightning-charge text-amber-600"></i>
-                                                    ویرایش سریع
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    wire:click="openQrModal({{ $person->id }})"
-                                                    wire:loading.attr="disabled"
-                                                    wire:target="openQrModal({{ $person->id }})"
-                                                    class="flex w-full items-center gap-2 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-cyan-50 hover:text-cyan-700 focus:bg-cyan-50 focus:outline-none disabled:opacity-60"
-                                                    role="menuitem"
-                                                    @click="open = false"
-                                                >
-                                                    <i class="bi bi-qr-code text-cyan-600"></i>
-                                                    کارت QR
-                                                </button>
-                                            @endcan
+                                            <button
+                                                type="button"
+                                                class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                                                aria-label="اقدامات بیشتر"
+                                                aria-haspopup="dialog"
+                                                :aria-expanded="open.toString()"
+                                                @click="open = ! open"
+                                            >
+                                                <i class="bi bi-three-dots text-sm"></i>
+                                            </button>
 
-                                            @can('people-delete')
+                                            <div
+                                                x-show="open"
+                                                x-transition.opacity
+                                                class="fixed inset-0 z-40 bg-slate-950/35 backdrop-blur-[1px]"
+                                                style="display: none;"
+                                                @click="open = false"
+                                                aria-hidden="true"
+                                            ></div>
+
+                                            <div
+                                                x-show="open"
+                                                x-transition:enter="transition ease-out duration-200"
+                                                x-transition:enter-start="translate-y-6 opacity-0"
+                                                x-transition:enter-end="translate-y-0 opacity-100"
+                                                x-transition:leave="transition ease-in duration-150"
+                                                x-transition:leave-start="translate-y-0 opacity-100"
+                                                x-transition:leave-end="translate-y-6 opacity-0"
+                                                class="fixed inset-x-0 bottom-0 z-50 rounded-t-3xl border border-slate-200 bg-white px-4 pb-5 pt-3 shadow-2xl"
+                                                style="display: none;"
+                                                role="dialog"
+                                                aria-modal="true"
+                                                aria-label="اقدامات کارت مددجو"
+                                                @click.stop
+                                            >
+                                                <div class="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-200"></div>
+                                                <div class="mb-3 border-b border-slate-100 pb-3 text-right">
+                                                    <p class="truncate text-sm font-extrabold text-slate-900">{{ $person->full_name ?: 'بدون نام' }}</p>
+                                                    <p class="mt-1 text-[11px] font-semibold text-slate-500" dir="ltr">{{ $person->person_code }}</p>
+                                                </div>
+
+                                                <div class="space-y-2">
+                                                    @can('people-edit')
+                                                        <button
+                                                            type="button"
+                                                            wire:click="quickEditPerson({{ $person->id }})"
+                                                            wire:loading.attr="disabled"
+                                                            wire:target="quickEditPerson({{ $person->id }})"
+                                                            class="flex min-h-12 w-full items-center gap-3 rounded-2xl border border-amber-100 bg-amber-50/70 px-4 py-3 text-right text-sm font-bold text-amber-800 transition hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-100 disabled:opacity-60"
+                                                            @click="open = false"
+                                                        >
+                                                            <i class="bi bi-lightning-charge text-base"></i>
+                                                            ویرایش سریع
+                                                        </button>
+
+                                                        <button
+                                                            type="button"
+                                                            wire:click="openQrModal({{ $person->id }})"
+                                                            wire:loading.attr="disabled"
+                                                            wire:target="openQrModal({{ $person->id }})"
+                                                            class="flex min-h-12 w-full items-center gap-3 rounded-2xl border border-cyan-100 bg-cyan-50/70 px-4 py-3 text-right text-sm font-bold text-cyan-800 transition hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-100 disabled:opacity-60"
+                                                            @click="open = false"
+                                                        >
+                                                            <i class="bi bi-qr-code text-base"></i>
+                                                            کارت QR
+                                                        </button>
+                                                    @endcan
+
+                                                    @can('people-delete')
+                                                        <button
+                                                            type="button"
+                                                            wire:click="openDeleteModal({{ $person->id }})"
+                                                            wire:loading.attr="disabled"
+                                                            wire:target="openDeleteModal({{ $person->id }})"
+                                                            class="flex min-h-12 w-full items-center gap-3 rounded-2xl border border-rose-100 bg-rose-50/70 px-4 py-3 text-right text-sm font-bold text-rose-700 transition hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-rose-100 disabled:opacity-60"
+                                                            @click="open = false"
+                                                        >
+                                                            <i class="bi bi-trash3 text-base"></i>
+                                                            انتقال به بلاک لیست
+                                                        </button>
+                                                    @endcan
+                                                </div>
+
                                                 <button
                                                     type="button"
-                                                    wire:click="openDeleteModal({{ $person->id }})"
-                                                    wire:loading.attr="disabled"
-                                                    wire:target="openDeleteModal({{ $person->id }})"
-                                                    class="flex w-full items-center gap-2 px-4 py-3 text-sm font-bold text-rose-700 transition hover:bg-rose-50 focus:bg-rose-50 focus:outline-none disabled:opacity-60"
-                                                    role="menuitem"
+                                                    class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200"
                                                     @click="open = false"
                                                 >
-                                                    <i class="bi bi-trash3"></i>
-                                                    انتقال به بلاک لیست
+                                                    بستن
                                                 </button>
-                                            @endcan
+                                            </div>
                                         </div>
-                                    </div>
-                                @endcanany
+                                    @endcanany
+                                </div>
                             </div>
                         </article>
                     @endforeach
@@ -359,13 +396,17 @@
                                                     <div class="relative" x-data="{ open: false }" @click.stop @keydown.escape.window="open = false">
                                                         <button
                                                             type="button"
-                                                            class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                                                            class="group inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
                                                             aria-label="اقدامات بیشتر"
                                                             aria-haspopup="menu"
                                                             :aria-expanded="open.toString()"
                                                             @click="open = ! open"
                                                         >
-                                                            <i class="bi bi-three-dots-vertical"></i>
+                                                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                                <circle cx="12" cy="5" r="1.8" />
+                                                                <circle cx="12" cy="12" r="1.8" />
+                                                                <circle cx="12" cy="19" r="1.8" />
+                                                            </svg>
                                                         </button>
 
                                                         <div
