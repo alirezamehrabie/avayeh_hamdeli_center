@@ -5,58 +5,52 @@
             $hasSearch = trim($search) !== '' || $searchField !== 'all';
         @endphp
 
-        <div class="rounded-2xl border bg-gradient-to-br from-white via-rose-50/30 to-white p-6 shadow-sm sm:p-7" style="border-color: #f5d0e1;">
-            <div class="mb-6 rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100">
-                <div class="flex flex-col gap-4 px-5 py-5 lg:flex-row lg:items-center lg:justify-between">
-
-                    <div class="flex items-start gap-4">
-                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-sm"
-                             style="background: linear-gradient(to left, #9D174D, #BE185D);">
-                            <i class="fa fa-users text-xl"></i>
-                        </div>
-
-                        <div>
-                            <h1 class="text-xl font-extrabold text-slate-800 lg:text-2xl">لیست مددجویان</h1>
-                            <p class="mt-1 text-sm text-slate-500">جستجو، مشاهده و مدیریت افراد ثبت‌شده در سامانه</p>
-                        </div>
+        <div class="rounded-2xl border bg-gradient-to-br from-white via-rose-50/30 to-white p-3 shadow-sm sm:p-5" style="border-color: #f5d0e1;">
+            <div class="mb-3 flex flex-col gap-3 sm:mb-5 lg:flex-row lg:items-center lg:justify-between">
+                <div class="flex min-w-0 items-center gap-3">
+                    <div class="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow-sm sm:flex"
+                         style="background: linear-gradient(to left, #9D174D, #BE185D);">
+                        <i class="fa fa-users text-base"></i>
                     </div>
 
-                    <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-                        @can('people-register')
-                            <a  href="{{ route('admin.dashboard', ['section' => 'people-fast-create']) }}"
-                               class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4"
-                               style="background: linear-gradient(to left, #9D174D, #BE185D); --tw-ring-color: rgb(244 114 182 / 0.25);">
-                                <i class="fa fa-bolt ml-2 text-sm"></i>
-                                ثبت نام سریع
-                            </a>
-
-                            <a href="{{ route('admin.dashboard', ['section' => 'person-create']) }}"
-                               class="inline-flex items-center justify-center rounded-xl border px-4 py-2.5 text-sm font-semibold shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4"
-                               style="border-color: #f3d2df; color: #9D174D; background-color: #fff7fb; --tw-ring-color: rgb(244 114 182 / 0.18);">
-                                <i class="fa fa-user-plus ml-2 text-sm"></i>
-                                ثبت نام کامل
-                            </a>
-                        @endcan
-
-                        <div class="min-w-[140px] rounded-xl border px-4 py-2.5 text-center shadow-sm"
-                             style="border-color: #f3d2df; background: linear-gradient(180deg, #fffafc 0%, #ffffff 100%);">
-                            <p class="text-xs font-semibold text-slate-500 py-2">تعداد مددجویان</p>
-                            <p class="mt-1 text-xl font-extrabold" style="color: #9D174D;">
-                                {{ number_format($people->total()) }}
-                            </p>
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h1 class="text-lg font-extrabold text-slate-800 sm:text-xl lg:text-2xl">لیست مددجویان</h1>
+                            <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-extrabold"
+                                  style="border-color: #f3d2df; color: #9D174D; background-color: #fff7fb;">
+                                {{ number_format($people->total()) }} مددجو
+                            </span>
                         </div>
+                        <p class="mt-1 hidden text-sm text-slate-500 sm:block">جستجو، مشاهده و مدیریت افراد ثبت‌شده در سامانه</p>
                     </div>
                 </div>
+
+                @can('people-register')
+                    <div class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end">
+                        <a  href="{{ route('admin.dashboard', ['section' => 'people-fast-create']) }}"
+                           class="inline-flex min-h-10 items-center justify-center rounded-xl px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 sm:px-4 sm:text-sm"
+                           style="background: linear-gradient(to left, #9D174D, #BE185D); --tw-ring-color: rgb(244 114 182 / 0.25);">
+                            <i class="fa fa-bolt ml-2 text-xs sm:text-sm"></i>
+                            ثبت سریع
+                        </a>
+
+                        <a href="{{ route('admin.dashboard', ['section' => 'person-create']) }}"
+                           class="inline-flex min-h-10 items-center justify-center rounded-xl border px-3 py-2 text-xs font-bold shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 sm:px-4 sm:text-sm"
+                           style="border-color: #f3d2df; color: #9D174D; background-color: #fff7fb; --tw-ring-color: rgb(244 114 182 / 0.18);">
+                            <i class="fa fa-user-plus ml-2 text-xs sm:text-sm"></i>
+                            ثبت کامل
+                        </a>
+                    </div>
+                @endcan
             </div>
 
-
-            <div class="mb-6 rounded-2xl border bg-white/70 p-4 sm:p-5" style="border-color: #f5d0e1;">
+            <div class="mb-4 rounded-2xl border bg-white/70 p-3 sm:mb-5 sm:p-4" style="border-color: #f5d0e1;">
                 <label for="beneficiary-search" class="mb-2 block text-sm font-semibold text-slate-700">جستجوی سریع</label>
                 <div class="grid gap-3 md:grid-cols-[minmax(180px,240px)_1fr]">
                     <select
                         id="beneficiary-search-field"
                         wire:model.live="searchField"
-                        class="w-full rounded-2xl border bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition focus:outline-none focus:ring-4"
+                        class="w-full rounded-2xl border bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition focus:outline-none focus:ring-4 sm:py-3"
                         style="border-color: #f5d0e1;"
                         aria-label="معیار جستجو"
                     >
@@ -74,7 +68,7 @@
                         id="beneficiary-search"
                         type="text"
                         wire:model.live.debounce.300ms="search"
-                        class="w-full rounded-2xl border bg-white px-4 py-3 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:outline-none focus:ring-4"
+                        class="w-full rounded-2xl border bg-white px-4 py-2.5 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:outline-none focus:ring-4 sm:py-3"
                         style="border-color: #f5d0e1;"
                         placeholder="عبارت جستجو را وارد کنید..."
                     >
