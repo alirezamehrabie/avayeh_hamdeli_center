@@ -45,6 +45,13 @@ class IndexPeople extends Component
         $this->resetPage();
     }
 
+    public function clearSearch(): void
+    {
+        $this->search = '';
+        $this->searchField = 'all';
+        $this->resetPage();
+    }
+
     public function getPeopleProperty()
     {
         $query = Person::with(['creator:id,name', 'updater:id,name'])->orderBy('created_at', 'desc');
