@@ -106,3 +106,26 @@ body {
     overflow-y: scroll;
     scrollbar-gutter: stable;
 }
+
+#id-card-scanner-reader,
+#id-card-scanner-reader > div,
+#id-card-scanner-reader__dashboard,
+#id-card-scanner-reader__scan_region {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    border: 0 !important;
+    overflow: hidden !important;
+}
+
+#id-card-scanner-reader video,
+#id-card-scanner-reader canvas {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+}
+
+#id-card-scanner-reader__dashboard,
+#id-card-scanner-reader__header_message {
+    display: none !important;
+}

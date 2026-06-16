@@ -1,6 +1,7 @@
 import './bootstrap';
 import 'bootstrap/dist/js/bootstrap.min.js';
 import * as bootstrap from 'bootstrap';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { Livewire, Alpine } from '../../vendor/livewire/livewire/dist/livewire.esm';
 
 window.Alpine = Alpine;
@@ -38,75 +39,98 @@ Alpine.data('rialAmountInput', (model) => ({
     },
 }));
 
-Alpine.data('idCardScanner', ({ resolveScan, updateStatus }) => ({
+Alpine.data('idCardScanner', ({ resolveScan }) => ({
     cameras: [],
     selectedDeviceId: '',
-    stream: null,
-    detector: null,
+    html5QrCode: null,
+    scannerElementId: '',
+    cameraActive: false,
+    startingCamera: false,
     scanning: false,
-    rafId: null,
+    resolvingScan: false,
+    status: 'initializing',
+    message: 'در حال آماده‌سازی دوربین...',
     lastDecodedText: '',
     lastDecodedAt: 0,
     async init() {
         if (!('mediaDevices' in navigator) || !('getUserMedia' in navigator.mediaDevices)) {
-            updateStatus('unsupported', 'دسترسی به دوربین در این مرورگر یا دستگاه در دسترس نیست.');
-            return;
-        }
-
-        if (!('BarcodeDetector' in window)) {
-            updateStatus('unsupported', 'تشخیص زنده QR در این مرورگر پشتیبانی نمی‌شود.');
+            this.setStatus('unsupported', 'دسترسی به دوربین در این مرورگر یا دستگاه در دسترس نیست.');
             return;
         }
 
         try {
-            const formats = await window.BarcodeDetector.getSupportedFormats();
-
-            if (!formats.includes('qr_code')) {
-                updateStatus('unsupported', 'مرورگر از تشخیص QR پشتیبانی نمی‌کند.');
-                return;
-            }
-
-            this.detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+            await this.ensureCameraPermission();
             await this.loadCameras();
-            updateStatus('ready', 'دوربین آماده است. برای شروع، دوربین را فعال کنید.');
+            this.scannerElementId = this.$refs.scanner.id;
+            this.html5QrCode = new Html5Qrcode(this.scannerElementId, {
+                verbose: false,
+                formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+                useBarCodeDetectorIfSupported: false,
+            });
+            await this.startCamera();
         } catch (error) {
-            updateStatus('unsupported', 'امکان آماده‌سازی اسکنر در این مرورگر وجود ندارد.');
+            this.setStatus('camera_denied', 'فعال‌سازی دوربین انجام نشد. دسترسی مرورگر به دوربین را بررسی کنید.');
         }
     },
+    async ensureCameraPermission() {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: 'environment',
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+            },
+            audio: false,
+        });
+
+        stream.getTracks().forEach((track) => track.stop());
+    },
     async loadCameras() {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        this.cameras = devices
-            .filter((device) => device.kind === 'videoinput')
-            .map((device, index) => ({
-                id: device.deviceId,
-                label: device.label || `دوربین ${index + 1}`,
-            }));
+        const devices = await Html5Qrcode.getCameras();
+        this.cameras = devices.map((device, index) => ({
+            id: device.id,
+            label: device.label || `دوربین ${index + 1}`,
+        }));
 
         if (!this.selectedDeviceId && this.cameras.length) {
             this.selectedDeviceId = this.cameras[0].id;
         }
     },
     async startCamera() {
-        if (!this.detector) {
+        if (this.startingCamera) {
             return;
         }
 
         try {
-            this.stopCamera();
-
-            const constraints = this.selectedDeviceId
-                ? { video: { deviceId: { exact: this.selectedDeviceId } }, audio: false }
-                : { video: { facingMode: 'environment' }, audio: false };
-
-            this.stream = await navigator.mediaDevices.getUserMedia(constraints);
-            this.$refs.video.srcObject = this.stream;
-            await this.$refs.video.play();
+            this.startingCamera = true;
+            this.setStatus('initializing', 'در حال فعال‌سازی دوربین...');
+            await this.stopCamera();
+            this.$refs.scanner.innerHTML = '';
             await this.loadCameras();
+
+            const preferredCamera = this.resolvePreferredCamera();
+            const started = await this.tryStartScanner(preferredCamera);
+
+            if (!started) {
+                throw new Error('No available camera could be started.');
+            }
+
+            this.stabilizePreview();
+            await this.waitForPreview();
+            this.optimizeRunningCamera();
+            this.cameraActive = true;
             this.scanning = true;
-            updateStatus('scanning', 'اسکن زنده فعال است. QR را مقابل دوربین نگه دارید.');
-            this.scanFrame();
+            this.resolvingScan = false;
+            this.setStatus('scanning', 'اسکن زنده فعال است. QR را مقابل دوربین نگه دارید.');
         } catch (error) {
-            updateStatus('camera_denied', 'مرورگر اجازه دسترسی به دوربین را نداد یا دوربین در دسترس نیست.');
+            const message = error?.message || '';
+            this.setStatus(
+                'camera_denied',
+                message !== ''
+                    ? `فعال‌سازی دوربین یا اسکنر انجام نشد: ${message}`
+                    : 'مرورگر اجازه دسترسی به دوربین را نداد یا دوربین در دسترس نیست.'
+            );
+        } finally {
+            this.startingCamera = false;
         }
     },
     async switchCamera() {
@@ -118,67 +142,216 @@ Alpine.data('idCardScanner', ({ resolveScan, updateStatus }) => ({
     },
     pauseFromWire() {
         this.scanning = false;
-        updateStatus('paused', 'اسکن پس از شناسایی موفق متوقف شد.');
+        this.setStatus('paused', 'اسکن پس از شناسایی موفق متوقف شد.');
     },
     resumeFromWire() {
         this.resumeScan();
     },
     resumeScan() {
-        if (!this.stream) {
+        if (!this.cameraActive) {
             this.startCamera();
             return;
         }
 
         this.lastDecodedText = '';
         this.lastDecodedAt = 0;
+        this.resolvingScan = false;
         this.scanning = true;
-        updateStatus('scanning', 'اسکن دوباره فعال شد. QR را مقابل دوربین نگه دارید.');
-        this.scanFrame();
-    },
-    async scanFrame() {
-        if (!this.scanning || !this.detector || !this.$refs.video) {
+
+        try {
+            this.html5QrCode?.resume();
+            this.stabilizePreview();
+        } catch (error) {
+            this.startCamera();
             return;
         }
 
-        try {
-            if (this.$refs.video.readyState >= 2) {
-                const barcodes = await this.detector.detect(this.$refs.video);
-
-                if (barcodes.length) {
-                    const value = (barcodes[0].rawValue || '').trim();
-                    const now = Date.now();
-
-                    if (value && (value !== this.lastDecodedText || (now - this.lastDecodedAt) > 2500)) {
-                        this.lastDecodedText = value;
-                        this.lastDecodedAt = now;
-                        this.scanning = false;
-                        resolveScan(value);
-                        return;
-                    }
-                }
-            }
-        } catch (error) {
-            updateStatus('scan_error', 'خطا در خواندن تصویر دوربین رخ داد.');
-        }
-
-        this.rafId = window.requestAnimationFrame(() => this.scanFrame());
+        this.setStatus('scanning', 'اسکن دوباره فعال شد. QR را مقابل دوربین نگه دارید.');
     },
-    stopCamera() {
+    async stopCamera() {
         this.scanning = false;
+        this.resolvingScan = false;
 
-        if (this.rafId) {
-            window.cancelAnimationFrame(this.rafId);
-            this.rafId = null;
+        if (this.html5QrCode && (this.cameraActive || this.html5QrCode.isScanning)) {
+            try {
+                await this.html5QrCode.stop();
+            } catch (error) {
+                // Ignore stop errors; the next start attempt should still proceed.
+            }
         }
 
-        if (this.stream) {
-            this.stream.getTracks().forEach((track) => track.stop());
-            this.stream = null;
+        this.cameraActive = false;
+    },
+    resolvePreferredCamera() {
+        if (this.selectedDeviceId && this.cameras.some((camera) => camera.id === this.selectedDeviceId)) {
+            return this.selectedDeviceId;
         }
 
-        if (this.$refs.video) {
-            this.$refs.video.srcObject = null;
+        if (this.cameras.length) {
+            this.selectedDeviceId = this.cameras[0].id;
+            return this.selectedDeviceId;
         }
+
+        this.selectedDeviceId = '';
+
+        return null;
+    },
+    cameraScanConfig() {
+        return {
+            fps: 30,
+            qrbox: (viewfinderWidth, viewfinderHeight) => {
+                const boxSize = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.84);
+
+                return {
+                    width: Math.max(280, boxSize),
+                    height: Math.max(280, boxSize),
+                };
+            },
+            disableFlip: false,
+        };
+    },
+    async handleDecode(decodedText) {
+        if (!this.scanning || this.resolvingScan) {
+            return;
+        }
+
+        const value = (decodedText || '').trim();
+        const now = Date.now();
+
+        if (!value) {
+            return;
+        }
+
+        if (value === this.lastDecodedText && (now - this.lastDecodedAt) <= 2500) {
+            return;
+        }
+
+        this.lastDecodedText = value;
+        this.lastDecodedAt = now;
+        this.resolvingScan = true;
+        this.scanning = false;
+        this.html5QrCode?.pause(false);
+        this.setStatus('paused', 'QR شناسایی شد. در حال دریافت اطلاعات...');
+        try {
+            const response = await resolveScan(value);
+
+            this.setStatus(
+                response?.ok ? 'paused' : (response?.status || 'scan_error'),
+                response?.message || (response?.ok ? 'اطلاعات شناسایی شد.' : 'دریافت اطلاعات انجام نشد.')
+            );
+        } catch (error) {
+            this.resolvingScan = false;
+            this.setStatus('scan_error', 'دریافت اطلاعات QR انجام نشد. دوباره تلاش کنید.');
+        }
+    },
+    async tryStartScanner(preferredCamera) {
+        const startAttempts = [];
+
+        if (preferredCamera) {
+            startAttempts.push(preferredCamera);
+        }
+
+        startAttempts.push({
+            facingMode: 'environment',
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+        });
+
+        for (const camera of this.cameras) {
+            if (camera.id !== preferredCamera) {
+                startAttempts.push(camera.id);
+            }
+        }
+
+        for (const attempt of startAttempts) {
+            try {
+                await this.html5QrCode.start(
+                    attempt,
+                    this.cameraScanConfig(),
+                    (decodedText) => this.handleDecode(decodedText),
+                    () => {}
+                );
+
+                if (typeof attempt === 'string') {
+                    this.selectedDeviceId = attempt;
+                }
+
+                return true;
+            } catch (error) {
+                this.$refs.scanner.innerHTML = '';
+            }
+        }
+
+        return false;
+    },
+    stabilizePreview() {
+        requestAnimationFrame(() => {
+            const scanner = this.$refs.scanner;
+
+            if (!scanner) {
+                return;
+            }
+
+            scanner.querySelectorAll('video, canvas').forEach((element) => {
+                element.style.width = '100%';
+                element.style.height = '100%';
+                element.style.objectFit = 'cover';
+            });
+        });
+    },
+    async waitForPreview() {
+        const scanner = this.$refs.scanner;
+
+        for (let attempt = 0; attempt < 20; attempt++) {
+            const video = scanner?.querySelector('video');
+
+            if (video && video.srcObject) {
+                return;
+            }
+
+            await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+
+        throw new Error('Camera preview was not attached.');
+    },
+    async optimizeRunningCamera() {
+        requestAnimationFrame(async () => {
+            if (!this.html5QrCode?.isScanning) {
+                return;
+            }
+
+            try {
+                await this.html5QrCode.applyVideoConstraints({
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                    frameRate: { ideal: 30, min: 15 },
+                    advanced: [
+                        { focusMode: 'continuous' },
+                        { exposureMode: 'continuous' },
+                    ],
+                });
+            } catch (error) {
+                // Some webcams do not expose focus/exposure constraints; scanning can continue.
+            }
+        });
+    },
+    setStatus(status, message = '') {
+        this.status = status;
+
+        if (message !== '') {
+            this.message = message;
+        }
+    },
+    statusLabel() {
+        return {
+            initializing: 'در حال آماده‌سازی',
+            ready: 'آماده',
+            scanning: 'در حال اسکن',
+            paused: 'متوقف',
+            camera_denied: 'خطای دوربین',
+            unsupported: 'پشتیبانی نمی‌شود',
+            scan_error: 'خطای اسکن',
+        }[this.status] || this.status;
     },
     destroy() {
         this.stopCamera();

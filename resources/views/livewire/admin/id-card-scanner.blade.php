@@ -1,15 +1,14 @@
 <div
     x-data="idCardScanner({
         resolveScan: (payload) => $wire.resolveScannedQr(payload),
-        updateStatus: (status, message = '') => $wire.setScanStatus(status, message),
     })"
     x-init="init()"
     x-on:id-card-scanner-pause.window="pauseFromWire()"
     x-on:id-card-scanner-resume.window="resumeFromWire()"
-    class="space-y-5"
+    class="h-full min-h-0"
     dir="rtl"
 >
-    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <div class="flex h-full min-h-[560px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="border-b border-slate-100 px-6 py-5">
             <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
@@ -18,36 +17,35 @@
                 </div>
                 <div class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold"
                      :class="{
-                        'bg-emerald-50 text-emerald-700': ['ready', 'scanning'].includes(@js($scanStatus)),
-                        'bg-amber-50 text-amber-700': @js($scanStatus) === 'paused',
-                        'bg-rose-50 text-rose-700': ['camera_denied', 'scan_error', 'unsupported'].includes(@js($scanStatus)),
-                        'bg-slate-100 text-slate-700': @js($scanStatus) === 'initializing',
+                        'bg-emerald-50 text-emerald-700': ['ready', 'scanning'].includes(status),
+                        'bg-amber-50 text-amber-700': status === 'paused',
+                        'bg-rose-50 text-rose-700': ['camera_denied', 'scan_error', 'unsupported'].includes(status),
+                        'bg-slate-100 text-slate-700': status === 'initializing',
                      }">
                     <span class="inline-flex h-2.5 w-2.5 rounded-full"
                           :class="{
-                            'bg-emerald-500': ['ready', 'scanning'].includes(@js($scanStatus)),
-                            'bg-amber-500': @js($scanStatus) === 'paused',
-                            'bg-rose-500': ['camera_denied', 'scan_error', 'unsupported'].includes(@js($scanStatus)),
-                            'bg-slate-400': @js($scanStatus) === 'initializing',
+                            'bg-emerald-500': ['ready', 'scanning'].includes(status),
+                            'bg-amber-500': status === 'paused',
+                            'bg-rose-500': ['camera_denied', 'scan_error', 'unsupported'].includes(status),
+                            'bg-slate-400': status === 'initializing',
                           }"></span>
-                    <span>{{ $scanStatus }}</span>
+                    <span x-text="statusLabel()"></span>
                 </div>
             </div>
         </div>
 
-        <div class="grid gap-5 p-5 xl:grid-cols-[minmax(0,1.35fr)_360px]">
-            <div class="space-y-4">
-                <div class="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-950">
-                    <video
-                        x-ref="video"
-                        autoplay
-                        playsinline
-                        muted
-                        class="aspect-[16/10] w-full object-cover"
-                    ></video>
+        <div class="grid min-h-0 flex-1 gap-5 p-5 lg:grid-cols-[minmax(0,1.7fr)_380px] lg:items-start">
+            <div class="flex min-h-0 flex-col gap-4">
+                <div class="relative aspect-video max-h-[56vh] min-h-[300px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-950">
+                    <div
+                        wire:ignore
+                        x-ref="scanner"
+                        id="id-card-scanner-reader"
+                        class="h-full w-full"
+                    ></div>
 
                     <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
-                        <div class="h-[58%] w-[70%] rounded-3xl border-2 border-emerald-300/90 shadow-[0_0_0_9999px_rgba(15,23,42,0.35)]"></div>
+                        <div class="h-[48%] w-[58%] rounded-3xl border-2 border-emerald-300/90 shadow-[0_0_0_9999px_rgba(15,23,42,0.34)]"></div>
                     </div>
 
                     <div class="absolute bottom-4 right-4 rounded-full bg-slate-950/70 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
@@ -55,7 +53,7 @@
                     </div>
                 </div>
 
-                <div class="flex flex-col gap-3 md:flex-row md:items-end">
+                <div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto_auto] xl:items-end">
                     <div class="flex-1">
                         <label class="mb-2 block text-sm font-semibold text-slate-700">دوربین فعال</label>
                         <select
@@ -69,42 +67,41 @@
                         </select>
                     </div>
 
-                    <div class="flex gap-2">
-                        <button
-                            type="button"
-                            @click="startCamera()"
-                            class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700"
-                        >
-                            فعال‌سازی دوربین
-                        </button>
-                        <button
-                            type="button"
-                            wire:click="resumeScanning"
-                            class="inline-flex items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100"
-                        >
-                            ادامه اسکن
-                        </button>
-                    </div>
+                    <button
+                        type="button"
+                        @click="startCamera()"
+                        class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                    >
+                        فعال‌سازی دوربین
+                    </button>
+                    <button
+                        type="button"
+                        wire:click="resumeScanning"
+                        class="inline-flex items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                    >
+                        ادامه اسکن
+                    </button>
                 </div>
             </div>
 
-            <div class="space-y-4">
+            <div class="flex min-h-0 flex-col gap-4">
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <h2 class="text-sm font-extrabold text-slate-800">وضعیت اسکن</h2>
-                    <p class="mt-2 text-sm leading-7 text-slate-600">{{ $scanMessage }}</p>
+                    <p class="mt-2 text-sm leading-7 text-slate-600" x-text="message"></p>
                 </div>
 
                 <div class="rounded-2xl border border-slate-200 bg-white p-4">
                     <h2 class="text-sm font-extrabold text-slate-800">آخرین نتیجه</h2>
                     <div class="mt-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                        @if($resolvedSubjectType === \App\Models\QrIdentity::SUBJECT_PERSON && $this->selectedPerson)
-                            <p class="font-semibold text-emerald-700">مددجو شناسایی شد</p>
-                            <p class="mt-1">{{ $this->selectedPerson->full_name ?: '-' }}</p>
-                            <p class="mt-1 text-xs text-slate-500">کد مددجو: {{ $this->selectedPerson->person_code ?: '-' }}</p>
-                        @elseif($resolvedSubjectType === \App\Models\QrIdentity::SUBJECT_GUARDIAN && $this->selectedGuardian)
-                            <p class="font-semibold text-amber-700">خانوار شناسایی شد</p>
-                            <p class="mt-1">{{ $this->selectedGuardian->full_name ?: '-' }}</p>
-                            <p class="mt-1 text-xs text-slate-500">کد خانوار: {{ $this->selectedGuardian->guardian_code ?: '-' }}</p>
+                        @if($lastScanResult)
+                            <p class="font-semibold {{ ($lastScanResult['type'] ?? null) === \App\Models\QrIdentity::SUBJECT_PERSON ? 'text-emerald-700' : 'text-amber-700' }}">
+                                {{ $lastScanResult['title'] ?? '-' }}
+                            </p>
+                            <p class="mt-1">{{ $lastScanResult['name'] ?? '-' }}</p>
+                            <p class="mt-1 text-xs text-slate-500">
+                                {{ $lastScanResult['code_label'] ?? 'کد' }}:
+                                <span dir="ltr">{{ $lastScanResult['code'] ?? '-' }}</span>
+                            </p>
                         @else
                             <p>هنوز نتیجه معتبری ثبت نشده است.</p>
                         @endif
@@ -112,7 +109,7 @@
                 </div>
 
                 <div class="rounded-2xl border border-slate-200 bg-white p-4 text-xs leading-6 text-slate-500">
-                    این بخش از دوربین دستگاه برای تشخیص QR استفاده می‌کند. اگر مرورگر از تشخیص زنده QR پشتیبانی نکند، پیام راهنما نمایش داده می‌شود.
+                    این بخش از دوربین دستگاه برای تشخیص QR استفاده می‌کند. پس از شناسایی، نتیجه در همین بخش نمایش داده می‌شود.
                 </div>
             </div>
         </div>
