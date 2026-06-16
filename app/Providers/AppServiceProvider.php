@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Observers\GuardianObserver;
 use App\Observers\PersonObserver;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
@@ -70,6 +71,11 @@ class AppServiceProvider extends ServiceProvider
 
         Guardian::observe(GuardianObserver::class);
         Person::observe(PersonObserver::class);
+
+        Relation::enforceMorphMap([
+            'person' => Person::class,
+            'guardian' => Guardian::class,
+        ]);
 
         Gate::define('manage-people', function (User $user) {
             return $user->canManagePeople();

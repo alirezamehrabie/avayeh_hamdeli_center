@@ -6,9 +6,11 @@ use App\Helpers\Morilog\CalendarUtils;
 use App\Helpers\Morilog\Jalalian;
 use App\Models\Guardian;
 use App\Models\Person;
+use App\Models\QrIdentity;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\ServiceDelivery;
+use App\Services\QrIdentityService;
 use App\Traits\InteractsWithNotificationModal;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -149,6 +151,80 @@ class Dashboard extends Component
         }
 
         $this->markUnregisteredRecipient($index, $query);
+    }
+
+    public function resolveRecipientQr(int $index): void
+    {
+        abort_unless($this->selectedService, 404);
+
+        $rawToken = trim((string) ($this->recipientEntries[$index]['qr_token'] ?? ''));
+
+        if ($rawToken === '') {
+            $this->addError('recipientEntries.' . $index . '.qr_token', 'وارد کردن توکن یا نشانی QR الزامی است.');
+
+            return;
+        }
+
+        $qrIdentityService = app(QrIdentityService::class);
+        $identity = $qrIdentityService->resolveToken($this->extractQrToken($rawToken), 'service-delivery');
+
+        if (! $identity) {
+            $this->clearResolvedEntry($index, preserveNationalId: false);
+            $this->addError('recipientEntries.' . $index . '.qr_token', 'QR نامعتبر، ابطال‌شده یا غیرقابل دسترس است.');
+
+            return;
+        }
+
+        if ($identity->subject_type === QrIdentity::SUBJECT_GUARDIAN) {
+            if ($this->selectedService->service_type !== 'family') {
+                $this->addError('recipientEntries.' . $index . '.qr_token', 'QR سرپرست فقط برای خدمات خانوادگی قابل استفاده است.');
+
+                return;
+            }
+
+            $guardian = Guardian::query()
+                ->withCount('people')
+                ->where('social_worker_id', $this->currentSocialWorkerId())
+                ->find($identity->subject_id);
+
+            if (! $guardian) {
+                $this->addError('recipientEntries.' . $index . '.qr_token', 'این سرپرست به حساب شما تخصیص داده نشده است.');
+
+                return;
+            }
+
+            $this->fillGuardianEntry($index, $guardian, $guardian->people_count . ' نفر تحت تکفل');
+
+            return;
+        }
+
+        $person = Person::query()
+            ->with('guardian:id,social_worker_id,children_count,children_in_house,national_code,first_name,last_name,guardian_phone_number')
+            ->whereHas('guardian', fn (Builder $query) => $query->where('social_worker_id', $this->currentSocialWorkerId()))
+            ->find($identity->subject_id);
+
+        if (! $person) {
+            $this->addError('recipientEntries.' . $index . '.qr_token', 'این مددجو به حساب شما تخصیص داده نشده است.');
+
+            return;
+        }
+
+        if ($this->selectedService->service_type === 'family') {
+            $guardian = $person->guardian;
+
+            if (! $guardian) {
+                $this->addError('recipientEntries.' . $index . '.qr_token', 'این مددجو برای ثبت خدمت خانوادگی سرپرست مرتبط ندارد.');
+
+                return;
+            }
+
+            $guardian->loadCount('people');
+            $this->fillGuardianEntry($index, $guardian, $guardian->people_count . ' نفر تحت تکفل');
+
+            return;
+        }
+
+        $this->fillPersonEntry($index, $person, 'مددجو');
     }
 
     public function setActiveRecipientSearch(int $index): void
@@ -501,6 +577,7 @@ class Dashboard extends Component
             'family_members_count' => null,
             'person_id' => null,
             'guardian_id' => null,
+            'qr_token' => '',
         ];
     }
 
@@ -565,6 +642,8 @@ class Dashboard extends Component
 
     protected function clearResolvedEntry(int $index, bool $preserveNationalId = true): void
     {
+        $qrToken = (string) ($this->recipientEntries[$index]['qr_token'] ?? '');
+
         $this->recipientEntries[$index]['national_id'] = $preserveNationalId
             ? (string) ($this->recipientEntries[$index]['national_id'] ?? '')
             : '';
@@ -578,6 +657,7 @@ class Dashboard extends Component
         $this->recipientEntries[$index]['family_members_count'] = null;
         $this->recipientEntries[$index]['person_id'] = null;
         $this->recipientEntries[$index]['guardian_id'] = null;
+        $this->recipientEntries[$index]['qr_token'] = $qrToken;
     }
 
     protected function fillGuardianEntry(int $index, Guardian $guardian, string $meta = ''): void
@@ -702,5 +782,17 @@ class Dashboard extends Component
         $this->recipientEntries[$index]['national_id'] = $nationalId;
         $this->recipientEntries[$index]['is_unregistered'] = true;
         $this->recipientEntries[$index]['not_found_notice'] = 'این شخص در سامانه ثبت نشده است';
+    }
+
+    protected function extractQrToken(string $value): string
+    {
+        if (filter_var($value, FILTER_VALIDATE_URL)) {
+            $path = parse_url($value, PHP_URL_PATH);
+            $segments = array_values(array_filter(explode('/', (string) $path)));
+
+            return (string) end($segments);
+        }
+
+        return $value;
     }
 }

@@ -25,6 +25,7 @@ use App\Livewire\ChildSupporters\UserAccount as ChildSupporterUserAccount;
 use App\Livewire\SocialWorkers\DeliveryHistory as SocialWorkerDeliveryHistory;
 use App\Livewire\SocialWorkers\Dashboard as SocialWorkerDashboard;
 use App\Livewire\SocialWorkers\UserAccount as SocialWorkerUserAccount;
+use App\Http\Controllers\QrIdentityController;
 
 
 // مسیر لاگین با استفاده از کامپوننت Livewire
@@ -46,6 +47,10 @@ Route::get('/', function () {
 
     return redirect()->route('login');
 });
+
+Route::get('/qr/r/{token}', [QrIdentityController::class, 'resolve'])
+    ->middleware(['auth'])
+    ->name('qr-identities.resolve');
 
 // مسیر ثبت‌نام سریع فرد جدید
 Route::get('/people/fast-create/{person?}', FastCreatePerson::class)

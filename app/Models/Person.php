@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Helpers\Morilog\Jalalian;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class Person extends Model
 {
@@ -539,6 +541,18 @@ class Person extends Model
     public function auditLogs()
     {
         return $this->hasMany(BeneficiaryAuditLog::class)->latest();
+    }
+
+    public function qrCodes(): MorphMany
+    {
+        return $this->morphMany(QrIdentity::class, 'subject', 'subject_type', 'subject_id');
+    }
+
+    public function activeQrCode(): MorphOne
+    {
+        return $this->morphOne(QrIdentity::class, 'subject', 'subject_type', 'subject_id')
+            ->where('status', QrIdentity::STATUS_ACTIVE)
+            ->latestOfMany();
     }
 
     private function storeAuditLog(string $action, array $beforeValues, array $afterValues): void

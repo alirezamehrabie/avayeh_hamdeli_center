@@ -242,6 +242,29 @@
                                     @endif
 
                                     <div class="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-end">
+                                        <div class="md:col-span-12">
+                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-500 mr-1">QR card token or URL</label>
+                                            <div class="grid gap-2 md:grid-cols-[1fr_auto]">
+                                                <input
+                                                    type="text"
+                                                    wire:model.defer="recipientEntries.{{ $index }}.qr_token"
+                                                    @disabled(!$this->selectedService)
+                                                    class="w-full rounded-xl border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all placeholder:text-slate-400"
+                                                    placeholder="Paste scanned QR payload"
+                                                    autocomplete="off"
+                                                >
+                                                <button
+                                                    type="button"
+                                                    wire:click="resolveRecipientQr({{ $index }})"
+                                                    @disabled(!$this->selectedService)
+                                                    class="inline-flex items-center justify-center rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2.5 text-xs font-black text-cyan-700 transition hover:bg-cyan-100"
+                                                >
+                                                    Resolve QR
+                                                </button>
+                                            </div>
+                                            @error('recipientEntries.' . $index . '.qr_token') <p class="mt-1 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror
+                                        </div>
+
                                         <!-- National ID Input -->
                                         <div class="md:col-span-8">
                                             <label class="mb-1.5 block text-[11px] font-bold text-slate-500 mr-1">کد ملی یا نام</label>

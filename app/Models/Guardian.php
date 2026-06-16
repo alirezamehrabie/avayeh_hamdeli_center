@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 use App\Helpers\Morilog\Jalalian;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class Guardian extends Model
 {
@@ -119,6 +121,18 @@ class Guardian extends Model
     public function bankInfo()
     {
         return $this->hasOne(BankInfo::class);
+    }
+
+    public function qrCodes(): MorphMany
+    {
+        return $this->morphMany(QrIdentity::class, 'subject', 'subject_type', 'subject_id');
+    }
+
+    public function activeQrCode(): MorphOne
+    {
+        return $this->morphOne(QrIdentity::class, 'subject', 'subject_type', 'subject_id')
+            ->where('status', QrIdentity::STATUS_ACTIVE)
+            ->latestOfMany();
     }
 
 

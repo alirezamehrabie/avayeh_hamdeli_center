@@ -162,6 +162,22 @@
                                                 </button>
                                             @endcan
 
+                                            @can('people-edit')
+                                                <button
+                                                    wire:click.stop="openQrModal({{ $person->id }})"
+                                                    onclick="event.stopPropagation()"
+                                                    class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-cyan-200 bg-cyan-50 text-cyan-700 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+                                                    aria-label="کارت QR"
+                                                    data-bs-toggle="tooltip"
+                                                    data-bs-placement="top"
+                                                    data-bs-title="کارت QR"
+                                                    x-data="{}"
+                                                    x-init="if (window.bootstrap?.Tooltip) { const t = new window.bootstrap.Tooltip($el, { container: 'body', trigger: 'hover focus', delay: { show: 120, hide: 80 } }); $el.addEventListener('click', () => t.hide()); $el.addEventListener('mouseleave', () => t.hide()); }"
+                                                >
+                                                    <i class="bi bi-qr-code"></i>
+                                                </button>
+                                            @endcan
+
                                             @can('people-delete')
                                                 <button
                                                     wire:click.stop="openDeleteModal({{ $person->id }})"
@@ -264,6 +280,53 @@
                         <button type="button" wire:click="confirmDeletePerson" class="inline-flex items-center justify-center rounded-2xl border border-rose-200 bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700">
                             حذف مددجو
                         </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if($showQrModal && $this->qrPerson)
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+            <div class="w-full max-w-xl overflow-hidden rounded-3xl border border-cyan-100 bg-white shadow-2xl">
+                <div class="flex items-start justify-between gap-4 bg-cyan-700 px-6 py-5 text-white">
+                    <div>
+                        <h2 class="text-xl font-extrabold">کارت QR مددجو</h2>
+                        <p class="mt-1 text-sm text-white/85">{{ $this->qrPerson->full_name }} - {{ $this->qrPerson->person_code }}</p>
+                    </div>
+                    <button type="button" wire:click="closeQrModal" class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-2xl leading-none text-white transition hover:bg-white/25" aria-label="بستن">&times;</button>
+                </div>
+
+                <div class="space-y-4 p-6">
+                    @if($this->selectedQrIdentity)
+                        <div class="grid gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-[240px_minmax(0,1fr)] sm:items-center">
+                            <div class="flex h-60 w-full items-center justify-center rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:w-60">
+                                <div class="h-[220px] w-[220px] [&>svg]:block [&>svg]:h-full [&>svg]:w-full">
+                                    {!! $this->selectedQrIdentity->qr_svg !!}
+                                </div>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-xs font-bold text-slate-500">شناسه کارت</p>
+                                <p class="mt-1 font-mono text-lg font-black text-slate-900">{{ $this->selectedQrIdentity->public_code }}</p>
+                                <p class="mt-3 text-xs font-bold text-slate-500">نشانی اسکن احراز هویت‌شده</p>
+                                <p class="mt-1 break-all rounded-xl bg-white px-3 py-2 text-xs text-slate-700">{{ $this->selectedQrIdentity->scan_url }}</p>
+                                <p class="mt-3 text-xs text-slate-500">این QR فقط پس از ورود کارکنان قابل استفاده است و شامل اطلاعات شخصی نیست.</p>
+                            </div>
+                        </div>
+                    @else
+                        <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">برای این مددجو QR فعال وجود ندارد.</div>
+                    @endif
+
+                    @if($issuedQrToken)
+                        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                            QR جدید صادر شد. نشانی اسکن نمایش‌داده‌شده برای چاپ به‌روزرسانی شده است.
+                        </div>
+                    @endif
+
+                    <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                        <button type="button" wire:click="revokeQrCode" @disabled(!$this->selectedQrIdentity) class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-bold text-rose-700 disabled:opacity-50">ابطال</button>
+                        <button type="button" wire:click="reissueQrCode" class="rounded-2xl bg-cyan-700 px-4 py-2 text-sm font-bold text-white">صدور مجدد</button>
+                        <button type="button" wire:click="closeQrModal" class="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700">بستن</button>
                     </div>
                 </div>
             </div>

@@ -5,6 +5,8 @@ namespace App\Livewire\People;
 use Livewire\Component;
 use Livewire\Attributes\Layout;
 use App\Models\Person;
+use App\Models\QrIdentity;
+use App\Services\QrIdentityService;
 use Illuminate\Support\Facades\DB;
 use Livewire\WithPagination;
 
@@ -19,8 +21,11 @@ class IndexPeople extends Component
     public ?int $selectedPersonId = null;
     public bool $showPersonModal = false;
     public bool $showDeleteModal = false;
+    public bool $showQrModal = false;
     public string $deletionReason = '';
     public ?int $deletingPersonId = null;
+    public ?int $qrPersonId = null;
+    public ?string $issuedQrToken = null;
 
     public function mount(): void
     {
@@ -107,6 +112,72 @@ class IndexPeople extends Component
     {
         $this->showPersonModal = false;
         $this->selectedPersonId = null;
+    }
+
+    public function openQrModal(int $personId): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('people-edit'), 403);
+
+        $person = Person::query()->findOrFail($personId);
+        $qrIdentityService = app(QrIdentityService::class);
+        $qrIdentityService->ensureActiveFor($person, auth()->id());
+
+        $this->qrPersonId = $person->id;
+        $this->issuedQrToken = null;
+        $this->showQrModal = true;
+    }
+
+    public function closeQrModal(): void
+    {
+        $this->showQrModal = false;
+        $this->qrPersonId = null;
+        $this->issuedQrToken = null;
+    }
+
+    public function reissueQrCode(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('people-edit'), 403);
+
+        $person = Person::query()->findOrFail($this->qrPersonId);
+        $qrIdentityService = app(QrIdentityService::class);
+        $issued = $qrIdentityService->replaceFor($person, auth()->id());
+
+        $this->issuedQrToken = $issued['token'];
+        session()->flash('success', 'QR مددجو با موفقیت دوباره صادر شد.');
+    }
+
+    public function revokeQrCode(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('people-edit'), 403);
+
+        $identity = $this->selectedQrIdentity;
+
+        if ($identity) {
+            $qrIdentityService = app(QrIdentityService::class);
+            $qrIdentityService->revoke($identity, auth()->id());
+        }
+
+        $this->issuedQrToken = null;
+        session()->flash('success', 'QR مددجو با موفقیت ابطال شد.');
+    }
+
+    public function getSelectedQrIdentityProperty(): ?QrIdentity
+    {
+        if (! $this->qrPersonId) {
+            return null;
+        }
+
+        return QrIdentity::query()
+            ->where('subject_type', QrIdentity::SUBJECT_PERSON)
+            ->where('subject_id', $this->qrPersonId)
+            ->where('status', QrIdentity::STATUS_ACTIVE)
+            ->latest('id')
+            ->first();
+    }
+
+    public function getQrPersonProperty(): ?Person
+    {
+        return $this->qrPersonId ? Person::query()->find($this->qrPersonId) : null;
     }
 
     public function getSelectedPersonProperty(): ?Person

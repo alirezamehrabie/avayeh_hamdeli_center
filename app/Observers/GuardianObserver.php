@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\Guardian;
 use App\Models\ServiceDelivery;
 use App\Models\SocialWorker;
+use App\Services\QrIdentityService;
 
 class GuardianObserver
 {
@@ -14,6 +15,7 @@ class GuardianObserver
     public function created(Guardian $guardian): void
     {
         ServiceDelivery::attachToGuardian($guardian);
+        app(QrIdentityService::class)->ensureActiveFor($guardian, auth()->id());
     }
 
     /**

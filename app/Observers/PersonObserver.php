@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\Person;
 use App\Models\Guardian;
 use App\Models\ServiceDelivery;
+use App\Services\QrIdentityService;
 
 class PersonObserver
 {
@@ -14,6 +15,7 @@ class PersonObserver
     public function created(Person $person): void
     {
         ServiceDelivery::attachToPerson($person);
+        app(QrIdentityService::class)->ensureActiveFor($person, auth()->id());
     }
 
     /**

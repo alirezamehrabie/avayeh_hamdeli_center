@@ -3,6 +3,8 @@
 namespace App\Livewire\Guardians;
 
 use App\Models\Guardian;
+use App\Models\QrIdentity;
+use App\Services\QrIdentityService;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -22,11 +24,14 @@ class IndexGuardians extends Component
     public bool $showHouseholdModal = false;
     public bool $showHouseholdSizeModal = false;
     public bool $showDeleteModal = false;
+    public bool $showQrModal = false;
     public string $householdStatsTab = 'household_size';
     public string $deletionReason = '';
     public ?int $expandedHouseholdSize = null;
     public ?int $expandedCoverageCount = null;
     public ?int $deletingGuardianId = null;
+    public ?int $qrGuardianId = null;
+    public ?string $issuedQrToken = null;
 
     public function mount(): void
     {
@@ -92,6 +97,72 @@ class IndexGuardians extends Component
         }
 
         return redirect()->route('guardians.edit', ['guardian' => $guardianId]);
+    }
+
+    public function openQrModal(int $guardianId): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
+
+        $guardian = Guardian::query()->findOrFail($guardianId);
+        $qrIdentityService = app(QrIdentityService::class);
+        $qrIdentityService->ensureActiveFor($guardian, auth()->id());
+
+        $this->qrGuardianId = $guardian->id;
+        $this->issuedQrToken = null;
+        $this->showQrModal = true;
+    }
+
+    public function closeQrModal(): void
+    {
+        $this->showQrModal = false;
+        $this->qrGuardianId = null;
+        $this->issuedQrToken = null;
+    }
+
+    public function reissueQrCode(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
+
+        $guardian = Guardian::query()->findOrFail($this->qrGuardianId);
+        $qrIdentityService = app(QrIdentityService::class);
+        $issued = $qrIdentityService->replaceFor($guardian, auth()->id());
+
+        $this->issuedQrToken = $issued['token'];
+        session()->flash('success', 'QR سرپرست با موفقیت دوباره صادر شد.');
+    }
+
+    public function revokeQrCode(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
+
+        $identity = $this->selectedQrIdentity;
+
+        if ($identity) {
+            $qrIdentityService = app(QrIdentityService::class);
+            $qrIdentityService->revoke($identity, auth()->id());
+        }
+
+        $this->issuedQrToken = null;
+        session()->flash('success', 'QR سرپرست با موفقیت ابطال شد.');
+    }
+
+    public function getSelectedQrIdentityProperty(): ?QrIdentity
+    {
+        if (! $this->qrGuardianId) {
+            return null;
+        }
+
+        return QrIdentity::query()
+            ->where('subject_type', QrIdentity::SUBJECT_GUARDIAN)
+            ->where('subject_id', $this->qrGuardianId)
+            ->where('status', QrIdentity::STATUS_ACTIVE)
+            ->latest('id')
+            ->first();
+    }
+
+    public function getQrGuardianProperty(): ?Guardian
+    {
+        return $this->qrGuardianId ? Guardian::query()->find($this->qrGuardianId) : null;
     }
 
     public function openDeleteModal(int $guardianId): void
