@@ -19,7 +19,9 @@ class IndexPeople extends Component
     public string $searchField = 'all';
     public bool $embedded = false;
     public ?int $selectedPersonId = null;
+    public ?int $trackingPersonId = null;
     public bool $showPersonModal = false;
+    public bool $showTrackingModal = false;
     public bool $showDeleteModal = false;
     public bool $showQrModal = false;
     public string $deletionReason = '';
@@ -122,6 +124,18 @@ class IndexPeople extends Component
     {
         $this->showPersonModal = false;
         $this->selectedPersonId = null;
+    }
+
+    public function showRegistrationTracking(int $personId): void
+    {
+        $this->trackingPersonId = $personId;
+        $this->showTrackingModal = true;
+    }
+
+    public function closeTrackingModal(): void
+    {
+        $this->showTrackingModal = false;
+        $this->trackingPersonId = null;
     }
 
     public function openQrModal(int $personId): void
@@ -242,6 +256,13 @@ class IndexPeople extends Component
             'harmTypes',
             'needsLevel.levelType',
         ])->find($this->selectedPersonId);
+    }
+
+    public function getTrackingPersonProperty(): ?Person
+    {
+        return $this->trackingPersonId
+            ? Person::with(['creator:id,name', 'updater:id,name'])->find($this->trackingPersonId)
+            : null;
     }
 
     public function deletePerson(Person $person): void

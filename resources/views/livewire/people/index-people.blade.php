@@ -126,15 +126,6 @@
             @else
                 <div class="space-y-3 md:hidden">
                     @foreach($people as $person)
-                        @php
-                            $trackingTooltip = '<div class="tracking-tooltip-wrap border-gray-400" dir="rtl">'
-                                . '<div class="tracking-tooltip-title my-2">رهگیری ثبت نام</div>'
-                                . '<div class="tracking-tooltip-row"><span class="label"> ایجادکننده </span><span class="value">' . e($person->creator?->name ?? 'مدیریت') . '</span></div>'
-                                . '<div class="tracking-tooltip-row"><span class="label"> زمان ایجاد </span><span class="value">' . e(optional($person->created_at)->format('Y/m/d H:i') ?? '-') . '</span></div>'
-                                . '<div class="tracking-tooltip-row"><span class="label"> آخرین ویرایش توسط </span><span class="value">' . e($person->updater?->name ?? $person->creator?->name ?? 'مدیریت') . '</span></div>'
-                                . '<div class="tracking-tooltip-row"><span class="label"> زمان آخرین ویرایش </span><span class="value">' . e(optional($person->updated_at)->format('Y/m/d H:i') ?? '-') . '</span></div>'
-                                . '</div>';
-                        @endphp
                         <article wire:key="person-card-{{ $person->id }}" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm ring-1 ring-slate-100">
                             <button
                                 type="button"
@@ -170,19 +161,13 @@
                             <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
                                 <button
                                     type="button"
-                                    onclick="event.stopPropagation()"
-                                    class="js-tracking-tooltip inline-flex h-11 w-11 items-center justify-center rounded-full border bg-white text-slate-600 shadow-sm transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-200"
-                                    style="border-color: #f5d0e1;"
+                                    wire:click="showRegistrationTracking({{ $person->id }})"
+                                    wire:loading.attr="disabled"
+                                    wire:target="showRegistrationTracking({{ $person->id }})"
+                                    class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-100 bg-gradient-to-br from-cyan-50 to-white text-cyan-700 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-cyan-100 disabled:opacity-60"
                                     aria-label="رهگیری ثبت"
-                                    data-bs-toggle="tooltip"
-                                    data-bs-placement="top"
-                                    data-bs-html="true"
-                                    data-bs-custom-class="beneficiary-tracking-tooltip"
-                                    data-bs-title="{{ $trackingTooltip }}"
-                                    x-data="{}"
-                                    x-init="if (window.bootstrap?.Tooltip) { const t = new window.bootstrap.Tooltip($el, { container: 'body', trigger: 'hover focus', sanitize: false, delay: { show: 120, hide: 80 } }); $el.addEventListener('click', () => t.hide()); $el.addEventListener('mouseleave', () => t.hide()); }"
                                 >
-                                    <i class="bi bi-clock-history"></i>
+                                    <i class="bi bi-file-earmark-check text-lg"></i>
                                 </button>
 
                                 <button
@@ -195,40 +180,71 @@
                                     مشاهده
                                 </button>
 
-                                @can('people-edit')
-                                    <button
-                                        type="button"
-                                        wire:click="quickEditPerson({{ $person->id }})"
-                                        wire:loading.attr="disabled"
-                                        wire:target="quickEditPerson({{ $person->id }})"
-                                        class="inline-flex min-h-11 flex-1 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-700 transition hover:border-amber-300 hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:opacity-60"
-                                    >
-                                        ویرایش سریع
-                                    </button>
-                                    <button
-                                        type="button"
-                                        wire:click="openQrModal({{ $person->id }})"
-                                        wire:loading.attr="disabled"
-                                        wire:target="openQrModal({{ $person->id }})"
-                                        class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-cyan-200 bg-cyan-50 text-cyan-700 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-200 disabled:opacity-60"
-                                        aria-label="کارت QR"
-                                    >
-                                        <i class="bi bi-qr-code"></i>
-                                    </button>
-                                @endcan
+                                @canany(['people-edit', 'people-delete'])
+                                    <div class="relative" x-data="{ open: false }" @click.stop @keydown.escape.window="open = false">
+                                        <button
+                                            type="button"
+                                            class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                                            aria-label="اقدامات بیشتر"
+                                            aria-haspopup="menu"
+                                            :aria-expanded="open.toString()"
+                                            @click="open = ! open"
+                                        >
+                                            <i class="bi bi-three-dots-vertical"></i>
+                                        </button>
 
-                                @can('people-delete')
-                                    <button
-                                        type="button"
-                                        wire:click="openDeleteModal({{ $person->id }})"
-                                        wire:loading.attr="disabled"
-                                        wire:target="openDeleteModal({{ $person->id }})"
-                                        class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700 shadow-sm transition hover:border-rose-300 hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-rose-200 disabled:opacity-60"
-                                        aria-label="حذف"
-                                    >
-                                        <i class="bi bi-trash3"></i>
-                                    </button>
-                                @endcan
+                                        <div
+                                            x-show="open"
+                                            x-transition.origin.top.right
+                                            @click.away="open = false"
+                                            class="absolute left-0 z-30 mt-2 w-48 overflow-hidden rounded-2xl border border-slate-200 bg-white py-1 text-right shadow-xl ring-1 ring-slate-100"
+                                            style="display: none;"
+                                            role="menu"
+                                        >
+                                            @can('people-edit')
+                                                <button
+                                                    type="button"
+                                                    wire:click="quickEditPerson({{ $person->id }})"
+                                                    wire:loading.attr="disabled"
+                                                    wire:target="quickEditPerson({{ $person->id }})"
+                                                    class="flex w-full items-center gap-2 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-amber-50 hover:text-amber-700 focus:bg-amber-50 focus:outline-none disabled:opacity-60"
+                                                    role="menuitem"
+                                                    @click="open = false"
+                                                >
+                                                    <i class="bi bi-lightning-charge text-amber-600"></i>
+                                                    ویرایش سریع
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    wire:click="openQrModal({{ $person->id }})"
+                                                    wire:loading.attr="disabled"
+                                                    wire:target="openQrModal({{ $person->id }})"
+                                                    class="flex w-full items-center gap-2 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-cyan-50 hover:text-cyan-700 focus:bg-cyan-50 focus:outline-none disabled:opacity-60"
+                                                    role="menuitem"
+                                                    @click="open = false"
+                                                >
+                                                    <i class="bi bi-qr-code text-cyan-600"></i>
+                                                    کارت QR
+                                                </button>
+                                            @endcan
+
+                                            @can('people-delete')
+                                                <button
+                                                    type="button"
+                                                    wire:click="openDeleteModal({{ $person->id }})"
+                                                    wire:loading.attr="disabled"
+                                                    wire:target="openDeleteModal({{ $person->id }})"
+                                                    class="flex w-full items-center gap-2 px-4 py-3 text-sm font-bold text-rose-700 transition hover:bg-rose-50 focus:bg-rose-50 focus:outline-none disabled:opacity-60"
+                                                    role="menuitem"
+                                                    @click="open = false"
+                                                >
+                                                    <i class="bi bi-trash3"></i>
+                                                    انتقال به بلاک لیست
+                                                </button>
+                                            @endcan
+                                        </div>
+                                    </div>
+                                @endcanany
                             </div>
                         </article>
                     @endforeach
@@ -249,15 +265,6 @@
                             </thead>
                             <tbody class="divide-y divide-slate-100">
                                 @foreach($people as $person)
-                                    @php
-                                        $trackingTooltip = '<div class="tracking-tooltip-wrap border-gray-400" dir="rtl">'
-                                            . '<div class="tracking-tooltip-title my-2">رهگیری ثبت نام</div>'
-                                            . '<div class="tracking-tooltip-row"><span class="label"> ایجادکننده </span><span class="value">' . e($person->creator?->name ?? 'مدیریت') . '</span></div>'
-                                            . '<div class="tracking-tooltip-row"><span class="label"> زمان ایجاد </span><span class="value">' . e(optional($person->created_at)->format('Y/m/d H:i') ?? '-') . '</span></div>'
-                                            . '<div class="tracking-tooltip-row"><span class="label"> آخرین ویرایش توسط </span><span class="value">' . e($person->updater?->name ?? $person->creator?->name ?? 'مدیریت') . '</span></div>'
-                                            . '<div class="tracking-tooltip-row"><span class="label"> زمان آخرین ویرایش </span><span class="value">' . e(optional($person->updated_at)->format('Y/m/d H:i') ?? '-') . '</span></div>'
-                                            . '</div>';
-                                    @endphp
                                     <tr wire:key="person-row-{{ $person->id }}" wire:click="showPersonInfo({{ $person->id }})" class="cursor-pointer transition hover:bg-rose-50/70">
                                         <td class="px-5 py-4 text-center font-light text-slate-700">{{ $people->firstItem() + $loop->index }}</td>
                                         <td class="px-5 py-4 text-center font-medium text-slate-700">{{ $person->person_code }}</td>
@@ -268,19 +275,14 @@
                                             <div class="flex items-center justify-center gap-2 whitespace-nowrap">
                                                 <button
                                                     type="button"
+                                                    wire:click.stop="showRegistrationTracking({{ $person->id }})"
+                                                    wire:loading.attr="disabled"
+                                                    wire:target="showRegistrationTracking({{ $person->id }})"
                                                     onclick="event.stopPropagation()"
-                                                    class="js-tracking-tooltip inline-flex h-11 w-11 items-center justify-center rounded-full border bg-white text-slate-600 shadow-sm transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-200"
-                                                    style="border-color: #f5d0e1;"
+                                                    class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-100 bg-gradient-to-br from-cyan-50 to-white text-cyan-700 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-cyan-100 disabled:opacity-60"
                                                     aria-label="رهگیری ثبت"
-                                                    data-bs-toggle="tooltip"
-                                                    data-bs-placement="top"
-                                                    data-bs-html="true"
-                                                    data-bs-custom-class="beneficiary-tracking-tooltip"
-                                                    data-bs-title="{{ $trackingTooltip }}"
-                                                    x-data="{}"
-                                                    x-init="if (window.bootstrap?.Tooltip) { const t = new window.bootstrap.Tooltip($el, { container: 'body', trigger: 'hover focus', sanitize: false, delay: { show: 120, hide: 80 } }); $el.addEventListener('click', () => t.hide()); $el.addEventListener('mouseleave', () => t.hide()); }"
                                                 >
-                                                    <i class="bi bi-clock-history"></i>
+                                                    <i class="bi bi-file-earmark-check text-lg"></i>
                                                 </button>
 
                                                 @can('people-edit')
@@ -289,7 +291,7 @@
                                                         wire:loading.attr="disabled"
                                                         wire:target="editPerson({{ $person->id }})"
                                                         onclick="event.stopPropagation()"
-                                                        class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-indigo-200 bg-indigo-50 text-indigo-700 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:opacity-60"
+                                                        class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white text-indigo-700 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-100 disabled:opacity-60"
                                                         aria-label="ویرایش کامل"
                                                         data-bs-toggle="tooltip"
                                                         data-bs-placement="top"
@@ -297,61 +299,76 @@
                                                         x-data="{}"
                                                         x-init="if (window.bootstrap?.Tooltip) { const t = new window.bootstrap.Tooltip($el, { container: 'body', trigger: 'hover focus', delay: { show: 120, hide: 80 } }); $el.addEventListener('click', () => t.hide()); $el.addEventListener('mouseleave', () => t.hide()); }"
                                                     >
-                                                        <i class="bi bi-pencil-square"></i>
+                                                        <i class="bi bi-pencil-fill text-base"></i>
                                                     </button>
 
-                                                    <button
-                                                        wire:click.stop="quickEditPerson({{ $person->id }})"
-                                                        wire:loading.attr="disabled"
-                                                        wire:target="quickEditPerson({{ $person->id }})"
-                                                        onclick="event.stopPropagation()"
-                                                        class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-amber-200 bg-amber-50 text-amber-700 shadow-sm transition hover:border-amber-300 hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:opacity-60"
-                                                        aria-label="ویرایش سریع"
-                                                        data-bs-toggle="tooltip"
-                                                        data-bs-placement="top"
-                                                        data-bs-title="ویرایش سریع اطلاعات کلیدی"
-                                                        x-data="{}"
-                                                        x-init="if (window.bootstrap?.Tooltip) { const t = new window.bootstrap.Tooltip($el, { container: 'body', trigger: 'hover focus', delay: { show: 120, hide: 80 } }); $el.addEventListener('click', () => t.hide()); $el.addEventListener('mouseleave', () => t.hide()); }"
-                                                    >
-                                                        <i class="bi bi-lightning-charge"></i>
-                                                    </button>
                                                 @endcan
 
-                                                @can('people-edit')
-                                                    <button
-                                                        wire:click.stop="openQrModal({{ $person->id }})"
-                                                        wire:loading.attr="disabled"
-                                                        wire:target="openQrModal({{ $person->id }})"
-                                                        onclick="event.stopPropagation()"
-                                                        class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-cyan-200 bg-cyan-50 text-cyan-700 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-200 disabled:opacity-60"
-                                                        aria-label="کارت QR"
-                                                        data-bs-toggle="tooltip"
-                                                        data-bs-placement="top"
-                                                        data-bs-title="کارت QR"
-                                                        x-data="{}"
-                                                        x-init="if (window.bootstrap?.Tooltip) { const t = new window.bootstrap.Tooltip($el, { container: 'body', trigger: 'hover focus', delay: { show: 120, hide: 80 } }); $el.addEventListener('click', () => t.hide()); $el.addEventListener('mouseleave', () => t.hide()); }"
-                                                    >
-                                                        <i class="bi bi-qr-code"></i>
-                                                    </button>
-                                                @endcan
+                                                @canany(['people-edit', 'people-delete'])
+                                                    <div class="relative" x-data="{ open: false }" @click.stop @keydown.escape.window="open = false">
+                                                        <button
+                                                            type="button"
+                                                            class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                                                            aria-label="اقدامات بیشتر"
+                                                            aria-haspopup="menu"
+                                                            :aria-expanded="open.toString()"
+                                                            @click="open = ! open"
+                                                        >
+                                                            <i class="bi bi-three-dots-vertical"></i>
+                                                        </button>
 
-                                                @can('people-delete')
-                                                    <button
-                                                        wire:click.stop="openDeleteModal({{ $person->id }})"
-                                                        wire:loading.attr="disabled"
-                                                        wire:target="openDeleteModal({{ $person->id }})"
-                                                        onclick="event.stopPropagation()"
-                                                        class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700 shadow-sm transition hover:border-rose-300 hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-rose-200 disabled:opacity-60"
-                                                        aria-label="حذف"
-                                                        data-bs-toggle="tooltip"
-                                                        data-bs-placement="top"
-                                                        data-bs-title="انتقال به بلاک لیست"
-                                                        x-data="{}"
-                                                        x-init="if (window.bootstrap?.Tooltip) { const t = new window.bootstrap.Tooltip($el, { container: 'body', trigger: 'hover focus', delay: { show: 120, hide: 80 } }); $el.addEventListener('click', () => t.hide()); $el.addEventListener('mouseleave', () => t.hide()); }"
-                                                    >
-                                                        <i class="bi bi-trash3"></i>
-                                                    </button>
-                                                @endcan
+                                                        <div
+                                                            x-show="open"
+                                                            x-transition.origin.top.right
+                                                            @click.away="open = false"
+                                                            class="absolute left-0 z-30 mt-2 w-48 overflow-hidden rounded-2xl border border-slate-200 bg-white py-1 text-right shadow-xl ring-1 ring-slate-100"
+                                                            style="display: none;"
+                                                            role="menu"
+                                                        >
+                                                            @can('people-edit')
+                                                                <button
+                                                                    type="button"
+                                                                    wire:click="quickEditPerson({{ $person->id }})"
+                                                                    wire:loading.attr="disabled"
+                                                                    wire:target="quickEditPerson({{ $person->id }})"
+                                                                    class="flex w-full items-center gap-2 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-amber-50 hover:text-amber-700 focus:bg-amber-50 focus:outline-none disabled:opacity-60"
+                                                                    role="menuitem"
+                                                                    @click="open = false"
+                                                                >
+                                                                    <i class="bi bi-lightning-charge text-amber-600"></i>
+                                                                    ویرایش سریع
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    wire:click="openQrModal({{ $person->id }})"
+                                                                    wire:loading.attr="disabled"
+                                                                    wire:target="openQrModal({{ $person->id }})"
+                                                                    class="flex w-full items-center gap-2 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-cyan-50 hover:text-cyan-700 focus:bg-cyan-50 focus:outline-none disabled:opacity-60"
+                                                                    role="menuitem"
+                                                                    @click="open = false"
+                                                                >
+                                                                    <i class="bi bi-qr-code text-cyan-600"></i>
+                                                                    کارت QR
+                                                                </button>
+                                                            @endcan
+
+                                                            @can('people-delete')
+                                                                <button
+                                                                    type="button"
+                                                                    wire:click="openDeleteModal({{ $person->id }})"
+                                                                    wire:loading.attr="disabled"
+                                                                    wire:target="openDeleteModal({{ $person->id }})"
+                                                                    class="flex w-full items-center gap-2 px-4 py-3 text-sm font-bold text-rose-700 transition hover:bg-rose-50 focus:bg-rose-50 focus:outline-none disabled:opacity-60"
+                                                                    role="menuitem"
+                                                                    @click="open = false"
+                                                                >
+                                                                    <i class="bi bi-trash3"></i>
+                                                                    انتقال به بلاک لیست
+                                                                </button>
+                                                            @endcan
+                                                        </div>
+                                                    </div>
+                                                @endcanany
                                             </div>
                                         </td>
                                     </tr>
@@ -367,6 +384,135 @@
             </div>
         </div>
     </div>
+
+    @if($showTrackingModal)
+        @php
+            $trackingPerson = $this->trackingPerson;
+        @endphp
+
+        @if($trackingPerson)
+            <div
+                wire:key="person-tracking-modal-{{ $trackingPerson->id }}"
+                x-data="{
+                    open: @js($showTrackingModal),
+                    close() {
+                        this.open = false;
+                        setTimeout(() => $wire.closeTrackingModal(), 180);
+                    }
+                }"
+                x-show="open"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="person-tracking-modal-title"
+                @keydown.escape.window="close()"
+                style="display: none;"
+            >
+                <div class="absolute inset-0" @click="close()"></div>
+
+                <div
+                    x-show="open"
+                    x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+                    x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                    x-transition:leave="transition ease-in duration-150"
+                    x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                    x-transition:leave-end="opacity-0 translate-y-4 scale-95"
+                    class="relative w-full overflow-hidden rounded-t-3xl border border-cyan-100 bg-white shadow-2xl shadow-slate-950/20 sm:max-w-xl sm:rounded-3xl"
+                    @click.stop
+                >
+                    <div class="bg-gradient-to-l from-cyan-700 via-sky-600 to-cyan-600 px-5 py-5 text-white sm:px-6">
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="min-w-0">
+                                <div class="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-bold text-white/90 ring-1 ring-white/20">
+                                    <i class="bi bi-file-earmark-check"></i>
+                                    رهگیری ثبت نام
+                                </div>
+                                <h2 id="person-tracking-modal-title" class="mt-3 truncate text-xl font-extrabold">
+                                    {{ $trackingPerson->full_name ?: 'مددجوی بدون نام' }}
+                                </h2>
+                                <p class="mt-1 text-sm font-semibold text-white/80" dir="ltr">
+                                    {{ $trackingPerson->person_code ?: '-' }}
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                @click="close()"
+                                class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-2xl leading-none text-white transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40"
+                                aria-label="بستن"
+                            >
+                                &times;
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 p-4 sm:p-6">
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                                <p class="flex items-center gap-2 text-xs font-bold text-slate-500">
+                                    <i class="bi bi-person-plus text-cyan-600"></i>
+                                    ایجادکننده
+                                </p>
+                                <p class="mt-2 break-words text-base font-extrabold text-slate-900">
+                                    {{ $trackingPerson->creator?->name ?? 'مدیریت' }}
+                                </p>
+                            </div>
+
+                            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                                <p class="flex items-center gap-2 text-xs font-bold text-slate-500">
+                                    <i class="bi bi-calendar2-plus text-cyan-600"></i>
+                                    زمان ایجاد
+                                </p>
+                                <p class="mt-2 text-base font-extrabold text-slate-900" dir="ltr">
+                                    {{ optional($trackingPerson->created_at)->format('Y/m/d H:i') ?? '-' }}
+                                </p>
+                            </div>
+
+                            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                                <p class="flex items-center gap-2 text-xs font-bold text-slate-500">
+                                    <i class="bi bi-person-check text-indigo-600"></i>
+                                    آخرین ویرایش توسط
+                                </p>
+                                <p class="mt-2 break-words text-base font-extrabold text-slate-900">
+                                    {{ $trackingPerson->updater?->name ?? $trackingPerson->creator?->name ?? 'مدیریت' }}
+                                </p>
+                            </div>
+
+                            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                                <p class="flex items-center gap-2 text-xs font-bold text-slate-500">
+                                    <i class="bi bi-calendar2-check text-indigo-600"></i>
+                                    زمان آخرین ویرایش
+                                </p>
+                                <p class="mt-2 text-base font-extrabold text-slate-900" dir="ltr">
+                                    {{ optional($trackingPerson->updated_at)->format('Y/m/d H:i') ?? '-' }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="rounded-2xl border border-cyan-100 bg-cyan-50/70 px-4 py-3 text-xs leading-6 text-cyan-900">
+                            این اطلاعات برای پیگیری داخلی ثبت و تغییرات پرونده نمایش داده می‌شود.
+                        </div>
+
+                        <div class="flex justify-end">
+                            <button
+                                type="button"
+                                @click="close()"
+                                class="inline-flex min-h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100"
+                            >
+                                بستن
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+    @endif
 
     @if($showDeleteModal && $deletingPerson)
         <div
@@ -518,81 +664,3 @@
 
     @include('livewire.people.partials.person-details-modal')
 </div>
-
-@push('styles')
-    <style>
-        .tooltip.beneficiary-tracking-tooltip .tooltip-inner {
-            max-width: 21rem;
-            min-width: 17rem;
-            text-align: right;
-            direction: rtl;
-            border-radius: 0.95rem;
-            border: 1px solid #fecdd3;
-            background: linear-gradient(180deg, #fff 0%, #fffafc 100%);
-            color: #334155;
-            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.14);
-            padding: 0.7rem 0.8rem;
-            font-size: 0.74rem;
-            line-height: 1.5;
-        }
-
-        .tooltip.beneficiary-tracking-tooltip .tooltip-arrow::before {
-            border-top-color: #fecdd3;
-            border-bottom-color: #fecdd3;
-            border-left-color: #fecdd3;
-            border-right-color: #fecdd3;
-        }
-
-        .tooltip .tooltip-inner {
-            border-radius: 0.75rem;
-            font-size: 0.72rem;
-            background: #fff;
-            color: #334155;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.12);
-            padding: 0.42rem 0.62rem;
-        }
-
-        .tooltip .tooltip-arrow::before {
-            border-top-color: #e2e8f0;
-            border-bottom-color: #e2e8f0;
-            border-left-color: #e2e8f0;
-            border-right-color: #e2e8f0;
-        }
-
-        .tracking-tooltip-wrap {
-            display: grid;
-            gap: 0.42rem;
-        }
-
-        .tracking-tooltip-title {
-            margin-bottom: 0.1rem;
-            padding-bottom: 0.35rem;
-            border-bottom: 1px solid #ffe4e6;
-            font-size: 0.78rem;
-            font-weight: 800;
-            color: #9f1239;
-        }
-
-        .tracking-tooltip-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 0.75rem;
-            align-items: baseline;
-            font-size: 0.73rem;
-        }
-
-        .tracking-tooltip-row .label {
-            color: #64748b;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-
-        .tracking-tooltip-row .value {
-            color: #0f172a;
-            font-weight: 700;
-            text-align: left;
-            direction: ltr;
-        }
-    </style>
-@endpush
