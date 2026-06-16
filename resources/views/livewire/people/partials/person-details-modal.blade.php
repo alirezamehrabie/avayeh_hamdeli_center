@@ -142,13 +142,13 @@
         x-transition:leave="transition ease-in duration-200"
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
+        class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 p-0 backdrop-blur-md sm:items-center sm:p-4"
         @keydown.escape.window="viewerOpen ? closeViewer() : close()"
         @keydown.arrow-right.window="if (viewerOpen) nextImage()"
         @keydown.arrow-left.window="if (viewerOpen) previousImage()"
         style="display: none;"
     >
-        <div class="absolute inset-0" @click="close()"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.18),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(15,23,42,0.22),transparent_36%)]" @click="close()"></div>
 
         <div
             x-show="open"
@@ -158,57 +158,116 @@
             x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
             x-transition:leave-end="opacity-0 translate-y-4 scale-95"
-            class="relative w-full max-w-5xl overflow-hidden rounded-3xl border shadow-2xl"
-            style="border-color: #f5d0e1; background: linear-gradient(180deg, #ffffff 0%, #fff8fb 100%);"
+            class="relative flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-t-[2rem] border border-white/70 bg-white shadow-2xl shadow-slate-950/30 ring-1 ring-slate-950/5 sm:max-h-[90vh] sm:rounded-[2rem]"
             @click.stop
         >
-            <div class="flex items-start justify-between gap-4 px-6 py-4 text-white" style="background: linear-gradient(to left, #9D174D, #BE185D);">
-                <div class="flex items-center gap-4">
-                    <div class="shrink-0 overflow-hidden rounded-2xl border-2 border-white/60 bg-white/20 shadow-sm" style="width: 110px; height: 140px; aspect-ratio: 3 / 4;">
-                        <img
-                            src="{{ $selectedPerson->profile_photo ? asset($selectedPerson->profile_photo) : asset('images/no-image-profile.png?v=2') }}"
-                            alt="تصویر مددجو"
-                            class="h-full w-full cursor-zoom-in object-cover"
-                            @click="openViewer(0)"
-                        >
+            <div class="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-slate-50 via-white to-transparent"></div>
+
+            <div class="relative flex items-start justify-between gap-3 border-b border-slate-100 bg-white/90 px-4 py-4 backdrop-blur-xl sm:px-6 sm:py-5">
+                <div class="min-w-0">
+                    <div class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-black text-slate-500">
+                        <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                        <span>پرونده مددجو</span>
                     </div>
-                    <div>
-                        <h2 class="text-xl font-extrabold">اطلاعات مددجو</h2>
-                        <p class="mt-1 text-sm text-white/85">{{ $selectedPerson->full_name ?: 'بدون نام' }}</p>
-                        <div class="mt-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/12 px-3 py-1.5 text-xs font-semibold text-white/95 backdrop-blur-sm">
-                            <span class="text-white/70">کد مددجو</span>
-                            <span dir="ltr">{{ $selectedPerson->formatted_person_code ?: ($selectedPerson->person_code ?: '-') }}</span>
-                        </div>
+                    <h2 class="mt-3 truncate text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
+                        {{ $selectedPerson->full_name ?: 'بدون نام' }}
+                    </h2>
+                    <div class="mt-2 flex flex-wrap items-center gap-2 text-xs font-bold text-slate-500">
+                        <span class="rounded-full bg-slate-100 px-3 py-1" dir="ltr">{{ $selectedPerson->formatted_person_code ?: ($selectedPerson->person_code ?: '-') }}</span>
+                        <span class="rounded-full bg-slate-100 px-3 py-1" dir="ltr">{{ $selectedPerson->national_id ?: '-' }}</span>
                     </div>
                 </div>
-                <div class="flex flex-col items-end gap-2">
-                    <button type="button" @click="close()" class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-2xl leading-none text-white transition hover:bg-white/25" aria-label="بستن">
+
+                <div class="flex shrink-0 items-center gap-2">
+                    @if($showEditAction)
+                        <button
+                            type="button"
+                            wire:click="editPerson({{ $selectedPerson->id }})"
+                            class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                            aria-label="ویرایش"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a4 4 0 01-1.414.95L7 17l1.514-4.122a4 4 0 01.95-1.414z"/>
+                            </svg>
+                        </button>
+                    @endif
+                    <button
+                        type="button"
+                        @click="close()"
+                        class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-2xl leading-none text-slate-500 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                        aria-label="بستن"
+                    >
                         &times;
                     </button>
-                    @if($showEditAction)
-                        <button type="button" wire:click="editPerson({{ $selectedPerson->id }})" class="mt-4 inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/15 p-2 text-white transition hover:bg-white/25"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 14.536a4 4 0 01-1.414.95L7 17l1.514-4.122a4 4 0 01.95-1.414z"/></svg></button>
-                    @endif
                 </div>
             </div>
 
-            <div class="max-h-[75vh] overflow-y-auto p-6">
-                <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div class="relative grid min-h-0 flex-1 overflow-y-auto bg-slate-50/60 p-4 sm:p-6 lg:grid-cols-[17rem_minmax(0,1fr)] lg:gap-6">
+                <aside class="mb-4 rounded-[1.75rem] border border-white bg-white p-4 shadow-sm ring-1 ring-slate-950/5 lg:sticky lg:top-0 lg:mb-0 lg:self-start">
+                    <div class="overflow-hidden rounded-[1.5rem] bg-slate-100 shadow-inner ring-1 ring-slate-200" style="aspect-ratio: 3 / 4;">
+                        <img
+                            src="{{ $selectedPerson->profile_photo ? asset($selectedPerson->profile_photo) : asset('images/no-image-profile.png?v=2') }}"
+                            alt="تصویر مددجو"
+                            class="h-full w-full cursor-zoom-in object-cover transition duration-300 hover:scale-105"
+                            @click="openViewer(0)"
+                        >
+                    </div>
+
+                    <div class="mt-4 space-y-3">
+                        <div>
+                            <p class="text-xs font-bold text-slate-400">نام کامل</p>
+                            <p class="mt-1 text-base font-black text-slate-950">{{ $selectedPerson->full_name ?: '-' }}</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="rounded-2xl bg-slate-50 p-3">
+                                <p class="text-[11px] font-bold text-slate-400">کد مددجو</p>
+                                <p class="mt-1 truncate text-sm font-black text-slate-900" dir="ltr">{{ $selectedPerson->formatted_person_code ?: ($selectedPerson->person_code ?: '-') }}</p>
+                            </div>
+                            <div class="rounded-2xl bg-slate-50 p-3">
+                                <p class="text-[11px] font-bold text-slate-400">سطح نیاز</p>
+                                <p class="mt-1 truncate text-sm font-black text-slate-900">{{ $selectedPerson->needsLevel?->levelType?->title ?: '-' }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if($personImages->count() > 1)
+                        <div class="mt-4 grid grid-cols-3 gap-2">
+                            @foreach($personImages->take(4) as $imageIndex => $image)
+                                <button
+                                    type="button"
+                                    class="group relative overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-slate-200"
+                                    style="aspect-ratio: 1 / 1;"
+                                    @click="openViewer({{ $imageIndex }})"
+                                    aria-label="{{ $image['label'] }}"
+                                >
+                                    <img src="{{ $image['url'] }}" alt="{{ $image['label'] }}" class="h-full w-full object-cover transition duration-300 group-hover:scale-110">
+                                </button>
+                            @endforeach
+                        </div>
+                    @endif
+                </aside>
+
+                <section class="min-w-0">
+                    <div class="mb-4 rounded-[1.5rem] border border-cyan-100 bg-gradient-to-l from-cyan-50 via-white to-white p-4 shadow-sm">
+                        <p class="text-sm font-black text-slate-900">اطلاعات پرونده</p>
+                        <p class="mt-1 text-xs leading-6 text-slate-500">جزئیات فردی، خانوادگی، آموزشی و حمایتی مددجو در یک نمای خلاصه و قابل مرور.</p>
+                    </div>
+
+                    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     @foreach($detailItems as $key => $item)
 
                         @switch($key)
                             @case('birthDateValue')
-                                <div class="rounded-2xl border border-slate-100 bg-white/90 p-4 shadow-sm">
-                                    <p class="text-xs font-semibold text-slate-500">
+                                <div class="group rounded-[1.35rem] border border-white bg-white p-4 shadow-sm ring-1 ring-slate-950/5 transition hover:-translate-y-0.5 hover:shadow-md">
+                                    <p class="text-[11px] font-black uppercase tracking-wide text-slate-400">
                                         {{ $item['label'] }}
                                     </p>
-                                    <div class="mt-1 flex flex-col items-start gap-2">
-                                    @if($ageBreakdown)
-
-                                            <p class="font-bold leading-7 text-slate-800">
-                                                {{ $item['value'] }}
-                                            </p>
-                                            <div
-                                                class="inline-flex items-center rounded-full bg-pink-50 text-pink-700 px-3 py-1 text-sm font-semibold">
+                                    <div class="mt-2 flex flex-col items-start gap-2">
+                                        <p class="break-words text-sm font-black leading-7 text-slate-900">
+                                            {{ $item['value'] }}
+                                        </p>
+                                        @if($ageBreakdown)
+                                            <div class="inline-flex items-center rounded-full bg-cyan-50 px-3 py-1 text-xs font-black text-cyan-700 ring-1 ring-cyan-100">
                                                 {{ $ageBreakdown }}
                                             </div>
                                         @endif
@@ -218,12 +277,12 @@
 
 
                             @default
-                                <div class="rounded-2xl border border-slate-100 bg-white/90 p-4 shadow-sm">
-                                    <p class="text-xs font-semibold text-slate-500">
+                                <div class="group rounded-[1.35rem] border border-white bg-white p-4 shadow-sm ring-1 ring-slate-950/5 transition hover:-translate-y-0.5 hover:shadow-md">
+                                    <p class="text-[11px] font-black uppercase tracking-wide text-slate-400">
                                         {{ $item['label'] }}
                                     </p>
 
-                                    <p class="mt-1 font-bold leading-7 text-slate-800">
+                                    <p class="mt-2 break-words text-sm font-black leading-7 text-slate-900">
                                         {{ $item['value'] }}
                                     </p>
                                 </div>
@@ -231,8 +290,9 @@
 
                     @endforeach
 
+                    </div>
+                </section>
                 </div>
-            </div>
 
             <div
                 x-show="viewerOpen"
@@ -242,13 +302,13 @@
                 x-transition:leave="transition ease-in duration-150"
                 x-transition:leave-start="opacity-100"
                 x-transition:leave-end="opacity-0"
-                class="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/80 p-4"
+                class="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/90 p-4 backdrop-blur-sm"
                 @click.self="closeViewer()"
                 style="display: none;"
             >
                 <button
                     type="button"
-                    class="absolute left-4 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-2xl text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                    class="absolute left-3 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-white/10 text-2xl text-white shadow-lg backdrop-blur transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40 sm:left-6"
                     @click.stop="previousImage()"
                     :disabled="viewerImages.length < 2"
                     aria-label="تصویر قبلی"
@@ -259,7 +319,7 @@
                 <div class="relative flex w-full max-w-4xl flex-col items-center gap-4" @click.stop>
                     <button
                         type="button"
-                        class="absolute right-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-2xl leading-none text-white transition hover:bg-white/25"
+                        class="absolute right-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/10 text-2xl leading-none text-white shadow-lg backdrop-blur transition hover:bg-white/20"
                         @click="closeViewer()"
                         aria-label="بستن نمایشگر تصویر"
                     >
@@ -271,9 +331,9 @@
                             <img
                                 :src="viewerImages[viewerIndex].url"
                                 :alt="viewerImages[viewerIndex].label"
-                                class="max-h-[70vh] w-auto max-w-full rounded-2xl bg-white object-contain shadow-2xl"
+                                class="max-h-[70vh] w-auto max-w-full rounded-[1.5rem] bg-white object-contain shadow-2xl ring-1 ring-white/10"
                             >
-                            <div class="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white">
+                            <div class="rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-bold text-white shadow-lg backdrop-blur">
                                 <span x-text="viewerImages[viewerIndex].label"></span>
                                 <span class="mx-2 text-white/60">|</span>
                                 <span x-text="`${viewerIndex + 1} / ${viewerImages.length}`"></span>
@@ -284,7 +344,7 @@
 
                 <button
                     type="button"
-                    class="absolute right-4 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-2xl text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                    class="absolute right-3 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-white/10 text-2xl text-white shadow-lg backdrop-blur transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40 sm:right-6"
                     @click.stop="nextImage()"
                     :disabled="viewerImages.length < 2"
                     aria-label="تصویر بعدی"
