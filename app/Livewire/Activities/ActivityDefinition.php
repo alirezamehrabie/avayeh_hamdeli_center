@@ -11,14 +11,25 @@ use Livewire\Component;
 class ActivityDefinition extends Component
 {
     public ?int $activityId = null;
+
     public ?int $editingActivityId = null;
+
     public string $name = '';
+
     public string $activityType = 'group_activity';
+
     public string $description = '';
+
     public string $location = '';
+
     public ?string $startsAt = null;
+
     public ?string $endsAt = null;
+
     public string $capacity = '';
+
+    public string $status = 'draft';
+
     public string $statusNotes = '';
 
     public function mount(?int $activityId = null): void
@@ -37,6 +48,8 @@ class ActivityDefinition extends Component
     {
         abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
+        $this->normalizeInput();
+
         $activity = $this->editingActivityId
             ? Activity::query()->findOrFail($this->editingActivityId)
             : new Activity;
@@ -52,7 +65,6 @@ class ActivityDefinition extends Component
         if (! $this->editingActivityId) {
             $activity->code = Activity::generateNextCode();
             $activity->created_by = auth()->id();
-            $activity->status = 'draft';
         }
 
         $payload = [
@@ -63,11 +75,12 @@ class ActivityDefinition extends Component
             'starts_at' => blank($validated['startsAt']) ? null : $this->jalaliDateTimeToGregorian($validated['startsAt']),
             'ends_at' => blank($validated['endsAt']) ? null : $this->jalaliDateTimeToGregorian($validated['endsAt']),
             'capacity' => blank($validated['capacity']) ? null : (int) $validated['capacity'],
+            'status' => $validated['status'],
             'status_notes' => blank($validated['statusNotes']) ? null : trim($validated['statusNotes']),
         ];
 
         if ($activity->exists && $activity->status === 'ongoing') {
-            $payload = array_intersect_key($payload, array_flip(['location', 'ends_at', 'status_notes']));
+            $payload = array_intersect_key($payload, array_flip(['location', 'ends_at', 'status', 'status_notes']));
         }
 
         $activity->fill($payload);
@@ -90,6 +103,7 @@ class ActivityDefinition extends Component
         $this->startsAt = $activity->starts_at ? Jalalian::fromDateTime($activity->starts_at)->format('Y/m/d H:i') : null;
         $this->endsAt = $activity->ends_at ? Jalalian::fromDateTime($activity->ends_at)->format('Y/m/d H:i') : null;
         $this->capacity = $activity->capacity ? (string) $activity->capacity : '';
+        $this->status = (string) $activity->status;
         $this->statusNotes = (string) $activity->status_notes;
     }
 
@@ -107,11 +121,14 @@ class ActivityDefinition extends Component
 
     public function render()
     {
+        $currentStatus = $this->editingActivityId
+            ? Activity::query()->whereKey($this->editingActivityId)->value('status')
+            : $this->status;
+
         return view('livewire.activities.activity-definition', [
             'typeOptions' => Activity::TYPE_OPTIONS,
-            'currentStatus' => $this->editingActivityId
-                ? Activity::query()->whereKey($this->editingActivityId)->value('status')
-                : 'draft',
+            'currentStatus' => $currentStatus,
+            'detailsLocked' => $currentStatus === 'ongoing',
             'statusOptions' => Activity::STATUS_OPTIONS,
         ]);
     }
@@ -125,15 +142,26 @@ class ActivityDefinition extends Component
             'location' => ['nullable', 'string', 'max:255'],
             'startsAt' => ['nullable', 'string', $this->jalaliDateTimeRule('زمان شروع')],
             'endsAt' => ['nullable', 'string', $this->jalaliDateTimeRule('زمان پایان'), function (string $attribute, mixed $value, \Closure $fail): void {
-                if (blank($value) || blank($this->startsAt) || ! $this->isValidJalaliDateTime((string) $value) || ! $this->isValidJalaliDateTime((string) $this->startsAt)) {
+                if (blank($value)) {
                     return;
                 }
 
-                if (Jalalian::fromFormat('Y/m/d H:i', trim((string) $value))->lessThan(Jalalian::fromFormat('Y/m/d H:i', trim((string) $this->startsAt)))) {
-                    $fail('زمان پایان باید برابر یا بعد از زمان شروع باشد.');
+                if (blank($this->startsAt)) {
+                    $fail('برای ثبت زمان پایان، زمان شروع نیز الزامی است.');
+
+                    return;
+                }
+
+                if (! $this->isValidJalaliDateTime((string) $value) || ! $this->isValidJalaliDateTime((string) $this->startsAt)) {
+                    return;
+                }
+
+                if (! Jalalian::fromFormat('Y/m/d H:i', trim((string) $value))->greaterThan(Jalalian::fromFormat('Y/m/d H:i', trim((string) $this->startsAt)))) {
+                    $fail('زمان پایان باید بعد از زمان شروع باشد.');
                 }
             }],
             'capacity' => ['nullable', 'integer', 'min:1'],
+            'status' => ['required', Rule::in(array_keys(Activity::STATUS_OPTIONS))],
             'statusNotes' => ['nullable', 'string', 'max:5000'],
         ];
     }
@@ -155,6 +183,20 @@ class ActivityDefinition extends Component
     protected function bootDefaults(): void
     {
         $this->activityType = $this->activityType ?: 'group_activity';
+        $this->status = $this->status ?: 'draft';
+    }
+
+    protected function normalizeInput(): void
+    {
+        $this->name = trim($this->name);
+        $this->activityType = trim($this->activityType) ?: 'group_activity';
+        $this->description = trim($this->description);
+        $this->location = trim($this->location);
+        $this->startsAt = filled($this->startsAt) ? trim((string) $this->startsAt) : null;
+        $this->endsAt = filled($this->endsAt) ? trim((string) $this->endsAt) : null;
+        $this->capacity = trim($this->capacity);
+        $this->status = trim($this->status) ?: 'draft';
+        $this->statusNotes = trim($this->statusNotes);
     }
 
     protected function canEditDetails(Activity $activity): bool

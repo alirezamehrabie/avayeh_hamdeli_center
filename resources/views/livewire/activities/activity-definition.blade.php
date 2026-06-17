@@ -19,6 +19,12 @@
                 <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{{ $message }}</div>
             @enderror
 
+            @if($detailsLocked)
+                <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+                    این فعالیت در حال برگزاری است؛ فقط مکان، زمان پایان و یادداشت وضعیت قابل ویرایش هستند.
+                </div>
+            @endif
+
             <div class="grid gap-4 md:grid-cols-3">
                 <div>
                     <label class="mb-1 block text-xs font-bold text-slate-500">کد فعالیت</label>
@@ -26,11 +32,16 @@
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-bold text-slate-500">وضعیت</label>
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-bold text-slate-700">{{ $statusOptions[$currentStatus] ?? $currentStatus }}</div>
+                    <select wire:model="status" class="w-full rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
+                        @foreach($statusOptions as $value => $label)
+                            <option value="{{ $value }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    @error('status') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-bold text-slate-500">نوع فعالیت</label>
-                    <select wire:model="activityType" class="w-full rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
+                    <select wire:model="activityType" @disabled($detailsLocked) class="w-full rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100 disabled:bg-slate-100 disabled:text-slate-400">
                         @foreach($typeOptions as $value => $label)
                             <option value="{{ $value }}">{{ $label }}</option>
                         @endforeach
@@ -42,7 +53,7 @@
             <div class="grid gap-4 md:grid-cols-2">
                 <div>
                     <label class="mb-1 block text-xs font-bold text-slate-500">نام فعالیت</label>
-                    <input type="text" wire:model="name" class="w-full rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
+                    <input type="text" wire:model="name" @disabled($detailsLocked) class="w-full rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100 disabled:bg-slate-100 disabled:text-slate-400">
                     @error('name') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
@@ -55,7 +66,7 @@
             <div class="grid gap-4 md:grid-cols-3">
                 <div>
                     <label class="mb-1 block text-xs font-bold text-slate-500">زمان شروع</label>
-                    <input type="text" wire:model="startsAt" placeholder="1403/01/01 14:30" class="w-full rounded-2xl border border-slate-200 px-4 py-2 text-sm ltr:text-left focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
+                    <input type="text" wire:model="startsAt" @disabled($detailsLocked) placeholder="1403/01/01 14:30" class="w-full rounded-2xl border border-slate-200 px-4 py-2 text-sm ltr:text-left focus:border-violet-300 focus:ring-4 focus:ring-violet-100 disabled:bg-slate-100 disabled:text-slate-400">
                     @error('startsAt') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
@@ -65,14 +76,14 @@
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-bold text-slate-500">ظرفیت</label>
-                    <input type="number" min="1" wire:model="capacity" class="w-full rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
+                    <input type="number" min="1" wire:model="capacity" @disabled($detailsLocked) class="w-full rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100 disabled:bg-slate-100 disabled:text-slate-400">
                     @error('capacity') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                 </div>
             </div>
 
             <div>
                 <label class="mb-1 block text-xs font-bold text-slate-500">توضیحات</label>
-                <textarea wire:model="description" rows="4" class="w-full rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100"></textarea>
+                <textarea wire:model="description" rows="4" @disabled($detailsLocked) class="w-full rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100 disabled:bg-slate-100 disabled:text-slate-400"></textarea>
                 @error('description') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
             </div>
 

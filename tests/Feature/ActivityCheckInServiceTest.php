@@ -8,18 +8,22 @@ use App\Models\Person;
 use App\Models\User;
 use App\Services\ActivityCheckInService;
 use App\Services\QrIdentityService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ActivityCheckInServiceTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_qr_check_in_creates_attendance_for_ongoing_activity(): void
     {
         $user = $this->operator();
         $activity = $this->activity(['status' => 'ongoing']);
         $person = $this->person('1234567890', '14001');
         $issued = app(QrIdentityService::class)->issueFor($person, $user->id);
+        $token = $issued['token'] ?? $issued['identity']->token_encrypted;
 
-        $result = app(ActivityCheckInService::class)->checkInByQr($activity, $issued['token'], $user);
+        $result = app(ActivityCheckInService::class)->checkInByQr($activity, $token, $user);
 
         $this->assertTrue($result->ok);
         $this->assertSame('checked_in', $result->code);
