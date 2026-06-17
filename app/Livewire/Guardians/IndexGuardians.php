@@ -2,9 +2,8 @@
 
 namespace App\Livewire\Guardians;
 
+use App\Livewire\Concerns\HandlesQrIdentityModal;
 use App\Models\Guardian;
-use App\Models\QrIdentity;
-use App\Services\QrIdentityService;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -13,6 +12,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.app')]
 class IndexGuardians extends Component
 {
+    use HandlesQrIdentityModal;
     use WithPagination;
 
     public bool $embedded = false;
@@ -24,17 +24,11 @@ class IndexGuardians extends Component
     public bool $showHouseholdModal = false;
     public bool $showHouseholdSizeModal = false;
     public bool $showDeleteModal = false;
-    public bool $showQrModal = false;
     public string $householdStatsTab = 'household_size';
     public string $deletionReason = '';
     public ?int $expandedHouseholdSize = null;
     public ?int $expandedCoverageCount = null;
     public ?int $deletingGuardianId = null;
-    public ?int $qrGuardianId = null;
-    public ?string $issuedQrToken = null;
-    public bool $confirmingQrLifecycleAction = false;
-    public string $qrLifecycleAction = '';
-    public string $qrLifecycleReason = '';
 
     public function mount(): void
     {
@@ -102,102 +96,29 @@ class IndexGuardians extends Component
         return redirect()->route('guardians.edit', ['guardian' => $guardianId]);
     }
 
-    public function openQrModal(int $guardianId): void
+    protected function qrSubjectType(): string
     {
-        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
-
-        $guardian = Guardian::query()->findOrFail($guardianId);
-        $qrIdentityService = app(QrIdentityService::class);
-        $qrIdentityService->ensureActiveFor($guardian, auth()->id());
-
-        $this->qrGuardianId = $guardian->id;
-        $this->issuedQrToken = null;
-        $this->confirmingQrLifecycleAction = false;
-        $this->qrLifecycleAction = '';
-        $this->qrLifecycleReason = '';
-        $this->showQrModal = true;
+        return \App\Models\QrIdentity::SUBJECT_GUARDIAN;
     }
 
-    public function closeQrModal(): void
+    protected function qrOpenPermission(): string
     {
-        $this->showQrModal = false;
-        $this->qrGuardianId = null;
-        $this->issuedQrToken = null;
-        $this->confirmingQrLifecycleAction = false;
-        $this->qrLifecycleAction = '';
-        $this->qrLifecycleReason = '';
-        $this->resetValidation(['qrLifecycleReason']);
+        return 'full-access';
     }
 
-    public function requestQrLifecycleAction(string $action): void
+    protected function qrManagePermission(): string
     {
-        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
-        abort_unless(in_array($action, ['reissue', 'revoke'], true), 422);
-
-        $this->qrLifecycleAction = $action;
-        $this->qrLifecycleReason = '';
-        $this->confirmingQrLifecycleAction = true;
-        $this->resetValidation(['qrLifecycleReason']);
+        return 'full-access';
     }
 
-    public function cancelQrLifecycleAction(): void
+    protected function resolveQrSubject(int $subjectId): Guardian
     {
-        $this->confirmingQrLifecycleAction = false;
-        $this->qrLifecycleAction = '';
-        $this->qrLifecycleReason = '';
-        $this->resetValidation(['qrLifecycleReason']);
+        return Guardian::query()->findOrFail($subjectId);
     }
 
-    public function confirmQrLifecycleAction(): void
+    protected function qrSubjectLabel(): string
     {
-        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
-        abort_unless(in_array($this->qrLifecycleAction, ['reissue', 'revoke'], true), 422);
-
-        $validated = $this->validate([
-            'qrLifecycleReason' => ['required', 'string', 'min:10', 'max:1000'],
-        ], [
-            'qrLifecycleReason.required' => 'ثبت علت برای تغییر وضعیت QR الزامی است.',
-            'qrLifecycleReason.min' => 'علت تغییر وضعیت QR باید حداقل ۱۰ کاراکتر باشد.',
-        ]);
-
-        $reason = trim($validated['qrLifecycleReason']);
-
-        if ($this->qrLifecycleAction === 'reissue') {
-            $guardian = Guardian::query()->findOrFail($this->qrGuardianId);
-            $issued = app(QrIdentityService::class)->replaceFor($guardian, auth()->id(), $reason);
-            $this->issuedQrToken = $issued['token'];
-            session()->flash('success', 'QR سرپرست با ثبت علت، دوباره صادر شد.');
-        } else {
-            $identity = $this->selectedQrIdentity;
-
-            if ($identity) {
-                app(QrIdentityService::class)->revoke($identity, auth()->id(), $reason);
-            }
-
-            $this->issuedQrToken = null;
-            session()->flash('success', 'QR سرپرست با ثبت علت، ابطال شد.');
-        }
-
-        $this->cancelQrLifecycleAction();
-    }
-
-    public function getSelectedQrIdentityProperty(): ?QrIdentity
-    {
-        if (! $this->qrGuardianId) {
-            return null;
-        }
-
-        return QrIdentity::query()
-            ->where('subject_type', QrIdentity::SUBJECT_GUARDIAN)
-            ->where('subject_id', $this->qrGuardianId)
-            ->where('status', QrIdentity::STATUS_ACTIVE)
-            ->latest('id')
-            ->first();
-    }
-
-    public function getQrGuardianProperty(): ?Guardian
-    {
-        return $this->qrGuardianId ? Guardian::query()->find($this->qrGuardianId) : null;
+        return 'سرپرست';
     }
 
     public function openDeleteModal(int $guardianId): void

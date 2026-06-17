@@ -2,12 +2,11 @@
 
 namespace App\Livewire\People;
 
+use App\Livewire\Concerns\HandlesQrIdentityModal;
+use App\Models\Person;
+use App\Queries\People\PeopleIndexSearchQuery;
 use Livewire\Component;
 use Livewire\Attributes\Layout;
-use App\Models\Person;
-use App\Models\QrIdentity;
-use App\Queries\People\PeopleIndexSearchQuery;
-use App\Services\QrIdentityService;
 use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Livewire\WithPagination;
@@ -15,6 +14,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.app')]
 class IndexPeople extends Component
 {
+    use HandlesQrIdentityModal;
     use WithPagination;
 
     public $search = '';
@@ -25,14 +25,8 @@ class IndexPeople extends Component
     public bool $showPersonModal = false;
     public bool $showTrackingModal = false;
     public bool $showDeleteModal = false;
-    public bool $showQrModal = false;
     public string $deletionReason = '';
     public ?int $deletingPersonId = null;
-    public ?int $qrPersonId = null;
-    public ?string $issuedQrToken = null;
-    public bool $confirmingQrLifecycleAction = false;
-    public string $qrLifecycleAction = '';
-    public string $qrLifecycleReason = '';
 
     public function mount(): void
     {
@@ -127,102 +121,29 @@ class IndexPeople extends Component
         $this->trackingPersonId = null;
     }
 
-    public function openQrModal(int $personId): void
+    protected function qrSubjectType(): string
     {
-        abort_unless(auth()->check() && auth()->user()->can('people-edit'), 403);
-
-        $person = Person::query()->findOrFail($personId);
-        $qrIdentityService = app(QrIdentityService::class);
-        $qrIdentityService->ensureActiveFor($person, auth()->id());
-
-        $this->qrPersonId = $person->id;
-        $this->issuedQrToken = null;
-        $this->confirmingQrLifecycleAction = false;
-        $this->qrLifecycleAction = '';
-        $this->qrLifecycleReason = '';
-        $this->showQrModal = true;
+        return \App\Models\QrIdentity::SUBJECT_PERSON;
     }
 
-    public function closeQrModal(): void
+    protected function qrOpenPermission(): string
     {
-        $this->showQrModal = false;
-        $this->qrPersonId = null;
-        $this->issuedQrToken = null;
-        $this->confirmingQrLifecycleAction = false;
-        $this->qrLifecycleAction = '';
-        $this->qrLifecycleReason = '';
-        $this->resetValidation(['qrLifecycleReason']);
+        return 'people-edit';
     }
 
-    public function requestQrLifecycleAction(string $action): void
+    protected function qrManagePermission(): string
     {
-        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
-        abort_unless(in_array($action, ['reissue', 'revoke'], true), 422);
-
-        $this->qrLifecycleAction = $action;
-        $this->qrLifecycleReason = '';
-        $this->confirmingQrLifecycleAction = true;
-        $this->resetValidation(['qrLifecycleReason']);
+        return 'full-access';
     }
 
-    public function cancelQrLifecycleAction(): void
+    protected function resolveQrSubject(int $subjectId): Person
     {
-        $this->confirmingQrLifecycleAction = false;
-        $this->qrLifecycleAction = '';
-        $this->qrLifecycleReason = '';
-        $this->resetValidation(['qrLifecycleReason']);
+        return Person::query()->findOrFail($subjectId);
     }
 
-    public function confirmQrLifecycleAction(): void
+    protected function qrSubjectLabel(): string
     {
-        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
-        abort_unless(in_array($this->qrLifecycleAction, ['reissue', 'revoke'], true), 422);
-
-        $validated = $this->validate([
-            'qrLifecycleReason' => ['required', 'string', 'min:10', 'max:1000'],
-        ], [
-            'qrLifecycleReason.required' => 'ثبت علت برای تغییر وضعیت QR الزامی است.',
-            'qrLifecycleReason.min' => 'علت تغییر وضعیت QR باید حداقل ۱۰ کاراکتر باشد.',
-        ]);
-
-        $reason = trim($validated['qrLifecycleReason']);
-
-        if ($this->qrLifecycleAction === 'reissue') {
-            $person = Person::query()->findOrFail($this->qrPersonId);
-            $issued = app(QrIdentityService::class)->replaceFor($person, auth()->id(), $reason);
-            $this->issuedQrToken = $issued['token'];
-            session()->flash('success', 'QR مددجو با ثبت علت، دوباره صادر شد.');
-        } else {
-            $identity = $this->selectedQrIdentity;
-
-            if ($identity) {
-                app(QrIdentityService::class)->revoke($identity, auth()->id(), $reason);
-            }
-
-            $this->issuedQrToken = null;
-            session()->flash('success', 'QR مددجو با ثبت علت، ابطال شد.');
-        }
-
-        $this->cancelQrLifecycleAction();
-    }
-
-    public function getSelectedQrIdentityProperty(): ?QrIdentity
-    {
-        if (! $this->qrPersonId) {
-            return null;
-        }
-
-        return QrIdentity::query()
-            ->where('subject_type', QrIdentity::SUBJECT_PERSON)
-            ->where('subject_id', $this->qrPersonId)
-            ->where('status', QrIdentity::STATUS_ACTIVE)
-            ->latest('id')
-            ->first();
-    }
-
-    public function getQrPersonProperty(): ?Person
-    {
-        return $this->qrPersonId ? Person::query()->find($this->qrPersonId) : null;
+        return 'مددجو';
     }
 
     public function getSelectedPersonProperty(): ?Person
