@@ -218,6 +218,15 @@
                         <livewire:services.service-management :key="'service-management'" />
                         @break
 
+
+                    @case('activity-definition')
+                        <livewire:activities.activity-definition :activity-id="$editingActivityId" :key="'activity-definition-' . ($editingActivityId ?? 'new')" />
+                        @break
+
+                    @case('activity-list')
+                        <livewire:activities.activity-list :key="'activity-list'" />
+                        @break
+
                     @case('system-settings-user-definition')
                         <livewire:admin.user-management :key="'system-settings-user-definition'" />
                         @break

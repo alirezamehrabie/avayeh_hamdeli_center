@@ -17,6 +17,7 @@ class Activity extends Model
         'scheduled' => 'زمان‌بندی شده',
         'ongoing' => 'در حال برگزاری',
         'closed' => 'بسته شده',
+        'cancelled' => 'لغو شده',
     ];
 
     public const TYPE_OPTIONS = [

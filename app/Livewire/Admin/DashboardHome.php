@@ -23,6 +23,7 @@ class DashboardHome extends Component
     public ?int $editingSocialWorkerId = null;
     public ?int $editingGuardianId = null;
     public ?int $editingServiceId = null;
+    public ?int $editingActivityId = null;
     public ?int $serviceReportServiceId = null;
     public bool $showDeletedUsers = false;
     public string $newReminderTitle = '';
@@ -46,6 +47,10 @@ class DashboardHome extends Component
             $this->activeSection = 'service-list';
         } elseif (request()->routeIs('admin.service-delivery')) {
             $this->activeSection = 'service-delivery';
+        } elseif (request()->routeIs('admin.activity-definition')) {
+            $this->activeSection = 'activity-definition';
+        } elseif (request()->routeIs('admin.activity-list')) {
+            $this->activeSection = 'activity-list';
         } elseif (request()->routeIs('admin.special-features.id-card-scanner')) {
             $this->activeSection = 'special-features-id-card-scanner';
         }
@@ -61,6 +66,7 @@ class DashboardHome extends Component
         $this->editingSocialWorkerId = $section === 'social-worker-edit' ? $id : null;
         $this->editingGuardianId = $section === 'guardian-edit' ? $id : null;
         $this->editingServiceId = $this->activeSection === 'service-definition' ? $id : null;
+        $this->editingActivityId = $this->activeSection === 'activity-definition' ? $id : null;
         $this->serviceReportServiceId = $section === 'advanced-service-report' ? $id : null;
         $this->showDeletedUsers = false;
     }
@@ -125,6 +131,8 @@ class DashboardHome extends Component
                 'service-list',
                 'service-delivery',
                 'service-management',
+                'activity-definition',
+                'activity-list',
                 'child-supporter-sponsor-registration',
                 'child-supporter-sponsor-list',
                 'special-features-id-card-scanner'

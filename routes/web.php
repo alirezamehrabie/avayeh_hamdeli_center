@@ -99,6 +99,14 @@ Route::get('/admin/services/service-delivery', DashboardHome::class)
     ->middleware(['auth', 'can:full-access'])
     ->name('admin.service-delivery');
 
+Route::get('/admin/activities/activity-definition', DashboardHome::class)
+    ->middleware(['auth', 'can:full-access'])
+    ->name('admin.activity-definition');
+
+Route::get('/admin/activities/activity-list', DashboardHome::class)
+    ->middleware(['auth', 'can:full-access'])
+    ->name('admin.activity-list');
+
 Route::get('/admin/system-settings/user-definition', DashboardHome::class)
     ->middleware(['auth', 'can:full-access'])
     ->name('admin.user-definition');

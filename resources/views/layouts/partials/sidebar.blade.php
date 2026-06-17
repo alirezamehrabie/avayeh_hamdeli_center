@@ -51,6 +51,7 @@
         $guardiansOpen = $dashboardMode ? $isActive(['guardians-list', 'guardians-block-list']) : request()->routeIs('guardians.*');
         $reportsOpen = $dashboardMode ? $isActive(['advanced-reports', 'advanced-service-report', 'advanced-beneficiary-report', 'advanced-operator-report', 'advanced-supervisor-report', 'advanced-social-worker-report']) : false;
         $servicesOpen = $dashboardMode ? $isActive(['service-definition', 'service-management', 'service-list', 'service-delivery']) : false;
+        $activitiesOpen = $dashboardMode ? $isActive(['activity-definition', 'activity-list']) : false;
         $childSupporterOpen = $dashboardMode ? $isActive(['child-supporter-sponsor-registration', 'child-supporter-sponsor-list']) : false;
         $specialFeaturesOpen = $dashboardMode ? $isActive(['special-features-id-card-scanner']) : false;
         $systemSettingsOpen = $dashboardMode ? $isActive(['system-settings-user-definition', 'system-settings-user-list', 'system-settings-user-account']) : request()->routeIs('admin.user-definition') || request()->routeIs('admin.user-management') || request()->routeIs('admin.user-list') || request()->routeIs('admin.user-account');
@@ -308,6 +309,37 @@
                         <button type="button" wire:click="selectSection('service-management')"
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'service-management' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             تنظیمات خدمات
+                        </button>
+                    </div>
+                </div>
+            @endif
+        @endcan
+
+
+        @can('full-access')
+            @if($dashboardMode)
+                <div>
+                    <button type="button" @click="openMenu = openMenu === 'activities' ? '' : 'activities'"
+                            class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $activitiesOpen ? 'bg-indigo-700' : '' }}">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M5 11h14M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <span>فعالیت‌ها</span>
+                        </div>
+                        <svg :class="openMenu === 'activities' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <div x-show="openMenu === 'activities'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
+                        <button type="button" wire:click="selectSection('activity-list')"
+                                class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'activity-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
+                            مدیریت فعالیت‌ها
+                        </button>
+                        <button type="button" wire:click="selectSection('activity-definition')"
+                                class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'activity-definition' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
+                            تعریف فعالیت
                         </button>
                     </div>
                 </div>
