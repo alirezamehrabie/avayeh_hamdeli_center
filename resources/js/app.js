@@ -57,6 +57,7 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
     message: 'در حال آماده‌سازی دوربین...',
     lastDecodedText: '',
     lastDecodedAt: 0,
+    resumeAfterSuccessTimer: null,
     async init() {
         if (!('mediaDevices' in navigator) || !('getUserMedia' in navigator.mediaDevices)) {
             this.setStatus('unsupported', 'دسترسی به دوربین در این مرورگر یا دستگاه در دسترس نیست.');
@@ -261,6 +262,10 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
         try {
             const response = await resolveScan(value);
 
+            if (response?.ok) {
+                this.scheduleResumeAfterSuccess();
+            }
+
             this.setStatus(
                 response?.ok ? 'paused' : (response?.status || 'scan_error'),
                 response?.message || (response?.ok ? 'اطلاعات شناسایی شد.' : 'دریافت اطلاعات انجام نشد.')
@@ -269,6 +274,16 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
             this.resolvingScan = false;
             this.setStatus('scan_error', 'دریافت اطلاعات QR انجام نشد. دوباره تلاش کنید.');
         }
+    },
+    scheduleResumeAfterSuccess() {
+        if (this.resumeAfterSuccessTimer) {
+            window.clearTimeout(this.resumeAfterSuccessTimer);
+        }
+
+        this.resumeAfterSuccessTimer = window.setTimeout(() => {
+            this.resumeAfterSuccessTimer = null;
+            this.resumeScan();
+        }, 900);
     },
     startFallbackLoop() {
         this.stopFallbackLoop();
@@ -446,6 +461,11 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
         }[this.status] || this.status;
     },
     destroy() {
+        if (this.resumeAfterSuccessTimer) {
+            window.clearTimeout(this.resumeAfterSuccessTimer);
+            this.resumeAfterSuccessTimer = null;
+        }
+
         this.stopFallbackLoop();
         this.stopCamera();
     },

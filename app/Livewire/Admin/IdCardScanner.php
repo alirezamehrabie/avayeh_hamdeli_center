@@ -77,7 +77,6 @@ class IdCardScanner extends Component
             $this->showPersonModal = false;
             $this->scanStatus = 'paused';
             $this->scanMessage = 'اطلاعات خانوار شناسایی شد.';
-            $this->dispatch('id-card-scanner-pause');
 
             return $this->scanResponse(true);
         }
@@ -108,7 +107,6 @@ class IdCardScanner extends Component
         $this->showHouseholdModal = false;
         $this->scanStatus = 'paused';
         $this->scanMessage = 'اطلاعات مددجو شناسایی شد.';
-        $this->dispatch('id-card-scanner-pause');
 
         return $this->scanResponse(true);
     }
