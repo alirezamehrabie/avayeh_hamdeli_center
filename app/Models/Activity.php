@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Activity extends Model
@@ -77,5 +79,25 @@ class Activity extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(ActivityAttendance::class);
+    }
+
+    public function participants(): BelongsToMany
+    {
+        return $this->belongsToMany(Person::class, 'activity_attendances')
+            ->withPivot([
+                'qr_identity_id',
+                'status',
+                'registration_method',
+                'checked_in_at',
+                'checked_out_at',
+                'notes',
+                'recorded_by',
+            ])
+            ->withTimestamps();
     }
 }

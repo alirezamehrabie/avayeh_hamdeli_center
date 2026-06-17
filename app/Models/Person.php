@@ -562,6 +562,11 @@ class Person extends Model
         return $this->hasMany(BeneficiaryAuditLog::class)->latest();
     }
 
+    public function activityAttendances()
+    {
+        return $this->hasMany(ActivityAttendance::class);
+    }
+
     public function qrCodes(): MorphMany
     {
         return $this->morphMany(QrIdentity::class, 'subject', 'subject_type', 'subject_id');
