@@ -42,6 +42,20 @@ Alpine.data('rialAmountInput', (model) => ({
     },
 }));
 
+const normalizeLocaleDigits = (value) => {
+    const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
+    const arabicDigits = '٠١٢٣٤٥٦٧٨٩';
+
+    return String(value ?? '')
+        .replace(/[۰-۹]/g, digit => persianDigits.indexOf(digit))
+        .replace(/[٠-٩]/g, digit => arabicDigits.indexOf(digit));
+};
+
+const normalizeJalaliDateTimeValue = (value) => normalizeLocaleDigits(value)
+    .replace(/[‌‏ ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
 Alpine.data('jalaliDateTimeField', (model) => ({
     model,
     draft: '',
@@ -52,7 +66,7 @@ Alpine.data('jalaliDateTimeField', (model) => ({
         this.committedValue = this.model ?? '';
 
         this.$watch('model', (value) => {
-            const normalizedValue = value ?? '';
+            const normalizedValue = normalizeJalaliDateTimeValue(value ?? '');
 
             if (normalizedValue === this.committedValue && normalizedValue === this.draft) {
                 return;
@@ -60,12 +74,16 @@ Alpine.data('jalaliDateTimeField', (model) => ({
 
             this.draft = normalizedValue;
             this.committedValue = normalizedValue;
+
+            if (this.$refs.input) {
+                this.$refs.input.value = normalizedValue;
+            }
         });
     },
     handlePickerOpen() {
         this.confirmedDuringSession = false;
-        this.committedValue = this.model ?? '';
-        this.draft = this.$refs.input?.value ?? this.draft ?? '';
+        this.committedValue = normalizeJalaliDateTimeValue(this.model ?? '');
+        this.draft = normalizeJalaliDateTimeValue(this.$refs.input?.value ?? this.draft ?? '');
     },
     handlePickerClose() {
         if (this.confirmedDuringSession) {
@@ -79,10 +97,9 @@ Alpine.data('jalaliDateTimeField', (model) => ({
             this.$refs.input.value = this.committedValue;
         }
     },
-    confirm() {
-        const normalizedValue = (this.draft ?? '').trim();
+    syncFromInput() {
+        const normalizedValue = normalizeJalaliDateTimeValue(this.$refs.input?.value ?? this.draft ?? '');
 
-        this.confirmedDuringSession = true;
         this.draft = normalizedValue;
         this.committedValue = normalizedValue;
         this.model = normalizedValue;
@@ -90,6 +107,10 @@ Alpine.data('jalaliDateTimeField', (model) => ({
         if (this.$refs.input) {
             this.$refs.input.value = normalizedValue;
         }
+    },
+    confirm() {
+        this.confirmedDuringSession = true;
+        this.syncFromInput();
     },
 }));
 

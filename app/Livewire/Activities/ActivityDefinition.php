@@ -5,6 +5,7 @@ namespace App\Livewire\Activities;
 use App\Helpers\Morilog\CalendarUtils;
 use App\Helpers\Morilog\Jalalian;
 use App\Models\Activity;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 
@@ -28,7 +29,7 @@ class ActivityDefinition extends Component
 
     public string $capacity = '';
 
-    public string $status = 'draft';
+    public string $status = 'ongoing';
 
     public string $statusNotes = '';
 
@@ -54,12 +55,6 @@ class ActivityDefinition extends Component
             ? Activity::query()->findOrFail($this->editingActivityId)
             : new Activity;
 
-        if (! $this->canEditDetails($activity)) {
-            $this->addError('status', 'ویرایش جزئیات این فعالیت در وضعیت فعلی مجاز نیست.');
-
-            return null;
-        }
-
         $validated = $this->validate($this->rules(), [], $this->validationAttributes());
 
         if (! $this->editingActivityId) {
@@ -67,21 +62,20 @@ class ActivityDefinition extends Component
             $activity->created_by = auth()->id();
         }
 
+        $startsAt = blank($validated['startsAt']) ? null : $this->jalaliDateTimeToGregorian($validated['startsAt']);
+        $endsAt = blank($validated['endsAt']) ? null : $this->jalaliDateTimeToGregorian($validated['endsAt']);
+
         $payload = [
             'name' => trim($validated['name']),
             'activity_type' => $validated['activityType'],
             'description' => blank($validated['description']) ? null : trim($validated['description']),
             'location' => blank($validated['location']) ? null : trim($validated['location']),
-            'starts_at' => blank($validated['startsAt']) ? null : $this->jalaliDateTimeToGregorian($validated['startsAt']),
-            'ends_at' => blank($validated['endsAt']) ? null : $this->jalaliDateTimeToGregorian($validated['endsAt']),
+            'starts_at' => $startsAt,
+            'ends_at' => $endsAt,
             'capacity' => blank($validated['capacity']) ? null : (int) $validated['capacity'],
-            'status' => $validated['status'],
+            'status' => $this->resolveStatus($validated['status'], $startsAt),
             'status_notes' => blank($validated['statusNotes']) ? null : trim($validated['statusNotes']),
         ];
-
-        if ($activity->exists && $activity->status === 'ongoing') {
-            $payload = array_intersect_key($payload, array_flip(['location', 'ends_at', 'status', 'status_notes']));
-        }
 
         $activity->fill($payload);
         $activity->save();
@@ -121,14 +115,8 @@ class ActivityDefinition extends Component
 
     public function render()
     {
-        $currentStatus = $this->editingActivityId
-            ? Activity::query()->whereKey($this->editingActivityId)->value('status')
-            : $this->status;
-
         return view('livewire.activities.activity-definition', [
             'typeOptions' => Activity::TYPE_OPTIONS,
-            'currentStatus' => $currentStatus,
-            'detailsLocked' => $currentStatus === 'ongoing',
             'statusOptions' => Activity::STATUS_OPTIONS,
         ]);
     }
@@ -156,8 +144,8 @@ class ActivityDefinition extends Component
                     return;
                 }
 
-                if (! Jalalian::fromDateTime($this->jalaliDateTimeToGregorian((string) $value))
-                    ->greaterThan(Jalalian::fromDateTime($this->jalaliDateTimeToGregorian((string) $this->startsAt)))) {
+                if (! $this->jalaliDateTimeToGregorian((string) $value)
+                    ->greaterThan($this->jalaliDateTimeToGregorian((string) $this->startsAt))) {
                     $fail('زمان پایان باید بعد از زمان شروع باشد.');
                 }
             }],
@@ -184,7 +172,7 @@ class ActivityDefinition extends Component
     protected function bootDefaults(): void
     {
         $this->activityType = $this->activityType ?: 'group_activity';
-        $this->status = $this->status ?: 'draft';
+        $this->status = $this->status ?: 'ongoing';
     }
 
     protected function normalizeInput(): void
@@ -193,20 +181,11 @@ class ActivityDefinition extends Component
         $this->activityType = trim($this->activityType) ?: 'group_activity';
         $this->description = trim($this->description);
         $this->location = trim($this->location);
-        $this->startsAt = filled($this->startsAt) ? trim((string) $this->startsAt) : null;
-        $this->endsAt = filled($this->endsAt) ? trim((string) $this->endsAt) : null;
+        $this->startsAt = $this->normalizeJalaliDateTimeInput($this->startsAt);
+        $this->endsAt = $this->normalizeJalaliDateTimeInput($this->endsAt);
         $this->capacity = trim($this->capacity);
-        $this->status = trim($this->status) ?: 'draft';
+        $this->status = trim($this->status) ?: 'ongoing';
         $this->statusNotes = trim($this->statusNotes);
-    }
-
-    protected function canEditDetails(Activity $activity): bool
-    {
-        if (! $activity->exists) {
-            return true;
-        }
-
-        return in_array($activity->status, ['draft', 'scheduled', 'ongoing'], true);
     }
 
     protected function jalaliDateTimeRule(string $label): \Closure
@@ -258,55 +237,58 @@ class ActivityDefinition extends Component
             && $minute >= 0 && $minute <= 59;
     }
 
-    protected function jalaliDateTimeToGregorian(string $value): string
+    protected function splitJalaliDateTime(?string $value): array
     {
-        $normalizedValue = $this->normalizePersianDigits(trim($value));
+        $normalized = $this->normalizeJalaliDateTimeInput($value);
 
-        if (! str_contains($normalizedValue, ' ')) {
-            $normalizedValue .= ' 00:00';
-        }
-
-        return Jalalian::fromFormat('Y/m/d H:i', $normalizedValue)->toCarbon()->toDateTimeString();
-    }
-
-    protected function splitJalaliDateTime(string $value): array
-    {
-        $normalizedValue = preg_replace('/\s+/', ' ', trim($this->normalizePersianDigits($value)));
-
-        if ($normalizedValue === '') {
+        if ($normalized === null) {
             return [null, null];
         }
 
-        $parts = explode(' ', $normalizedValue, 2);
-        $date = $parts[0] ?? null;
-        $time = $parts[1] ?? null;
+        $parts = explode(' ', $normalized, 2);
 
-        return [$date, $time !== '' ? $time : null];
+        return [$parts[0] ?? null, $parts[1] ?? null];
     }
 
-    protected function normalizePersianDigits(string $value): string
+    protected function jalaliDateTimeToGregorian(string $value): Carbon
     {
-        return strtr($value, [
-            '۰' => '0',
-            '۱' => '1',
-            '۲' => '2',
-            '۳' => '3',
-            '۴' => '4',
-            '۵' => '5',
-            '۶' => '6',
-            '۷' => '7',
-            '۸' => '8',
-            '۹' => '9',
-            '٠' => '0',
-            '١' => '1',
-            '٢' => '2',
-            '٣' => '3',
-            '٤' => '4',
-            '٥' => '5',
-            '٦' => '6',
-            '٧' => '7',
-            '٨' => '8',
-            '٩' => '9',
-        ]);
+        [$date, $time] = $this->splitJalaliDateTime($value);
+
+        $normalized = $time === null ? (string) $date : trim($date.' '.$time);
+        $format = $time === null ? 'Y/m/d' : 'Y/m/d H:i';
+        $timezone = new \DateTimeZone((string) config('app.timezone'));
+        $carbon = Jalalian::fromFormat($format, $normalized, $timezone)
+            ->toCarbon()
+            ->setTimezone($timezone);
+
+        return Carbon::instance($carbon);
+    }
+
+    protected function normalizeJalaliDateTimeInput(?string $value): ?string
+    {
+        if (blank($value)) {
+            return null;
+        }
+
+        $normalized = CalendarUtils::convertNumbers((string) $value, true);
+        $normalized = str_replace(["\u{200c}", "\u{200f}", "\u{00a0}"], ' ', $normalized);
+        $normalized = preg_replace('/\s+/u', ' ', trim($normalized)) ?? '';
+
+        return $normalized !== '' ? $normalized : null;
+    }
+
+    protected function resolveStatus(string $status, ?Carbon $startsAt): string
+    {
+        $status = trim($status);
+
+        if ($status !== 'ongoing') {
+            return $status;
+        }
+
+        if ($startsAt && $startsAt->isFuture()) {
+            return 'scheduled';
+        }
+
+        return 'ongoing';
     }
 }

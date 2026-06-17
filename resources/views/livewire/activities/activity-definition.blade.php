@@ -15,16 +15,6 @@
                 <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{{ session('activity-success') }}</div>
             @endif
 
-            @error('status')
-                <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{{ $message }}</div>
-            @enderror
-
-            @if($detailsLocked)
-                <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-                    این فعالیت در حال برگزاری است؛ فقط مکان، زمان پایان و یادداشت وضعیت قابل ویرایش هستند.
-                </div>
-            @endif
-
             <div class="grid gap-4 md:grid-cols-3">
                 <div>
                     <label class="mb-1 block text-xs font-bold text-slate-500">کد فعالیت</label>
@@ -41,7 +31,7 @@
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-bold text-slate-500">نوع فعالیت</label>
-                    <select wire:model="activityType" @disabled($detailsLocked) class="w-full rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100 disabled:bg-slate-100 disabled:text-slate-400">
+                    <select wire:model="activityType" class="w-full rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
                         @foreach($typeOptions as $value => $label)
                             <option value="{{ $value }}">{{ $label }}</option>
                         @endforeach
@@ -53,7 +43,7 @@
             <div class="grid gap-4 md:grid-cols-2">
                 <div>
                     <label class="mb-1 block text-xs font-bold text-slate-500">نام فعالیت</label>
-                    <input type="text" wire:model="name" @disabled($detailsLocked) class="w-full rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100 disabled:bg-slate-100 disabled:text-slate-400">
+                    <input type="text" wire:model="name" class="w-full rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
                     @error('name') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
@@ -71,14 +61,15 @@
                             type="text"
                             x-ref="input"
                             x-model="draft"
+                            x-on:change="syncFromInput()"
+                            x-on:blur="syncFromInput()"
                             x-on:jalali-picker-open="handlePickerOpen()"
                             x-on:jalali-picker-close="handlePickerClose()"
                             x-on:jalali-picker-confirm="confirm()"
                             data-jdp
                             data-jdp-time
-                            @disabled($detailsLocked)
                             placeholder="۱۴۰۳/۰۱/۰۱ ۱۴:۳۰"
-                            class="w-full rounded-2xl border border-slate-200 px-4 py-2 pe-11 text-sm ltr:text-left focus:border-violet-300 focus:ring-4 focus:ring-violet-100 disabled:bg-slate-100 disabled:text-slate-400"
+                            class="w-full rounded-2xl border border-slate-200 px-4 py-2 pe-11 text-sm ltr:text-left focus:border-violet-300 focus:ring-4 focus:ring-violet-100"
                         >
                         <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
                             <i class="bi bi-calendar2-event text-base"></i>
@@ -94,6 +85,8 @@
                             type="text"
                             x-ref="input"
                             x-model="draft"
+                            x-on:change="syncFromInput()"
+                            x-on:blur="syncFromInput()"
                             x-on:jalali-picker-open="handlePickerOpen()"
                             x-on:jalali-picker-close="handlePickerClose()"
                             x-on:jalali-picker-confirm="confirm()"
@@ -111,14 +104,14 @@
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-bold text-slate-500">ظرفیت</label>
-                    <input type="number" min="1" wire:model="capacity" @disabled($detailsLocked) class="w-full rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100 disabled:bg-slate-100 disabled:text-slate-400">
+                    <input type="number" min="1" wire:model="capacity" class="w-full rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
                     @error('capacity') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                 </div>
             </div>
 
             <div>
                 <label class="mb-1 block text-xs font-bold text-slate-500">توضیحات</label>
-                <textarea wire:model="description" rows="4" @disabled($detailsLocked) class="w-full rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100 disabled:bg-slate-100 disabled:text-slate-400"></textarea>
+                <textarea wire:model="description" rows="4" class="w-full rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100"></textarea>
                 @error('description') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
             </div>
 
