@@ -294,7 +294,7 @@
             </div>
 
             <div class="mt-5">
-                {{ $this->guardians->links() }}
+                {{ $this->guardians->links('vendor.livewire.tailwind-mobile-persian') }}
             </div>
         </div>
     </div>

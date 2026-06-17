@@ -472,7 +472,7 @@
             @endif
 
             <div class="mt-3">
-                {{ $people->links() }}
+                {{ $people->links('vendor.livewire.tailwind-mobile-persian') }}
             </div>
         </div>
     </div>
