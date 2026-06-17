@@ -3,12 +3,15 @@
 namespace App\Livewire\Activities;
 
 use App\Helpers\Morilog\CalendarUtils;
+use App\Exports\ActivityAttendancesExport;
 use App\Helpers\Morilog\Jalalian;
 use App\Models\Activity;
 use App\Services\ActivityLifecycleService;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ActivityList extends Component
 {
@@ -19,6 +22,9 @@ class ActivityList extends Component
     public ?string $startsUntil = null;
     public ?int $selectedActivityId = null;
     public string $transitionNotes = '';
+    public string $attendanceSearch = '';
+    public string $attendanceMethodFilter = 'all';
+    public string $attendanceStatusFilter = 'all';
 
     public function mount(): void
     {
@@ -39,7 +45,17 @@ class ActivityList extends Component
     {
         $this->selectedActivityId = $activityId;
         $this->transitionNotes = '';
+        $this->attendanceSearch = '';
+        $this->attendanceMethodFilter = 'all';
+        $this->attendanceStatusFilter = 'all';
         $this->resetValidation();
+    }
+
+    public function openScanner(int $activityId): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+
+        $this->dispatch('open-dashboard-section', section: 'activity-scanner', id: $activityId);
     }
 
     public function clearSelectedActivity(): void
@@ -84,7 +100,11 @@ class ActivityList extends Component
         }
 
         return Activity::query()
-            ->with(['creator'])
+            ->with([
+                'creator',
+                'attendances.person',
+                'attendances.recorder',
+            ])
             ->withCount([
                 'attendances',
                 'attendances as present_attendances_count' => fn ($query) => $query->where('status', 'present'),
@@ -92,6 +112,56 @@ class ActivityList extends Component
                 'attendances as absent_attendances_count' => fn ($query) => $query->where('status', 'absent'),
             ])
             ->find($this->selectedActivityId);
+    }
+
+
+    public function getFilteredAttendancesProperty(): Collection
+    {
+        $activity = $this->selectedActivity;
+
+        if (! $activity) {
+            return collect();
+        }
+
+        $search = trim($this->attendanceSearch);
+        $method = $this->attendanceMethodFilter;
+        $status = $this->attendanceStatusFilter;
+
+        return $activity->attendances
+            ->when($method !== 'all', fn ($items) => $items->where('registration_method', $method))
+            ->when($status !== 'all', fn ($items) => $items->where('status', $status))
+            ->filter(function ($attendance) use ($search): bool {
+                if ($search === '') {
+                    return true;
+                }
+
+                $person = $attendance->person;
+                $haystack = implode(' ', [
+                    $person?->full_name,
+                    $person?->first_name,
+                    $person?->last_name,
+                    $person?->person_code,
+                    $person?->national_id,
+                    $attendance->recorder?->full_name,
+                    $attendance->recorder?->name,
+                ]);
+
+                return mb_stripos($haystack, $search) !== false;
+            })
+            ->sortByDesc('checked_in_at')
+            ->values();
+    }
+
+
+    public function exportAttendances(): mixed
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless($this->selectedActivity, 404);
+
+        $activity = $this->selectedActivity;
+        $fileName = 'activity-attendances-' . $activity->code . '.xlsx';
+
+        return Excel::download(new ActivityAttendancesExport($activity), $fileName);
     }
 
     public function allowedTransitionTargets(Activity $activity): array
@@ -104,7 +174,7 @@ class ActivityList extends Component
         return $dateTime ? Jalalian::fromDateTime($dateTime)->format('Y/m/d H:i') : '-';
     }
 
-    public function render()
+    public function render(): mixed
     {
         $search = trim($this->search);
         $status = $this->statusFilter === 'all' ? null : $this->statusFilter;
@@ -142,8 +212,11 @@ class ActivityList extends Component
                 ->latest()
                 ->get(),
             'selectedActivity' => $this->selectedActivity,
+            'filteredAttendances' => $this->filteredAttendances,
             'statusOptions' => Activity::STATUS_OPTIONS,
             'typeOptions' => Activity::TYPE_OPTIONS,
+            'attendanceStatusOptions' => \App\Models\ActivityAttendance::STATUS_OPTIONS,
+            'attendanceMethodOptions' => \App\Models\ActivityAttendance::METHOD_OPTIONS,
         ]);
     }
 

@@ -26,6 +26,7 @@ use App\Livewire\SocialWorkers\DeliveryHistory as SocialWorkerDeliveryHistory;
 use App\Livewire\SocialWorkers\Dashboard as SocialWorkerDashboard;
 use App\Livewire\SocialWorkers\UserAccount as SocialWorkerUserAccount;
 use App\Http\Controllers\QrIdentityController;
+use App\Http\Controllers\ActivityCheckInController;
 
 
 // مسیر لاگین با استفاده از کامپوننت Livewire
@@ -106,6 +107,11 @@ Route::get('/admin/activities/activity-definition', DashboardHome::class)
 Route::get('/admin/activities/activity-list', DashboardHome::class)
     ->middleware(['auth', 'can:full-access'])
     ->name('admin.activity-list');
+
+
+Route::post('/admin/activities/{activity}/check-in/qr', [ActivityCheckInController::class, 'qr'])
+    ->middleware(['auth', 'can:access-admin-panel'])
+    ->name('admin.activities.check-in.qr');
 
 Route::get('/admin/system-settings/user-definition', DashboardHome::class)
     ->middleware(['auth', 'can:full-access'])

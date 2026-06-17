@@ -24,6 +24,7 @@ class DashboardHome extends Component
     public ?int $editingGuardianId = null;
     public ?int $editingServiceId = null;
     public ?int $editingActivityId = null;
+    public ?int $scanningActivityId = null;
     public ?int $serviceReportServiceId = null;
     public bool $showDeletedUsers = false;
     public string $newReminderTitle = '';
@@ -67,6 +68,7 @@ class DashboardHome extends Component
         $this->editingGuardianId = $section === 'guardian-edit' ? $id : null;
         $this->editingServiceId = $this->activeSection === 'service-definition' ? $id : null;
         $this->editingActivityId = $this->activeSection === 'activity-definition' ? $id : null;
+        $this->scanningActivityId = $this->activeSection === 'activity-scanner' ? $id : null;
         $this->serviceReportServiceId = $section === 'advanced-service-report' ? $id : null;
         $this->showDeletedUsers = false;
     }
@@ -107,6 +109,7 @@ class DashboardHome extends Component
             $validSections[] = 'child-supporter-sponsor-registration';
             $validSections[] = 'child-supporter-sponsor-list';
             $validSections[] = 'special-features-id-card-scanner';
+            $validSections[] = 'activity-scanner';
         }
 
         if ($user?->can('full-access')) {

@@ -227,6 +227,18 @@
                         <livewire:activities.activity-list :key="'activity-list'" />
                         @break
 
+
+                    @case('activity-scanner')
+                        @if($scanningActivityId)
+                            <livewire:activities.activity-scanner :activity-id="$scanningActivityId" :key="'activity-scanner-' . $scanningActivityId" />
+                        @else
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                                <p class="text-red-600 mb-4">فعالیت انتخاب شده یافت نشد.</p>
+                                <button type="button" wire:click="selectSection('activity-list')" class="btn btn-primary">بازگشت به لیست فعالیت‌ها</button>
+                            </div>
+                        @endif
+                        @break
+
                     @case('system-settings-user-definition')
                         <livewire:admin.user-management :key="'system-settings-user-definition'" />
                         @break

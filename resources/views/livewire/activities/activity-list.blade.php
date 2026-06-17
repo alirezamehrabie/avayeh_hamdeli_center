@@ -79,6 +79,9 @@
                                 </div>
                                 <div class="flex shrink-0 items-center justify-end gap-2">
                                     <button type="button" wire:click="selectActivity({{ $activity->id }})" class="rounded-full border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-bold text-violet-700 hover:bg-violet-100">جزئیات</button>
+                                    @if($activity->status === 'ongoing')
+                                        <button type="button" wire:click="openScanner({{ $activity->id }})" class="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-100">ثبت حضور</button>
+                                    @endif
                                     <button type="button" wire:click="editActivity({{ $activity->id }})" class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100">ویرایش</button>
                                 </div>
                             </div>
@@ -104,6 +107,7 @@
                                 <div class="rounded-2xl bg-white p-3"><span class="block text-slate-400">وضعیت</span><strong>{{ $statusOptions[$selectedActivity->status] ?? $selectedActivity->status }}</strong></div>
                                 <div class="rounded-2xl bg-white p-3"><span class="block text-slate-400">ظرفیت</span><strong>{{ $selectedActivity->capacity ?: 'نامحدود' }}</strong></div>
                                 <div class="rounded-2xl bg-white p-3"><span class="block text-slate-400">کل حضور</span><strong>{{ $selectedActivity->attendances_count }}</strong></div>
+                                <div class="rounded-2xl bg-white p-3"><span class="block text-slate-400">درصد ظرفیت</span><strong>{{ $selectedActivity->capacity ? min(100, round(($selectedActivity->present_attendances_count / max(1, $selectedActivity->capacity)) * 100)) . '%' : '-' }}</strong></div>
                                 <div class="rounded-2xl bg-white p-3"><span class="block text-slate-400">حاضر</span><strong>{{ $selectedActivity->present_attendances_count }}</strong></div>
                                 <div class="rounded-2xl bg-white p-3"><span class="block text-slate-400">غایب</span><strong>{{ $selectedActivity->absent_attendances_count }}</strong></div>
                             </div>
@@ -130,8 +134,45 @@
                                 </div>
                             </div>
 
-                            <div class="rounded-2xl border border-dashed border-violet-200 bg-violet-50 p-3 text-xs text-violet-700">
-                                جایگاه اتصال آینده: اسکن QR، آمار حضور و گزارش فعالیت.
+                            <div class="flex flex-wrap gap-2">
+                                @if($selectedActivity->status === 'ongoing')
+                                    <button type="button" wire:click="openScanner({{ $selectedActivity->id }})" class="rounded-full bg-cyan-600 px-4 py-2 text-xs font-bold text-white hover:bg-cyan-700">شروع ثبت حضور QR</button>
+                                @endif
+                                <button type="button" wire:click="exportAttendances" class="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">خروجی اکسل حضور</button>
+                            </div>
+
+                            <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                                <div class="mb-3 flex flex-col gap-2">
+                                    <h3 class="text-sm font-black text-slate-800">فهرست شرکت‌کنندگان</h3>
+                                    <input type="text" wire:model.live.debounce.300ms="attendanceSearch" placeholder="جستجو مددجو یا ثبت‌کننده" class="rounded-2xl border border-slate-200 px-3 py-2 text-xs focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <select wire:model.live="attendanceMethodFilter" class="rounded-2xl border border-slate-200 px-3 py-2 text-xs">
+                                            <option value="all">همه روش‌ها</option>
+                                            @foreach($attendanceMethodOptions as $value => $label)
+                                                <option value="{{ $value }}">{{ $label }}</option>
+                                            @endforeach
+                                        </select>
+                                        <select wire:model.live="attendanceStatusFilter" class="rounded-2xl border border-slate-200 px-3 py-2 text-xs">
+                                            <option value="all">همه وضعیت‌ها</option>
+                                            @foreach($attendanceStatusOptions as $value => $label)
+                                                <option value="{{ $value }}">{{ $label }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="max-h-80 space-y-2 overflow-y-auto pr-1">
+                                    @forelse($filteredAttendances as $attendance)
+                                        <div class="rounded-2xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                                            <p class="font-bold text-slate-800">{{ $attendance->person?->full_name ?: '-' }}</p>
+                                            <p>{{ $attendance->person?->person_code ?: '-' }} · {{ $attendance->person?->national_id ?: '-' }}</p>
+                                            <p>روش: {{ $attendanceMethodOptions[$attendance->registration_method] ?? $attendance->registration_method }} · وضعیت: {{ $attendanceStatusOptions[$attendance->status] ?? $attendance->status }}</p>
+                                            <p>زمان: {{ $this->formatJalaliDateTime($attendance->checked_in_at) }} · ثبت‌کننده: {{ $attendance->recorder?->full_name ?: $attendance->recorder?->name ?: '-' }}</p>
+                                        </div>
+                                    @empty
+                                        <p class="rounded-2xl border border-dashed border-slate-200 p-4 text-center text-xs text-slate-400">هنوز حضوری برای این فعالیت ثبت نشده است.</p>
+                                    @endforelse
+                                </div>
                             </div>
                         </div>
                     @else
