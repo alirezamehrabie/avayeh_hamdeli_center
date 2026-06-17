@@ -263,6 +263,7 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
             const response = await resolveScan(value);
 
             if (response?.ok) {
+                this.vibrateOnSuccess();
                 this.scheduleResumeAfterSuccess();
             }
 
@@ -284,6 +285,13 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
             this.resumeAfterSuccessTimer = null;
             this.resumeScan();
         }, 900);
+    },
+    vibrateOnSuccess() {
+        if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') {
+            return;
+        }
+
+        navigator.vibrate([60, 20, 60]);
     },
     startFallbackLoop() {
         this.stopFallbackLoop();
