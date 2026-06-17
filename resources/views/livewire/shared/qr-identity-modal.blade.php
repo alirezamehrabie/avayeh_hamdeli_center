@@ -7,14 +7,29 @@
 ])
 
 @if($showQrModal && $subject)
-    <div class="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 px-2 pt-6 backdrop-blur-sm sm:items-center sm:p-4">
+    <div
+        x-data="{
+            showScanUrl: false,
+            lastActiveElement: null,
+            init() {
+                this.lastActiveElement = document.activeElement;
+                this.$nextTick(() => this.$refs.closeButton?.focus());
+            },
+            close() {
+                $wire.closeQrModal();
+                this.$nextTick(() => this.lastActiveElement?.focus?.());
+            }
+        }"
+        @keydown.escape.window.prevent="close()"
+        class="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 px-2 pt-6 backdrop-blur-sm sm:items-center sm:p-4"
+    >
         <div class="w-full max-w-lg overflow-hidden rounded-t-[1.75rem] border border-cyan-100 bg-white shadow-2xl sm:max-w-2xl sm:max-h-[90vh] sm:rounded-3xl">
             <div class="flex items-start justify-between gap-3 bg-cyan-700 px-3.5 py-3 text-white sm:gap-4 sm:px-6 sm:py-5">
                 <div class="min-w-0">
                     <h2 class="text-base font-extrabold sm:text-xl">کارت QR {{ $subjectLabel }}</h2>
                     <p class="mt-1 truncate text-xs text-white/85 sm:text-sm">{{ $subject->full_name }} - {{ $subjectCode }}</p>
                 </div>
-                <button type="button" wire:click="closeQrModal" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15 text-xl leading-none text-white transition hover:bg-white/25 sm:h-9 sm:w-9 sm:text-2xl" aria-label="بستن">&times;</button>
+                <button type="button" @click="close()" x-ref="closeButton" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15 text-xl leading-none text-white transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/70 sm:h-9 sm:w-9 sm:text-2xl" aria-label="بستن">&times;</button>
             </div>
 
             <div class="max-h-[78vh] space-y-3 overflow-y-auto p-3 sm:max-h-[calc(90vh-5.5rem)] sm:space-y-4 sm:p-6">
@@ -28,8 +43,23 @@
                         <div class="min-w-0">
                             <p class="text-xs font-bold text-slate-500">شناسه کارت</p>
                             <p class="mt-1 break-all font-mono text-sm font-black text-slate-900 sm:text-lg">{{ $this->selectedQrIdentity->public_code }}</p>
-                            <p class="mt-3 text-xs font-bold text-slate-500">نشانی اسکن احراز هویت‌شده</p>
-                            <p class="mt-1 break-all rounded-xl bg-white px-2.5 py-2 text-[11px] leading-5 text-slate-700 sm:px-3 sm:text-xs">{{ $this->selectedQrIdentity->scan_url }}</p>
+                            <button
+                                type="button"
+                                @click="showScanUrl = !showScanUrl"
+                                class="mt-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
+                                :aria-expanded="showScanUrl.toString()"
+                            >
+                                <span>نشانی اسکن احراز هویت‌شده</span>
+                                <span class="text-[10px] text-slate-400" x-text="showScanUrl ? 'پنهان' : 'نمایش'"></span>
+                            </button>
+                            <div
+                                x-show="showScanUrl"
+                                x-transition.opacity.duration.150ms
+                                class="mt-2 break-all rounded-xl bg-white px-2.5 py-2 text-[11px] leading-5 text-slate-700 sm:px-3 sm:text-xs"
+                                style="display: none;"
+                            >
+                                {{ $this->selectedQrIdentity->scan_url }}
+                            </div>
                             <p class="mt-2 text-[11px] leading-5 text-slate-500 sm:mt-3 sm:text-xs">این QR فقط پس از ورود کارکنان قابل استفاده است و شامل اطلاعات شخصی نیست.</p>
                         </div>
                     </div>
@@ -68,12 +98,31 @@
                     </div>
                 @endif
 
-                <div class="grid grid-cols-1 gap-2 sm:flex sm:flex-row sm:flex-wrap sm:justify-end">
+                <div class="grid grid-cols-3 gap-2 sm:flex sm:flex-row sm:flex-wrap sm:justify-end">
                     @can('full-access')
-                        <button type="button" wire:click="requestQrLifecycleAction('revoke')" @disabled(!$this->selectedQrIdentity) class="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 disabled:opacity-50 sm:w-auto sm:px-4 sm:text-sm">ابطال کنترل‌شده</button>
-                        <button type="button" wire:click="requestQrLifecycleAction('reissue')" class="rounded-2xl bg-cyan-700 px-3 py-2 text-xs font-bold text-white sm:w-auto sm:px-4 sm:text-sm">صدور مجدد کنترل‌شده</button>
+                        <button
+                            type="button"
+                            wire:click="requestQrLifecycleAction('revoke')"
+                            @disabled(!$this->selectedQrIdentity)
+                            class="flex min-h-14 items-center justify-center rounded-2xl border border-rose-200 bg-gradient-to-b from-rose-50 to-white px-2 py-2 text-center text-[11px] font-semibold leading-4 text-rose-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md disabled:opacity-50 sm:min-h-0 sm:w-auto sm:px-4 sm:text-sm"
+                        >
+                            ابطال
+                        </button>
+                        <button
+                            type="button"
+                            wire:click="requestQrLifecycleAction('reissue')"
+                            class="flex min-h-14 items-center justify-center rounded-2xl bg-gradient-to-b from-cyan-600 to-cyan-700 px-2 py-2 text-center text-[11px] font-semibold leading-4 text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:min-h-0 sm:w-auto sm:px-4 sm:text-sm"
+                        >
+                            صدور مجدد
+                        </button>
                     @endcan
-                    <button type="button" wire:click="closeQrModal" class="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 sm:w-auto sm:px-4 sm:text-sm">بستن</button>
+                    <button
+                        type="button"
+                        @click="close()"
+                        class="flex min-h-14 items-center justify-center rounded-2xl border border-slate-200 bg-white px-2 py-2 text-center text-[11px] font-semibold leading-4 text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md sm:min-h-0 sm:w-auto sm:px-4 sm:text-sm"
+                    >
+                        بستن
+                    </button>
                 </div>
             </div>
         </div>
