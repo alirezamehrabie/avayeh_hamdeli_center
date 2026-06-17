@@ -2,6 +2,7 @@ import './bootstrap';
 import 'bootstrap/dist/js/bootstrap.min.js';
 import * as bootstrap from 'bootstrap';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import { createEnhancedQrScanner } from './qr-scanner-enhancer';
 import { Livewire, Alpine } from '../../vendor/livewire/livewire/dist/livewire.esm';
 
 window.Alpine = Alpine;
@@ -44,6 +45,10 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
     selectedDeviceId: '',
     html5QrCode: null,
     scannerElementId: '',
+    enhancedScanner: null,
+    fallbackTimer: null,
+    cameraCapabilities: {},
+    cameraSettings: {},
     cameraActive: false,
     startingCamera: false,
     scanning: false,
@@ -62,10 +67,11 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
             await this.ensureCameraPermission();
             await this.loadCameras();
             this.scannerElementId = this.$refs.scanner.id;
+            this.enhancedScanner = createEnhancedQrScanner();
             this.html5QrCode = new Html5Qrcode(this.scannerElementId, {
                 verbose: false,
                 formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
-                useBarCodeDetectorIfSupported: false,
+                useBarCodeDetectorIfSupported: true,
             });
             await this.startCamera();
         } catch (error) {
@@ -86,14 +92,30 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
     },
     async loadCameras() {
         const devices = await Html5Qrcode.getCameras();
-        this.cameras = devices.map((device, index) => ({
-            id: device.id,
-            label: device.label || `دوربین ${index + 1}`,
-        }));
+        this.cameras = devices
+            .map((device, index) => ({
+                id: device.id,
+                label: device.label || `دوربین ${index + 1}`,
+            }))
+            .sort((left, right) => this.cameraScore(right) - this.cameraScore(left));
 
         if (!this.selectedDeviceId && this.cameras.length) {
             this.selectedDeviceId = this.cameras[0].id;
         }
+    },
+    cameraScore(camera) {
+        const label = (camera?.label || '').toLowerCase();
+        let score = 0;
+
+        if (/(back|rear|environment|world|external|usb)/.test(label)) {
+            score += 10;
+        }
+
+        if (/(front|user|face)/.test(label)) {
+            score -= 10;
+        }
+
+        return score;
     },
     async startCamera() {
         if (this.startingCamera) {
@@ -120,6 +142,7 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
             this.cameraActive = true;
             this.scanning = true;
             this.resolvingScan = false;
+            this.startFallbackLoop();
             this.setStatus('scanning', 'اسکن زنده فعال است. QR را مقابل دوربین نگه دارید.');
         } catch (error) {
             const message = error?.message || '';
@@ -142,6 +165,7 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
     },
     pauseFromWire() {
         this.scanning = false;
+        this.stopFallbackLoop();
         this.setStatus('paused', 'اسکن پس از شناسایی موفق متوقف شد.');
     },
     resumeFromWire() {
@@ -157,6 +181,7 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
         this.lastDecodedAt = 0;
         this.resolvingScan = false;
         this.scanning = true;
+        this.startFallbackLoop();
 
         try {
             this.html5QrCode?.resume();
@@ -171,6 +196,7 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
     async stopCamera() {
         this.scanning = false;
         this.resolvingScan = false;
+        this.stopFallbackLoop();
 
         if (this.html5QrCode && (this.cameraActive || this.html5QrCode.isScanning)) {
             try {
@@ -200,11 +226,11 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
         return {
             fps: 30,
             qrbox: (viewfinderWidth, viewfinderHeight) => {
-                const boxSize = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.92);
+                const boxSize = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.68);
 
                 return {
-                    width: Math.min(viewfinderWidth, Math.max(320, boxSize)),
-                    height: Math.min(viewfinderHeight, Math.max(320, boxSize)),
+                    width: Math.min(viewfinderWidth, Math.max(280, boxSize)),
+                    height: Math.min(viewfinderHeight, Math.max(280, boxSize)),
                 };
             },
             disableFlip: false,
@@ -244,17 +270,60 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
             this.setStatus('scan_error', 'دریافت اطلاعات QR انجام نشد. دوباره تلاش کنید.');
         }
     },
+    startFallbackLoop() {
+        this.stopFallbackLoop();
+
+        this.fallbackTimer = window.setInterval(async () => {
+            if (!this.scanning || this.resolvingScan || !this.enhancedScanner) {
+                return;
+            }
+
+            const video = this.currentVideoElement();
+
+            if (!video) {
+                return;
+            }
+
+            const decoded = await this.enhancedScanner.decodeVideo(video);
+
+            if (decoded) {
+                await this.handleDecode(decoded);
+            }
+        }, 550);
+    },
+    stopFallbackLoop() {
+        if (this.fallbackTimer) {
+            window.clearInterval(this.fallbackTimer);
+            this.fallbackTimer = null;
+        }
+    },
+    currentVideoElement() {
+        return this.$refs.scanner?.querySelector('video') || null;
+    },
     async tryStartScanner(preferredCamera) {
         const startAttempts = [];
 
         if (preferredCamera) {
             startAttempts.push(preferredCamera);
+            startAttempts.push({
+                deviceId: { exact: preferredCamera },
+                width: { ideal: 1920, min: 640 },
+                height: { ideal: 1080, min: 480 },
+                frameRate: { ideal: 30, min: 15 },
+            });
         }
 
         startAttempts.push({
             facingMode: 'environment',
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
+            width: { ideal: 1920, min: 640 },
+            height: { ideal: 1080, min: 480 },
+            frameRate: { ideal: 30, min: 15 },
+        });
+        startAttempts.push({
+            facingMode: 'environment',
+            width: { ideal: 1280, min: 640 },
+            height: { ideal: 720, min: 480 },
+            frameRate: { ideal: 24, min: 12 },
         });
 
         for (const camera of this.cameras) {
@@ -321,15 +390,38 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
             }
 
             try {
-                await this.html5QrCode.applyVideoConstraints({
+                this.cameraCapabilities = this.html5QrCode.getRunningTrackCapabilities?.() || {};
+                this.cameraSettings = this.html5QrCode.getRunningTrackSettings?.() || {};
+
+                const constraints = {
                     width: { ideal: 1280 },
                     height: { ideal: 720 },
                     frameRate: { ideal: 30, min: 15 },
-                    advanced: [
-                        { focusMode: 'continuous' },
-                        { exposureMode: 'continuous' },
-                    ],
-                });
+                    advanced: [],
+                };
+
+                const advanced = constraints.advanced;
+                const capabilities = this.cameraCapabilities;
+
+                if (Array.isArray(capabilities.focusMode) && capabilities.focusMode.includes('continuous')) {
+                    advanced.push({ focusMode: 'continuous' });
+                }
+
+                if (Array.isArray(capabilities.exposureMode) && capabilities.exposureMode.includes('continuous')) {
+                    advanced.push({ exposureMode: 'continuous' });
+                }
+
+                if (capabilities.torch) {
+                    advanced.push({ torch: true });
+                }
+
+                if (capabilities.zoom?.max && capabilities.zoom.max > 1) {
+                    const zoom = Math.min(capabilities.zoom.max, Math.max(capabilities.zoom.min || 1, 2));
+                    advanced.push({ zoom });
+                }
+
+                await this.html5QrCode.applyVideoConstraints(constraints);
+                this.cameraSettings = this.html5QrCode.getRunningTrackSettings?.() || {};
             } catch (error) {
                 // Some webcams do not expose focus/exposure constraints; scanning can continue.
             }
@@ -354,6 +446,7 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
         }[this.status] || this.status;
     },
     destroy() {
+        this.stopFallbackLoop();
         this.stopCamera();
     },
 }));

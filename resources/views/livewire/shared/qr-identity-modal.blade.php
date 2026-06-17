@@ -34,9 +34,9 @@
 
             <div class="max-h-[78vh] space-y-3 overflow-y-auto p-3 sm:max-h-[calc(90vh-5.5rem)] sm:space-y-4 sm:p-6">
                 @if($this->selectedQrIdentity)
-                    <div class="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:gap-4 sm:p-4 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-center">
-                        <div class="flex min-h-[11.5rem] w-full items-center justify-center rounded-2xl border border-slate-200 bg-white p-2.5 shadow-sm sm:min-h-[18rem] sm:p-3 lg:w-60">
-                            <div class="aspect-square w-full max-w-[150px] sm:max-w-[220px] [&>svg]:block [&>svg]:h-full [&>svg]:w-full">
+                    <div class="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:gap-4 sm:p-4 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-center">
+                        <div class="flex min-h-[14rem] w-full items-center justify-center rounded-2xl border border-slate-200 bg-white p-2.5 shadow-sm sm:min-h-[21rem] sm:p-3 lg:w-[300px]">
+                            <div class="aspect-square w-full max-w-[190px] sm:max-w-[280px] [&>svg]:block [&>svg]:h-full [&>svg]:w-full">
                                 {!! $this->selectedQrIdentity->qr_svg !!}
                             </div>
                         </div>

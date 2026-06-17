@@ -77,16 +77,16 @@ class QrIdentity extends Model
 
     public function getQrSvgAttribute(): ?string
     {
-        $scanUrl = $this->scan_url;
+        $payload = $this->public_code;
 
-        if (! $scanUrl) {
+        if (! $payload) {
             return null;
         }
 
         return (string) QrCode::format('svg')
-            ->size(220)
-            ->margin(1)
-            ->errorCorrection('M')
-            ->generate($scanUrl);
+            ->size(320)
+            ->margin(4)
+            ->errorCorrection('Q')
+            ->generate($payload);
     }
 }

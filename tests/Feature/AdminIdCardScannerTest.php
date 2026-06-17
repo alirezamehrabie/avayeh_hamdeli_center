@@ -41,6 +41,34 @@ class AdminIdCardScannerTest extends TestCase
             ->assertSet('scanStatus', 'paused');
     }
 
+    public function test_person_public_qr_code_opens_beneficiary_modal_for_authorized_admin(): void
+    {
+        $user = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_ADMIN,
+            'is_admin' => true,
+            'permissions' => [User::PERMISSION_PEOPLE_EDIT],
+        ]);
+
+        $person = Person::query()->create([
+            'first_name' => 'Mina',
+            'last_name' => 'Rahimi',
+            'national_id' => '5234567890',
+            'person_code' => '14003',
+        ]);
+
+        $issued = app(QrIdentityService::class)->issueFor($person, $user->id);
+        $identity = $issued['identity'];
+
+        $this->actingAs($user);
+
+        Livewire::test(IdCardScanner::class)
+            ->call('resolveScannedQr', strtolower($identity->public_code))
+            ->assertSet('resolvedSubjectType', QrIdentity::SUBJECT_PERSON)
+            ->assertSet('selectedPersonId', $person->id)
+            ->assertSet('showPersonModal', true)
+            ->assertSet('scanStatus', 'paused');
+    }
+
     public function test_guardian_qr_opens_household_modal_for_full_access_user(): void
     {
         $user = User::factory()->create([

@@ -45,11 +45,24 @@
                     ></div>
 
                     <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
-                        <div class="h-[62%] w-[72%] rounded-3xl border-2 border-emerald-300/90 shadow-[0_0_0_9999px_rgba(15,23,42,0.28)]"></div>
+                        <div class="aspect-square h-[62%] max-h-[72%] max-w-[72%] rounded-3xl border-2 border-emerald-300/90 shadow-[0_0_0_9999px_rgba(15,23,42,0.28)]"></div>
                     </div>
 
                     <div class="absolute bottom-4 right-4 rounded-full bg-slate-950/70 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
                         کد QR را داخل قاب قرار دهید
+                    </div>
+
+                    <div
+                        x-show="cameraActive"
+                        x-transition.opacity.duration.150ms
+                        class="absolute left-4 top-4 max-w-[calc(100%-2rem)] rounded-full bg-slate-950/70 px-3 py-1.5 text-[11px] font-semibold text-white backdrop-blur"
+                        dir="ltr"
+                        style="display: none;"
+                    >
+                        <span x-text="cameraSettings.width && cameraSettings.height ? `${cameraSettings.width}x${cameraSettings.height}` : 'camera'"></span>
+                        <span x-show="cameraSettings.zoom"> · zoom <span x-text="Number(cameraSettings.zoom).toFixed(1)"></span>x</span>
+                        <span x-show="cameraCapabilities.torch"> · torch</span>
+                        <span> · enhanced</span>
                     </div>
                 </div>
 
