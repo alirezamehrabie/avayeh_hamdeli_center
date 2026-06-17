@@ -1,6 +1,8 @@
 import './bootstrap';
 import 'bootstrap/dist/js/bootstrap.min.js';
 import * as bootstrap from 'bootstrap';
+import '@majidh1/jalalidatepicker/dist/jalalidatepicker.min.css';
+import '@majidh1/jalalidatepicker';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { createEnhancedQrScanner } from './qr-scanner-enhancer';
 import { Livewire, Alpine } from '../../vendor/livewire/livewire/dist/livewire.esm';
@@ -37,6 +39,57 @@ Alpine.data('rialAmountInput', (model) => ({
 
         this.formatted = this.format(digits);
         this.model = digits;
+    },
+}));
+
+Alpine.data('jalaliDateTimeField', (model) => ({
+    model,
+    draft: '',
+    committedValue: '',
+    confirmedDuringSession: false,
+    init() {
+        this.draft = this.model ?? '';
+        this.committedValue = this.model ?? '';
+
+        this.$watch('model', (value) => {
+            const normalizedValue = value ?? '';
+
+            if (normalizedValue === this.committedValue && normalizedValue === this.draft) {
+                return;
+            }
+
+            this.draft = normalizedValue;
+            this.committedValue = normalizedValue;
+        });
+    },
+    handlePickerOpen() {
+        this.confirmedDuringSession = false;
+        this.committedValue = this.model ?? '';
+        this.draft = this.$refs.input?.value ?? this.draft ?? '';
+    },
+    handlePickerClose() {
+        if (this.confirmedDuringSession) {
+            this.confirmedDuringSession = false;
+            return;
+        }
+
+        this.draft = this.committedValue;
+
+        if (this.$refs.input) {
+            this.$refs.input.value = this.committedValue;
+        }
+    },
+    confirm() {
+        const normalizedValue = (this.draft ?? '').trim();
+
+        this.confirmedDuringSession = true;
+        this.draft = normalizedValue;
+        this.committedValue = normalizedValue;
+        this.model = normalizedValue;
+
+        if (this.$refs.input) {
+            this.$refs.input.value = normalizedValue;
+        }
     },
 }));
 
@@ -478,5 +531,120 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
         this.stopCamera();
     },
 }));
+
+const initializeJalaliDateTimePickers = () => {
+    if (!window.jalaliDatepicker) {
+        return;
+    }
+
+    const options = {
+        time: true,
+        hasSecond: false,
+        autoHide: true,
+        hideAfterChange: false,
+        showTodayBtn: true,
+        showEmptyBtn: true,
+        showCloseBtn: true,
+        showSelectTimeBtnAlways: false,
+        autoReadOnlyInput: false,
+        useDropDownYears: true,
+        persianDigits: true,
+        separatorChars: {
+            date: '/',
+            between: ' ',
+            time: ':',
+        },
+    };
+
+    if (window.__jalaliDatepickerInitialized) {
+        window.jalaliDatepicker.updateOptions(options);
+        return;
+    }
+
+    window.jalaliDatepicker.startWatch(options);
+    window.__jalaliDatepickerInitialized = true;
+
+    document.querySelectorAll('input[data-jdp]').forEach((input) => {
+        input.removeAttribute('readonly');
+        input.readOnly = false;
+    });
+};
+
+const dispatchJalaliPickerEvent = (input, eventName) => {
+    if (!input) {
+        return;
+    }
+
+    input.dispatchEvent(new CustomEvent(eventName, {
+        bubbles: true,
+    }));
+};
+
+const ensureJalaliConfirmButton = () => {
+    const container = document.querySelector('.jdp-container');
+    const footer = container?.querySelector('.jdp-footer');
+
+    if (!footer || footer.querySelector('[data-jdp-confirm-btn]')) {
+        return;
+    }
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn btn-primary btn-sm ms-2';
+    button.textContent = 'تأیید';
+    button.setAttribute('data-jdp-confirm-btn', 'true');
+    button.addEventListener('click', () => {
+        const activeInput = window.__jdpActiveInput;
+
+        dispatchJalaliPickerEvent(activeInput, 'jalali-picker-confirm');
+        window.jalaliDatepicker.hide();
+    });
+
+    footer.insertBefore(button, footer.firstChild);
+};
+
+const patchJalaliDatepickerLifecycle = () => {
+    if (!window.jalaliDatepicker || window.__jalaliDatepickerPatched) {
+        return;
+    }
+
+    const originalShow = window.jalaliDatepicker.show.bind(window.jalaliDatepicker);
+    const originalHide = window.jalaliDatepicker.hide.bind(window.jalaliDatepicker);
+
+    window.jalaliDatepicker.show = (input) => {
+        window.__jdpActiveInput = input;
+        dispatchJalaliPickerEvent(input, 'jalali-picker-open');
+        originalShow(input);
+        requestAnimationFrame(() => {
+            ensureJalaliConfirmButton();
+        });
+    };
+
+    window.jalaliDatepicker.hide = () => {
+        const activeInput = window.__jdpActiveInput;
+
+        originalHide();
+        dispatchJalaliPickerEvent(activeInput, 'jalali-picker-close');
+        window.__jdpActiveInput = null;
+    };
+
+    document.addEventListener('jdp:change', () => {
+        requestAnimationFrame(() => {
+            ensureJalaliConfirmButton();
+        });
+    });
+
+    window.__jalaliDatepickerPatched = true;
+};
+
+document.addEventListener('livewire:init', () => {
+    patchJalaliDatepickerLifecycle();
+    initializeJalaliDateTimePickers();
+
+    Livewire.hook('morph.updated', () => {
+        patchJalaliDatepickerLifecycle();
+        initializeJalaliDateTimePickers();
+    });
+});
 
 Livewire.start();

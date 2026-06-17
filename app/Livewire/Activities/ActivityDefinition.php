@@ -156,7 +156,8 @@ class ActivityDefinition extends Component
                     return;
                 }
 
-                if (! Jalalian::fromFormat('Y/m/d H:i', trim((string) $value))->greaterThan(Jalalian::fromFormat('Y/m/d H:i', trim((string) $this->startsAt)))) {
+                if (! Jalalian::fromDateTime($this->jalaliDateTimeToGregorian((string) $value))
+                    ->greaterThan(Jalalian::fromDateTime($this->jalaliDateTimeToGregorian((string) $this->startsAt)))) {
                     $fail('زمان پایان باید بعد از زمان شروع باشد.');
                 }
             }],
@@ -216,37 +217,96 @@ class ActivityDefinition extends Component
             }
 
             if (! $this->isValidJalaliDateTime((string) $value)) {
-                $fail($label.' شمسی معتبر نیست. قالب درست: 1403/01/01 14:30');
+                $fail($label.' شمسی معتبر نیست. قالب درست: 1403/01/01 یا 1403/01/01 14:30');
             }
         };
     }
 
     protected function isValidJalaliDateTime(string $value): bool
     {
-        $parts = explode(' ', trim($value));
+        [$date, $time] = $this->splitJalaliDateTime($value);
 
-        if (count($parts) !== 2) {
+        if ($date === null) {
             return false;
         }
 
-        [$date, $time] = $parts;
         $dateParts = explode('/', $date);
-        $timeParts = explode(':', $time);
 
-        if (count($dateParts) !== 3 || count($timeParts) !== 2) {
+        if (count($dateParts) !== 3) {
             return false;
         }
 
         [$year, $month, $day] = array_map('intval', $dateParts);
+
+        if (! CalendarUtils::isValidateJalaliDate($year, $month, $day)) {
+            return false;
+        }
+
+        if ($time === null) {
+            return true;
+        }
+
+        $timeParts = explode(':', $time);
+
+        if (count($timeParts) !== 2) {
+            return false;
+        }
+
         [$hour, $minute] = array_map('intval', $timeParts);
 
-        return CalendarUtils::isValidateJalaliDate($year, $month, $day)
-            && $hour >= 0 && $hour <= 23
+        return $hour >= 0 && $hour <= 23
             && $minute >= 0 && $minute <= 59;
     }
 
     protected function jalaliDateTimeToGregorian(string $value): string
     {
-        return Jalalian::fromFormat('Y/m/d H:i', trim($value))->toCarbon()->toDateTimeString();
+        $normalizedValue = $this->normalizePersianDigits(trim($value));
+
+        if (! str_contains($normalizedValue, ' ')) {
+            $normalizedValue .= ' 00:00';
+        }
+
+        return Jalalian::fromFormat('Y/m/d H:i', $normalizedValue)->toCarbon()->toDateTimeString();
+    }
+
+    protected function splitJalaliDateTime(string $value): array
+    {
+        $normalizedValue = preg_replace('/\s+/', ' ', trim($this->normalizePersianDigits($value)));
+
+        if ($normalizedValue === '') {
+            return [null, null];
+        }
+
+        $parts = explode(' ', $normalizedValue, 2);
+        $date = $parts[0] ?? null;
+        $time = $parts[1] ?? null;
+
+        return [$date, $time !== '' ? $time : null];
+    }
+
+    protected function normalizePersianDigits(string $value): string
+    {
+        return strtr($value, [
+            '۰' => '0',
+            '۱' => '1',
+            '۲' => '2',
+            '۳' => '3',
+            '۴' => '4',
+            '۵' => '5',
+            '۶' => '6',
+            '۷' => '7',
+            '۸' => '8',
+            '۹' => '9',
+            '٠' => '0',
+            '١' => '1',
+            '٢' => '2',
+            '٣' => '3',
+            '٤' => '4',
+            '٥' => '5',
+            '٦' => '6',
+            '٧' => '7',
+            '٨' => '8',
+            '٩' => '9',
+        ]);
     }
 }
