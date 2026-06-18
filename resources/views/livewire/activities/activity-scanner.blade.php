@@ -155,7 +155,7 @@
                 <div class="min-w-0 flex-1">
                     <h1 class="text-lg font-extrabold leading-6 sm:text-xl">ثبت حضور فعالیت</h1>
                     <div class="mt-2 inline-flex max-w-full items-center rounded-full bg-white/14 px-3 py-1 text-xs font-bold text-emerald-50 ring-1 ring-white/15">
-                        <span class="truncate">نام فعالیت : {{ $activity?->name ?? '-' }}</span>
+                        <span class="truncate">{{ $activity?->name ?? '-' }}</span>
                     </div>
                 </div>
                 <button

@@ -25,6 +25,8 @@ class DashboardHome extends Component
     public ?int $editingServiceId = null;
     public ?int $editingActivityId = null;
     public ?int $scanningActivityId = null;
+    #[Url(as: 'activity', history: true)]
+    public ?int $activityContextId = null;
     public ?int $serviceReportServiceId = null;
     public bool $showDeletedUsers = false;
     public string $newReminderTitle = '';
@@ -33,29 +35,30 @@ class DashboardHome extends Component
     public function mount(): void
     {
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
-        if (request()->routeIs('admin.user-list*')) {
+        if (! request()->has('section') && request()->routeIs('admin.user-list*')) {
             $this->activeSection = 'system-settings-user-list';
             $this->showDeletedUsers = request()->routeIs('admin.user-list.deleted');
-        } elseif (request()->routeIs('admin.user-definition') || request()->routeIs('admin.user-management*')) {
+        } elseif (! request()->has('section') && (request()->routeIs('admin.user-definition') || request()->routeIs('admin.user-management*'))) {
             $this->activeSection = 'system-settings-user-definition';
-        } elseif (request()->routeIs('admin.user-account')) {
+        } elseif (! request()->has('section') && request()->routeIs('admin.user-account')) {
             $this->activeSection = 'system-settings-user-account';
-        } elseif (request()->routeIs('admin.service-definition')) {
+        } elseif (! request()->has('section') && request()->routeIs('admin.service-definition')) {
             $this->activeSection = 'service-definition';
-        } elseif (request()->routeIs('admin.service-management')) {
+        } elseif (! request()->has('section') && request()->routeIs('admin.service-management')) {
             $this->activeSection = 'service-management';
-        } elseif (request()->routeIs('admin.service-list')) {
+        } elseif (! request()->has('section') && request()->routeIs('admin.service-list')) {
             $this->activeSection = 'service-list';
-        } elseif (request()->routeIs('admin.service-delivery')) {
+        } elseif (! request()->has('section') && request()->routeIs('admin.service-delivery')) {
             $this->activeSection = 'service-delivery';
-        } elseif (request()->routeIs('admin.activity-definition')) {
+        } elseif (! request()->has('section') && request()->routeIs('admin.activity-definition')) {
             $this->activeSection = 'activity-definition';
-        } elseif (request()->routeIs('admin.activity-list')) {
+        } elseif (! request()->has('section') && request()->routeIs('admin.activity-list')) {
             $this->activeSection = 'activity-list';
-        } elseif (request()->routeIs('admin.special-features.id-card-scanner')) {
+        } elseif (! request()->has('section') && request()->routeIs('admin.special-features.id-card-scanner')) {
             $this->activeSection = 'special-features-id-card-scanner';
         }
         $this->normalizeActiveSection();
+        $this->syncActivityContext();
     }
 
     #[On('open-dashboard-section')]
@@ -69,8 +72,41 @@ class DashboardHome extends Component
         $this->editingServiceId = $this->activeSection === 'service-definition' ? $id : null;
         $this->editingActivityId = $this->activeSection === 'activity-definition' ? $id : null;
         $this->scanningActivityId = $this->activeSection === 'activity-scanner' ? $id : null;
+        $this->activityContextId = in_array($this->activeSection, ['activity-definition', 'activity-scanner'], true) ? $id : null;
         $this->serviceReportServiceId = $section === 'advanced-service-report' ? $id : null;
         $this->showDeletedUsers = false;
+    }
+
+    public function updatedActiveSection(): void
+    {
+        $this->normalizeActiveSection();
+        $this->syncActivityContext();
+    }
+
+    public function updatedActivityContextId(): void
+    {
+        $this->syncActivityContext();
+    }
+
+    private function syncActivityContext(): void
+    {
+        if ($this->activeSection === 'activity-definition') {
+            $this->editingActivityId = $this->activityContextId;
+            $this->scanningActivityId = null;
+
+            return;
+        }
+
+        if ($this->activeSection === 'activity-scanner') {
+            $this->scanningActivityId = $this->activityContextId;
+            $this->editingActivityId = null;
+
+            return;
+        }
+
+        $this->activityContextId = null;
+        $this->editingActivityId = null;
+        $this->scanningActivityId = null;
     }
 
     private function normalizeActiveSection(): void
