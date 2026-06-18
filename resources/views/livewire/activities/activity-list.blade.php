@@ -15,7 +15,9 @@
                     <h1 class="text-lg font-extrabold leading-tight text-white sm:mt-2 sm:text-2xl">مدیریت فعالیت‌ها</h1>
                     <p class="mt-1 hidden max-w-3xl text-sm leading-6 text-blue-50/90 sm:mt-2 sm:block">فعالیت‌ها را ایجاد، ویرایش و در چرخه برگزاری مدیریت کنید.</p>
                 </div>
-                <button type="button" wire:click="createActivity" class="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60">افزودن فعالیت</button>
+                @can('full-access')
+                    <button type="button" wire:click="createActivity" class="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60">افزودن فعالیت</button>
+                @endcan
             </div>
         </div>
 
@@ -87,7 +89,9 @@
                                     @if($activity->status === 'ongoing')
                                         <button type="button" wire:click="openScanner({{ $activity->id }})" class="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-100">ثبت حضور</button>
                                     @endif
-                                    <button type="button" wire:click="editActivity({{ $activity->id }})" class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100">ویرایش</button>
+                                    @can('full-access')
+                                        <button type="button" wire:click="editActivity({{ $activity->id }})" class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100">ویرایش</button>
+                                    @endcan
                                 </div>
                             </div>
                         </article>
@@ -131,19 +135,21 @@
                                 <p><strong>یادداشت وضعیت:</strong> {{ $selectedActivity->status_notes ?: 'ثبت نشده' }}</p>
                             </div>
 
-                            <div class="space-y-2">
-                                <label class="block text-xs font-bold text-slate-500">یادداشت تغییر وضعیت</label>
-                                <textarea wire:model="transitionNotes" rows="2" class="w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100"></textarea>
-                                <div class="flex flex-wrap gap-2">
-                                    @forelse($this->allowedTransitionTargets($selectedActivity) as $targetStatus)
-                                        <button type="button" wire:click="transitionActivity({{ $selectedActivity->id }}, '{{ $targetStatus }}')" class="rounded-full bg-slate-800 px-3 py-2 text-xs font-bold text-white hover:bg-slate-900">
-                                            تغییر به {{ $statusOptions[$targetStatus] ?? $targetStatus }}
-                                        </button>
-                                    @empty
-                                        <span class="text-xs font-semibold text-slate-400">تغییر وضعیت دیگری مجاز نیست.</span>
-                                    @endforelse
+                            @can('full-access')
+                                <div class="space-y-2">
+                                    <label class="block text-xs font-bold text-slate-500">یادداشت تغییر وضعیت</label>
+                                    <textarea wire:model="transitionNotes" rows="2" class="w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100"></textarea>
+                                    <div class="flex flex-wrap gap-2">
+                                        @forelse($this->allowedTransitionTargets($selectedActivity) as $targetStatus)
+                                            <button type="button" wire:click="transitionActivity({{ $selectedActivity->id }}, '{{ $targetStatus }}')" class="rounded-full bg-slate-800 px-3 py-2 text-xs font-bold text-white hover:bg-slate-900">
+                                                تغییر به {{ $statusOptions[$targetStatus] ?? $targetStatus }}
+                                            </button>
+                                        @empty
+                                            <span class="text-xs font-semibold text-slate-400">تغییر وضعیت دیگری مجاز نیست.</span>
+                                        @endforelse
+                                    </div>
                                 </div>
-                            </div>
+                            @endcan
 
                             <div class="flex flex-wrap gap-2">
                                 @if($selectedActivity->status === 'ongoing')

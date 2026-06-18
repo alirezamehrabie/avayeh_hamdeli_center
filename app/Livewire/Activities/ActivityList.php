@@ -35,16 +35,20 @@ class ActivityList extends Component
 
     public function mount(): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
     }
 
     public function createActivity(): void
     {
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
+
         $this->dispatch('open-dashboard-section', section: 'activity-definition');
     }
 
     public function editActivity(int $activityId): void
     {
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
+
         $this->dispatch('open-dashboard-section', section: 'activity-definition', id: $activityId);
     }
 

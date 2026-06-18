@@ -145,6 +145,7 @@ class DashboardHome extends Component
             $validSections[] = 'child-supporter-sponsor-registration';
             $validSections[] = 'child-supporter-sponsor-list';
             $validSections[] = 'special-features-id-card-scanner';
+            $validSections[] = 'activity-list';
             $validSections[] = 'activity-scanner';
         }
 
@@ -171,7 +172,6 @@ class DashboardHome extends Component
                 'service-delivery',
                 'service-management',
                 'activity-definition',
-                'activity-list',
                 'child-supporter-sponsor-registration',
                 'child-supporter-sponsor-list',
                 'special-features-id-card-scanner'

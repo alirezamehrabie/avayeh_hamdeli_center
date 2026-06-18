@@ -51,7 +51,7 @@
         $guardiansOpen = $dashboardMode ? $isActive(['guardians-list', 'guardians-block-list']) : request()->routeIs('guardians.*');
         $reportsOpen = $dashboardMode ? $isActive(['advanced-reports', 'advanced-service-report', 'advanced-beneficiary-report', 'advanced-operator-report', 'advanced-supervisor-report', 'advanced-social-worker-report']) : false;
         $servicesOpen = $dashboardMode ? $isActive(['service-definition', 'service-management', 'service-list', 'service-delivery']) : false;
-        $activitiesOpen = $dashboardMode ? $isActive(['activity-definition', 'activity-list']) : false;
+        $activitiesOpen = $dashboardMode ? $isActive(['activity-definition', 'activity-list', 'activity-scanner']) : false;
         $childSupporterOpen = $dashboardMode ? $isActive(['child-supporter-sponsor-registration', 'child-supporter-sponsor-list']) : false;
         $specialFeaturesOpen = $dashboardMode ? $isActive(['special-features-id-card-scanner']) : false;
         $systemSettingsOpen = $dashboardMode ? $isActive(['system-settings-user-definition', 'system-settings-user-list', 'system-settings-user-account']) : request()->routeIs('admin.user-definition') || request()->routeIs('admin.user-management') || request()->routeIs('admin.user-list') || request()->routeIs('admin.user-account');
@@ -316,7 +316,7 @@
         @endcan
 
 
-        @can('full-access')
+        @can('access-admin-panel')
             @if($dashboardMode)
                 <div>
                     <button type="button" @click="openMenu = openMenu === 'activities' ? '' : 'activities'"
@@ -337,10 +337,12 @@
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'activity-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             مدیریت فعالیت‌ها
                         </button>
+                        @can('full-access')
                         <button type="button" wire:click="selectSection('activity-definition')"
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'activity-definition' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             تعریف فعالیت
                         </button>
+                        @endcan
                     </div>
                 </div>
             @endif

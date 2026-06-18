@@ -23,6 +23,15 @@ class DashboardHomeNavigationTest extends TestCase
             ->assertSeeLivewire(ActivityList::class);
     }
 
+    public function test_admin_panel_user_without_full_access_can_open_activity_list_route(): void
+    {
+        $this->actingAs($this->adminPanelUserWithoutFullAccess());
+
+        $this->get('/admin/activities/activity-list')
+            ->assertOk()
+            ->assertSeeLivewire(ActivityList::class);
+    }
+
     public function test_activity_definition_context_survives_mount_from_url(): void
     {
         $this->actingAs($this->manager());
@@ -93,6 +102,15 @@ class DashboardHomeNavigationTest extends TestCase
             'access_level' => User::ACCESS_LEVEL_ADMIN,
             'is_admin' => true,
             'permissions' => [User::PERMISSION_FULL_ACCESS],
+        ]);
+    }
+
+    private function adminPanelUserWithoutFullAccess(): User
+    {
+        return User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_REGULAR,
+            'is_admin' => false,
+            'permissions' => [User::PERMISSION_PEOPLE_REGISTER],
         ]);
     }
 

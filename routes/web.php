@@ -105,7 +105,7 @@ Route::get('/admin/activities/activity-definition', DashboardHome::class)
     ->name('admin.activity-definition');
 
 Route::get('/admin/activities/activity-list', DashboardHome::class)
-    ->middleware(['auth', 'can:full-access'])
+    ->middleware(['auth', 'can:access-admin-panel'])
     ->name('admin.activity-list');
 
 
