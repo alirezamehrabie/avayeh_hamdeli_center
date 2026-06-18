@@ -2,6 +2,7 @@
     x-data="{
         ...idCardScanner({
             resolveScan: (payload) => $wire.resolveScannedQr(payload),
+            successSoundUrl: '/sounds/scan-success.wav',
             activityName: @js($activity?->name ?? ''),
         }),
         mobileHeaderExpanded: false,

@@ -1,6 +1,8 @@
 <div
     x-data="idCardScanner({
         resolveScan: (payload) => $wire.resolveScannedQr(payload),
+        successSoundUrl: '/sounds/scan-card.wav',
+        enableResultBanner: false,
     })"
     x-init="init()"
     x-on:id-card-scanner-pause.window="pauseFromWire()"

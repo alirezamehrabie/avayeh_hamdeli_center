@@ -133,7 +133,12 @@ Alpine.data('jalaliDateTimeField', (model) => ({
     },
 }));
 
-Alpine.data('idCardScanner', ({ resolveScan, successSoundUrl = '/sounds/scan-success.wav', activityName = '' }) => ({
+Alpine.data('idCardScanner', ({
+    resolveScan,
+    successSoundUrl = '',
+    activityName = '',
+    enableResultBanner = true,
+}) => ({
     ...attendanceResultBanner(),
     cameras: [],
     selectedDeviceId: '',
@@ -162,6 +167,7 @@ Alpine.data('idCardScanner', ({ resolveScan, successSoundUrl = '/sounds/scan-suc
     scanSuccessSoundUrl: successSoundUrl,
     scanSuccessAudio: null,
     activityName,
+    enableResultBanner,
     successBanner: createAttendanceResultBannerState(),
     async init() {
         this.prepareSuccessSound();
@@ -396,7 +402,9 @@ Alpine.data('idCardScanner', ({ resolveScan, successSoundUrl = '/sounds/scan-suc
                     this.playFeedbackSound(feedbackVariant);
                 }
 
-                this.showResultBanner(response.result, response?.message);
+                if (this.enableResultBanner) {
+                    this.showResultBanner(response.result, response?.message);
+                }
                 this.scheduleResumeAfterSuccess();
             }
 
@@ -405,11 +413,13 @@ Alpine.data('idCardScanner', ({ resolveScan, successSoundUrl = '/sounds/scan-suc
                 response?.message || (response?.ok ? 'اطلاعات شناسایی شد.' : 'دریافت اطلاعات انجام نشد.')
             );
         } catch (error) {
-            this.showResultBanner({
-                ok: false,
-                code: 'processing_failed',
-                message: 'خطا در پردازش کد',
-            });
+            if (this.enableResultBanner) {
+                this.showResultBanner({
+                    ok: false,
+                    code: 'processing_failed',
+                    message: 'خطا در پردازش کد',
+                });
+            }
             this.scheduleResumeAfterSuccess();
             this.resolvingScan = false;
             this.setStatus('scan_error', 'دریافت اطلاعات QR انجام نشد. دوباره تلاش کنید.');
