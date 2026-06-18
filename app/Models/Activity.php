@@ -63,17 +63,10 @@ class Activity extends Model
 
     public static function generateNextCode(): string
     {
-        $lastSequence = static::withTrashed()
+        $lastSequence = (int) static::withTrashed()
             ->where('code', 'like', 'ACT-%')
-            ->pluck('code')
-            ->map(function (?string $code): int {
-                if (! is_string($code) || ! preg_match('/^ACT-(\d+)$/', $code, $matches)) {
-                    return 0;
-                }
-
-                return (int) $matches[1];
-            })
-            ->max() ?? 0;
+            ->selectRaw(static::codeSequenceExpression().' as sequence')
+            ->value('sequence');
 
         if ($lastSequence <= 0) {
             $lastSequence = (int) static::withTrashed()
@@ -82,6 +75,16 @@ class Activity extends Model
         }
 
         return 'ACT-'.str_pad((string) ($lastSequence + 1), 5, '0', STR_PAD_LEFT);
+    }
+
+    protected static function codeSequenceExpression(): string
+    {
+        return match (static::query()->getConnection()->getDriverName()) {
+            'mysql', 'mariadb' => 'MAX(CAST(SUBSTRING(code, 5) AS UNSIGNED))',
+            'pgsql' => 'MAX(CAST(SUBSTRING(code FROM 5) AS INTEGER))',
+            'sqlsrv' => 'MAX(CAST(SUBSTRING(code, 5, 8000) AS INTEGER))',
+            default => 'MAX(CAST(SUBSTR(code, 5) AS INTEGER))',
+        };
     }
 
     public function creator(): BelongsTo

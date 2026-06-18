@@ -147,6 +147,26 @@ class ActivityDefinitionTest extends TestCase
         $this->assertMatchesRegularExpression('/^ACT-\d{5}$/', (string) $activity->code);
     }
 
+    public function test_new_activity_code_ignores_soft_deleted_rows_when_generating_sequence(): void
+    {
+        $user = $this->manager();
+        $this->actingAs($user);
+
+        $softDeletedActivity = Activity::query()->create([
+            'code' => 'ACT-00041',
+            'name' => 'Archived Session',
+            'activity_type' => 'workshop',
+            'status' => 'closed',
+            'created_by' => $user->id,
+        ]);
+
+        $softDeletedActivity->delete();
+
+        $nextCode = Activity::generateNextCode();
+
+        $this->assertSame('ACT-00042', $nextCode);
+    }
+
     private function manager(): User
     {
         return User::factory()->create([
