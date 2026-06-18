@@ -88,7 +88,7 @@ class ActivityDefinition extends Component
             $this->saveNewActivity($payload);
         }
 
-        session()->flash('activity-success', 'فعالیت با موفقیت ذخیره شد.');
+        session()->flash('activity-success', __('activities.definition.messages.saved'));
 
         return redirect()->to('/admin/dashboard?section=activity-list');
     }
@@ -130,14 +130,14 @@ class ActivityDefinition extends Component
             'activityType' => ['required', Rule::in(array_keys(Activity::TYPE_OPTIONS))],
             'description' => ['nullable', 'string', 'max:5000'],
             'location' => ['nullable', 'string', 'max:255'],
-            'startsAt' => ['nullable', 'string', $this->jalaliDateTimeRule('زمان شروع')],
-            'endsAt' => ['nullable', 'string', $this->jalaliDateTimeRule('زمان پایان'), function (string $attribute, mixed $value, \Closure $fail): void {
+            'startsAt' => ['nullable', 'string', $this->jalaliDateTimeRule('startsAt')],
+            'endsAt' => ['nullable', 'string', $this->jalaliDateTimeRule('endsAt'), function (string $attribute, mixed $value, \Closure $fail): void {
                 if (blank($value)) {
                     return;
                 }
 
                 if (blank($this->startsAt)) {
-                    $fail('برای ثبت زمان پایان، زمان شروع نیز الزامی است.');
+                    $fail(__('activities.definition.validation.messages.end_requires_start'));
 
                     return;
                 }
@@ -148,7 +148,7 @@ class ActivityDefinition extends Component
 
                 if (! $this->jalaliDateTimeToGregorian((string) $value)
                     ->greaterThan($this->jalaliDateTimeToGregorian((string) $this->startsAt))) {
-                    $fail('زمان پایان باید بعد از زمان شروع باشد.');
+                    $fail(__('activities.definition.validation.messages.end_after_start'));
                 }
             }],
             'capacity' => ['nullable', 'integer', 'min:1'],
@@ -160,14 +160,14 @@ class ActivityDefinition extends Component
     protected function validationAttributes(): array
     {
         return [
-            'name' => 'نام فعالیت',
-            'activityType' => 'نوع فعالیت',
-            'description' => 'توضیحات',
-            'location' => 'مکان',
-            'startsAt' => 'زمان شروع',
-            'endsAt' => 'زمان پایان',
-            'capacity' => 'ظرفیت',
-            'statusNotes' => 'یادداشت وضعیت',
+            'name' => __('activities.definition.validation.attributes.name'),
+            'activityType' => __('activities.definition.validation.attributes.activityType'),
+            'description' => __('activities.definition.validation.attributes.description'),
+            'location' => __('activities.definition.validation.attributes.location'),
+            'startsAt' => __('activities.definition.validation.attributes.startsAt'),
+            'endsAt' => __('activities.definition.validation.attributes.endsAt'),
+            'capacity' => __('activities.definition.validation.attributes.capacity'),
+            'statusNotes' => __('activities.definition.validation.attributes.statusNotes'),
         ];
     }
 
@@ -199,15 +199,17 @@ class ActivityDefinition extends Component
         $this->statusNotes = trim($this->statusNotes);
     }
 
-    protected function jalaliDateTimeRule(string $label): \Closure
+    protected function jalaliDateTimeRule(string $attributeKey): \Closure
     {
-        return function (string $attribute, mixed $value, \Closure $fail) use ($label): void {
+        return function (string $attribute, mixed $value, \Closure $fail) use ($attributeKey): void {
             if (blank($value)) {
                 return;
             }
 
             if (! $this->isValidJalaliDateTime((string) $value)) {
-                $fail($label.' شمسی معتبر نیست. قالب درست: 1403/01/01 یا 1403/01/01 14:30');
+                $fail(__('activities.definition.validation.messages.invalid_jalali_datetime', [
+                    'attribute' => __('activities.definition.validation.attributes.'.$attributeKey),
+                ]));
             }
         };
     }
