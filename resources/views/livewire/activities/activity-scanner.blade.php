@@ -66,29 +66,88 @@
             x-transition:leave="transition ease-in duration-150"
             x-transition:leave-start="translate-y-0 scale-100 opacity-100"
             x-transition:leave-end="translate-y-3 scale-97 opacity-0"
-            class="relative w-full max-w-2xl overflow-hidden rounded-[2rem] border border-emerald-200/80 bg-white text-center shadow-2xl shadow-emerald-950/25 ring-1 ring-white/80 md:rounded-[2.25rem]"
+            class="relative w-full max-w-2xl overflow-hidden rounded-[2rem] border bg-white text-center shadow-2xl ring-1 ring-white/80 md:rounded-[2.25rem]"
+            :class="{
+                'border-emerald-200/80 shadow-emerald-950/25': successBanner.variant === 'success',
+                'border-amber-200/80 shadow-amber-950/20': successBanner.variant === 'warning',
+                'border-rose-200/80 shadow-rose-950/20': successBanner.variant === 'error',
+            }"
             role="status"
             aria-live="polite"
         >
-            <div class="absolute inset-x-0 top-0 h-2 bg-gradient-to-l from-emerald-400 via-teal-400 to-cyan-400"></div>
-            <div class="absolute -left-20 -top-20 size-56 rounded-full bg-emerald-200/45 blur-3xl"></div>
-            <div class="absolute -bottom-24 -right-20 size-64 rounded-full bg-cyan-200/45 blur-3xl"></div>
+            <div
+                class="absolute inset-x-0 top-0 h-2 bg-gradient-to-l"
+                :class="{
+                    'from-emerald-400 via-teal-400 to-cyan-400': successBanner.variant === 'success',
+                    'from-amber-400 via-orange-400 to-yellow-400': successBanner.variant === 'warning',
+                    'from-rose-500 via-red-500 to-orange-500': successBanner.variant === 'error',
+                }"
+            ></div>
+            <div
+                class="absolute -left-20 -top-20 size-56 rounded-full blur-3xl"
+                :class="{
+                    'bg-emerald-200/45': successBanner.variant === 'success',
+                    'bg-amber-200/45': successBanner.variant === 'warning',
+                    'bg-rose-200/45': successBanner.variant === 'error',
+                }"
+            ></div>
+            <div
+                class="absolute -bottom-24 -right-20 size-64 rounded-full blur-3xl"
+                :class="{
+                    'bg-cyan-200/45': successBanner.variant === 'success',
+                    'bg-yellow-200/45': successBanner.variant === 'warning',
+                    'bg-orange-200/45': successBanner.variant === 'error',
+                }"
+            ></div>
 
             <div class="relative px-6 py-7 md:px-9 md:py-8">
                 <div class="mx-auto flex size-24 items-center justify-center md:size-28">
-                    <div class="attendance-success-pulse absolute size-24 rounded-full bg-emerald-400 md:size-28"></div>
-                    <div class="relative flex size-16 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-xl shadow-emerald-700/25 ring-8 ring-emerald-100 md:size-20">
+                    <div
+                        class="attendance-success-pulse absolute size-24 rounded-full md:size-28"
+                        :class="{
+                            'bg-emerald-400': successBanner.variant === 'success',
+                            'bg-amber-400': successBanner.variant === 'warning',
+                            'bg-rose-400': successBanner.variant === 'error',
+                        }"
+                    ></div>
+                    <div
+                        class="relative flex size-16 items-center justify-center rounded-full bg-gradient-to-br text-white shadow-xl ring-8 md:size-20"
+                        :class="{
+                            'from-emerald-500 to-teal-500 shadow-emerald-700/25 ring-emerald-100': successBanner.variant === 'success',
+                            'from-amber-500 to-orange-500 shadow-amber-700/25 ring-amber-100': successBanner.variant === 'warning',
+                            'from-rose-500 to-red-500 shadow-rose-700/25 ring-rose-100': successBanner.variant === 'error',
+                        }"
+                    >
                         <svg class="size-10 md:size-12" viewBox="0 0 52 52" fill="none" aria-hidden="true">
-                            <path class="attendance-success-check" d="M14 27.5 22.5 36 39 17" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+                            <path x-show="successBanner.variant === 'success'" class="attendance-success-check" d="M14 27.5 22.5 36 39 17" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+                            <path x-show="successBanner.variant === 'warning'" d="M26 13v17" stroke="currentColor" stroke-width="6" stroke-linecap="round" />
+                            <path x-show="successBanner.variant === 'warning'" d="M26 39h.01" stroke="currentColor" stroke-width="7" stroke-linecap="round" />
+                            <path x-show="successBanner.variant === 'error'" d="M17 17l18 18M35 17 17 35" stroke="currentColor" stroke-width="6" stroke-linecap="round" />
                         </svg>
                     </div>
                 </div>
 
                 <div class="mt-5">
-                    <p class="text-xs font-extrabold tracking-[0.22em] text-emerald-600">ثبت موفق</p>
-                    <h2 class="mt-2 text-2xl font-black text-slate-950 md:text-4xl">حضور ثبت شد</h2>
-                    <div class="mx-auto mt-5 max-w-xl rounded-3xl border border-emerald-100 bg-emerald-50/80 px-5 py-4">
-                        <p class="truncate text-2xl font-black text-slate-900 md:text-3xl" x-text="successBanner.name"></p>
+                    <p
+                        class="text-xs font-extrabold tracking-[0.22em]"
+                        :class="{
+                            'text-emerald-600': successBanner.variant === 'success',
+                            'text-amber-600': successBanner.variant === 'warning',
+                            'text-rose-600': successBanner.variant === 'error',
+                        }"
+                        x-text="successBanner.variant === 'success' ? 'ثبت موفق' : (successBanner.variant === 'warning' ? 'نیاز به توجه' : 'خطای اسکن')"
+                    ></p>
+                    <h2 class="mt-2 text-2xl font-black text-slate-950 md:text-4xl" x-text="successBanner.message"></h2>
+                    <div
+                        class="mx-auto mt-5 max-w-xl rounded-3xl border px-5 py-4"
+                        :class="{
+                            'border-emerald-100 bg-emerald-50/80': successBanner.variant === 'success',
+                            'border-amber-100 bg-amber-50/80': successBanner.variant === 'warning',
+                            'border-rose-100 bg-rose-50/80': successBanner.variant === 'error',
+                        }"
+                    >
+                        <p class="truncate text-2xl font-black text-slate-900 md:text-3xl" x-show="successBanner.name" x-text="successBanner.name"></p>
+                        <p class="text-sm font-semibold text-slate-500" x-show="!successBanner.name">اطلاعات مددجو در دسترس نیست</p>
                         <p class="mt-2 text-sm font-medium leading-6 text-slate-500" x-text="successBanner.time"></p>
                     </div>
                     <p class="mx-auto mt-4 max-w-xl truncate rounded-full border border-slate-200 bg-white/75 px-4 py-2 text-xs font-semibold text-slate-500" x-show="successBanner.activityName" x-text="successBanner.activityName"></p>

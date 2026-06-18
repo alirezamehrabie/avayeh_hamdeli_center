@@ -139,6 +139,8 @@ Alpine.data('idCardScanner', ({ resolveScan, successSoundUrl = '/sounds/scan-suc
     activityName,
     successBanner: {
         visible: false,
+        variant: 'success',
+        message: '',
         name: '',
         time: '',
         activityName: '',
@@ -352,12 +354,15 @@ Alpine.data('idCardScanner', ({ resolveScan, successSoundUrl = '/sounds/scan-suc
         try {
             const response = await resolveScan(value);
 
-            if (response?.ok) {
+            if (response?.result) {
                 const feedbackVariant = response?.result?.code === 'duplicate' ? 'warning' : 'success';
 
-                this.vibrateOnSuccess();
-                this.playFeedbackSound(feedbackVariant);
-                this.showSuccessBanner(response?.result);
+                if (response?.ok) {
+                    this.vibrateOnSuccess();
+                    this.playFeedbackSound(feedbackVariant);
+                }
+
+                this.showResultBanner(response.result, response?.message);
                 this.scheduleResumeAfterSuccess();
             }
 
@@ -366,6 +371,12 @@ Alpine.data('idCardScanner', ({ resolveScan, successSoundUrl = '/sounds/scan-suc
                 response?.message || (response?.ok ? 'اطلاعات شناسایی شد.' : 'دریافت اطلاعات انجام نشد.')
             );
         } catch (error) {
+            this.showResultBanner({
+                ok: false,
+                code: 'processing_failed',
+                message: 'خطا در پردازش کد',
+            });
+            this.scheduleResumeAfterSuccess();
             this.resolvingScan = false;
             this.setStatus('scan_error', 'دریافت اطلاعات QR انجام نشد. دوباره تلاش کنید.');
         }
@@ -380,14 +391,18 @@ Alpine.data('idCardScanner', ({ resolveScan, successSoundUrl = '/sounds/scan-suc
             this.resumeScan({ clearLastDecoded: false });
         }, 0);
     },
-    showSuccessBanner(result = {}) {
+    showResultBanner(result = {}, fallbackMessage = '') {
         if (this.successBannerTimer) {
             window.clearTimeout(this.successBannerTimer);
         }
 
+        const variant = this.resultBannerVariant(result);
+
         this.successBanner = {
             visible: true,
-            name: result?.person?.name || '-',
+            variant,
+            message: this.resultBannerMessage(result, fallbackMessage),
+            name: result?.person?.name || '',
             time: this.toPersianDigits(result?.attendance?.checked_in_time || this.currentDisplayTime()),
             activityName: result?.activity?.name || this.activityName || '',
         };
@@ -396,6 +411,37 @@ Alpine.data('idCardScanner', ({ resolveScan, successSoundUrl = '/sounds/scan-suc
             this.successBanner.visible = false;
             this.successBannerTimer = null;
         }, 2000);
+    },
+    resultBannerVariant(result = {}) {
+        if (result?.code === 'duplicate') {
+            return 'warning';
+        }
+
+        return result?.ok ? 'success' : 'error';
+    },
+    resultBannerMessage(result = {}, fallbackMessage = '') {
+        if (result?.code === 'duplicate') {
+            return 'حضور این مددجو قبلاً ثبت شده است';
+        }
+
+        if (result?.ok) {
+            return 'حضور با موفقیت ثبت شد';
+        }
+
+        return fallbackMessage || result?.message || this.errorMessageForResultCode(result?.code);
+    },
+    errorMessageForResultCode(code = '') {
+        const messages = {
+            invalid_qr: 'کد QR نامعتبر است',
+            not_beneficiary: 'این QR متعلق به مددجو نیست',
+            beneficiary_unavailable: 'اطلاعات مددجو در دسترس نیست',
+            activity_unavailable: 'فعالیت پیدا نشد',
+            activity_not_active: 'این کد برای فعالیت فعلی فعال نیست',
+            capacity_full: 'ظرفیت فعالیت تکمیل شده است',
+            processing_failed: 'خطا در پردازش کد',
+        };
+
+        return messages[code] || 'خطا در پردازش کد';
     },
     currentDisplayTime() {
         return new Intl.DateTimeFormat('fa-IR-u-nu-arabext', {
