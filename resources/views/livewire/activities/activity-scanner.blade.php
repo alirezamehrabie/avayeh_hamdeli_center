@@ -212,7 +212,7 @@
         <div class="grid gap-4 p-4 xl:grid-cols-[minmax(0,1.5fr)_25rem]">
             <div class="space-y-4">
                 <div class="relative h-[clamp(320px,65svh,560px)] overflow-hidden rounded-2xl border border-slate-200 bg-slate-950">
-                    <div wire:ignore x-ref="scanner" id="activity-scanner-reader-{{ $activityId }}" class="h-full w-full"></div>
+                    <div wire:ignore x-ref="scanner" id="activity-scanner-reader-{{ $activityId }}" class="qr-scanner-reader h-full w-full"></div>
                     <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
                         <div class="activity-scanner-frame relative aspect-square w-[min(72%,420px)] rounded-3xl border-2 border-emerald-300/90">
                             <span class="activity-scanner-frame-corner absolute right-0 top-0 h-12 w-12 rounded-tr-3xl border-r-4 border-t-4 border-teal-200"></span>

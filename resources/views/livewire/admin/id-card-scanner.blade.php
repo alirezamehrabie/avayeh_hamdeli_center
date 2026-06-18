@@ -41,7 +41,7 @@
                         wire:ignore
                         x-ref="scanner"
                         id="id-card-scanner-reader"
-                        class="h-full w-full"
+                        class="qr-scanner-reader h-full w-full"
                     ></div>
 
                     <div class="pointer-events-none absolute inset-0 flex items-center justify-center">

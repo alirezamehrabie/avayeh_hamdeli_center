@@ -107,6 +107,10 @@ body {
     scrollbar-gutter: stable;
 }
 
+.qr-scanner-reader,
+.qr-scanner-reader > div,
+.qr-scanner-reader [id$="__dashboard"],
+.qr-scanner-reader [id$="__scan_region"],
 #id-card-scanner-reader,
 #id-card-scanner-reader > div,
 #id-card-scanner-reader__dashboard,
@@ -118,6 +122,8 @@ body {
     overflow: hidden !important;
 }
 
+.qr-scanner-reader video,
+.qr-scanner-reader canvas,
 #id-card-scanner-reader video,
 #id-card-scanner-reader canvas {
     width: 100% !important;
@@ -125,6 +131,8 @@ body {
     object-fit: cover !important;
 }
 
+.qr-scanner-reader [id$="__dashboard"],
+.qr-scanner-reader [id$="__header_message"],
 #id-card-scanner-reader__dashboard,
 #id-card-scanner-reader__header_message {
     display: none !important;
