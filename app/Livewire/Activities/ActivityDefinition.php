@@ -5,7 +5,9 @@ namespace App\Livewire\Activities;
 use App\Helpers\Morilog\CalendarUtils;
 use App\Helpers\Morilog\Jalalian;
 use App\Models\Activity;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 
@@ -33,12 +35,15 @@ class ActivityDefinition extends Component
 
     public string $statusNotes = '';
 
+    public string $previewActivityCode = '';
+
     public function mount(?int $activityId = null): void
     {
         abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         $this->activityId = $activityId;
         $this->bootDefaults();
+        $this->syncPreviewActivityCode();
 
         if ($activityId) {
             $this->editActivity($activityId);
@@ -51,16 +56,7 @@ class ActivityDefinition extends Component
 
         $this->normalizeInput();
 
-        $activity = $this->editingActivityId
-            ? Activity::query()->findOrFail($this->editingActivityId)
-            : new Activity;
-
         $validated = $this->validate($this->rules(), [], $this->validationAttributes());
-
-        if (! $this->editingActivityId) {
-            $activity->code = Activity::generateNextCode();
-            $activity->created_by = auth()->id();
-        }
 
         $startsAt = blank($validated['startsAt']) ? null : $this->jalaliDateTimeToGregorian($validated['startsAt']);
         $endsAt = blank($validated['endsAt']) ? null : $this->jalaliDateTimeToGregorian($validated['endsAt']);
@@ -77,8 +73,13 @@ class ActivityDefinition extends Component
             'status_notes' => blank($validated['statusNotes']) ? null : trim($validated['statusNotes']),
         ];
 
-        $activity->fill($payload);
-        $activity->save();
+        if ($this->editingActivityId) {
+            $activity = Activity::query()->findOrFail($this->editingActivityId);
+            $activity->fill($payload);
+            $activity->save();
+        } else {
+            $this->saveNewActivity($payload);
+        }
 
         session()->flash('activity-success', 'فعالیت با موفقیت ذخیره شد.');
 
@@ -99,18 +100,12 @@ class ActivityDefinition extends Component
         $this->capacity = $activity->capacity ? (string) $activity->capacity : '';
         $this->status = (string) $activity->status;
         $this->statusNotes = (string) $activity->status_notes;
+        $this->previewActivityCode = (string) $activity->code;
     }
 
     public function backToList(): void
     {
         $this->dispatch('open-dashboard-section', section: 'activity-list');
-    }
-
-    public function getPreviewActivityCodeProperty(): string
-    {
-        return $this->editingActivityId
-            ? (string) Activity::query()->whereKey($this->editingActivityId)->value('code')
-            : Activity::generateNextCode();
     }
 
     public function render()
@@ -173,6 +168,15 @@ class ActivityDefinition extends Component
     {
         $this->activityType = $this->activityType ?: 'group_activity';
         $this->status = $this->status ?: 'ongoing';
+    }
+
+    protected function syncPreviewActivityCode(): void
+    {
+        if ($this->editingActivityId) {
+            return;
+        }
+
+        $this->previewActivityCode = Activity::generateNextCode();
     }
 
     protected function normalizeInput(): void
@@ -275,5 +279,38 @@ class ActivityDefinition extends Component
         $normalized = preg_replace('/\s+/u', ' ', trim($normalized)) ?? '';
 
         return $normalized !== '' ? $normalized : null;
+    }
+
+    protected function saveNewActivity(array $payload): void
+    {
+        $attempts = 0;
+
+        while (true) {
+            try {
+                DB::transaction(function () use ($payload): void {
+                    $activity = new Activity;
+                    $activity->created_by = auth()->id();
+                    $activity->fill($payload);
+                    $activity->save();
+                });
+
+                return;
+            } catch (QueryException $exception) {
+                if (! $this->isDuplicateActivityCodeException($exception) || $attempts >= 2) {
+                    throw $exception;
+                }
+
+                $attempts++;
+            }
+        }
+    }
+
+    protected function isDuplicateActivityCodeException(QueryException $exception): bool
+    {
+        $message = $exception->getMessage();
+
+        return str_contains($message, 'activities.code')
+            || str_contains($message, 'activities_code_unique')
+            || str_contains($message, 'UNIQUE constraint failed: activities.code');
     }
 }

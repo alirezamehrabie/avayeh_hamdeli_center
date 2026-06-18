@@ -60,6 +60,7 @@ class ActivityDefinitionTest extends TestCase
 
         $this->assertSame('2026-06-18 14:30', $activity->starts_at?->copy()->timezone(config('app.timezone'))->format('Y-m-d H:i'));
         $this->assertSame('2026-06-18 16:45', $activity->ends_at?->copy()->timezone(config('app.timezone'))->format('Y-m-d H:i'));
+        $this->assertMatchesRegularExpression('/^ACT-\d{5}$/', (string) $activity->code);
     }
 
     public function test_activity_datetimes_accept_persian_digits_from_picker(): void
@@ -127,6 +128,23 @@ class ActivityDefinitionTest extends TestCase
             'id' => $activity->id,
             'status' => 'cancelled',
         ]);
+    }
+
+    public function test_new_activity_code_is_generated_on_save(): void
+    {
+        $user = $this->manager();
+
+        $this->actingAs($user);
+
+        Livewire::test(ActivityDefinition::class)
+            ->set('name', 'Code Generation Workshop')
+            ->set('activityType', 'workshop')
+            ->call('save')
+            ->assertRedirect('/admin/dashboard?section=activity-list');
+
+        $activity = Activity::query()->where('name', 'Code Generation Workshop')->firstOrFail();
+
+        $this->assertMatchesRegularExpression('/^ACT-\d{5}$/', (string) $activity->code);
     }
 
     private function manager(): User
