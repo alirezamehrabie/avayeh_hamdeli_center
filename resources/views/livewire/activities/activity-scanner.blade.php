@@ -154,17 +154,53 @@
                     </div>
                 </div>
 
-                <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-end md:gap-4">
+                <div class="activity-scanner-controls grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto_auto] md:items-end md:gap-4">
                     <div>
                         <label class="mb-2 block text-sm font-semibold text-slate-700">دوربین فعال</label>
-                        <select x-model="selectedDeviceId" @change="switchCamera()" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-300 focus:ring-4 focus:ring-emerald-100">
+                        <select x-model="selectedDeviceId" @change="switchCamera()" :disabled="startingCamera || !cameras.length" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm transition focus:border-emerald-300 focus:ring-4 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400">
                             <template x-for="camera in cameras" :key="camera.id">
                                 <option :value="camera.id" x-text="camera.label"></option>
                             </template>
                         </select>
                     </div>
-                    <button type="button" @click="startCamera()" class="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-700/20 transition hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-100 md:min-w-36">فعال‌سازی دوربین</button>
-                    <button type="button" wire:click="resumeScanning" class="rounded-xl border border-emerald-300 bg-white px-5 py-3 text-sm font-bold text-emerald-700 transition hover:border-emerald-400 hover:bg-emerald-50 focus:outline-none focus:ring-4 focus:ring-emerald-100 md:min-w-32">ادامه اسکن</button>
+                    <div class="inline-flex items-center gap-2 rounded-xl border px-4 py-3 text-xs font-bold md:min-w-32"
+                        :class="{
+                            'border-emerald-200 bg-emerald-50 text-emerald-700': status === 'scanning',
+                            'border-amber-200 bg-amber-50 text-amber-700': status === 'paused' || resolvingScan,
+                            'border-rose-200 bg-rose-50 text-rose-700': ['camera_denied', 'scan_error', 'unsupported'].includes(status),
+                            'border-slate-200 bg-slate-50 text-slate-600': status === 'initializing',
+                        }"
+                    >
+                        <span class="inline-flex size-2.5 rounded-full"
+                            :class="{
+                                'bg-emerald-500': status === 'scanning',
+                                'bg-amber-500': status === 'paused' || resolvingScan,
+                                'bg-rose-500': ['camera_denied', 'scan_error', 'unsupported'].includes(status),
+                                'bg-slate-400': status === 'initializing',
+                            }"
+                        ></span>
+                        <span x-text="statusLabel()"></span>
+                    </div>
+                    <button
+                        type="button"
+                        @click="startCamera()"
+                        :disabled="startingCamera || status === 'unsupported'"
+                        class="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-700/20 transition hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none md:min-w-36"
+                    >
+                        <span x-cloak x-show="startingCamera">در حال فعال‌سازی...</span>
+                        <span x-cloak x-show="!startingCamera && cameraActive">راه‌اندازی مجدد</span>
+                        <span x-cloak x-show="!startingCamera && !cameraActive">فعال‌سازی دوربین</span>
+                    </button>
+                    <button
+                        type="button"
+                        wire:click="resumeScanning"
+                        :disabled="startingCamera || scanning || resolvingScan || ['camera_denied', 'unsupported'].includes(status)"
+                        class="rounded-xl border border-emerald-300 bg-white px-5 py-3 text-sm font-bold text-emerald-700 transition hover:border-emerald-400 hover:bg-emerald-50 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 md:min-w-32"
+                    >
+                        <span x-cloak x-show="resolvingScan">در حال بررسی...</span>
+                        <span x-cloak x-show="!resolvingScan && scanning">اسکن فعال است</span>
+                        <span x-cloak x-show="!resolvingScan && !scanning">ادامه اسکن</span>
+                    </button>
                 </div>
             </div>
 
