@@ -88,6 +88,12 @@
                     @empty
                         <div class="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm font-semibold text-slate-500">فعالیتی با این فیلترها یافت نشد.</div>
                     @endforelse
+
+                    @if($activities->hasPages())
+                        <div class="rounded-[26px] border border-slate-200 bg-white px-3 py-3 shadow-sm">
+                            {{ $activities->links('vendor.livewire.tailwind-mobile-persian') }}
+                        </div>
+                    @endif
                 </div>
 
                 <aside class="rounded-[28px] border border-slate-200 bg-slate-50/80 p-4">

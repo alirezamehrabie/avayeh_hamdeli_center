@@ -11,10 +11,15 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ActivityList extends Component
 {
+    use WithPagination;
+
+    private const ACTIVITIES_PER_PAGE = 12;
+
     public string $search = '';
     public string $statusFilter = 'all';
     public string $typeFilter = 'all';
@@ -90,7 +95,33 @@ class ActivityList extends Component
         $this->reset(['search', 'statusFilter', 'typeFilter', 'startsFrom', 'startsUntil']);
         $this->statusFilter = 'all';
         $this->typeFilter = 'all';
+        $this->resetPage();
         $this->resetValidation();
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedStatusFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedTypeFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedStartsFrom(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedStartsUntil(): void
+    {
+        $this->resetPage();
     }
 
     public function getSelectedActivityProperty(): ?Activity
@@ -210,7 +241,7 @@ class ActivityList extends Component
                 ->when($startsUntil, fn ($query) => $query->where('starts_at', '<=', $startsUntil->endOfDay()))
                 ->latest('starts_at')
                 ->latest()
-                ->get(),
+                ->paginate(self::ACTIVITIES_PER_PAGE),
             'selectedActivity' => $this->selectedActivity,
             'filteredAttendances' => $this->filteredAttendances,
             'statusOptions' => Activity::STATUS_OPTIONS,
