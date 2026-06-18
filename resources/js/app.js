@@ -132,6 +132,13 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
     lastDecodedText: '',
     lastDecodedAt: 0,
     resumeAfterSuccessTimer: null,
+    successBannerTimer: null,
+    audioContext: null,
+    successBanner: {
+        visible: false,
+        name: '',
+        time: '',
+    },
     async init() {
         if (!('mediaDevices' in navigator) || !('getUserMedia' in navigator.mediaDevices)) {
             this.setStatus('unsupported', 'دسترسی به دوربین در این مرورگر یا دستگاه در دسترس نیست.');
@@ -246,14 +253,17 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
     resumeFromWire() {
         this.resumeScan();
     },
-    resumeScan() {
+    resumeScan({ clearLastDecoded = true } = {}) {
         if (!this.cameraActive) {
             this.startCamera();
             return;
         }
 
-        this.lastDecodedText = '';
-        this.lastDecodedAt = 0;
+        if (clearLastDecoded) {
+            this.lastDecodedText = '';
+            this.lastDecodedAt = 0;
+        }
+
         this.resolvingScan = false;
         this.scanning = true;
         this.startFallbackLoop();
@@ -337,7 +347,11 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
             const response = await resolveScan(value);
 
             if (response?.ok) {
+                const feedbackVariant = response?.result?.code === 'duplicate' ? 'warning' : 'success';
+
                 this.vibrateOnSuccess();
+                this.playFeedbackSound(feedbackVariant);
+                this.showSuccessBanner(response?.result);
                 this.scheduleResumeAfterSuccess();
             }
 
@@ -357,8 +371,128 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
 
         this.resumeAfterSuccessTimer = window.setTimeout(() => {
             this.resumeAfterSuccessTimer = null;
-            this.resumeScan();
-        }, 900);
+            this.resumeScan({ clearLastDecoded: false });
+        }, 0);
+    },
+    showSuccessBanner(result = {}) {
+        if (this.successBannerTimer) {
+            window.clearTimeout(this.successBannerTimer);
+        }
+
+        this.successBanner = {
+            visible: true,
+            name: result?.person?.name || '-',
+            time: this.toPersianDigits(result?.attendance?.checked_in_time || this.currentDisplayTime()),
+        };
+
+        this.successBannerTimer = window.setTimeout(() => {
+            this.successBanner.visible = false;
+            this.successBannerTimer = null;
+        }, 2000);
+    },
+    currentDisplayTime() {
+        return new Intl.DateTimeFormat('fa-IR-u-nu-arabext', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+        }).format(new Date());
+    },
+    toPersianDigits(value) {
+        return String(value || '').replace(/\d/g, (digit) => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)]);
+    },
+    playFeedbackSound(variant = 'success') {
+        if (typeof window === 'undefined' || !('AudioContext' in window || 'webkitAudioContext' in window)) {
+            return;
+        }
+
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        this.audioContext = this.audioContext || new AudioContextClass();
+
+        if (this.audioContext.state === 'suspended') {
+            this.audioContext.resume();
+        }
+
+        const now = this.audioContext.currentTime;
+
+        if (variant === 'warning') {
+            this.playWarningChime(now);
+            return;
+        }
+
+        this.playScanChirp(now);
+    },
+    playScanChirp(startTime) {
+        this.playTone({
+            type: 'triangle',
+            frequency: 1660,
+            startTime,
+            duration: 0.055,
+            volume: 0.052,
+            attack: 0.004,
+            releasePadding: 0.015,
+            frequencyEnd: 2140,
+        });
+
+        this.playTone({
+            type: 'square',
+            frequency: 2140,
+            startTime: startTime + 0.05,
+            duration: 0.045,
+            volume: 0.018,
+            attack: 0.002,
+            releasePadding: 0.012,
+            frequencyEnd: 2320,
+        });
+    },
+    playWarningChime(startTime) {
+        this.playTone({
+            type: 'sine',
+            frequency: 720,
+            startTime,
+            duration: 0.075,
+            volume: 0.028,
+            attack: 0.01,
+            releasePadding: 0.02,
+            frequencyEnd: 660,
+        });
+
+        this.playTone({
+            type: 'sine',
+            frequency: 620,
+            startTime: startTime + 0.085,
+            duration: 0.085,
+            volume: 0.024,
+            attack: 0.012,
+            releasePadding: 0.024,
+            frequencyEnd: 560,
+        });
+    },
+    playTone({
+        frequency,
+        startTime,
+        duration,
+        volume,
+        type = 'sine',
+        attack = 0.008,
+        releasePadding = 0.02,
+        frequencyEnd = null,
+    }) {
+        const oscillator = this.audioContext.createOscillator();
+        const gain = this.audioContext.createGain();
+
+        oscillator.type = type;
+        oscillator.frequency.setValueAtTime(frequency, startTime);
+        if (frequencyEnd !== null) {
+            oscillator.frequency.exponentialRampToValueAtTime(frequencyEnd, startTime + duration);
+        }
+        gain.gain.setValueAtTime(0.001, startTime);
+        gain.gain.exponentialRampToValueAtTime(volume, startTime + attack);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+        oscillator.connect(gain);
+        gain.connect(this.audioContext.destination);
+        oscillator.start(startTime);
+        oscillator.stop(startTime + duration + releasePadding);
     },
     vibrateOnSuccess() {
         if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') {
@@ -546,6 +680,11 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
         if (this.resumeAfterSuccessTimer) {
             window.clearTimeout(this.resumeAfterSuccessTimer);
             this.resumeAfterSuccessTimer = null;
+        }
+
+        if (this.successBannerTimer) {
+            window.clearTimeout(this.successBannerTimer);
+            this.successBannerTimer = null;
         }
 
         this.stopFallbackLoop();

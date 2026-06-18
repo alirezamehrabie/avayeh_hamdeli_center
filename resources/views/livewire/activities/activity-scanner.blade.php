@@ -5,6 +5,94 @@
     class="space-y-4"
     dir="rtl"
 >
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
+        @keyframes attendance-success-check {
+            from {
+                stroke-dashoffset: 48;
+            }
+
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        @keyframes attendance-success-pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 0.18;
+            }
+
+            50% {
+                transform: scale(1.18);
+                opacity: 0.32;
+            }
+        }
+
+        .attendance-success-check {
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: attendance-success-check 650ms ease-out 120ms forwards;
+        }
+
+        .attendance-success-pulse {
+            animation: attendance-success-pulse 1.35s ease-in-out infinite;
+        }
+    </style>
+
+    <div
+        x-cloak
+        x-show="successBanner.visible"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        class="pointer-events-none fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/35 px-4 backdrop-blur-sm"
+        dir="rtl"
+    >
+        <div
+            x-show="successBanner.visible"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="translate-y-4 scale-95 opacity-0"
+            x-transition:enter-end="translate-y-0 scale-100 opacity-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="translate-y-0 scale-100 opacity-100"
+            x-transition:leave-end="translate-y-3 scale-97 opacity-0"
+            class="relative w-full max-w-3xl overflow-hidden rounded-[2rem] border border-emerald-200/80 bg-white text-center shadow-2xl shadow-emerald-950/25 ring-1 ring-white/80 md:rounded-[2.25rem]"
+            role="status"
+            aria-live="polite"
+        >
+            <div class="absolute inset-x-0 top-0 h-2 bg-gradient-to-l from-emerald-400 via-teal-400 to-cyan-400"></div>
+            <div class="absolute -left-20 -top-20 size-56 rounded-full bg-emerald-200/45 blur-3xl"></div>
+            <div class="absolute -bottom-24 -right-20 size-64 rounded-full bg-cyan-200/45 blur-3xl"></div>
+
+            <div class="relative grid gap-6 px-6 py-8 md:grid-cols-[9rem_minmax(0,1fr)] md:items-center md:px-10 md:py-10 md:text-right">
+                <div class="mx-auto flex size-32 items-center justify-center md:size-36">
+                    <div class="attendance-success-pulse absolute size-32 rounded-full bg-emerald-400 md:size-36"></div>
+                    <div class="relative flex size-24 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-xl shadow-emerald-700/25 ring-8 ring-emerald-100 md:size-28">
+                        <svg class="size-14 md:size-16" viewBox="0 0 52 52" fill="none" aria-hidden="true">
+                            <path class="attendance-success-check" d="M14 27.5 22.5 36 39 17" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-sm font-extrabold tracking-wide text-emerald-600">ثبت موفق</p>
+                    <h2 class="mt-2 text-3xl font-black text-slate-950 md:text-5xl">حضور ثبت شد</h2>
+                    <div class="mt-5 rounded-3xl border border-emerald-100 bg-emerald-50/80 px-5 py-4">
+                        <p class="truncate text-2xl font-black text-slate-900 md:text-3xl" x-text="successBanner.name"></p>
+                        <p class="mt-2 text-4xl font-black tracking-wide text-emerald-600 md:text-5xl" x-text="successBanner.time"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div class="bg-gradient-to-l from-emerald-600 via-teal-600 to-cyan-600 px-5 py-4 text-white">
             <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">

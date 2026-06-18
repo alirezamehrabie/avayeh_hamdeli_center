@@ -12,7 +12,12 @@
 
         <form wire:submit.prevent="save" class="space-y-5 p-5">
             @if (session('activity-success'))
-                <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{{ session('activity-success') }}</div>
+                <div role="status" aria-live="polite" class="flex items-center gap-3 rounded-2xl border border-emerald-300/70 bg-gradient-to-l from-emerald-600 via-emerald-500 to-green-500 px-4 py-3.5 text-sm font-medium text-emerald-50 shadow-lg shadow-emerald-900/10 ring-1 ring-emerald-100">
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/18 text-white ring-1 ring-white/30">
+                        <i class="bi bi-check2-circle text-lg leading-none"></i>
+                    </span>
+                    <span class="leading-6">{{ session('activity-success') }}</span>
+                </div>
             @endif
 
             <div class="grid gap-4 md:grid-cols-3">

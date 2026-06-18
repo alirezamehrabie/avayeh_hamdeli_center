@@ -35,6 +35,9 @@ class ActivityCheckInResult
                 'status' => $this->attendance->status,
                 'registration_method' => $this->attendance->registration_method,
                 'checked_in_at' => $this->attendance->checked_in_at?->toISOString(),
+                'checked_in_time' => $this->attendance->checked_in_at
+                    ? \App\Helpers\Morilog\Jalalian::fromDateTime($this->attendance->checked_in_at)->format('H:i')
+                    : null,
             ] : null,
             'stats' => $this->activity ? [
                 'checked_in_count' => $this->activity->attendances()->where('status', 'present')->count(),
