@@ -2,7 +2,6 @@
     @php
         $badgeClasses = [
             'draft' => 'bg-slate-100 text-slate-700',
-            'scheduled' => 'bg-sky-100 text-sky-700',
             'ongoing' => 'bg-amber-100 text-amber-700',
             'closed' => 'bg-emerald-100 text-emerald-700',
             'cancelled' => 'bg-rose-100 text-rose-700',

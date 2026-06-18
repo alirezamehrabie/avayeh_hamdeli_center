@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Console\Commands\SyncActivityStatuses;
 use App\Livewire\Activities\ActivityDefinition;
 use App\Models\Activity;
 use App\Models\User;
@@ -25,7 +24,7 @@ class ActivityDefinitionTest extends TestCase
             ->assertSet('status', 'ongoing');
     }
 
-    public function test_manager_can_choose_scheduled_status_when_creating_activity(): void
+    public function test_unknown_status_is_rejected_when_creating_activity(): void
     {
         $user = $this->manager();
 
@@ -34,15 +33,12 @@ class ActivityDefinitionTest extends TestCase
         Livewire::test(ActivityDefinition::class)
             ->set('name', 'Summer Workshop')
             ->set('activityType', 'workshop')
-            ->set('status', 'scheduled')
+            ->set('status', 'archived')
             ->call('save')
-            ->assertRedirect('/admin/dashboard?section=activity-list');
+            ->assertHasErrors(['status']);
 
-        $this->assertDatabaseHas('activities', [
+        $this->assertDatabaseMissing('activities', [
             'name' => 'Summer Workshop',
-            'activity_type' => 'workshop',
-            'status' => 'scheduled',
-            'created_by' => $user->id,
         ]);
     }
 
@@ -86,7 +82,7 @@ class ActivityDefinitionTest extends TestCase
         $this->assertSame('2026-06-18 16:45', $activity->ends_at?->copy()->timezone(config('app.timezone'))->format('Y-m-d H:i'));
     }
 
-    public function test_scheduled_status_changes_to_ongoing_when_start_time_has_passed_on_save(): void
+    public function test_ongoing_status_is_preserved_when_start_time_is_in_future(): void
     {
         $user = $this->manager();
 
@@ -96,8 +92,8 @@ class ActivityDefinitionTest extends TestCase
         Livewire::test(ActivityDefinition::class)
             ->set('name', 'Morning Event')
             ->set('activityType', 'workshop')
-            ->set('startsAt', '1405/03/28 11:00')
-            ->set('status', 'scheduled')
+            ->set('startsAt', '1405/03/28 13:00')
+            ->set('status', 'ongoing')
             ->call('save')
             ->assertRedirect('/admin/dashboard?section=activity-list');
 
@@ -123,40 +119,14 @@ class ActivityDefinitionTest extends TestCase
 
         Livewire::test(ActivityDefinition::class, ['activityId' => $activity->id])
             ->assertSet('status', 'draft')
-            ->set('status', 'scheduled')
+            ->set('status', 'cancelled')
             ->call('save')
             ->assertRedirect('/admin/dashboard?section=activity-list');
 
         $this->assertDatabaseHas('activities', [
             'id' => $activity->id,
-            'status' => 'scheduled',
+            'status' => 'cancelled',
         ]);
-    }
-
-    public function test_scheduled_activities_are_promoted_to_ongoing_by_sync_command(): void
-    {
-        $user = $this->manager();
-
-        Carbon::setTestNow(Carbon::create(2026, 6, 18, 12, 0, 0, config('app.timezone')));
-
-        $activity = Activity::query()->create([
-            'name' => 'Camp Session',
-            'activity_type' => 'camp',
-            'status' => 'scheduled',
-            'starts_at' => Carbon::now(config('app.timezone'))->subMinute(),
-            'created_by' => $user->id,
-        ]);
-
-        $this->artisan(SyncActivityStatuses::class)
-            ->expectsOutput('Updated 1 scheduled activities.')
-            ->assertSuccessful();
-
-        $this->assertDatabaseHas('activities', [
-            'id' => $activity->id,
-            'status' => 'ongoing',
-        ]);
-
-        Carbon::setTestNow();
     }
 
     private function manager(): User

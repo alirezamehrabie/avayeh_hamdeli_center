@@ -12,8 +12,7 @@ class ActivityLifecycleService
      * @var array<string, list<string>>
      */
     private const ALLOWED_TRANSITIONS = [
-        'draft' => ['scheduled', 'cancelled'],
-        'scheduled' => ['draft', 'ongoing', 'cancelled'],
+        'draft' => ['ongoing', 'cancelled'],
         'ongoing' => ['closed', 'cancelled'],
         'closed' => ['cancelled'],
         'cancelled' => [],
@@ -59,9 +58,9 @@ class ActivityLifecycleService
 
     private function assertTransitionRequirements(Activity $activity, string $targetStatus): void
     {
-        if (in_array($targetStatus, ['scheduled', 'ongoing'], true) && blank($activity->starts_at)) {
+        if ($targetStatus === 'ongoing' && blank($activity->starts_at)) {
             throw ValidationException::withMessages([
-                'starts_at' => 'برای زمان‌بندی یا شروع فعالیت، ثبت زمان شروع الزامی است.',
+                'starts_at' => 'برای شروع فعالیت، ثبت زمان شروع الزامی است.',
             ]);
         }
 

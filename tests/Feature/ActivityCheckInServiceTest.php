@@ -53,7 +53,7 @@ class ActivityCheckInServiceTest extends TestCase
     public function test_check_in_requires_ongoing_activity(): void
     {
         $user = $this->operator();
-        $activity = $this->activity(['status' => 'scheduled']);
+        $activity = $this->activity(['status' => 'draft']);
         $person = $this->person('3234567890', '14003');
 
         $result = app(ActivityCheckInService::class)->checkInPerson($activity, $person, $user, 'manual');

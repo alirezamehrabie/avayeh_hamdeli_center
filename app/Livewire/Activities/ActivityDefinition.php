@@ -73,7 +73,7 @@ class ActivityDefinition extends Component
             'starts_at' => $startsAt,
             'ends_at' => $endsAt,
             'capacity' => blank($validated['capacity']) ? null : (int) $validated['capacity'],
-            'status' => $this->resolveStatus($validated['status'], $startsAt),
+            'status' => $validated['status'],
             'status_notes' => blank($validated['statusNotes']) ? null : trim($validated['statusNotes']),
         ];
 
@@ -275,20 +275,5 @@ class ActivityDefinition extends Component
         $normalized = preg_replace('/\s+/u', ' ', trim($normalized)) ?? '';
 
         return $normalized !== '' ? $normalized : null;
-    }
-
-    protected function resolveStatus(string $status, ?Carbon $startsAt): string
-    {
-        $status = trim($status);
-
-        if ($status !== 'ongoing') {
-            return $status;
-        }
-
-        if ($startsAt && $startsAt->isFuture()) {
-            return 'scheduled';
-        }
-
-        return 'ongoing';
     }
 }
