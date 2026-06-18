@@ -165,6 +165,7 @@ Alpine.data('idCardScanner', ({ resolveScan, successSoundUrl = '/sounds/scan-suc
     successBanner: createAttendanceResultBannerState(),
     async init() {
         this.prepareSuccessSound();
+        this.ensurePrimaryViewportVisible();
 
         if (!('mediaDevices' in navigator) || !('getUserMedia' in navigator.mediaDevices)) {
             this.setStatus('unsupported', 'دسترسی به دوربین در این مرورگر یا دستگاه در دسترس نیست.');
@@ -252,6 +253,7 @@ Alpine.data('idCardScanner', ({ resolveScan, successSoundUrl = '/sounds/scan-suc
 
             this.stabilizePreview();
             await this.waitForPreview();
+            this.ensurePrimaryViewportVisible();
             this.optimizeRunningCamera();
             this.cameraActive = true;
             this.scanning = true;
@@ -682,6 +684,23 @@ Alpine.data('idCardScanner', ({ resolveScan, successSoundUrl = '/sounds/scan-suc
                 element.style.width = '100%';
                 element.style.height = '100%';
                 element.style.objectFit = 'cover';
+            });
+        });
+    },
+    ensurePrimaryViewportVisible() {
+        const root = this.$root;
+
+        if (!root) {
+            return;
+        }
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                root.scrollIntoView({
+                    block: 'start',
+                    inline: 'nearest',
+                    behavior: 'instant',
+                });
             });
         });
     },
