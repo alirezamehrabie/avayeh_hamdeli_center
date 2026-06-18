@@ -3,13 +3,31 @@ import 'bootstrap/dist/js/bootstrap.min.js';
 import * as bootstrap from 'bootstrap';
 import '@majidh1/jalalidatepicker/dist/jalalidatepicker.min.css';
 import '@majidh1/jalalidatepicker';
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { attendanceResultBanner, createAttendanceResultBannerState } from './attendance-result-banner';
-import { createEnhancedQrScanner } from './qr-scanner-enhancer';
 import { Livewire, Alpine } from '../../vendor/livewire/livewire/dist/livewire.esm';
 
 window.Alpine = Alpine;
 window.bootstrap = bootstrap;
+
+let qrScannerDependencies = null;
+
+const loadQrScannerDependencies = async () => {
+    if (!qrScannerDependencies) {
+        qrScannerDependencies = Promise.all([
+            import('html5-qrcode'),
+            import('./qr-scanner-enhancer'),
+        ]).then(([html5QrCode, scannerEnhancer]) => ({
+            Html5Qrcode: html5QrCode.Html5Qrcode,
+            Html5QrcodeSupportedFormats: html5QrCode.Html5QrcodeSupportedFormats,
+            createEnhancedQrScanner: scannerEnhancer.createEnhancedQrScanner,
+        })).catch((error) => {
+            qrScannerDependencies = null;
+            throw error;
+        });
+    }
+
+    return qrScannerDependencies;
+};
 
 Alpine.data('rialAmountInput', (model) => ({
     model,
@@ -131,6 +149,9 @@ Alpine.data('idCardScanner', ({ resolveScan, successSoundUrl = '/sounds/scan-suc
     resolvingScan: false,
     status: 'initializing',
     message: 'در حال آماده‌سازی دوربین...',
+    Html5Qrcode: null,
+    Html5QrcodeSupportedFormats: null,
+    createEnhancedQrScanner: null,
     lastDecodedText: '',
     lastDecodedAt: 0,
     lastNativeDecodeAt: 0,
@@ -151,13 +172,19 @@ Alpine.data('idCardScanner', ({ resolveScan, successSoundUrl = '/sounds/scan-suc
         }
 
         try {
+            const dependencies = await loadQrScannerDependencies();
+
+            this.Html5Qrcode = dependencies.Html5Qrcode;
+            this.Html5QrcodeSupportedFormats = dependencies.Html5QrcodeSupportedFormats;
+            this.createEnhancedQrScanner = dependencies.createEnhancedQrScanner;
+
             await this.ensureCameraPermission();
             await this.loadCameras();
             this.scannerElementId = this.$refs.scanner.id;
-            this.enhancedScanner = createEnhancedQrScanner();
-            this.html5QrCode = new Html5Qrcode(this.scannerElementId, {
+            this.enhancedScanner = this.createEnhancedQrScanner();
+            this.html5QrCode = new this.Html5Qrcode(this.scannerElementId, {
                 verbose: false,
-                formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+                formatsToSupport: [this.Html5QrcodeSupportedFormats.QR_CODE],
                 useBarCodeDetectorIfSupported: true,
             });
             await this.startCamera();
@@ -178,7 +205,7 @@ Alpine.data('idCardScanner', ({ resolveScan, successSoundUrl = '/sounds/scan-suc
         stream.getTracks().forEach((track) => track.stop());
     },
     async loadCameras() {
-        const devices = await Html5Qrcode.getCameras();
+        const devices = await this.Html5Qrcode.getCameras();
         this.cameras = devices
             .map((device, index) => ({
                 id: device.id,
