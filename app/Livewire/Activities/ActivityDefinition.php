@@ -213,6 +213,10 @@ class ActivityDefinition extends Component
             return false;
         }
 
+        if (! $this->hasStrictJalaliDateTimeFormat($date, $time)) {
+            return false;
+        }
+
         $dateParts = explode('/', $date);
 
         if (count($dateParts) !== 3) {
@@ -239,6 +243,15 @@ class ActivityDefinition extends Component
 
         return $hour >= 0 && $hour <= 23
             && $minute >= 0 && $minute <= 59;
+    }
+
+    protected function hasStrictJalaliDateTimeFormat(string $date, ?string $time): bool
+    {
+        if (! preg_match('/^\d{4}\/\d{2}\/\d{2}$/', $date)) {
+            return false;
+        }
+
+        return $time === null || (bool) preg_match('/^\d{2}:\d{2}$/', $time);
     }
 
     protected function splitJalaliDateTime(?string $value): array

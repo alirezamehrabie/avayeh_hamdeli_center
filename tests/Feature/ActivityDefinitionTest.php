@@ -83,6 +83,61 @@ class ActivityDefinitionTest extends TestCase
         $this->assertSame('2026-06-18 16:45', $activity->ends_at?->copy()->timezone(config('app.timezone'))->format('Y-m-d H:i'));
     }
 
+    public function test_malformed_jalali_date_suffix_is_rejected(): void
+    {
+        $user = $this->manager();
+
+        $this->actingAs($user);
+
+        Livewire::test(ActivityDefinition::class)
+            ->set('name', 'Malformed Date Workshop')
+            ->set('activityType', 'workshop')
+            ->set('startsAt', '1405/03/28abc')
+            ->call('save')
+            ->assertHasErrors(['startsAt']);
+
+        $this->assertDatabaseMissing('activities', [
+            'name' => 'Malformed Date Workshop',
+        ]);
+    }
+
+    public function test_malformed_jalali_time_suffix_is_rejected(): void
+    {
+        $user = $this->manager();
+
+        $this->actingAs($user);
+
+        Livewire::test(ActivityDefinition::class)
+            ->set('name', 'Malformed Time Workshop')
+            ->set('activityType', 'workshop')
+            ->set('startsAt', '1405/03/28 14:30x')
+            ->call('save')
+            ->assertHasErrors(['startsAt']);
+
+        $this->assertDatabaseMissing('activities', [
+            'name' => 'Malformed Time Workshop',
+        ]);
+    }
+
+    public function test_malformed_jalali_end_time_suffix_is_rejected(): void
+    {
+        $user = $this->manager();
+
+        $this->actingAs($user);
+
+        Livewire::test(ActivityDefinition::class)
+            ->set('name', 'Malformed End Time Workshop')
+            ->set('activityType', 'workshop')
+            ->set('startsAt', '1405/03/28 14:30')
+            ->set('endsAt', '1405/03/28 16:45x')
+            ->call('save')
+            ->assertHasErrors(['endsAt']);
+
+        $this->assertDatabaseMissing('activities', [
+            'name' => 'Malformed End Time Workshop',
+        ]);
+    }
+
     public function test_ready_to_hold_status_is_preserved_when_start_time_is_in_future(): void
     {
         $user = $this->manager();
