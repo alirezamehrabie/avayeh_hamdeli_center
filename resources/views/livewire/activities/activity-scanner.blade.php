@@ -1,8 +1,11 @@
 <div
-    x-data="idCardScanner({
-        resolveScan: (payload) => $wire.resolveScannedQr(payload),
-        activityName: @js($activity?->name ?? ''),
-    })"
+    x-data="{
+        ...idCardScanner({
+            resolveScan: (payload) => $wire.resolveScannedQr(payload),
+            activityName: @js($activity?->name ?? ''),
+        }),
+        mobileHeaderExpanded: false,
+    }"
     x-init="init()"
     x-on:id-card-scanner-resume.window="resumeFromWire()"
     class="space-y-4"
@@ -123,8 +126,56 @@
     </div>
 
     <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="rounded-t-3xl bg-gradient-to-l from-emerald-500 via-teal-500 to-cyan-500 px-5 py-4 text-white">
-            <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div class="rounded-t-3xl bg-gradient-to-l from-emerald-500 via-teal-500 to-cyan-500 px-4 py-3 text-white sm:px-5 sm:py-4">
+            <div class="flex items-start justify-between gap-3 lg:hidden">
+                <div class="min-w-0 flex-1">
+                    <h1 class="text-lg font-extrabold leading-6 sm:text-xl">ثبت حضور فعالیت</h1>
+                    <div class="mt-2 inline-flex max-w-full items-center rounded-full bg-white/14 px-3 py-1 text-xs font-bold text-emerald-50 ring-1 ring-white/15">
+                        <span class="truncate">نام فعالیت : {{ $activity?->name ?? '-' }}</span>
+                    </div>
+                </div>
+                <button
+                    type="button"
+                    @click="mobileHeaderExpanded = !mobileHeaderExpanded"
+                    class="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-bold shadow-sm transition hover:bg-white/20 focus:outline-none focus:ring-4 focus:ring-white/20"
+                    :aria-expanded="mobileHeaderExpanded.toString()"
+                    aria-controls="activity-scanner-mobile-header-panel"
+                >
+                    <span>جزئیات</span>
+                    <svg class="size-4 transition" :class="{ 'rotate-180': mobileHeaderExpanded }" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                        <path d="m5 7.5 5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
+            </div>
+
+            <div
+                x-cloak
+                x-show="mobileHeaderExpanded"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 -translate-y-2"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100 translate-y-0"
+                x-transition:leave-end="opacity-0 -translate-y-2"
+                id="activity-scanner-mobile-header-panel"
+                class="mt-3 space-y-2 lg:hidden"
+            >
+                <div class="rounded-2xl border border-white/15 bg-white/10 p-3 text-xs font-bold backdrop-blur-sm">
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="text-emerald-100">وضعیت</span>
+                        <span>{{ \App\Models\Activity::STATUS_OPTIONS[$activity?->status] ?? $activity?->status }}</span>
+                    </div>
+                    <div class="mt-2 flex items-center justify-between gap-3">
+                        <span class="text-emerald-100">حضور</span>
+                        <span>{{ $activity?->present_attendances_count ?? 0 }} / {{ $activity?->capacity ?: '∞' }}</span>
+                    </div>
+                    <button type="button" wire:click="backToActivities" class="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-bold transition hover:bg-white/20">
+                        بازگشت
+                    </button>
+                </div>
+            </div>
+
+            <div class="hidden flex-col gap-3 lg:flex lg:flex-row lg:items-center lg:justify-between">
                 <div>
                     <h1 class="text-2xl font-extrabold">ثبت حضور فعالیت</h1>
                     <p class="mt-1 text-sm text-emerald-50">{{ $activity?->name ?? '-' }}</p>
