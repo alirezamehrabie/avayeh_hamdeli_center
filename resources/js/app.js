@@ -827,6 +827,13 @@ const initializeJalaliDateTimePickers = () => {
     window.__jalaliDatepickerInitialized = true;
 
     document.querySelectorAll('input[data-jdp]').forEach((input) => {
+        if (input.hasAttribute('data-jdp-readonly')) {
+            input.setAttribute('readonly', 'readonly');
+            input.readOnly = true;
+            input.setAttribute('inputmode', 'none');
+            return;
+        }
+
         input.removeAttribute('readonly');
         input.readOnly = false;
     });

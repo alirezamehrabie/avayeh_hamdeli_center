@@ -124,6 +124,10 @@
                                     x-on:jalali-picker-open="handlePickerOpen()"
                                     x-on:jalali-picker-close="handlePickerClose()"
                                     x-on:jalali-picker-confirm="confirm()"
+                                    readonly
+                                    inputmode="none"
+                                    autocomplete="off"
+                                    data-jdp-readonly
                                     data-jdp
                                     data-jdp-time
                                     placeholder="۱۴۰۳/۰۱/۰۱ ۱۴:۳۰"
@@ -148,6 +152,10 @@
                                     x-on:jalali-picker-open="handlePickerOpen()"
                                     x-on:jalali-picker-close="handlePickerClose()"
                                     x-on:jalali-picker-confirm="confirm()"
+                                    readonly
+                                    inputmode="none"
+                                    autocomplete="off"
+                                    data-jdp-readonly
                                     data-jdp
                                     data-jdp-time
                                     placeholder="۱۴۰۳/۰۱/۰۱ ۱۸:۰۰"
