@@ -133,6 +133,8 @@ Alpine.data('idCardScanner', ({ resolveScan, successSoundUrl = '/sounds/scan-suc
     message: 'در حال آماده‌سازی دوربین...',
     lastDecodedText: '',
     lastDecodedAt: 0,
+    lastNativeDecodeAt: 0,
+    fallbackEnabledAt: 0,
     resumeAfterSuccessTimer: null,
     successBannerTimer: null,
     audioContext: null,
@@ -227,6 +229,8 @@ Alpine.data('idCardScanner', ({ resolveScan, successSoundUrl = '/sounds/scan-suc
             this.cameraActive = true;
             this.scanning = true;
             this.resolvingScan = false;
+            this.lastNativeDecodeAt = 0;
+            this.fallbackEnabledAt = Date.now() + 2200;
             this.startFallbackLoop();
             this.setStatus('scanning', 'اسکن زنده فعال است. QR را مقابل دوربین نگه دارید.');
         } catch (error) {
@@ -269,6 +273,8 @@ Alpine.data('idCardScanner', ({ resolveScan, successSoundUrl = '/sounds/scan-suc
 
         this.resolvingScan = false;
         this.scanning = true;
+        this.lastNativeDecodeAt = 0;
+        this.fallbackEnabledAt = Date.now() + 1200;
         this.startFallbackLoop();
 
         try {
@@ -312,7 +318,7 @@ Alpine.data('idCardScanner', ({ resolveScan, successSoundUrl = '/sounds/scan-suc
     },
     cameraScanConfig() {
         return {
-            fps: 30,
+            fps: 18,
             qrbox: (viewfinderWidth, viewfinderHeight) => {
                 const boxSize = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.68);
 
@@ -324,9 +330,13 @@ Alpine.data('idCardScanner', ({ resolveScan, successSoundUrl = '/sounds/scan-suc
             disableFlip: false,
         };
     },
-    async handleDecode(decodedText) {
+    async handleDecode(decodedText, source = 'native') {
         if (!this.scanning || this.resolvingScan) {
             return;
+        }
+
+        if (source === 'native') {
+            this.lastNativeDecodeAt = Date.now();
         }
 
         const value = (decodedText || '').trim();
@@ -550,6 +560,14 @@ Alpine.data('idCardScanner', ({ resolveScan, successSoundUrl = '/sounds/scan-suc
                 return;
             }
 
+            if (Date.now() < this.fallbackEnabledAt) {
+                return;
+            }
+
+            if (this.lastNativeDecodeAt && Date.now() - this.lastNativeDecodeAt < 1800) {
+                return;
+            }
+
             const video = this.currentVideoElement();
 
             if (!video) {
@@ -559,9 +577,9 @@ Alpine.data('idCardScanner', ({ resolveScan, successSoundUrl = '/sounds/scan-suc
             const decoded = await this.enhancedScanner.decodeVideo(video);
 
             if (decoded) {
-                await this.handleDecode(decoded);
+                await this.handleDecode(decoded, 'fallback');
             }
-        }, 550);
+        }, 900);
     },
     stopFallbackLoop() {
         if (this.fallbackTimer) {

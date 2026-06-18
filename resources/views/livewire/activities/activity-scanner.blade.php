@@ -122,8 +122,8 @@
         </div>
     </div>
 
-    <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="bg-gradient-to-l from-emerald-600 via-teal-600 to-cyan-600 px-5 py-4 text-white">
+    <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div class="rounded-t-3xl bg-gradient-to-l from-emerald-500 via-teal-500 to-cyan-500 px-5 py-4 text-white">
             <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                     <h1 class="text-2xl font-extrabold">ثبت حضور فعالیت</h1>
