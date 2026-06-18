@@ -6,6 +6,7 @@ use App\Helpers\Morilog\CalendarUtils;
 use App\Exports\ActivityAttendancesExport;
 use App\Helpers\Morilog\Jalalian;
 use App\Models\Activity;
+use App\Models\ActivityAttendance;
 use App\Services\ActivityLifecycleService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,7 @@ class ActivityList extends Component
     use WithPagination;
 
     private const ACTIVITIES_PER_PAGE = 12;
+    private const ATTENDANCES_DISPLAY_LIMIT = 75;
 
     public string $search = '';
     public string $statusFilter = 'all';
@@ -50,9 +52,7 @@ class ActivityList extends Component
     {
         $this->selectedActivityId = $activityId;
         $this->transitionNotes = '';
-        $this->attendanceSearch = '';
-        $this->attendanceMethodFilter = 'all';
-        $this->attendanceStatusFilter = 'all';
+        $this->resetAttendanceFilters();
         $this->resetValidation();
     }
 
@@ -67,6 +67,7 @@ class ActivityList extends Component
     {
         $this->selectedActivityId = null;
         $this->transitionNotes = '';
+        $this->resetAttendanceFilters();
         $this->resetValidation();
     }
 
@@ -133,8 +134,6 @@ class ActivityList extends Component
         return Activity::query()
             ->with([
                 'creator',
-                'attendances.person',
-                'attendances.recorder',
             ])
             ->withCount([
                 'attendances',
@@ -148,9 +147,7 @@ class ActivityList extends Component
 
     public function getFilteredAttendancesProperty(): Collection
     {
-        $activity = $this->selectedActivity;
-
-        if (! $activity) {
+        if (! $this->selectedActivityId) {
             return collect();
         }
 
@@ -158,29 +155,33 @@ class ActivityList extends Component
         $method = $this->attendanceMethodFilter;
         $status = $this->attendanceStatusFilter;
 
-        return $activity->attendances
-            ->when($method !== 'all', fn ($items) => $items->where('registration_method', $method))
-            ->when($status !== 'all', fn ($items) => $items->where('status', $status))
-            ->filter(function ($attendance) use ($search): bool {
-                if ($search === '') {
-                    return true;
-                }
-
-                $person = $attendance->person;
-                $haystack = implode(' ', [
-                    $person?->full_name,
-                    $person?->first_name,
-                    $person?->last_name,
-                    $person?->person_code,
-                    $person?->national_id,
-                    $attendance->recorder?->full_name,
-                    $attendance->recorder?->name,
-                ]);
-
-                return mb_stripos($haystack, $search) !== false;
+        return ActivityAttendance::query()
+            ->with(['person', 'recorder'])
+            ->where('activity_id', $this->selectedActivityId)
+            ->when($method !== 'all', fn ($query) => $query->where('registration_method', $method))
+            ->when($status !== 'all', fn ($query) => $query->where('status', $status))
+            ->when($search !== '', function ($query) use ($search): void {
+                $query->where(function ($nestedQuery) use ($search): void {
+                    $nestedQuery
+                        ->whereHas('person', function ($personQuery) use ($search): void {
+                            $personQuery
+                                ->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%")
+                                ->orWhere('person_code', 'like', "%{$search}%")
+                                ->orWhere('national_id', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('recorder', function ($recorderQuery) use ($search): void {
+                            $recorderQuery
+                                ->where('name', 'like', "%{$search}%")
+                                ->orWhere('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%");
+                        });
+                });
             })
-            ->sortByDesc('checked_in_at')
-            ->values();
+            ->latest('checked_in_at')
+            ->latest('id')
+            ->limit(self::ATTENDANCES_DISPLAY_LIMIT)
+            ->get();
     }
 
 
@@ -244,11 +245,19 @@ class ActivityList extends Component
                 ->paginate(self::ACTIVITIES_PER_PAGE),
             'selectedActivity' => $this->selectedActivity,
             'filteredAttendances' => $this->filteredAttendances,
+            'attendanceDisplayLimit' => self::ATTENDANCES_DISPLAY_LIMIT,
             'statusOptions' => Activity::STATUS_OPTIONS,
             'typeOptions' => Activity::TYPE_OPTIONS,
-            'attendanceStatusOptions' => \App\Models\ActivityAttendance::STATUS_OPTIONS,
-            'attendanceMethodOptions' => \App\Models\ActivityAttendance::METHOD_OPTIONS,
+            'attendanceStatusOptions' => ActivityAttendance::STATUS_OPTIONS,
+            'attendanceMethodOptions' => ActivityAttendance::METHOD_OPTIONS,
         ]);
+    }
+
+    private function resetAttendanceFilters(): void
+    {
+        $this->attendanceSearch = '';
+        $this->attendanceMethodFilter = 'all';
+        $this->attendanceStatusFilter = 'all';
     }
 
     protected function validDateOrNull(?string $date): ?\Carbon\Carbon

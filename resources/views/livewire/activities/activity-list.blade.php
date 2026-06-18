@@ -148,7 +148,10 @@
 
                             <div class="rounded-2xl border border-slate-200 bg-white p-3">
                                 <div class="mb-3 flex flex-col gap-2">
-                                    <h3 class="text-sm font-black text-slate-800">فهرست شرکت‌کنندگان</h3>
+                                    <div>
+                                        <h3 class="text-sm font-black text-slate-800">فهرست شرکت‌کنندگان</h3>
+                                        <p class="mt-1 text-[11px] font-semibold text-slate-400">نمایش حداکثر {{ $attendanceDisplayLimit }} حضور آخر؛ برای فهرست کامل از خروجی اکسل استفاده کنید.</p>
+                                    </div>
                                     <input type="text" wire:model.live.debounce.300ms="attendanceSearch" placeholder="جستجو مددجو یا ثبت‌کننده" class="rounded-2xl border border-slate-200 px-3 py-2 text-xs focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
                                     <div class="grid grid-cols-2 gap-2">
                                         <select wire:model.live="attendanceMethodFilter" class="rounded-2xl border border-slate-200 px-3 py-2 text-xs">
