@@ -9,13 +9,13 @@
     @endphp
 
     <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="bg-gradient-to-l from-violet-600 via-fuchsia-600 to-rose-600 px-5 py-4 text-white">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="min-h-[104px] border-b border-blue-700/30 bg-[#2563EB] px-4 py-4 text-white sm:px-6 sm:py-6">
+            <div class="flex flex-col gap-3 sm:gap-5 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                    <h1 class="text-2xl font-extrabold">مدیریت فعالیت‌ها</h1>
-                    <p class="mt-1 text-xs text-violet-50/90">فعالیت‌ها را ایجاد، ویرایش و در چرخه برگزاری مدیریت کنید.</p>
+                    <h1 class="text-lg font-extrabold leading-tight text-white sm:mt-2 sm:text-2xl">مدیریت فعالیت‌ها</h1>
+                    <p class="mt-1 hidden max-w-3xl text-sm leading-6 text-blue-50/90 sm:mt-2 sm:block">فعالیت‌ها را ایجاد، ویرایش و در چرخه برگزاری مدیریت کنید.</p>
                 </div>
-                <button type="button" wire:click="createActivity" class="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20">افزودن فعالیت</button>
+                <button type="button" wire:click="createActivity" class="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60">افزودن فعالیت</button>
             </div>
         </div>
 

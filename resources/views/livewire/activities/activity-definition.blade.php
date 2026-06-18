@@ -24,11 +24,11 @@
     x-on:beforeunload.window="if (isDirty && ! isSaving) { $event.preventDefault(); $event.returnValue = ''; }"
 >
     <div class="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
-        <div class="bg-gradient-to-l from-violet-600 via-fuchsia-600 to-rose-600 px-4 py-4 text-white sm:px-6 sm:py-6">
+        <div class="min-h-[104px] border-b border-emerald-700/30 bg-[#059669] px-4 py-4 text-white sm:px-6 sm:py-6">
             <div class="flex flex-col gap-3 sm:gap-5 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                    <h1 class="text-lg font-extrabold leading-tight sm:mt-2 sm:text-2xl">{{ $editingActivityId ? 'ویرایش فعالیت' : 'تعریف فعالیت جدید' }}</h1>
-                    <p class="mt-1 hidden max-w-3xl text-sm leading-6 text-violet-50/90 sm:mt-2 sm:block">فعالیت‌ها برای رویدادها، جشن‌ها، اردوها و برنامه‌های گروهی ثبت می‌شوند.</p>
+                    <h1 class="text-lg font-extrabold leading-tight text-white sm:mt-2 sm:text-2xl">{{ $editingActivityId ? 'ویرایش فعالیت' : 'تعریف فعالیت جدید' }}</h1>
+                    <p class="mt-1 hidden max-w-3xl text-sm leading-6 text-emerald-50/90 sm:mt-2 sm:block">فعالیت‌ها برای رویدادها، جشن‌ها، اردوها و برنامه‌های گروهی ثبت می‌شوند.</p>
                 </div>
                 <button type="button" x-on:click="leaveForm()" wire:loading.attr="disabled" wire:target="save" class="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60">بازگشت به فهرست</button>
             </div>
@@ -56,22 +56,20 @@
                         </span>
                     </div>
 
-                    <div class="grid gap-4 md:grid-cols-3">
+                    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+{{--                        <div class="md:max-w-56">--}}
+{{--                            <label class="mb-2 block text-sm font-bold text-slate-700">{{ $editingActivityId ? 'کد فعالیت' : 'کد پیشنهادی فعالیت' }}</label>--}}
+{{--                            <div class="inline-flex min-w-36 max-w-full items-center rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-700 shadow-sm">--}}
+{{--                                <span class="truncate">{{ $this->previewActivityCode }}</span>--}}
+{{--                            </div>--}}
+{{--                            @unless($editingActivityId)--}}
+{{--                                <p class="mt-1 text-xs leading-5 text-slate-500">کد نهایی هنگام ذخیره قطعی می‌شود.</p>--}}
+{{--                            @endunless--}}
+{{--                        </div>--}}
                         <div>
-                            <label class="mb-2 block text-sm font-bold text-slate-700">{{ $editingActivityId ? 'کد فعالیت' : 'کد پیشنهادی فعالیت' }}</label>
-                            <div class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700">{{ $this->previewActivityCode }}</div>
-                            @unless($editingActivityId)
-                                <p class="mt-1 text-xs leading-5 text-slate-500">کد نهایی هنگام ذخیره قطعی می‌شود و ممکن است در صورت ثبت همزمان تغییر کند.</p>
-                            @endunless
-                        </div>
-                        <div>
-                            <label class="mb-2 block text-sm font-bold text-slate-700">وضعیت <span class="text-rose-500">*</span></label>
-                            <select required wire:model="status" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
-                                @foreach($statusOptions as $value => $label)
-                                    <option value="{{ $value }}">{{ $label }}</option>
-                                @endforeach
-                            </select>
-                            @error('status') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
+                            <label class="mb-2 block text-sm font-bold text-slate-700">نام فعالیت <span class="text-rose-500">*</span></label>
+                            <input type="text" required wire:model="name" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
+                            @error('name') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
                             <label class="mb-2 block text-sm font-bold text-slate-700">نوع فعالیت <span class="text-rose-500">*</span></label>
@@ -86,13 +84,22 @@
 
                     <div class="grid gap-4 md:grid-cols-2">
                         <div>
-                            <label class="mb-2 block text-sm font-bold text-slate-700">نام فعالیت <span class="text-rose-500">*</span></label>
-                            <input type="text" required wire:model="name" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
-                            @error('name') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
+                            <label class="mb-2 block text-sm font-bold text-slate-700">دسته‌بندی / نوع فعالیت <span class="text-rose-500">*</span></label>
+                            <select required wire:model="status" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
+                                @foreach($statusOptions as $value => $label)
+                                    <option value="{{ $value }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            @error('status') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
                             <label class="mb-2 block text-sm font-bold text-slate-700">مکان</label>
-                            <input type="text" wire:model="location" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
+                            <div class="relative">
+                                <input type="text" wire:model="location" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 pe-11 text-sm text-slate-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
+                                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                                    <i class="bi bi-geo-alt text-base"></i>
+                                </span>
+                            </div>
                             @error('location') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                         </div>
                     </div>

@@ -20,7 +20,7 @@ class ActivityDefinition extends Component
 
     public string $name = '';
 
-    public string $activityType = 'group_activity';
+    public string $activityType = 'ceremony';
 
     public string $description = '';
 
@@ -173,7 +173,7 @@ class ActivityDefinition extends Component
 
     protected function bootDefaults(): void
     {
-        $this->activityType = $this->activityType ?: 'group_activity';
+        $this->activityType = $this->activityType ?: 'ceremony';
         $this->status = $this->status ?: 'ongoing';
     }
 
@@ -189,7 +189,7 @@ class ActivityDefinition extends Component
     protected function normalizeInput(): void
     {
         $this->name = trim($this->name);
-        $this->activityType = trim($this->activityType) ?: 'group_activity';
+        $this->activityType = trim($this->activityType) ?: 'ceremony';
         $this->description = trim($this->description);
         $this->location = trim($this->location);
         $this->startsAt = $this->normalizeJalaliDateTimeInput($this->startsAt);
