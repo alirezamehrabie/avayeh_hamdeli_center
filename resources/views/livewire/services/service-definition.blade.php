@@ -1,5 +1,5 @@
-<div class="space-y-6">
-    <div class="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
+<div class="mx-auto max-w-[1680px] space-y-6 px-4 2xl:max-w-[1760px]">
+    <div class="rounded-[32px] border border-slate-200 bg-white shadow-sm">
         <div class="bg-gradient-to-l from-teal-600 via-cyan-600 to-sky-700 px-4 py-4 text-white sm:px-6 sm:py-6">
             <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between sm:gap-5">
                 <div>
@@ -22,7 +22,7 @@
             </div>
         </div>
 
-        <div class="px-6 py-6">
+        <div class="px-6 py-6 xl:px-8 2xl:px-10">
             @if (session()->has('success'))
                 <div class="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
                     {{ session('success') }}
@@ -30,7 +30,7 @@
             @endif
 
             <form wire:submit.prevent="save" class="space-y-6">
-                <div class="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.8fr)]">
+                <div class="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_360px] 2xl:grid-cols-[minmax(0,1.35fr)_400px] 2xl:gap-8">
                     <div class="space-y-6">
                         <div class="rounded-3xl border border-slate-200 bg-slate-50/80 p-4">
                             <div class="mb-4 flex items-center justify-between">
@@ -483,7 +483,7 @@
                         </div>
                     </div>
 
-                    <div class="space-y-6">
+                    <div class="space-y-6 xl:sticky xl:top-6 xl:self-start">
                         <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/40">
                             <h2 class="text-base font-bold text-slate-800">زمان‌بندی و وضعیت</h2>
                             <div class="mt-4 grid gap-3">

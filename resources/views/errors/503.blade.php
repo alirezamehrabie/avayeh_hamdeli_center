@@ -244,7 +244,7 @@
 
 <script>
     // تاریخ هدف: شنبه ۲۳ می ۲۰۲۶ ساعت ۰۰:۰۰:۰۰
-    const targetDate = new Date("2026-06-18T19:30:00").getTime();
+    const targetDate = new Date("2026-06-21T19:30:00").getTime();
 
     function toPersianDigits(num) {
         const id = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
