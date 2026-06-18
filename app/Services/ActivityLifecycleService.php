@@ -66,7 +66,7 @@ class ActivityLifecycleService
 
         if ($targetStatus === 'closed' && $activity->status !== 'ongoing') {
             throw ValidationException::withMessages([
-                'status' => 'فقط فعالیت در حال برگزاری قابل بستن است.',
+                'status' => 'فقط فعالیت آماده برگزاری قابل بستن است.',
             ]);
         }
 

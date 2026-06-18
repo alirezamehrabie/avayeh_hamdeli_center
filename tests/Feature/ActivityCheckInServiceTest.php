@@ -15,7 +15,7 @@ class ActivityCheckInServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_qr_check_in_creates_attendance_for_ongoing_activity(): void
+    public function test_qr_check_in_creates_attendance_for_ready_to_hold_activity(): void
     {
         $user = $this->operator();
         $activity = $this->activity(['status' => 'ongoing']);
@@ -50,7 +50,7 @@ class ActivityCheckInServiceTest extends TestCase
         $this->assertSame(1, ActivityAttendance::query()->where('activity_id', $activity->id)->where('person_id', $person->id)->count());
     }
 
-    public function test_check_in_requires_ongoing_activity(): void
+    public function test_check_in_requires_ready_to_hold_activity(): void
     {
         $user = $this->operator();
         $activity = $this->activity(['status' => 'draft']);

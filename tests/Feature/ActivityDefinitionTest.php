@@ -14,7 +14,7 @@ class ActivityDefinitionTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_default_status_is_ongoing_for_new_activity(): void
+    public function test_default_status_is_ready_to_hold_for_new_activity(): void
     {
         $user = $this->manager();
 
@@ -82,7 +82,7 @@ class ActivityDefinitionTest extends TestCase
         $this->assertSame('2026-06-18 16:45', $activity->ends_at?->copy()->timezone(config('app.timezone'))->format('Y-m-d H:i'));
     }
 
-    public function test_ongoing_status_is_preserved_when_start_time_is_in_future(): void
+    public function test_ready_to_hold_status_is_preserved_when_start_time_is_in_future(): void
     {
         $user = $this->manager();
 

@@ -14,7 +14,7 @@ class Activity extends Model
 
     public const STATUS_OPTIONS = [
         'draft' => 'پیش نویس',
-        'ongoing' => 'در حال برگزاری',
+        'ongoing' => 'آماده برگزاری',
         'closed' => 'بسته شده',
         'cancelled' => 'لغو شده',
     ];

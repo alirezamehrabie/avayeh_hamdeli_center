@@ -29,7 +29,7 @@ class ActivityScanner extends Component
         $this->scanStatus = $this->activity?->status === 'ongoing' ? 'ready' : 'paused';
         $this->scanMessage = $this->activity?->status === 'ongoing'
             ? 'دوربین را فعال کنید و QR مددجو را اسکن کنید.'
-            : 'ثبت حضور فقط زمانی فعال است که فعالیت در وضعیت در حال برگزاری باشد.';
+            : 'ثبت حضور فقط زمانی فعال است که فعالیت در وضعیت آماده برگزاری باشد.';
     }
 
     public function resolveScannedQr(string $payload): array
@@ -74,7 +74,7 @@ class ActivityScanner extends Component
 
         if ($this->activity?->status !== 'ongoing') {
             $this->scanStatus = 'paused';
-            $this->scanMessage = 'فعالیت در حال برگزاری نیست.';
+            $this->scanMessage = 'فعالیت در وضعیت آماده برگزاری نیست.';
             return;
         }
 

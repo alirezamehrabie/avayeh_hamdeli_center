@@ -59,7 +59,7 @@ class ActivityCheckInService
             }
 
             if ($lockedActivity->status !== 'ongoing') {
-                return new ActivityCheckInResult(false, 'activity_not_active', 'ثبت حضور فقط برای فعالیت در حال برگزاری مجاز است.', $lockedActivity, $person);
+                return new ActivityCheckInResult(false, 'activity_not_active', 'ثبت حضور فقط برای فعالیت آماده برگزاری مجاز است.', $lockedActivity, $person);
             }
 
             $existingAttendance = ActivityAttendance::query()
