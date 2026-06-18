@@ -35,6 +35,36 @@
             }
         }
 
+        @keyframes activity-scanner-frame-pulse {
+            0%, 100% {
+                border-color: rgba(110, 231, 183, 0.82);
+                box-shadow:
+                    0 0 0 1px rgba(255, 255, 255, 0.16),
+                    0 0 22px rgba(16, 185, 129, 0.18),
+                    0 0 0 9999px rgba(15, 23, 42, 0.28);
+            }
+
+            50% {
+                border-color: rgba(45, 212, 191, 1);
+                box-shadow:
+                    0 0 0 1px rgba(255, 255, 255, 0.22),
+                    0 0 34px rgba(20, 184, 166, 0.34),
+                    0 0 0 9999px rgba(15, 23, 42, 0.28);
+            }
+        }
+
+        @keyframes activity-scanner-corner-pulse {
+            0%, 100% {
+                opacity: 0.7;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.035);
+            }
+        }
+
         .attendance-success-check {
             stroke-dasharray: 48;
             stroke-dashoffset: 48;
@@ -43,6 +73,14 @@
 
         .attendance-success-pulse {
             animation: attendance-success-pulse 1.35s ease-in-out infinite;
+        }
+
+        .activity-scanner-frame {
+            animation: activity-scanner-frame-pulse 1.8s ease-in-out infinite;
+        }
+
+        .activity-scanner-frame-corner {
+            animation: activity-scanner-corner-pulse 1.8s ease-in-out infinite;
         }
     </style>
 
@@ -176,12 +214,19 @@
                 <div class="relative h-[clamp(320px,65svh,560px)] overflow-hidden rounded-2xl border border-slate-200 bg-slate-950">
                     <div wire:ignore x-ref="scanner" id="activity-scanner-reader-{{ $activityId }}" class="h-full w-full"></div>
                     <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
-                        <div class="aspect-square w-[min(72%,420px)] rounded-3xl border-2 border-emerald-300/90 shadow-[0_0_0_9999px_rgba(15,23,42,0.28)]"></div>
+                        <div class="activity-scanner-frame relative aspect-square w-[min(72%,420px)] rounded-3xl border-2 border-emerald-300/90">
+                            <span class="activity-scanner-frame-corner absolute right-0 top-0 h-12 w-12 rounded-tr-3xl border-r-4 border-t-4 border-teal-200"></span>
+                            <span class="activity-scanner-frame-corner absolute left-0 top-0 h-12 w-12 rounded-tl-3xl border-l-4 border-t-4 border-teal-200"></span>
+                            <span class="activity-scanner-frame-corner absolute bottom-0 right-0 h-12 w-12 rounded-br-3xl border-b-4 border-r-4 border-teal-200"></span>
+                            <span class="activity-scanner-frame-corner absolute bottom-0 left-0 h-12 w-12 rounded-bl-3xl border-b-4 border-l-4 border-teal-200"></span>
+                        </div>
                     </div>
-                    <div class="absolute bottom-4 right-4 rounded-full bg-slate-950/70 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">QR مددجو را داخل قاب قرار دهید</div>
+                    <div class="absolute bottom-4 right-4 rounded-full border border-white/20 bg-slate-950/55 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-slate-950/25 backdrop-blur-md ring-1 ring-white/10">
+                        QR مددجو را داخل قاب قرار دهید
+                    </div>
                 </div>
 
-                <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-end">
+                <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-end md:gap-4">
                     <div>
                         <label class="mb-2 block text-sm font-semibold text-slate-700">دوربین فعال</label>
                         <select x-model="selectedDeviceId" @change="switchCamera()" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-emerald-300 focus:ring-4 focus:ring-emerald-100">
@@ -190,12 +235,12 @@
                             </template>
                         </select>
                     </div>
-                    <button type="button" @click="startCamera()" class="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-700">فعال‌سازی دوربین</button>
-                    <button type="button" wire:click="resumeScanning" class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 hover:bg-emerald-100">ادامه اسکن</button>
+                    <button type="button" @click="startCamera()" class="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-700/20 transition hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-100 md:min-w-36">فعال‌سازی دوربین</button>
+                    <button type="button" wire:click="resumeScanning" class="rounded-xl border border-emerald-300 bg-white px-5 py-3 text-sm font-bold text-emerald-700 transition hover:border-emerald-400 hover:bg-emerald-50 focus:outline-none focus:ring-4 focus:ring-emerald-100 md:min-w-32">ادامه اسکن</button>
                 </div>
             </div>
 
-            <aside class="space-y-4">
+            <aside class="space-y-5">
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <h2 class="text-sm font-extrabold text-slate-800">وضعیت اسکن</h2>
                     <p class="mt-2 text-sm leading-7 text-slate-600" x-text="message"></p>
@@ -210,9 +255,17 @@
                     @endif
                 </div>
 
-                <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_32px_rgba(15,23,42,0.06)] ring-1 ring-slate-100/70">
                     <h2 class="text-sm font-extrabold text-slate-800">ثبت دستی</h2>
-                    <input type="text" wire:model.live.debounce.300ms="manualSearch" placeholder="جستجو با نام، کد مددجو یا کد ملی" class="mt-3 w-full rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:border-emerald-300 focus:ring-4 focus:ring-emerald-100">
+                    <div class="relative mt-3">
+                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400">
+                            <svg class="size-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                <path d="m14.2 14.2 3.3 3.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                                <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.8" />
+                            </svg>
+                        </span>
+                        <input type="text" wire:model.live.debounce.300ms="manualSearch" placeholder="جستجو با نام، کد مددجو یا کد ملی" class="w-full rounded-2xl border border-slate-200 bg-slate-50/70 py-2 pl-4 pr-11 text-sm text-slate-800 shadow-sm transition focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-100">
+                    </div>
 
                     <div class="mt-3 space-y-2">
                         @foreach($manualCandidates as $candidate)
