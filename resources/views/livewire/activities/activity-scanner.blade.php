@@ -1,5 +1,8 @@
 <div
-    x-data="idCardScanner({ resolveScan: (payload) => $wire.resolveScannedQr(payload) })"
+    x-data="idCardScanner({
+        resolveScan: (payload) => $wire.resolveScannedQr(payload),
+        activityName: @js($activity?->name ?? ''),
+    })"
     x-init="init()"
     x-on:id-card-scanner-resume.window="resumeFromWire()"
     class="space-y-4"
@@ -63,7 +66,7 @@
             x-transition:leave="transition ease-in duration-150"
             x-transition:leave-start="translate-y-0 scale-100 opacity-100"
             x-transition:leave-end="translate-y-3 scale-97 opacity-0"
-            class="relative w-full max-w-3xl overflow-hidden rounded-[2rem] border border-emerald-200/80 bg-white text-center shadow-2xl shadow-emerald-950/25 ring-1 ring-white/80 md:rounded-[2.25rem]"
+            class="relative w-full max-w-2xl overflow-hidden rounded-[2rem] border border-emerald-200/80 bg-white text-center shadow-2xl shadow-emerald-950/25 ring-1 ring-white/80 md:rounded-[2.25rem]"
             role="status"
             aria-live="polite"
         >
@@ -71,23 +74,24 @@
             <div class="absolute -left-20 -top-20 size-56 rounded-full bg-emerald-200/45 blur-3xl"></div>
             <div class="absolute -bottom-24 -right-20 size-64 rounded-full bg-cyan-200/45 blur-3xl"></div>
 
-            <div class="relative grid gap-6 px-6 py-8 md:grid-cols-[9rem_minmax(0,1fr)] md:items-center md:px-10 md:py-10 md:text-right">
-                <div class="mx-auto flex size-32 items-center justify-center md:size-36">
-                    <div class="attendance-success-pulse absolute size-32 rounded-full bg-emerald-400 md:size-36"></div>
-                    <div class="relative flex size-24 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-xl shadow-emerald-700/25 ring-8 ring-emerald-100 md:size-28">
-                        <svg class="size-14 md:size-16" viewBox="0 0 52 52" fill="none" aria-hidden="true">
+            <div class="relative px-6 py-7 md:px-9 md:py-8">
+                <div class="mx-auto flex size-24 items-center justify-center md:size-28">
+                    <div class="attendance-success-pulse absolute size-24 rounded-full bg-emerald-400 md:size-28"></div>
+                    <div class="relative flex size-16 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-xl shadow-emerald-700/25 ring-8 ring-emerald-100 md:size-20">
+                        <svg class="size-10 md:size-12" viewBox="0 0 52 52" fill="none" aria-hidden="true">
                             <path class="attendance-success-check" d="M14 27.5 22.5 36 39 17" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                     </div>
                 </div>
 
-                <div>
-                    <p class="text-sm font-extrabold tracking-wide text-emerald-600">ثبت موفق</p>
-                    <h2 class="mt-2 text-3xl font-black text-slate-950 md:text-5xl">حضور ثبت شد</h2>
-                    <div class="mt-5 rounded-3xl border border-emerald-100 bg-emerald-50/80 px-5 py-4">
+                <div class="mt-5">
+                    <p class="text-xs font-extrabold tracking-[0.22em] text-emerald-600">ثبت موفق</p>
+                    <h2 class="mt-2 text-2xl font-black text-slate-950 md:text-4xl">حضور ثبت شد</h2>
+                    <div class="mx-auto mt-5 max-w-xl rounded-3xl border border-emerald-100 bg-emerald-50/80 px-5 py-4">
                         <p class="truncate text-2xl font-black text-slate-900 md:text-3xl" x-text="successBanner.name"></p>
-                        <p class="mt-2 text-4xl font-black tracking-wide text-emerald-600 md:text-5xl" x-text="successBanner.time"></p>
+                        <p class="mt-2 text-sm font-medium leading-6 text-slate-500" x-text="successBanner.time"></p>
                     </div>
+                    <p class="mx-auto mt-4 max-w-xl truncate rounded-full border border-slate-200 bg-white/75 px-4 py-2 text-xs font-semibold text-slate-500" x-show="successBanner.activityName" x-text="successBanner.activityName"></p>
                 </div>
             </div>
         </div>

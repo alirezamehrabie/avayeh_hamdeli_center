@@ -114,7 +114,7 @@ Alpine.data('jalaliDateTimeField', (model) => ({
     },
 }));
 
-Alpine.data('idCardScanner', ({ resolveScan }) => ({
+Alpine.data('idCardScanner', ({ resolveScan, successSoundUrl = '/sounds/scan-success.wav', activityName = '' }) => ({
     cameras: [],
     selectedDeviceId: '',
     html5QrCode: null,
@@ -134,12 +134,18 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
     resumeAfterSuccessTimer: null,
     successBannerTimer: null,
     audioContext: null,
+    scanSuccessSoundUrl: successSoundUrl,
+    scanSuccessAudio: null,
+    activityName,
     successBanner: {
         visible: false,
         name: '',
         time: '',
+        activityName: '',
     },
     async init() {
+        this.prepareSuccessSound();
+
         if (!('mediaDevices' in navigator) || !('getUserMedia' in navigator.mediaDevices)) {
             this.setStatus('unsupported', 'دسترسی به دوربین در این مرورگر یا دستگاه در دسترس نیست.');
             return;
@@ -383,6 +389,7 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
             visible: true,
             name: result?.person?.name || '-',
             time: this.toPersianDigits(result?.attendance?.checked_in_time || this.currentDisplayTime()),
+            activityName: result?.activity?.name || this.activityName || '',
         };
 
         this.successBannerTimer = window.setTimeout(() => {
@@ -400,7 +407,42 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
     toPersianDigits(value) {
         return String(value || '').replace(/\d/g, (digit) => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)]);
     },
+    prepareSuccessSound() {
+        if (typeof Audio === 'undefined' || !this.scanSuccessSoundUrl) {
+            return;
+        }
+
+        this.scanSuccessAudio = new Audio(this.scanSuccessSoundUrl);
+        this.scanSuccessAudio.preload = 'auto';
+    },
     playFeedbackSound(variant = 'success') {
+        if (variant === 'success' && this.playCustomSuccessSound()) {
+            return;
+        }
+
+        this.playGeneratedFeedbackSound(variant);
+    },
+    playCustomSuccessSound() {
+        if (!this.scanSuccessAudio) {
+            return false;
+        }
+
+        try {
+            this.scanSuccessAudio.pause();
+            this.scanSuccessAudio.currentTime = 0;
+
+            const playback = this.scanSuccessAudio.play();
+
+            if (playback && typeof playback.catch === 'function') {
+                playback.catch(() => this.playGeneratedFeedbackSound('success'));
+            }
+
+            return true;
+        } catch (error) {
+            return false;
+        }
+    },
+    playGeneratedFeedbackSound(variant = 'success') {
         if (typeof window === 'undefined' || !('AudioContext' in window || 'webkitAudioContext' in window)) {
             return;
         }
@@ -419,29 +461,48 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
             return;
         }
 
-        this.playScanChirp(now);
+        this.playScannerChirp(now);
     },
-    playScanChirp(startTime) {
+    playScannerChirp(startTime) {
+        const output = this.audioContext.createGain();
+        output.gain.setValueAtTime(0.82, startTime);
+        output.gain.exponentialRampToValueAtTime(0.001, startTime + 0.19);
+        output.connect(this.audioContext.destination);
+
         this.playTone({
             type: 'triangle',
-            frequency: 1660,
+            frequency: 1320,
             startTime,
-            duration: 0.055,
-            volume: 0.052,
-            attack: 0.004,
-            releasePadding: 0.015,
-            frequencyEnd: 2140,
+            duration: 0.155,
+            volume: 0.15,
+            attack: 0.001,
+            releasePadding: 0.02,
+            frequencyEnd: 3150,
+            destination: output,
         });
 
         this.playTone({
             type: 'square',
-            frequency: 2140,
-            startTime: startTime + 0.05,
-            duration: 0.045,
-            volume: 0.018,
-            attack: 0.002,
+            frequency: 2350,
+            startTime: startTime + 0.012,
+            duration: 0.078,
+            volume: 0.052,
+            attack: 0.001,
             releasePadding: 0.012,
-            frequencyEnd: 2320,
+            frequencyEnd: 3850,
+            destination: output,
+        });
+
+        this.playTone({
+            type: 'triangle',
+            frequency: 3050,
+            startTime: startTime + 0.088,
+            duration: 0.066,
+            volume: 0.04,
+            attack: 0.001,
+            releasePadding: 0.014,
+            frequencyEnd: 2500,
+            destination: output,
         });
     },
     playWarningChime(startTime) {
@@ -476,6 +537,7 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
         attack = 0.008,
         releasePadding = 0.02,
         frequencyEnd = null,
+        destination = null,
     }) {
         const oscillator = this.audioContext.createOscillator();
         const gain = this.audioContext.createGain();
@@ -490,7 +552,7 @@ Alpine.data('idCardScanner', ({ resolveScan }) => ({
         gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 
         oscillator.connect(gain);
-        gain.connect(this.audioContext.destination);
+        gain.connect(destination || this.audioContext.destination);
         oscillator.start(startTime);
         oscillator.stop(startTime + duration + releasePadding);
     },
