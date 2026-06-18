@@ -118,11 +118,13 @@ class ActivityList extends Component
     public function updatedStartsFrom(): void
     {
         $this->resetPage();
+        $this->resetValidation('startsFrom');
     }
 
     public function updatedStartsUntil(): void
     {
         $this->resetPage();
+        $this->resetValidation('startsUntil');
     }
 
     public function getSelectedActivityProperty(): ?Activity
@@ -211,8 +213,10 @@ class ActivityList extends Component
         $search = trim($this->search);
         $status = $this->statusFilter === 'all' ? null : $this->statusFilter;
         $type = $this->typeFilter === 'all' ? null : $this->typeFilter;
-        $startsFrom = $this->validDateOrNull($this->startsFrom);
-        $startsUntil = $this->validDateOrNull($this->startsUntil);
+        $startsFrom = $this->parseJalaliDateFilter($this->startsFrom, 'startsFrom');
+        $startsUntil = $this->parseJalaliDateFilter($this->startsUntil, 'startsUntil');
+        $hasInvalidDateFilter = $this->getErrorBag()->has('startsFrom')
+            || $this->getErrorBag()->has('startsUntil');
 
         return view('livewire.activities.activity-list', [
             'activities' => Activity::query()
@@ -238,6 +242,7 @@ class ActivityList extends Component
                 })
                 ->when($status, fn ($query) => $query->where('status', $status))
                 ->when($type, fn ($query) => $query->where('activity_type', $type))
+                ->when($hasInvalidDateFilter, fn ($query) => $query->whereRaw('1 = 0'))
                 ->when($startsFrom, fn ($query) => $query->where('starts_at', '>=', $startsFrom->startOfDay()))
                 ->when($startsUntil, fn ($query) => $query->where('starts_at', '<=', $startsUntil->endOfDay()))
                 ->latest('starts_at')
@@ -260,24 +265,42 @@ class ActivityList extends Component
         $this->attendanceStatusFilter = 'all';
     }
 
-    protected function validDateOrNull(?string $date): ?\Carbon\Carbon
+    protected function parseJalaliDateFilter(?string $date, string $field): mixed
     {
+        $this->resetValidation($field);
+
         if (blank($date)) {
             return null;
         }
 
-        $parts = explode('/', trim($date));
+        $normalized = $this->normalizeJalaliDateInput($date);
 
-        if (count($parts) !== 3) {
+        if ($normalized === null || ! preg_match('/^\d{4}\/\d{2}\/\d{2}$/', $normalized)) {
+            $this->addError($field, 'تاریخ فیلتر باید با قالب 1403/01/01 وارد شود.');
             return null;
         }
 
+        $parts = explode('/', $normalized);
         [$year, $month, $day] = array_map('intval', $parts);
 
         if (! CalendarUtils::isValidateJalaliDate($year, $month, $day)) {
+            $this->addError($field, 'تاریخ فیلتر معتبر نیست.');
             return null;
         }
 
-        return Jalalian::fromFormat('Y/m/d', trim($date))->toCarbon();
+        return Jalalian::fromFormat('Y/m/d', $normalized)->toCarbon();
+    }
+
+    protected function normalizeJalaliDateInput(?string $value): ?string
+    {
+        if (blank($value)) {
+            return null;
+        }
+
+        $normalized = CalendarUtils::convertNumbers((string) $value, true);
+        $normalized = str_replace(["\u{200c}", "\u{200f}", "\u{00a0}"], ' ', $normalized);
+        $normalized = preg_replace('/\s+/u', ' ', trim($normalized)) ?? '';
+
+        return $normalized !== '' ? $normalized : null;
     }
 }
