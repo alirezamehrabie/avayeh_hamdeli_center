@@ -107,13 +107,41 @@ class ActivityScanner extends Component
             return collect();
         }
 
+        $normalizedSearch = Person::normalizeSearchText($search);
+        $escapedSearch = $this->escapeLike($search);
+        $escapedNormalizedSearch = $this->escapeLike($normalizedSearch);
+        $digits = preg_replace('/\D+/', '', $search) ?: '';
+        $escapedDigits = $this->escapeLike($digits);
+        $hasNormalizedColumns = Person::hasNormalizedSearchColumns();
+
         return Person::query()
-            ->where(function ($query) use ($search): void {
-                $query->where('person_code', 'like', "%{$search}%")
-                    ->orWhere('national_id', 'like', "%{$search}%")
-                    ->orWhere('full_name', 'like', "%{$search}%")
-                    ->orWhere('first_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%");
+            ->select(['id', 'first_name', 'last_name', 'full_name', 'person_code', 'national_id'])
+            ->where(function ($query) use ($escapedSearch, $escapedNormalizedSearch, $escapedDigits, $hasNormalizedColumns, $normalizedSearch): void {
+                if ($escapedDigits !== '') {
+                    $query->where('person_code', 'like', "{$escapedDigits}%")
+                        ->orWhere('national_id', 'like', "{$escapedDigits}%");
+                } else {
+                    $query->where('person_code', 'like', "{$escapedSearch}%")
+                        ->orWhere('national_id', 'like', "{$escapedSearch}%");
+                }
+
+                if ($hasNormalizedColumns && $escapedNormalizedSearch !== '') {
+                    $query->orWhere('normalized_full_name', 'like', "{$escapedNormalizedSearch}%")
+                        ->orWhere('normalized_first_name', 'like', "{$escapedNormalizedSearch}%")
+                        ->orWhere('normalized_last_name', 'like', "{$escapedNormalizedSearch}%");
+                } else {
+                    $query->orWhere('full_name', 'like', "{$escapedSearch}%")
+                        ->orWhere('first_name', 'like', "{$escapedSearch}%")
+                        ->orWhere('last_name', 'like', "{$escapedSearch}%");
+                }
+
+                if (mb_strlen($normalizedSearch) >= 3) {
+                    if ($hasNormalizedColumns && $escapedNormalizedSearch !== '') {
+                        $query->orWhere('normalized_full_name', 'like', "%{$escapedNormalizedSearch}%");
+                    } else {
+                        $query->orWhere('full_name', 'like', "%{$escapedSearch}%");
+                    }
+                }
             })
             ->orderBy('last_name')
             ->orderBy('first_name')
@@ -162,5 +190,10 @@ class ActivityScanner extends Component
             'message' => $this->scanMessage,
             'result' => $this->lastScanResult,
         ];
+    }
+
+    private function escapeLike(string $value): string
+    {
+        return addcslashes($value, '\\%_');
     }
 }
