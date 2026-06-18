@@ -2,7 +2,6 @@
 
 namespace App\Livewire\Guardians;
 
-use App\Livewire\Concerns\HandlesQrIdentityModal;
 use App\Models\Guardian;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
@@ -12,22 +11,34 @@ use Livewire\WithPagination;
 #[Layout('layouts.app')]
 class IndexGuardians extends Component
 {
-    use HandlesQrIdentityModal;
     use WithPagination;
 
     public bool $embedded = false;
+
     public bool $hasAutoRefreshedStats = false;
+
     public ?int $expandedGuardianId = null;
+
     public string $search = '';
+
     public string $searchField = 'all';
+
     public ?int $selectedGuardianId = null;
+
     public bool $showHouseholdModal = false;
+
     public bool $showHouseholdSizeModal = false;
+
     public bool $showDeleteModal = false;
+
     public string $householdStatsTab = 'household_size';
+
     public string $deletionReason = '';
+
     public ?int $expandedHouseholdSize = null;
+
     public ?int $expandedCoverageCount = null;
+
     public ?int $deletingGuardianId = null;
 
     public function mount(): void
@@ -90,35 +101,11 @@ class IndexGuardians extends Component
     {
         if ($this->embedded) {
             $this->dispatch('open-dashboard-section', section: 'guardian-edit', id: $guardianId);
+
             return null;
         }
 
         return redirect()->route('guardians.edit', ['guardian' => $guardianId]);
-    }
-
-    protected function qrSubjectType(): string
-    {
-        return \App\Models\QrIdentity::SUBJECT_GUARDIAN;
-    }
-
-    protected function qrOpenPermission(): string
-    {
-        return 'full-access';
-    }
-
-    protected function qrManagePermission(): string
-    {
-        return 'full-access';
-    }
-
-    protected function resolveQrSubject(int $subjectId): Guardian
-    {
-        return Guardian::query()->findOrFail($subjectId);
-    }
-
-    protected function qrSubjectLabel(): string
-    {
-        return 'سرپرست';
     }
 
     public function openDeleteModal(int $guardianId): void
@@ -150,7 +137,7 @@ class IndexGuardians extends Component
         ]);
 
         $guardian = Guardian::query()->findOrFail($this->deletingGuardianId);
-        $guardianName = trim($guardian->first_name . ' ' . $guardian->last_name);
+        $guardianName = trim($guardian->first_name.' '.$guardian->last_name);
 
         $guardian->softDeleteFamily($validated['deletionReason']);
 
@@ -161,13 +148,14 @@ class IndexGuardians extends Component
         $this->closeDeleteModal();
         $this->resetPage();
 
-        session()->flash('success', 'خانوار ' . ($guardianName !== '' ? $guardianName : 'انتخاب‌شده') . ' با همه مددجویان مرتبط به بلاک لیست منتقل شد.');
+        session()->flash('success', 'خانوار '.($guardianName !== '' ? $guardianName : 'انتخاب‌شده').' با همه مددجویان مرتبط به بلاک لیست منتقل شد.');
     }
 
     public function goToDeletedGuardians(): mixed
     {
         if ($this->embedded) {
             $this->dispatch('open-dashboard-section', section: 'guardians-block-list');
+
             return null;
         }
 
@@ -224,7 +212,7 @@ class IndexGuardians extends Component
 
     public function getSelectedGuardianProperty(): ?Guardian
     {
-        if (!$this->selectedGuardianId) {
+        if (! $this->selectedGuardianId) {
             return null;
         }
 
@@ -246,10 +234,11 @@ class IndexGuardians extends Component
     {
         abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
-        return view('livewire.guardians.index-guardians', [
-            'totalGuardians' => Guardian::count(),
-            'totalCenterMembers' => (int) Guardian::query()->sum('children_in_house'),
-            'householdSizeStats' => Guardian::query()
+        $householdSizeStats = collect();
+        $coverageCountStats = collect();
+
+        if ($this->showHouseholdSizeModal) {
+            $householdSizeStats = Guardian::query()
                 ->select(['id', 'national_code', 'first_name', 'last_name', 'children_in_house'])
                 ->orderBy('children_in_house')
                 ->orderBy('national_code')
@@ -262,8 +251,9 @@ class IndexGuardians extends Component
                         'national_codes' => $guardians->pluck('national_code')->filter()->values()->all(),
                     ];
                 })
-                ->values(),
-            'coverageCountStats' => Guardian::query()
+                ->values();
+
+            $coverageCountStats = Guardian::query()
                 ->select(['id', 'national_code', 'first_name', 'last_name', 'children_count'])
                 ->orderBy('children_count')
                 ->orderBy('national_code')
@@ -276,7 +266,14 @@ class IndexGuardians extends Component
                         'national_codes' => $guardians->pluck('national_code')->filter()->values()->all(),
                     ];
                 })
-                ->values(),
+                ->values();
+        }
+
+        return view('livewire.guardians.index-guardians', [
+            'totalGuardians' => Guardian::count(),
+            'totalCenterMembers' => (int) Guardian::query()->sum('children_in_house'),
+            'householdSizeStats' => $householdSizeStats,
+            'coverageCountStats' => $coverageCountStats,
             'deletingGuardian' => $this->deletingGuardianId
                 ? Guardian::query()
                     ->withCount('people')

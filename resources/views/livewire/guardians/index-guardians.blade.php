@@ -19,6 +19,10 @@
     }"
     x-on:guardian-stats-refreshed.window="openToast($event.detail.message)"
 >
+    @php
+        $guardians = $this->guardians;
+    @endphp
+
     <div class="container mx-auto p-0">
         <div
             class="rounded-2xl border border-amber-100 bg-gradient-to-br from-white via-amber-50/30 to-white p-5 shadow-sm">
@@ -144,11 +148,11 @@
                         </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                        @forelse ($this->guardians as $guardian)
+                        @forelse ($guardians as $guardian)
                             <tr wire:key="guardian-row-{{ $guardian->id }}"
                                 wire:click="toggleGuardian({{ $guardian->id }})"
                                 class="cursor-pointer transition hover:bg-amber-50/70">
-                                <td class="px-3 py-4 text-center text-xs font-extrabold text-slate-500">{{ ($this->guardians->firstItem() ?? 1) + $loop->index }}</td>
+                                <td class="px-3 py-4 text-center text-xs font-extrabold text-slate-500">{{ ($guardians->firstItem() ?? 1) + $loop->index }}</td>
                                 <td class="px-5 py-4 text-center font-medium text-slate-700">{{ $guardian->national_code }}</td>
                                 <td class="px-5 py-4 text-right font-light text-slate-800">{{ trim($guardian->first_name . ' ' . $guardian->last_name) }}</td>
                                 <td class="px-5 py-4 text-center font-light text-slate-700">{{ $guardian->guardian_phone_number ?? '-' }}</td>
@@ -201,7 +205,7 @@
                                                       d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                             </svg>
                                         </button>
-                                        <button type="button" wire:click.stop="openQrModal({{ $guardian->id }})"
+                                        <button type="button" wire:click.stop="$dispatch('open-qr-identity-modal', { subjectType: 'guardian', subjectId: {{ $guardian->id }} })"
                                                 onclick="event.stopPropagation()"
                                                 class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-200 bg-cyan-50 text-cyan-700 transition hover:border-cyan-300 hover:bg-cyan-100"
                                                 title="کارت QR" aria-label="کارت QR">
@@ -294,7 +298,7 @@
             </div>
 
             <div class="mt-5">
-                {{ $this->guardians->links('vendor.livewire.tailwind-mobile-persian') }}
+                {{ $guardians->links('vendor.livewire.tailwind-mobile-persian') }}
             </div>
         </div>
     </div>
@@ -442,13 +446,7 @@
         'wireKey' => 'household-modal',
     ])
 
-    @include('livewire.shared.qr-identity-modal', [
-        'subject' => $this->qrSubject,
-        'subjectLabel' => 'سرپرست',
-        'subjectCode' => $this->qrSubject?->guardian_code,
-        'reasonInputId' => 'guardian-qr-lifecycle-reason',
-        'emptyStateMessage' => 'برای این سرپرست QR فعال وجود ندارد.',
-    ])
+    <livewire:shared.qr-identity-modal />
 
     @if($showHouseholdSizeModal)
         <div

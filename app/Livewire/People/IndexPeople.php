@@ -2,30 +2,37 @@
 
 namespace App\Livewire\People;
 
-use App\Livewire\Concerns\HandlesQrIdentityModal;
 use App\Models\Person;
 use App\Queries\People\PeopleIndexSearchQuery;
-use Livewire\Component;
-use Livewire\Attributes\Layout;
-use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Contracts\Pagination\Paginator;
+use Livewire\Attributes\Layout;
+use Livewire\Component;
 use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
 class IndexPeople extends Component
 {
-    use HandlesQrIdentityModal;
     use WithPagination;
 
     public $search = '';
+
     public string $searchField = 'all';
+
     public bool $embedded = false;
+
     public ?int $selectedPersonId = null;
+
     public ?int $trackingPersonId = null;
+
     public bool $showPersonModal = false;
+
     public bool $showTrackingModal = false;
+
     public bool $showDeleteModal = false;
+
     public string $deletionReason = '';
+
     public ?int $deletingPersonId = null;
 
     public function mount(): void
@@ -76,12 +83,13 @@ class IndexPeople extends Component
 
         if ($this->embedded) {
             $this->dispatch('open-dashboard-section', section: 'person-edit', id: $person->id);
+
             return;
         }
 
         return redirect()->route('people.form', [
             'mode' => 'edit',
-            'person' => $person->id
+            'person' => $person->id,
         ]);
     }
 
@@ -91,6 +99,7 @@ class IndexPeople extends Component
 
         if ($this->embedded) {
             $this->dispatch('open-dashboard-section', section: 'people-fast-create', id: $person->id);
+
             return;
         }
 
@@ -121,34 +130,9 @@ class IndexPeople extends Component
         $this->trackingPersonId = null;
     }
 
-    protected function qrSubjectType(): string
-    {
-        return \App\Models\QrIdentity::SUBJECT_PERSON;
-    }
-
-    protected function qrOpenPermission(): string
-    {
-        return 'people-edit';
-    }
-
-    protected function qrManagePermission(): string
-    {
-        return 'full-access';
-    }
-
-    protected function resolveQrSubject(int $subjectId): Person
-    {
-        return Person::query()->findOrFail($subjectId);
-    }
-
-    protected function qrSubjectLabel(): string
-    {
-        return 'مددجو';
-    }
-
     public function getSelectedPersonProperty(): ?Person
     {
-        if (!$this->selectedPersonId) {
+        if (! $this->selectedPersonId) {
             return null;
         }
 

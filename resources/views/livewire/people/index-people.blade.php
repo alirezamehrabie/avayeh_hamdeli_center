@@ -296,9 +296,9 @@
 
                                                         <button
                                                             type="button"
-                                                            wire:click="openQrModal({{ $person->id }})"
+                                                            wire:click="$dispatch('open-qr-identity-modal', { subjectType: 'person', subjectId: {{ $person->id }} })"
                                                             wire:loading.attr="disabled"
-                                                            wire:target="openQrModal({{ $person->id }})"
+
                                                             class="flex min-h-12 w-full items-center gap-3 rounded-2xl border border-cyan-100 bg-cyan-50/70 px-4 py-3 text-right text-sm font-bold text-cyan-800 transition hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-100 disabled:opacity-60"
                                                             @click="open = false"
                                                         >
@@ -432,9 +432,9 @@
                                                                 </button>
                                                                 <button
                                                                     type="button"
-                                                                    wire:click="openQrModal({{ $person->id }})"
+                                                                    wire:click="$dispatch('open-qr-identity-modal', { subjectType: 'person', subjectId: {{ $person->id }} })"
                                                                     wire:loading.attr="disabled"
-                                                                    wire:target="openQrModal({{ $person->id }})"
+
                                                                     class="flex w-full items-center gap-2 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-cyan-50 hover:text-cyan-700 focus:bg-cyan-50 focus:outline-none disabled:opacity-60"
                                                                     role="menuitem"
                                                                     @click="open = false"
@@ -664,13 +664,7 @@
         </div>
     @endif
 
-    @include('livewire.shared.qr-identity-modal', [
-        'subject' => $this->qrSubject,
-        'subjectLabel' => 'مددجو',
-        'subjectCode' => $this->qrSubject?->person_code,
-        'reasonInputId' => 'person-qr-lifecycle-reason',
-        'emptyStateMessage' => 'برای این مددجو QR فعال وجود ندارد.',
-    ])
+    <livewire:shared.qr-identity-modal />
 
     @include('livewire.people.partials.person-details-modal')
 </div>

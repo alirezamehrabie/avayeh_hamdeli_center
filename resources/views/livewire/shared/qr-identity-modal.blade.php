@@ -1,12 +1,5 @@
-@props([
-    'subject',
-    'subjectLabel',
-    'subjectCode',
-    'reasonInputId',
-    'emptyStateMessage',
-])
-
-@if($showQrModal && $subject)
+<div>
+@if($showQrModal)
     <div
         x-data="{
             showScanUrl: false,
@@ -27,22 +20,22 @@
             <div class="flex items-start justify-between gap-3 bg-cyan-700 px-3.5 py-3 text-white sm:gap-4 sm:px-6 sm:py-5">
                 <div class="min-w-0">
                     <h2 class="text-base font-extrabold sm:text-xl">کارت QR {{ $subjectLabel }}</h2>
-                    <p class="mt-1 truncate text-xs text-white/85 sm:text-sm">{{ $subject->full_name }} - {{ $subjectCode }}</p>
+                    <p class="mt-1 truncate text-xs text-white/85 sm:text-sm">{{ $subjectName }} - {{ $subjectCode }}</p>
                 </div>
                 <button type="button" @click="close()" x-ref="closeButton" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15 text-xl leading-none text-white transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/70 sm:h-9 sm:w-9 sm:text-2xl" aria-label="بستن">&times;</button>
             </div>
 
             <div class="max-h-[78vh] space-y-3 overflow-y-auto p-3 sm:max-h-[calc(90vh-5.5rem)] sm:space-y-4 sm:p-6">
-                @if($this->selectedQrIdentity)
+                @if($publicCode && $qrMarkup)
                     <div class="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:gap-4 sm:p-4 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-center">
                         <div class="flex min-h-[14rem] w-full items-center justify-center rounded-2xl border border-slate-200 bg-white p-2.5 shadow-sm sm:min-h-[21rem] sm:p-3 lg:w-[300px]">
                             <div class="aspect-square w-full max-w-[190px] sm:max-w-[280px] [&>svg]:block [&>svg]:h-full [&>svg]:w-full">
-                                {!! $this->selectedQrIdentity->qr_svg !!}
+                                {!! $qrMarkup !!}
                             </div>
                         </div>
                         <div class="min-w-0">
                             <p class="text-xs font-bold text-slate-500">شناسه کارت</p>
-                            <p class="mt-1 break-all font-mono text-sm font-black text-slate-900 sm:text-lg">{{ $this->selectedQrIdentity->public_code }}</p>
+                            <p class="mt-1 break-all font-mono text-sm font-black text-slate-900 sm:text-lg">{{ $publicCode }}</p>
                             <button
                                 type="button"
                                 @click="showScanUrl = !showScanUrl"
@@ -58,13 +51,13 @@
                                 class="mt-2 break-all rounded-xl bg-white px-2.5 py-2 text-[11px] leading-5 text-slate-700 sm:px-3 sm:text-xs"
                                 style="display: none;"
                             >
-                                {{ $this->selectedQrIdentity->scan_url }}
+                                {{ $scanUrl }}
                             </div>
                             <p class="mt-2 text-[11px] leading-5 text-slate-500 sm:mt-3 sm:text-xs">این QR فقط پس از ورود کارکنان قابل استفاده است و شامل اطلاعات شخصی نیست.</p>
                         </div>
                     </div>
                 @else
-                    <div class="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-5 text-amber-800 sm:px-4 sm:py-3 sm:text-sm">{{ $emptyStateMessage }}</div>
+                    <div class="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-5 text-amber-800 sm:px-4 sm:py-3 sm:text-sm">برای این {{ $subjectLabel }} QR فعال وجود ندارد.</div>
                 @endif
 
                 @if($issuedQrToken)
@@ -82,9 +75,9 @@
                         <p class="text-xs font-black text-rose-800 sm:text-sm">
                             {{ $qrLifecycleAction === 'reissue' ? 'تایید صدور مجدد QR' : 'تایید ابطال QR' }}
                         </p>
-                        <label class="mt-2.5 block text-xs font-bold text-slate-700 sm:mt-3" for="{{ $reasonInputId }}">علت اقدام</label>
+                        <label class="mt-2.5 block text-xs font-bold text-slate-700 sm:mt-3" for="qr-lifecycle-reason">علت اقدام</label>
                         <textarea
-                            id="{{ $reasonInputId }}"
+                            id="qr-lifecycle-reason"
                             wire:model.defer="qrLifecycleReason"
                             rows="3"
                             class="mt-1 w-full rounded-xl border border-rose-200 bg-white px-3 py-2 text-xs text-slate-700 focus:border-rose-400 focus:outline-none focus:ring-4 focus:ring-rose-100 sm:text-sm"
@@ -103,7 +96,7 @@
                         <button
                             type="button"
                             wire:click="requestQrLifecycleAction('revoke')"
-                            @disabled(!$this->selectedQrIdentity)
+                            @disabled(!$publicCode)
                             class="flex min-h-14 items-center justify-center rounded-2xl border border-rose-200 bg-gradient-to-b from-rose-50 to-white px-2 py-2 text-center text-[11px] font-semibold leading-4 text-rose-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md disabled:opacity-50 sm:min-h-0 sm:w-auto sm:px-4 sm:text-sm"
                         >
                             ابطال
@@ -128,3 +121,4 @@
         </div>
     </div>
 @endif
+</div>
