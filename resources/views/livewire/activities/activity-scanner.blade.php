@@ -115,7 +115,30 @@
                     ></p>
                     <h2 class="mt-1 text-sm font-black leading-6 text-slate-900" x-text="successBanner.message"></h2>
                     <div class="mt-1">
-                        <p class="truncate text-sm font-bold text-slate-700" x-show="successBanner.name" x-text="successBanner.name"></p>
+                        <p
+                            class="truncate"
+                            x-show="successBanner.name"
+                            :class="(() => {
+                                const statusName = ['success', 'warning', 'error'].includes(successBanner.name)
+                                    ? successBanner.name
+                                    : successBanner.variant;
+
+                                if (statusName === 'success') {
+                                    return 'text-lg font-black text-emerald-600';
+                                }
+
+                                if (statusName === 'warning') {
+                                    return 'text-lg font-black text-amber-600';
+                                }
+
+                                if (statusName === 'error') {
+                                    return 'text-lg font-black text-rose-600';
+                                }
+
+                                return 'text-sm font-bold text-slate-700';
+                            })()"
+                            x-text="successBanner.name"
+                        ></p>
                         <p class="text-sm font-semibold text-slate-500" x-show="!successBanner.name">اطلاعات مددجو در دسترس نیست</p>
                         <p class="mt-2 text-sm font-medium leading-6 text-slate-500" x-text="successBanner.time"></p>
                     </div>
