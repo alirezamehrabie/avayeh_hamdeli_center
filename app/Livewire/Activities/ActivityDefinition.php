@@ -9,6 +9,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
 class ActivityDefinition extends Component
@@ -56,7 +57,13 @@ class ActivityDefinition extends Component
 
         $this->normalizeInput();
 
-        $validated = $this->validate($this->rules(), [], $this->validationAttributes());
+        try {
+            $validated = $this->validate($this->rules(), [], $this->validationAttributes());
+        } catch (ValidationException $exception) {
+            $this->dispatch('activity-save-failed');
+
+            throw $exception;
+        }
 
         $startsAt = blank($validated['startsAt']) ? null : $this->jalaliDateTimeToGregorian($validated['startsAt']);
         $endsAt = blank($validated['endsAt']) ? null : $this->jalaliDateTimeToGregorian($validated['endsAt']);
