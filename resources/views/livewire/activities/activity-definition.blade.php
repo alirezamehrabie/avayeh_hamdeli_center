@@ -6,7 +6,7 @@
                     <h1 class="text-2xl font-extrabold">{{ $editingActivityId ? 'ویرایش فعالیت' : 'تعریف فعالیت جدید' }}</h1>
                     <p class="mt-1 text-xs text-violet-50/90">فعالیت‌ها برای رویدادها، جشن‌ها، اردوها و برنامه‌های گروهی ثبت می‌شوند.</p>
                 </div>
-                <button type="button" wire:click="backToList" class="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20">بازگشت به فهرست</button>
+                <button type="button" wire:click="backToList" wire:loading.attr="disabled" wire:target="save" class="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60">بازگشت به فهرست</button>
             </div>
         </div>
 
@@ -20,6 +20,7 @@
                 </div>
             @endif
 
+            <fieldset wire:loading.attr="disabled" wire:target="save" class="space-y-5 disabled:pointer-events-none disabled:opacity-70">
             <div class="grid gap-4 md:grid-cols-3">
                 <div>
                     <label class="mb-1 block text-xs font-bold text-slate-500">کد فعالیت</label>
@@ -127,9 +128,16 @@
             </div>
 
             <div class="flex items-center justify-end gap-2 border-t border-slate-100 pt-4">
-                <button type="button" wire:click="backToList" class="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">انصراف</button>
-                <button type="submit" class="rounded-full bg-violet-600 px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700">ذخیره فعالیت</button>
+                <button type="button" wire:click="backToList" class="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60">انصراف</button>
+                <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-full bg-violet-600 px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-violet-400">
+                    <span wire:loading.remove wire:target="save">ذخیره فعالیت</span>
+                    <span wire:loading.flex wire:target="save" class="items-center gap-2">
+                        <i class="bi bi-arrow-repeat animate-spin text-base leading-none"></i>
+                        در حال ذخیره...
+                    </span>
+                </button>
             </div>
+            </fieldset>
         </form>
     </div>
 </div>
