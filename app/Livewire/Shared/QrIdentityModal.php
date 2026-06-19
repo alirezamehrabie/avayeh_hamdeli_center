@@ -44,7 +44,7 @@ class QrIdentityModal extends Component
         abort_unless(auth()->check() && auth()->user()->can($this->openPermission($subjectType)), 403);
 
         $subject = $this->resolveSubject($subjectType, $subjectId);
-        app(QrIdentityService::class)->ensureActiveFor($subject, auth()->id());
+        $identity = app(QrIdentityService::class)->ensureActiveFor($subject, auth()->id());
 
         $this->qrSubjectType = $subjectType;
         $this->qrSubjectId = $subject->id;
@@ -59,7 +59,7 @@ class QrIdentityModal extends Component
         $this->qrLifecycleReason = '';
         $this->showQrModal = true;
 
-        $this->refreshQrIdentityState();
+        $this->setQrIdentityState($identity);
     }
 
     public function closeQrModal(): void
@@ -118,6 +118,7 @@ class QrIdentityModal extends Component
             $subject = $this->resolveSubject($this->qrSubjectType, $this->qrSubjectId);
             $issued = app(QrIdentityService::class)->replaceFor($subject, auth()->id(), $reason);
             $this->issuedQrToken = $issued['token'];
+            $this->setQrIdentityState($issued['identity']);
             session()->flash('success', "QR {$this->subjectLabel} با ثبت علت، دوباره صادر شد.");
         } else {
             $identity = $this->activeQrIdentity();
@@ -127,11 +128,11 @@ class QrIdentityModal extends Component
             }
 
             $this->issuedQrToken = null;
+            $this->setQrIdentityState(null);
             session()->flash('success', "QR {$this->subjectLabel} با ثبت علت، ابطال شد.");
         }
 
         $this->cancelQrLifecycleAction();
-        $this->refreshQrIdentityState();
     }
 
     public function render()
@@ -139,10 +140,8 @@ class QrIdentityModal extends Component
         return view('livewire.shared.qr-identity-modal');
     }
 
-    private function refreshQrIdentityState(): void
+    private function setQrIdentityState(?QrIdentity $identity): void
     {
-        $identity = $this->activeQrIdentity();
-
         $this->publicCode = $identity?->public_code;
         $this->scanUrl = $identity?->scan_url;
         $this->qrMarkup = $identity?->qr_svg;
