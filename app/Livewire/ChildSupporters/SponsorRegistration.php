@@ -12,6 +12,7 @@ use Livewire\Component;
 class SponsorRegistration extends Component
 {
     public bool $embedded = false;
+    public bool $isEditing = false;
 
     public string $firstName = '';
     public string $lastName = '';
