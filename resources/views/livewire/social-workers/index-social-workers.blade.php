@@ -129,6 +129,9 @@
                                 </td>
                             </tr>
                             @if($expandedSocialWorkerId === $worker->id)
+                                @php
+                                    $guardians = $this->getGuardiansForWorker($worker->id);
+                                @endphp
                                 <tr class="bg-cyan-50/40" wire:key="social-worker-panel-{{ $worker->id }}">
                                     <td colspan="6" class="px-5 py-4">
                                         <div
@@ -145,7 +148,7 @@
                                         >
                                             <div class="mb-3 flex items-center justify-between">
                                                 <h2 class="text-sm font-bold text-slate-700">سرپرستان تحت پوشش {{ $worker->full_name }}</h2>
-                                                <span class="rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-700">{{ $worker->guardians->count() }} سرپرست</span>
+                                                <span class="rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-700">{{ count($guardians) }} سرپرست</span>
                                             </div>
 
                                             <div class="overflow-x-auto">
@@ -160,13 +163,13 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody class="divide-y divide-slate-100">
-                                                        @forelse ($worker->guardians as $guardian)
+                                                        @forelse ($guardians as $guardian)
                                                             <tr class="transition hover:bg-slate-50">
                                                                 <td class="px-4 py-3 text-center font-medium text-slate-700">{{ $loop->iteration }}</td>
-                                                                <td class="px-4 py-3 text-center text-slate-600">{{ $guardian->national_code ?: '-' }}</td>
-                                                                <td class="px-4 py-3 text-right text-slate-700">{{ trim(($guardian->first_name ?? '') . ' ' . ($guardian->last_name ?? '')) ?: '-' }}</td>
-                                                                <td class="px-4 py-3 text-center text-slate-600">{{ $guardian->guardian_phone_number ?: '-' }}</td>
-                                                                <td class="px-4 py-3 text-center text-slate-600">{{ $guardian->people_count }}</td>
+                                                                <td class="px-4 py-3 text-center text-slate-600">{{ $guardian['national_code'] ?: '-' }}</td>
+                                                                <td class="px-4 py-3 text-right text-slate-700">{{ trim(($guardian['first_name'] ?? '') . ' ' . ($guardian['last_name'] ?? '')) ?: '-' }}</td>
+                                                                <td class="px-4 py-3 text-center text-slate-600">{{ $guardian['guardian_phone_number'] ?: '-' }}</td>
+                                                                <td class="px-4 py-3 text-center text-slate-600">{{ $guardian['people_count'] }}</td>
                                                             </tr>
                                                         @empty
                                                             <tr>

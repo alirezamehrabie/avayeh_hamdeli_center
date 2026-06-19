@@ -22,22 +22,26 @@ class IndexSocialWorkers extends Component
     public ?int $expandedSocialWorkerId = null;
     public array $coveredDetailsByWorker = [];
     public array $coveredCountsByWorker = [];
+    public array $guardiansByWorker = [];
 
     public function updatingSearch(): void
     {
         $this->expandedSocialWorkerId = null;
+        $this->guardiansByWorker = [];
         $this->resetPage();
     }
 
     public function updatingSearchField(): void
     {
         $this->expandedSocialWorkerId = null;
+        $this->guardiansByWorker = [];
         $this->resetPage();
     }
 
     public function updatingPaginators(): void
     {
         $this->expandedSocialWorkerId = null;
+        $this->guardiansByWorker = [];
     }
 
     public function createSocialWorker(): void
@@ -54,6 +58,7 @@ class IndexSocialWorkers extends Component
     {
         $socialWorker->deactivate();
         $this->expandedSocialWorkerId = null;
+        $this->guardiansByWorker = [];
         $this->resetPage();
 
         session()->flash('success', 'مددکار با موفقیت حذف شد.');
@@ -67,9 +72,34 @@ class IndexSocialWorkers extends Component
         }
 
         $this->expandedSocialWorkerId = $socialWorkerId;
+        $socialWorker = SocialWorker::find($socialWorkerId);
+
+        if (!array_key_exists($socialWorkerId, $this->guardiansByWorker)) {
+            $this->guardiansByWorker[$socialWorkerId] = $socialWorker
+                ?->guardians()
+                ->select([
+                    'id',
+                    'social_worker_id',
+                    'national_code',
+                    'first_name',
+                    'last_name',
+                    'guardian_phone_number',
+                ])
+                ->withCount('people')
+                ->orderBy('id')
+                ->get()
+                ->map(fn ($guardian) => [
+                    'id' => $guardian->id,
+                    'national_code' => $guardian->national_code,
+                    'first_name' => $guardian->first_name,
+                    'last_name' => $guardian->last_name,
+                    'guardian_phone_number' => $guardian->guardian_phone_number,
+                    'people_count' => $guardian->people_count,
+                ])
+                ->all() ?? [];
+        }
 
         if (!array_key_exists($socialWorkerId, $this->coveredDetailsByWorker)) {
-            $socialWorker = SocialWorker::find($socialWorkerId);
             $this->coveredDetailsByWorker[$socialWorkerId] = $socialWorker
                 ? $socialWorker->getCoveredPeopleDetails()
                 : [];
@@ -82,19 +112,8 @@ class IndexSocialWorkers extends Component
 
     public function getSocialWorkersProperty(): LengthAwarePaginator
     {
-        $query = SocialWorker::with([
-            'guardians' => fn ($guardianQuery) => $guardianQuery
-                ->select([
-                    'id',
-                    'social_worker_id',
-                    'national_code',
-                    'first_name',
-                    'last_name',
-                    'guardian_phone_number',
-                ])
-                ->withCount('people')
-                ->orderBy('id'),
-        ])->orderBy('created_at', 'desc');
+        $query = SocialWorker::query()
+            ->orderBy('created_at', 'desc');
 
         if (trim($this->search) !== '') {
             $search = trim($this->search);
@@ -126,6 +145,11 @@ class IndexSocialWorkers extends Component
     public function getCoveredDetailsForWorker(int $socialWorkerId): array
     {
         return $this->coveredDetailsByWorker[$socialWorkerId] ?? [];
+    }
+
+    public function getGuardiansForWorker(int $socialWorkerId): array
+    {
+        return $this->guardiansByWorker[$socialWorkerId] ?? [];
     }
 
     public function getCoveredCountForWorker(SocialWorker $socialWorker): int
