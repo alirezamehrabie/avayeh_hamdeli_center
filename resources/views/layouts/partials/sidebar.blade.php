@@ -61,6 +61,7 @@
         $childSupporterOpen = $dashboardMode ? $isActive(['child-supporter-sponsor-registration', 'child-supporter-sponsor-list']) : false;
         $specialFeaturesOpen = $dashboardMode ? $isActive(['special-features-id-card-scanner']) : false;
         $systemSettingsOpen = $dashboardMode ? $isActive(['system-settings-user-definition', 'system-settings-user-list', 'system-settings-user-account']) : request()->routeIs('admin.user-definition') || request()->routeIs('admin.user-management') || request()->routeIs('admin.user-list') || request()->routeIs('admin.user-account');
+        $dashboardReportsLinkActive = ! $dashboardMode && request()->routeIs('admin.dashboard') && request()->query('section') && in_array(request()->query('section'), ['advanced-reports', 'advanced-operator-report'], true);
         $defaultOpenMenu = '';
 
         if ($peopleOpen) {
@@ -153,7 +154,7 @@
         @can('manage-people')
             <div>
                 <button type="button" @click="openMenu = openMenu === 'people' ? '' : 'people'"
-                        class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800">
+                        class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $peopleOpen ? 'bg-indigo-700' : '' }}">
                     <div class="flex items-center">
                         <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4"
@@ -184,7 +185,7 @@
                     @else
                         @can('people-register')
                             <a href="{{ route('people.fast-create') }}"
-                               class="block px-4 py-2 text-sm text-indigo-200 hover:text-white"><i
+                               class="block px-4 py-2 text-sm {{ request()->routeIs('people.fast-create') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}"><i
                                     class="fa fa-bolt"></i> ثبت سریع فرد</a>
                         @endcan
                         <a href="{{ route('people.index') }}"
@@ -197,7 +198,7 @@
                         @endcan
                         @can('people-register')
                             <a href="{{ route('people.form', ['mode' => 'create']) }}"
-                               class="block px-4 py-2 text-sm text-indigo-200 hover:text-white"><i
+                               class="block px-4 py-2 text-sm {{ request()->routeIs('people.form') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}"><i
                                     class="fa fa-user-plus"></i> ثبت مددجوی جدید (کامل)</a>
                         @endcan
                     @endif
@@ -473,7 +474,7 @@
             </div>
         @else
             <a href="{{ route('admin.dashboard', ['section' => auth()->user()?->can('full-access') ? 'advanced-reports' : 'advanced-operator-report']) }}"
-               class="flex items-center px-4 py-3 rounded-lg transition-colors hover:bg-indigo-800">
+               class="flex items-center px-4 py-3 rounded-lg transition-colors {{ $dashboardReportsLinkActive ? 'bg-indigo-700' : 'hover:bg-indigo-800' }}">
                 <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M9 17v-6m4 6V7m4 10v-4M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
