@@ -3,19 +3,73 @@
         sidebarOpen: window.innerWidth >= 1024,
         toggleSidebar() {
             this.sidebarOpen = !this.sidebarOpen;
+            this.syncSidebarFocus();
         },
         closeSidebarOnMobile() {
-            if (window.innerWidth < 1024) {
+            if (window.innerWidth < 1024 && this.sidebarOpen) {
                 this.sidebarOpen = false;
+                this.restoreSidebarToggleFocus();
             }
         },
         syncSidebar() {
             if (window.innerWidth >= 1024) {
                 this.sidebarOpen = true;
             }
+        },
+        syncSidebarFocus() {
+            if (this.sidebarOpen && window.innerWidth < 1024) {
+                this.$nextTick(() => this.$refs.sidebarPanel?.focus({ preventScroll: true }));
+            } else if (!this.sidebarOpen) {
+                this.restoreSidebarToggleFocus();
+            }
+        },
+        restoreSidebarToggleFocus() {
+            this.$nextTick(() => this.$refs.sidebarToggle?.focus({ preventScroll: true }));
+        },
+        trapSidebarFocus(event) {
+            if (!this.sidebarOpen || window.innerWidth >= 1024) {
+                return;
+            }
+
+            const panel = this.$refs.sidebarPanel;
+
+            if (!panel) {
+                return;
+            }
+
+            const focusable = Array.from(panel.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex=\'-1\'])'))
+                .filter((element) => element.offsetParent !== null);
+
+            if (focusable.length === 0) {
+                event.preventDefault();
+                panel.focus({ preventScroll: true });
+
+                return;
+            }
+
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+
+            if (!panel.contains(document.activeElement)) {
+                event.preventDefault();
+                first.focus({ preventScroll: true });
+
+                return;
+            }
+
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus({ preventScroll: true });
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus({ preventScroll: true });
+            }
         }
     }"
     x-init="syncSidebar(); window.addEventListener('resize', () => syncSidebar())"
+    @open-dashboard-section.window="closeSidebarOnMobile()"
+    @keydown.escape.window="closeSidebarOnMobile()"
+    @keydown.tab.window="trapSidebarFocus($event)"
     class="flex h-full overflow-hidden"
     dir="rtl"
 >
@@ -24,7 +78,7 @@
     <div
         x-show="sidebarOpen"
         x-transition.opacity.duration.300ms
-        @click="sidebarOpen = false"
+        @click="closeSidebarOnMobile()"
         class="fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-sm lg:hidden"
         style="display: none;"
     ></div>
