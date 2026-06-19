@@ -70,11 +70,10 @@
                         </div>
 
                         <div class="hidden lg:block">
-                            <p class="text-sm font-bold text-[#5964AE]">مرکز نیکوکاری آوای همدلی</p>
-                            <h2 class="mt-2 text-3xl font-black text-slate-900">
+                            <h2 class="mt-3 text-3xl font-black text-slate-900">
                                 ورود به سامانه
                             </h2>
-                            <p class="mt-3 text-sm leading-7 text-slate-600">
+                            <p class="mt-2 text-sm leading-7 text-slate-600">
                                 برای ثبت و پیگیری خدمات، اطلاعات حساب خود را وارد کنید.
                             </p>
                         </div>
@@ -83,7 +82,7 @@
                     <form class="space-y-3.5 sm:space-y-5" wire:submit.prevent="login" autocomplete="on" novalidate>
                         <div>
                             <label for="email" class="mb-1.5 block text-sm font-bold text-slate-700 sm:mb-2">
-                                نام کاربری یا ایمیل ثبت‌شده
+                                نام کاربری
                             </label>
                             <div class="relative">
                                 <span class="pointer-events-none absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#4d56a3]">
@@ -104,7 +103,7 @@
                                     wire:loading.attr="disabled"
                                     wire:target="login"
                                     class="block min-h-[48px] w-full rounded-xl border border-slate-300 bg-white px-4 py-3 pl-4 pr-12 text-left text-base text-slate-900 shadow-inner shadow-slate-100 outline-none transition placeholder:text-slate-500 hover:border-slate-400 focus:border-[#1572A1] focus:bg-white focus:ring-4 focus:ring-[#1572A1]/20 disabled:cursor-wait disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-500 sm:min-h-[54px]"
-                                    placeholder="نام کاربری حساب شما"
+                                    placeholder="نام کاربری"
                                     aria-describedby="@error('email') email-error @enderror"
                                     aria-invalid="@error('email') true @else false @enderror"
                                 >
@@ -144,7 +143,7 @@
                                     wire:loading.attr="disabled"
                                     wire:target="login"
                                     class="block min-h-[48px] w-full rounded-xl border border-slate-300 bg-white px-12 py-3 text-left text-base text-slate-900 shadow-inner shadow-slate-100 outline-none transition placeholder:text-slate-500 hover:border-slate-400 focus:border-[#1572A1] focus:bg-white focus:ring-4 focus:ring-[#1572A1]/20 disabled:cursor-wait disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-500 sm:min-h-[54px]"
-                                    placeholder="رمز عبور حساب شما"
+                                    placeholder="رمز عبور"
                                     aria-describedby="@error('password') password-error @enderror password-caps-warning"
                                     aria-invalid="@error('password') true @else false @enderror"
                                 >
@@ -223,9 +222,20 @@
                         </button>
                     </form>
 
-                    <p class="mt-4 text-center text-xs leading-6 text-slate-600 sm:mt-6">
-                        در صورت مشکل در ورود، با مدیر سامانه مرکز تماس بگیرید.
-                    </p>
+                    <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80 px-3 py-3 text-center text-xs leading-6 text-slate-600 sm:mt-6">
+                        <p>در صورت فراموشی رمز یا مشکل در ورود، با پشتیبانی فنی سامانه تماس بگیرید.</p>
+                        @if($supportPhone['href'] && $supportPhone['label'])
+                            <a
+                                href="{{ $supportPhone['href'] }}"
+                                class="mt-2 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#1572A1]/20 bg-white px-3 text-xs font-bold text-[#1572A1] transition hover:border-[#1572A1]/35 hover:bg-[#eef8fd] focus:outline-none focus:ring-4 focus:ring-[#1572A1]/15"
+                            >
+                                <i class="bi bi-telephone" aria-hidden="true"></i>
+                                 پشتیبانی فنی: <span dir="ltr">{{ $supportPhone['label'] }}</span>
+                            </a>
+                        @else
+                            <p class="mt-1 font-semibold text-slate-700">اطلاعات تماس از طریق مدیر داخلی مرکز اعلام می‌شود.</p>
+                        @endif
+                    </div>
                 </div>
             </section>
         </div>

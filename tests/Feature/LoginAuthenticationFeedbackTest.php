@@ -66,4 +66,25 @@ class LoginAuthenticationFeedbackTest extends TestCase
             ->assertHasNoErrors(['auth'])
             ->assertSee('رمز عبور باید حداقل ۶ کاراکتر باشد.');
     }
+
+    public function test_support_phone_link_is_hidden_when_not_configured(): void
+    {
+        config()->set('services.support.phone', null);
+        config()->set('services.support.phone_label', null);
+
+        Livewire::test(Login::class)
+            ->assertSee('اطلاعات تماس از طریق مدیر داخلی مرکز اعلام می‌شود.')
+            ->assertDontSee('tel:', false);
+    }
+
+    public function test_support_phone_link_uses_sanitized_dialable_value(): void
+    {
+        config()->set('services.support.phone', '+98 (21) 1234-5678');
+        config()->set('services.support.phone_label', '۰۲۱-۱۲۳۴۵۶۷۸');
+
+        Livewire::test(Login::class)
+            ->assertSee('تماس با پشتیبانی')
+            ->assertSee('۰۲۱-۱۲۳۴۵۶۷۸')
+            ->assertSee('tel:+982112345678', false);
+    }
 }

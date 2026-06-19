@@ -28,6 +28,11 @@ return [
         'key' => env('RESEND_KEY'),
     ],
 
+    'support' => [
+        'phone' => env('SUPPORT_PHONE'),
+        'phone_label' => env('SUPPORT_PHONE_LABEL', env('SUPPORT_PHONE')),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

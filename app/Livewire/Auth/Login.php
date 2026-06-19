@@ -81,8 +81,33 @@ class Login extends Component
         return Str::lower($this->email).'|'.request()->ip();
     }
 
+    /**
+     * @return array{href: ?string, label: ?string}
+     */
+    private function supportPhone(): array
+    {
+        $phone = trim((string) config('services.support.phone', ''));
+        $label = trim((string) config('services.support.phone_label', $phone));
+
+        if ($phone === '') {
+            return [
+                'href' => null,
+                'label' => null,
+            ];
+        }
+
+        $dialablePhone = preg_replace('/[^\d+]/', '', $phone);
+
+        return [
+            'href' => $dialablePhone !== '' ? 'tel:'.$dialablePhone : null,
+            'label' => $label !== '' ? $label : $phone,
+        ];
+    }
+
     public function render()
     {
-        return view('livewire.auth.login');
+        return view('livewire.auth.login', [
+            'supportPhone' => $this->supportPhone(),
+        ]);
     }
 }
