@@ -361,18 +361,6 @@
                                         <td class="px-5 py-4 text-center font-light text-slate-700">{{ $person->birth_date ?? 'نامشخص' }}</td>
                                         <td class="px-5 py-4 text-center">
                                             <div class="flex items-center justify-center gap-2 whitespace-nowrap">
-                                                <button
-                                                    type="button"
-                                                    wire:click.stop="showRegistrationTracking({{ $person->id }})"
-                                                    wire:loading.attr="disabled"
-                                                    wire:target="showRegistrationTracking({{ $person->id }})"
-                                                    onclick="event.stopPropagation()"
-                                                    class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-100 bg-gradient-to-br from-cyan-50 to-white text-cyan-700 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-cyan-100 disabled:opacity-60"
-                                                    aria-label="رهگیری ثبت"
-                                                >
-                                                    <i class="bi bi-file-earmark-check text-lg"></i>
-                                                </button>
-
                                                 @can('people-edit')
                                                     <button
                                                         wire:click.stop="editPerson({{ $person->id }})"
@@ -407,7 +395,7 @@
 
                                                                 const rect = button.getBoundingClientRect();
                                                                 const menuWidth = 192;
-                                                                const menuHeight = 156;
+                                                                const menuHeight = 208;
                                                                 const gap = 8;
                                                                 const viewportPadding = 8;
 
@@ -495,6 +483,19 @@
                                                                     کارت QR
                                                                 </button>
                                                             @endcan
+
+                                                            <button
+                                                                type="button"
+                                                                wire:click="showRegistrationTracking({{ $person->id }})"
+                                                                wire:loading.attr="disabled"
+                                                                wire:target="showRegistrationTracking({{ $person->id }})"
+                                                                class="flex w-full items-center gap-2 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-cyan-50 hover:text-cyan-700 focus:bg-cyan-50 focus:outline-none disabled:opacity-60"
+                                                                role="menuitem"
+                                                                @click="close()"
+                                                            >
+                                                                <i class="bi bi-file-earmark-check text-cyan-600"></i>
+                                                                رهگیری ثبت
+                                                            </button>
 
                                                             @can('people-delete')
                                                                 <button
