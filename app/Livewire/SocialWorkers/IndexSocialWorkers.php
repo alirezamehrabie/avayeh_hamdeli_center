@@ -24,12 +24,16 @@ class IndexSocialWorkers extends Component
     public array $coveredDetailsByWorker = [];
     public array $coveredCountsByWorker = [];
     public array $guardiansByWorker = [];
+    public array $visibleGuardianLimitsByWorker = [];
+    public array $visibleCoveredDetailLimitsByWorker = [];
 
     public function updatingSearch(): void
     {
         $this->expandedSocialWorkerId = null;
         $this->guardiansByWorker = [];
         $this->coveredDetailsByWorker = [];
+        $this->visibleGuardianLimitsByWorker = [];
+        $this->visibleCoveredDetailLimitsByWorker = [];
         $this->resetPage();
     }
 
@@ -38,6 +42,8 @@ class IndexSocialWorkers extends Component
         $this->expandedSocialWorkerId = null;
         $this->guardiansByWorker = [];
         $this->coveredDetailsByWorker = [];
+        $this->visibleGuardianLimitsByWorker = [];
+        $this->visibleCoveredDetailLimitsByWorker = [];
         $this->resetPage();
     }
 
@@ -46,6 +52,8 @@ class IndexSocialWorkers extends Component
         $this->expandedSocialWorkerId = null;
         $this->guardiansByWorker = [];
         $this->coveredDetailsByWorker = [];
+        $this->visibleGuardianLimitsByWorker = [];
+        $this->visibleCoveredDetailLimitsByWorker = [];
     }
 
     public function createSocialWorker(): void
@@ -64,6 +72,8 @@ class IndexSocialWorkers extends Component
         $this->expandedSocialWorkerId = null;
         $this->guardiansByWorker = [];
         $this->coveredDetailsByWorker = [];
+        $this->visibleGuardianLimitsByWorker = [];
+        $this->visibleCoveredDetailLimitsByWorker = [];
         $this->resetPage();
 
         session()->flash('success', 'مددکار با موفقیت حذف شد.');
@@ -77,6 +87,8 @@ class IndexSocialWorkers extends Component
         }
 
         $this->expandedSocialWorkerId = $socialWorkerId;
+        $this->visibleGuardianLimitsByWorker[$socialWorkerId] ??= 10;
+        $this->visibleCoveredDetailLimitsByWorker[$socialWorkerId] ??= 20;
         $socialWorker = SocialWorker::find($socialWorkerId);
 
         if (!array_key_exists($socialWorkerId, $this->guardiansByWorker)) {
@@ -186,6 +198,25 @@ class IndexSocialWorkers extends Component
         return $this->coveredDetailsByWorker[$socialWorkerId] ?? [];
     }
 
+    public function getVisibleCoveredDetailsForWorker(int $socialWorkerId): array
+    {
+        return array_slice(
+            $this->getCoveredDetailsForWorker($socialWorkerId),
+            0,
+            $this->getVisibleCoveredDetailLimitForWorker($socialWorkerId)
+        );
+    }
+
+    public function getVisibleCoveredDetailLimitForWorker(int $socialWorkerId): int
+    {
+        return $this->visibleCoveredDetailLimitsByWorker[$socialWorkerId] ?? 20;
+    }
+
+    public function showMoreCoveredDetails(int $socialWorkerId): void
+    {
+        $this->visibleCoveredDetailLimitsByWorker[$socialWorkerId] = $this->getVisibleCoveredDetailLimitForWorker($socialWorkerId) + 20;
+    }
+
     public function loadCoveredDetailsForWorker(int $socialWorkerId): void
     {
         if (array_key_exists($socialWorkerId, $this->coveredDetailsByWorker)) {
@@ -208,6 +239,25 @@ class IndexSocialWorkers extends Component
     public function getGuardiansForWorker(int $socialWorkerId): array
     {
         return $this->guardiansByWorker[$socialWorkerId] ?? [];
+    }
+
+    public function getVisibleGuardiansForWorker(int $socialWorkerId): array
+    {
+        return array_slice(
+            $this->getGuardiansForWorker($socialWorkerId),
+            0,
+            $this->getVisibleGuardianLimitForWorker($socialWorkerId)
+        );
+    }
+
+    public function getVisibleGuardianLimitForWorker(int $socialWorkerId): int
+    {
+        return $this->visibleGuardianLimitsByWorker[$socialWorkerId] ?? 10;
+    }
+
+    public function showMoreGuardians(int $socialWorkerId): void
+    {
+        $this->visibleGuardianLimitsByWorker[$socialWorkerId] = $this->getVisibleGuardianLimitForWorker($socialWorkerId) + 10;
     }
 
     public function getCoveredCountForWorker(SocialWorker $socialWorker): int

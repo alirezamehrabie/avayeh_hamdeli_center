@@ -139,8 +139,12 @@
                         @if($expandedSocialWorkerId === $worker->id)
                             @php
                                 $guardians = $this->getGuardiansForWorker($worker->id);
+                                $visibleGuardians = $this->getVisibleGuardiansForWorker($worker->id);
+                                $guardianLimit = $this->getVisibleGuardianLimitForWorker($worker->id);
                                 $coveredDetailsLoaded = $this->hasLoadedCoveredDetailsForWorker($worker->id);
                                 $coveredDetails = $this->getCoveredDetailsForWorker($worker->id);
+                                $visibleCoveredDetails = $this->getVisibleCoveredDetailsForWorker($worker->id);
+                                $coveredDetailLimit = $this->getVisibleCoveredDetailLimitForWorker($worker->id);
                             @endphp
                             <div class="space-y-4 border-t border-cyan-100 bg-cyan-50/30 p-3" wire:init="loadCoveredDetailsForWorker({{ $worker->id }})">
                                 <section class="rounded-2xl border border-cyan-100 bg-white p-3">
@@ -149,7 +153,7 @@
                                         <span class="rounded-full bg-cyan-100 px-2.5 py-1 text-[10px] font-bold text-cyan-700">{{ count($guardians) }} سرپرست</span>
                                     </div>
                                     <div class="space-y-2">
-                                        @forelse($guardians as $guardian)
+                                        @forelse($visibleGuardians as $guardian)
                                             <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
                                                 <div class="flex items-start justify-between gap-3">
                                                     <p class="min-w-0 truncate text-xs font-extrabold text-slate-800">{{ trim(($guardian['first_name'] ?? '') . ' ' . ($guardian['last_name'] ?? '')) ?: '-' }}</p>
@@ -163,6 +167,11 @@
                                         @empty
                                             <p class="rounded-xl bg-slate-50 px-3 py-4 text-center text-xs font-bold text-slate-500">سرپرستی برای این مددکار ثبت نشده است.</p>
                                         @endforelse
+                                        @if(count($guardians) > $guardianLimit)
+                                            <button type="button" wire:click="showMoreGuardians({{ $worker->id }})" class="w-full rounded-xl border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs font-bold text-cyan-700 transition hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-100">
+                                                نمایش سرپرستان بیشتر ({{ count($guardians) - $guardianLimit }})
+                                            </button>
+                                        @endif
                                     </div>
                                 </section>
 
@@ -176,9 +185,9 @@
                                         <p class="rounded-xl bg-slate-50 px-3 py-4 text-center text-xs font-bold text-slate-500">در حال بارگذاری جزئیات...</p>
                                     @else
                                         <div class="space-y-2">
-                                            @forelse($coveredDetails as $detail)
+                                            @forelse($visibleCoveredDetails as $detail)
                                                 @php
-                                                    $details = $coveredDetails;
+                                                    $details = $visibleCoveredDetails;
                                                     $currentGuardianGroup = $detail['guardian_group'] ?? '-';
                                                     $previousGuardianGroup = $loop->index > 0 ? ($details[$loop->index - 1]['guardian_group'] ?? '-') : null;
                                                     $isNewSourceGroup = $loop->first || $currentGuardianGroup !== $previousGuardianGroup;
@@ -197,6 +206,11 @@
                                             @empty
                                                 <p class="rounded-xl bg-slate-50 px-3 py-4 text-center text-xs font-bold text-slate-500">موردی برای نمایش ثبت نشده است.</p>
                                             @endforelse
+                                            @if(count($coveredDetails) > $coveredDetailLimit)
+                                                <button type="button" wire:click="showMoreCoveredDetails({{ $worker->id }})" class="w-full rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-100">
+                                                    نمایش جزئیات بیشتر ({{ count($coveredDetails) - $coveredDetailLimit }})
+                                                </button>
+                                            @endif
                                         </div>
                                     @endif
                                 </section>
@@ -264,8 +278,12 @@
                             @if($expandedSocialWorkerId === $worker->id)
                                 @php
                                     $guardians = $this->getGuardiansForWorker($worker->id);
+                                    $visibleGuardians = $this->getVisibleGuardiansForWorker($worker->id);
+                                    $guardianLimit = $this->getVisibleGuardianLimitForWorker($worker->id);
                                     $coveredDetailsLoaded = $this->hasLoadedCoveredDetailsForWorker($worker->id);
                                     $coveredDetails = $this->getCoveredDetailsForWorker($worker->id);
+                                    $visibleCoveredDetails = $this->getVisibleCoveredDetailsForWorker($worker->id);
+                                    $coveredDetailLimit = $this->getVisibleCoveredDetailLimitForWorker($worker->id);
                                 @endphp
                                 <tr class="bg-cyan-50/40" wire:key="social-worker-panel-{{ $worker->id }}">
                                     <td colspan="6" class="px-5 py-4">
@@ -298,7 +316,7 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody class="divide-y divide-slate-100">
-                                                        @forelse ($guardians as $guardian)
+                                                        @forelse ($visibleGuardians as $guardian)
                                                             <tr class="transition hover:bg-slate-50">
                                                                 <td class="px-4 py-3 text-center font-medium text-slate-700">{{ $loop->iteration }}</td>
                                                                 <td class="px-4 py-3 text-center text-slate-600">{{ $guardian['national_code'] ?: '-' }}</td>
@@ -311,6 +329,15 @@
                                                                 <td colspan="5" class="px-4 py-6 text-center text-slate-500">سرپرستی برای این مددکار ثبت نشده است.</td>
                                                             </tr>
                                                         @endforelse
+                                                        @if(count($guardians) > $guardianLimit)
+                                                            <tr>
+                                                                <td colspan="5" class="px-4 py-3 text-center">
+                                                                    <button type="button" wire:click="showMoreGuardians({{ $worker->id }})" class="inline-flex items-center justify-center rounded-lg border border-cyan-100 bg-cyan-50 px-4 py-2 text-xs font-bold text-cyan-700 transition hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-100">
+                                                                        نمایش سرپرستان بیشتر ({{ count($guardians) - $guardianLimit }})
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        @endif
                                                     </tbody>
                                                 </table>
                                             </div>
@@ -341,9 +368,9 @@
                                                                 </td>
                                                             </tr>
                                                         @else
-                                                        @forelse ($coveredDetails as $detail)
+                                                        @forelse ($visibleCoveredDetails as $detail)
                                                             @php
-                                                                $details = $coveredDetails;
+                                                                $details = $visibleCoveredDetails;
                                                                 $currentGuardianGroup = $detail['guardian_group'] ?? '-';
                                                                 $previousGuardianGroup = $loop->index > 0 ? ($details[$loop->index - 1]['guardian_group'] ?? '-') : null;
                                                                 $isNewSourceGroup = $loop->first || $currentGuardianGroup !== $previousGuardianGroup;
@@ -373,6 +400,15 @@
                                                                 </td>
                                                             </tr>
                                                         @endforelse
+                                                        @if(count($coveredDetails) > $coveredDetailLimit)
+                                                            <tr>
+                                                                <td colspan="5" class="px-4 py-3 text-center">
+                                                                    <button type="button" wire:click="showMoreCoveredDetails({{ $worker->id }})" class="inline-flex items-center justify-center rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-100">
+                                                                        نمایش جزئیات بیشتر ({{ count($coveredDetails) - $coveredDetailLimit }})
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        @endif
                                                         @endif
                                                     </tbody>
                                                 </table>
