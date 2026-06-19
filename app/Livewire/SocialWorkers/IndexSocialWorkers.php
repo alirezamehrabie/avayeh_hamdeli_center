@@ -21,39 +21,31 @@ class IndexSocialWorkers extends Component
     public string $searchField = 'all';
     public bool $embedded = false;
     public ?int $expandedSocialWorkerId = null;
-    public array $coveredDetailsByWorker = [];
     public array $coveredCountsByWorker = [];
-    public array $guardiansByWorker = [];
-    public array $visibleGuardianLimitsByWorker = [];
-    public array $visibleCoveredDetailLimitsByWorker = [];
+    public ?int $cachedDetailsWorkerId = null;
+    public array $coveredDetailsForExpandedWorker = [];
+    public array $guardiansForExpandedWorker = [];
+    public int $visibleGuardianLimit = 10;
+    public int $visibleCoveredDetailLimit = 20;
 
     public function updatingSearch(): void
     {
         $this->expandedSocialWorkerId = null;
-        $this->guardiansByWorker = [];
-        $this->coveredDetailsByWorker = [];
-        $this->visibleGuardianLimitsByWorker = [];
-        $this->visibleCoveredDetailLimitsByWorker = [];
+        $this->clearExpandedWorkerCache();
         $this->resetPage();
     }
 
     public function updatingSearchField(): void
     {
         $this->expandedSocialWorkerId = null;
-        $this->guardiansByWorker = [];
-        $this->coveredDetailsByWorker = [];
-        $this->visibleGuardianLimitsByWorker = [];
-        $this->visibleCoveredDetailLimitsByWorker = [];
+        $this->clearExpandedWorkerCache();
         $this->resetPage();
     }
 
     public function updatingPaginators(): void
     {
         $this->expandedSocialWorkerId = null;
-        $this->guardiansByWorker = [];
-        $this->coveredDetailsByWorker = [];
-        $this->visibleGuardianLimitsByWorker = [];
-        $this->visibleCoveredDetailLimitsByWorker = [];
+        $this->clearExpandedWorkerCache();
     }
 
     public function createSocialWorker(): void
@@ -70,10 +62,7 @@ class IndexSocialWorkers extends Component
     {
         $socialWorker->deactivate();
         $this->expandedSocialWorkerId = null;
-        $this->guardiansByWorker = [];
-        $this->coveredDetailsByWorker = [];
-        $this->visibleGuardianLimitsByWorker = [];
-        $this->visibleCoveredDetailLimitsByWorker = [];
+        $this->clearExpandedWorkerCache();
         $this->resetPage();
 
         session()->flash('success', 'مددکار با موفقیت حذف شد.');
@@ -83,16 +72,16 @@ class IndexSocialWorkers extends Component
     {
         if ($this->expandedSocialWorkerId === $socialWorkerId) {
             $this->expandedSocialWorkerId = null;
+            $this->clearExpandedWorkerCache();
             return;
         }
 
         $this->expandedSocialWorkerId = $socialWorkerId;
-        $this->visibleGuardianLimitsByWorker[$socialWorkerId] ??= 10;
-        $this->visibleCoveredDetailLimitsByWorker[$socialWorkerId] ??= 20;
+        $this->clearExpandedWorkerCache();
         $socialWorker = SocialWorker::find($socialWorkerId);
 
-        if (!array_key_exists($socialWorkerId, $this->guardiansByWorker)) {
-            $this->guardiansByWorker[$socialWorkerId] = $socialWorker
+        if ($socialWorker) {
+            $this->guardiansForExpandedWorker = $socialWorker
                 ?->guardians()
                 ->select([
                     'id',
@@ -195,7 +184,9 @@ class IndexSocialWorkers extends Component
 
     public function getCoveredDetailsForWorker(int $socialWorkerId): array
     {
-        return $this->coveredDetailsByWorker[$socialWorkerId] ?? [];
+        return $this->cachedDetailsWorkerId === $socialWorkerId
+            ? $this->coveredDetailsForExpandedWorker
+            : [];
     }
 
     public function getVisibleCoveredDetailsForWorker(int $socialWorkerId): array
@@ -209,36 +200,43 @@ class IndexSocialWorkers extends Component
 
     public function getVisibleCoveredDetailLimitForWorker(int $socialWorkerId): int
     {
-        return $this->visibleCoveredDetailLimitsByWorker[$socialWorkerId] ?? 20;
+        return $this->visibleCoveredDetailLimit;
     }
 
     public function showMoreCoveredDetails(int $socialWorkerId): void
     {
-        $this->visibleCoveredDetailLimitsByWorker[$socialWorkerId] = $this->getVisibleCoveredDetailLimitForWorker($socialWorkerId) + 20;
+        if ($this->expandedSocialWorkerId !== $socialWorkerId) {
+            return;
+        }
+
+        $this->visibleCoveredDetailLimit += 20;
     }
 
     public function loadCoveredDetailsForWorker(int $socialWorkerId): void
     {
-        if (array_key_exists($socialWorkerId, $this->coveredDetailsByWorker)) {
+        if ($this->cachedDetailsWorkerId === $socialWorkerId) {
             return;
         }
 
         $socialWorker = SocialWorker::find($socialWorkerId);
-        $this->coveredDetailsByWorker[$socialWorkerId] = $socialWorker
+        $this->coveredDetailsForExpandedWorker = $socialWorker
             ? $socialWorker->getCoveredPeopleDetails()
             : [];
+        $this->cachedDetailsWorkerId = $socialWorkerId;
 
-        $this->coveredCountsByWorker[$socialWorkerId] = count($this->coveredDetailsByWorker[$socialWorkerId]);
+        $this->coveredCountsByWorker[$socialWorkerId] = count($this->coveredDetailsForExpandedWorker);
     }
 
     public function hasLoadedCoveredDetailsForWorker(int $socialWorkerId): bool
     {
-        return array_key_exists($socialWorkerId, $this->coveredDetailsByWorker);
+        return $this->cachedDetailsWorkerId === $socialWorkerId;
     }
 
     public function getGuardiansForWorker(int $socialWorkerId): array
     {
-        return $this->guardiansByWorker[$socialWorkerId] ?? [];
+        return $this->expandedSocialWorkerId === $socialWorkerId
+            ? $this->guardiansForExpandedWorker
+            : [];
     }
 
     public function getVisibleGuardiansForWorker(int $socialWorkerId): array
@@ -252,12 +250,25 @@ class IndexSocialWorkers extends Component
 
     public function getVisibleGuardianLimitForWorker(int $socialWorkerId): int
     {
-        return $this->visibleGuardianLimitsByWorker[$socialWorkerId] ?? 10;
+        return $this->visibleGuardianLimit;
     }
 
     public function showMoreGuardians(int $socialWorkerId): void
     {
-        $this->visibleGuardianLimitsByWorker[$socialWorkerId] = $this->getVisibleGuardianLimitForWorker($socialWorkerId) + 10;
+        if ($this->expandedSocialWorkerId !== $socialWorkerId) {
+            return;
+        }
+
+        $this->visibleGuardianLimit += 10;
+    }
+
+    private function clearExpandedWorkerCache(): void
+    {
+        $this->cachedDetailsWorkerId = null;
+        $this->coveredDetailsForExpandedWorker = [];
+        $this->guardiansForExpandedWorker = [];
+        $this->visibleGuardianLimit = 10;
+        $this->visibleCoveredDetailLimit = 20;
     }
 
     public function getCoveredCountForWorker(SocialWorker $socialWorker): int

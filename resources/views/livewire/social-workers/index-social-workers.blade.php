@@ -5,8 +5,8 @@
         $searchNeedsMoreInput = $this->searchNeedsMoreInput();
     @endphp
 
-    <div class="container mx-auto p-4">
-        <div class="rounded-2xl border bg-gradient-to-br from-white to-cyan-50/30 p-5 shadow-sm" style="border-color: #bfe9f8;">
+    <div class="container mx-auto p-0">
+        <div class="rounded-2xl border bg-gradient-to-br from-white to-cyan-50/30 p-4 shadow-sm" style="border-color: #bfe9f8;">
             <div class="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 class="text-2xl font-bold text-slate-800">لیست مددکاران اجتماعی</h1>
@@ -388,7 +388,7 @@
                                                         @if(! $coveredDetailsLoaded)
                                                             <tr>
                                                                 <td colspan="5" class="px-4 py-6 text-center text-slate-500">
-                                                                    Ø¯Ø± Ø­Ø§Ù„ Ø¨Ø§Ø±Ú¯Ø°Ø§Ø±ÛŒ Ø¬Ø²Ø¦ÛŒØ§Øª...
+                                                                    در حال بارگذاری جزئیات...
                                                                 </td>
                                                             </tr>
                                                         @else
