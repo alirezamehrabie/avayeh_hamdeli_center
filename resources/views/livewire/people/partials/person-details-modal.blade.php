@@ -178,19 +178,53 @@
             closing: false,
             scrollLockStyles: null,
             allowBackdropClose: false,
+            enableHistoryClose: false,
+            historyStatePushed: false,
+            closingFromPopstate: false,
+            popstateHandler: null,
             init() {
                 this.previousActiveElement = document.activeElement instanceof HTMLElement
                     ? document.activeElement
                     : null;
                 this.allowBackdropClose = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+                this.enableHistoryClose = window.matchMedia('(max-width: 767px), (pointer: coarse)').matches;
                 this.lockScroll();
+                this.setupHistoryClose();
 
                 this.$nextTick(() => {
                     (this.$refs.closeButton || this.$refs.dialog)?.focus({ preventScroll: true });
                 });
             },
             destroy() {
+                this.teardownHistoryClose();
                 this.unlockScroll();
+            },
+            setupHistoryClose() {
+                if (! this.enableHistoryClose || ! window.history?.pushState) return;
+
+                window.history.pushState({ ...(window.history.state || {}), personDetailsModal: true }, '', window.location.href);
+                this.historyStatePushed = true;
+
+                this.popstateHandler = () => {
+                    if (! this.historyStatePushed || this.closing) return;
+
+                    if (this.viewerOpen) {
+                        this.closeViewer();
+                        window.history.pushState({ ...(window.history.state || {}), personDetailsModal: true }, '', window.location.href);
+                        return;
+                    }
+
+                    this.closingFromPopstate = true;
+                    this.close(true);
+                };
+
+                window.addEventListener('popstate', this.popstateHandler);
+            },
+            teardownHistoryClose() {
+                if (! this.popstateHandler) return;
+
+                window.removeEventListener('popstate', this.popstateHandler);
+                this.popstateHandler = null;
             },
             lockScroll() {
                 if (this.scrollLockStyles) return;
@@ -317,10 +351,21 @@
 
                 this.close();
             },
-            close() {
+            close(skipHistoryBack = false) {
                 if (this.closing) return;
 
+                if (this.historyStatePushed && ! this.closingFromPopstate && ! skipHistoryBack) {
+                    try {
+                        window.history.replaceState({ ...(window.history.state || {}), personDetailsModal: false }, '', window.location.href);
+                    } catch (error) {
+                        // The modal must still close even if history state cannot be adjusted.
+                    }
+
+                    this.historyStatePushed = false;
+                }
+
                 this.closing = true;
+                this.historyStatePushed = false;
                 this.closeViewer();
                 this.open = false;
                 setTimeout(() => {
