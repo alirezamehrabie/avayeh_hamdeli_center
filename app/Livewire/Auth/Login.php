@@ -23,6 +23,12 @@ class Login extends Component
         'password' => 'required|min:6',
     ];
 
+    protected $messages = [
+        'email.required' => 'نام کاربری یا ایمیل را وارد کنید.',
+        'password.required' => 'رمز عبور را وارد کنید.',
+        'password.min' => 'رمز عبور باید حداقل ۶ کاراکتر باشد.',
+    ];
+
     public function login()
     {
         $loginInput = Str::lower(trim((string) $this->email));

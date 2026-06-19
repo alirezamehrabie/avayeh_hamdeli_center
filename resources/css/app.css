@@ -107,6 +107,10 @@ body {
     scrollbar-gutter: stable;
 }
 
+[x-cloak] {
+    display: none !important;
+}
+
 .qr-scanner-reader,
 .qr-scanner-reader > div,
 .qr-scanner-reader [id$="__dashboard"],

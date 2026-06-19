@@ -51,6 +51,19 @@ class LoginAuthenticationFeedbackTest extends TestCase
         Livewire::test(Login::class)
             ->call('login')
             ->assertHasErrors(['email', 'password'])
-            ->assertHasNoErrors(['auth']);
+            ->assertHasNoErrors(['auth'])
+            ->assertSee('نام کاربری یا ایمیل را وارد کنید.')
+            ->assertSee('رمز عبور را وارد کنید.');
+    }
+
+    public function test_short_password_shows_clear_field_level_validation_error(): void
+    {
+        Livewire::test(Login::class)
+            ->set('email', 'operator@example.test')
+            ->set('password', '12345')
+            ->call('login')
+            ->assertHasErrors(['password'])
+            ->assertHasNoErrors(['auth'])
+            ->assertSee('رمز عبور باید حداقل ۶ کاراکتر باشد.');
     }
 }

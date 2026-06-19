@@ -91,7 +91,7 @@
                                     <i class="bi bi-person text-lg" aria-hidden="true"></i>
                                 </span>
                                 <input
-                                    wire:model.defer="email"
+                                    wire:model.live.debounce.500ms="email"
                                     id="email"
                                     type="text"
                                     required
@@ -105,6 +105,7 @@
                                     class="block min-h-[48px] w-full rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 pl-4 pr-12 text-left text-base text-slate-900 shadow-inner shadow-slate-100 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#36A9DF] focus:bg-white focus:ring-4 focus:ring-[#36A9DF]/15 disabled:cursor-wait disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-500 sm:min-h-[54px]"
                                     placeholder="شناسه همکار یا ایمیل شما"
                                     aria-describedby="@error('email') email-error @enderror"
+                                    aria-invalid="@error('email') true @else false @enderror"
                                 >
                             </div>
                             @error('email')
@@ -115,7 +116,7 @@
                             @enderror
                         </div>
 
-                        <div x-data="{ showPassword: false }">
+                        <div x-data="{ showPassword: false, capsLockOn: false }">
                             <label for="password" class="mb-1.5 block text-sm font-bold text-slate-700 sm:mb-2">
                                 رمز عبور
                             </label>
@@ -124,9 +125,12 @@
                                     <i class="bi bi-lock text-lg" aria-hidden="true"></i>
                                 </span>
                                 <input
-                                    wire:model.defer="password"
+                                    wire:model.live.debounce.500ms="password"
                                     id="password"
                                     x-bind:type="showPassword ? 'text' : 'password'"
+                                    x-on:keydown="capsLockOn = $event.getModifierState && $event.getModifierState('CapsLock')"
+                                    x-on:keyup="capsLockOn = $event.getModifierState && $event.getModifierState('CapsLock')"
+                                    x-on:blur="capsLockOn = false"
                                     required
                                     minlength="6"
                                     maxlength="128"
@@ -136,7 +140,8 @@
                                     wire:target="login"
                                     class="block min-h-[48px] w-full rounded-xl border border-slate-200 bg-slate-50/80 px-12 py-3 text-left text-base text-slate-900 shadow-inner shadow-slate-100 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#36A9DF] focus:bg-white focus:ring-4 focus:ring-[#36A9DF]/15 disabled:cursor-wait disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-500 sm:min-h-[54px]"
                                     placeholder="رمز عبور حساب شما"
-                                    aria-describedby="@error('password') password-error @enderror"
+                                    aria-describedby="@error('password') password-error @enderror password-caps-warning"
+                                    aria-invalid="@error('password') true @else false @enderror"
                                 >
                                 <button
                                     type="button"
@@ -145,10 +150,21 @@
                                     class="absolute inset-y-1 left-1 flex w-10 items-center justify-center rounded-lg text-slate-500 transition hover:bg-white hover:text-[#5964AE] focus:outline-none focus:ring-2 focus:ring-[#36A9DF]/30 disabled:cursor-wait disabled:opacity-50"
                                     x-on:click="showPassword = !showPassword"
                                     x-bind:aria-label="showPassword ? 'پنهان کردن رمز عبور' : 'نمایش رمز عبور'"
+                                    x-bind:aria-pressed="showPassword.toString()"
                                 >
                                     <i class="bi text-lg" x-bind:class="showPassword ? 'bi-eye-slash' : 'bi-eye'" aria-hidden="true"></i>
                                 </button>
                             </div>
+                            <p
+                                id="password-caps-warning"
+                                x-cloak
+                                x-show="capsLockOn"
+                                class="mt-2 flex items-center gap-1.5 text-xs font-semibold text-amber-700"
+                                role="status"
+                            >
+                                <i class="bi bi-shift" aria-hidden="true"></i>
+                                کلید Caps Lock روشن است.
+                            </p>
                             @error('password')
                                 <span id="password-error" class="mt-2 flex items-center gap-1.5 text-xs font-medium text-red-600" role="alert" aria-live="assertive">
                                     <i class="bi bi-exclamation-circle" aria-hidden="true"></i>
