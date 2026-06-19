@@ -5,13 +5,17 @@ namespace App\Livewire\SocialWorkers;
 use AllowDynamicProperties;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 use App\Models\SocialWorker;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 #[AllowDynamicProperties]
 #[Layout('layouts.app')]
 class IndexSocialWorkers extends Component
 {
+    use WithPagination;
+
     public string $search = '';
     public string $searchField = 'all';
     public bool $embedded = false;
@@ -22,9 +26,16 @@ class IndexSocialWorkers extends Component
     public function updatingSearch(): void
     {
         $this->expandedSocialWorkerId = null;
+        $this->resetPage();
     }
 
     public function updatingSearchField(): void
+    {
+        $this->expandedSocialWorkerId = null;
+        $this->resetPage();
+    }
+
+    public function updatingPaginators(): void
     {
         $this->expandedSocialWorkerId = null;
     }
@@ -42,6 +53,8 @@ class IndexSocialWorkers extends Component
     public function deleteSocialWorker(SocialWorker $socialWorker): void
     {
         $socialWorker->deactivate();
+        $this->expandedSocialWorkerId = null;
+        $this->resetPage();
 
         session()->flash('success', 'مددکار با موفقیت حذف شد.');
     }
@@ -67,7 +80,7 @@ class IndexSocialWorkers extends Component
         }
     }
 
-    public function getSocialWorkersProperty()
+    public function getSocialWorkersProperty(): LengthAwarePaginator
     {
         $query = SocialWorker::with([
             'guardians' => fn ($guardianQuery) => $guardianQuery
@@ -107,7 +120,7 @@ class IndexSocialWorkers extends Component
             };
         }
 
-        return $query->get();
+        return $query->paginate(20);
     }
 
     public function getCoveredDetailsForWorker(int $socialWorkerId): array

@@ -1,5 +1,8 @@
 <div>
     {{-- resources/views/livewire/social-workers/index-social-workers.blade.php --}}
+    @php
+        $socialWorkers = $this->socialWorkers;
+    @endphp
 
     <div class="container mx-auto p-4">
         <div class="rounded-2xl border bg-gradient-to-br from-white to-cyan-50/30 p-5 shadow-sm" style="border-color: #bfe9f8;">
@@ -91,7 +94,7 @@
                         </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                        @forelse ($this->socialWorkers as $worker)
+                        @forelse ($socialWorkers as $worker)
                             <tr
                                 wire:key="social-worker-{{ $worker->id }}"
                                 wire:click="toggleSocialWorker({{ $worker->id }})"
@@ -246,6 +249,10 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            <div class="mt-3">
+                {{ $socialWorkers->links('vendor.livewire.tailwind-mobile-persian') }}
             </div>
         </div>
     </div>
