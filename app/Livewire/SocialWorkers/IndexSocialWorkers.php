@@ -73,7 +73,7 @@ class IndexSocialWorkers extends Component
         $this->clearExpandedWorkerCache();
         $this->resetPage();
 
-        session()->flash('success', 'مددکار با موفقیت حذف شد.');
+        session()->flash('success', 'مددکار با موفقیت غیرفعال شد.');
     }
 
     public function toggleSocialWorker(int $socialWorkerId): void

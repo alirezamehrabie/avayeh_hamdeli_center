@@ -164,8 +164,8 @@
                                         ویرایش
                                     </a>
                                 @endif
-                                <button type="button" wire:click.stop="deleteSocialWorker({{ $worker->id }})" wire:confirm="آیا از حذف این مددکار مطمئن هستید؟" wire:loading.attr="disabled" wire:target="deleteSocialWorker({{ $worker->id }})" class="inline-flex min-h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-2 text-xs font-bold text-rose-600 transition hover:border-rose-200 hover:bg-rose-50 focus:outline-none focus:ring-2 focus:ring-rose-100 disabled:cursor-wait disabled:opacity-60">
-                                    <span wire:loading.remove wire:target="deleteSocialWorker({{ $worker->id }})">حذف</span>
+                                <button type="button" wire:click.stop="deleteSocialWorker({{ $worker->id }})" wire:confirm="آیا از غیرفعال‌سازی این مددکار مطمئن هستید؟" wire:loading.attr="disabled" wire:target="deleteSocialWorker({{ $worker->id }})" class="inline-flex min-h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-bold text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-100 disabled:cursor-wait disabled:opacity-60">
+                                    <span wire:loading.remove wire:target="deleteSocialWorker({{ $worker->id }})">غیرفعال</span>
                                     <span wire:loading wire:target="deleteSocialWorker({{ $worker->id }})">...</span>
                                 </button>
                             </div>
@@ -181,8 +181,17 @@
                                 $visibleCoveredDetails = $this->getVisibleCoveredDetailsForWorker($worker->id);
                                 $coveredDetailLimit = $this->getVisibleCoveredDetailLimitForWorker($worker->id);
                             @endphp
-                            <div class="space-y-4 border-t border-slate-100 bg-slate-50 p-3" wire:init="loadCoveredDetailsForWorker({{ $worker->id }})">
-                                <section class="rounded-lg border border-slate-200 bg-white p-3">
+                            <div class="space-y-3 border-t border-slate-100 bg-slate-50 p-3" wire:init="loadCoveredDetailsForWorker({{ $worker->id }})" x-data="{ activePanel: 'guardians' }">
+                                <div class="grid grid-cols-2 gap-2 rounded-lg border border-slate-200 bg-white p-1">
+                                    <button type="button" @click="activePanel = 'guardians'" :class="activePanel === 'guardians' ? 'bg-cyan-50 text-cyan-700' : 'text-slate-500 hover:bg-slate-50'" class="rounded-md px-3 py-2 text-xs font-extrabold transition">
+                                        سرپرستان
+                                    </button>
+                                    <button type="button" @click="activePanel = 'coverage'" :class="activePanel === 'coverage' ? 'bg-emerald-50 text-emerald-700' : 'text-slate-500 hover:bg-slate-50'" class="rounded-md px-3 py-2 text-xs font-extrabold transition">
+                                        آمار تحت پوشش
+                                    </button>
+                                </div>
+
+                                <section x-show="activePanel === 'guardians'" class="rounded-lg border border-slate-200 bg-white p-3">
                                     <div class="mb-3 flex items-center justify-between gap-3">
                                         <h3 class="text-xs font-extrabold text-slate-700">سرپرستان تحت پوشش</h3>
                                         <span class="rounded-full bg-cyan-100 px-2.5 py-1 text-[10px] font-bold text-cyan-700">{{ count($guardians) }} سرپرست</span>
@@ -211,7 +220,7 @@
                                     </div>
                                 </section>
 
-                                <section class="rounded-lg border border-slate-200 bg-white p-3">
+                                <section x-show="activePanel === 'coverage'" class="rounded-lg border border-slate-200 bg-white p-3">
                                     <div class="mb-3 flex items-center justify-between gap-3">
                                         <h3 class="text-xs font-extrabold text-slate-700">جزئیات آمار تحت پوشش</h3>
                                         <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-700">{{ $this->getCoveredCountForWorker($worker) }} نفر</span>
@@ -284,13 +293,18 @@
                                 wire:key="social-worker-{{ $worker->id }}"
                                 class="transition hover:bg-slate-50"
                             >
-                                <td class="px-5 py-4 text-center font-medium text-slate-700">{{ $worker->worker_code }}</td>
-                                <td class="px-5 py-4 text-right">
-                                    <div class="font-light text-slate-800">{{ $worker->full_name }}</div>
+                                <td class="px-5 py-4 text-center">
+                                    <span class="font-bold text-slate-800" dir="ltr">{{ $worker->worker_code ?: '-' }}</span>
                                 </td>
-                                <td class="px-5 py-4 text-center font-light text-slate-700">{{ $worker->national_id }}</td>
-                                <td class="px-5 py-4 text-center font-light text-slate-700">{{ $worker->mobile }}</td>
-                                <td class="px-5 py-4 text-center font-light text-slate-800">{{ $this->getCoveredCountForWorker($worker) }} نفر</td>
+                                <td class="px-5 py-4 text-right">
+                                    <div class="font-bold text-slate-900">{{ $worker->full_name ?: 'بدون نام' }}</div>
+                                </td>
+                                <td class="px-5 py-4 text-center font-medium text-slate-600" dir="ltr">{{ $worker->national_id ?: '-' }}</td>
+                                <td class="px-5 py-4 text-center font-medium text-slate-600" dir="ltr">{{ $worker->mobile ?: '-' }}</td>
+                                <td class="px-5 py-4 text-center">
+                                    <span class="font-bold text-slate-800">{{ $this->getCoveredCountForWorker($worker) }}</span>
+                                    <span class="text-xs text-slate-500">نفر</span>
+                                </td>
                                 <td class="px-5 py-4 text-center">
                                     <div class="flex items-center justify-center gap-2">
                                         <button type="button" wire:click="toggleSocialWorker({{ $worker->id }})" wire:loading.attr="disabled" wire:target="toggleSocialWorker({{ $worker->id }})" class="inline-flex items-center justify-center rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-700 transition hover:border-cyan-300 hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-100 disabled:cursor-wait disabled:opacity-60">
@@ -308,8 +322,8 @@
                                             </a>
                                         @endif
 
-                                        <button type="button" wire:click.stop="deleteSocialWorker({{ $worker->id }})" wire:confirm="آیا از حذف این مددکار مطمئن هستید؟" wire:loading.attr="disabled" wire:target="deleteSocialWorker({{ $worker->id }})" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-600 transition hover:border-rose-200 hover:bg-rose-50 disabled:cursor-wait disabled:opacity-60">
-                                            <span wire:loading.remove wire:target="deleteSocialWorker({{ $worker->id }})">حذف</span>
+                                        <button type="button" wire:click.stop="deleteSocialWorker({{ $worker->id }})" wire:confirm="آیا از غیرفعال‌سازی این مددکار مطمئن هستید؟" wire:loading.attr="disabled" wire:target="deleteSocialWorker({{ $worker->id }})" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 disabled:cursor-wait disabled:opacity-60">
+                                            <span wire:loading.remove wire:target="deleteSocialWorker({{ $worker->id }})">غیرفعال</span>
                                             <span wire:loading wire:target="deleteSocialWorker({{ $worker->id }})">...</span>
                                         </button>
                                     </div>
@@ -328,7 +342,7 @@
                                 <tr class="bg-slate-50" wire:key="social-worker-panel-{{ $worker->id }}">
                                     <td colspan="6" class="px-5 py-4">
                                         <div
-                                            x-data="{ show: false }"
+                                            x-data="{ show: false, activePanel: 'guardians' }"
                                             x-init="$nextTick(() => show = true)"
                                             x-show="show"
                                             x-transition:enter="transition ease-out duration-300"
@@ -338,13 +352,21 @@
                                             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
                                             x-transition:leave-end="opacity-0 -translate-y-2 scale-[0.98]"
                                             class="rounded-lg border border-slate-200 bg-white p-4"
+                                            wire:init="loadCoveredDetailsForWorker({{ $worker->id }})"
                                         >
-                                            <div class="mb-3 flex items-center justify-between">
-                                                <h2 class="text-sm font-bold text-slate-700">سرپرستان تحت پوشش {{ $worker->full_name }}</h2>
-                                                <span class="rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-700">{{ count($guardians) }} سرپرست</span>
+                                            <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                                                <h2 class="text-sm font-bold text-slate-700">جزئیات {{ $worker->full_name ?: 'بدون نام' }}</h2>
+                                                <div class="inline-grid grid-cols-2 gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
+                                                    <button type="button" @click="activePanel = 'guardians'" :class="activePanel === 'guardians' ? 'bg-white text-cyan-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'" class="rounded-md px-4 py-2 text-xs font-bold transition">
+                                                        سرپرستان ({{ count($guardians) }})
+                                                    </button>
+                                                    <button type="button" @click="activePanel = 'coverage'" :class="activePanel === 'coverage' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'" class="rounded-md px-4 py-2 text-xs font-bold transition">
+                                                        آمار تحت پوشش ({{ $this->getCoveredCountForWorker($worker) }})
+                                                    </button>
+                                                </div>
                                             </div>
 
-                                            <div class="overflow-x-auto" wire:init="loadCoveredDetailsForWorker({{ $worker->id }})">
+                                            <div x-show="activePanel === 'guardians'" class="overflow-x-auto">
                                                 <table class="min-w-full border-collapse text-xs">
                                                     <thead class="bg-slate-50 text-slate-600">
                                                         <tr>
@@ -359,9 +381,9 @@
                                                         @forelse ($visibleGuardians as $guardian)
                                                             <tr class="transition hover:bg-slate-50">
                                                                 <td class="px-4 py-3 text-center font-medium text-slate-700">{{ $loop->iteration }}</td>
-                                                                <td class="px-4 py-3 text-center text-slate-600">{{ $guardian['national_code'] ?: '-' }}</td>
+                                                                <td class="px-4 py-3 text-center text-slate-600" dir="ltr">{{ $guardian['national_code'] ?: '-' }}</td>
                                                                 <td class="px-4 py-3 text-right text-slate-700">{{ trim(($guardian['first_name'] ?? '') . ' ' . ($guardian['last_name'] ?? '')) ?: '-' }}</td>
-                                                                <td class="px-4 py-3 text-center text-slate-600">{{ $guardian['guardian_phone_number'] ?: '-' }}</td>
+                                                                <td class="px-4 py-3 text-center text-slate-600" dir="ltr">{{ $guardian['guardian_phone_number'] ?: '-' }}</td>
                                                                 <td class="px-4 py-3 text-center text-slate-600">{{ $guardian['people_count'] }}</td>
                                                             </tr>
                                                         @empty
@@ -383,7 +405,8 @@
                                                 </table>
                                             </div>
 
-                                            <div class="mt-6 mb-3 flex items-center justify-between">
+                                            <div x-show="activePanel === 'coverage'" class="mt-1">
+                                            <div class="mb-3 flex items-center justify-between">
                                                 <h2 class="text-sm font-bold text-slate-700">جزئیات افراد مؤثر در آمار تحت پوشش</h2>
                                                 <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
                                                     {{ $this->getCoveredCountForWorker($worker) }} نفر (بر پایه کد ملی)
@@ -425,7 +448,7 @@
                                                             @endif
                                                             <tr class="transition hover:bg-slate-50">
                                                                 <td class="px-4 py-3 text-center font-medium text-slate-700">{{ $loop->iteration }}</td>
-                                                                <td class="px-4 py-3 text-center text-slate-700">{{ $detail['national_id'] }}</td>
+                                                                <td class="px-4 py-3 text-center text-slate-700" dir="ltr">{{ $detail['national_id'] }}</td>
                                                                 <td class="px-4 py-3 text-right text-slate-700">{{ $detail['name'] ?: '-' }}</td>
                                                                 <td class="px-4 py-3 text-center">
                                                                     <span class="rounded-full bg-sky-100 px-2.5 py-1 text-[11px] font-semibold text-sky-700">
@@ -454,6 +477,7 @@
                                                         @endif
                                                     </tbody>
                                                 </table>
+                                            </div>
                                             </div>
                                         </div>
                                     </td>
