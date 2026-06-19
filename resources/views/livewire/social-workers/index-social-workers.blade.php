@@ -118,11 +118,11 @@
 
                         <div class="border-t border-slate-100 bg-slate-50/70 px-3 py-2">
                             <div class="grid grid-cols-3 gap-2">
-                                <button type="button" wire:click="toggleSocialWorker({{ $worker->id }})" class="inline-flex min-h-9 items-center justify-center rounded-xl border border-cyan-200 bg-white px-2 text-xs font-bold text-cyan-700 transition hover:bg-cyan-50">
+                                <button type="button" wire:click.stop="toggleSocialWorker({{ $worker->id }})" class="inline-flex min-h-9 items-center justify-center rounded-xl border border-cyan-200 bg-white px-2 text-xs font-bold text-cyan-700 transition hover:bg-cyan-50 focus:outline-none focus:ring-2 focus:ring-cyan-100">
                                     {{ $expandedSocialWorkerId === $worker->id ? 'بستن' : 'سرپرستان' }}
                                 </button>
                                 @if($embedded)
-                                    <button type="button" wire:click="editSocialWorker({{ $worker->id }})" class="inline-flex min-h-9 items-center justify-center rounded-xl border px-2 text-xs font-bold transition" style="border-color: #bfe9f8; background-color: #eff9fd; color: #1d9dcf;">
+                                    <button type="button" wire:click.stop="editSocialWorker({{ $worker->id }})" class="inline-flex min-h-9 items-center justify-center rounded-xl border px-2 text-xs font-bold transition focus:outline-none focus:ring-2" style="border-color: #bfe9f8; background-color: #eff9fd; color: #1d9dcf;">
                                         ویرایش
                                     </button>
                                 @else
@@ -130,7 +130,7 @@
                                         ویرایش
                                     </a>
                                 @endif
-                                <button type="button" wire:click="deleteSocialWorker({{ $worker->id }})" wire:confirm="آیا از حذف این مددکار مطمئن هستید؟" class="inline-flex min-h-9 items-center justify-center rounded-xl border border-rose-200 bg-white px-2 text-xs font-bold text-rose-700 transition hover:bg-rose-50">
+                                <button type="button" wire:click.stop="deleteSocialWorker({{ $worker->id }})" wire:confirm="آیا از حذف این مددکار مطمئن هستید؟" class="inline-flex min-h-9 items-center justify-center rounded-xl border border-rose-200 bg-white px-2 text-xs font-bold text-rose-700 transition hover:bg-rose-50 focus:outline-none focus:ring-2 focus:ring-rose-100">
                                     حذف
                                 </button>
                             </div>
@@ -231,8 +231,7 @@
                         @forelse ($socialWorkers as $worker)
                             <tr
                                 wire:key="social-worker-{{ $worker->id }}"
-                                wire:click="toggleSocialWorker({{ $worker->id }})"
-                                class="cursor-pointer transition hover:bg-cyan-50/70"
+                                class="transition hover:bg-slate-50"
                             >
                                 <td class="px-5 py-4 text-center font-medium text-slate-700">{{ $worker->worker_code }}</td>
                                 <td class="px-5 py-4 text-right">
@@ -243,7 +242,7 @@
                                 <td class="px-5 py-4 text-center font-light text-slate-800">{{ $this->getCoveredCountForWorker($worker) }} نفر</td>
                                 <td class="px-5 py-4 text-center">
                                     <div class="flex items-center justify-center gap-2">
-                                        <button type="button" wire:click.stop="toggleSocialWorker({{ $worker->id }})" onclick="event.stopPropagation()" class="inline-flex items-center justify-center rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-700 transition hover:border-cyan-300 hover:bg-cyan-100">
+                                        <button type="button" wire:click="toggleSocialWorker({{ $worker->id }})" class="inline-flex items-center justify-center rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-700 transition hover:border-cyan-300 hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-100">
                                             {{ $expandedSocialWorkerId === $worker->id ? 'بستن' : 'سرپرستان' }}
                                         </button>
                                         @if($embedded)
