@@ -4,23 +4,67 @@
         x-data="{
             showScanUrl: false,
             lastActiveElement: null,
+            previousBodyOverflow: '',
             init() {
                 this.lastActiveElement = document.activeElement;
+                this.previousBodyOverflow = document.body.style.overflow;
+                document.body.style.overflow = 'hidden';
                 this.$nextTick(() => this.$refs.closeButton?.focus());
             },
-            close() {
-                $wire.closeQrModal();
+            destroy() {
+                document.body.style.overflow = this.previousBodyOverflow;
+            },
+            focusableElements() {
+                return Array.from(this.$refs.dialog.querySelectorAll([
+                    'a[href]',
+                    'button:not([disabled])',
+                    'textarea:not([disabled])',
+                    'input:not([disabled])',
+                    'select:not([disabled])',
+                    '[tabindex]:not([tabindex=\'-1\'])',
+                ].join(','))).filter((element) => element.offsetParent !== null);
+            },
+            trapFocus(event) {
+                const focusable = this.focusableElements();
+
+                if (!focusable.length) {
+                    event.preventDefault();
+                    return;
+                }
+
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+
+                if (event.shiftKey && document.activeElement === first) {
+                    event.preventDefault();
+                    last.focus();
+                } else if (!event.shiftKey && document.activeElement === last) {
+                    event.preventDefault();
+                    first.focus();
+                }
+            },
+            async close() {
+                await $wire.closeQrModal();
                 this.$nextTick(() => this.lastActiveElement?.focus?.());
             }
         }"
         @keydown.escape.window.prevent="close()"
+        @keydown.tab="trapFocus($event)"
         class="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 px-2 pt-6 backdrop-blur-sm sm:items-center sm:p-4"
     >
-        <div class="w-full max-w-lg overflow-hidden rounded-t-[1.75rem] border border-cyan-100 bg-white shadow-2xl sm:max-w-2xl sm:max-h-[90vh] sm:rounded-3xl">
+        <div
+            x-ref="dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="qr-identity-modal-title"
+            aria-describedby="qr-identity-modal-description"
+            tabindex="-1"
+            class="w-full max-w-lg overflow-hidden rounded-t-[1.75rem] border border-cyan-100 bg-white shadow-2xl sm:max-w-2xl sm:max-h-[90vh] sm:rounded-3xl"
+        >
             <div class="flex items-start justify-between gap-3 bg-cyan-700 px-3.5 py-3 text-white sm:gap-4 sm:px-6 sm:py-5">
                 <div class="min-w-0">
-                    <h2 class="text-base font-extrabold sm:text-xl">کارت QR {{ $subjectLabel }}</h2>
-                    <p class="mt-1 truncate text-xs text-white/85 sm:text-sm">{{ $subjectName }} - {{ $subjectCode }}</p>
+                    <h2 id="qr-identity-modal-title" class="text-base font-extrabold sm:text-xl">کارت QR {{ $subjectLabel }}</h2>
+                    <p id="qr-identity-modal-description" class="mt-1 truncate text-xs text-white/85 sm:text-sm">{{ $subjectName }} - {{ $subjectCode }}</p>
                 </div>
                 <button type="button" @click="close()" x-ref="closeButton" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15 text-xl leading-none text-white transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/70 sm:h-9 sm:w-9 sm:text-2xl" aria-label="بستن">&times;</button>
             </div>
