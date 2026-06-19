@@ -6,9 +6,9 @@
     <div class="flex min-h-[100svh] items-stretch justify-center px-0 py-0 sm:items-center sm:px-6 sm:py-6 lg:px-8">
         <div class="grid min-h-[100svh] w-full max-w-md overflow-hidden border border-white bg-white/95 shadow-[0_24px_80px_rgba(89,100,174,0.16)] ring-1 ring-slate-200/80 backdrop-blur sm:min-h-0 sm:rounded-2xl lg:max-w-5xl lg:grid-cols-[0.88fr_1.12fr]">
             <aside class="relative hidden overflow-hidden bg-[#5964AE] lg:block">
-                <div class="absolute inset-0 bg-[linear-gradient(145deg,rgba(54,169,223,0.95)_0%,rgba(89,100,174,0.94)_48%,rgba(212,32,95,0.92)_100%)]"></div>
+                <div class="absolute inset-0 bg-[linear-gradient(145deg,rgba(21,114,161,0.98)_0%,rgba(68,77,153,0.97)_48%,rgba(164,24,75,0.96)_100%)]"></div>
                 <div class="absolute inset-x-0 top-0 h-24 bg-white/10"></div>
-                <div class="absolute bottom-0 left-0 right-0 h-40 bg-[linear-gradient(0deg,rgba(15,23,42,0.22),transparent)]"></div>
+                <div class="absolute bottom-0 left-0 right-0 h-40 bg-[linear-gradient(0deg,rgba(15,23,42,0.34),transparent)]"></div>
 
                 <div class="relative flex h-full min-h-[560px] flex-col justify-between p-10 text-white">
                     <div>
@@ -21,28 +21,25 @@
                         </div>
 
                         <div class="mt-12 max-w-sm">
-                            <p class="text-sm font-bold text-white/85">مرکز نیکوکاری آوای همدلی</p>
+                            <p class="text-sm font-bold text-white">مرکز نیکوکاری آوای همدلی</p>
                             <h1 class="mt-4 text-3xl font-black leading-10">
                                 سامانه خدمات حمایتی آوای همدلی
                             </h1>
-                            <p class="mt-5 text-sm leading-7 text-white/80">
-                                برای ثبت و پیگیری خدمات مددجویان و خانواده‌های تحت پوشش، وارد حساب کاربری خود شوید.
+                            <p class="mt-5 text-sm font-medium leading-7 text-white/90">
+                                دسترسی امن به اطلاعات حمایتی و خدمات مددجویان مرکز.
                             </p>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-3 text-center">
-                        <div class="rounded-xl bg-white/12 px-3 py-4 ring-1 ring-white/15">
-                            <i class="bi bi-shield-check text-2xl" aria-hidden="true"></i>
-                            <p class="mt-2 text-xs font-bold text-white/85">محرمانه</p>
-                        </div>
-                        <div class="rounded-xl bg-white/12 px-3 py-4 ring-1 ring-white/15">
-                            <i class="bi bi-lightning-charge text-2xl" aria-hidden="true"></i>
-                            <p class="mt-2 text-xs font-bold text-white/85">منظم</p>
-                        </div>
-                        <div class="rounded-xl bg-white/12 px-3 py-4 ring-1 ring-white/15">
-                            <i class="bi bi-phone text-2xl" aria-hidden="true"></i>
-                            <p class="mt-2 text-xs font-bold text-white/85">در دسترس</p>
+                    <div class="rounded-2xl bg-white/16 px-4 py-4 ring-1 ring-white/25">
+                        <div class="flex items-start gap-3">
+                            <i class="bi bi-shield-check shrink-0 text-2xl text-white" aria-hidden="true"></i>
+                            <div>
+                                <p class="text-sm font-black text-white">ورود محرمانه کاربران مجاز</p>
+                                <p class="mt-1 text-xs font-medium leading-6 text-white/90">
+                                    برای حفاظت از اطلاعات مرکز، پس از پایان کار از حساب خود خارج شوید.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -64,7 +61,7 @@
                                 <h2 class="text-xl font-black text-slate-900 sm:mt-1 sm:text-2xl">
                                     ورود به سامانه
                                 </h2>
-                                <p class="mt-0.5 text-[11px] leading-5 text-slate-500 sm:mt-1 sm:text-sm sm:leading-6">
+                                <p class="mt-0.5 text-[11px] leading-5 text-slate-600 sm:mt-1 sm:text-sm sm:leading-6">
                                     برای پیگیری خدمات حمایتی وارد حساب خود شوید.
                                 </p>
                             </div>
@@ -75,7 +72,7 @@
                             <h2 class="mt-2 text-3xl font-black text-slate-900">
                                 ورود به سامانه
                             </h2>
-                            <p class="mt-3 text-sm leading-7 text-slate-500">
+                            <p class="mt-3 text-sm leading-7 text-slate-600">
                                 برای ثبت و پیگیری خدمات حمایتی، اطلاعات حساب خود را وارد کنید.
                             </p>
                         </div>
@@ -87,7 +84,7 @@
                                 نام کاربری یا ایمیل ثبت‌شده
                             </label>
                             <div class="relative">
-                                <span class="pointer-events-none absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#5964AE]">
+                                <span class="pointer-events-none absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#4d56a3]">
                                     <i class="bi bi-person text-lg" aria-hidden="true"></i>
                                 </span>
                                 <input
@@ -102,7 +99,7 @@
                                     dir="ltr"
                                     wire:loading.attr="disabled"
                                     wire:target="login"
-                                    class="block min-h-[48px] w-full rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 pl-4 pr-12 text-left text-base text-slate-900 shadow-inner shadow-slate-100 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#36A9DF] focus:bg-white focus:ring-4 focus:ring-[#36A9DF]/15 disabled:cursor-wait disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-500 sm:min-h-[54px]"
+                                    class="block min-h-[48px] w-full rounded-xl border border-slate-300 bg-white px-4 py-3 pl-4 pr-12 text-left text-base text-slate-900 shadow-inner shadow-slate-100 outline-none transition placeholder:text-slate-500 hover:border-slate-400 focus:border-[#1572A1] focus:bg-white focus:ring-4 focus:ring-[#1572A1]/20 disabled:cursor-wait disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-500 sm:min-h-[54px]"
                                     placeholder="شناسه همکار یا ایمیل شما"
                                     aria-describedby="@error('email') email-error @enderror"
                                     aria-invalid="@error('email') true @else false @enderror"
@@ -121,7 +118,7 @@
                                 رمز عبور
                             </label>
                             <div class="relative">
-                                <span class="pointer-events-none absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#5964AE]">
+                                <span class="pointer-events-none absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#4d56a3]">
                                     <i class="bi bi-lock text-lg" aria-hidden="true"></i>
                                 </span>
                                 <input
@@ -138,7 +135,7 @@
                                     dir="ltr"
                                     wire:loading.attr="disabled"
                                     wire:target="login"
-                                    class="block min-h-[48px] w-full rounded-xl border border-slate-200 bg-slate-50/80 px-12 py-3 text-left text-base text-slate-900 shadow-inner shadow-slate-100 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#36A9DF] focus:bg-white focus:ring-4 focus:ring-[#36A9DF]/15 disabled:cursor-wait disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-500 sm:min-h-[54px]"
+                                    class="block min-h-[48px] w-full rounded-xl border border-slate-300 bg-white px-12 py-3 text-left text-base text-slate-900 shadow-inner shadow-slate-100 outline-none transition placeholder:text-slate-500 hover:border-slate-400 focus:border-[#1572A1] focus:bg-white focus:ring-4 focus:ring-[#1572A1]/20 disabled:cursor-wait disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-500 sm:min-h-[54px]"
                                     placeholder="رمز عبور حساب شما"
                                     aria-describedby="@error('password') password-error @enderror password-caps-warning"
                                     aria-invalid="@error('password') true @else false @enderror"
@@ -147,7 +144,7 @@
                                     type="button"
                                     wire:loading.attr="disabled"
                                     wire:target="login"
-                                    class="absolute inset-y-1 left-1 flex w-10 items-center justify-center rounded-lg text-slate-500 transition hover:bg-white hover:text-[#5964AE] focus:outline-none focus:ring-2 focus:ring-[#36A9DF]/30 disabled:cursor-wait disabled:opacity-50"
+                                    class="absolute inset-y-1 left-1 flex w-10 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100 hover:text-[#4d56a3] focus:outline-none focus:ring-2 focus:ring-[#1572A1]/35 disabled:cursor-wait disabled:opacity-50"
                                     x-on:click="showPassword = !showPassword"
                                     x-bind:aria-label="showPassword ? 'پنهان کردن رمز عبور' : 'نمایش رمز عبور'"
                                     x-bind:aria-pressed="showPassword.toString()"
@@ -186,14 +183,14 @@
                         @enderror
 
                         <div class="flex items-center justify-between gap-3 pt-0.5 text-sm sm:pt-1">
-                            <label for="remember-me" class="inline-flex min-h-11 cursor-pointer select-none items-center gap-2 text-slate-600">
+                            <label for="remember-me" class="inline-flex min-h-11 cursor-pointer select-none items-center gap-2 text-slate-700">
                                 <input
                                     wire:model="remember"
                                     id="remember-me"
                                     type="checkbox"
                                     wire:loading.attr="disabled"
                                     wire:target="login"
-                                    class="h-5 w-5 rounded border-slate-300 text-[#5964AE] focus:ring-[#36A9DF] disabled:cursor-wait disabled:opacity-60 sm:h-4 sm:w-4"
+                                    class="h-5 w-5 rounded border-slate-400 text-[#5964AE] focus:ring-[#1572A1] disabled:cursor-wait disabled:opacity-60 sm:h-4 sm:w-4"
                                 >
                                 <span>مرا به خاطر بسپار</span>
                             </label>
@@ -205,7 +202,7 @@
                             type="submit"
                             wire:loading.attr="disabled"
                             wire:target="login"
-                            class="group flex min-h-[50px] w-full items-center justify-center gap-2 rounded-xl bg-[linear-gradient(135deg,#5964AE_0%,#36A9DF_55%,#D4205F_130%)] px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-[#5964AE]/20 transition hover:shadow-xl hover:shadow-[#36A9DF]/20 focus:outline-none focus:ring-4 focus:ring-[#36A9DF]/25 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-70 sm:min-h-[54px]"
+                            class="group flex min-h-[50px] w-full items-center justify-center gap-2 rounded-xl bg-[linear-gradient(135deg,#4d56a3_0%,#1572A1_58%,#A4184B_130%)] px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-[#5964AE]/20 transition hover:shadow-xl hover:shadow-[#1572A1]/20 focus:outline-none focus:ring-4 focus:ring-[#1572A1]/30 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-70 sm:min-h-[54px]"
                         >
                             <span wire:loading.remove wire:target="login" class="inline-flex items-center gap-2">
                                 ورود به سامانه
@@ -218,7 +215,7 @@
                         </button>
                     </form>
 
-                    <p class="mt-4 text-center text-xs leading-6 text-slate-500 sm:mt-6">
+                    <p class="mt-4 text-center text-xs leading-6 text-slate-600 sm:mt-6">
                         در صورت مشکل در ورود، با مدیر سامانه مرکز تماس بگیرید.
                     </p>
                 </div>
