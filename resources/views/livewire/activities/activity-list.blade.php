@@ -121,36 +121,41 @@
                 <aside class="rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
                     @if($selectedActivity)
                         <div class="space-y-4">
-                            <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <p class="text-xs font-bold text-slate-400">جزئیات فعالیت</p>
-                                    <h2 class="mt-1 text-lg font-black text-slate-800">{{ $selectedActivity->name }}</h2>
+                            <div class="border-b border-slate-200 pb-4">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="min-w-0">
+                                        <p class="text-xs font-semibold text-slate-400">جزئیات فعالیت</p>
+                                        <h2 class="mt-1 truncate text-lg font-bold text-slate-900">{{ $selectedActivity->name }}</h2>
+                                    </div>
+                                    <button type="button" wire:click="clearSelectedActivity" class="shrink-0 text-xs font-semibold text-slate-400 hover:text-slate-600">بستن</button>
                                 </div>
-                                <button type="button" wire:click="clearSelectedActivity" class="text-xs font-bold text-slate-400 hover:text-slate-600">بستن</button>
                             </div>
 
-                            <div class="grid grid-cols-2 gap-2 text-xs">
-                                <div class="rounded-xl bg-white p-3"><span class="block text-slate-400">کد</span><strong>{{ $selectedActivity->code }}</strong></div>
-                                <div class="rounded-xl bg-white p-3"><span class="block text-slate-400">وضعیت</span><strong>{{ $statusOptions[$selectedActivity->status] ?? $selectedActivity->status }}</strong></div>
-                                <div class="rounded-xl bg-white p-3"><span class="block text-slate-400">ظرفیت</span><strong>{{ $selectedActivity->capacity ?: 'نامحدود' }}</strong></div>
-                                <div class="rounded-xl bg-white p-3"><span class="block text-slate-400">کل حضور</span><strong>{{ $selectedActivity->attendances_count }}</strong></div>
-                                <div class="rounded-xl bg-white p-3"><span class="block text-slate-400">درصد ظرفیت</span><strong>{{ $selectedActivity->capacity ? min(100, round(($selectedActivity->present_attendances_count / max(1, $selectedActivity->capacity)) * 100)) . '%' : '-' }}</strong></div>
-                                <div class="rounded-xl bg-white p-3"><span class="block text-slate-400">حاضر</span><strong>{{ $selectedActivity->present_attendances_count }}</strong></div>
-                                <div class="rounded-xl bg-white p-3"><span class="block text-slate-400">غایب</span><strong>{{ $selectedActivity->absent_attendances_count }}</strong></div>
+                            <div class="space-y-3">
+                                <h3 class="text-xs font-semibold text-slate-500">خلاصه</h3>
+                                <div class="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                                    <div><span class="block text-slate-400">کد</span><strong class="mt-0.5 block text-sm font-semibold text-slate-800">{{ $selectedActivity->code }}</strong></div>
+                                    <div><span class="block text-slate-400">وضعیت</span><strong class="mt-0.5 block text-sm font-semibold text-slate-800">{{ $statusOptions[$selectedActivity->status] ?? $selectedActivity->status }}</strong></div>
+                                    <div><span class="block text-slate-400">ظرفیت</span><strong class="mt-0.5 block text-sm font-semibold text-slate-800">{{ $selectedActivity->capacity ?: 'نامحدود' }}</strong></div>
+                                    <div><span class="block text-slate-400">کل حضور</span><strong class="mt-0.5 block text-sm font-semibold text-slate-800">{{ $selectedActivity->attendances_count }}</strong></div>
+                                    <div><span class="block text-slate-400">درصد ظرفیت</span><strong class="mt-0.5 block text-sm font-semibold text-slate-800">{{ $selectedActivity->capacity ? min(100, round(($selectedActivity->present_attendances_count / max(1, $selectedActivity->capacity)) * 100)) . '%' : '-' }}</strong></div>
+                                    <div><span class="block text-slate-400">حاضر / غایب</span><strong class="mt-0.5 block text-sm font-semibold text-slate-800">{{ $selectedActivity->present_attendances_count }} / {{ $selectedActivity->absent_attendances_count }}</strong></div>
+                                </div>
                             </div>
 
-                            <div class="rounded-xl bg-white p-3 text-xs leading-6 text-slate-600">
-                                <p><strong>شروع:</strong> {{ $this->formatJalaliDateTime($selectedActivity->starts_at) }}</p>
-                                <p><strong>پایان:</strong> {{ $this->formatJalaliDateTime($selectedActivity->ends_at) }}</p>
-                                <p><strong>مکان:</strong> {{ $selectedActivity->location ?: '-' }}</p>
-                                <p><strong>توضیحات:</strong> {{ $selectedActivity->description ?: 'ثبت نشده' }}</p>
-                                <p><strong>یادداشت وضعیت:</strong> {{ $selectedActivity->status_notes ?: 'ثبت نشده' }}</p>
+                            <div class="space-y-2 border-t border-slate-200 pt-4 text-xs leading-6 text-slate-600">
+                                <h3 class="text-xs font-semibold text-slate-500">اطلاعات برگزاری</h3>
+                                <p><strong class="text-slate-700">شروع:</strong> {{ $this->formatJalaliDateTime($selectedActivity->starts_at) }}</p>
+                                <p><strong class="text-slate-700">پایان:</strong> {{ $this->formatJalaliDateTime($selectedActivity->ends_at) }}</p>
+                                <p><strong class="text-slate-700">مکان:</strong> {{ $selectedActivity->location ?: '-' }}</p>
+                                <p><strong class="text-slate-700">توضیحات:</strong> {{ $selectedActivity->description ?: 'ثبت نشده' }}</p>
+                                <p><strong class="text-slate-700">یادداشت وضعیت:</strong> {{ $selectedActivity->status_notes ?: 'ثبت نشده' }}</p>
                             </div>
 
                             @can('full-access')
-                                <div class="space-y-2">
-                                    <label class="block text-xs font-bold text-slate-500">یادداشت تغییر وضعیت</label>
-                                    <textarea wire:model="transitionNotes" rows="2" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100"></textarea>
+                                <div class="space-y-2 border-t border-slate-200 pt-4">
+                                    <label class="block text-xs font-semibold text-slate-500">یادداشت تغییر وضعیت</label>
+                                    <textarea wire:model="transitionNotes" rows="2" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100"></textarea>
                                     <div class="flex flex-wrap gap-2">
                                         @forelse($this->allowedTransitionTargets($selectedActivity) as $targetStatus)
                                             <button type="button" wire:click="transitionActivity({{ $selectedActivity->id }}, '{{ $targetStatus }}')" class="rounded-full bg-slate-800 px-3 py-2 text-xs font-bold text-white hover:bg-slate-900">
@@ -163,28 +168,28 @@
                                 </div>
                             @endcan
 
-                            <div class="flex flex-wrap gap-2">
+                            <div class="flex flex-wrap gap-2 border-t border-slate-200 pt-4">
                                 @if($selectedActivity->status === 'ongoing')
                                     <button type="button" wire:click="openScanner({{ $selectedActivity->id }})" class="rounded-full bg-cyan-600 px-4 py-2 text-xs font-bold text-white hover:bg-cyan-700">شروع ثبت حضور QR</button>
                                 @endif
                                 <button type="button" wire:click="exportAttendances" class="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">خروجی اکسل حضور</button>
                             </div>
 
-                            <div class="rounded-xl border border-slate-200 bg-white p-3">
+                            <div class="space-y-3 border-t border-slate-200 pt-4">
                                 <div class="mb-3 flex flex-col gap-2">
                                     <div>
-                                        <h3 class="text-sm font-black text-slate-800">فهرست شرکت‌کنندگان</h3>
-                                        <p class="mt-1 text-[11px] font-semibold text-slate-400">نمایش حداکثر {{ $attendanceDisplayLimit }} حضور آخر؛ برای فهرست کامل از خروجی اکسل استفاده کنید.</p>
+                                        <h3 class="text-sm font-bold text-slate-800">فهرست شرکت‌کنندگان</h3>
+                                        <p class="mt-1 text-[11px] font-medium text-slate-400">نمایش حداکثر {{ $attendanceDisplayLimit }} حضور آخر؛ برای فهرست کامل از خروجی اکسل استفاده کنید.</p>
                                     </div>
-                                    <input type="text" wire:model.live.debounce.300ms="attendanceSearch" placeholder="جستجو مددجو یا ثبت‌کننده" class="rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
+                                    <input type="text" wire:model.live.debounce.300ms="attendanceSearch" placeholder="جستجو مددجو یا ثبت‌کننده" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
                                     <div class="grid grid-cols-2 gap-2">
-                                        <select wire:model.live="attendanceMethodFilter" class="rounded-xl border border-slate-200 px-3 py-2 text-xs">
+                                        <select wire:model.live="attendanceMethodFilter" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs">
                                             <option value="all">همه روش‌ها</option>
                                             @foreach($attendanceMethodOptions as $value => $label)
                                                 <option value="{{ $value }}">{{ $label }}</option>
                                             @endforeach
                                         </select>
-                                        <select wire:model.live="attendanceStatusFilter" class="rounded-xl border border-slate-200 px-3 py-2 text-xs">
+                                        <select wire:model.live="attendanceStatusFilter" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs">
                                             <option value="all">همه وضعیت‌ها</option>
                                             @foreach($attendanceStatusOptions as $value => $label)
                                                 <option value="{{ $value }}">{{ $label }}</option>
