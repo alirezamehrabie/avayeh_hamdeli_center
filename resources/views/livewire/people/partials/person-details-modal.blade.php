@@ -177,10 +177,12 @@
             previousActiveElement: null,
             closing: false,
             scrollLockStyles: null,
+            allowBackdropClose: false,
             init() {
                 this.previousActiveElement = document.activeElement instanceof HTMLElement
                     ? document.activeElement
                     : null;
+                this.allowBackdropClose = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
                 this.lockScroll();
 
                 this.$nextTick(() => {
@@ -310,6 +312,11 @@
                     this.copiedField = null;
                 }
             },
+            closeFromBackdrop() {
+                if (! this.allowBackdropClose || this.viewerOpen) return;
+
+                this.close();
+            },
             close() {
                 if (this.closing) return;
 
@@ -342,7 +349,7 @@
         @keydown.arrow-left.window="if (viewerOpen) previousImage()"
         style="display: none;"
     >
-        <div class="absolute inset-0" @click="close()"></div>
+        <div class="absolute inset-0" @click="closeFromBackdrop()"></div>
 
         <div
             x-ref="dialog"
