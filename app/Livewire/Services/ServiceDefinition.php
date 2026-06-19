@@ -137,10 +137,12 @@ class ServiceDefinition extends Component
                 }
 
                 foreach ($validated['categories'] as $index => $categoryData) {
+                    $categoryName = trim($categoryData['name']);
+
                     $payload = [
                         'service_name_id' => $service->service_name_id,
                         'service_id' => $service->id,
-                        'name' => trim($categoryData['name']),
+                        'name' => $categoryName,
                         'quantity' => (float) $categoryData['quantity'],
                         'unit' => trim($categoryData['unit']),
                         'value' => (int) $categoryData['value'],
@@ -167,6 +169,12 @@ class ServiceDefinition extends Component
 
                     $category->fill($payload);
                     $category->save();
+
+                    $this->persistCategoryTemplateRecord(
+                        $service->service_name_id,
+                        $categoryName,
+                        $index + 1
+                    );
                 }
 
                 $service->refreshFinancialTotals();
@@ -479,6 +487,36 @@ class ServiceDefinition extends Component
     protected function nextServiceNameSortId(): int
     {
         return ((int) ServiceName::query()->max('sort_id')) + 1;
+    }
+
+    protected function persistCategoryTemplateRecord(int $serviceNameId, string $categoryName, int $fallbackSortId): void
+    {
+        $name = trim($categoryName);
+
+        if ($name === '') {
+            return;
+        }
+
+        $existingTemplate = ServiceCategoryTemplate::query()
+            ->withTrashed()
+            ->where('service_name_id', $serviceNameId)
+            ->where('name', $name)
+            ->first();
+
+        if ($existingTemplate) {
+            if ($existingTemplate->trashed()) {
+                $existingTemplate->restore();
+            }
+
+            return;
+        }
+
+        ServiceCategoryTemplate::query()->create([
+            'service_name_id' => $serviceNameId,
+            'name' => $name,
+            'sort_id' => ServiceCategoryTemplate::nextSortId($serviceNameId) ?: $fallbackSortId,
+            'created_by' => auth()->id(),
+        ]);
     }
 
     protected function nextCategorySortId(int $serviceId): int
