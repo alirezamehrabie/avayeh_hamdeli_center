@@ -393,14 +393,62 @@
                                                 @endcan
 
                                                 @canany(['people-edit', 'people-delete'])
-                                                    <div class="relative" x-data="{ open: false }" @click.stop @keydown.escape.window="open = false">
+                                                    <div
+                                                        class="relative"
+                                                        x-data="{
+                                                            open: false,
+                                                            menuStyle: '',
+                                                            updatePosition() {
+                                                                const button = this.$refs.menuButton;
+
+                                                                if (! button) {
+                                                                    return;
+                                                                }
+
+                                                                const rect = button.getBoundingClientRect();
+                                                                const menuWidth = 192;
+                                                                const menuHeight = 156;
+                                                                const gap = 8;
+                                                                const viewportPadding = 8;
+
+                                                                let top = rect.bottom + gap;
+                                                                let left = rect.left;
+
+                                                                if (top + menuHeight > window.innerHeight - viewportPadding) {
+                                                                    top = Math.max(viewportPadding, rect.top - menuHeight - gap);
+                                                                }
+
+                                                                if (left + menuWidth > window.innerWidth - viewportPadding) {
+                                                                    left = window.innerWidth - menuWidth - viewportPadding;
+                                                                }
+
+                                                                left = Math.max(viewportPadding, left);
+                                                                this.menuStyle = `top: ${top}px; left: ${left}px;`;
+                                                            },
+                                                            toggle() {
+                                                                this.open = ! this.open;
+
+                                                                if (this.open) {
+                                                                    this.$nextTick(() => this.updatePosition());
+                                                                }
+                                                            },
+                                                            close() {
+                                                                this.open = false;
+                                                            },
+                                                        }"
+                                                        @click.stop
+                                                        @keydown.escape.window="close()"
+                                                        @resize.window="open && updatePosition()"
+                                                        @scroll.window="open && updatePosition()"
+                                                    >
                                                         <button
+                                                            x-ref="menuButton"
                                                             type="button"
                                                             class="group inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
                                                             aria-label="اقدامات بیشتر"
                                                             aria-haspopup="menu"
                                                             :aria-expanded="open.toString()"
-                                                            @click="open = ! open"
+                                                            @click="toggle()"
                                                         >
                                                             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                                                                 <circle cx="12" cy="5" r="1.8" />
@@ -409,11 +457,15 @@
                                                             </svg>
                                                         </button>
 
+                                                        <template x-teleport="body">
                                                         <div
+                                                            x-cloak
                                                             x-show="open"
                                                             x-transition.origin.top.right
-                                                            @click.away="open = false"
-                                                            class="absolute left-0 z-30 mt-2 w-48 overflow-hidden rounded-2xl border border-slate-200 bg-white py-1 text-right shadow-xl ring-1 ring-slate-100"
+                                                            @click.outside="close()"
+                                                            @click.stop
+                                                            class="fixed z-[9999] w-48 overflow-hidden rounded-2xl border border-slate-200 bg-white py-1 text-right shadow-xl ring-1 ring-slate-100"
+                                                            :style="menuStyle"
                                                             style="display: none;"
                                                             role="menu"
                                                         >
@@ -425,7 +477,7 @@
                                                                     wire:target="quickEditPerson({{ $person->id }})"
                                                                     class="flex w-full items-center gap-2 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-amber-50 hover:text-amber-700 focus:bg-amber-50 focus:outline-none disabled:opacity-60"
                                                                     role="menuitem"
-                                                                    @click="open = false"
+                                                                    @click="close()"
                                                                 >
                                                                     <i class="bi bi-lightning-charge text-amber-600"></i>
                                                                     ویرایش سریع
@@ -437,7 +489,7 @@
 
                                                                     class="flex w-full items-center gap-2 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-cyan-50 hover:text-cyan-700 focus:bg-cyan-50 focus:outline-none disabled:opacity-60"
                                                                     role="menuitem"
-                                                                    @click="open = false"
+                                                                    @click="close()"
                                                                 >
                                                                     <i class="bi bi-qr-code text-cyan-600"></i>
                                                                     کارت QR
@@ -452,13 +504,14 @@
                                                                     wire:target="openDeleteModal({{ $person->id }})"
                                                                     class="flex w-full items-center gap-2 px-4 py-3 text-sm font-bold text-rose-700 transition hover:bg-rose-50 focus:bg-rose-50 focus:outline-none disabled:opacity-60"
                                                                     role="menuitem"
-                                                                    @click="open = false"
+                                                                    @click="close()"
                                                                 >
                                                                     <i class="bi bi-trash3"></i>
                                                                     انتقال به بلاک لیست
                                                                 </button>
                                                             @endcan
                                                         </div>
+                                                        </template>
                                                     </div>
                                                 @endcanany
                                             </div>
