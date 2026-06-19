@@ -4,15 +4,51 @@
         x-data="{
             showScanUrl: false,
             lastActiveElement: null,
-            previousBodyOverflow: '',
+            scrollLockStyles: null,
             init() {
                 this.lastActiveElement = document.activeElement;
-                this.previousBodyOverflow = document.body.style.overflow;
-                document.body.style.overflow = 'hidden';
+                this.lockScroll();
                 this.$nextTick(() => this.$refs.closeButton?.focus());
             },
             destroy() {
-                document.body.style.overflow = this.previousBodyOverflow;
+                this.unlockScroll();
+            },
+            lockScroll() {
+                if (this.scrollLockStyles) return;
+
+                this.scrollLockStyles = {
+                    bodyOverflow: document.body.style.overflow,
+                    bodyPosition: document.body.style.position,
+                    bodyTop: document.body.style.top,
+                    bodyWidth: document.body.style.width,
+                    htmlOverflow: document.documentElement.style.overflow,
+                    bodyPaddingRight: document.body.style.paddingRight,
+                    scrollY: window.scrollY,
+                };
+
+                const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+                document.documentElement.style.overflow = 'hidden';
+                document.body.style.overflow = 'hidden';
+                document.body.style.position = 'fixed';
+                document.body.style.top = `-${this.scrollLockStyles.scrollY}px`;
+                document.body.style.width = '100%';
+
+                if (scrollbarWidth > 0) {
+                    document.body.style.paddingRight = `${scrollbarWidth}px`;
+                }
+            },
+            unlockScroll() {
+                if (! this.scrollLockStyles) return;
+
+                document.body.style.overflow = this.scrollLockStyles.bodyOverflow;
+                document.body.style.position = this.scrollLockStyles.bodyPosition;
+                document.body.style.top = this.scrollLockStyles.bodyTop;
+                document.body.style.width = this.scrollLockStyles.bodyWidth;
+                document.documentElement.style.overflow = this.scrollLockStyles.htmlOverflow;
+                document.body.style.paddingRight = this.scrollLockStyles.bodyPaddingRight;
+                window.scrollTo(0, this.scrollLockStyles.scrollY);
+                this.scrollLockStyles = null;
             },
             focusableElements() {
                 return Array.from(this.$refs.dialog.querySelectorAll([
@@ -46,10 +82,19 @@
             async close() {
                 await $wire.closeQrModal();
                 this.$nextTick(() => this.lastActiveElement?.focus?.());
+            },
+            closeFromBackdrop() {
+                if ($wire.confirmingQrLifecycleAction) {
+                    this.$refs.dialog?.focus();
+                    return;
+                }
+
+                this.close();
             }
         }"
         @keydown.escape.window.prevent="close()"
         @keydown.tab="trapFocus($event)"
+        @click.self="closeFromBackdrop()"
         class="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 px-2 pt-6 backdrop-blur-sm sm:items-center sm:p-4"
     >
         <div
