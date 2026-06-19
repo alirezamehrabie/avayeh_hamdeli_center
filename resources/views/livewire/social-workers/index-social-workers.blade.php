@@ -82,7 +82,139 @@
                 </div>
             @endif
 
-            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div class="space-y-3 md:hidden">
+                @forelse ($socialWorkers as $worker)
+                    <article wire:key="social-worker-card-{{ $worker->id }}" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100">
+                        <button
+                            type="button"
+                            wire:click="toggleSocialWorker({{ $worker->id }})"
+                            class="block w-full px-4 py-4 text-right transition hover:bg-cyan-50/50 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                        >
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0 flex-1">
+                                    <h2 class="truncate text-sm font-extrabold text-slate-900">{{ $worker->full_name ?: 'بدون نام' }}</h2>
+                                    <div class="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] font-bold text-slate-500">
+                                        <span class="rounded-full border border-cyan-200 bg-cyan-50 px-2 py-0.5 text-cyan-700" dir="ltr">{{ $worker->worker_code ?: '-' }}</span>
+                                        <span class="rounded-full bg-slate-100 px-2 py-0.5" dir="ltr">{{ $worker->national_id ?: '-' }}</span>
+                                    </div>
+                                </div>
+                                <div class="shrink-0 text-left">
+                                    <p class="text-[10px] font-semibold text-slate-400">تحت پوشش</p>
+                                    <p class="mt-0.5 text-xs font-extrabold text-slate-800">{{ $this->getCoveredCountForWorker($worker) }} نفر</p>
+                                </div>
+                            </div>
+
+                            <dl class="mt-3 grid grid-cols-2 gap-2 text-right">
+                                <div class="rounded-xl bg-slate-50 px-3 py-2">
+                                    <dt class="text-[10px] font-bold text-slate-400">موبایل</dt>
+                                    <dd class="mt-1 truncate text-xs font-bold text-slate-700" dir="ltr">{{ $worker->mobile ?: '-' }}</dd>
+                                </div>
+                                <div class="rounded-xl bg-slate-50 px-3 py-2">
+                                    <dt class="text-[10px] font-bold text-slate-400">وضعیت</dt>
+                                    <dd class="mt-1 text-xs font-bold text-slate-700">{{ $expandedSocialWorkerId === $worker->id ? 'باز شده' : 'بسته' }}</dd>
+                                </div>
+                            </dl>
+                        </button>
+
+                        <div class="border-t border-slate-100 bg-slate-50/70 px-3 py-2">
+                            <div class="grid grid-cols-3 gap-2">
+                                <button type="button" wire:click="toggleSocialWorker({{ $worker->id }})" class="inline-flex min-h-9 items-center justify-center rounded-xl border border-cyan-200 bg-white px-2 text-xs font-bold text-cyan-700 transition hover:bg-cyan-50">
+                                    {{ $expandedSocialWorkerId === $worker->id ? 'بستن' : 'سرپرستان' }}
+                                </button>
+                                @if($embedded)
+                                    <button type="button" wire:click="editSocialWorker({{ $worker->id }})" class="inline-flex min-h-9 items-center justify-center rounded-xl border px-2 text-xs font-bold transition" style="border-color: #bfe9f8; background-color: #eff9fd; color: #1d9dcf;">
+                                        ویرایش
+                                    </button>
+                                @else
+                                    <a href="{{ route('social-workers.edit', $worker) }}" class="inline-flex min-h-9 items-center justify-center rounded-xl border px-2 text-xs font-bold transition" style="border-color: #bfe9f8; background-color: #eff9fd; color: #1d9dcf;">
+                                        ویرایش
+                                    </a>
+                                @endif
+                                <button type="button" wire:click="deleteSocialWorker({{ $worker->id }})" wire:confirm="آیا از حذف این مددکار مطمئن هستید؟" class="inline-flex min-h-9 items-center justify-center rounded-xl border border-rose-200 bg-white px-2 text-xs font-bold text-rose-700 transition hover:bg-rose-50">
+                                    حذف
+                                </button>
+                            </div>
+                        </div>
+
+                        @if($expandedSocialWorkerId === $worker->id)
+                            @php
+                                $guardians = $this->getGuardiansForWorker($worker->id);
+                                $coveredDetailsLoaded = $this->hasLoadedCoveredDetailsForWorker($worker->id);
+                                $coveredDetails = $this->getCoveredDetailsForWorker($worker->id);
+                            @endphp
+                            <div class="space-y-4 border-t border-cyan-100 bg-cyan-50/30 p-3" wire:init="loadCoveredDetailsForWorker({{ $worker->id }})">
+                                <section class="rounded-2xl border border-cyan-100 bg-white p-3">
+                                    <div class="mb-3 flex items-center justify-between gap-3">
+                                        <h3 class="text-xs font-extrabold text-slate-700">سرپرستان تحت پوشش</h3>
+                                        <span class="rounded-full bg-cyan-100 px-2.5 py-1 text-[10px] font-bold text-cyan-700">{{ count($guardians) }} سرپرست</span>
+                                    </div>
+                                    <div class="space-y-2">
+                                        @forelse($guardians as $guardian)
+                                            <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                                                <div class="flex items-start justify-between gap-3">
+                                                    <p class="min-w-0 truncate text-xs font-extrabold text-slate-800">{{ trim(($guardian['first_name'] ?? '') . ' ' . ($guardian['last_name'] ?? '')) ?: '-' }}</p>
+                                                    <span class="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-600">{{ $guardian['people_count'] }} نفر</span>
+                                                </div>
+                                                <div class="mt-2 flex flex-wrap gap-1.5 text-[10px] font-bold text-slate-500">
+                                                    <span class="rounded-full bg-white px-2 py-0.5" dir="ltr">{{ $guardian['national_code'] ?: '-' }}</span>
+                                                    <span class="rounded-full bg-white px-2 py-0.5" dir="ltr">{{ $guardian['guardian_phone_number'] ?: '-' }}</span>
+                                                </div>
+                                            </div>
+                                        @empty
+                                            <p class="rounded-xl bg-slate-50 px-3 py-4 text-center text-xs font-bold text-slate-500">سرپرستی برای این مددکار ثبت نشده است.</p>
+                                        @endforelse
+                                    </div>
+                                </section>
+
+                                <section class="rounded-2xl border border-emerald-100 bg-white p-3">
+                                    <div class="mb-3 flex items-center justify-between gap-3">
+                                        <h3 class="text-xs font-extrabold text-slate-700">جزئیات آمار تحت پوشش</h3>
+                                        <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-700">{{ $this->getCoveredCountForWorker($worker) }} نفر</span>
+                                    </div>
+
+                                    @if(! $coveredDetailsLoaded)
+                                        <p class="rounded-xl bg-slate-50 px-3 py-4 text-center text-xs font-bold text-slate-500">در حال بارگذاری جزئیات...</p>
+                                    @else
+                                        <div class="space-y-2">
+                                            @forelse($coveredDetails as $detail)
+                                                @php
+                                                    $details = $coveredDetails;
+                                                    $currentGuardianGroup = $detail['guardian_group'] ?? '-';
+                                                    $previousGuardianGroup = $loop->index > 0 ? ($details[$loop->index - 1]['guardian_group'] ?? '-') : null;
+                                                    $isNewSourceGroup = $loop->first || $currentGuardianGroup !== $previousGuardianGroup;
+                                                @endphp
+                                                @if($isNewSourceGroup)
+                                                    <p class="rounded-xl bg-cyan-50 px-3 py-2 text-[10px] font-extrabold text-cyan-800">سرپرست مشترک: {{ $currentGuardianGroup }}</p>
+                                                @endif
+                                                <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                                                    <div class="flex items-start justify-between gap-3">
+                                                        <p class="min-w-0 truncate text-xs font-extrabold text-slate-800">{{ $detail['name'] ?: '-' }}</p>
+                                                        <span class="shrink-0 rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold text-sky-700">{{ $detail['role_label'] }}</span>
+                                                    </div>
+                                                    <p class="mt-1 text-[10px] font-bold text-slate-500" dir="ltr">{{ $detail['national_id'] }}</p>
+                                                    <p class="mt-2 text-[10px] leading-5 text-slate-600">{{ implode('، ', $detail['sources']) }}</p>
+                                                </div>
+                                            @empty
+                                                <p class="rounded-xl bg-slate-50 px-3 py-4 text-center text-xs font-bold text-slate-500">موردی برای نمایش ثبت نشده است.</p>
+                                            @endforelse
+                                        </div>
+                                    @endif
+                                </section>
+                            </div>
+                        @endif
+                    </article>
+                @empty
+                    <div class="rounded-2xl border border-slate-200 bg-white px-5 py-8 text-center text-sm font-bold text-slate-500 shadow-sm">
+                        @if($search)
+                            نتیجه‌ای برای این جستجو پیدا نشد.
+                        @else
+                            هنوز مددکاری ثبت نشده است.
+                        @endif
+                    </div>
+                @endforelse
+            </div>
+
+            <div class="hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:block">
                 <div class="overflow-x-auto">
                     <table class="min-w-full border-collapse text-sm">
                         <thead class="text-white" style="background: linear-gradient(to left, #53BEEA, #39addc);">
