@@ -2,6 +2,7 @@
     {{-- resources/views/livewire/social-workers/index-social-workers.blade.php --}}
     @php
         $socialWorkers = $this->socialWorkers;
+        $searchNeedsMoreInput = $this->searchNeedsMoreInput();
     @endphp
 
     <div class="container mx-auto p-4">
@@ -55,7 +56,7 @@
                         <input
                             id="social-worker-search"
                             type="text"
-                            wire:model.live.debounce.300ms="search"
+                            wire:model.live.debounce.600ms="search"
                             class="w-full rounded-2xl border bg-white px-10 py-3 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:outline-none focus:ring-4"
                             style="border-color: #bfe9f8;"
                             placeholder="عبارت جستجو را وارد کنید..."
@@ -67,6 +68,11 @@
                         </span>
                     </div>
                 </div>
+                @if($searchNeedsMoreInput)
+                    <div class="mt-2.5 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800 sm:text-xs">
+                        برای جستجوی متنی حداقل ۲ کاراکتر وارد کنید.
+                    </div>
+                @endif
                 @error('search') <span class="mt-1 block text-sm text-red-600">{{ $message }}</span> @enderror
             </div>
 

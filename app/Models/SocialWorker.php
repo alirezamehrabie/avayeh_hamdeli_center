@@ -89,6 +89,14 @@ class SocialWorker extends Model
         });
     }
 
+    public static function normalizeSearchText(?string $value): string
+    {
+        $value = str_replace(['ي', 'ى', 'ك', 'ۀ', 'ة'], ['ی', 'ی', 'ک', 'ه', 'ه'], (string) $value);
+        $value = str_replace(["\u{200C}", "\u{200D}"], ' ', $value);
+
+        return preg_replace('/\s+/u', ' ', trim($value)) ?? '';
+    }
+
 
     public static function generateNextWorkerCode(): int
     {

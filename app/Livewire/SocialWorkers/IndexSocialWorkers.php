@@ -8,6 +8,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\SocialWorker;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
 
 #[AllowDynamicProperties]
@@ -105,36 +106,79 @@ class IndexSocialWorkers extends Component
 
     }
 
-    public function getSocialWorkersProperty(): LengthAwarePaginator
+    public function getSocialWorkersProperty(): LengthAwarePaginator|Paginator
     {
         $query = SocialWorker::query()
             ->orderBy('created_at', 'desc');
 
-        if (trim($this->search) !== '') {
-            $search = trim($this->search);
-            $fullNameExpression = DB::connection()->getDriverName() === 'sqlite'
-                ? "COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')"
-                : "CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, ''))";
+        $search = $this->normalizedSearchTerm();
 
-            match ($this->searchField) {
-                'national_id' => $query->where('national_id', 'LIKE', "%{$search}%"),
-                'mobile' => $query->where('mobile', 'LIKE', "%{$search}%"),
-                'first_name' => $query->where('first_name', 'LIKE', "%{$search}%"),
-                'last_name' => $query->where('last_name', 'LIKE', "%{$search}%"),
-                'full_name' => $query->whereRaw("{$fullNameExpression} LIKE ?", ["%{$search}%"]),
-                'worker_code' => $query->where('worker_code', 'LIKE', "%{$search}%"),
-                default => $query->where(function ($q) use ($search, $fullNameExpression) {
-                    $q->where('national_id', 'LIKE', "%{$search}%")
-                        ->orWhere('mobile', 'LIKE', "%{$search}%")
-                        ->orWhere('first_name', 'LIKE', "%{$search}%")
-                        ->orWhere('last_name', 'LIKE', "%{$search}%")
-                        ->orWhere('worker_code', 'LIKE', "%{$search}%")
-                        ->orWhereRaw("{$fullNameExpression} LIKE ?", ["%{$search}%"]);
-                }),
-            };
+        if ($search !== '') {
+            if ($this->searchNeedsMoreInput($search)) {
+                return $query->whereRaw('1 = 0')->simplePaginate(20);
+            }
+
+            $this->applySearch($query, $search);
+
+            return $query->simplePaginate(20);
         }
 
         return $query->paginate(20);
+    }
+
+    public function normalizedSearchTerm(): string
+    {
+        return SocialWorker::normalizeSearchText($this->search);
+    }
+
+    public function searchNeedsMoreInput(?string $search = null): bool
+    {
+        $search ??= $this->normalizedSearchTerm();
+
+        return $search !== ''
+            && in_array($this->searchField, ['all', 'full_name', 'first_name', 'last_name'], true)
+            && mb_strlen($search) < 2;
+    }
+
+    private function applySearch($query, string $search): void
+    {
+        $isNumeric = ctype_digit($search);
+        $prefixSearch = "{$search}%";
+        $fullNameExpression = DB::connection()->getDriverName() === 'sqlite'
+            ? "COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')"
+            : "CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, ''))";
+
+        match ($this->searchField) {
+            'national_id' => $this->applyIdentifierSearch($query, 'national_id', $search, $prefixSearch),
+            'mobile' => $this->applyIdentifierSearch($query, 'mobile', $search, $prefixSearch),
+            'first_name' => $query->where('first_name', 'LIKE', $prefixSearch),
+            'last_name' => $query->where('last_name', 'LIKE', $prefixSearch),
+            'full_name' => $query->where('full_name', 'LIKE', $prefixSearch),
+            'worker_code' => strlen($search) >= 2
+                ? $query->where('worker_code', $search)
+                : $query->where('worker_code', 'LIKE', $prefixSearch),
+            default => $query->where(function ($q) use ($search, $prefixSearch, $isNumeric, $fullNameExpression) {
+                if ($isNumeric) {
+                    $q->where('worker_code', 'LIKE', $prefixSearch)
+                        ->orWhere('national_id', strlen($search) === 10 ? '=' : 'LIKE', strlen($search) === 10 ? $search : $prefixSearch)
+                        ->orWhere('mobile', strlen($search) >= 10 ? '=' : 'LIKE', strlen($search) >= 10 ? $search : $prefixSearch);
+
+                    return;
+                }
+
+                $q->where('full_name', 'LIKE', $prefixSearch)
+                    ->orWhere('first_name', 'LIKE', $prefixSearch)
+                    ->orWhere('last_name', 'LIKE', $prefixSearch)
+                    ->orWhereRaw("{$fullNameExpression} LIKE ?", [$prefixSearch]);
+            }),
+        };
+    }
+
+    private function applyIdentifierSearch($query, string $column, string $search, string $prefixSearch): void
+    {
+        strlen($search) >= 10
+            ? $query->where($column, $search)
+            : $query->where($column, 'LIKE', $prefixSearch);
     }
 
     public function getCoveredDetailsForWorker(int $socialWorkerId): array
