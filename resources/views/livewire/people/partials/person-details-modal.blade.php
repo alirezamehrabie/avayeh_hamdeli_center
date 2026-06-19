@@ -176,22 +176,116 @@
             copiedField: null,
             previousActiveElement: null,
             closing: false,
+            scrollLockStyles: null,
             init() {
                 this.previousActiveElement = document.activeElement instanceof HTMLElement
                     ? document.activeElement
                     : null;
+                this.lockScroll();
 
                 this.$nextTick(() => {
                     (this.$refs.closeButton || this.$refs.dialog)?.focus({ preventScroll: true });
                 });
             },
+            destroy() {
+                this.unlockScroll();
+            },
+            lockScroll() {
+                if (this.scrollLockStyles) return;
+
+                this.scrollLockStyles = {
+                    bodyOverflow: document.body.style.overflow,
+                    bodyPosition: document.body.style.position,
+                    bodyTop: document.body.style.top,
+                    bodyWidth: document.body.style.width,
+                    htmlOverflow: document.documentElement.style.overflow,
+                    bodyPaddingRight: document.body.style.paddingRight,
+                    scrollY: window.scrollY,
+                };
+
+                const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+                document.documentElement.style.overflow = 'hidden';
+                document.body.style.overflow = 'hidden';
+                document.body.style.position = 'fixed';
+                document.body.style.top = `-${this.scrollLockStyles.scrollY}px`;
+                document.body.style.width = '100%';
+
+                if (scrollbarWidth > 0) {
+                    document.body.style.paddingRight = `${scrollbarWidth}px`;
+                }
+            },
+            unlockScroll() {
+                if (! this.scrollLockStyles) return;
+
+                document.body.style.overflow = this.scrollLockStyles.bodyOverflow;
+                document.body.style.position = this.scrollLockStyles.bodyPosition;
+                document.body.style.top = this.scrollLockStyles.bodyTop;
+                document.body.style.width = this.scrollLockStyles.bodyWidth;
+                document.documentElement.style.overflow = this.scrollLockStyles.htmlOverflow;
+                document.body.style.paddingRight = this.scrollLockStyles.bodyPaddingRight;
+                window.scrollTo(0, this.scrollLockStyles.scrollY);
+                this.scrollLockStyles = null;
+            },
+            focusableElements(scope) {
+                if (! scope) return [];
+
+                return Array.from(scope.querySelectorAll([
+                    'a[href]',
+                    'button:not([disabled])',
+                    'input:not([disabled])',
+                    'select:not([disabled])',
+                    'textarea:not([disabled])',
+                    '[tabindex]:not([tabindex=\'-1\'])',
+                ].join(','))).filter((element) => {
+                    return element.offsetParent !== null || element === document.activeElement;
+                });
+            },
+            trapFocus(event) {
+                if (! this.open || this.closing) return;
+
+                const scope = this.viewerOpen ? this.$refs.viewer : this.$refs.dialog;
+                const focusable = this.focusableElements(scope);
+
+                if (! focusable.length) {
+                    event.preventDefault();
+                    scope?.focus({ preventScroll: true });
+                    return;
+                }
+
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+
+                if (! scope.contains(document.activeElement)) {
+                    event.preventDefault();
+                    first.focus({ preventScroll: true });
+                    return;
+                }
+
+                if (event.shiftKey && document.activeElement === first) {
+                    event.preventDefault();
+                    last.focus({ preventScroll: true });
+                    return;
+                }
+
+                if (! event.shiftKey && document.activeElement === last) {
+                    event.preventDefault();
+                    first.focus({ preventScroll: true });
+                }
+            },
             openViewer(index = 0) {
                 if (! this.viewerImages.length) return;
                 this.viewerIndex = index;
                 this.viewerOpen = true;
+                this.$nextTick(() => {
+                    (this.$refs.viewerCloseButton || this.$refs.viewer)?.focus({ preventScroll: true });
+                });
             },
             closeViewer() {
                 this.viewerOpen = false;
+                this.$nextTick(() => {
+                    (this.$refs.dialog || this.$refs.closeButton)?.focus({ preventScroll: true });
+                });
             },
             nextImage() {
                 if (this.viewerImages.length < 2) return;
@@ -224,6 +318,7 @@
                 this.open = false;
                 setTimeout(() => {
                     Promise.resolve($wire.closePersonModal()).finally(() => {
+                        this.unlockScroll();
                         this.$nextTick(() => {
                             if (this.previousActiveElement?.isConnected) {
                                 this.previousActiveElement.focus({ preventScroll: true });
@@ -242,6 +337,7 @@
         x-transition:leave-end="opacity-0"
         class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 px-0 pb-0 pt-8 backdrop-blur-sm sm:items-center sm:p-4"
         @keydown.escape.window="viewerOpen ? closeViewer() : close()"
+        @keydown.tab="trapFocus($event)"
         @keydown.arrow-right.window="if (viewerOpen) nextImage()"
         @keydown.arrow-left.window="if (viewerOpen) previousImage()"
         style="display: none;"
@@ -432,6 +528,7 @@
             </div>
 
             <div
+                x-ref="viewer"
                 x-show="viewerOpen"
                 x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0"
@@ -441,6 +538,7 @@
                 x-transition:leave-end="opacity-0"
                 class="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/90 p-3 sm:p-4"
                 @click.self="closeViewer()"
+                tabindex="-1"
                 style="display: none;"
             >
                 <button
@@ -455,6 +553,7 @@
 
                 <div class="relative flex w-full max-w-4xl flex-col items-center gap-3" @click.stop>
                     <button
+                        x-ref="viewerCloseButton"
                         type="button"
                         class="absolute right-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-2xl leading-none text-white shadow-lg transition hover:bg-white/20"
                         @click="closeViewer()"
