@@ -48,6 +48,14 @@ class IndexSocialWorkers extends Component
         $this->clearExpandedWorkerCache();
     }
 
+    public function clearSearch(): void
+    {
+        $this->search = '';
+        $this->expandedSocialWorkerId = null;
+        $this->clearExpandedWorkerCache();
+        $this->resetPage();
+    }
+
     public function createSocialWorker(): void
     {
         $this->dispatch('open-dashboard-section', section: 'social-worker-create');
