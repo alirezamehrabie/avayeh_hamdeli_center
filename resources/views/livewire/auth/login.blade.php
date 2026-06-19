@@ -1,10 +1,10 @@
 <div
     dir="rtl"
-    class="min-h-[calc(100svh-2rem)] bg-[linear-gradient(135deg,#eef8fd_0%,#ffffff_42%,#fcf1f6_100%)]"
+    class="min-h-[100svh] bg-[linear-gradient(135deg,#eef8fd_0%,#ffffff_42%,#fcf1f6_100%)]"
     style="margin-inline: calc(50% - 50vw); width: 100vw;"
 >
-    <div class="flex min-h-[calc(100svh-2rem)] items-center justify-center px-3 py-3 sm:px-6 sm:py-6 lg:px-8">
-        <div class="grid w-full max-w-md overflow-hidden rounded-2xl border border-white bg-white/95 shadow-[0_24px_80px_rgba(89,100,174,0.16)] ring-1 ring-slate-200/80 backdrop-blur lg:max-w-5xl lg:grid-cols-[0.88fr_1.12fr]">
+    <div class="flex min-h-[100svh] items-stretch justify-center px-0 py-0 sm:items-center sm:px-6 sm:py-6 lg:px-8">
+        <div class="grid min-h-[100svh] w-full max-w-md overflow-hidden border border-white bg-white/95 shadow-[0_24px_80px_rgba(89,100,174,0.16)] ring-1 ring-slate-200/80 backdrop-blur sm:min-h-0 sm:rounded-2xl lg:max-w-5xl lg:grid-cols-[0.88fr_1.12fr]">
             <aside class="relative hidden overflow-hidden bg-[#5964AE] lg:block">
                 <div class="absolute inset-0 bg-[linear-gradient(145deg,rgba(54,169,223,0.95)_0%,rgba(89,100,174,0.94)_48%,rgba(212,32,95,0.92)_100%)]"></div>
                 <div class="absolute inset-x-0 top-0 h-24 bg-white/10"></div>
@@ -48,23 +48,23 @@
                 </div>
             </aside>
 
-            <section class="relative px-4 py-5 sm:px-7 sm:py-8 lg:px-14 lg:py-12">
+            <section class="relative flex min-h-[100svh] px-4 py-4 sm:min-h-0 sm:px-7 sm:py-8 lg:px-14 lg:py-12">
                 <div class="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#5964AE,#36A9DF,#D4205F)] lg:hidden"></div>
 
-                <div class="mx-auto flex w-full max-w-md flex-col">
-                    <header class="mb-5 sm:mb-7 lg:mb-8">
-                        <div class="flex items-center gap-3 lg:hidden">
+                <div class="mx-auto flex w-full max-w-md flex-col justify-center">
+                    <header class="mb-4 sm:mb-7 lg:mb-8">
+                        <div class="flex items-center gap-2.5 lg:hidden">
                             <img
-                                class="h-auto w-28 shrink-0 sm:w-32"
+                                class="h-auto w-20 shrink-0 sm:w-32"
                                 src="{{ asset('/images/logo-sm.png') }}"
                                 alt="لوگوی آوای همدلی"
                             >
                             <div class="min-w-0">
-                                <p class="text-xs font-bold text-[#5964AE]">مرکز نیکوکاری آوای همدلی</p>
-                                <h2 class="mt-1 text-xl font-black text-slate-900 sm:text-2xl">
+                                <p class="text-[11px] font-bold leading-5 text-[#5964AE] sm:text-xs">مرکز نیکوکاری آوای همدلی</p>
+                                <h2 class="text-xl font-black text-slate-900 sm:mt-1 sm:text-2xl">
                                     ورود به سامانه
                                 </h2>
-                                <p class="mt-1 text-xs leading-6 text-slate-500 sm:text-sm">
+                                <p class="mt-0.5 text-[11px] leading-5 text-slate-500 sm:mt-1 sm:text-sm sm:leading-6">
                                     برای پیگیری خدمات حمایتی وارد حساب خود شوید.
                                 </p>
                             </div>
@@ -81,9 +81,9 @@
                         </div>
                     </header>
 
-                    <form class="space-y-4 sm:space-y-5" wire:submit.prevent="login" autocomplete="on" novalidate>
+                    <form class="space-y-3.5 sm:space-y-5" wire:submit.prevent="login" autocomplete="on" novalidate>
                         <div>
-                            <label for="email" class="mb-2 block text-sm font-bold text-slate-700">
+                            <label for="email" class="mb-1.5 block text-sm font-bold text-slate-700 sm:mb-2">
                                 نام کاربری یا ایمیل ثبت‌شده
                             </label>
                             <div class="relative">
@@ -100,7 +100,7 @@
                                     autocapitalize="off"
                                     spellcheck="false"
                                     dir="ltr"
-                                    class="block min-h-[50px] w-full rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 pl-4 pr-12 text-left text-base text-slate-900 shadow-inner shadow-slate-100 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#36A9DF] focus:bg-white focus:ring-4 focus:ring-[#36A9DF]/15 sm:min-h-[54px]"
+                                    class="block min-h-[48px] w-full rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 pl-4 pr-12 text-left text-base text-slate-900 shadow-inner shadow-slate-100 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#36A9DF] focus:bg-white focus:ring-4 focus:ring-[#36A9DF]/15 sm:min-h-[54px]"
                                     placeholder="شناسه همکار یا ایمیل شما"
                                     aria-describedby="@error('email') email-error @enderror"
                                 >
@@ -114,7 +114,7 @@
                         </div>
 
                         <div x-data="{ showPassword: false }">
-                            <label for="password" class="mb-2 block text-sm font-bold text-slate-700">
+                            <label for="password" class="mb-1.5 block text-sm font-bold text-slate-700 sm:mb-2">
                                 رمز عبور
                             </label>
                             <div class="relative">
@@ -130,7 +130,7 @@
                                     maxlength="128"
                                     autocomplete="current-password"
                                     dir="ltr"
-                                    class="block min-h-[50px] w-full rounded-xl border border-slate-200 bg-slate-50/80 px-12 py-3 text-left text-base text-slate-900 shadow-inner shadow-slate-100 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#36A9DF] focus:bg-white focus:ring-4 focus:ring-[#36A9DF]/15 sm:min-h-[54px]"
+                                    class="block min-h-[48px] w-full rounded-xl border border-slate-200 bg-slate-50/80 px-12 py-3 text-left text-base text-slate-900 shadow-inner shadow-slate-100 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#36A9DF] focus:bg-white focus:ring-4 focus:ring-[#36A9DF]/15 sm:min-h-[54px]"
                                     placeholder="رمز عبور حساب شما"
                                     aria-describedby="@error('password') password-error @enderror"
                                 >
@@ -163,13 +163,13 @@
                             </div>
                         @enderror
 
-                        <div class="flex items-center justify-between gap-3 pt-1 text-sm">
-                            <label for="remember-me" class="inline-flex cursor-pointer select-none items-center gap-2 text-slate-600">
+                        <div class="flex items-center justify-between gap-3 pt-0.5 text-sm sm:pt-1">
+                            <label for="remember-me" class="inline-flex min-h-11 cursor-pointer select-none items-center gap-2 text-slate-600">
                                 <input
                                     wire:model="remember"
                                     id="remember-me"
                                     type="checkbox"
-                                    class="h-4 w-4 rounded border-slate-300 text-[#5964AE] focus:ring-[#36A9DF]"
+                                    class="h-5 w-5 rounded border-slate-300 text-[#5964AE] focus:ring-[#36A9DF] sm:h-4 sm:w-4"
                                 >
                                 <span>مرا به خاطر بسپار</span>
                             </label>
@@ -181,7 +181,7 @@
                             type="submit"
                             wire:loading.attr="disabled"
                             wire:target="login"
-                            class="group flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-[linear-gradient(135deg,#5964AE_0%,#36A9DF_55%,#D4205F_130%)] px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-[#5964AE]/20 transition hover:shadow-xl hover:shadow-[#36A9DF]/20 focus:outline-none focus:ring-4 focus:ring-[#36A9DF]/25 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-70 sm:min-h-[54px]"
+                            class="group flex min-h-[50px] w-full items-center justify-center gap-2 rounded-xl bg-[linear-gradient(135deg,#5964AE_0%,#36A9DF_55%,#D4205F_130%)] px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-[#5964AE]/20 transition hover:shadow-xl hover:shadow-[#36A9DF]/20 focus:outline-none focus:ring-4 focus:ring-[#36A9DF]/25 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-70 sm:min-h-[54px]"
                         >
                             <span wire:loading.remove wire:target="login" class="inline-flex items-center gap-2">
                                 ورود به سامانه
@@ -194,7 +194,7 @@
                         </button>
                     </form>
 
-                    <p class="mt-5 text-center text-xs leading-6 text-slate-500 sm:mt-6">
+                    <p class="mt-4 text-center text-xs leading-6 text-slate-500 sm:mt-6">
                         در صورت مشکل در ورود، با مدیر سامانه مرکز تماس بگیرید.
                     </p>
                 </div>
