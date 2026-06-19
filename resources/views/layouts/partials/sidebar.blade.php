@@ -80,6 +80,53 @@
         } elseif ($systemSettingsOpen) {
             $defaultOpenMenu = 'system-settings';
         }
+
+        $user = auth()->user();
+        $dashboardMenuItems = [
+            'people' => [
+                ['section' => 'people-list', 'label' => 'لیست مددجویان', 'icon' => 'fa fa-users', 'active' => ['people-list', 'person-edit']],
+                ['section' => 'person-create', 'label' => 'فرم کامل ثبت نام', 'icon' => 'fa fa-user-plus', 'visible' => $user?->can('people-register')],
+                ['section' => 'people-fast-create', 'label' => 'ثبت سریع مددجو', 'icon' => 'fa fa-bolt', 'visible' => $user?->can('people-register')],
+                ['section' => 'people-block-list', 'label' => 'مددجویان غیرفعال', 'icon' => 'fa fa-ban', 'visible' => $user?->can('people-delete')],
+            ],
+            'social-workers' => [
+                ['section' => 'social-workers-list', 'label' => 'لیست مددکاران', 'active' => ['social-workers-list', 'social-worker-edit']],
+                ['section' => 'social-worker-create', 'label' => 'ثبت مددکار جدید'],
+                ['section' => 'social-workers-block-list', 'label' => 'مددکاران غیرفعال'],
+            ],
+            'guardians' => [
+                ['section' => 'guardians-list', 'label' => 'لیست سرپرستان'],
+                ['section' => 'guardians-block-list', 'label' => 'سرپرستان غیرفعال'],
+            ],
+            'services' => [
+                ['section' => 'service-list', 'label' => 'مدیریت خدمات'],
+                ['section' => 'service-delivery', 'label' => 'تحویل خدمات'],
+                ['section' => 'service-management', 'label' => 'تنظیمات خدمات'],
+            ],
+            'activities' => [
+                ['section' => 'activity-list', 'label' => 'مدیریت فعالیت‌ها'],
+                ['section' => 'activity-definition', 'label' => 'تعریف فعالیت', 'visible' => $user?->can('full-access')],
+            ],
+            'child-supporter' => [
+                ['section' => 'child-supporter-sponsor-registration', 'label' => 'ثبت نام حامی'],
+                ['section' => 'child-supporter-sponsor-list', 'label' => 'لیست حامیان'],
+            ],
+            'special-features' => [
+                ['section' => 'special-features-id-card-scanner', 'label' => 'اسکن کارت شناسایی'],
+            ],
+            'reports' => [
+                ['section' => 'advanced-beneficiary-report', 'label' => 'گزارش مددجویان', 'visible' => $user?->can('full-access')],
+                ['section' => 'advanced-supervisor-report', 'label' => 'گزارش سرپرستان', 'visible' => $user?->can('full-access')],
+                ['section' => 'advanced-social-worker-report', 'label' => 'گزارش مددکاران', 'visible' => $user?->can('full-access')],
+                ['section' => 'advanced-service-report', 'label' => 'گزارش خدمات'],
+                ['section' => 'advanced-operator-report', 'label' => 'گزارش اپراتورها'],
+            ],
+            'system-settings' => [
+                ['section' => 'system-settings-user-definition', 'label' => 'تعریف کاربر', 'visible' => $user?->can('full-access')],
+                ['section' => 'system-settings-user-list', 'label' => 'لیست کاربران', 'visible' => $user?->can('full-access')],
+                ['section' => 'system-settings-user-account', 'label' => 'حساب کاربری'],
+            ],
+        ];
     @endphp
 
     <nav x-data="{ openMenu: '{{ $defaultOpenMenu }}' }" class="flex-1 space-y-2">
@@ -122,29 +169,18 @@
                 <div x-show="openMenu === 'people'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
                     @if($dashboardMode)
 
-                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'people-list' })"
-                                class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'people-list' || $activeSection === 'person-edit' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            <i class="fa fa-users"></i> لیست مددجویان
-                        </button>
-
-                        @can('people-register')
-                            <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'person-create' })"
-                                    class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'person-create' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                                <i class="fa fa-user-plus"></i> فرم کامل ثبت نام
-                            </button>
-
-                            <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'people-fast-create' })"
-                                    class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'people-fast-create' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                                <i class="fa fa-bolt"></i> ثبت سریع مددجو
-                            </button>
-                        @endcan
-
-                        @can('people-delete')
-                            <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'people-block-list' })"
-                                    class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'people-block-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                                <i class="fa fa-ban"></i> مددجویان غیرفعال
-                            </button>
-                        @endcan
+                        @foreach($dashboardMenuItems['people'] as $item)
+                            @continue(array_key_exists('visible', $item) && ! $item['visible'])
+                            <x-sidebar.dashboard-section-button
+                                :section="$item['section']"
+                                :active="$isActive($item['active'] ?? $item['section'])"
+                            >
+                                @isset($item['icon'])
+                                    <i class="{{ $item['icon'] }}"></i>
+                                @endisset
+                                {{ $item['label'] }}
+                            </x-sidebar.dashboard-section-button>
+                        @endforeach
                     @else
                         @can('people-register')
                             <a href="{{ route('people.fast-create') }}"
@@ -187,18 +223,14 @@
                         </svg>
                     </button>
                     <div x-show="openMenu === 'social-workers'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
-                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'social-workers-list' })"
-                                class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'social-workers-list' || $activeSection === 'social-worker-edit' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            لیست مددکاران
-                        </button>
-                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'social-worker-create' })"
-                                class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'social-worker-create' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            ثبت مددکار جدید
-                        </button>
-                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'social-workers-block-list' })"
-                                class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'social-workers-block-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            مددکاران غیرفعال
-                        </button>
+                        @foreach($dashboardMenuItems['social-workers'] as $item)
+                            <x-sidebar.dashboard-section-button
+                                :section="$item['section']"
+                                :active="$isActive($item['active'] ?? $item['section'])"
+                            >
+                                {{ $item['label'] }}
+                            </x-sidebar.dashboard-section-button>
+                        @endforeach
                     </div>
                 </div>
             @else
@@ -250,14 +282,14 @@
                         </svg>
                     </button>
                     <div x-show="openMenu === 'guardians'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
-                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'guardians-list' })"
-                                class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'guardians-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            لیست سرپرستان
-                        </button>
-                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'guardians-block-list' })"
-                                class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'guardians-block-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            سرپرستان غیرفعال
-                        </button>
+                        @foreach($dashboardMenuItems['guardians'] as $item)
+                            <x-sidebar.dashboard-section-button
+                                :section="$item['section']"
+                                :active="$isActive($item['active'] ?? $item['section'])"
+                            >
+                                {{ $item['label'] }}
+                            </x-sidebar.dashboard-section-button>
+                        @endforeach
                     </div>
                 </div>
             @else
@@ -304,18 +336,14 @@
                         </svg>
                     </button>
                     <div x-show="openMenu === 'services'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
-                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'service-list' })"
-                                class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'service-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            مدیریت خدمات
-                        </button>
-                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'service-delivery' })"
-                                class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'service-delivery' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            تحویل خدمات
-                        </button>
-                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'service-management' })"
-                                class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'service-management' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            تنظیمات خدمات
-                        </button>
+                        @foreach($dashboardMenuItems['services'] as $item)
+                            <x-sidebar.dashboard-section-button
+                                :section="$item['section']"
+                                :active="$isActive($item['active'] ?? $item['section'])"
+                            >
+                                {{ $item['label'] }}
+                            </x-sidebar.dashboard-section-button>
+                        @endforeach
                     </div>
                 </div>
             @endif
@@ -339,16 +367,15 @@
                         </svg>
                     </button>
                     <div x-show="openMenu === 'activities'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
-                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'activity-list' })"
-                                class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'activity-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            مدیریت فعالیت‌ها
-                        </button>
-                        @can('full-access')
-                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'activity-definition' })"
-                                class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'activity-definition' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            تعریف فعالیت
-                        </button>
-                        @endcan
+                        @foreach($dashboardMenuItems['activities'] as $item)
+                            @continue(array_key_exists('visible', $item) && ! $item['visible'])
+                            <x-sidebar.dashboard-section-button
+                                :section="$item['section']"
+                                :active="$isActive($item['active'] ?? $item['section'])"
+                            >
+                                {{ $item['label'] }}
+                            </x-sidebar.dashboard-section-button>
+                        @endforeach
                     </div>
                 </div>
             @endif
@@ -371,14 +398,14 @@
                     </svg>
                 </button>
                 <div x-show="openMenu === 'child-supporter'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
-                    <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'child-supporter-sponsor-registration' })"
-                            class="block w-full rounded px-4 py-2 text-right text-sm {{ $activeSection === 'child-supporter-sponsor-registration' ? 'bg-indigo-800 text-white' : 'text-indigo-200 hover:text-white' }}">
-                        ثبت نام حامی
-                    </button>
-                    <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'child-supporter-sponsor-list' })"
-                            class="block w-full rounded px-4 py-2 text-right text-sm {{ $activeSection === 'child-supporter-sponsor-list' ? 'bg-indigo-800 text-white' : 'text-indigo-200 hover:text-white' }}">
-                        لیست حامیان
-                    </button>
+                    @foreach($dashboardMenuItems['child-supporter'] as $item)
+                        <x-sidebar.dashboard-section-button
+                            :section="$item['section']"
+                            :active="$isActive($item['active'] ?? $item['section'])"
+                        >
+                            {{ $item['label'] }}
+                        </x-sidebar.dashboard-section-button>
+                    @endforeach
                 </div>
             </div>
 
@@ -401,10 +428,14 @@
                     </svg>
                 </button>
                 <div x-show="openMenu === 'special-features'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
-                    <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'special-features-id-card-scanner' })"
-                            class="block w-full rounded px-4 py-2 text-right text-sm {{ $activeSection === 'special-features-id-card-scanner' ? 'bg-indigo-800 text-white' : 'text-indigo-200 hover:text-white' }}">
-                        اسکن کارت شناسایی
-                    </button>
+                    @foreach($dashboardMenuItems['special-features'] as $item)
+                        <x-sidebar.dashboard-section-button
+                            :section="$item['section']"
+                            :active="$isActive($item['active'] ?? $item['section'])"
+                        >
+                            {{ $item['label'] }}
+                        </x-sidebar.dashboard-section-button>
+                    @endforeach
                 </div>
             </div>
         @endif
@@ -429,30 +460,15 @@
                 </button>
                 <div x-show="openMenu === 'reports'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
 
-                    @can('full-access')
-                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'advanced-beneficiary-report' })"
-                                class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'advanced-beneficiary-report' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            گزارش مددجویان
-                        </button>
-                    @endcan
-                    @can('full-access')
-                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'advanced-supervisor-report' })"
-                                class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'advanced-supervisor-report' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            گزارش سرپرستان
-                        </button>
-                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'advanced-social-worker-report' })"
-                                class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'advanced-social-worker-report' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            گزارش مددکاران
-                        </button>
-                    @endcan
-                    <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'advanced-service-report' })"
-                            class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'advanced-service-report' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                         گزارش خدمات
-                    </button>
-                    <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'advanced-operator-report' })"
-                            class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'advanced-operator-report' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                        گزارش اپراتورها
-                    </button>
+                    @foreach($dashboardMenuItems['reports'] as $item)
+                        @continue(array_key_exists('visible', $item) && ! $item['visible'])
+                        <x-sidebar.dashboard-section-button
+                            :section="$item['section']"
+                            :active="$isActive($item['active'] ?? $item['section'])"
+                        >
+                            {{ $item['label'] }}
+                        </x-sidebar.dashboard-section-button>
+                    @endforeach
                 </div>
             </div>
         @else
@@ -486,20 +502,15 @@
                     </svg>
                 </button>
                 <div x-show="openMenu === 'system-settings'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
-                    @can('full-access')
-                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'system-settings-user-definition' })"
-                                class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'system-settings-user-definition' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            تعریف کاربر
-                        </button>
-                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'system-settings-user-list' })"
-                                class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'system-settings-user-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            لیست کاربران
-                        </button>
-                    @endcan
-                    <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'system-settings-user-account' })"
-                            class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'system-settings-user-account' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                        حساب کاربری
-                    </button>
+                    @foreach($dashboardMenuItems['system-settings'] as $item)
+                        @continue(array_key_exists('visible', $item) && ! $item['visible'])
+                        <x-sidebar.dashboard-section-button
+                            :section="$item['section']"
+                            :active="$isActive($item['active'] ?? $item['section'])"
+                        >
+                            {{ $item['label'] }}
+                        </x-sidebar.dashboard-section-button>
+                    @endforeach
                 </div>
             </div>
         @else
