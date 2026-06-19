@@ -149,25 +149,35 @@
                         </button>
 
                         <div class="border-t border-slate-100 bg-slate-50/70 px-3 py-2">
-                            <div class="grid grid-cols-3 gap-2">
-                                <button type="button" wire:click.stop="toggleSocialWorker({{ $worker->id }})" wire:loading.attr="disabled" wire:target="toggleSocialWorker({{ $worker->id }})" class="inline-flex min-h-9 items-center justify-center rounded-lg border border-cyan-200 bg-cyan-50 px-2 text-xs font-bold text-cyan-700 transition hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-100 disabled:cursor-wait disabled:opacity-60">
+                            <div class="flex items-center justify-between gap-2">
+                                <button type="button" wire:click.stop="toggleSocialWorker({{ $worker->id }})" wire:loading.attr="disabled" wire:target="toggleSocialWorker({{ $worker->id }})" class="inline-flex min-h-9 flex-1 items-center justify-center rounded-lg border border-cyan-200 bg-cyan-50 px-3 text-xs font-bold text-cyan-700 transition hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-100 disabled:cursor-wait disabled:opacity-60">
                                     <span wire:loading.remove wire:target="toggleSocialWorker({{ $worker->id }})">{{ $expandedSocialWorkerId === $worker->id ? 'بستن' : 'جزئیات' }}</span>
                                     <span wire:loading wire:target="toggleSocialWorker({{ $worker->id }})">...</span>
                                 </button>
-                                @if($embedded)
-                                    <button type="button" wire:click.stop="editSocialWorker({{ $worker->id }})" wire:loading.attr="disabled" wire:target="editSocialWorker({{ $worker->id }})" class="inline-flex min-h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-2 text-xs font-bold text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-100 disabled:cursor-wait disabled:opacity-60">
-                                        <span wire:loading.remove wire:target="editSocialWorker({{ $worker->id }})">ویرایش</span>
-                                        <span wire:loading wire:target="editSocialWorker({{ $worker->id }})">...</span>
+
+                                <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                                    <button type="button" @click.stop="open = !open" class="inline-flex min-h-9 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-100" aria-label="عملیات مددکار">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.75h.01M12 12h.01M12 17.25h.01"/>
+                                        </svg>
                                     </button>
-                                @else
-                                    <a href="{{ route('social-workers.edit', $worker) }}" class="inline-flex min-h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-2 text-xs font-bold text-slate-600 transition hover:bg-slate-50">
-                                        ویرایش
-                                    </a>
-                                @endif
-                                <button type="button" wire:click.stop="deleteSocialWorker({{ $worker->id }})" wire:confirm="آیا از غیرفعال‌سازی این مددکار مطمئن هستید؟" wire:loading.attr="disabled" wire:target="deleteSocialWorker({{ $worker->id }})" class="inline-flex min-h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-bold text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-100 disabled:cursor-wait disabled:opacity-60">
-                                    <span wire:loading.remove wire:target="deleteSocialWorker({{ $worker->id }})">غیرفعال</span>
-                                    <span wire:loading wire:target="deleteSocialWorker({{ $worker->id }})">...</span>
-                                </button>
+                                    <div x-show="open" x-transition.origin.top.left style="display: none;" class="absolute left-0 z-20 mt-2 w-40 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
+                                        @if($embedded)
+                                            <button type="button" @click="open = false" wire:click.stop="editSocialWorker({{ $worker->id }})" wire:loading.attr="disabled" wire:target="editSocialWorker({{ $worker->id }})" class="block w-full px-3 py-2.5 text-right text-xs font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60">
+                                                <span wire:loading.remove wire:target="editSocialWorker({{ $worker->id }})">ویرایش</span>
+                                                <span wire:loading wire:target="editSocialWorker({{ $worker->id }})">...</span>
+                                            </button>
+                                        @else
+                                            <a href="{{ route('social-workers.edit', $worker) }}" @click.stop="open = false" class="block px-3 py-2.5 text-right text-xs font-bold text-slate-700 transition hover:bg-slate-50">
+                                                ویرایش
+                                            </a>
+                                        @endif
+                                        <button type="button" @click="open = false" wire:click.stop="deleteSocialWorker({{ $worker->id }})" wire:confirm="آیا از غیرفعال‌سازی این مددکار مطمئن هستید؟" wire:loading.attr="disabled" wire:target="deleteSocialWorker({{ $worker->id }})" class="block w-full border-t border-slate-100 px-3 py-2.5 text-right text-xs font-bold text-slate-500 transition hover:bg-rose-50 hover:text-rose-600 disabled:cursor-wait disabled:opacity-60">
+                                            <span wire:loading.remove wire:target="deleteSocialWorker({{ $worker->id }})">غیرفعال</span>
+                                            <span wire:loading wire:target="deleteSocialWorker({{ $worker->id }})">...</span>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
