@@ -118,7 +118,7 @@
                     @endif
                 </div>
 
-                <aside class="rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
+                <aside class="{{ $selectedActivity ? 'order-first xl:order-none' : 'hidden xl:block' }} rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
                     @if($selectedActivity)
                         <div class="space-y-4">
                             <div class="border-b border-slate-200 pb-4">
