@@ -2,16 +2,50 @@
 @if($showQrModal)
     <div
         x-data="{
+            open: true,
             showScanUrl: false,
             lastActiveElement: null,
             scrollLockStyles: null,
+            historyStatePushed: false,
+            popstateHandler: null,
+            closing: false,
             init() {
                 this.lastActiveElement = document.activeElement;
                 this.lockScroll();
+                this.setupHistoryClose();
                 this.$nextTick(() => this.$refs.closeButton?.focus());
             },
             destroy() {
+                this.teardownHistoryClose();
                 this.unlockScroll();
+            },
+            setupHistoryClose() {
+                if (! window.history?.pushState) return;
+
+                try {
+                    window.history.pushState({
+                        ...(window.history.state || {}),
+                        qrIdentityModal: true,
+                    }, '', window.location.href);
+                    this.historyStatePushed = true;
+                } catch (error) {
+                    this.historyStatePushed = false;
+                    return;
+                }
+
+                this.popstateHandler = () => {
+                    if (! this.historyStatePushed || this.closing) return;
+
+                    this.close(true);
+                };
+
+                window.addEventListener('popstate', this.popstateHandler);
+            },
+            teardownHistoryClose() {
+                if (! this.popstateHandler) return;
+
+                window.removeEventListener('popstate', this.popstateHandler);
+                this.popstateHandler = null;
             },
             lockScroll() {
                 if (this.scrollLockStyles) return;
@@ -79,9 +113,26 @@
                     first.focus();
                 }
             },
-            async close() {
-                await $wire.closeQrModal();
+            close(fromHistory = false) {
+                if (this.closing) return;
+
+                this.closing = true;
+                this.open = false;
+                this.teardownHistoryClose();
+                this.unlockScroll();
                 this.$nextTick(() => this.lastActiveElement?.focus?.());
+
+                if (this.historyStatePushed && ! fromHistory) {
+                    this.historyStatePushed = false;
+
+                    try {
+                        window.history.back();
+                    } catch (error) {
+                        // The modal must still close even if browser history cannot be adjusted.
+                    }
+                }
+
+                $wire.closeQrModal();
             },
             closeFromBackdrop() {
                 if ($wire.confirmingQrLifecycleAction) {
@@ -92,6 +143,7 @@
                 this.close();
             }
         }"
+        x-show="open"
         @keydown.escape.window.prevent="close()"
         @keydown.tab="trapFocus($event)"
         @click.self="closeFromBackdrop()"
