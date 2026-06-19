@@ -131,6 +131,8 @@
                             @if($expandedSocialWorkerId === $worker->id)
                                 @php
                                     $guardians = $this->getGuardiansForWorker($worker->id);
+                                    $coveredDetailsLoaded = $this->hasLoadedCoveredDetailsForWorker($worker->id);
+                                    $coveredDetails = $this->getCoveredDetailsForWorker($worker->id);
                                 @endphp
                                 <tr class="bg-cyan-50/40" wire:key="social-worker-panel-{{ $worker->id }}">
                                     <td colspan="6" class="px-5 py-4">
@@ -151,7 +153,7 @@
                                                 <span class="rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-700">{{ count($guardians) }} سرپرست</span>
                                             </div>
 
-                                            <div class="overflow-x-auto">
+                                            <div class="overflow-x-auto" wire:init="loadCoveredDetailsForWorker({{ $worker->id }})">
                                                 <table class="min-w-full border-collapse text-xs">
                                                     <thead class="bg-slate-50 text-slate-600">
                                                         <tr>
@@ -199,9 +201,16 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody class="divide-y divide-slate-100">
-                                                        @forelse ($this->getCoveredDetailsForWorker($worker->id) as $detail)
+                                                        @if(! $coveredDetailsLoaded)
+                                                            <tr>
+                                                                <td colspan="5" class="px-4 py-6 text-center text-slate-500">
+                                                                    Ø¯Ø± Ø­Ø§Ù„ Ø¨Ø§Ø±Ú¯Ø°Ø§Ø±ÛŒ Ø¬Ø²Ø¦ÛŒØ§Øª...
+                                                                </td>
+                                                            </tr>
+                                                        @else
+                                                        @forelse ($coveredDetails as $detail)
                                                             @php
-                                                                $details = $this->getCoveredDetailsForWorker($worker->id);
+                                                                $details = $coveredDetails;
                                                                 $currentGuardianGroup = $detail['guardian_group'] ?? '-';
                                                                 $previousGuardianGroup = $loop->index > 0 ? ($details[$loop->index - 1]['guardian_group'] ?? '-') : null;
                                                                 $isNewSourceGroup = $loop->first || $currentGuardianGroup !== $previousGuardianGroup;
@@ -231,6 +240,7 @@
                                                                 </td>
                                                             </tr>
                                                         @endforelse
+                                                        @endif
                                                     </tbody>
                                                 </table>
                                             </div>

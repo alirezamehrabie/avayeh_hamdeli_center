@@ -28,6 +28,7 @@ class IndexSocialWorkers extends Component
     {
         $this->expandedSocialWorkerId = null;
         $this->guardiansByWorker = [];
+        $this->coveredDetailsByWorker = [];
         $this->resetPage();
     }
 
@@ -35,6 +36,7 @@ class IndexSocialWorkers extends Component
     {
         $this->expandedSocialWorkerId = null;
         $this->guardiansByWorker = [];
+        $this->coveredDetailsByWorker = [];
         $this->resetPage();
     }
 
@@ -42,6 +44,7 @@ class IndexSocialWorkers extends Component
     {
         $this->expandedSocialWorkerId = null;
         $this->guardiansByWorker = [];
+        $this->coveredDetailsByWorker = [];
     }
 
     public function createSocialWorker(): void
@@ -59,6 +62,7 @@ class IndexSocialWorkers extends Component
         $socialWorker->deactivate();
         $this->expandedSocialWorkerId = null;
         $this->guardiansByWorker = [];
+        $this->coveredDetailsByWorker = [];
         $this->resetPage();
 
         session()->flash('success', 'مددکار با موفقیت حذف شد.');
@@ -99,15 +103,6 @@ class IndexSocialWorkers extends Component
                 ->all() ?? [];
         }
 
-        if (!array_key_exists($socialWorkerId, $this->coveredDetailsByWorker)) {
-            $this->coveredDetailsByWorker[$socialWorkerId] = $socialWorker
-                ? $socialWorker->getCoveredPeopleDetails()
-                : [];
-        }
-
-        if (!array_key_exists($socialWorkerId, $this->coveredCountsByWorker)) {
-            $this->coveredCountsByWorker[$socialWorkerId] = count($this->coveredDetailsByWorker[$socialWorkerId] ?? []);
-        }
     }
 
     public function getSocialWorkersProperty(): LengthAwarePaginator
@@ -147,6 +142,25 @@ class IndexSocialWorkers extends Component
         return $this->coveredDetailsByWorker[$socialWorkerId] ?? [];
     }
 
+    public function loadCoveredDetailsForWorker(int $socialWorkerId): void
+    {
+        if (array_key_exists($socialWorkerId, $this->coveredDetailsByWorker)) {
+            return;
+        }
+
+        $socialWorker = SocialWorker::find($socialWorkerId);
+        $this->coveredDetailsByWorker[$socialWorkerId] = $socialWorker
+            ? $socialWorker->getCoveredPeopleDetails()
+            : [];
+
+        $this->coveredCountsByWorker[$socialWorkerId] = count($this->coveredDetailsByWorker[$socialWorkerId]);
+    }
+
+    public function hasLoadedCoveredDetailsForWorker(int $socialWorkerId): bool
+    {
+        return array_key_exists($socialWorkerId, $this->coveredDetailsByWorker);
+    }
+
     public function getGuardiansForWorker(int $socialWorkerId): array
     {
         return $this->guardiansByWorker[$socialWorkerId] ?? [];
@@ -159,15 +173,6 @@ class IndexSocialWorkers extends Component
         }
 
         return $this->coveredCountsByWorker[$socialWorker->id];
-    }
-
-    private function getOrLoadCoveredDetailsForWorker(SocialWorker $socialWorker): array
-    {
-        if (!array_key_exists($socialWorker->id, $this->coveredDetailsByWorker)) {
-            $this->coveredDetailsByWorker[$socialWorker->id] = $socialWorker->getCoveredPeopleDetails();
-        }
-
-        return $this->coveredDetailsByWorker[$socialWorker->id];
     }
 
     public function render()
