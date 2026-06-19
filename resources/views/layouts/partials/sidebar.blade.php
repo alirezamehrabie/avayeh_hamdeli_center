@@ -78,7 +78,7 @@
 
     <nav x-data="{ openMenu: '{{ $defaultOpenMenu }}' }" class="flex-1 space-y-2">
         @if($dashboardMode)
-            <button type="button" wire:click="selectSection('overview')"
+            <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'overview' })"
                     class="flex items-center w-full px-4 py-2.5 rounded-lg transition-colors {{ $activeSection === 'overview' ? 'bg-indigo-700' : 'hover:bg-indigo-800' }}">
                 <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -116,25 +116,25 @@
                 <div x-show="openMenu === 'people'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
                     @if($dashboardMode)
 
-                        <button type="button" wire:click="selectSection('people-list')"
+                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'people-list' })"
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'people-list' || $activeSection === 'person-edit' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             <i class="fa fa-users"></i> لیست مددجویان
                         </button>
 
                         @can('people-register')
-                            <button type="button" wire:click="selectSection('person-create')"
+                            <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'person-create' })"
                                     class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'person-create' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                                 <i class="fa fa-user-plus"></i> فرم کامل ثبت نام
                             </button>
 
-                            <button type="button" wire:click="selectSection('people-fast-create')"
+                            <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'people-fast-create' })"
                                     class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'people-fast-create' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                                 <i class="fa fa-bolt"></i> ثبت سریع مددجو
                             </button>
                         @endcan
 
                         @can('people-delete')
-                            <button type="button" wire:click="selectSection('people-block-list')"
+                            <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'people-block-list' })"
                                     class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'people-block-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                                 <i class="fa fa-ban"></i> مددجویان غیرفعال
                             </button>
@@ -181,15 +181,15 @@
                         </svg>
                     </button>
                     <div x-show="openMenu === 'social-workers'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
-                        <button type="button" wire:click="selectSection('social-workers-list')"
+                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'social-workers-list' })"
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'social-workers-list' || $activeSection === 'social-worker-edit' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             لیست مددکاران
                         </button>
-                        <button type="button" wire:click="selectSection('social-worker-create')"
+                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'social-worker-create' })"
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'social-worker-create' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             ثبت مددکار جدید
                         </button>
-                        <button type="button" wire:click="selectSection('social-workers-block-list')"
+                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'social-workers-block-list' })"
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'social-workers-block-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             مددکاران غیرفعال
                         </button>
@@ -244,11 +244,11 @@
                         </svg>
                     </button>
                     <div x-show="openMenu === 'guardians'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
-                        <button type="button" wire:click="selectSection('guardians-list')"
+                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'guardians-list' })"
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'guardians-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             لیست سرپرستان
                         </button>
-                        <button type="button" wire:click="selectSection('guardians-block-list')"
+                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'guardians-block-list' })"
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'guardians-block-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             سرپرستان غیرفعال
                         </button>
@@ -298,15 +298,15 @@
                         </svg>
                     </button>
                     <div x-show="openMenu === 'services'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
-                        <button type="button" wire:click="selectSection('service-list')"
+                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'service-list' })"
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'service-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             مدیریت خدمات
                         </button>
-                        <button type="button" wire:click="selectSection('service-delivery')"
+                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'service-delivery' })"
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'service-delivery' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             تحویل خدمات
                         </button>
-                        <button type="button" wire:click="selectSection('service-management')"
+                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'service-management' })"
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'service-management' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             تنظیمات خدمات
                         </button>
@@ -333,12 +333,12 @@
                         </svg>
                     </button>
                     <div x-show="openMenu === 'activities'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
-                        <button type="button" wire:click="selectSection('activity-list')"
+                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'activity-list' })"
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'activity-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             مدیریت فعالیت‌ها
                         </button>
                         @can('full-access')
-                        <button type="button" wire:click="selectSection('activity-definition')"
+                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'activity-definition' })"
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'activity-definition' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             تعریف فعالیت
                         </button>
@@ -365,11 +365,11 @@
                     </svg>
                 </button>
                 <div x-show="openMenu === 'child-supporter'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
-                    <button type="button" wire:click="selectSection('child-supporter-sponsor-registration')"
+                    <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'child-supporter-sponsor-registration' })"
                             class="block w-full rounded px-4 py-2 text-right text-sm {{ $activeSection === 'child-supporter-sponsor-registration' ? 'bg-indigo-800 text-white' : 'text-indigo-200 hover:text-white' }}">
                         ثبت نام حامی
                     </button>
-                    <button type="button" wire:click="selectSection('child-supporter-sponsor-list')"
+                    <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'child-supporter-sponsor-list' })"
                             class="block w-full rounded px-4 py-2 text-right text-sm {{ $activeSection === 'child-supporter-sponsor-list' ? 'bg-indigo-800 text-white' : 'text-indigo-200 hover:text-white' }}">
                         لیست حامیان
                     </button>
@@ -395,7 +395,7 @@
                     </svg>
                 </button>
                 <div x-show="openMenu === 'special-features'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
-                    <button type="button" wire:click="selectSection('special-features-id-card-scanner')"
+                    <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'special-features-id-card-scanner' })"
                             class="block w-full rounded px-4 py-2 text-right text-sm {{ $activeSection === 'special-features-id-card-scanner' ? 'bg-indigo-800 text-white' : 'text-indigo-200 hover:text-white' }}">
                         اسکن کارت شناسایی
                     </button>
@@ -424,26 +424,26 @@
                 <div x-show="openMenu === 'reports'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
 
                     @can('full-access')
-                        <button type="button" wire:click="selectSection('advanced-beneficiary-report')"
+                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'advanced-beneficiary-report' })"
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'advanced-beneficiary-report' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             گزارش مددجویان
                         </button>
                     @endcan
                     @can('full-access')
-                        <button type="button" wire:click="selectSection('advanced-supervisor-report')"
+                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'advanced-supervisor-report' })"
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'advanced-supervisor-report' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             گزارش سرپرستان
                         </button>
-                        <button type="button" wire:click="selectSection('advanced-social-worker-report')"
+                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'advanced-social-worker-report' })"
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'advanced-social-worker-report' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             گزارش مددکاران
                         </button>
                     @endcan
-                    <button type="button" wire:click="selectSection('advanced-service-report')"
+                    <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'advanced-service-report' })"
                             class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'advanced-service-report' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                          گزارش خدمات
                     </button>
-                    <button type="button" wire:click="selectSection('advanced-operator-report')"
+                    <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'advanced-operator-report' })"
                             class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'advanced-operator-report' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                         گزارش اپراتورها
                     </button>
@@ -481,16 +481,16 @@
                 </button>
                 <div x-show="openMenu === 'system-settings'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
                     @can('full-access')
-                        <button type="button" wire:click="selectSection('system-settings-user-definition')"
+                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'system-settings-user-definition' })"
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'system-settings-user-definition' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             تعریف کاربر
                         </button>
-                        <button type="button" wire:click="selectSection('system-settings-user-list')"
+                        <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'system-settings-user-list' })"
                                 class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'system-settings-user-list' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                             لیست کاربران
                         </button>
                     @endcan
-                    <button type="button" wire:click="selectSection('system-settings-user-account')"
+                    <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'system-settings-user-account' })"
                             class="block w-full text-right px-4 py-2 text-sm {{ $activeSection === 'system-settings-user-account' ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                         حساب کاربری
                     </button>

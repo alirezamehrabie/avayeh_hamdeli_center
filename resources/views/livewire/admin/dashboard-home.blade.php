@@ -14,7 +14,7 @@
     class="flex h-full overflow-hidden"
     dir="rtl"
 >
-    @include('layouts.partials.sidebar', ['dashboardMode' => true, 'activeSection' => $activeSection])
+    <livewire:admin.dashboard-sidebar :active-section="$activeSection" :key="'dashboard-sidebar'" />
 
     <div
         x-show="sidebarOpen"

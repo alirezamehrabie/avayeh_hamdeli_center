@@ -75,12 +75,14 @@ class DashboardHome extends Component
         $this->activityContextId = in_array($this->activeSection, ['activity-definition', 'activity-scanner'], true) ? $id : null;
         $this->serviceReportServiceId = $section === 'advanced-service-report' ? $id : null;
         $this->showDeletedUsers = false;
+        $this->dispatchDashboardSectionChanged();
     }
 
     public function updatedActiveSection(): void
     {
         $this->normalizeActiveSection();
         $this->syncActivityContext();
+        $this->dispatchDashboardSectionChanged();
     }
 
     public function updatedActivityContextId(): void
@@ -181,6 +183,11 @@ class DashboardHome extends Component
         if (!in_array($this->activeSection, $validSections, true)) {
             $this->activeSection = 'overview';
         }
+    }
+
+    private function dispatchDashboardSectionChanged(): void
+    {
+        $this->dispatch('dashboard-section-changed', section: $this->activeSection)->to(DashboardSidebar::class);
     }
 
     public function addReminder(): void
