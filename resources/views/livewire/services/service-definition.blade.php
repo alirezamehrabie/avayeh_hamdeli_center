@@ -1,5 +1,5 @@
 <div class="mx-auto max-w-[1680px] space-y-6 px-4 2xl:max-w-[1760px]">
-    <div class="rounded-[32px] border border-slate-200 bg-white shadow-sm">
+    <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div class="bg-gradient-to-l from-teal-600 via-cyan-600 to-sky-700 px-4 py-4 text-white sm:px-6 sm:py-6">
             <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between sm:gap-5">
                 <div>
@@ -402,6 +402,8 @@
                                                 <div
                                                     x-data="{
                                                         open: false,
+                                                        dropUp: false,
+                                                        menuMaxHeight: 224,
                                                         unit: @entangle('categories.' . $index . '.unit').live,
                                                         unitOptions: @js($unitOptions),
                                                         get options() {
@@ -410,17 +412,46 @@
                                                         get selectedLabel() {
                                                             return this.unitOptions[this.unit] ?? 'انتخاب واحد';
                                                         },
+                                                        toggleUnitDropdown() {
+                                                            this.open = !this.open;
+
+                                                            if (this.open) {
+                                                                this.$nextTick(() => this.positionUnitDropdown());
+                                                            }
+                                                        },
+                                                        positionUnitDropdown() {
+                                                            const trigger = this.$refs.unitTrigger;
+
+                                                            if (!trigger) {
+                                                                return;
+                                                            }
+
+                                                            const rect = trigger.getBoundingClientRect();
+                                                            const gap = 8;
+                                                            const viewportPadding = 16;
+                                                            const preferredHeight = 224;
+                                                            const spaceBelow = window.innerHeight - rect.bottom - gap - viewportPadding;
+                                                            const spaceAbove = rect.top - gap - viewportPadding;
+
+                                                            this.dropUp = spaceBelow < preferredHeight && spaceAbove > spaceBelow;
+                                                            const availableSpace = this.dropUp ? spaceAbove : spaceBelow;
+
+                                                            this.menuMaxHeight = Math.max(0, Math.min(preferredHeight, availableSpace));
+                                                        },
                                                         selectUnit(value) {
                                                             this.unit = value;
                                                             this.open = false;
                                                         }
                                                     }"
                                                     x-on:click.outside="open = false"
+                                                    x-on:resize.window="open && positionUnitDropdown()"
+                                                    x-on:scroll.window.throttle.100ms="open && positionUnitDropdown()"
                                                     class="relative"
                                                 >
                                                     <button
+                                                        x-ref="unitTrigger"
                                                         type="button"
-                                                        x-on:click.stop.prevent="open = !open"
+                                                        x-on:click.stop.prevent="toggleUnitDropdown()"
                                                         x-on:keydown.escape="open = false"
                                                         class="flex h-[50px] w-full items-center justify-between gap-3 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-right text-sm text-slate-700 transition focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100"
                                                         aria-haspopup="listbox"
@@ -435,11 +466,16 @@
                                                     <div
                                                         x-cloak
                                                         x-show="open"
-                                                        x-transition.origin.top.left
-                                                        class="absolute z-30 mt-2 max-h-60 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
+                                                        x-transition
+                                                        x-bind:class="dropUp ? 'bottom-full mb-2' : 'top-full mt-2'"
+                                                        x-bind:style="`max-height: ${menuMaxHeight}px`"
+                                                        class="absolute z-30 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
                                                         role="listbox"
                                                     >
-                                                        <div class="max-h-56 overflow-y-auto py-1">
+                                                        <div
+                                                            class="overflow-y-auto py-1"
+                                                            x-bind:style="`max-height: ${menuMaxHeight}px`"
+                                                        >
                                                             <template x-for="item in options" :key="item.value">
                                                                 <button
                                                                     type="button"

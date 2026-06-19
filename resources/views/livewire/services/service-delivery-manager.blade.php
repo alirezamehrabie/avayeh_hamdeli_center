@@ -65,24 +65,24 @@
     class="space-y-4"
 >
     <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="bg-gradient-to-l from-cyan-600 via-sky-600 to-blue-600 px-5 py-4 text-white">
+        <div class="bg-gradient-to-l from-indigo-700 via-sky-700 to-cyan-700 px-5 py-4 text-white">
             <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
                 <div class="min-w-0">
                     <h1 class="mt-1 truncate text-2xl font-extrabold leading-7 text-white">مدیریت سهمیه خدمات</h1>
-                    <p class="mt-1.5 hidden max-w-2xl text-xs leading-6 text-cyan-50/90 lg:block">
+                    <p class="mt-1.5 hidden max-w-2xl text-xs leading-6 text-sky-50/90 lg:block">
                         در این بخش فقط سهمیه مددکاران برای هر آیتم خدمت یا پویش مشخص می‌شود.
                     </p>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-1.5 sm:justify-end">
-                    <span class="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/12 px-2 py-1 text-[10px] font-semibold text-cyan-50/90 shadow-sm shadow-cyan-950/10 backdrop-blur">
+                    <span class="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/12 px-2 py-1 text-[10px] font-semibold text-sky-50/90 shadow-sm shadow-sky-950/10 backdrop-blur">
                         <svg viewBox="0 0 24 24" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
                             <path d="M4 7.5h16M7 4v7m10-7v7M6 20h12a2 2 0 0 0 2-2V9H4v9a2 2 0 0 0 2 2Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                         <span>خدمات</span>
                         <span class="font-black text-white">{{ $services->count() }}</span>
                     </span>
-                    <span class="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/12 px-2 py-1 text-[10px] font-semibold text-cyan-50/90 shadow-sm shadow-cyan-950/10 backdrop-blur">
+                    <span class="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/12 px-2 py-1 text-[10px] font-semibold text-sky-50/90 shadow-sm shadow-sky-950/10 backdrop-blur">
                         <svg viewBox="0 0 24 24" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
                             <path d="M16 19a4 4 0 0 0-8 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
                             <circle cx="12" cy="10" r="4" stroke="currentColor" stroke-width="1.8" />
@@ -90,7 +90,7 @@
                         <span>مددکار</span>
                         <span class="font-black text-white">{{ $selectedWorkers->count() }}</span>
                     </span>
-                    <span class="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/12 px-2 py-1 text-[10px] font-semibold text-cyan-50/90 shadow-sm shadow-cyan-950/10 backdrop-blur">
+                    <span class="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/12 px-2 py-1 text-[10px] font-semibold text-sky-50/90 shadow-sm shadow-sky-950/10 backdrop-blur">
                         <svg viewBox="0 0 24 24" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
                             <path d="M12 3v18M7.5 7.5h6.75a2.75 2.75 0 1 1 0 5.5H9.75a2.75 2.75 0 1 0 0 5.5H17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
