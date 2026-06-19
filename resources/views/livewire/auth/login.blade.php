@@ -151,6 +151,18 @@
                             @enderror
                         </div>
 
+                        @error('auth')
+                            <div
+                                id="login-auth-error"
+                                class="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-3 text-sm font-semibold leading-6 text-rose-700"
+                                role="alert"
+                                aria-live="assertive"
+                            >
+                                <i class="bi bi-exclamation-triangle mt-0.5 shrink-0 text-base" aria-hidden="true"></i>
+                                <span>{{ $message }}</span>
+                            </div>
+                        @enderror
+
                         <div class="flex items-center justify-between gap-3 pt-1 text-sm">
                             <label for="remember-me" class="inline-flex cursor-pointer select-none items-center gap-2 text-slate-600">
                                 <input

@@ -43,12 +43,19 @@ class Login extends Component
         }
 
         RateLimiter::hit($this->throttleKey(), 120);
-        $this->addError('email', 'اطلاعات ورود صحیح نیست.');
+        $this->addError('auth', 'اطلاعات ورود صحیح نیست.');
     }
 
     public function updatedEmail(): void
     {
         $this->resetErrorBag('email');
+        $this->resetErrorBag('auth');
+    }
+
+    public function updatedPassword(): void
+    {
+        $this->resetErrorBag('password');
+        $this->resetErrorBag('auth');
     }
 
     protected function ensureIsNotRateLimited(): void
@@ -59,7 +66,7 @@ class Login extends Component
 
         $seconds = RateLimiter::availableIn($this->throttleKey());
         throw ValidationException::withMessages([
-            'email' => "تعداد تلاش های ورود بیش از حد مجاز است. لطفا {$seconds} ثانیه دیگر دوباره تلاش کنید.",
+            'auth' => "تعداد تلاش های ورود بیش از حد مجاز است. لطفا {$seconds} ثانیه دیگر دوباره تلاش کنید.",
         ]);
     }
 
