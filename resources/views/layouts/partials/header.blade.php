@@ -7,7 +7,27 @@
         </button>
 
         <div class="relative">
-            <span class="text-gray-700 font-semibold">{{ auth()->user()->access_level === 'manager' ? 'مدیریت محترم ←' : 'اپراتور محترم ←' }} {{ auth()->user()->first_name ?? '' }}  {{ auth()->user()->last_name ?? 'کاربر' }} </span>
+            <div class="inline-flex items-center rounded-lg border border-gray-100 bg-gray-50 p-1 pl-3 shadow-sm">
+                <span class="ml-2 rounded-md bg-indigo-600 px-2 py-1 text-[10px] font-bold text-white shadow-sm">
+                    {{ auth()->user()->access_level === 'manager' ? 'مدیریت' : 'ادمین' }}
+                </span>
+
+                <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-700">
+                    <span>{{ auth()->user()->first_name ?? '' }} {{ auth()->user()->last_name ?? 'کاربر' }}</span>
+                    <span class="inline-flex h-5 w-5 items-center justify-center" title="حساب تاییدشده" aria-label="حساب تاییدشده">
+                        <svg class="h-5 w-5 drop-shadow-[0_1px_1px_rgba(14,165,233,0.22)]" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                            <defs>
+                                <linearGradient id="admin-verified-badge" x1="4" y1="4" x2="16" y2="16" gradientUnits="userSpaceOnUse">
+                                    <stop offset="0" stop-color="#5BB7FF" />
+                                    <stop offset="1" stop-color="#1D8DFF" />
+                                </linearGradient>
+                            </defs>
+                            <circle cx="10" cy="10" r="8.75" fill="url(#admin-verified-badge)" />
+                            <path d="M6.55 10.25L8.7 12.4L13.4 7.7" stroke="#FFFFFF" stroke-width="1.95" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </span>
+                </span>
+            </div>
         </div>
     </div>
 
