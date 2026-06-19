@@ -8,7 +8,7 @@
         ];
     @endphp
 
-    <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         <div class="min-h-[104px] border-b border-blue-700/30 bg-[#2563EB] px-4 py-4 text-white sm:px-6 sm:py-6">
             <div class="flex flex-col gap-3 sm:gap-5 lg:flex-row lg:items-end lg:justify-between">
                 <div>
@@ -23,40 +23,46 @@
 
         <div class="space-y-4 p-4">
             @if (session('activity-success'))
-                <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{{ session('activity-success') }}</div>
+                <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">{{ session('activity-success') }}</div>
             @endif
 
             @error('status')
-                <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{{ $message }}</div>
+                <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{{ $message }}</div>
             @enderror
             @error('starts_at')
-                <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{{ $message }}</div>
+                <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{{ $message }}</div>
             @enderror
             @error('startsFrom')
-                <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{{ $message }}</div>
+                <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{{ $message }}</div>
             @enderror
             @error('startsUntil')
-                <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{{ $message }}</div>
+                <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{{ $message }}</div>
             @enderror
 
-            <div class="grid gap-3 rounded-[26px] border border-slate-200 bg-slate-50/80 p-3 lg:grid-cols-6">
-                <input type="text" wire:model.live.debounce.300ms="search" placeholder="جستجو کد، نام، مکان یا ثبت‌کننده" class="rounded-2xl border border-slate-200 px-4 py-2 text-sm lg:col-span-2 focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
-                <select wire:model.live="statusFilter" class="rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
-                    <option value="all">همه وضعیت‌ها</option>
-                    @foreach($statusOptions as $value => $label)
-                        <option value="{{ $value }}">{{ $label }}</option>
-                    @endforeach
-                </select>
-                <select wire:model.live="typeFilter" class="rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
-                    <option value="all">همه نوع‌ها</option>
-                    @foreach($typeOptions as $value => $label)
-                        <option value="{{ $value }}">{{ $label }}</option>
-                    @endforeach
-                </select>
-                <input type="text" wire:model.live.debounce.500ms="startsFrom" placeholder="از تاریخ 1403/01/01" class="rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
-                <div class="flex gap-2">
-                    <input type="text" wire:model.live.debounce.500ms="startsUntil" placeholder="تا تاریخ" class="min-w-0 flex-1 rounded-2xl border border-slate-200 px-4 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
-                    <button type="button" wire:click="resetFilters" class="rounded-2xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 hover:bg-slate-50">پاک</button>
+            <div class="space-y-3 rounded-2xl border border-slate-100 bg-slate-50/40 p-3">
+                <div class="relative">
+                    <input type="text" wire:model.live.debounce.300ms="search" placeholder="جستجو کد، نام، مکان یا ثبت‌کننده" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-4 pr-10 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
+                    <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
+                        <i class="bi bi-search text-sm"></i>
+                    </span>
+                </div>
+
+                <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+                    <select wire:model.live="statusFilter" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
+                        <option value="all">همه وضعیت‌ها</option>
+                        @foreach($statusOptions as $value => $label)
+                            <option value="{{ $value }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    <select wire:model.live="typeFilter" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
+                        <option value="all">همه نوع‌ها</option>
+                        @foreach($typeOptions as $value => $label)
+                            <option value="{{ $value }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    <input type="text" wire:model.live.debounce.500ms="startsFrom" placeholder="از تاریخ 1403/01/01" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
+                    <input type="text" wire:model.live.debounce.500ms="startsUntil" placeholder="تا تاریخ" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
+                    <button type="button" wire:click="resetFilters" class="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100">پاک</button>
                 </div>
             </div>
 
@@ -67,24 +73,30 @@
                             $creator = $activity->creator;
                             $creatorName = $creator?->full_name ?: $creator?->name ?: 'نامشخص';
                         @endphp
-                        <article class="rounded-[26px] border border-slate-200 bg-white p-4 shadow-sm transition hover:border-violet-200 hover:shadow-md">
-                            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <article class="rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-violet-200 hover:bg-slate-50/40">
+                            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                 <div class="min-w-0 flex-1">
-                                    <div class="mb-2 flex flex-wrap items-center gap-2">
-                                        <span class="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-600">{{ $activity->code }}</span>
-                                        <span class="rounded-full px-3 py-1 text-[11px] font-bold {{ $badgeClasses[$activity->status] ?? 'bg-slate-100 text-slate-700' }}">{{ $statusOptions[$activity->status] ?? $activity->status }}</span>
-                                        <span class="rounded-full bg-violet-50 px-3 py-1 text-[11px] font-bold text-violet-700">{{ $typeOptions[$activity->activity_type] ?? $activity->activity_type }}</span>
+                                    <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                        <h2 class="min-w-0 truncate text-base font-bold text-slate-900">{{ $activity->name }}</h2>
+                                        <span class="rounded-lg px-3 py-1 text-[11px] font-semibold {{ $badgeClasses[$activity->status] ?? 'bg-slate-100 text-slate-700' }}">{{ $statusOptions[$activity->status] ?? $activity->status }}</span>
                                     </div>
-                                    <h2 class="truncate text-base font-black text-slate-800">{{ $activity->name }}</h2>
-                                    <div class="mt-2 grid gap-2 text-xs text-slate-500 md:grid-cols-4">
-                                        <span>شروع: {{ $this->formatJalaliDateTime($activity->starts_at) }}</span>
+
+                                    <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                                        <span class="font-medium text-slate-600">{{ $this->formatJalaliDateTime($activity->starts_at) }}</span>
+                                        <span class="text-slate-300">|</span>
+                                        <span>{{ $activity->location ?: '-' }}</span>
+                                        <span class="text-slate-300">|</span>
+                                        <span>{{ $activity->attendances_count }} نفر</span>
+                                    </div>
+
+                                    <div class="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+                                        <span class="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 font-medium text-slate-500">{{ $activity->code }}</span>
+                                        <span class="rounded-lg bg-violet-50 px-2.5 py-1 font-medium text-violet-700">{{ $typeOptions[$activity->activity_type] ?? $activity->activity_type }}</span>
                                         <span>پایان: {{ $this->formatJalaliDateTime($activity->ends_at) }}</span>
-                                        <span>مکان: {{ $activity->location ?: '-' }}</span>
-                                        <span>حضور: {{ $activity->attendances_count }} نفر</span>
+                                        <span>ثبت‌کننده: {{ $creatorName }}</span>
                                     </div>
-                                    <p class="mt-2 text-xs text-slate-400">ثبت‌کننده: {{ $creatorName }}</p>
                                 </div>
-                                <div class="flex shrink-0 items-center justify-end gap-2">
+                                <div class="flex shrink-0 items-center justify-end gap-2 lg:pt-1">
                                     <button type="button" wire:click="selectActivity({{ $activity->id }})" class="rounded-full border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-bold text-violet-700 hover:bg-violet-100">جزئیات</button>
                                     @if($activity->status === 'ongoing')
                                         <button type="button" wire:click="openScanner({{ $activity->id }})" class="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-100">ثبت حضور</button>
@@ -96,17 +108,17 @@
                             </div>
                         </article>
                     @empty
-                        <div class="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm font-semibold text-slate-500">فعالیتی با این فیلترها یافت نشد.</div>
+                        <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm font-medium text-slate-500">فعالیتی با این فیلترها یافت نشد.</div>
                     @endforelse
 
                     @if($activities->hasPages())
-                        <div class="rounded-[26px] border border-slate-200 bg-white px-3 py-3 shadow-sm">
+                        <div class="rounded-2xl border border-slate-200 bg-white px-3 py-3">
                             {{ $activities->links('vendor.livewire.tailwind-mobile-persian') }}
                         </div>
                     @endif
                 </div>
 
-                <aside class="rounded-[28px] border border-slate-200 bg-slate-50/80 p-4">
+                <aside class="rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
                     @if($selectedActivity)
                         <div class="space-y-4">
                             <div class="flex items-start justify-between gap-3">
@@ -118,16 +130,16 @@
                             </div>
 
                             <div class="grid grid-cols-2 gap-2 text-xs">
-                                <div class="rounded-2xl bg-white p-3"><span class="block text-slate-400">کد</span><strong>{{ $selectedActivity->code }}</strong></div>
-                                <div class="rounded-2xl bg-white p-3"><span class="block text-slate-400">وضعیت</span><strong>{{ $statusOptions[$selectedActivity->status] ?? $selectedActivity->status }}</strong></div>
-                                <div class="rounded-2xl bg-white p-3"><span class="block text-slate-400">ظرفیت</span><strong>{{ $selectedActivity->capacity ?: 'نامحدود' }}</strong></div>
-                                <div class="rounded-2xl bg-white p-3"><span class="block text-slate-400">کل حضور</span><strong>{{ $selectedActivity->attendances_count }}</strong></div>
-                                <div class="rounded-2xl bg-white p-3"><span class="block text-slate-400">درصد ظرفیت</span><strong>{{ $selectedActivity->capacity ? min(100, round(($selectedActivity->present_attendances_count / max(1, $selectedActivity->capacity)) * 100)) . '%' : '-' }}</strong></div>
-                                <div class="rounded-2xl bg-white p-3"><span class="block text-slate-400">حاضر</span><strong>{{ $selectedActivity->present_attendances_count }}</strong></div>
-                                <div class="rounded-2xl bg-white p-3"><span class="block text-slate-400">غایب</span><strong>{{ $selectedActivity->absent_attendances_count }}</strong></div>
+                                <div class="rounded-xl bg-white p-3"><span class="block text-slate-400">کد</span><strong>{{ $selectedActivity->code }}</strong></div>
+                                <div class="rounded-xl bg-white p-3"><span class="block text-slate-400">وضعیت</span><strong>{{ $statusOptions[$selectedActivity->status] ?? $selectedActivity->status }}</strong></div>
+                                <div class="rounded-xl bg-white p-3"><span class="block text-slate-400">ظرفیت</span><strong>{{ $selectedActivity->capacity ?: 'نامحدود' }}</strong></div>
+                                <div class="rounded-xl bg-white p-3"><span class="block text-slate-400">کل حضور</span><strong>{{ $selectedActivity->attendances_count }}</strong></div>
+                                <div class="rounded-xl bg-white p-3"><span class="block text-slate-400">درصد ظرفیت</span><strong>{{ $selectedActivity->capacity ? min(100, round(($selectedActivity->present_attendances_count / max(1, $selectedActivity->capacity)) * 100)) . '%' : '-' }}</strong></div>
+                                <div class="rounded-xl bg-white p-3"><span class="block text-slate-400">حاضر</span><strong>{{ $selectedActivity->present_attendances_count }}</strong></div>
+                                <div class="rounded-xl bg-white p-3"><span class="block text-slate-400">غایب</span><strong>{{ $selectedActivity->absent_attendances_count }}</strong></div>
                             </div>
 
-                            <div class="rounded-2xl bg-white p-3 text-xs leading-6 text-slate-600">
+                            <div class="rounded-xl bg-white p-3 text-xs leading-6 text-slate-600">
                                 <p><strong>شروع:</strong> {{ $this->formatJalaliDateTime($selectedActivity->starts_at) }}</p>
                                 <p><strong>پایان:</strong> {{ $this->formatJalaliDateTime($selectedActivity->ends_at) }}</p>
                                 <p><strong>مکان:</strong> {{ $selectedActivity->location ?: '-' }}</p>
@@ -138,7 +150,7 @@
                             @can('full-access')
                                 <div class="space-y-2">
                                     <label class="block text-xs font-bold text-slate-500">یادداشت تغییر وضعیت</label>
-                                    <textarea wire:model="transitionNotes" rows="2" class="w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100"></textarea>
+                                    <textarea wire:model="transitionNotes" rows="2" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-violet-300 focus:ring-4 focus:ring-violet-100"></textarea>
                                     <div class="flex flex-wrap gap-2">
                                         @forelse($this->allowedTransitionTargets($selectedActivity) as $targetStatus)
                                             <button type="button" wire:click="transitionActivity({{ $selectedActivity->id }}, '{{ $targetStatus }}')" class="rounded-full bg-slate-800 px-3 py-2 text-xs font-bold text-white hover:bg-slate-900">
@@ -158,21 +170,21 @@
                                 <button type="button" wire:click="exportAttendances" class="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">خروجی اکسل حضور</button>
                             </div>
 
-                            <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                            <div class="rounded-xl border border-slate-200 bg-white p-3">
                                 <div class="mb-3 flex flex-col gap-2">
                                     <div>
                                         <h3 class="text-sm font-black text-slate-800">فهرست شرکت‌کنندگان</h3>
                                         <p class="mt-1 text-[11px] font-semibold text-slate-400">نمایش حداکثر {{ $attendanceDisplayLimit }} حضور آخر؛ برای فهرست کامل از خروجی اکسل استفاده کنید.</p>
                                     </div>
-                                    <input type="text" wire:model.live.debounce.300ms="attendanceSearch" placeholder="جستجو مددجو یا ثبت‌کننده" class="rounded-2xl border border-slate-200 px-3 py-2 text-xs focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
+                                    <input type="text" wire:model.live.debounce.300ms="attendanceSearch" placeholder="جستجو مددجو یا ثبت‌کننده" class="rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
                                     <div class="grid grid-cols-2 gap-2">
-                                        <select wire:model.live="attendanceMethodFilter" class="rounded-2xl border border-slate-200 px-3 py-2 text-xs">
+                                        <select wire:model.live="attendanceMethodFilter" class="rounded-xl border border-slate-200 px-3 py-2 text-xs">
                                             <option value="all">همه روش‌ها</option>
                                             @foreach($attendanceMethodOptions as $value => $label)
                                                 <option value="{{ $value }}">{{ $label }}</option>
                                             @endforeach
                                         </select>
-                                        <select wire:model.live="attendanceStatusFilter" class="rounded-2xl border border-slate-200 px-3 py-2 text-xs">
+                                        <select wire:model.live="attendanceStatusFilter" class="rounded-xl border border-slate-200 px-3 py-2 text-xs">
                                             <option value="all">همه وضعیت‌ها</option>
                                             @foreach($attendanceStatusOptions as $value => $label)
                                                 <option value="{{ $value }}">{{ $label }}</option>
@@ -183,20 +195,20 @@
 
                                 <div class="max-h-80 space-y-2 overflow-y-auto pr-1">
                                     @forelse($filteredAttendances as $attendance)
-                                        <div class="rounded-2xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                                        <div class="rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
                                             <p class="font-bold text-slate-800">{{ $attendance->person?->full_name ?: '-' }}</p>
                                             <p>{{ $attendance->person?->person_code ?: '-' }} · {{ $attendance->person?->national_id ?: '-' }}</p>
                                             <p>روش: {{ $attendanceMethodOptions[$attendance->registration_method] ?? $attendance->registration_method }} · وضعیت: {{ $attendanceStatusOptions[$attendance->status] ?? $attendance->status }}</p>
                                             <p>زمان: {{ $this->formatJalaliDateTime($attendance->checked_in_at) }} · ثبت‌کننده: {{ $attendance->recorder?->full_name ?: $attendance->recorder?->name ?: '-' }}</p>
                                         </div>
                                     @empty
-                                        <p class="rounded-2xl border border-dashed border-slate-200 p-4 text-center text-xs text-slate-400">هنوز حضوری برای این فعالیت ثبت نشده است.</p>
+                                        <p class="rounded-xl border border-dashed border-slate-200 p-4 text-center text-xs text-slate-400">هنوز حضوری برای این فعالیت ثبت نشده است.</p>
                                     @endforelse
                                 </div>
                             </div>
                         </div>
                     @else
-                        <div class="flex min-h-72 items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm font-semibold text-slate-400">برای مشاهده جزئیات و مدیریت چرخه، یک فعالیت را انتخاب کنید.</div>
+                        <div class="flex min-h-72 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm font-medium text-slate-400">برای مشاهده جزئیات و مدیریت چرخه، یک فعالیت را انتخاب کنید.</div>
                     @endif
                 </aside>
             </div>
