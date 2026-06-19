@@ -16,7 +16,7 @@
                 <div
                     class="w-14 h-14 opacity-80 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/10 overflow-hidden">
                     <!-- در اینجا آدرس تصویر لوگوی خود را وارد کنید -->
-                    <img src="{{ asset("images/logo-wh.png")  }}" alt="Logo" class="w-full h-full object-cover">
+                    <img src="{{ asset('images/logo-wh.webp') }}" width="150" height="150" alt="لوگوی آوای همدلی" class="w-full h-full object-cover">
                 </div>
             </div>
 

@@ -37,7 +37,7 @@
                 <div class="space-y-3 text-center">
                     <div class="flex justify-center">
                         <div class="h-14 w-14 overflow-hidden rounded-2xl opacity-80 shadow-lg shadow-indigo-500/10">
-                            <img src="{{ asset('images/logo-wh.png') }}" alt="Logo" class="h-full w-full object-cover">
+                            <img src="{{ asset('images/logo-wh.webp') }}" width="150" height="150" alt="لوگوی آوای همدلی" class="h-full w-full object-cover">
                         </div>
                     </div>
 
