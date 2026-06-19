@@ -174,6 +174,17 @@
             viewerImages: @js($personImages),
             viewerIndex: 0,
             copiedField: null,
+            previousActiveElement: null,
+            closing: false,
+            init() {
+                this.previousActiveElement = document.activeElement instanceof HTMLElement
+                    ? document.activeElement
+                    : null;
+
+                this.$nextTick(() => {
+                    (this.$refs.closeButton || this.$refs.dialog)?.focus({ preventScroll: true });
+                });
+            },
             openViewer(index = 0) {
                 if (! this.viewerImages.length) return;
                 this.viewerIndex = index;
@@ -206,9 +217,20 @@
                 }
             },
             close() {
+                if (this.closing) return;
+
+                this.closing = true;
                 this.closeViewer();
                 this.open = false;
-                setTimeout(() => $wire.closePersonModal(), 220);
+                setTimeout(() => {
+                    Promise.resolve($wire.closePersonModal()).finally(() => {
+                        this.$nextTick(() => {
+                            if (this.previousActiveElement?.isConnected) {
+                                this.previousActiveElement.focus({ preventScroll: true });
+                            }
+                        });
+                    });
+                }, 220);
             }
         }"
         x-show="open"
@@ -227,6 +249,7 @@
         <div class="absolute inset-0" @click="close()"></div>
 
         <div
+            x-ref="dialog"
             x-show="open"
             x-transition:enter="transition ease-out duration-300"
             x-transition:enter-start="opacity-0 translate-y-4 scale-95"
@@ -236,6 +259,7 @@
             x-transition:leave-end="opacity-0 translate-y-4 scale-95"
             class="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-t-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/20 sm:h-auto sm:max-h-[90vh] sm:rounded-3xl"
             @click.stop
+            tabindex="-1"
         >
             <div class="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-slate-100 bg-white px-4 py-3 sm:px-5 sm:py-4">
                 <div class="min-w-0">
@@ -265,6 +289,7 @@
                         </button>
                     @endif
                     <button
+                        x-ref="closeButton"
                         type="button"
                         @click="close()"
                         class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-2xl leading-none text-slate-500 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-4 focus:ring-slate-200"
