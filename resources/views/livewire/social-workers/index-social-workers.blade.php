@@ -13,13 +13,9 @@
                 </div>
 
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <div wire:poll.5s class="rounded-2xl border bg-white/90 px-5 py-3 shadow-sm ring-1 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md" style="border-color: #cfeefb;">
+                    <div class="rounded-2xl border bg-white/90 px-5 py-3 shadow-sm ring-1 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md" style="border-color: #cfeefb;">
                         <p class="text-xs font-semibold text-slate-500">تعداد مددکاران</p>
                         <div class="mt-1 flex items-center justify-center gap-3" dir="ltr">
-                            <span class="relative flex h-3 w-3" aria-label="به‌روزرسانی زنده">
-                                <span class="absolute inline-flex h-full w-full animate-ping rounded-full opacity-60" style="background-color: #53BEEA;"></span>
-                                <span class="relative inline-flex h-3 w-3 animate-pulse rounded-full shadow-sm" style="background-color: #53BEEA; box-shadow: 0 0 0 2px #cfeefb;"></span>
-                            </span>
                             <span class="text-xl font-extrabold tracking-tight iranyekan-bold" style="color: #1d9dcf;">{{ number_format($totalSocialWorkers) }}</span>
                         </div>
                     </div>
