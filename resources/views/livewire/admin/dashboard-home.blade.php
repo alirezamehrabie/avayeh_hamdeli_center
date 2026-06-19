@@ -1,6 +1,12 @@
 <div
     x-data="{
         sidebarOpen: window.innerWidth >= 1024,
+        resizeHandler: null,
+        initSidebar() {
+            this.syncSidebar();
+            this.resizeHandler = () => this.syncSidebar();
+            window.addEventListener('resize', this.resizeHandler);
+        },
         toggleSidebar() {
             this.sidebarOpen = !this.sidebarOpen;
             this.syncSidebarFocus();
@@ -64,9 +70,15 @@
                 event.preventDefault();
                 first.focus({ preventScroll: true });
             }
+        },
+        destroy() {
+            if (this.resizeHandler) {
+                window.removeEventListener('resize', this.resizeHandler);
+                this.resizeHandler = null;
+            }
         }
     }"
-    x-init="syncSidebar(); window.addEventListener('resize', () => syncSidebar())"
+    x-init="initSidebar()"
     @open-dashboard-section.window="closeSidebarOnMobile()"
     @keydown.escape.window="closeSidebarOnMobile()"
     @keydown.tab.window="trapSidebarFocus($event)"

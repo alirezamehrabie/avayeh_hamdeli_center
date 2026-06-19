@@ -479,7 +479,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M9 17v-6m4 6V7m4 10v-4M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                 </svg>
-                <span>{{ auth()->user()?->can('full-access') ? 'Advanced Reports' : 'Operator Report' }}</span>
+                <span>{{ auth()->user()?->can('full-access') ? 'گزارش‌های پیشرفته' : 'گزارش اپراتورها' }}</span>
             </a>
         @endif
 
