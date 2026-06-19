@@ -22,8 +22,9 @@
                     </div>
 
                 @if($embedded)
-                    <button type="button" wire:click="createSocialWorker" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition focus:outline-none focus:ring-2" style="background-color: #53BEEA;">
-                        ثبت مددکار جدید
+                    <button type="button" wire:click="createSocialWorker" wire:loading.attr="disabled" wire:target="createSocialWorker" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60" style="background-color: #53BEEA;">
+                        <span wire:loading.remove wire:target="createSocialWorker">ثبت مددکار جدید</span>
+                        <span wire:loading wire:target="createSocialWorker">در حال باز کردن...</span>
                     </button>
                 @else
                     <a href="{{ route('social-workers.create') }}" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition focus:outline-none focus:ring-2" style="background-color: #53BEEA;">
@@ -39,6 +40,8 @@
                     <select
                         id="social-worker-search-field"
                         wire:model.live="searchField"
+                        wire:loading.attr="disabled"
+                        wire:target="search,searchField"
                         class="w-full rounded-2xl border bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition focus:outline-none focus:ring-4"
                         style="border-color: #bfe9f8;"
                         aria-label="معیار جستجو"
@@ -57,6 +60,8 @@
                             id="social-worker-search"
                             type="text"
                             wire:model.live.debounce.600ms="search"
+                            wire:loading.attr="disabled"
+                            wire:target="search,searchField"
                             class="w-full rounded-2xl border bg-white px-10 py-3 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:outline-none focus:ring-4"
                             style="border-color: #bfe9f8;"
                             placeholder="عبارت جستجو را وارد کنید..."
@@ -73,6 +78,14 @@
                         برای جستجوی متنی حداقل ۲ کاراکتر وارد کنید.
                     </div>
                 @endif
+                <div
+                    wire:loading.flex
+                    wire:target="search,searchField,previousPage,nextPage,gotoPage"
+                    class="mt-2.5 items-center gap-2 rounded-xl border border-cyan-100 bg-cyan-50/70 px-3 py-2 text-[11px] font-semibold text-cyan-700 sm:text-xs"
+                >
+                    <span class="h-2 w-2 animate-pulse rounded-full bg-cyan-600"></span>
+                    در حال به‌روزرسانی لیست...
+                </div>
                 @error('search') <span class="mt-1 block text-sm text-red-600">{{ $message }}</span> @enderror
             </div>
 
@@ -88,7 +101,9 @@
                         <button
                             type="button"
                             wire:click="toggleSocialWorker({{ $worker->id }})"
-                            class="block w-full px-4 py-4 text-right transition hover:bg-cyan-50/50 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                            wire:loading.attr="disabled"
+                            wire:target="toggleSocialWorker({{ $worker->id }})"
+                            class="block w-full px-4 py-4 text-right transition hover:bg-cyan-50/50 focus:outline-none focus:ring-4 focus:ring-cyan-100 disabled:cursor-wait disabled:opacity-70"
                         >
                             <div class="flex items-start justify-between gap-3">
                                 <div class="min-w-0 flex-1">
@@ -118,20 +133,23 @@
 
                         <div class="border-t border-slate-100 bg-slate-50/70 px-3 py-2">
                             <div class="grid grid-cols-3 gap-2">
-                                <button type="button" wire:click.stop="toggleSocialWorker({{ $worker->id }})" class="inline-flex min-h-9 items-center justify-center rounded-xl border border-cyan-200 bg-white px-2 text-xs font-bold text-cyan-700 transition hover:bg-cyan-50 focus:outline-none focus:ring-2 focus:ring-cyan-100">
-                                    {{ $expandedSocialWorkerId === $worker->id ? 'بستن' : 'سرپرستان' }}
+                                <button type="button" wire:click.stop="toggleSocialWorker({{ $worker->id }})" wire:loading.attr="disabled" wire:target="toggleSocialWorker({{ $worker->id }})" class="inline-flex min-h-9 items-center justify-center rounded-xl border border-cyan-200 bg-white px-2 text-xs font-bold text-cyan-700 transition hover:bg-cyan-50 focus:outline-none focus:ring-2 focus:ring-cyan-100 disabled:cursor-wait disabled:opacity-60">
+                                    <span wire:loading.remove wire:target="toggleSocialWorker({{ $worker->id }})">{{ $expandedSocialWorkerId === $worker->id ? 'بستن' : 'سرپرستان' }}</span>
+                                    <span wire:loading wire:target="toggleSocialWorker({{ $worker->id }})">...</span>
                                 </button>
                                 @if($embedded)
-                                    <button type="button" wire:click.stop="editSocialWorker({{ $worker->id }})" class="inline-flex min-h-9 items-center justify-center rounded-xl border px-2 text-xs font-bold transition focus:outline-none focus:ring-2" style="border-color: #bfe9f8; background-color: #eff9fd; color: #1d9dcf;">
-                                        ویرایش
+                                    <button type="button" wire:click.stop="editSocialWorker({{ $worker->id }})" wire:loading.attr="disabled" wire:target="editSocialWorker({{ $worker->id }})" class="inline-flex min-h-9 items-center justify-center rounded-xl border px-2 text-xs font-bold transition focus:outline-none focus:ring-2 disabled:cursor-wait disabled:opacity-60" style="border-color: #bfe9f8; background-color: #eff9fd; color: #1d9dcf;">
+                                        <span wire:loading.remove wire:target="editSocialWorker({{ $worker->id }})">ویرایش</span>
+                                        <span wire:loading wire:target="editSocialWorker({{ $worker->id }})">...</span>
                                     </button>
                                 @else
                                     <a href="{{ route('social-workers.edit', $worker) }}" class="inline-flex min-h-9 items-center justify-center rounded-xl border px-2 text-xs font-bold transition" style="border-color: #bfe9f8; background-color: #eff9fd; color: #1d9dcf;">
                                         ویرایش
                                     </a>
                                 @endif
-                                <button type="button" wire:click.stop="deleteSocialWorker({{ $worker->id }})" wire:confirm="آیا از حذف این مددکار مطمئن هستید؟" class="inline-flex min-h-9 items-center justify-center rounded-xl border border-rose-200 bg-white px-2 text-xs font-bold text-rose-700 transition hover:bg-rose-50 focus:outline-none focus:ring-2 focus:ring-rose-100">
-                                    حذف
+                                <button type="button" wire:click.stop="deleteSocialWorker({{ $worker->id }})" wire:confirm="آیا از حذف این مددکار مطمئن هستید؟" wire:loading.attr="disabled" wire:target="deleteSocialWorker({{ $worker->id }})" class="inline-flex min-h-9 items-center justify-center rounded-xl border border-rose-200 bg-white px-2 text-xs font-bold text-rose-700 transition hover:bg-rose-50 focus:outline-none focus:ring-2 focus:ring-rose-100 disabled:cursor-wait disabled:opacity-60">
+                                    <span wire:loading.remove wire:target="deleteSocialWorker({{ $worker->id }})">حذف</span>
+                                    <span wire:loading wire:target="deleteSocialWorker({{ $worker->id }})">...</span>
                                 </button>
                             </div>
                         </div>
@@ -168,8 +186,9 @@
                                             <p class="rounded-xl bg-slate-50 px-3 py-4 text-center text-xs font-bold text-slate-500">سرپرستی برای این مددکار ثبت نشده است.</p>
                                         @endforelse
                                         @if(count($guardians) > $guardianLimit)
-                                            <button type="button" wire:click="showMoreGuardians({{ $worker->id }})" class="w-full rounded-xl border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs font-bold text-cyan-700 transition hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-100">
-                                                نمایش سرپرستان بیشتر ({{ count($guardians) - $guardianLimit }})
+                                            <button type="button" wire:click="showMoreGuardians({{ $worker->id }})" wire:loading.attr="disabled" wire:target="showMoreGuardians({{ $worker->id }})" class="w-full rounded-xl border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs font-bold text-cyan-700 transition hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-100 disabled:cursor-wait disabled:opacity-60">
+                                                <span wire:loading.remove wire:target="showMoreGuardians({{ $worker->id }})">نمایش سرپرستان بیشتر ({{ count($guardians) - $guardianLimit }})</span>
+                                                <span wire:loading wire:target="showMoreGuardians({{ $worker->id }})">در حال نمایش...</span>
                                             </button>
                                         @endif
                                     </div>
@@ -207,8 +226,9 @@
                                                 <p class="rounded-xl bg-slate-50 px-3 py-4 text-center text-xs font-bold text-slate-500">موردی برای نمایش ثبت نشده است.</p>
                                             @endforelse
                                             @if(count($coveredDetails) > $coveredDetailLimit)
-                                                <button type="button" wire:click="showMoreCoveredDetails({{ $worker->id }})" class="w-full rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-100">
-                                                    نمایش جزئیات بیشتر ({{ count($coveredDetails) - $coveredDetailLimit }})
+                                                <button type="button" wire:click="showMoreCoveredDetails({{ $worker->id }})" wire:loading.attr="disabled" wire:target="showMoreCoveredDetails({{ $worker->id }})" class="w-full rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-100 disabled:cursor-wait disabled:opacity-60">
+                                                    <span wire:loading.remove wire:target="showMoreCoveredDetails({{ $worker->id }})">نمایش جزئیات بیشتر ({{ count($coveredDetails) - $coveredDetailLimit }})</span>
+                                                    <span wire:loading wire:target="showMoreCoveredDetails({{ $worker->id }})">در حال نمایش...</span>
                                                 </button>
                                             @endif
                                         </div>
@@ -256,12 +276,14 @@
                                 <td class="px-5 py-4 text-center font-light text-slate-800">{{ $this->getCoveredCountForWorker($worker) }} نفر</td>
                                 <td class="px-5 py-4 text-center">
                                     <div class="flex items-center justify-center gap-2">
-                                        <button type="button" wire:click="toggleSocialWorker({{ $worker->id }})" class="inline-flex items-center justify-center rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-700 transition hover:border-cyan-300 hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-100">
-                                            {{ $expandedSocialWorkerId === $worker->id ? 'بستن' : 'سرپرستان' }}
+                                        <button type="button" wire:click="toggleSocialWorker({{ $worker->id }})" wire:loading.attr="disabled" wire:target="toggleSocialWorker({{ $worker->id }})" class="inline-flex items-center justify-center rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-700 transition hover:border-cyan-300 hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-100 disabled:cursor-wait disabled:opacity-60">
+                                            <span wire:loading.remove wire:target="toggleSocialWorker({{ $worker->id }})">{{ $expandedSocialWorkerId === $worker->id ? 'بستن' : 'سرپرستان' }}</span>
+                                            <span wire:loading wire:target="toggleSocialWorker({{ $worker->id }})">...</span>
                                         </button>
                                         @if($embedded)
-                                            <button type="button" wire:click.stop="editSocialWorker({{ $worker->id }})" class="inline-flex items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-semibold transition" style="border-color: #bfe9f8; background-color: #eff9fd; color: #1d9dcf;">
-                                                ویرایش
+                                            <button type="button" wire:click.stop="editSocialWorker({{ $worker->id }})" wire:loading.attr="disabled" wire:target="editSocialWorker({{ $worker->id }})" class="inline-flex items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-wait disabled:opacity-60" style="border-color: #bfe9f8; background-color: #eff9fd; color: #1d9dcf;">
+                                                <span wire:loading.remove wire:target="editSocialWorker({{ $worker->id }})">ویرایش</span>
+                                                <span wire:loading wire:target="editSocialWorker({{ $worker->id }})">...</span>
                                             </button>
                                         @else
                                             <a href="{{ route('social-workers.edit', $worker) }}" wire:click.stop class="inline-flex items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-semibold transition" style="border-color: #bfe9f8; background-color: #eff9fd; color: #1d9dcf;">
@@ -269,8 +291,9 @@
                                             </a>
                                         @endif
 
-                                        <button type="button" wire:click.stop="deleteSocialWorker({{ $worker->id }})" wire:confirm="آیا از حذف این مددکار مطمئن هستید؟" class="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100">
-                                            حذف
+                                        <button type="button" wire:click.stop="deleteSocialWorker({{ $worker->id }})" wire:confirm="آیا از حذف این مددکار مطمئن هستید؟" wire:loading.attr="disabled" wire:target="deleteSocialWorker({{ $worker->id }})" class="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 disabled:cursor-wait disabled:opacity-60">
+                                            <span wire:loading.remove wire:target="deleteSocialWorker({{ $worker->id }})">حذف</span>
+                                            <span wire:loading wire:target="deleteSocialWorker({{ $worker->id }})">...</span>
                                         </button>
                                     </div>
                                 </td>
@@ -332,8 +355,9 @@
                                                         @if(count($guardians) > $guardianLimit)
                                                             <tr>
                                                                 <td colspan="5" class="px-4 py-3 text-center">
-                                                                    <button type="button" wire:click="showMoreGuardians({{ $worker->id }})" class="inline-flex items-center justify-center rounded-lg border border-cyan-100 bg-cyan-50 px-4 py-2 text-xs font-bold text-cyan-700 transition hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-100">
-                                                                        نمایش سرپرستان بیشتر ({{ count($guardians) - $guardianLimit }})
+                                                                    <button type="button" wire:click="showMoreGuardians({{ $worker->id }})" wire:loading.attr="disabled" wire:target="showMoreGuardians({{ $worker->id }})" class="inline-flex items-center justify-center rounded-lg border border-cyan-100 bg-cyan-50 px-4 py-2 text-xs font-bold text-cyan-700 transition hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-100 disabled:cursor-wait disabled:opacity-60">
+                                                                        <span wire:loading.remove wire:target="showMoreGuardians({{ $worker->id }})">نمایش سرپرستان بیشتر ({{ count($guardians) - $guardianLimit }})</span>
+                                                                        <span wire:loading wire:target="showMoreGuardians({{ $worker->id }})">در حال نمایش...</span>
                                                                     </button>
                                                                 </td>
                                                             </tr>
@@ -403,8 +427,9 @@
                                                         @if(count($coveredDetails) > $coveredDetailLimit)
                                                             <tr>
                                                                 <td colspan="5" class="px-4 py-3 text-center">
-                                                                    <button type="button" wire:click="showMoreCoveredDetails({{ $worker->id }})" class="inline-flex items-center justify-center rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-100">
-                                                                        نمایش جزئیات بیشتر ({{ count($coveredDetails) - $coveredDetailLimit }})
+                                                                    <button type="button" wire:click="showMoreCoveredDetails({{ $worker->id }})" wire:loading.attr="disabled" wire:target="showMoreCoveredDetails({{ $worker->id }})" class="inline-flex items-center justify-center rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-100 disabled:cursor-wait disabled:opacity-60">
+                                                                        <span wire:loading.remove wire:target="showMoreCoveredDetails({{ $worker->id }})">نمایش جزئیات بیشتر ({{ count($coveredDetails) - $coveredDetailLimit }})</span>
+                                                                        <span wire:loading wire:target="showMoreCoveredDetails({{ $worker->id }})">در حال نمایش...</span>
                                                                     </button>
                                                                 </td>
                                                             </tr>
