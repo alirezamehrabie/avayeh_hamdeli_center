@@ -100,7 +100,9 @@
                                     autocapitalize="off"
                                     spellcheck="false"
                                     dir="ltr"
-                                    class="block min-h-[48px] w-full rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 pl-4 pr-12 text-left text-base text-slate-900 shadow-inner shadow-slate-100 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#36A9DF] focus:bg-white focus:ring-4 focus:ring-[#36A9DF]/15 sm:min-h-[54px]"
+                                    wire:loading.attr="disabled"
+                                    wire:target="login"
+                                    class="block min-h-[48px] w-full rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 pl-4 pr-12 text-left text-base text-slate-900 shadow-inner shadow-slate-100 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#36A9DF] focus:bg-white focus:ring-4 focus:ring-[#36A9DF]/15 disabled:cursor-wait disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-500 sm:min-h-[54px]"
                                     placeholder="شناسه همکار یا ایمیل شما"
                                     aria-describedby="@error('email') email-error @enderror"
                                 >
@@ -130,13 +132,17 @@
                                     maxlength="128"
                                     autocomplete="current-password"
                                     dir="ltr"
-                                    class="block min-h-[48px] w-full rounded-xl border border-slate-200 bg-slate-50/80 px-12 py-3 text-left text-base text-slate-900 shadow-inner shadow-slate-100 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#36A9DF] focus:bg-white focus:ring-4 focus:ring-[#36A9DF]/15 sm:min-h-[54px]"
+                                    wire:loading.attr="disabled"
+                                    wire:target="login"
+                                    class="block min-h-[48px] w-full rounded-xl border border-slate-200 bg-slate-50/80 px-12 py-3 text-left text-base text-slate-900 shadow-inner shadow-slate-100 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#36A9DF] focus:bg-white focus:ring-4 focus:ring-[#36A9DF]/15 disabled:cursor-wait disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-500 sm:min-h-[54px]"
                                     placeholder="رمز عبور حساب شما"
                                     aria-describedby="@error('password') password-error @enderror"
                                 >
                                 <button
                                     type="button"
-                                    class="absolute inset-y-1 left-1 flex w-10 items-center justify-center rounded-lg text-slate-500 transition hover:bg-white hover:text-[#5964AE] focus:outline-none focus:ring-2 focus:ring-[#36A9DF]/30"
+                                    wire:loading.attr="disabled"
+                                    wire:target="login"
+                                    class="absolute inset-y-1 left-1 flex w-10 items-center justify-center rounded-lg text-slate-500 transition hover:bg-white hover:text-[#5964AE] focus:outline-none focus:ring-2 focus:ring-[#36A9DF]/30 disabled:cursor-wait disabled:opacity-50"
                                     x-on:click="showPassword = !showPassword"
                                     x-bind:aria-label="showPassword ? 'پنهان کردن رمز عبور' : 'نمایش رمز عبور'"
                                 >
@@ -169,7 +175,9 @@
                                     wire:model="remember"
                                     id="remember-me"
                                     type="checkbox"
-                                    class="h-5 w-5 rounded border-slate-300 text-[#5964AE] focus:ring-[#36A9DF] sm:h-4 sm:w-4"
+                                    wire:loading.attr="disabled"
+                                    wire:target="login"
+                                    class="h-5 w-5 rounded border-slate-300 text-[#5964AE] focus:ring-[#36A9DF] disabled:cursor-wait disabled:opacity-60 sm:h-4 sm:w-4"
                                 >
                                 <span>مرا به خاطر بسپار</span>
                             </label>
