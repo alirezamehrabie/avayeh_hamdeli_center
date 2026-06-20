@@ -43,7 +43,7 @@
                                             {{ optional($item->deleted_at)->format('Y-m-d H:i') }}
                                         </p>
                                     </div>
-                                    <button type="button" wire:click="restoreServiceName({{ $item->id }})" class="shrink-0 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-bold text-emerald-700 transition hover:bg-emerald-100">
+                                    <button type="button" wire:click="openRestoreServiceNameConfirmation({{ $item->id }})" class="shrink-0 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-bold text-emerald-700 transition hover:bg-emerald-100">
                                         بازیابی
                                     </button>
                                 </div>
@@ -72,7 +72,7 @@
                                             {{ optional($item->deleted_at)->format('Y-m-d H:i') }}
                                         </p>
                                     </div>
-                                    <button type="button" wire:click="restoreCategory({{ $item->id }})" class="shrink-0 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-bold text-emerald-700 transition hover:bg-emerald-100">
+                                    <button type="button" wire:click="openRestoreCategoryConfirmation({{ $item->id }})" class="shrink-0 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-bold text-emerald-700 transition hover:bg-emerald-100">
                                         بازیابی
                                     </button>
                                 </div>

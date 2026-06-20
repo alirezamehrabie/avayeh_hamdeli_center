@@ -5,6 +5,7 @@ namespace App\Livewire\Services;
 use App\Models\ServiceCategoryTemplate;
 use App\Models\ServiceName;
 use App\Traits\InteractsWithNotificationModal;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class ServiceArchive extends Component
@@ -16,6 +17,32 @@ class ServiceArchive extends Component
         abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
     }
 
+    public function openRestoreServiceNameConfirmation(int $serviceNameId): void
+    {
+        $serviceName = ServiceName::onlyTrashed()->findOrFail($serviceNameId);
+
+        $this->openNotificationModal([
+            'type' => 'warning',
+            'title' => 'بازیابی نام خدمت',
+            'message' => "آیا از بازیابی نام خدمت «{$serviceName->name}» مطمئن هستید؟ این نام دوباره در فهرست انتخاب‌های جدید نمایش داده می‌شود.",
+            'buttons' => [
+                [
+                    'label' => 'بازیابی نام خدمت',
+                    'action' => 'event',
+                    'event' => 'confirm-service-name-restore',
+                    'payload' => ['serviceNameId' => $serviceName->id],
+                    'variant' => 'primary',
+                ],
+                [
+                    'label' => 'انصراف',
+                    'action' => 'close',
+                    'variant' => 'secondary',
+                ],
+            ],
+        ]);
+    }
+
+    #[On('confirm-service-name-restore')]
     public function restoreServiceName(int $serviceNameId): void
     {
         $serviceName = ServiceName::onlyTrashed()->findOrFail($serviceNameId);
@@ -40,6 +67,34 @@ class ServiceArchive extends Component
         session()->flash('archive-success', "نام خدمت «{$serviceName->name}» بازیابی شد.");
     }
 
+    public function openRestoreCategoryConfirmation(int $categoryId): void
+    {
+        $category = ServiceCategoryTemplate::onlyTrashed()
+            ->with(['serviceName' => fn ($query) => $query->withTrashed()])
+            ->findOrFail($categoryId);
+
+        $this->openNotificationModal([
+            'type' => 'warning',
+            'title' => 'بازیابی دسته‌بندی',
+            'message' => "آیا از بازیابی دسته‌بندی «{$category->name}» مطمئن هستید؟ این دسته‌بندی دوباره برای «{$category->serviceName?->name}» قابل انتخاب می‌شود.",
+            'buttons' => [
+                [
+                    'label' => 'بازیابی دسته‌بندی',
+                    'action' => 'event',
+                    'event' => 'confirm-service-category-restore',
+                    'payload' => ['categoryId' => $category->id],
+                    'variant' => 'primary',
+                ],
+                [
+                    'label' => 'انصراف',
+                    'action' => 'close',
+                    'variant' => 'secondary',
+                ],
+            ],
+        ]);
+    }
+
+    #[On('confirm-service-category-restore')]
     public function restoreCategory(int $categoryId): void
     {
         $category = ServiceCategoryTemplate::onlyTrashed()

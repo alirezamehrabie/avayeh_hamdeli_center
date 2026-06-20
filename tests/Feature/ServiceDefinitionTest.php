@@ -308,6 +308,15 @@ class ServiceDefinitionTest extends TestCase
         Livewire::test(ServiceArchive::class)
             ->assertViewHas('archivedServiceNames', fn ($items): bool => $items->contains('id', $serviceName->id))
             ->assertViewHas('archivedServiceCategories', fn ($items): bool => $items->contains('id', $template->id))
+            ->call('openRestoreServiceNameConfirmation', $serviceName->id)
+            ->assertDispatched('open-notification-modal')
+            ->call('openRestoreCategoryConfirmation', $template->id)
+            ->assertDispatched('open-notification-modal');
+
+        $this->assertNotNull($serviceName->fresh()?->deleted_at);
+        $this->assertNotNull($template->fresh()?->deleted_at);
+
+        Livewire::test(ServiceArchive::class)
             ->call('restoreServiceName', $serviceName->id)
             ->call('restoreCategory', $template->id);
 
