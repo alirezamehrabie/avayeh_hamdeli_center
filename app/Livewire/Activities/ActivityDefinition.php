@@ -296,13 +296,8 @@ class ActivityDefinition extends Component
             'activityServices.*.categories.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'activityServices.*.categories.*.unit' => ['required', Rule::in(Service::unitKeys())],
             'activityServices.*.categories.*.value' => [
-                'required',
+                'nullable',
                 'regex:/^[\d,\s]+$/',
-                function (string $attribute, mixed $value, \Closure $fail): void {
-                    if ($this->digitsOnly((string) $value) === '') {
-                        $fail('ارزش واحد معتبر نیست.');
-                    }
-                },
             ],
         ];
     }
@@ -631,7 +626,7 @@ class ActivityDefinition extends Component
                 'name' => $categoryName,
                 'quantity' => (float) $categoryData['quantity'],
                 'unit' => trim($categoryData['unit']),
-                'value' => (int) $this->digitsOnly((string) $categoryData['value']),
+                'value' => $this->nullableDigitsToInt((string) ($categoryData['value'] ?? '')),
                 'created_by' => $category->exists
                     ? (int) ($category->created_by ?: auth()->id())
                     : auth()->id(),
@@ -852,6 +847,13 @@ class ActivityDefinition extends Component
     protected function digitsOnly(string $value): string
     {
         return preg_replace('/\D+/', '', $value) ?: '';
+    }
+
+    protected function nullableDigitsToInt(string $value): int
+    {
+        $digits = $this->digitsOnly($value);
+
+        return $digits === '' ? 0 : (int) $digits;
     }
 
     protected function formatDecimal(string|int|float|null $value): string
