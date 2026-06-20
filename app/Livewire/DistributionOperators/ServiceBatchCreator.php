@@ -5,244 +5,162 @@ namespace App\Livewire\DistributionOperators;
 use App\Helpers\Morilog\Jalalian;
 use App\Models\Service;
 use App\Models\ServiceCategory;
-use App\Models\ServiceCategoryTemplate;
 use App\Models\ServiceName;
+use App\Models\ServiceWorkerAllocation;
 use App\Models\SocialWorker;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
 class ServiceBatchCreator extends Component
 {
-    protected const DEFAULT_SERVICE_NAME = 'متفرقه';
+    public const MODE_PREDEFINED = 'predefined';
+    public const MODE_MISC = 'misc';
+    protected const MISC_NAME_PREFIX = 'Misc - ';
 
-    protected const DEFAULT_SERVICE_CATEGORY = 'سایر (متفرقه)';
+    public string $mode = self::MODE_PREDEFINED;
+
+    public ?int $selectedServiceId = null;
+
+    public ?int $socialWorkerId = null;
+
+    public string $socialWorkerQuery = '';
+
+    public bool $showSocialWorkerSuggestions = false;
+
+    public ?int $editingServiceId = null;
+
+    /**
+     * @var array<int, string|int|float|null>
+     */
+    public array $predefinedAllocations = [];
 
     /**
      * @var array<int, array<string, mixed>>
      */
-    public array $serviceBlocks = [];
+    public array $miscCategories = [];
 
-    public ?int $activeSocialWorkerSearchIndex = null;
+    public string $miscServiceType = 'individual';
 
-    public ?int $editingServiceId = null;
+    public string $miscDescription = '';
+
+    public string $dateDay = '';
+
+    public string $dateMonth = '';
+
+    public string $dateYear = '';
+
+    public string $date = '';
 
     public function mount(?int $editingServiceId = null): void
     {
         abort_unless(auth()->check() && auth()->user()->can('access-distribution-operator-panel'), 403);
 
         $this->editingServiceId = $editingServiceId;
-        $this->serviceBlocks = $this->editingServiceId
-            ? [$this->makeBlockFromService($this->resolveEditableService($this->editingServiceId))]
-            : [$this->makeBlock()];
-        $this->synchronizeBlockDates();
-        $this->refreshPreviewCodes();
+
+        $today = Jalalian::now();
+        $this->dateDay = (string) $today->getDay();
+        $this->dateMonth = (string) $today->getMonth();
+        $this->dateYear = (string) $today->getYear();
+        $this->date = $today->format('Y/m/d');
+        $this->miscCategories = [$this->makeMiscCategory()];
+
+        if ($this->editingServiceId) {
+            $this->loadEditableMiscService($this->resolveEditableService($this->editingServiceId));
+        }
     }
 
-    public function addBlock(): void
+    public function updatedMode(): void
     {
         if ($this->editingServiceId) {
+            $this->mode = self::MODE_MISC;
+
             return;
         }
 
-        $this->serviceBlocks[] = $this->makeBlock();
-        $this->synchronizeBlockDates();
-        $this->refreshPreviewCodes();
+        if (! in_array($this->mode, [self::MODE_PREDEFINED, self::MODE_MISC], true)) {
+            $this->mode = self::MODE_PREDEFINED;
+        }
+
+        $this->resetValidation();
     }
 
-    public function removeBlock(int $index): void
+    public function updatedSelectedServiceId(): void
     {
-        if ($this->editingServiceId) {
-            return;
-        }
-
-        if (count($this->serviceBlocks) === 1) {
-            return;
-        }
-
-        unset($this->serviceBlocks[$index]);
-        $this->serviceBlocks = array_values($this->serviceBlocks);
-        $this->refreshPreviewCodes();
+        $this->predefinedAllocations = [];
+        $this->resetValidation();
     }
 
-    public function updatedServiceBlocks(mixed $value, string $name): void
+    public function updatedSocialWorkerQuery(mixed $value): void
     {
-        $parts = explode('.', $name);
+        $this->socialWorkerQuery = trim((string) $value);
+        $this->socialWorkerId = null;
+        $this->showSocialWorkerSuggestions = true;
 
-        if (count($parts) < 3) {
-            return;
-        }
-
-        $index = (int) $parts[1];
-        $field = $parts[2];
-
-        if (! isset($this->serviceBlocks[$index])) {
-            return;
-        }
-
-        if ($field === 'social_worker_query') {
-            $this->serviceBlocks[$index]['social_worker_query'] = trim((string) $value);
-            $this->serviceBlocks[$index]['social_worker_id'] = null;
-            $this->activeSocialWorkerSearchIndex = $index;
-
-            if ($this->serviceBlocks[$index]['social_worker_query'] === '') {
-                $this->serviceBlocks[$index]['social_worker_id'] = null;
-            }
-        }
-
-        if (in_array($field, ['date_day', 'date_month', 'date_year'], true)) {
-            $this->serviceBlocks[$index]['date'] = $this->buildJalaliDateFromParts($this->serviceBlocks[$index]);
+        if ($this->socialWorkerQuery === '') {
+            $this->socialWorkerId = null;
         }
     }
 
-    public function activateSocialWorkerSearch(int $index): void
+    public function updatedDateDay(): void
     {
-        $this->activeSocialWorkerSearchIndex = $index;
+        $this->synchronizeDate();
     }
 
-    public function selectSocialWorker(int $index, int $socialWorkerId): void
+    public function updatedDateMonth(): void
+    {
+        $this->synchronizeDate();
+    }
+
+    public function updatedDateYear(): void
+    {
+        $this->synchronizeDate();
+    }
+
+    public function selectSocialWorker(int $socialWorkerId): void
     {
         $worker = SocialWorker::query()
             ->select(['id', 'first_name', 'last_name', 'worker_code'])
             ->findOrFail($socialWorkerId);
 
-        $this->serviceBlocks[$index]['social_worker_id'] = $worker->id;
-        $this->serviceBlocks[$index]['social_worker_query'] = trim($worker->full_name . ' - کد ' . $worker->worker_code);
-        $this->activeSocialWorkerSearchIndex = null;
+        $this->socialWorkerId = $worker->id;
+        $this->socialWorkerQuery = trim($worker->full_name . ' - کد ' . $worker->worker_code);
+        $this->showSocialWorkerSuggestions = false;
     }
 
-    public function clearSocialWorkerSelection(int $index): void
+    public function clearSocialWorkerSelection(): void
     {
-        if (! isset($this->serviceBlocks[$index])) {
+        $this->socialWorkerId = null;
+        $this->socialWorkerQuery = '';
+        $this->showSocialWorkerSuggestions = true;
+    }
+
+    public function addCategory(): void
+    {
+        $this->miscCategories[] = $this->makeMiscCategory();
+    }
+
+    public function removeCategory(int $index): void
+    {
+        if (count($this->miscCategories) === 1) {
             return;
         }
 
-        $this->serviceBlocks[$index]['social_worker_id'] = null;
-        $this->serviceBlocks[$index]['social_worker_query'] = '';
-        $this->activeSocialWorkerSearchIndex = $index;
+        unset($this->miscCategories[$index]);
+        $this->miscCategories = array_values($this->miscCategories);
     }
 
     public function saveBatch()
     {
-        $this->synchronizeBlockDates();
-        $validated = $this->validate($this->rules(), [], $this->validationAttributes());
-        $defaultServiceName = $this->resolveDefaultServiceName();
-        $defaultServiceCategory = $this->resolveDefaultServiceCategory($defaultServiceName->id);
+        $this->synchronizeDate();
 
-        if ($this->editingServiceId) {
-            $service = $this->resolveEditableService($this->editingServiceId);
-            $block = $validated['serviceBlocks'][0];
-
-            DB::transaction(function () use ($service, $block, $defaultServiceName, $defaultServiceCategory): void {
-                $service->update([
-                    'service_name_id' => $defaultServiceName->id,
-                    'service_type' => $block['service_type'],
-                    'supports_gate_delivery' => true,
-                    'supports_home_delivery' => true,
-                    'description' => $this->buildServiceDescription(
-                        $block['service_name'] ?? null,
-                        $block['description'] ?? null
-                    ),
-                    'total_quantity' => $block['total_quantity'],
-                    'distribution_start_date' => $this->jalaliToGregorian($block['date']),
-                    'distribution_end_date' => $this->jalaliToGregorian($block['date']),
-                ]);
-
-                $category = $service->categories()->ordered()->first() ?? $service->categories()->create([
-                    'service_name_id' => $defaultServiceName->id,
-                    'name' => trim((string) ($block['service_name'] ?? '')) !== '' ? trim((string) $block['service_name']) : $defaultServiceCategory->name,
-                    'quantity' => (float) $block['total_quantity'],
-                    'unit' => $block['unit'],
-                    'value' => 0,
-                    'sort_id' => 1,
-                    'created_by' => $service->created_by ?? auth()->id(),
-                ]);
-
-                $category->fill([
-                    'service_name_id' => $defaultServiceName->id,
-                    'name' => trim((string) ($block['service_name'] ?? '')) !== '' ? trim((string) $block['service_name']) : $category->name,
-                    'quantity' => (float) $block['total_quantity'],
-                    'unit' => $block['unit'],
-                ])->save();
-
-                $service->workerAllocations()->updateOrCreate(
-                    [
-                        'social_worker_id' => $block['social_worker_id'],
-                        'service_category_id' => $category->id,
-                    ],
-                    [
-                        'allocated_quantity' => $block['total_quantity'],
-                        'assigned_by_user_id' => auth()->id(),
-                    ]
-                );
-
-                $service->refreshFinancialTotals();
-            });
-
-            session()->flash('success', 'خدمت با موفقیت به‌روزرسانی شد.');
-
-            return redirect()->route('distribution-operator.service-list');
-        }
-
-        DB::transaction(function () use ($validated, $defaultServiceName, $defaultServiceCategory): void {
-            foreach ($validated['serviceBlocks'] as $index => $block) {
-                $serviceCode = Service::generateNextCode();
-
-                $service = Service::query()->create([
-                    'code' => $serviceCode,
-                    'service_name_id' => $defaultServiceName->id,
-                    'service_type' => $block['service_type'],
-                    'supports_gate_delivery' => true,
-                    'supports_home_delivery' => true,
-                    'description' => $this->buildServiceDescription(
-                        $block['service_name'] ?? null,
-                        $block['description'] ?? null
-                    ),
-                    'total_quantity' => $block['total_quantity'],
-                    'total_service_value' => 0,
-                    'district_id' => null,
-                    'distribution_start_date' => $this->jalaliToGregorian($block['date']),
-                    'distribution_end_date' => $this->jalaliToGregorian($block['date']),
-                    'priority' => null,
-                    'status' => 'in_distribution',
-                    'status_notes' => 'ایجادشده توسط اپراتور توزیع و تخصیص مستقیم به مددکار.',
-                    'quantity_delivered' => 0,
-                    'created_by' => auth()->id(),
-                ]);
-
-                $category = $service->categories()->create([
-                    'service_name_id' => $defaultServiceName->id,
-                    'name' => trim((string) ($block['service_name'] ?? '')) !== '' ? trim((string) $block['service_name']) : $defaultServiceCategory->name,
-                    'quantity' => (float) $block['total_quantity'],
-                    'unit' => $block['unit'],
-                    'value' => 0,
-                    'sort_id' => 1,
-                    'created_by' => auth()->id(),
-                ]);
-
-                $service->workerAllocations()->create([
-                    'social_worker_id' => $block['social_worker_id'],
-                    'service_category_id' => $category->id,
-                    'allocated_quantity' => $block['total_quantity'],
-                    'assigned_by_user_id' => auth()->id(),
-                ]);
-
-                $service->refreshFinancialTotals();
-                $this->serviceBlocks[$index]['service_id_preview'] = $serviceCode;
-            }
-        });
-
-        $count = count($validated['serviceBlocks']);
-        $this->resetValidation();
-        $this->serviceBlocks = [$this->makeBlock()];
-        $this->synchronizeBlockDates();
-        $this->refreshPreviewCodes();
-
-        session()->flash('success', "{$count} خدمت برای توزیع ثبت و به مددکاران تخصیص داده شد.");
-
-        return redirect()->route('distribution-operator.service-list');
+        return ($this->mode === self::MODE_MISC || $this->editingServiceId)
+            ? $this->saveMiscService()
+            : $this->savePredefinedAllocation();
     }
 
     public function cancelEditing()
@@ -257,184 +175,346 @@ class ServiceBatchCreator extends Component
     public function render()
     {
         return view('livewire.distribution-operators.service-batch-creator', [
-            'socialWorkerSuggestions' => $this->getSocialWorkerSuggestions(),
+            'services' => $this->predefinedServices(),
+            'selectedService' => $this->selectedPredefinedService,
+            'selectedServiceCategories' => $this->selectedPredefinedServiceCategories,
+            'socialWorkerSuggestions' => $this->socialWorkerSuggestions,
             'isEditing' => $this->editingServiceId !== null,
             'typeOptions' => Service::TYPE_OPTIONS,
             'unitOptions' => Service::unitOptions(),
+            'nextMiscName' => $this->nextMiscName(),
         ]);
     }
 
-    protected function rules(): array
+    protected function savePredefinedAllocation()
+    {
+        $validated = $this->validate($this->predefinedRules(), [], $this->validationAttributes());
+        $service = $this->resolvePredefinedService((int) $validated['selectedServiceId']);
+
+        $rows = collect($validated['predefinedAllocations'] ?? [])
+            ->map(fn ($quantity, $categoryId): array => [
+                'category_id' => (int) $categoryId,
+                'quantity' => (float) $quantity,
+            ])
+            ->filter(fn (array $row): bool => $row['quantity'] > 0)
+            ->values();
+
+        if ($rows->isEmpty()) {
+            throw ValidationException::withMessages([
+                'predefinedAllocations' => 'حداقل برای یک دسته‌بندی مقدار تخصیص وارد کنید.',
+            ]);
+        }
+
+        DB::transaction(function () use ($service, $rows, $validated): void {
+            $categories = $service->categories()->lockForUpdate()->get()->keyBy('id');
+
+            foreach ($rows as $row) {
+                $category = $categories->get($row['category_id']);
+
+                if (! $category) {
+                    throw ValidationException::withMessages([
+                        'predefinedAllocations' => 'دسته‌بندی انتخاب‌شده متعلق به خدمت انتخاب‌شده نیست.',
+                    ]);
+                }
+
+                if ($row['quantity'] > (float) $category->quantity) {
+                    throw ValidationException::withMessages([
+                        'predefinedAllocations.' . $category->id => 'مقدار تخصیص نمی‌تواند از موجودی دسته‌بندی بیشتر باشد.',
+                    ]);
+                }
+
+                $allocation = ServiceWorkerAllocation::query()->firstOrNew([
+                    'service_id' => $service->id,
+                    'service_category_id' => $category->id,
+                    'social_worker_id' => (int) $validated['socialWorkerId'],
+                ]);
+
+                $allocation->fill([
+                    'allocated_quantity' => (float) $allocation->allocated_quantity + $row['quantity'],
+                    'assigned_by_user_id' => auth()->id(),
+                ])->save();
+
+                $category->forceFill([
+                    'quantity' => max(0, (float) $category->quantity - $row['quantity']),
+                ])->save();
+            }
+
+            $service->forceFill([
+                'total_quantity' => (float) $service->categories()->sum('quantity'),
+            ])->save();
+            $service->refreshFinancialTotals();
+        });
+
+        session()->flash('success', 'تخصیص خدمت انتخاب‌شده با موفقیت ثبت شد.');
+
+        return redirect()->route('distribution-operator.service-list');
+    }
+
+    protected function saveMiscService()
+    {
+        $validated = $this->validate($this->miscRules(), [], $this->validationAttributes());
+        $miscName = $this->nextMiscName();
+
+        DB::transaction(function () use ($validated, $miscName): void {
+            $serviceName = ServiceName::query()->firstOrCreate(
+                ['name' => $miscName],
+                [
+                    'sort_id' => ((int) ServiceName::query()->max('sort_id')) + 1,
+                    'created_by' => auth()->id(),
+                ]
+            );
+
+            $totalQuantity = collect($validated['miscCategories'])
+                ->sum(fn (array $category): float => (float) $category['quantity']);
+
+            if ($this->editingServiceId) {
+                $service = $this->resolveEditableService($this->editingServiceId);
+                $service->categories()->delete();
+                $service->workerAllocations()->delete();
+            } else {
+                $service = new Service([
+                    'code' => Service::generateNextCode(),
+                    'created_by' => auth()->id(),
+                    'quantity_delivered' => 0,
+                ]);
+            }
+
+            $service->fill([
+                'name' => $miscName,
+                'service_name_id' => $serviceName->id,
+                'service_type' => $validated['miscServiceType'],
+                'supports_gate_delivery' => true,
+                'supports_home_delivery' => true,
+                'description' => $validated['miscDescription'] ?? null,
+                'total_quantity' => $totalQuantity,
+                'total_service_value' => 0,
+                'district_id' => null,
+                'distribution_start_date' => $this->jalaliToGregorian($validated['date']),
+                'distribution_end_date' => $this->jalaliToGregorian($validated['date']),
+                'priority' => null,
+                'status' => 'in_distribution',
+                'status_notes' => 'Ad-hoc service created by distribution operator.',
+            ])->save();
+
+            foreach (array_values($validated['miscCategories']) as $index => $categoryRow) {
+                $category = $service->categories()->create([
+                    'service_name_id' => $serviceName->id,
+                    'name' => trim((string) $categoryRow['name']),
+                    'quantity' => (float) $categoryRow['quantity'],
+                    'unit' => $categoryRow['unit'],
+                    'value' => 0,
+                    'sort_id' => $index + 1,
+                    'created_by' => auth()->id(),
+                ]);
+
+                $service->workerAllocations()->create([
+                    'social_worker_id' => (int) $validated['socialWorkerId'],
+                    'service_category_id' => $category->id,
+                    'allocated_quantity' => (float) $categoryRow['quantity'],
+                    'assigned_by_user_id' => auth()->id(),
+                ]);
+            }
+
+            $service->refreshFinancialTotals();
+        });
+
+        session()->flash('success', 'خدمت متفرقه با موفقیت ایجاد و تخصیص داده شد.');
+
+        return redirect()->route('distribution-operator.service-list');
+    }
+
+    protected function predefinedRules(): array
     {
         return [
-            'serviceBlocks' => ['required', 'array', 'min:1'],
-            'serviceBlocks.*.service_name' => ['nullable', 'string', 'max:255'],
-            'serviceBlocks.*.service_type' => ['required', Rule::in(array_keys(Service::TYPE_OPTIONS))],
-            'serviceBlocks.*.description' => ['nullable', 'string', 'max:5000'],
-            'serviceBlocks.*.total_quantity' => ['required', 'numeric', 'min:0.01'],
-            'serviceBlocks.*.unit' => ['required', Rule::in(Service::unitKeys())],
-            'serviceBlocks.*.date_day' => ['required', 'integer', 'min:1', 'max:31'],
-            'serviceBlocks.*.date_month' => ['required', 'integer', 'min:1', 'max:12'],
-            'serviceBlocks.*.date_year' => ['required', 'integer', 'min:1300', 'max:1600'],
-            'serviceBlocks.*.date' => ['required', 'string', function (string $attribute, mixed $value, \Closure $fail): void {
+            'selectedServiceId' => [
+                'required',
+                'integer',
+                Rule::exists('services', 'id')->where(fn ($query) => $query->whereIn('status', ['approved', 'in_distribution'])),
+            ],
+            'socialWorkerId' => ['required', 'integer', 'exists:social_workers,id'],
+            'predefinedAllocations' => ['array'],
+            'predefinedAllocations.*' => ['nullable', 'numeric', 'min:0'],
+        ];
+    }
+
+    protected function miscRules(): array
+    {
+        return [
+            'miscServiceType' => ['required', Rule::in(array_keys(Service::TYPE_OPTIONS))],
+            'miscDescription' => ['nullable', 'string', 'max:5000'],
+            'dateDay' => ['required', 'integer', 'min:1', 'max:31'],
+            'dateMonth' => ['required', 'integer', 'min:1', 'max:12'],
+            'dateYear' => ['required', 'integer', 'min:1300', 'max:1600'],
+            'date' => ['required', 'string', function (string $attribute, mixed $value, \Closure $fail): void {
                 if (! $this->isValidJalaliDate((string) $value)) {
                     $fail('تاریخ واردشده معتبر نیست.');
                 }
             }],
-            'serviceBlocks.*.social_worker_id' => ['required', 'integer', 'exists:social_workers,id'],
+            'socialWorkerId' => ['required', 'integer', 'exists:social_workers,id'],
+            'miscCategories' => ['required', 'array', 'min:1'],
+            'miscCategories.*.name' => ['required', 'string', 'max:255'],
+            'miscCategories.*.quantity' => ['required', 'numeric', 'min:0.01'],
+            'miscCategories.*.unit' => ['required', Rule::in(Service::unitKeys())],
         ];
     }
 
     protected function validationAttributes(): array
     {
         return [
-            'serviceBlocks.*.service_name' => 'نام خدمت',
-            'serviceBlocks.*.service_type' => 'نوع خدمت',
-            'serviceBlocks.*.description' => 'توضیحات',
-            'serviceBlocks.*.total_quantity' => 'تعداد کل',
-            'serviceBlocks.*.unit' => 'واحد',
-            'serviceBlocks.*.date_day' => 'روز',
-            'serviceBlocks.*.date_month' => 'ماه',
-            'serviceBlocks.*.date_year' => 'سال',
-            'serviceBlocks.*.date' => 'تاریخ',
-            'serviceBlocks.*.social_worker_id' => 'مددکار',
+            'selectedServiceId' => 'خدمت / پویش',
+            'socialWorkerId' => 'مددکار',
+            'predefinedAllocations.*' => 'مقدار تخصیص',
+            'miscServiceType' => 'نوع خدمت',
+            'miscDescription' => 'توضیحات',
+            'dateDay' => 'روز',
+            'dateMonth' => 'ماه',
+            'dateYear' => 'سال',
+            'date' => 'تاریخ',
+            'miscCategories.*.name' => 'نام دسته‌بندی',
+            'miscCategories.*.quantity' => 'مقدار دسته‌بندی',
+            'miscCategories.*.unit' => 'واحد',
         ];
     }
 
     /**
      * @return array<string, mixed>
      */
-    protected function makeBlock(): array
+    protected function makeMiscCategory(): array
     {
-        $today = Jalalian::now();
-
         return [
-            'service_id_preview' => '',
-            'service_name' => '',
-            'service_type' => 'individual',
-            'description' => '',
-            'total_quantity' => '',
-            'unit' => 'package',
-            'date_day' => (string) $today->getDay(),
-            'date_month' => (string) $today->getMonth(),
-            'date_year' => (string) $today->getYear(),
-            'date' => $today->format('Y/m/d'),
-            'social_worker_id' => null,
-            'social_worker_query' => '',
+            'name' => '',
+            'quantity' => '',
+            'unit' => array_key_first(Service::unitOptions()) ?? 'count',
         ];
     }
 
-    protected function makeBlockFromService(Service $service): array
+    protected function loadEditableMiscService(Service $service): void
     {
-        [$serviceTitle, $serviceDescription] = $this->splitServiceDescription((string) $service->description);
         $worker = $service->socialWorkers()->select(['social_workers.id', 'first_name', 'last_name', 'worker_code'])->first();
         $jalaliDate = Jalalian::fromDateTime($service->distribution_start_date);
 
-        return [
-            'service_id_preview' => (string) $service->code,
-            'service_name' => $serviceTitle,
-            'service_type' => (string) $service->service_type,
-            'description' => $serviceDescription,
-            'total_quantity' => $this->formatDecimal($service->total_quantity),
-            'unit' => (string) ($service->serviceCategory?->unit ?? $service->categories()->ordered()->value('unit') ?? array_key_first(Service::unitOptions()) ?? 'package'),
-            'date_day' => (string) $jalaliDate->getDay(),
-            'date_month' => (string) $jalaliDate->getMonth(),
-            'date_year' => (string) $jalaliDate->getYear(),
-            'date' => $jalaliDate->format('Y/m/d'),
-            'social_worker_id' => $worker?->id,
-            'social_worker_query' => $worker ? trim($worker->full_name . ' - کد ' . $worker->worker_code) : '',
-        ];
+        $this->mode = self::MODE_MISC;
+        $this->miscServiceType = (string) $service->service_type;
+        $this->miscDescription = (string) $service->description;
+        $this->dateDay = (string) $jalaliDate->getDay();
+        $this->dateMonth = (string) $jalaliDate->getMonth();
+        $this->dateYear = (string) $jalaliDate->getYear();
+        $this->date = $jalaliDate->format('Y/m/d');
+        $this->socialWorkerId = $worker?->id;
+        $this->socialWorkerQuery = $worker ? trim($worker->full_name . ' - کد ' . $worker->worker_code) : '';
+        $this->miscCategories = $service->categories()
+            ->ordered()
+            ->get()
+            ->map(fn (ServiceCategory $category): array => [
+                'name' => $category->name,
+                'quantity' => $this->formatDecimal($category->quantity),
+                'unit' => $category->unit,
+            ])
+            ->values()
+            ->all() ?: [$this->makeMiscCategory()];
     }
 
-    protected function synchronizeBlockDates(): void
+    protected function synchronizeDate(): void
     {
-        foreach (array_keys($this->serviceBlocks) as $index) {
-            $this->serviceBlocks[$index]['date'] = $this->buildJalaliDateFromParts($this->serviceBlocks[$index]);
+        $year = str_pad(trim($this->dateYear), 4, '0', STR_PAD_LEFT);
+        $month = str_pad(trim($this->dateMonth), 2, '0', STR_PAD_LEFT);
+        $day = str_pad(trim($this->dateDay), 2, '0', STR_PAD_LEFT);
+
+        $this->date = implode('/', [$year, $month, $day]);
+    }
+
+    protected function resolvePredefinedService(int $serviceId): Service
+    {
+        return Service::query()
+            ->with(['categories' => fn ($query) => $query->orderBy('sort_id')->orderBy('id')])
+            ->whereIn('status', ['approved', 'in_distribution'])
+            ->where(function (Builder $query): void {
+                $query->whereNull('created_by')
+                    ->orWhereDoesntHave('creator', fn (Builder $creatorQuery) => $creatorQuery
+                        ->where('access_level', User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR));
+            })
+            ->findOrFail($serviceId);
+    }
+
+    protected function resolveEditableService(int $serviceId): Service
+    {
+        $service = Service::query()
+            ->with(['socialWorkers', 'categories'])
+            ->where('created_by', auth()->id())
+            ->findOrFail($serviceId);
+
+        abort_unless(auth()->user()?->can('view-distribution-operator-service', $service), 403);
+
+        return $service;
+    }
+
+    protected function predefinedServices(): Collection
+    {
+        return Service::query()
+            ->with(['serviceName', 'categories' => fn ($query) => $query->orderBy('sort_id')->orderBy('id')])
+            ->whereIn('status', ['approved', 'in_distribution'])
+            ->where(function (Builder $query): void {
+                $query->whereNull('created_by')
+                    ->orWhereDoesntHave('creator', fn (Builder $creatorQuery) => $creatorQuery
+                        ->where('access_level', User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR));
+            })
+            ->latest()
+            ->get();
+    }
+
+    public function getSelectedPredefinedServiceProperty(): ?Service
+    {
+        if (! $this->selectedServiceId) {
+            return null;
         }
+
+        return $this->predefinedServices()->firstWhere('id', $this->selectedServiceId);
     }
 
-    /**
-     * @param  array<string, mixed>  $block
-     */
-    protected function buildJalaliDateFromParts(array $block): string
+    public function getSelectedPredefinedServiceCategoriesProperty(): Collection
     {
-        $year = str_pad(trim((string) ($block['date_year'] ?? '')), 4, '0', STR_PAD_LEFT);
-        $month = str_pad(trim((string) ($block['date_month'] ?? '')), 2, '0', STR_PAD_LEFT);
-        $day = str_pad(trim((string) ($block['date_day'] ?? '')), 2, '0', STR_PAD_LEFT);
-
-        return implode('/', [$year, $month, $day]);
+        return $this->selectedPredefinedService?->categories?->values() ?? collect();
     }
 
-    protected function refreshPreviewCodes(): void
+    public function getSocialWorkerSuggestionsProperty(): Collection
+    {
+        $query = trim($this->socialWorkerQuery);
+
+        if (! $this->showSocialWorkerSuggestions || mb_strlen($query) < 2) {
+            return collect();
+        }
+
+        return SocialWorker::query()
+            ->select(['id', 'first_name', 'last_name', 'worker_code'])
+            ->where(function (Builder $workerQuery) use ($query): void {
+                $workerQuery->where('first_name', 'like', $query . '%')
+                    ->orWhere('last_name', 'like', $query . '%')
+                    ->orWhere('worker_code', 'like', $query . '%')
+                    ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", [$query . '%'])
+                    ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", ['%' . $query . '%']);
+            })
+            ->orderBy('worker_code')
+            ->limit(6)
+            ->get();
+    }
+
+    protected function nextMiscName(): string
     {
         if ($this->editingServiceId) {
-            return;
+            return (string) $this->resolveEditableService($this->editingServiceId)->name;
         }
 
-        $lastId = (int) Service::query()->max('id');
+        $maxServiceNumber = Service::query()
+            ->where('name', 'like', self::MISC_NAME_PREFIX . '%')
+            ->selectRaw('MAX(CAST(SUBSTRING(name, ?) AS UNSIGNED)) as sequence', [mb_strlen(self::MISC_NAME_PREFIX) + 1])
+            ->value('sequence');
 
-        foreach (array_keys($this->serviceBlocks) as $index) {
-            $this->serviceBlocks[$index]['service_id_preview'] = 'SN-' . str_pad((string) ($lastId + $index + 1), 5, '0', STR_PAD_LEFT);
-        }
-    }
+        $maxServiceNameNumber = ServiceName::query()
+            ->where('name', 'like', self::MISC_NAME_PREFIX . '%')
+            ->selectRaw('MAX(CAST(SUBSTRING(name, ?) AS UNSIGNED)) as sequence', [mb_strlen(self::MISC_NAME_PREFIX) + 1])
+            ->value('sequence');
 
-    protected function resolveDefaultServiceName(): ServiceName
-    {
-        $serviceName = ServiceName::query()
-            ->where('name', self::DEFAULT_SERVICE_NAME)
-            ->first();
-
-        if ($serviceName) {
-            return $serviceName;
-        }
-
-        throw ValidationException::withMessages([
-            'serviceBlocks' => 'نام خدمت پیش‌فرض اپراتور تنظیم نشده است. لطفاً با مدیر سیستم تماس بگیرید.',
-        ]);
-    }
-
-    protected function resolveDefaultServiceCategory(int $serviceNameId): ServiceCategoryTemplate
-    {
-        $serviceCategory = ServiceCategoryTemplate::query()
-            ->where('service_name_id', $serviceNameId)
-            ->where('name', self::DEFAULT_SERVICE_CATEGORY)
-            ->first();
-
-        if ($serviceCategory) {
-            return $serviceCategory;
-        }
-
-        throw ValidationException::withMessages([
-            'serviceBlocks' => 'دسته‌بندی پیش‌فرض اپراتور تنظیم نشده است. لطفاً با مدیر سیستم تماس بگیرید.',
-        ]);
-    }
-
-    protected function buildServiceDescription(?string $serviceTitle, ?string $description): string
-    {
-        $parts = array_filter([
-            trim((string) $serviceTitle),
-            trim((string) $description),
-        ], fn (?string $value): bool => $value !== null && $value !== '');
-
-        return implode(PHP_EOL . PHP_EOL, $parts);
-    }
-
-    /**
-     * @return array{0:string,1:string}
-     */
-    protected function splitServiceDescription(string $description): array
-    {
-        $parts = preg_split("/\R{2,}/u", trim($description), 2) ?: [];
-
-        if (count($parts) === 0) {
-            return ['', ''];
-        }
-
-        if (count($parts) === 1) {
-            return ['', (string) $parts[0]];
-        }
-
-        return [(string) $parts[0], (string) $parts[1]];
+        return self::MISC_NAME_PREFIX . (((int) max($maxServiceNumber, $maxServiceNameNumber)) + 1);
     }
 
     protected function isValidJalaliDate(string $date): bool
@@ -455,18 +535,6 @@ class ServiceBatchCreator extends Component
         return Jalalian::fromFormat('Y/m/d', trim($date))->toCarbon()->toDateString();
     }
 
-    protected function resolveEditableService(int $serviceId): Service
-    {
-        $service = Service::query()
-            ->with('socialWorkers')
-            ->where('created_by', auth()->id())
-            ->findOrFail($serviceId);
-
-        abort_unless(auth()->user()?->can('view-distribution-operator-service', $service), 403);
-
-        return $service;
-    }
-
     protected function formatDecimal(string|int|float|null $value): string
     {
         $number = (float) ($value ?? 0);
@@ -476,52 +544,5 @@ class ServiceBatchCreator extends Component
         }
 
         return number_format($number, 2, '.', '');
-    }
-
-    /**
-     * @return array<int, \Illuminate\Support\Collection<int, SocialWorker>>
-     */
-    protected function getSocialWorkerSuggestions(): array
-    {
-        $suggestions = [];
-
-        foreach ($this->serviceBlocks as $index => $block) {
-            if ($this->activeSocialWorkerSearchIndex !== $index) {
-                $suggestions[$index] = collect();
-                continue;
-            }
-
-            $query = trim((string) ($block['social_worker_query'] ?? ''));
-
-            if (mb_strlen($query) < 2) {
-                $suggestions[$index] = collect();
-                continue;
-            }
-
-            $suggestions[$index] = SocialWorker::query()
-                ->select(['id', 'first_name', 'last_name', 'worker_code'])
-                ->where(function (Builder $workerQuery) use ($query): void {
-                    $workerQuery->where('first_name', 'like', $query . '%')
-                        ->orWhere('last_name', 'like', $query . '%')
-                        ->orWhere('worker_code', 'like', $query . '%')
-                        ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", [$query . '%'])
-                        ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", ['%' . $query . '%']);
-                })
-                ->orderByRaw(
-                    "CASE
-                        WHEN first_name LIKE ? THEN 1
-                        WHEN last_name LIKE ? THEN 2
-                        WHEN worker_code LIKE ? THEN 3
-                        WHEN CONCAT_WS(' ', first_name, last_name) LIKE ? THEN 4
-                        ELSE 5
-                    END",
-                    [$query . '%', $query . '%', $query . '%', $query . '%']
-                )
-                ->orderBy('worker_code')
-                ->limit(6)
-                ->get();
-        }
-
-        return $suggestions;
     }
 }

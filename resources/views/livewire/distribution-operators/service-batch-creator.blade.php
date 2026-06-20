@@ -7,7 +7,7 @@
 
     @if ($errors->any())
         <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-            <p class="font-bold">لطفاً خطاهای فرم را بررسی کنید.</p>
+            <p class="font-bold">لطفا خطاهای فرم را بررسی کنید.</p>
             <ul class="mt-2 list-disc space-y-1 pr-5">
                 @foreach ($errors->all() as $error)
                     <li>{{ $error }}</li>
@@ -16,14 +16,15 @@
         </div>
     @endif
 
-    <div class="rounded-3xl border border-violet-100 bg-white p-6 shadow-sm">
-        <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+    <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-                <h1 class="mt-2 text-2xl font-black text-slate-800">{{ $isEditing ? 'ویرایش خدمت' : 'تعریف خدمت' }}</h1>
+                <h1 class="text-2xl font-black text-slate-900">داشبورد اپراتور توزیع</h1>
                 <p class="mt-2 text-sm leading-6 text-slate-500">
-                    {{ $isEditing ? 'خدمت انتخاب‌شده را با همان فرم ثبت خدمات ویرایش کنید.' : 'در بخش می‌توانید خدمت جدید را تعریف کرده و با انتخاب مددکار، آن را در سیستم ثبت کنید.' }}
+                    در حالت خدمت / پویش فقط تخصیص از موجودی خدمات موجود انجام می‌شود. در حالت متفرقه، خدمت جدید با نام خودکار ایجاد می‌شود.
                 </p>
             </div>
+
             @if($isEditing)
                 <button
                     type="button"
@@ -34,134 +35,66 @@
                 </button>
             @endif
         </div>
+
+        @if(!$isEditing)
+            <div class="mt-5 grid gap-3 sm:grid-cols-2">
+                <label class="cursor-pointer rounded-2xl border p-4 transition {{ $mode === 'predefined' ? 'border-cyan-400 bg-cyan-50' : 'border-slate-200 bg-white hover:border-cyan-200' }}">
+                    <input type="radio" value="predefined" wire:model.live="mode" class="sr-only">
+                    <span class="block text-sm font-black text-slate-900">خدمت / پویش</span>
+                    <span class="mt-1 block text-xs leading-5 text-slate-500">انتخاب خدمت موجود و تخصیص مقدار از دسته‌بندی‌های تعریف‌شده.</span>
+                </label>
+
+                <label class="cursor-pointer rounded-2xl border p-4 transition {{ $mode === 'misc' ? 'border-emerald-400 bg-emerald-50' : 'border-slate-200 bg-white hover:border-emerald-200' }}">
+                    <input type="radio" value="misc" wire:model.live="mode" class="sr-only">
+                    <span class="block text-sm font-black text-slate-900">متفرقه / تک موردی</span>
+                    <span class="mt-1 block text-xs leading-5 text-slate-500">ایجاد خودکار {{ $nextMiscName }} و افزودن آزادانه دسته‌بندی‌ها.</span>
+                </label>
+            </div>
+        @endif
     </div>
 
     <form wire:submit.prevent="saveBatch" class="space-y-4">
-        @foreach($serviceBlocks as $index => $block)
-            <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-                <div class="flex flex-col gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        @if($mode === 'predefined' && !$isEditing)
+            <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
                     <div>
-                        <p class="text-xs font-semibold text-violet-700">بلوک خدمت {{ $loop->iteration }}</p>
-                        <h3 class="mt-1 text-base font-black text-slate-800">شناسه: {{ $block['service_id_preview'] }}</h3>
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                        <span class="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700">در حال توزیع</span>
-                        @if(!$isEditing && count($serviceBlocks) > 1)
-                            <button
-                                type="button"
-                                wire:click="removeBlock({{ $index }})"
-                                class="rounded-2xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100"
-                            >
-                                حذف
-                            </button>
-                        @endif
-                    </div>
-                </div>
-
-                <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    <div>
-                        <label class="mb-2 block text-sm font-bold text-slate-700">نام خدمت</label>
-                        <input
-                            type="text"
-                            wire:model.blur="serviceBlocks.{{ $index }}.service_name"
-                            class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
-                            placeholder="عنوان خدمت را تایپ کنید"
-                        >
-                        @error("serviceBlocks.$index.service_name") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div>
-                        <label class="mb-2 block text-sm font-bold text-slate-700">نوع خدمت</label>
-                        <div class="flex flex-wrap gap-2 rounded-2xl border border-slate-300 bg-white p-2">
-                            @foreach($typeOptions as $value => $label)
-                                <label class="flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50">
-                                    <input
-                                        type="radio"
-                                        value="{{ $value }}"
-                                        wire:model="serviceBlocks.{{ $index }}.service_type"
-                                        class="h-4 w-4 border-slate-300 text-violet-600 focus:ring-violet-500"
-                                    >
-                                    <span>{{ $label }}</span>
-                                </label>
-                            @endforeach
-                        </div>
-                        @error("serviceBlocks.$index.service_type") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
-                    </div>
-
-
-                    <div>
-                        <label class="mb-2 block text-sm font-bold text-slate-700">مقدار <span class="text-xs fw-light text-gray-500 px-1">(بر اساس واحد)</span> </label>
-                        <input
-                            type="number"
-                            min="0.01"
-                            step="0.01"
-                            wire:model.blur="serviceBlocks.{{ $index }}.total_quantity"
-                            class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
-                            placeholder="مثال: 25"
-                        >
-                        @error("serviceBlocks.$index.total_quantity") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
-                    </div>
-
-
-                    <div>
-                        <label class="mb-2 block text-sm font-bold text-slate-700">واحد</label>
+                        <label class="mb-2 block text-sm font-bold text-slate-700">انتخاب خدمت / پویش</label>
                         <select
-                            wire:model="serviceBlocks.{{ $index }}.unit"
+                            wire:model.live="selectedServiceId"
                             class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
                         >
-                            @foreach($unitOptions as $value => $label)
-                                <option value="{{ $value }}">{{ $label }}</option>
+                            <option value="">انتخاب کنید</option>
+                            @foreach($services as $service)
+                                <option value="{{ $service->id }}">
+                                    {{ $service->code }} - {{ $service->name ?: ($service->serviceName?->name ?? 'بدون عنوان') }}
+                                </option>
                             @endforeach
                         </select>
-                        @error("serviceBlocks.$index.unit") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                        @error('selectedServiceId') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                     </div>
 
-
-                    <div class="sm:col-span-2 xl:col-span-2">
-                        <label class="mb-2 block text-sm font-bold text-slate-700">توضیحات</label>
-                        <textarea
-                            rows="3"
-                            wire:model.blur="serviceBlocks.{{ $index }}.description"
+                    <div class="relative">
+                        <label class="mb-2 block text-sm font-bold text-slate-700">مددکار</label>
+                        <input
+                            type="text"
+                            wire:model.live.debounce.250ms="socialWorkerQuery"
+                            wire:focus="$set('showSocialWorkerSuggestions', true)"
                             class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
-                            placeholder="شرح و توضیحات تکمیلی را بنویسید ..."
-                        ></textarea>
-                        @error("serviceBlocks.$index.description") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
-                    </div>
+                            placeholder="نام یا کد مددکار"
+                            autocomplete="off"
+                        >
+                        @if($socialWorkerQuery !== '')
+                            <button type="button" wire:click="clearSocialWorkerSelection" class="absolute left-3 top-10 text-slate-400 hover:text-rose-600">×</button>
+                        @endif
+                        @error('socialWorkerId') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
 
-
-                    <div class="relative sm:col-span-2 xl:col-span-1">
-                        <label class="mb-2 block text-sm font-bold text-slate-700">مددکار مسئول</label>
-                        <div class="relative">
-                            <input
-                                type="text"
-                                wire:model.live.debounce.250ms="serviceBlocks.{{ $index }}.social_worker_query"
-                                wire:focus="activateSocialWorkerSearch({{ $index }})"
-                                class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 pl-12 text-sm text-slate-700"
-                                placeholder="نام یا کد مددکار را تایپ کنید"
-                                autocomplete="off"
-                            >
-                            @if(!empty($block['social_worker_query']))
-                                <button
-                                    type="button"
-                                    wire:click="clearSocialWorkerSelection({{ $index }})"
-                                    class="absolute inset-y-0 left-0 flex w-12 items-center justify-center text-slate-400 transition hover:text-rose-600"
-                                    aria-label="پاک کردن مددکار"
-                                >
-                                    ×
-                                </button>
-                            @endif
-                        </div>
-                        @if(
-                            mb_strlen(trim((string) ($block['social_worker_query'] ?? ''))) >= 2
-                            && $activeSocialWorkerSearchIndex === $index
-                        )
+                        @if($showSocialWorkerSuggestions && mb_strlen(trim($socialWorkerQuery)) >= 2)
                             <div class="absolute z-20 mt-2 max-h-60 w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-lg">
-                                @forelse(($socialWorkerSuggestions[$index] ?? collect()) as $worker)
+                                @forelse($socialWorkerSuggestions as $worker)
                                     <button
                                         type="button"
-                                        wire:click="selectSocialWorker({{ $index }}, {{ $worker->id }})"
-                                        class="flex w-full items-center justify-between gap-3 px-4 py-3 text-right text-sm text-slate-700 transition hover:bg-violet-50"
+                                        wire:click="selectSocialWorker({{ $worker->id }})"
+                                        class="flex w-full items-center justify-between gap-3 px-4 py-3 text-right text-sm text-slate-700 transition hover:bg-cyan-50"
                                     >
                                         <span class="font-semibold">{{ $worker->full_name }}</span>
                                         <span class="text-xs text-slate-500">کد {{ $worker->worker_code }}</span>
@@ -171,76 +104,154 @@
                                 @endforelse
                             </div>
                         @endif
-                        @error("serviceBlocks.$index.social_worker_id") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+
+                @if($selectedService)
+                    <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <h2 class="text-base font-black text-slate-900">{{ $selectedService->name ?: ($selectedService->serviceName?->name ?? 'خدمت انتخاب‌شده') }}</h2>
+                                <p class="mt-1 text-xs font-bold text-slate-500">{{ $selectedService->code }} - موجودی کل: {{ number_format((float) $selectedService->total_quantity, 2) }}</p>
+                            </div>
+                            <span class="rounded-full bg-cyan-100 px-3 py-1 text-xs font-bold text-cyan-800">تخصیص از موجودی موجود</span>
+                        </div>
+
+                        <div class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                            @foreach($selectedServiceCategories as $category)
+                                <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                                    <div class="mb-3 flex items-start justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <p class="truncate text-sm font-black text-slate-900">{{ $category->name }}</p>
+                                            <p class="mt-1 text-xs font-bold text-slate-500">موجودی: {{ number_format((float) $category->quantity, 2) }}</p>
+                                        </div>
+                                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">
+                                            {{ $unitOptions[$category->unit] ?? $category->unit }}
+                                        </span>
+                                    </div>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        max="{{ (float) $category->quantity }}"
+                                        wire:model.blur="predefinedAllocations.{{ $category->id }}"
+                                        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-sm font-black text-slate-900"
+                                        placeholder="0"
+                                    >
+                                    @error('predefinedAllocations.' . $category->id) <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+            </section>
+        @else
+            <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h2 class="text-lg font-black text-slate-900">{{ $isEditing ? 'ویرایش خدمت متفرقه' : $nextMiscName }}</h2>
+                        <p class="mt-1 text-sm text-slate-500">دسته‌بندی‌ها را آزادانه اضافه کنید؛ مجموع آن‌ها موجودی اولیه خدمت متفرقه می‌شود.</p>
+                    </div>
+                    <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">ایجاد + تخصیص</span>
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <div>
+                        <label class="mb-2 block text-sm font-bold text-slate-700">نوع خدمت</label>
+                        <select wire:model="miscServiceType" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
+                            @foreach($typeOptions as $value => $label)
+                                <option value="{{ $value }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
                     </div>
 
-                    <div>
+                    <div class="relative">
+                        <label class="mb-2 block text-sm font-bold text-slate-700">مددکار</label>
+                        <input
+                            type="text"
+                            wire:model.live.debounce.250ms="socialWorkerQuery"
+                            wire:focus="$set('showSocialWorkerSuggestions', true)"
+                            class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
+                            placeholder="نام یا کد مددکار"
+                            autocomplete="off"
+                        >
+                        @if($showSocialWorkerSuggestions && mb_strlen(trim($socialWorkerQuery)) >= 2)
+                            <div class="absolute z-20 mt-2 max-h-60 w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-lg">
+                                @forelse($socialWorkerSuggestions as $worker)
+                                    <button type="button" wire:click="selectSocialWorker({{ $worker->id }})" class="flex w-full items-center justify-between gap-3 px-4 py-3 text-right text-sm text-slate-700 transition hover:bg-emerald-50">
+                                        <span class="font-semibold">{{ $worker->full_name }}</span>
+                                        <span class="text-xs text-slate-500">کد {{ $worker->worker_code }}</span>
+                                    </button>
+                                @empty
+                                    <div class="px-4 py-3 text-sm text-slate-500">مددکاری یافت نشد.</div>
+                                @endforelse
+                            </div>
+                        @endif
+                        @error('socialWorkerId') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div class="sm:col-span-2">
                         <label class="mb-2 block text-sm font-bold text-slate-700">تاریخ ثبت</label>
                         <div class="grid grid-cols-3 gap-2">
-                            <div>
-                                <label class="mb-1 px-2 block text-xs font-normal text-slate-500">روز</label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    max="31"
-                                    wire:model.blur="serviceBlocks.{{ $index }}.date_day"
-                                    class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
-                                    placeholder="روز"
-                                >
-                            </div>
-                            <div>
-                                <label class="mb-1 px-2 block text-xs font-normal text-slate-500">ماه</label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    max="12"
-                                    wire:model.blur="serviceBlocks.{{ $index }}.date_month"
-                                    class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
-                                    placeholder="ماه"
-                                >
-                            </div>
-                            <div>
-                                <label class="mb-1 px-2 block text-xs font-normal text-slate-500">سال</label>
-                                <input
-                                    type="number"
-                                    min="1300"
-                                    max="1600"
-                                    wire:model.blur="serviceBlocks.{{ $index }}.date_year"
-                                    class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
-                                    placeholder="سال"
-                                >
-                            </div>
+                            <input type="number" min="1" max="31" wire:model.blur="dateDay" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700" placeholder="روز">
+                            <input type="number" min="1" max="12" wire:model.blur="dateMonth" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700" placeholder="ماه">
+                            <input type="number" min="1300" max="1600" wire:model.blur="dateYear" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700" placeholder="سال">
                         </div>
-                        @error("serviceBlocks.$index.date_day") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
-                        @error("serviceBlocks.$index.date_month") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
-                        @error("serviceBlocks.$index.date_year") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
-                        @error("serviceBlocks.$index.date") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                     </div>
 
+                    <div class="sm:col-span-2 xl:col-span-4">
+                        <label class="mb-2 block text-sm font-bold text-slate-700">توضیحات</label>
+                        <textarea rows="3" wire:model.blur="miscDescription" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"></textarea>
+                    </div>
                 </div>
-            </div>
-        @endforeach
 
-            <div class="flex flex-col gap-3 sm:flex-row sm:justify-between">
-                @if(!$isEditing)
+                <div class="mt-5 space-y-3">
+                    @foreach($miscCategories as $index => $category)
+                        <div class="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-[minmax(0,1fr)_160px_160px_auto]">
+                            <div>
+                                <label class="mb-2 block text-xs font-bold text-slate-600">نام دسته‌بندی</label>
+                                <input type="text" wire:model.blur="miscCategories.{{ $index }}.name" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm" placeholder="مثال: بسته غذایی">
+                                @error("miscCategories.$index.name") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-xs font-bold text-slate-600">مقدار</label>
+                                <input type="number" min="0.01" step="0.01" wire:model.blur="miscCategories.{{ $index }}.quantity" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm" placeholder="0">
+                                @error("miscCategories.$index.quantity") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-xs font-bold text-slate-600">واحد</label>
+                                <select wire:model="miscCategories.{{ $index }}.unit" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm">
+                                    @foreach($unitOptions as $value => $label)
+                                        <option value="{{ $value }}">{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="flex items-end">
+                                <button type="button" wire:click="removeCategory({{ $index }})" class="rounded-xl border border-rose-200 bg-white px-4 py-2 text-sm font-bold text-rose-700 transition hover:bg-rose-50">
+                                    حذف
+                                </button>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
                 <button
                     type="button"
-                    wire:click="addBlock"
-                    class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition-all duration-200 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 active:scale-[0.98]"
+                    wire:click="addCategory"
+                    class="mt-4 inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
                 >
-                    + افزودن خدمت جدید
+                    + افزودن دسته‌بندی
                 </button>
-                @else
-                    <div></div>
-                @endif
+            </section>
+        @endif
 
-                <button
-                    type="submit"
-                    class="inline-flex items-center justify-center rounded-2xl bg-emerald-700 px-6 py-3 text-sm font-black text-white shadow-lg shadow-violet-700/25 transition-all duration-200 hover:bg-violet-800 active:scale-[0.98]"
-                >
-                    {{ $isEditing ? 'ذخیره تغییرات' : 'ثبت همه خدمات' }}
-                </button>
-            </div>
-
+        <div class="flex justify-end">
+            <button
+                type="submit"
+                class="inline-flex items-center justify-center rounded-2xl bg-emerald-700 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-700/20 transition hover:bg-emerald-800"
+            >
+                {{ $mode === 'predefined' && !$isEditing ? 'ثبت تخصیص' : 'ثبت خدمت متفرقه' }}
+            </button>
+        </div>
     </form>
 </div>
