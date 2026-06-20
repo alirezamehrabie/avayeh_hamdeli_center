@@ -133,8 +133,94 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             'allocated_quantity' => 4,
             'assigned_by_user_id' => $operator->id,
         ]);
-        $this->assertSame(6.0, (float) $category->fresh()->quantity);
-        $this->assertSame(6.0, (float) $service->fresh()->total_quantity);
+        $this->assertSame(10.0, (float) $category->fresh()->quantity);
+        $this->assertSame(10.0, (float) $service->fresh()->total_quantity);
+    }
+
+    public function test_predefined_mode_limits_repeated_allocations_by_remaining_assignable_capacity(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $firstWorker = SocialWorker::query()->create([
+            'worker_code' => 912,
+            'first_name' => 'First',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+        $secondWorker = SocialWorker::query()->create([
+            'worker_code' => 913,
+            'first_name' => 'Second',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+        $manager = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_MANAGER,
+            'is_admin' => true,
+        ]);
+        $serviceName = ServiceName::query()->create([
+            'name' => 'Repeated Allocation Campaign',
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+        $service = Service::query()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'Repeated Allocation Campaign',
+            'service_type' => 'individual',
+            'supports_gate_delivery' => true,
+            'supports_home_delivery' => true,
+            'description' => null,
+            'total_quantity' => 10,
+            'total_service_value' => 0,
+            'distribution_start_date' => '2026-06-20',
+            'distribution_end_date' => '2026-06-20',
+            'status' => 'approved',
+            'quantity_delivered' => 0,
+            'created_by' => $manager->id,
+        ]);
+        $category = $service->categories()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'Rice',
+            'quantity' => 10,
+            'unit' => 'pack',
+            'value' => 0,
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class)
+            ->set('mode', ServiceBatchCreator::MODE_PREDEFINED)
+            ->set('selectedServiceId', $service->id)
+            ->set('socialWorkerQuery', $firstWorker->full_name)
+            ->set('socialWorkerId', $firstWorker->id)
+            ->set('predefinedAllocations.' . $category->id, '4')
+            ->call('saveBatch')
+            ->assertHasNoErrors();
+
+        Livewire::test(ServiceBatchCreator::class)
+            ->set('mode', ServiceBatchCreator::MODE_PREDEFINED)
+            ->set('selectedServiceId', $service->id)
+            ->set('socialWorkerQuery', $secondWorker->full_name)
+            ->set('socialWorkerId', $secondWorker->id)
+            ->set('predefinedAllocations.' . $category->id, '7')
+            ->call('saveBatch')
+            ->assertHasErrors(['predefinedAllocations.' . $category->id]);
+
+        Livewire::test(ServiceBatchCreator::class)
+            ->set('mode', ServiceBatchCreator::MODE_PREDEFINED)
+            ->set('selectedServiceId', $service->id)
+            ->set('socialWorkerQuery', $secondWorker->full_name)
+            ->set('socialWorkerId', $secondWorker->id)
+            ->set('predefinedAllocations.' . $category->id, '6')
+            ->call('saveBatch')
+            ->assertHasNoErrors();
+
+        $this->assertSame(10.0, (float) $category->fresh()->quantity);
+        $this->assertSame(10.0, (float) $service->fresh()->total_quantity);
+        $this->assertSame(10.0, (float) $service->workerAllocations()->sum('allocated_quantity'));
     }
 
     public function test_predefined_mode_exposes_minimal_live_remaining_inventory_for_selected_categories(): void

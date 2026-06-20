@@ -218,7 +218,12 @@ class ServiceBatchCreator extends Component
                     ]);
                 }
 
-                if ($row['quantity'] > (float) $category->quantity) {
+                $remainingAssignable = $this->remainingAssignableForPredefinedCategory(
+                    $service,
+                    (int) $category->id
+                );
+
+                if ($row['quantity'] > $remainingAssignable) {
                     throw ValidationException::withMessages([
                         'predefinedAllocations.' . $category->id => 'مقدار تخصیص نمی‌تواند از موجودی دسته‌بندی بیشتر باشد.',
                     ]);
@@ -235,15 +240,7 @@ class ServiceBatchCreator extends Component
                     'assigned_by_user_id' => auth()->id(),
                 ])->save();
 
-                $category->forceFill([
-                    'quantity' => max(0, (float) $category->quantity - $row['quantity']),
-                ])->save();
             }
-
-            $service->forceFill([
-                'total_quantity' => (float) $service->categories()->sum('quantity'),
-            ])->save();
-            $service->refreshFinancialTotals();
         });
 
         session()->flash('success', 'تخصیص خدمت انتخاب‌شده با موفقیت ثبت شد.');
@@ -482,12 +479,46 @@ class ServiceBatchCreator extends Component
         return max(0, (float) ($this->predefinedAllocations[$categoryId] ?? 0));
     }
 
+    public function predefinedAssignableForCategory(int $categoryId): float
+    {
+        $service = $this->selectedPredefinedService;
+
+        return $service
+            ? $this->remainingAssignableForPredefinedCategory($service, $categoryId)
+            : 0.0;
+    }
+
     public function predefinedRemainingForCategory(int $categoryId): float
     {
-        $category = $this->selectedPredefinedServiceCategories->firstWhere('id', $categoryId);
-        $definedQuantity = $category ? (float) $category->quantity : 0.0;
+        $service = $this->selectedPredefinedService;
 
-        return max(0, $definedQuantity - $this->predefinedAllocationForCategory($categoryId));
+        if (! $service) {
+            return 0.0;
+        }
+
+        return max(
+            0,
+            $this->remainingAssignableForPredefinedCategory($service, $categoryId)
+                - $this->predefinedAllocationForCategory($categoryId)
+        );
+    }
+
+    protected function remainingAssignableForPredefinedCategory(Service $service, int $categoryId): float
+    {
+        $category = $service->relationLoaded('categories')
+            ? $service->categories->firstWhere('id', $categoryId)
+            : $service->categories()->whereKey($categoryId)->first();
+
+        if (! $category) {
+            return 0.0;
+        }
+
+        $allocatedQuantity = (float) ServiceWorkerAllocation::query()
+            ->where('service_id', $service->id)
+            ->where('service_category_id', $categoryId)
+            ->sum('allocated_quantity');
+
+        return max(0, (float) $category->quantity - $allocatedQuantity);
     }
 
     public function getSocialWorkerSuggestionsProperty(): Collection

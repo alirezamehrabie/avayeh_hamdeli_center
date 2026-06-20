@@ -121,8 +121,9 @@
                             @foreach($selectedServiceCategories as $category)
                                 @php
                                     $allocatedPreview = $this->predefinedAllocationForCategory((int) $category->id);
+                                    $assignableQuantity = $this->predefinedAssignableForCategory((int) $category->id);
                                     $remainingPreview = $this->predefinedRemainingForCategory((int) $category->id);
-                                    $isOverAllocated = $allocatedPreview > (float) $category->quantity;
+                                    $isOverAllocated = $allocatedPreview > $assignableQuantity;
                                 @endphp
                                 <div class="rounded-2xl border border-slate-200 bg-white p-4">
                                     <div class="mb-3 flex items-start justify-between gap-3">
@@ -138,7 +139,7 @@
                                         type="number"
                                         min="0"
                                         step="0.01"
-                                        max="{{ (float) $category->quantity }}"
+                                        max="{{ $assignableQuantity }}"
                                         wire:model.live.debounce.250ms="predefinedAllocations.{{ $category->id }}"
                                         class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-sm font-black text-slate-900"
                                         placeholder="0"
