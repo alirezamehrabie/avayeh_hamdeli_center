@@ -45,6 +45,8 @@ class ActivityDefinition extends Component
 
     public string $activeTab = 'activity';
 
+    public string $lastActivityServiceDefaultName = '';
+
     /**
      * @var array<int, array{
      *     id: ?int,
@@ -69,6 +71,7 @@ class ActivityDefinition extends Component
 
         $this->activityId = $activityId;
         $this->bootDefaults();
+        $this->lastActivityServiceDefaultName = $this->defaultActivityServiceName();
         $this->syncPreviewActivityCode();
 
         if ($activityId) {
@@ -157,6 +160,23 @@ class ActivityDefinition extends Component
     {
         $this->activityServices[] = $this->emptyActivityService();
         $this->activeTab = 'services';
+    }
+
+    public function updatedName(): void
+    {
+        $previousDefault = $this->lastActivityServiceDefaultName;
+        $nextDefault = $this->defaultActivityServiceName();
+
+        foreach ($this->activityServices as $index => $service) {
+            $serviceName = trim((string) ($service['serviceName'] ?? ''));
+
+            if ($serviceName === '' || $serviceName === $previousDefault) {
+                $this->activityServices[$index]['serviceName'] = $nextDefault;
+                $this->activityServices[$index]['selectedServiceNameId'] = null;
+            }
+        }
+
+        $this->lastActivityServiceDefaultName = $nextDefault;
     }
 
     public function removeActivityService(int $index): void
@@ -627,7 +647,7 @@ class ActivityDefinition extends Component
         return [
             'id' => null,
             'selectedServiceNameId' => null,
-            'serviceName' => '',
+            'serviceName' => $this->defaultActivityServiceName(),
             'serviceType' => 'individual',
             'description' => '',
             'serviceDistrictId' => null,
@@ -694,6 +714,36 @@ class ActivityDefinition extends Component
         }
 
         return Jalalian::now()->format('Y/m/d');
+    }
+
+    protected function defaultActivityServiceName(): string
+    {
+        $activityName = trim($this->name);
+
+        return $activityName !== ''
+            ? 'خدمت ' . $activityName
+            : 'خدمت - ' . $this->currentJalaliDateLabel();
+    }
+
+    protected function currentJalaliDateLabel(): string
+    {
+        $date = Jalalian::fromDateTime(now());
+        $months = [
+            1 => 'فروردین',
+            2 => 'اردیبهشت',
+            3 => 'خرداد',
+            4 => 'تیر',
+            5 => 'مرداد',
+            6 => 'شهریور',
+            7 => 'مهر',
+            8 => 'آبان',
+            9 => 'آذر',
+            10 => 'دی',
+            11 => 'بهمن',
+            12 => 'اسفند',
+        ];
+
+        return $date->getDay() . ' ' . ($months[$date->getMonth()] ?? '') . ' ' . $date->getYear();
     }
 
     protected function defaultServiceEndDate(): ?string

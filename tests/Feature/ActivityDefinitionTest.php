@@ -256,6 +256,45 @@ class ActivityDefinitionTest extends TestCase
         ]);
     }
 
+    public function test_new_activity_service_defaults_to_event_service_name_from_activity_name(): void
+    {
+        $user = $this->manager();
+        $this->actingAs($user);
+
+        Livewire::test(ActivityDefinition::class)
+            ->set('name', 'مراسم افطاری')
+            ->call('addActivityService')
+            ->assertSet('activityServices.0.serviceName', 'خدمت رویداد مراسم افطاری');
+    }
+
+    public function test_new_activity_service_defaults_to_current_date_when_activity_name_is_empty(): void
+    {
+        $user = $this->manager();
+        Carbon::setTestNow(Carbon::create(2026, 9, 26, 12, 0, 0, config('app.timezone')));
+        $this->actingAs($user);
+
+        Livewire::test(ActivityDefinition::class)
+            ->call('addActivityService')
+            ->assertSet('activityServices.0.serviceName', 'خدمت رویداد - 4 مهر 1405');
+
+        Carbon::setTestNow();
+    }
+
+    public function test_activity_name_change_updates_only_untouched_default_service_names(): void
+    {
+        $user = $this->manager();
+        $this->actingAs($user);
+
+        Livewire::test(ActivityDefinition::class)
+            ->set('name', 'مراسم اول')
+            ->call('addActivityService')
+            ->set('name', 'مراسم دوم')
+            ->assertSet('activityServices.0.serviceName', 'خدمت رویداد مراسم دوم')
+            ->set('activityServices.0.serviceName', 'پذیرایی ویژه')
+            ->set('name', 'مراسم سوم')
+            ->assertSet('activityServices.0.serviceName', 'پذیرایی ویژه');
+    }
+
     public function test_activity_service_category_fields_are_required(): void
     {
         $user = $this->manager();
