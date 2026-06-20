@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Helpers\Morilog\Jalalian;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Person extends Model
 {
@@ -565,6 +566,12 @@ class Person extends Model
     public function activityAttendances()
     {
         return $this->hasMany(ActivityAttendance::class);
+    }
+
+    public function sponsorProfiles(): BelongsToMany
+    {
+        return $this->belongsToMany(SponsorProfile::class, 'person_sponsor_profile')
+            ->withTimestamps();
     }
 
     public function qrCodes(): MorphMany

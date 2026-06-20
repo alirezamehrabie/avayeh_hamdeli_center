@@ -180,16 +180,22 @@ class User extends Authenticatable
                 ]);
             }
 
-            $user->sponsorProfile()->updateOrCreate(
-                ['user_id' => $user->id],
-                [
-                    'monthly_donation_amount' => (int) $attributes['monthly_donation_amount'],
-                    'child_preferences' => $attributes['child_preferences'] ?? null,
-                    'monthly_payment_reminder_methods' => array_values($attributes['monthly_payment_reminder_methods']),
-                    'is_social_media_active' => (bool) $attributes['is_social_media_active'],
-                    'created_by' => $attributes['created_by'] ?? null,
-                ]
-            );
+            $profile = $user->sponsorProfile;
+
+            $profileData = [
+                'monthly_donation_amount' => (int) $attributes['monthly_donation_amount'],
+                'child_preferences' => $attributes['child_preferences'] ?? null,
+                'monthly_payment_reminder_methods' => array_values($attributes['monthly_payment_reminder_methods']),
+                'is_social_media_active' => (bool) $attributes['is_social_media_active'],
+                'created_by' => $attributes['created_by'] ?? null,
+            ];
+
+            if ($profile) {
+                $profile->update($profileData);
+            } else {
+                $profileData['supporter_code'] = SponsorProfile::generateNextSupporterCode();
+                $user->sponsorProfile()->create($profileData);
+            }
 
             return $user->refresh();
         });

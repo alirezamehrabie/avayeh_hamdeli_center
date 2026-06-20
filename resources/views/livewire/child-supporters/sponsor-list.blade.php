@@ -3,46 +3,52 @@
         <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <p class="text-xs font-bold text-indigo-600">حامی کودک</p>
-                    <h1 class="mt-1 text-xl font-black text-slate-900 sm:text-2xl">لیست حامیان</h1>
-                    <p class="mt-2 text-sm leading-6 text-slate-500">نمایش حامیان ثبت شده و مبلغ حمایت ماهیانه.</p>
+                    <p class="text-xs font-bold text-indigo-600">Child Supporter</p>
+                    <h1 class="mt-1 text-xl font-black text-slate-900 sm:text-2xl">Supporters list</h1>
+                    <p class="mt-2 text-sm leading-6 text-slate-500">Registered child supporters, monthly support amount, and assigned beneficiaries.</p>
                 </div>
 
                 <div class="inline-flex w-fit items-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">
-                    {{ $this->persianNumber(number_format($sponsors->total())) }} حامی
+                    {{ $this->persianNumber(number_format($sponsors->total())) }} supporters
                 </div>
             </div>
         </div>
 
         <section class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
-            <div class="hidden rounded-xl bg-slate-50 px-4 py-2 text-xs font-bold text-slate-500 md:grid md:grid-cols-[1fr_1fr_1.1fr_1.1fr_auto] md:items-center md:gap-3">
-                <span>نام</span>
-                <span>نام خانوادگی</span>
-                <span>شماره موبایل</span>
-                <span>مبلغ ماهیانه</span>
-                <span class="w-24 text-center">جزئیات</span>
+            <div class="hidden rounded-xl bg-slate-50 px-4 py-2 text-xs font-bold text-slate-500 md:grid md:grid-cols-[0.8fr_1fr_1fr_1.1fr_1.1fr_auto] md:items-center md:gap-3">
+                <span>Code</span>
+                <span>First name</span>
+                <span>Last name</span>
+                <span>Mobile</span>
+                <span>Monthly amount</span>
+                <span class="w-24 text-center">Details</span>
             </div>
 
             <div class="mt-0 space-y-2 md:mt-2">
                 @forelse($sponsors as $sponsor)
-                    <article class="rounded-xl border border-slate-200 bg-white p-3 transition hover:border-indigo-100 hover:bg-slate-50/60 sm:p-4 md:grid md:grid-cols-[1fr_1fr_1.1fr_1.1fr_auto] md:items-center md:gap-3">
+                    <article class="rounded-xl border border-slate-200 bg-white p-3 transition hover:border-indigo-100 hover:bg-slate-50/60 sm:p-4 md:grid md:grid-cols-[0.8fr_1fr_1fr_1.1fr_1.1fr_auto] md:items-center md:gap-3">
                         <div class="flex items-center justify-between gap-3 md:block">
-                            <span class="text-xs font-bold text-slate-400 md:hidden">نام</span>
+                            <span class="text-xs font-bold text-slate-400 md:hidden">Code</span>
+                            <span class="inline-flex rounded-lg bg-indigo-50 px-2.5 py-1 text-sm font-black text-indigo-700" dir="ltr">{{ $sponsor->supporter_code ?: '-' }}</span>
+                        </div>
+
+                        <div class="mt-2 flex items-center justify-between gap-3 md:mt-0 md:block">
+                            <span class="text-xs font-bold text-slate-400 md:hidden">First name</span>
                             <span class="truncate text-sm font-bold text-slate-800">{{ $sponsor->user?->first_name ?: '-' }}</span>
                         </div>
 
                         <div class="mt-2 flex items-center justify-between gap-3 md:mt-0 md:block">
-                            <span class="text-xs font-bold text-slate-400 md:hidden">نام خانوادگی</span>
+                            <span class="text-xs font-bold text-slate-400 md:hidden">Last name</span>
                             <span class="truncate text-sm font-bold text-slate-800">{{ $sponsor->user?->last_name ?: '-' }}</span>
                         </div>
 
                         <div class="mt-2 flex items-center justify-between gap-3 md:mt-0 md:block">
-                            <span class="text-xs font-bold text-slate-400 md:hidden">شماره موبایل</span>
+                            <span class="text-xs font-bold text-slate-400 md:hidden">Mobile</span>
                             <span class="inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-700">{{ $this->persianNumber($sponsor->user?->mobile ?: $sponsor->user?->name ?: '-') }}</span>
                         </div>
 
                         <div class="mt-2 flex items-center justify-between gap-3 md:mt-0 md:block">
-                            <span class="text-xs font-bold text-slate-400 md:hidden">مبلغ ماهیانه</span>
+                            <span class="text-xs font-bold text-slate-400 md:hidden">Monthly amount</span>
                             <div class="min-w-0 text-left md:text-right">
                                 <span class="block text-sm font-black text-emerald-700">{{ $this->persianNumber(number_format((int) $sponsor->monthly_donation_amount)) }} ریال</span>
                                 <span class="mt-0.5 block truncate text-[11px] font-semibold leading-5 text-teal-700">{{ $this->donationAmountInTomanWords((int) $sponsor->monthly_donation_amount) }}</span>
@@ -50,19 +56,14 @@
                         </div>
 
                         <div class="mt-3 md:mt-0">
-                            <button
-                                type="button"
-                                wire:click="showDetails({{ $sponsor->id }})"
-                                class="flex h-10 w-full items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 px-3 text-sm font-black text-indigo-700 transition hover:border-indigo-200 hover:bg-indigo-100 focus:outline-none focus:ring-4 focus:ring-indigo-100 md:w-24"
-                            >
-                                جزئیات
+                            <button type="button" wire:click="showDetails({{ $sponsor->id }})" class="flex h-10 w-full items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 px-3 text-sm font-black text-indigo-700 transition hover:border-indigo-200 hover:bg-indigo-100 focus:outline-none focus:ring-4 focus:ring-indigo-100 md:w-24">
+                                Details
                             </button>
                         </div>
                     </article>
                 @empty
                     <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center">
-                        <p class="text-sm font-bold text-slate-600">هنوز حامی ثبت نشده است.</p>
-                        <p class="mt-1 text-xs text-slate-400">بعد از ثبت نام حامی، اطلاعات اینجا نمایش داده می‌شود.</p>
+                        <p class="text-sm font-bold text-slate-600">No supporters registered yet.</p>
                     </div>
                 @endforelse
             </div>
@@ -77,14 +78,14 @@
 
     @if($selectedSponsor)
         <div class="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/35 p-2 sm:items-center sm:p-4" wire:click.self="closeDetails">
-            <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
+            <div class="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <p class="text-xs font-bold text-indigo-600">جزئیات حامی</p>
+                        <p class="text-xs font-bold text-indigo-600">Supporter details</p>
                         <h2 class="mt-1 text-lg font-black text-slate-900">{{ $selectedSponsor['fullName'] }}</h2>
                     </div>
                     <button type="button" wire:click="closeDetails" class="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition hover:bg-slate-200">
-                        <span class="sr-only">بستن</span>
+                        <span class="sr-only">Close</span>
                         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                             <path d="M5 5L15 15M15 5L5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                         </svg>
@@ -92,19 +93,23 @@
                 </div>
 
                 <div class="mt-4 divide-y divide-slate-100 rounded-xl border border-slate-100">
-                    <div class="grid grid-cols-[7rem_1fr] items-center gap-3 px-3 py-2.5">
-                        <span class="text-xs font-bold text-slate-400">شماره موبایل</span>
+                    <div class="grid grid-cols-[8rem_1fr] items-center gap-3 px-3 py-2.5">
+                        <span class="text-xs font-bold text-slate-400">Code</span>
+                        <span class="truncate text-left text-sm font-black text-indigo-700" dir="ltr">{{ $selectedSponsor['supporterCode'] ?? '-' }}</span>
+                    </div>
+                    <div class="grid grid-cols-[8rem_1fr] items-center gap-3 px-3 py-2.5">
+                        <span class="text-xs font-bold text-slate-400">Mobile</span>
                         <span class="truncate text-left text-sm font-black text-slate-800">{{ $selectedSponsor['mobile'] }}</span>
                     </div>
-                    <div class="grid grid-cols-[7rem_1fr] items-center gap-3 px-3 py-2.5">
-                        <span class="text-xs font-bold text-slate-400">مبلغ ماهیانه</span>
+                    <div class="grid grid-cols-[8rem_1fr] items-center gap-3 px-3 py-2.5">
+                        <span class="text-xs font-bold text-slate-400">Monthly amount</span>
                         <div class="min-w-0">
                             <span class="block truncate text-sm font-black text-emerald-700">{{ $selectedSponsor['monthlyDonationAmount'] }}</span>
                             <span class="mt-0.5 block truncate text-[11px] font-semibold leading-5 text-teal-700">{{ $selectedSponsor['monthlyDonationAmountInWords'] }}</span>
                         </div>
                     </div>
                     <div class="px-3 py-2.5">
-                        <span class="text-xs font-bold text-slate-400">روش یادآوری</span>
+                        <span class="text-xs font-bold text-slate-400">Reminder methods</span>
                         <div class="mt-2 flex flex-wrap gap-1.5">
                             @forelse($selectedSponsor['reminderMethods'] as $method)
                                 <span class="rounded-md bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">{{ $method }}</span>
@@ -114,8 +119,50 @@
                         </div>
                     </div>
                     <div class="px-3 py-2.5">
-                        <span class="text-xs font-bold text-slate-400">مشخصات خاص کودک</span>
+                        <span class="text-xs font-bold text-slate-400">Child preferences</span>
                         <p class="mt-1 max-h-28 overflow-y-auto text-sm leading-6 text-slate-700">{{ $selectedSponsor['childPreferences'] }}</p>
+                    </div>
+                    <div class="px-3 py-2.5">
+                        <span class="text-xs font-bold text-slate-400">Assigned beneficiaries</span>
+                        <div class="mt-2 space-y-2">
+                            @forelse($selectedSponsor['beneficiaries'] ?? [] as $beneficiary)
+                                <div class="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-2.5 py-2">
+                                    <div class="min-w-0">
+                                        <p class="truncate text-sm font-bold text-slate-800">{{ $beneficiary['full_name'] }}</p>
+                                        <p class="text-xs font-semibold text-slate-500" dir="ltr">{{ $beneficiary['person_code'] }}</p>
+                                    </div>
+                                    <button type="button" wire:click="removeBeneficiaryFromSelectedSponsor({{ $beneficiary['id'] }})" class="rounded-md bg-rose-50 px-2 py-1 text-xs font-black text-rose-700 transition hover:bg-rose-100">Remove</button>
+                                </div>
+                            @empty
+                                <p class="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-3 text-center text-sm font-semibold text-slate-500">No assigned beneficiaries.</p>
+                            @endforelse
+                        </div>
+
+                        <div class="mt-3 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
+                            <input type="text" wire:model.live.debounce.400ms="beneficiaryCode" dir="ltr" placeholder="Beneficiary code" class="h-10 rounded-lg border border-slate-200 px-3 text-left text-sm outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100">
+                            <button type="button" wire:click="lookupBeneficiary" class="h-10 rounded-lg border border-indigo-100 bg-indigo-50 px-3 text-xs font-black text-indigo-700 transition hover:bg-indigo-100">Check</button>
+                            <button type="button" wire:click="addBeneficiaryToSelectedSponsor" class="h-10 rounded-lg bg-teal-600 px-3 text-xs font-black text-white transition hover:bg-teal-700">Add</button>
+                        </div>
+                        @error('beneficiaryCode') <p class="mt-1.5 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+
+                        @if($beneficiaryPreview)
+                            <div class="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
+                                <div class="flex items-center justify-between gap-3">
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-800">{{ $beneficiaryPreview['full_name'] }}</p>
+                                        <p class="text-xs font-semibold text-slate-500" dir="ltr">{{ $beneficiaryPreview['person_code'] }}</p>
+                                    </div>
+                                    <span class="text-xs font-bold text-indigo-700">{{ $beneficiaryPreview['supporters_count'] }} current supporter(s)</span>
+                                </div>
+                                @if($beneficiaryPreview['supporters_count'] > 0)
+                                    <div class="mt-2 flex flex-wrap gap-1.5">
+                                        @foreach($beneficiaryPreview['supporters'] as $supporter)
+                                            <span class="rounded-md bg-white px-2 py-1 text-xs font-bold text-slate-600">{{ $supporter['full_name'] }} - {{ $supporter['supporter_code'] }}</span>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>

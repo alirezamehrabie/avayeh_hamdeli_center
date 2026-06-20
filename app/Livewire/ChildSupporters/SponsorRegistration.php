@@ -3,6 +3,7 @@
 namespace App\Livewire\ChildSupporters;
 
 use App\Models\SponsorProfile;
+use App\Models\Person;
 use App\Models\User;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
@@ -21,6 +22,9 @@ class SponsorRegistration extends Component
     public string $childPreferences = '';
     public array $monthlyPaymentReminderMethods = [];
     public ?string $isSocialMediaActive = null;
+    public string $beneficiaryCode = '';
+    public array $assignedBeneficiaries = [];
+    public ?array $beneficiaryPreview = null;
 
     public function mount(bool $embedded = false): void
     {
@@ -37,9 +41,67 @@ class SponsorRegistration extends Component
             'mobile',
             'monthlyPaymentReminderMethods',
             'isSocialMediaActive',
+            'beneficiaryCode',
         ], true)) {
             $this->validateOnly($property, $this->rules(), $this->messages());
         }
+    }
+
+    public function lookupBeneficiary(): void
+    {
+        $this->authorizeAccess();
+        $this->resetErrorBag('beneficiaryCode');
+
+        $code = $this->normalizeBeneficiaryCode($this->beneficiaryCode);
+        $this->beneficiaryCode = $code;
+        $this->beneficiaryPreview = null;
+
+        if ($code === '') {
+            $this->addError('beneficiaryCode', 'کد مددجو را وارد کنید.');
+
+            return;
+        }
+
+        $beneficiary = $this->findAssignableBeneficiary($code);
+
+        if (! $beneficiary) {
+            $this->addError('beneficiaryCode', 'مددجوی کودک با این کد پیدا نشد.');
+
+            return;
+        }
+
+        $this->beneficiaryPreview = $this->formatBeneficiary($beneficiary);
+    }
+
+    public function addBeneficiary(): void
+    {
+        $this->authorizeAccess();
+        $this->lookupBeneficiary();
+
+        if (! $this->beneficiaryPreview) {
+            return;
+        }
+
+        $beneficiaryId = (int) $this->beneficiaryPreview['id'];
+
+        if (collect($this->assignedBeneficiaries)->contains(fn (array $beneficiary): bool => (int) $beneficiary['id'] === $beneficiaryId)) {
+            $this->addError('beneficiaryCode', 'این مددجو قبلا به لیست اضافه شده است.');
+
+            return;
+        }
+
+        $this->assignedBeneficiaries[] = $this->beneficiaryPreview;
+        $this->beneficiaryCode = '';
+        $this->beneficiaryPreview = null;
+        $this->resetErrorBag('beneficiaryCode');
+    }
+
+    public function removeBeneficiary(int $beneficiaryId): void
+    {
+        $this->assignedBeneficiaries = collect($this->assignedBeneficiaries)
+            ->reject(fn (array $beneficiary): bool => (int) $beneficiary['id'] === $beneficiaryId)
+            ->values()
+            ->all();
     }
 
     public function save(): void
@@ -51,7 +113,7 @@ class SponsorRegistration extends Component
         $firstName = $this->normalizeNamePart($validated['firstName']);
         $lastName = $this->normalizeNamePart($validated['lastName']);
 
-        User::registerSponsorAccount([
+        $user = User::registerSponsorAccount([
             'mobile' => $mobile,
             'first_name' => $firstName,
             'last_name' => $lastName,
@@ -62,6 +124,21 @@ class SponsorRegistration extends Component
             'created_by' => auth()->id(),
         ]);
 
+        $profile = $user->sponsorProfile()->firstOrFail();
+        $beneficiaryIds = collect($this->assignedBeneficiaries)
+            ->pluck('id')
+            ->map(fn (mixed $id): int => (int) $id)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($beneficiaryIds !== []) {
+            $profile->beneficiaries()->syncWithoutDetaching($beneficiaryIds);
+        }
+
+        $supporterCode = $profile->supporter_code ?: '-';
+
         $this->reset([
             'firstName',
             'lastName',
@@ -70,6 +147,9 @@ class SponsorRegistration extends Component
             'childPreferences',
             'monthlyPaymentReminderMethods',
             'isSocialMediaActive',
+            'beneficiaryCode',
+            'assignedBeneficiaries',
+            'beneficiaryPreview',
         ]);
 
         session()->flash('success', 'ثبت نام حامی با موفقیت انجام شد.');
@@ -105,6 +185,7 @@ class SponsorRegistration extends Component
             'monthlyPaymentReminderMethods' => ['required', 'array', 'min:1'],
             'monthlyPaymentReminderMethods.*' => ['string', Rule::in($reminderKeys)],
             'isSocialMediaActive' => ['required', Rule::in(['yes', 'no'])],
+            'beneficiaryCode' => ['nullable', 'string', 'max:32'],
         ];
     }
 
@@ -152,6 +233,40 @@ class SponsorRegistration extends Component
     private function normalizeNamePart(string $value): string
     {
         return preg_replace('/\s+/u', ' ', trim($value)) ?: trim($value);
+    }
+
+    private function normalizeBeneficiaryCode(string $code): string
+    {
+        return preg_replace('/\s+/u', '', trim($code)) ?: trim($code);
+    }
+
+    private function findAssignableBeneficiary(string $code): ?Person
+    {
+        return Person::query()
+            ->with(['sponsorProfiles.user:id,first_name,last_name,name,mobile'])
+            ->where('person_code', $code)
+            ->where('role', 'child')
+            ->first();
+    }
+
+    private function formatBeneficiary(Person $beneficiary): array
+    {
+        $supporters = $beneficiary->sponsorProfiles
+            ->map(fn (SponsorProfile $profile): array => [
+                'id' => $profile->id,
+                'supporter_code' => $profile->supporter_code ?: '-',
+                'full_name' => trim(($profile->user?->first_name ?? '') . ' ' . ($profile->user?->last_name ?? '')) ?: ($profile->user?->name ?: '-'),
+            ])
+            ->values()
+            ->all();
+
+        return [
+            'id' => $beneficiary->id,
+            'person_code' => $beneficiary->person_code,
+            'full_name' => trim($beneficiary->first_name . ' ' . $beneficiary->last_name),
+            'supporters_count' => count($supporters),
+            'supporters' => $supporters,
+        ];
     }
 
     private function combineFullName(string $firstName, string $lastName): string

@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\DB;
 
 class SponsorProfile extends Model
 {
@@ -16,6 +18,7 @@ class SponsorProfile extends Model
 
     protected $fillable = [
         'user_id',
+        'supporter_code',
         'monthly_donation_amount',
         'child_preferences',
         'monthly_payment_reminder_methods',
@@ -45,6 +48,25 @@ class SponsorProfile extends Model
         ];
     }
 
+    public static function generateNextSupporterCode(): string
+    {
+        return DB::transaction(function (): string {
+            $lastCode = self::query()
+                ->whereNotNull('supporter_code')
+                ->where('supporter_code', 'like', 'CS-%')
+                ->lockForUpdate()
+                ->max('supporter_code');
+
+            $lastSequence = 0;
+
+            if (is_string($lastCode) && preg_match('/^CS-(\d+)$/', $lastCode, $matches) === 1) {
+                $lastSequence = (int) $matches[1];
+            }
+
+            return sprintf('CS-%04d', $lastSequence + 1);
+        });
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -53,5 +75,11 @@ class SponsorProfile extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function beneficiaries(): BelongsToMany
+    {
+        return $this->belongsToMany(Person::class, 'person_sponsor_profile')
+            ->withTimestamps();
     }
 }

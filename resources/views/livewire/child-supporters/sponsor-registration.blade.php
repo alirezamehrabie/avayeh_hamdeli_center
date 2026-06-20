@@ -140,6 +140,73 @@
 
             <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
                 <div class="mb-4 border-b border-slate-100 pb-3">
+                    <h2 class="text-base font-black text-slate-900">Assigned Beneficiaries</h2>
+                </div>
+
+                <div class="grid gap-3 lg:grid-cols-[1fr_auto_auto] lg:items-end">
+                    <div>
+                        <label for="assigned-beneficiary-code" class="mb-1.5 block text-sm font-bold text-slate-700">Beneficiary code</label>
+                        <input
+                            id="assigned-beneficiary-code"
+                            type="text"
+                            wire:model.live.debounce.400ms="beneficiaryCode"
+                            dir="ltr"
+                            placeholder="14000"
+                            class="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-left text-sm text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+                        >
+                        @error('beneficiaryCode') <p class="mt-1.5 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                    </div>
+
+                    <button type="button" wire:click="lookupBeneficiary" class="h-12 rounded-xl border border-indigo-100 bg-indigo-50 px-4 text-sm font-black text-indigo-700 transition hover:bg-indigo-100">
+                        Check
+                    </button>
+
+                    <button type="button" wire:click="addBeneficiary" class="h-12 rounded-xl bg-teal-600 px-4 text-sm font-black text-white transition hover:bg-teal-700">
+                        Add
+                    </button>
+                </div>
+
+                @if($beneficiaryPreview)
+                    <div class="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                        <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-sm font-black text-slate-800">{{ $beneficiaryPreview['full_name'] }}</p>
+                                <p class="text-xs font-semibold text-slate-500" dir="ltr">{{ $beneficiaryPreview['person_code'] }}</p>
+                            </div>
+                            <span class="text-xs font-bold text-indigo-700">{{ $beneficiaryPreview['supporters_count'] }} current supporter(s)</span>
+                        </div>
+
+                        @if($beneficiaryPreview['supporters_count'] > 0)
+                            <div class="mt-2 flex flex-wrap gap-1.5">
+                                @foreach($beneficiaryPreview['supporters'] as $supporter)
+                                    <span class="rounded-md bg-white px-2 py-1 text-xs font-bold text-slate-600">
+                                        {{ $supporter['full_name'] }} - {{ $supporter['supporter_code'] }}
+                                    </span>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
+                <div class="mt-3 space-y-2">
+                    @forelse($assignedBeneficiaries as $beneficiary)
+                        <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                            <div class="min-w-0">
+                                <p class="truncate text-sm font-bold text-slate-800">{{ $beneficiary['full_name'] }}</p>
+                                <p class="text-xs font-semibold text-slate-500" dir="ltr">{{ $beneficiary['person_code'] }}</p>
+                            </div>
+                            <button type="button" wire:click="removeBeneficiary({{ $beneficiary['id'] }})" class="rounded-lg bg-rose-50 px-3 py-2 text-xs font-black text-rose-700 transition hover:bg-rose-100">
+                                Remove
+                            </button>
+                        </div>
+                    @empty
+                        <p class="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-center text-sm font-semibold text-slate-500">No beneficiaries assigned yet.</p>
+                    @endforelse
+                </div>
+            </section>
+
+            <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                <div class="mb-4 border-b border-slate-100 pb-3">
                     <h2 class="text-base font-black text-slate-900">ترجیحات و یادآوری</h2>
                 </div>
 
