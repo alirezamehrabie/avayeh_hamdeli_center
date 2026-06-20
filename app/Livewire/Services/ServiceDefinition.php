@@ -30,6 +30,10 @@ class ServiceDefinition extends Component
 
     public string $serviceType = 'individual';
 
+    public bool $supportsGateDelivery = true;
+
+    public bool $supportsHomeDelivery = true;
+
     public string $description = '';
 
     public ?int $serviceDistrictId = null;
@@ -111,6 +115,8 @@ class ServiceDefinition extends Component
                     'service_name_id' => $serviceName->id,
                     'name' => trim($validated['serviceName']),
                     'service_type' => $validated['serviceType'],
+                    'supports_gate_delivery' => (bool) $validated['supportsGateDelivery'],
+                    'supports_home_delivery' => (bool) $validated['supportsHomeDelivery'],
                     'description' => $validated['description'] ?: null,
                     'district_id' => $validated['serviceDistrictId'] ?: null,
                     'distribution_start_date' => $this->jalaliToGregorian($validated['distributionStartDate']),
@@ -238,6 +244,8 @@ class ServiceDefinition extends Component
         $this->selectedServiceNameId = $service->service_name_id;
         $this->serviceName = $service->name;
         $this->serviceType = $service->service_type;
+        $this->supportsGateDelivery = (bool) $service->supports_gate_delivery;
+        $this->supportsHomeDelivery = (bool) $service->supports_home_delivery;
         $this->description = (string) $service->description;
         $this->serviceDistrictId = $service->district_id;
         $this->distributionStartDate = $service->distribution_start_date
@@ -313,6 +321,15 @@ class ServiceDefinition extends Component
             ],
             'selectedServiceNameId' => ['nullable', 'integer', 'exists:service_names,id'],
             'serviceType' => ['required', Rule::in(array_keys(Service::TYPE_OPTIONS))],
+            'supportsGateDelivery' => ['boolean'],
+            'supportsHomeDelivery' => [
+                'boolean',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (! $this->supportsGateDelivery && ! (bool) $value) {
+                        $fail('حداقل یک روش تحویل نهایی باید فعال باشد.');
+                    }
+                },
+            ],
             'description' => ['nullable', 'string', 'max:5000'],
             'serviceDistrictId' => ['nullable', 'integer', 'exists:districts,id'],
             'distributionStartDate' => [
@@ -399,6 +416,8 @@ class ServiceDefinition extends Component
         }
 
         $this->serviceType = $this->serviceType ?: 'individual';
+        $this->supportsGateDelivery = (bool) $this->supportsGateDelivery;
+        $this->supportsHomeDelivery = (bool) $this->supportsHomeDelivery;
         $this->status = $this->status ?: 'draft';
     }
 
@@ -409,6 +428,8 @@ class ServiceDefinition extends Component
             'selectedServiceNameId',
             'serviceName',
             'serviceType',
+            'supportsGateDelivery',
+            'supportsHomeDelivery',
             'description',
             'serviceDistrictId',
             'distributionStartDate',
@@ -420,6 +441,8 @@ class ServiceDefinition extends Component
         ]);
 
         $this->serviceType = 'individual';
+        $this->supportsGateDelivery = true;
+        $this->supportsHomeDelivery = true;
         $this->status = 'draft';
         $this->categories = [$this->emptyCategory()];
     }

@@ -139,6 +139,8 @@ class ServiceBatchCreator extends Component
                 $service->update([
                     'service_name_id' => $defaultServiceName->id,
                     'service_type' => $block['service_type'],
+                    'supports_gate_delivery' => true,
+                    'supports_home_delivery' => true,
                     'description' => $this->buildServiceDescription(
                         $block['service_name'] ?? null,
                         $block['description'] ?? null
@@ -191,6 +193,8 @@ class ServiceBatchCreator extends Component
                     'code' => $serviceCode,
                     'service_name_id' => $defaultServiceName->id,
                     'service_type' => $block['service_type'],
+                    'supports_gate_delivery' => true,
+                    'supports_home_delivery' => true,
                     'description' => $this->buildServiceDescription(
                         $block['service_name'] ?? null,
                         $block['description'] ?? null

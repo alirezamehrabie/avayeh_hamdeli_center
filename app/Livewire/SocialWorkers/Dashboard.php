@@ -406,6 +406,7 @@ class Dashboard extends Component
                 $query->where('social_workers.id', $this->currentSocialWorkerId())
                     ->where('service_social_worker.allocated_quantity', '>', 0);
             })
+            ->supportsHomeDelivery()
             ->whereIn('status', ['approved', 'in_distribution'])
             ->latest()
             ->get();
@@ -423,6 +424,7 @@ class Dashboard extends Component
                 $query->where('social_workers.id', $this->currentSocialWorkerId())
                     ->where('service_social_worker.allocated_quantity', '>', 0);
             })
+            ->supportsHomeDelivery()
             ->whereIn('status', ['approved', 'in_distribution'])
             ->find($this->selectedServiceId);
     }

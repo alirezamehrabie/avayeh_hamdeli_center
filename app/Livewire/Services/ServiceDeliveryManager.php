@@ -264,6 +264,7 @@ class ServiceDeliveryManager extends Component
                 'workerAllocations.socialWorker',
                 'workerAllocations.serviceCategory',
             ])
+            ->supportsHomeDelivery()
             ->find($this->selectedServiceId);
     }
 
@@ -404,6 +405,7 @@ class ServiceDeliveryManager extends Component
                     'workerAllocations.socialWorker',
                     'workerAllocations.serviceCategory',
                 ])
+                ->supportsHomeDelivery()
                 ->whereIn('status', ['approved', 'in_distribution', 'completed'])
                 ->latest()
                 ->get(),

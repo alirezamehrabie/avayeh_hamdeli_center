@@ -40,6 +40,15 @@ class Service extends Model
         'gram' => 'گرم',
     ];
 
+    public const DELIVERY_CHANNEL_GATE = 'gate';
+
+    public const DELIVERY_CHANNEL_HOME = 'home';
+
+    public const DELIVERY_CHANNEL_OPTIONS = [
+        self::DELIVERY_CHANNEL_GATE => 'ایستگاه توزیع',
+        self::DELIVERY_CHANNEL_HOME => 'تحویل در منزل',
+    ];
+
     public const UNIT_OPTION_ORDER = [
         'count',
         'portion',
@@ -54,6 +63,8 @@ class Service extends Model
         'name',
         'service_name_id',
         'service_type',
+        'supports_gate_delivery',
+        'supports_home_delivery',
         'description',
         'total_quantity',
         'total_service_value',
@@ -72,6 +83,8 @@ class Service extends Model
         return [
             'distribution_start_date' => 'date',
             'distribution_end_date' => 'date',
+            'supports_gate_delivery' => 'boolean',
+            'supports_home_delivery' => 'boolean',
             'total_quantity' => 'decimal:2',
             'quantity_delivered' => 'decimal:2',
             'total_service_value' => 'integer',
@@ -85,7 +98,40 @@ class Service extends Model
             if (blank($service->code)) {
                 $service->code = static::generateNextCode();
             }
+
+            if ($service->supports_gate_delivery === null) {
+                $service->supports_gate_delivery = true;
+            }
+
+            if ($service->supports_home_delivery === null) {
+                $service->supports_home_delivery = true;
+            }
         });
+    }
+
+    public function scopeSupportsGateDelivery($query)
+    {
+        return $query->where('supports_gate_delivery', true);
+    }
+
+    public function scopeSupportsHomeDelivery($query)
+    {
+        return $query->where('supports_home_delivery', true);
+    }
+
+    public function getDeliveryChannelLabelsAttribute(): array
+    {
+        $labels = [];
+
+        if ($this->supports_gate_delivery) {
+            $labels[] = self::DELIVERY_CHANNEL_OPTIONS[self::DELIVERY_CHANNEL_GATE];
+        }
+
+        if ($this->supports_home_delivery) {
+            $labels[] = self::DELIVERY_CHANNEL_OPTIONS[self::DELIVERY_CHANNEL_HOME];
+        }
+
+        return $labels;
     }
 
     public static function generateNextCode(): string

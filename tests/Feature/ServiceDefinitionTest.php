@@ -3,9 +3,12 @@
 namespace Tests\Feature;
 
 use App\Livewire\Services\ServiceDefinition;
+use App\Livewire\Services\ServiceDeliveryManager;
+use App\Livewire\SocialWorkers\Dashboard as SocialWorkerDashboard;
 use App\Models\Service;
 use App\Models\ServiceCategoryTemplate;
 use App\Models\ServiceName;
+use App\Models\SocialWorker;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -50,6 +53,100 @@ class ServiceDefinitionTest extends TestCase
             'name' => 'Protein Bundle',
             'created_by' => $user->id,
         ]);
+    }
+
+    public function test_delivery_channels_are_saved_with_service_definition(): void
+    {
+        $user = $this->manager();
+
+        $this->actingAs($user);
+
+        Livewire::test(ServiceDefinition::class)
+            ->set('serviceName', 'Station Only Package')
+            ->set('serviceType', 'individual')
+            ->set('supportsGateDelivery', true)
+            ->set('supportsHomeDelivery', false)
+            ->set('distributionStartDate', '1405/03/30')
+            ->set('status', 'draft')
+            ->set('categories', [[
+                'id' => null,
+                'code' => '',
+                'name' => 'Dry Food',
+                'quantity' => '8',
+                'unit' => 'pack',
+                'value' => '100,000',
+            ]])
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $service = Service::query()->where('name', 'Station Only Package')->firstOrFail();
+
+        $this->assertTrue($service->supports_gate_delivery);
+        $this->assertFalse($service->supports_home_delivery);
+    }
+
+    public function test_at_least_one_delivery_channel_must_be_active(): void
+    {
+        $this->actingAs($this->manager());
+
+        Livewire::test(ServiceDefinition::class)
+            ->set('serviceName', 'Invalid Channel Package')
+            ->set('serviceType', 'individual')
+            ->set('supportsGateDelivery', false)
+            ->set('supportsHomeDelivery', false)
+            ->set('distributionStartDate', '1405/03/30')
+            ->set('status', 'draft')
+            ->set('categories', [[
+                'id' => null,
+                'code' => '',
+                'name' => 'Dry Food',
+                'quantity' => '8',
+                'unit' => 'pack',
+                'value' => '100,000',
+            ]])
+            ->call('save')
+            ->assertHasErrors(['supportsHomeDelivery']);
+    }
+
+    public function test_station_only_services_are_hidden_from_home_delivery_flows(): void
+    {
+        $manager = $this->manager();
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 77,
+            'first_name' => 'Test',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+        $socialWorkerUser = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_SOCIAL_WORKER,
+            'is_admin' => false,
+            'social_worker_id' => $worker->id,
+        ]);
+
+        $stationOnlyService = $this->serviceWithCategory($manager, 'Station Only', false);
+        $homeService = $this->serviceWithCategory($manager, 'Home Enabled', true);
+
+        foreach ([$stationOnlyService, $homeService] as $service) {
+            $service->workerAllocations()->create([
+                'social_worker_id' => $worker->id,
+                'service_category_id' => $service->categories()->firstOrFail()->id,
+                'allocated_quantity' => 5,
+            ]);
+        }
+
+        $this->actingAs($manager);
+
+        Livewire::test(ServiceDeliveryManager::class)
+            ->assertViewHas('services', function ($services) use ($stationOnlyService, $homeService): bool {
+                return $services->contains('id', $homeService->id)
+                    && ! $services->contains('id', $stationOnlyService->id);
+            });
+
+        $this->actingAs($socialWorkerUser);
+
+        Livewire::test(SocialWorkerDashboard::class)
+            ->assertSee($homeService->code)
+            ->assertDontSee($stationOnlyService->code);
     }
 
     public function test_soft_deleted_template_is_restored_when_reused_in_service_definition(): void
@@ -104,5 +201,41 @@ class ServiceDefinitionTest extends TestCase
             'is_admin' => true,
             'permissions' => [User::PERMISSION_FULL_ACCESS],
         ]);
+    }
+
+    private function serviceWithCategory(User $creator, string $name, bool $supportsHomeDelivery): Service
+    {
+        $serviceName = ServiceName::query()->create([
+            'name' => $name,
+            'sort_id' => (int) ServiceName::query()->max('sort_id') + 1,
+            'created_by' => $creator->id,
+        ]);
+
+        $service = Service::query()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => $name,
+            'service_type' => 'individual',
+            'supports_gate_delivery' => true,
+            'supports_home_delivery' => $supportsHomeDelivery,
+            'total_quantity' => 10,
+            'total_service_value' => 0,
+            'distribution_start_date' => now()->toDateString(),
+            'distribution_end_date' => null,
+            'status' => 'approved',
+            'quantity_delivered' => 0,
+            'created_by' => $creator->id,
+        ]);
+
+        $service->categories()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => $name.' Category',
+            'quantity' => 10,
+            'unit' => 'pack',
+            'value' => 1000,
+            'sort_id' => 1,
+            'created_by' => $creator->id,
+        ]);
+
+        return $service;
     }
 }
