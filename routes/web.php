@@ -92,6 +92,10 @@ Route::get('/admin/services/service-management', DashboardHome::class)
     ->middleware(['auth', 'can:full-access'])
     ->name('admin.service-management');
 
+Route::get('/admin/services/service-archive', DashboardHome::class)
+    ->middleware(['auth', 'can:full-access'])
+    ->name('admin.service-archive');
+
 Route::get('/admin/services/service-list', DashboardHome::class)
     ->middleware(['auth', 'can:full-access'])
     ->name('admin.service-list');

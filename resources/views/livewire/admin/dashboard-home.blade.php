@@ -289,6 +289,9 @@
                         <livewire:services.service-management :key="'service-management'" />
                         @break
 
+                    @case('service-archive')
+                        <livewire:services.service-archive :key="'service-archive'" />
+                        @break
 
                     @case('activity-definition')
                         <livewire:activities.activity-definition :activity-id="$editingActivityId" :key="'activity-definition-' . ($editingActivityId ?? 'new')" />

@@ -158,33 +158,6 @@ class ServiceManagement extends Component
         session()->flash('management-success', "نام خدمت «{$archivedName}» از فهرست انتخاب‌های جدید حذف شد. سوابق قبلی حفظ شده‌اند.");
     }
 
-    public function restoreServiceName(int $serviceNameId): void
-    {
-        $serviceName = ServiceName::onlyTrashed()->findOrFail($serviceNameId);
-
-        if (ServiceName::query()->where('name', $serviceName->name)->exists()) {
-            $this->openNotificationModal([
-                'type' => 'error',
-                'title' => 'بازیابی امکان‌پذیر نیست',
-                'message' => 'یک نام خدمت فعال با همین عنوان وجود دارد. ابتدا نام فعال را تغییر دهید یا حذف کنید.',
-                'buttons' => [[
-                    'label' => 'متوجه شدم',
-                    'action' => 'close',
-                    'variant' => 'danger',
-                ]],
-            ]);
-
-            return;
-        }
-
-        $serviceName->restore();
-        $this->selectedServiceNameId = $serviceName->id;
-        $this->resetServiceNameForm();
-        $this->resetCategoryForm();
-
-        session()->flash('management-success', "نام خدمت «{$serviceName->name}» بازیابی شد.");
-    }
-
     public function saveCategory(): void
     {
         $validated = $this->validate([
@@ -302,54 +275,6 @@ class ServiceManagement extends Component
         session()->flash('management-success', "دسته‌بندی «{$deletedCategoryName}» حذف شد. اطلاعات خدمات قبلی حفظ شده است.");
     }
 
-    public function restoreCategory(int $categoryId): void
-    {
-        $category = ServiceCategoryTemplate::onlyTrashed()
-            ->with(['serviceName' => fn ($query) => $query->withTrashed()])
-            ->findOrFail($categoryId);
-
-        if ($category->serviceName?->trashed()) {
-            $this->openNotificationModal([
-                'type' => 'error',
-                'title' => 'بازیابی امکان‌پذیر نیست',
-                'message' => 'برای بازیابی این دسته‌بندی، ابتدا نام خدمت وابسته را از آرشیو بازیابی کنید.',
-                'buttons' => [[
-                    'label' => 'متوجه شدم',
-                    'action' => 'close',
-                    'variant' => 'danger',
-                ]],
-            ]);
-
-            return;
-        }
-
-        $duplicateExists = ServiceCategoryTemplate::query()
-            ->where('service_name_id', $category->service_name_id)
-            ->where('name', $category->name)
-            ->exists();
-
-        if ($duplicateExists) {
-            $this->openNotificationModal([
-                'type' => 'error',
-                'title' => 'بازیابی امکان‌پذیر نیست',
-                'message' => 'یک دسته‌بندی فعال با همین نام برای این خدمت وجود دارد.',
-                'buttons' => [[
-                    'label' => 'متوجه شدم',
-                    'action' => 'close',
-                    'variant' => 'danger',
-                ]],
-            ]);
-
-            return;
-        }
-
-        $category->restore();
-        $this->selectedServiceNameId = $category->service_name_id;
-        $this->resetCategoryForm();
-
-        session()->flash('management-success', "دسته‌بندی «{$category->name}» بازیابی شد.");
-    }
-
     public function saveUnit(): void
     {
         $validated = $this->validate([
@@ -451,18 +376,6 @@ class ServiceManagement extends Component
                 ->ordered()
                 ->get(),
             'serviceUnits' => ServiceUnit::query()->ordered()->get(),
-            'archivedServiceNames' => ServiceName::onlyTrashed()
-                ->withCount([
-                    'services',
-                    'categories',
-                    'categoryTemplates' => fn ($query) => $query->withTrashed(),
-                ])
-                ->orderByDesc('deleted_at')
-                ->get(),
-            'archivedServiceCategories' => ServiceCategoryTemplate::onlyTrashed()
-                ->with(['serviceName' => fn ($query) => $query->withTrashed()])
-                ->orderByDesc('deleted_at')
-                ->get(),
         ]);
     }
 }

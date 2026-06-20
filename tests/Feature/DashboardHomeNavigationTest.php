@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Livewire\Admin\DashboardHome;
 use App\Livewire\Activities\ActivityList;
+use App\Livewire\Services\ServiceArchive;
 use App\Models\Activity;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -30,6 +31,15 @@ class DashboardHomeNavigationTest extends TestCase
         $this->get('/admin/activities/activity-list')
             ->assertOk()
             ->assertSeeLivewire(ActivityList::class);
+    }
+
+    public function test_service_archive_route_opens_archive_section(): void
+    {
+        $this->actingAs($this->manager());
+
+        $this->get('/admin/services/service-archive')
+            ->assertOk()
+            ->assertSeeLivewire(ServiceArchive::class);
     }
 
     public function test_activity_definition_context_survives_mount_from_url(): void

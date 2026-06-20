@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Livewire\Services\ServiceDefinition;
+use App\Livewire\Services\ServiceArchive;
 use App\Livewire\Services\ServiceDeliveryManager;
 use App\Livewire\Services\ServiceManagement;
 use App\Livewire\SocialWorkers\Dashboard as SocialWorkerDashboard;
@@ -304,11 +305,10 @@ class ServiceDefinitionTest extends TestCase
 
         $this->actingAs($user);
 
-        Livewire::test(ServiceManagement::class)
+        Livewire::test(ServiceArchive::class)
             ->assertViewHas('archivedServiceNames', fn ($items): bool => $items->contains('id', $serviceName->id))
             ->assertViewHas('archivedServiceCategories', fn ($items): bool => $items->contains('id', $template->id))
             ->call('restoreServiceName', $serviceName->id)
-            ->assertSet('selectedServiceNameId', $serviceName->id)
             ->call('restoreCategory', $template->id);
 
         $this->assertNull($serviceName->fresh()?->deleted_at);
@@ -335,7 +335,7 @@ class ServiceDefinitionTest extends TestCase
 
         $this->actingAs($user);
 
-        Livewire::test(ServiceManagement::class)
+        Livewire::test(ServiceArchive::class)
             ->call('restoreCategory', $template->id);
 
         $this->assertNotNull($template->fresh()?->deleted_at);

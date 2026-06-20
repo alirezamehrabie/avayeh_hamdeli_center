@@ -1,0 +1,106 @@
+<?php
+
+namespace App\Livewire\Services;
+
+use App\Models\ServiceCategoryTemplate;
+use App\Models\ServiceName;
+use App\Traits\InteractsWithNotificationModal;
+use Livewire\Component;
+
+class ServiceArchive extends Component
+{
+    use InteractsWithNotificationModal;
+
+    public function mount(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
+    }
+
+    public function restoreServiceName(int $serviceNameId): void
+    {
+        $serviceName = ServiceName::onlyTrashed()->findOrFail($serviceNameId);
+
+        if (ServiceName::query()->where('name', $serviceName->name)->exists()) {
+            $this->openNotificationModal([
+                'type' => 'error',
+                'title' => 'بازیابی امکان‌پذیر نیست',
+                'message' => 'یک نام خدمت فعال با همین عنوان وجود دارد. ابتدا نام فعال را تغییر دهید یا حذف کنید.',
+                'buttons' => [[
+                    'label' => 'متوجه شدم',
+                    'action' => 'close',
+                    'variant' => 'danger',
+                ]],
+            ]);
+
+            return;
+        }
+
+        $serviceName->restore();
+
+        session()->flash('archive-success', "نام خدمت «{$serviceName->name}» بازیابی شد.");
+    }
+
+    public function restoreCategory(int $categoryId): void
+    {
+        $category = ServiceCategoryTemplate::onlyTrashed()
+            ->with(['serviceName' => fn ($query) => $query->withTrashed()])
+            ->findOrFail($categoryId);
+
+        if ($category->serviceName?->trashed()) {
+            $this->openNotificationModal([
+                'type' => 'error',
+                'title' => 'بازیابی امکان‌پذیر نیست',
+                'message' => 'برای بازیابی این دسته‌بندی، ابتدا نام خدمت وابسته را از آرشیو بازیابی کنید.',
+                'buttons' => [[
+                    'label' => 'متوجه شدم',
+                    'action' => 'close',
+                    'variant' => 'danger',
+                ]],
+            ]);
+
+            return;
+        }
+
+        $duplicateExists = ServiceCategoryTemplate::query()
+            ->where('service_name_id', $category->service_name_id)
+            ->where('name', $category->name)
+            ->exists();
+
+        if ($duplicateExists) {
+            $this->openNotificationModal([
+                'type' => 'error',
+                'title' => 'بازیابی امکان‌پذیر نیست',
+                'message' => 'یک دسته‌بندی فعال با همین نام برای این خدمت وجود دارد.',
+                'buttons' => [[
+                    'label' => 'متوجه شدم',
+                    'action' => 'close',
+                    'variant' => 'danger',
+                ]],
+            ]);
+
+            return;
+        }
+
+        $category->restore();
+
+        session()->flash('archive-success', "دسته‌بندی «{$category->name}» بازیابی شد.");
+    }
+
+    public function render()
+    {
+        return view('livewire.services.service-archive', [
+            'archivedServiceNames' => ServiceName::onlyTrashed()
+                ->withCount([
+                    'services',
+                    'categories',
+                    'categoryTemplates' => fn ($query) => $query->withTrashed(),
+                ])
+                ->orderByDesc('deleted_at')
+                ->get(),
+            'archivedServiceCategories' => ServiceCategoryTemplate::onlyTrashed()
+                ->with(['serviceName' => fn ($query) => $query->withTrashed()])
+                ->orderByDesc('deleted_at')
+                ->get(),
+        ]);
+    }
+}
