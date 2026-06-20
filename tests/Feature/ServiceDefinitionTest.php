@@ -284,6 +284,63 @@ class ServiceDefinitionTest extends TestCase
             ->assertDontSee($template->name);
     }
 
+    public function test_archived_service_names_and_categories_are_listed_and_restorable(): void
+    {
+        $user = $this->manager();
+        $serviceName = ServiceName::query()->create([
+            'name' => 'Restorable Service Name',
+            'sort_id' => 1,
+            'created_by' => $user->id,
+        ]);
+        $template = ServiceCategoryTemplate::query()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'Restorable Template',
+            'sort_id' => 1,
+            'created_by' => $user->id,
+        ]);
+
+        $template->delete();
+        $serviceName->delete();
+
+        $this->actingAs($user);
+
+        Livewire::test(ServiceManagement::class)
+            ->assertViewHas('archivedServiceNames', fn ($items): bool => $items->contains('id', $serviceName->id))
+            ->assertViewHas('archivedServiceCategories', fn ($items): bool => $items->contains('id', $template->id))
+            ->call('restoreServiceName', $serviceName->id)
+            ->assertSet('selectedServiceNameId', $serviceName->id)
+            ->call('restoreCategory', $template->id);
+
+        $this->assertNull($serviceName->fresh()?->deleted_at);
+        $this->assertNull($template->fresh()?->deleted_at);
+    }
+
+    public function test_archived_category_requires_active_service_name_before_restore(): void
+    {
+        $user = $this->manager();
+        $serviceName = ServiceName::query()->create([
+            'name' => 'Archived Parent',
+            'sort_id' => 1,
+            'created_by' => $user->id,
+        ]);
+        $template = ServiceCategoryTemplate::query()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'Child Template',
+            'sort_id' => 1,
+            'created_by' => $user->id,
+        ]);
+
+        $template->delete();
+        $serviceName->delete();
+
+        $this->actingAs($user);
+
+        Livewire::test(ServiceManagement::class)
+            ->call('restoreCategory', $template->id);
+
+        $this->assertNotNull($template->fresh()?->deleted_at);
+    }
+
     private function manager(): User
     {
         return User::factory()->create([
