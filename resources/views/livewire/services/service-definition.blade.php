@@ -57,6 +57,7 @@
                                     <div
                                         x-data="{
                                             open: false,
+                                            activeIndex: -1,
                                             selectedId: @entangle('selectedServiceNameId').live,
                                             serviceName: @entangle('serviceName').live,
                                             serviceNames: @js($serviceNames->map(fn ($serviceName) => [
@@ -445,13 +446,48 @@
 
                                                             this.menuMaxHeight = Math.max(0, Math.min(preferredHeight, availableSpace));
                                                         },
+                                                        activeIndex: -1,
+                                                        closeUnitDropdown() {
+                                                            this.open = false;
+                                                            this.activeIndex = -1;
+                                                        },
+                                                        openUnitDropdown() {
+                                                            this.open = true;
+                                                            this.activeIndex = Math.max(this.options.findIndex((item) => item.value === this.unit), 0);
+                                                            this.$nextTick(() => this.positionUnitDropdown());
+                                                        },
+                                                        moveUnitSelection(step) {
+                                                            if (!this.open) {
+                                                                this.openUnitDropdown();
+                                                                return;
+                                                            }
+
+                                                            const count = this.options.length;
+
+                                                            if (count === 0) {
+                                                                return;
+                                                            }
+
+                                                            const startIndex = this.activeIndex >= 0
+                                                                ? this.activeIndex
+                                                                : Math.max(this.options.findIndex((item) => item.value === this.unit), 0);
+
+                                                            this.activeIndex = (startIndex + step + count) % count;
+                                                        },
+                                                        selectActiveUnit() {
+                                                            if (this.activeIndex < 0 || this.activeIndex >= this.options.length) {
+                                                                return;
+                                                            }
+
+                                                            this.selectUnit(this.options[this.activeIndex].value);
+                                                        },
                                                         selectUnit(value) {
                                                             this.unit = value;
-                                                            this.open = false;
+                                                            this.closeUnitDropdown();
                                                         }
                                                     }"
-                                                    x-on:click.outside="open = false"
-                                                    x-on:focusout="if (! $el.contains($event.relatedTarget)) open = false"
+                                                    x-on:click.outside="closeUnitDropdown()"
+                                                    x-on:focusout="if (! $el.contains($event.relatedTarget)) closeUnitDropdown()"
                                                     x-on:resize.window="open && positionUnitDropdown()"
                                                     x-on:scroll.window.throttle.100ms="open && positionUnitDropdown()"
                                                     class="relative"
@@ -459,8 +495,11 @@
                                                     <button
                                                         x-ref="unitTrigger"
                                                         type="button"
-                                                        x-on:click.stop.prevent="toggleUnitDropdown()"
-                                                        x-on:keydown.escape="open = false"
+                                                        x-on:click.stop.prevent="open ? closeUnitDropdown() : openUnitDropdown()"
+                                                        x-on:keydown.down.prevent="moveUnitSelection(1)"
+                                                        x-on:keydown.up.prevent="moveUnitSelection(-1)"
+                                                        x-on:keydown.enter.prevent="open ? selectActiveUnit() : openUnitDropdown()"
+                                                        x-on:keydown.escape="closeUnitDropdown()"
                                                         class="flex h-[50px] w-full items-center justify-between gap-3 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-right text-sm text-slate-700 transition focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100"
                                                         aria-haspopup="listbox"
                                                         x-bind:aria-expanded="open.toString()"
@@ -484,10 +523,11 @@
                                                             class="overflow-y-auto py-1"
                                                             x-bind:style="`max-height: ${menuMaxHeight}px`"
                                                         >
-                                                            <template x-for="item in options" :key="item.value">
+                                                            <template x-for="(item, index) in options" :key="item.value">
                                                                 <button
                                                                     type="button"
                                                                     x-on:click="selectUnit(item.value)"
+                                                                    x-bind:class="{ 'bg-slate-50': activeIndex === index }"
                                                                     class="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-right text-sm text-slate-700 transition hover:bg-slate-50"
                                                                     role="option"
                                                                     x-bind:aria-selected="unit === item.value"
