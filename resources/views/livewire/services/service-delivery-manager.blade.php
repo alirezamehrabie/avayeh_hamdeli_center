@@ -375,39 +375,218 @@
                                         <p class="mt-1 text-sm text-slate-500">برای هر مددکار، مقدار سهمیه هر آیتم را وارد کنید. این مقدار مصرف نیست.</p>
                                     </div>
 
-                                    <div class="relative w-full lg:max-w-sm">
+                                    <div
+                                        x-data="{
+                                            socialWorkerOpen: false,
+                                            activeSocialWorkerIndex: -1,
+                                            socialWorkerSearchValue: @entangle('socialWorkerSearch').live,
+                                            get socialWorkerOptions() {
+                                                return Array.from(this.$refs.socialWorkerList?.querySelectorAll('[data-social-worker-option]') ?? []);
+                                            },
+                                            get hasEnoughSearchText() {
+                                                return (this.socialWorkerSearchValue || '').trim().length >= 2;
+                                            },
+                                            openSocialWorkerDropdown() {
+                                                this.socialWorkerOpen = true;
+                                                this.activeSocialWorkerIndex = this.socialWorkerOptions.length ? 0 : -1;
+                                            },
+                                            closeSocialWorkerDropdown() {
+                                                this.socialWorkerOpen = false;
+                                                this.activeSocialWorkerIndex = -1;
+                                            },
+                                            clearSocialWorkerSearch() {
+                                                this.socialWorkerSearchValue = '';
+                                                this.closeSocialWorkerDropdown();
+                                                this.$nextTick(() => this.$refs.socialWorkerSearch?.focus());
+                                            },
+                                            setActiveSocialWorker(index) {
+                                                const options = this.socialWorkerOptions;
+
+                                                if (! options.length) {
+                                                    this.activeSocialWorkerIndex = -1;
+                                                    return;
+                                                }
+
+                                                this.activeSocialWorkerIndex = Math.max(0, Math.min(index, options.length - 1));
+                                                this.$nextTick(() => options[this.activeSocialWorkerIndex]?.scrollIntoView({ block: 'nearest' }));
+                                            },
+                                            moveSocialWorkerActive(step) {
+                                                const options = this.socialWorkerOptions;
+
+                                                if (! options.length) {
+                                                    return;
+                                                }
+
+                                                if (! this.socialWorkerOpen) {
+                                                    this.openSocialWorkerDropdown();
+                                                    return;
+                                                }
+
+                                                const nextIndex = this.activeSocialWorkerIndex < 0
+                                                    ? 0
+                                                    : (this.activeSocialWorkerIndex + step + options.length) % options.length;
+
+                                                this.setActiveSocialWorker(nextIndex);
+                                            },
+                                            chooseActiveSocialWorker() {
+                                                if (! this.socialWorkerOpen) {
+                                                    this.openSocialWorkerDropdown();
+                                                    return;
+                                                }
+
+                                                this.socialWorkerOptions[this.activeSocialWorkerIndex]?.click();
+                                            },
+                                            selectSocialWorkerOption(workerId) {
+                                                $wire.addSocialWorker(workerId);
+                                                this.closeSocialWorkerDropdown();
+                                                this.$nextTick(() => this.$refs.socialWorkerSearch?.focus());
+                                            },
+                                        }"
+                                        x-on:click.outside="closeSocialWorkerDropdown()"
+                                        x-on:keydown.escape.window="closeSocialWorkerDropdown()"
+                                        x-effect="
+                                            if (hasEnoughSearchText && document.activeElement === $refs.socialWorkerSearch) {
+                                                socialWorkerOpen = true;
+                                            }
+
+                                            if (! hasEnoughSearchText) {
+                                                closeSocialWorkerDropdown();
+                                            }
+                                        "
+                                        class="relative w-full lg:max-w-md"
+                                    >
+                                        <label class="sr-only" for="social-worker-search">جستجوی مددکار</label>
                                         <input
+                                            id="social-worker-search"
+                                            x-ref="socialWorkerSearch"
                                             type="text"
                                             wire:model.live.debounce.250ms="socialWorkerSearch"
-                                            class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 focus:border-cyan-400 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                                            x-on:focus="if (hasEnoughSearchText) openSocialWorkerDropdown()"
+                                            x-on:keydown.arrow-down.prevent="moveSocialWorkerActive(1)"
+                                            x-on:keydown.arrow-up.prevent="moveSocialWorkerActive(-1)"
+                                            x-on:keydown.enter.prevent="chooseActiveSocialWorker()"
+                                            x-on:keydown.home.prevent="setActiveSocialWorker(0)"
+                                            x-on:keydown.end.prevent="setActiveSocialWorker(socialWorkerOptions.length - 1)"
+                                            role="combobox"
+                                            aria-autocomplete="list"
+                                            aria-controls="social-worker-search-results"
+                                            x-bind:aria-expanded="socialWorkerOpen.toString()"
+                                            x-bind:aria-activedescendant="activeSocialWorkerIndex >= 0 ? `social-worker-option-${activeSocialWorkerIndex}` : null"
+                                            autocomplete="off"
+                                            class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-11 pr-3.5 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-100"
                                             placeholder="جستجوی مددکار با نام یا کد"
                                         >
+                                        <button
+                                            type="button"
+                                            x-show="(socialWorkerSearchValue || '').length"
+                                            x-cloak
+                                            x-on:click="clearSocialWorkerSearch()"
+                                            class="absolute left-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-200 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-100"
+                                            aria-label="پاک کردن جستجو"
+                                        >
+                                            <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4" aria-hidden="true">
+                                                <path fill-rule="evenodd" d="M4.22 4.22a.75.75 0 0 1 1.06 0L10 8.94l4.72-4.72a.75.75 0 1 1 1.06 1.06L11.06 10l4.72 4.72a.75.75 0 1 1-1.06 1.06L10 11.06l-4.72 4.72a.75.75 0 0 1-1.06-1.06L8.94 10 4.22 5.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+                                            </svg>
+                                        </button>
 
-                                        @if($socialWorkerSearch !== '')
-                                            <div class="absolute right-0 z-20 mt-2 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
-                                                <div class="max-h-72 overflow-y-auto p-2">
-                                                    @forelse($availableSocialWorkers as $socialWorker)
-                                                        <button
-                                                            type="button"
-                                                            wire:click="addSocialWorker({{ $socialWorker->id }})"
-                                                            class="mb-2 flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-right transition hover:border-cyan-300 hover:bg-cyan-50 relative isolate"
-                                                        >
-                                                            <span aria-hidden="true" class="pointer-events-none absolute -inset-1 rounded-xl bg-[conic-gradient(from_0deg,rgba(34,211,238,0),rgba(34,211,238,0.18),rgba(16,185,129,0.12),rgba(59,130,246,0.18),rgba(34,211,238,0))] opacity-70 blur-md motion-safe:animate-[spin_8s_linear_infinite]"></span>
-                                                            <span aria-hidden="true" class="pointer-events-none absolute inset-[1px] rounded-[11px] bg-slate-50/85 transition group-hover:bg-cyan-50/70"></span>
-                                                            <span class="min-w-0">
-                                                                <span class="relative z-10 block truncate text-sm font-black text-slate-800">{{ $socialWorker->full_name }}</span>
-                                                                <span class="relative z-10 mt-1 block text-xs font-bold text-slate-500">کد مددکاری: {{ $socialWorker->worker_code }}</span>
-                                                            </span>
-                                                            <span class="relative z-10 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-bold text-cyan-700 shadow-sm shadow-cyan-500/10">افزودن</span>
-                                                        </button>
-                                                    @empty
-                                                        <div class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-800">
-                                                            مددکاری پیدا نشد.
-                                                        </div>
-                                                    @endforelse
+                                        <div
+                                            x-show="socialWorkerOpen"
+                                            x-transition.opacity.duration.100ms
+                                            x-cloak
+                                            class="fixed inset-x-3 bottom-20 z-30 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/20 sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:mt-2 sm:w-full sm:rounded-xl sm:shadow-xl"
+                                        >
+                                            <div class="border-b border-slate-100 bg-slate-50 px-3 py-2 sm:hidden">
+                                                <div class="mx-auto mb-2 h-1 w-10 rounded-full bg-slate-300"></div>
+                                                <div class="flex items-center justify-between gap-3">
+                                                    <p class="text-xs font-bold text-slate-600">
+                                                        @if(mb_strlen(trim($socialWorkerSearch)) < 2)
+                                                            جستجوی مددکار
+                                                        @else
+                                                            نتایج جستجو
+                                                        @endif
+                                                    </p>
+                                                    <button
+                                                        type="button"
+                                                        x-on:click="closeSocialWorkerDropdown()"
+                                                        class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-200 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-100"
+                                                        aria-label="بستن نتایج جستجو"
+                                                    >
+                                                        <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4" aria-hidden="true">
+                                                            <path fill-rule="evenodd" d="M4.22 4.22a.75.75 0 0 1 1.06 0L10 8.94l4.72-4.72a.75.75 0 1 1 1.06 1.06L11.06 10l4.72 4.72a.75.75 0 1 1-1.06 1.06L10 11.06l-4.72 4.72a.75.75 0 0 1-1.06-1.06L8.94 10 4.22 5.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+                                                        </svg>
+                                                    </button>
                                                 </div>
                                             </div>
-                                        @endif
+
+                                            <div
+                                                id="social-worker-search-results"
+                                                x-ref="socialWorkerList"
+                                                role="listbox"
+                                                aria-label="نتایج جستجوی مددکار"
+                                                class="max-h-[min(20rem,52vh)] overscroll-contain overflow-y-auto p-2 scroll-py-2"
+                                            >
+                                                @if(mb_strlen(trim($socialWorkerSearch)) >= 2)
+                                                    <div class="space-y-2">
+                                                        @forelse($availableSocialWorkers as $socialWorker)
+                                                            <button
+                                                                type="button"
+                                                                id="social-worker-option-{{ $loop->index }}"
+                                                                data-social-worker-option
+                                                                role="option"
+                                                                wire:key="service-delivery-social-worker-option-{{ $socialWorker->id }}"
+                                                                x-on:mouseenter="setActiveSocialWorker({{ $loop->index }})"
+                                                                x-on:click="selectSocialWorkerOption({{ $socialWorker->id }})"
+                                                                x-bind:aria-selected="activeSocialWorkerIndex === {{ $loop->index }}"
+                                                                class="group flex min-h-[3.25rem] w-full items-center justify-between gap-3 rounded-xl border px-3 py-3 text-right transition focus:outline-none focus:ring-2 focus:ring-sky-100"
+                                                                x-bind:class="activeSocialWorkerIndex === {{ $loop->index }} ? 'border-sky-300 bg-sky-50 shadow-sm' : 'border-slate-200 bg-white hover:border-sky-200 hover:bg-slate-50'"
+                                                            >
+                                                                <span
+                                                                    class="h-9 w-1 shrink-0 rounded-full transition"
+                                                                    x-bind:class="activeSocialWorkerIndex === {{ $loop->index }} ? 'bg-sky-500' : 'bg-slate-200 group-hover:bg-sky-300'"
+                                                                    aria-hidden="true"
+                                                                ></span>
+                                                                <span class="flex min-w-0 flex-1 items-center gap-3">
+                                                                    <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-xs font-black text-slate-600 transition group-hover:border-sky-200 group-hover:bg-white group-hover:text-sky-700">
+                                                                        {{ mb_substr($socialWorker->full_name, 0, 1) }}
+                                                                    </span>
+                                                                    <span class="min-w-0">
+                                                                        <span class="block truncate text-sm font-black text-slate-900">{{ $socialWorker->full_name }}</span>
+                                                                        <span class="mt-1 block truncate text-xs font-semibold text-slate-500">کد مددکاری: {{ $socialWorker->worker_code }}</span>
+                                                                    </span>
+                                                                </span>
+                                                                <span
+                                                                    class="inline-flex shrink-0 items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition"
+                                                                    x-bind:class="activeSocialWorkerIndex === {{ $loop->index }} ? 'border-sky-200 bg-white text-sky-700' : 'border-slate-200 bg-slate-50 text-slate-500 group-hover:border-sky-200 group-hover:text-sky-700'"
+                                                                >
+                                                                    <svg viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5" aria-hidden="true">
+                                                                        <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+                                                                    </svg>
+                                                                    <span>افزودن</span>
+                                                                </span>
+                                                            </button>
+                                                        @empty
+                                                            <div class="flex min-h-[3.25rem] items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-800" role="status">
+                                                                <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/80 text-amber-600">
+                                                                    <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4" aria-hidden="true">
+                                                                        <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 3.36 9.86l2.64 2.64a.75.75 0 1 0 1.06-1.06l-2.64-2.64A5.5 5.5 0 0 0 9 3.5ZM5 9a4 4 0 1 1 8 0 4 4 0 0 1-8 0Z" clip-rule="evenodd" />
+                                                                    </svg>
+                                                                </span>
+                                                                <span class="font-bold">مددکاری پیدا نشد.</span>
+                                                            </div>
+                                                        @endforelse
+                                                    </div>
+                                                @else
+                                                    <div class="flex min-h-[3.25rem] items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-600" role="status">
+                                                        <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-slate-400">
+                                                            <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4" aria-hidden="true">
+                                                                <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 3.36 9.86l2.64 2.64a.75.75 0 1 0 1.06-1.06l-2.64-2.64A5.5 5.5 0 0 0 9 3.5ZM5 9a4 4 0 1 1 8 0 4 4 0 0 1-8 0Z" clip-rule="evenodd" />
+                                                            </svg>
+                                                        </span>
+                                                        <span class="font-semibold">نام، نام خانوادگی یا کد مددکاری را وارد کنید.</span>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 

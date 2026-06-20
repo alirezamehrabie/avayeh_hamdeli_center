@@ -298,18 +298,40 @@ class ServiceDeliveryManager extends Component
     {
         $search = trim($this->socialWorkerSearch);
 
+        if (mb_strlen($search) < 2) {
+            return collect();
+        }
+
+        $searchParts = preg_split('/\s+/', $search, 2) ?: [];
+        $firstSearchPart = $searchParts[0] ?? $search;
+        $secondSearchPart = $searchParts[1] ?? null;
+
         return SocialWorker::query()
-            ->when($search !== '', function ($query) use ($search): void {
-                $query->where(function ($workerQuery) use ($search): void {
-                    $workerQuery->where('first_name', 'like', '%'.$search.'%')
-                        ->orWhere('last_name', 'like', '%'.$search.'%')
-                        ->orWhere('worker_code', 'like', '%'.$search.'%');
-                });
+            ->where(function ($workerQuery) use ($search, $firstSearchPart, $secondSearchPart): void {
+                $workerQuery->where('first_name', 'like', $search.'%')
+                    ->orWhere('last_name', 'like', $search.'%')
+                    ->orWhere('worker_code', 'like', $search.'%');
+
+                if ($secondSearchPart) {
+                    $workerQuery->orWhere(function ($nameQuery) use ($firstSearchPart, $secondSearchPart): void {
+                        $nameQuery->where('first_name', 'like', $firstSearchPart.'%')
+                            ->where('last_name', 'like', $secondSearchPart.'%');
+                    });
+                }
             })
             ->whereNotIn('id', array_keys($this->allocations))
+            ->orderByRaw(
+                'CASE
+                    WHEN worker_code LIKE ? THEN 0
+                    WHEN first_name LIKE ? THEN 1
+                    WHEN last_name LIKE ? THEN 2
+                    ELSE 3
+                END',
+                [$search.'%', $search.'%', $search.'%']
+            )
             ->orderBy('first_name')
             ->orderBy('last_name')
-            ->limit(8)
+            ->limit(10)
             ->get();
     }
 
