@@ -119,6 +119,11 @@
 
                         <div class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                             @foreach($selectedServiceCategories as $category)
+                                @php
+                                    $allocatedPreview = $this->predefinedAllocationForCategory((int) $category->id);
+                                    $remainingPreview = $this->predefinedRemainingForCategory((int) $category->id);
+                                    $isOverAllocated = $allocatedPreview > (float) $category->quantity;
+                                @endphp
                                 <div class="rounded-2xl border border-slate-200 bg-white p-4">
                                     <div class="mb-3 flex items-start justify-between gap-3">
                                         <div class="min-w-0">
@@ -134,10 +139,14 @@
                                         min="0"
                                         step="0.01"
                                         max="{{ (float) $category->quantity }}"
-                                        wire:model.blur="predefinedAllocations.{{ $category->id }}"
+                                        wire:model.live.debounce.250ms="predefinedAllocations.{{ $category->id }}"
                                         class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-sm font-black text-slate-900"
                                         placeholder="0"
                                     >
+                                    <div class="mt-3 flex items-center justify-between gap-3 rounded-xl {{ $isOverAllocated ? 'bg-rose-50 text-rose-800' : 'bg-emerald-50 text-emerald-800' }} px-3 py-2">
+                                        <span class="text-xs font-bold">مانده پس از تخصیص</span>
+                                        <span class="text-sm font-black">{{ number_format($remainingPreview, 2) }}</span>
+                                    </div>
                                     @error('predefinedAllocations.' . $category->id) <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                                 </div>
                             @endforeach

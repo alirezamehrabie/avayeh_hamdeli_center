@@ -477,6 +477,19 @@ class ServiceBatchCreator extends Component
         return $this->selectedPredefinedService?->categories?->values() ?? collect();
     }
 
+    public function predefinedAllocationForCategory(int $categoryId): float
+    {
+        return max(0, (float) ($this->predefinedAllocations[$categoryId] ?? 0));
+    }
+
+    public function predefinedRemainingForCategory(int $categoryId): float
+    {
+        $category = $this->selectedPredefinedServiceCategories->firstWhere('id', $categoryId);
+        $definedQuantity = $category ? (float) $category->quantity : 0.0;
+
+        return max(0, $definedQuantity - $this->predefinedAllocationForCategory($categoryId));
+    }
+
     public function getSocialWorkerSuggestionsProperty(): Collection
     {
         $query = trim($this->socialWorkerQuery);

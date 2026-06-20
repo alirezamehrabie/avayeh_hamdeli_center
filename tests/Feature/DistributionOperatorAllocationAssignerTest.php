@@ -137,6 +137,68 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         $this->assertSame(6.0, (float) $service->fresh()->total_quantity);
     }
 
+    public function test_predefined_mode_exposes_minimal_live_remaining_inventory_for_selected_categories(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $manager = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_MANAGER,
+            'is_admin' => true,
+        ]);
+        $serviceName = ServiceName::query()->create([
+            'name' => 'پویش آمار',
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+        $service = Service::query()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'پویش آمار',
+            'service_type' => 'individual',
+            'supports_gate_delivery' => true,
+            'supports_home_delivery' => true,
+            'description' => null,
+            'total_quantity' => 15,
+            'total_service_value' => 0,
+            'distribution_start_date' => '2026-06-20',
+            'distribution_end_date' => '2026-06-20',
+            'status' => 'approved',
+            'quantity_delivered' => 0,
+            'created_by' => $manager->id,
+        ]);
+        $rice = $service->categories()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'برنج',
+            'quantity' => 10,
+            'unit' => 'pack',
+            'value' => 0,
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+        $oil = $service->categories()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'روغن',
+            'quantity' => 5,
+            'unit' => 'pack',
+            'value' => 0,
+            'sort_id' => 2,
+            'created_by' => $manager->id,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class)
+            ->set('mode', ServiceBatchCreator::MODE_PREDEFINED)
+            ->set('selectedServiceId', $service->id)
+            ->set('predefinedAllocations.' . $rice->id, '3')
+            ->set('predefinedAllocations.' . $oil->id, '2')
+            ->assertSee('مانده پس از تخصیص')
+            ->assertSee('7.00')
+            ->assertSee('3.00')
+            ->assertDontSee('واردشده');
+    }
+
     public function test_misc_mode_auto_names_created_service(): void
     {
         $operator = User::factory()->create([
