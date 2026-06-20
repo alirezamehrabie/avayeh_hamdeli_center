@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Livewire\Services\ServiceDefinition;
 use App\Livewire\Services\ServiceDeliveryManager;
+use App\Livewire\Services\ServiceManagement;
 use App\Livewire\SocialWorkers\Dashboard as SocialWorkerDashboard;
 use App\Models\Service;
 use App\Models\ServiceCategoryTemplate;
@@ -192,6 +193,70 @@ class ServiceDefinitionTest extends TestCase
         ]);
 
         $this->assertNull($template->fresh()?->deleted_at);
+    }
+
+    public function test_service_name_archive_hides_name_from_future_catalog_lists_but_preserves_history(): void
+    {
+        $user = $this->manager();
+        $serviceName = ServiceName::query()->create([
+            'name' => 'Archived Food Basket',
+            'sort_id' => 1,
+            'created_by' => $user->id,
+        ]);
+        $fallbackServiceName = ServiceName::query()->create([
+            'name' => 'Active Food Basket',
+            'sort_id' => 2,
+            'created_by' => $user->id,
+        ]);
+        $service = Service::query()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => $serviceName->name,
+            'service_type' => 'individual',
+            'supports_gate_delivery' => true,
+            'supports_home_delivery' => true,
+            'total_quantity' => 10,
+            'total_service_value' => 0,
+            'distribution_start_date' => now()->toDateString(),
+            'distribution_end_date' => null,
+            'status' => 'approved',
+            'quantity_delivered' => 0,
+            'created_by' => $user->id,
+        ]);
+
+        $this->actingAs($user);
+
+        Livewire::test(ServiceManagement::class)
+            ->set('selectedServiceNameId', $serviceName->id)
+            ->call('archiveServiceName', $serviceName->id)
+            ->assertSet('selectedServiceNameId', $fallbackServiceName->id);
+
+        $this->assertSoftDeleted('service_names', [
+            'id' => $serviceName->id,
+        ]);
+        $this->assertSame($serviceName->name, $service->fresh()->serviceName?->name);
+
+        Livewire::test(ServiceDefinition::class)
+            ->assertViewHas('serviceNames', fn ($serviceNames): bool => $serviceNames->contains('id', $fallbackServiceName->id)
+                && ! $serviceNames->contains('id', $serviceName->id));
+    }
+
+    public function test_archiving_service_name_resets_matching_edit_state(): void
+    {
+        $user = $this->manager();
+        $serviceName = ServiceName::query()->create([
+            'name' => 'Editable Service Name',
+            'sort_id' => 1,
+            'created_by' => $user->id,
+        ]);
+
+        $this->actingAs($user);
+
+        Livewire::test(ServiceManagement::class)
+            ->set('editingServiceNameId', $serviceName->id)
+            ->set('serviceName', $serviceName->name)
+            ->call('archiveServiceName', $serviceName->id)
+            ->assertSet('editingServiceNameId', null)
+            ->assertSet('serviceName', '');
     }
 
     private function manager(): User

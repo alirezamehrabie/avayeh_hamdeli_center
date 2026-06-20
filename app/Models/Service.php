@@ -185,7 +185,7 @@ class Service extends Model
 
     public function serviceName(): BelongsTo
     {
-        return $this->belongsTo(ServiceName::class);
+        return $this->belongsTo(ServiceName::class)->withTrashed();
     }
 
     public function serviceCategory(): HasOne

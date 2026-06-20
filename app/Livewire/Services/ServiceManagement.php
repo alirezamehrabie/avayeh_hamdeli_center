@@ -100,6 +100,64 @@ class ServiceManagement extends Component
         $this->resetCategoryForm();
     }
 
+    public function openArchiveServiceNameConfirmation(int $serviceNameId): void
+    {
+        $serviceName = ServiceName::query()
+            ->withCount([
+                'services',
+                'categories',
+                'categoryTemplates',
+            ])
+            ->findOrFail($serviceNameId);
+
+        $usageMessage = $this->serviceNameUsageMessage(
+            (int) $serviceName->services_count,
+            (int) $serviceName->categories_count,
+            (int) $serviceName->category_templates_count
+        );
+
+        $this->openNotificationModal([
+            'type' => 'warning',
+            'title' => 'حذف نام خدمت',
+            'message' => "آیا از حذف «{$serviceName->name}» از فهرست نام خدمات مطمئن هستید؟\n\n{$usageMessage}\n\nاین عملیات فقط نام خدمت را از انتخاب‌های جدید پنهان می‌کند و سوابق قبلی حفظ می‌شوند.",
+            'buttons' => [
+                [
+                    'label' => 'حذف از فهرست',
+                    'action' => 'event',
+                    'event' => 'confirm-service-name-archive',
+                    'payload' => ['serviceNameId' => $serviceName->id],
+                    'variant' => 'danger',
+                ],
+                [
+                    'label' => 'انصراف',
+                    'action' => 'close',
+                    'variant' => 'secondary',
+                ],
+            ],
+        ]);
+    }
+
+    #[On('confirm-service-name-archive')]
+    public function archiveServiceName(int $serviceNameId): void
+    {
+        $serviceName = ServiceName::query()->findOrFail($serviceNameId);
+        $archivedName = $serviceName->name;
+
+        $serviceName->delete();
+
+        if ((int) $this->selectedServiceNameId === $serviceNameId) {
+            $this->selectedServiceNameId = ServiceName::query()->ordered()->value('id');
+            $this->resetCategoryForm();
+        }
+
+        if ((int) $this->editingServiceNameId === $serviceNameId) {
+            $this->resetServiceNameForm();
+        }
+
+        $this->closeNotificationModal();
+        session()->flash('management-success', "نام خدمت «{$archivedName}» از فهرست انتخاب‌های جدید حذف شد. سوابق قبلی حفظ شده‌اند.");
+    }
+
     public function saveCategory(): void
     {
         $validated = $this->validate([
@@ -285,6 +343,15 @@ class ServiceManagement extends Component
         return ((int) $query->max('sort_id')) + 1;
     }
 
+    protected function serviceNameUsageMessage(int $servicesCount, int $categoriesCount, int $templatesCount): string
+    {
+        if ($servicesCount === 0 && $categoriesCount === 0 && $templatesCount === 0) {
+            return 'این نام خدمت هنوز در هیچ خدمت یا دسته‌ای استفاده نشده است.';
+        }
+
+        return "این نام خدمت در {$servicesCount} خدمت ثبت‌شده، {$categoriesCount} دسته خدمت و {$templatesCount} دسته‌بندی پیشنهادی استفاده شده است.";
+    }
+
     public function render()
     {
         $serviceNamesQuery = ServiceName::query()
@@ -292,8 +359,13 @@ class ServiceManagement extends Component
             ->ordered();
 
         return view('livewire.services.service-management', [
-            'allServiceNames' => ServiceName::query()->withCount('categoryTemplates')->ordered()->get(),
-            'serviceNames' => $serviceNamesQuery->withCount('categoryTemplates')->get(),
+            'allServiceNames' => ServiceName::query()
+                ->withCount(['services', 'categories', 'categoryTemplates'])
+                ->ordered()
+                ->get(),
+            'serviceNames' => $serviceNamesQuery
+                ->withCount(['services', 'categories', 'categoryTemplates'])
+                ->get(),
             'serviceCategories' => ServiceCategoryTemplate::query()
                 ->with('serviceName')
                 ->when($this->selectedServiceNameId, fn ($query) => $query->where('service_name_id', $this->selectedServiceNameId))

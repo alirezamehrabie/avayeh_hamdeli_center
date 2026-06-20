@@ -134,12 +134,49 @@
                                             <span>{{ $item->category_templates_count }} دسته</span>
                                         </span>
                                     </button>
-                                    <button type="button" wire:click="editServiceName({{ $item->id }})" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-400 transition hover:border-indigo-200 hover:bg-white hover:text-indigo-700" aria-label="ویرایش نام خدمت {{ $item->name }}">
-                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                            <path d="M4 20h4l10.5-10.5a1.5 1.5 0 0 0 0-2.1l-1.9-1.9a1.5 1.5 0 0 0-2.1 0L4 16v4Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
-                                            <path d="M13.5 6.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-                                        </svg>
-                                    </button>
+                                    <div x-data="{ open: false }" x-on:click.outside="open = false" class="relative flex w-[78px] shrink-0 items-center justify-end gap-1">
+                                        <button type="button" wire:click="editServiceName({{ $item->id }})" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-400 transition hover:border-indigo-200 hover:bg-white hover:text-indigo-700" aria-label="ویرایش نام خدمت {{ $item->name }}">
+                                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                <path d="M4 20h4l10.5-10.5a1.5 1.5 0 0 0 0-2.1l-1.9-1.9a1.5 1.5 0 0 0-2.1 0L4 16v4Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+                                                <path d="M13.5 6.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                                            </svg>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            x-on:click.stop="open = !open"
+                                            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-transparent bg-transparent text-slate-400 transition hover:border-slate-200 hover:bg-white hover:text-slate-700"
+                                            aria-label="گزینه‌های نام خدمت {{ $item->name }}"
+                                            aria-haspopup="menu"
+                                            x-bind:aria-expanded="open.toString()"
+                                        >
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                <circle cx="12" cy="5" r="1.8" />
+                                                <circle cx="12" cy="12" r="1.8" />
+                                                <circle cx="12" cy="19" r="1.8" />
+                                            </svg>
+                                        </button>
+
+                                        <div
+                                            x-cloak
+                                            x-show="open"
+                                            x-transition.origin.top.left
+                                            class="absolute left-0 top-11 z-40 w-44 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1 shadow-xl"
+                                            role="menu"
+                                        >
+                                            <button
+                                                type="button"
+                                                wire:click="openArchiveServiceNameConfirmation({{ $item->id }})"
+                                                x-on:click="open = false"
+                                                class="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-right text-sm font-bold text-rose-600 transition hover:bg-rose-50"
+                                                role="menuitem"
+                                            >
+                                                <span>حذف از فهرست</span>
+                                                <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                    <path d="M6 7h12M10 11v6M14 11v6M9 7l1-2h4l1 2M8 7l.5 12h7L16 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             @endforeach
                         </div>
