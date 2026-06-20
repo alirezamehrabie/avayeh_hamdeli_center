@@ -125,13 +125,14 @@
                                         'border-slate-200 hover:border-indigo-300' => (int) $selectedServiceNameId !== (int) $item->id,
                                     ])
                                 >
-                                    @if((int) $selectedServiceNameId === (int) $item->id)
-                                        <span class="pointer-events-none absolute left-12 top-1/2 z-10 hidden -translate-y-1/2 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-bold text-slate-600 shadow-sm sm:inline-flex">در حال مدیریت</span>
-                                    @endif
-                                    <button type="button" wire:click="selectServiceName({{ $item->id }})" class="min-w-0 flex-1 rounded-lg px-2 py-1.5 text-right transition hover:bg-indigo-50/70 sm:pe-28">
+                                    <button type="button" wire:click="selectServiceName({{ $item->id }})" class="min-w-0 flex-1 rounded-lg px-2 py-1.5 text-right transition hover:bg-indigo-50/70">
                                         <span class="block truncate text-sm font-semibold text-slate-800">{{ $item->name }}</span>
-                                        <span class="mt-0.5 block truncate text-[11px] text-slate-500">
+                                        <span class="mt-0.5 flex min-w-0 items-center gap-1.5 truncate text-[11px] text-slate-500">
                                             <span>{{ $item->category_templates_count }} دسته</span>
+                                            @if((int) $selectedServiceNameId === (int) $item->id)
+                                                <span class="h-1 w-1 shrink-0 rounded-full bg-indigo-300"></span>
+                                                <span class="shrink-0 text-[10px] font-semibold text-indigo-600">فعال</span>
+                                            @endif
                                         </span>
                                     </button>
                                     <div x-data="{ open: false }" x-on:click.outside="open = false" class="relative flex w-[78px] shrink-0 items-center justify-end gap-1">
@@ -374,13 +375,14 @@
                                         'border-slate-200 hover:border-sky-300' => (int) $editingCategoryId !== (int) $item->id,
                                     ])
                                 >
-                                    @if((int) $editingCategoryId === (int) $item->id)
-                                        <span class="pointer-events-none absolute left-20 top-1/2 z-10 hidden -translate-y-1/2 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-bold text-slate-600 shadow-sm sm:inline-flex">در حال ویرایش</span>
-                                    @endif
-                                    <div class="min-w-0 flex-1 rounded-lg px-2 py-1.5 sm:pe-28">
+                                    <div class="min-w-0 flex-1 rounded-lg px-2 py-1.5">
                                         <span class="block truncate text-sm font-semibold text-slate-800">{{ $item->name }}</span>
-                                        <span class="mt-0.5 block truncate text-[11px] text-slate-500">
+                                        <span class="mt-0.5 flex min-w-0 items-center gap-1.5 truncate text-[11px] text-slate-500">
                                             <span>{{ $item->serviceName?->name }}</span>
+                                            @if((int) $editingCategoryId === (int) $item->id)
+                                                <span class="h-1 w-1 shrink-0 rounded-full bg-amber-300"></span>
+                                                <span class="shrink-0 text-[10px] font-semibold text-amber-600">ویرایش</span>
+                                            @endif
                                         </span>
                                     </div>
                                     <div x-data="{ open: false }" x-on:click.outside="open = false" class="relative flex w-[78px] shrink-0 items-center justify-end gap-1">
