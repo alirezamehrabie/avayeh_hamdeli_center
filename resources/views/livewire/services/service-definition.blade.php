@@ -225,62 +225,6 @@
                             </div>
                         </div>
 
-                        <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/40">
-                            <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                                <div>
-                                    <h2 class="text-base font-bold text-slate-800">روش تحویل نهایی</h2>
-                                    <p class="mt-0.5 text-xs text-slate-500">برای این خدمت یک یا هر دو مسیر تحویل را فعال کنید.</p>
-                                </div>
-                                <span class="inline-flex w-fit items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
-                                    {{ ((int) $supportsGateDelivery + (int) $supportsHomeDelivery) }} روش فعال
-                                </span>
-                            </div>
-
-                            <div class="grid gap-3 md:grid-cols-2">
-                                <label
-                                    class="group relative flex cursor-pointer gap-3 rounded-2xl border p-4 transition {{ $supportsGateDelivery ? 'border-cyan-300 bg-cyan-50/70 shadow-sm shadow-cyan-100/60' : 'border-slate-200 bg-slate-50 hover:border-cyan-200 hover:bg-white' }}"
-                                >
-                                    <input type="checkbox" wire:model.live="supportsGateDelivery" class="sr-only">
-                                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl {{ $supportsGateDelivery ? 'bg-cyan-600 text-white' : 'bg-white text-slate-400 ring-1 ring-slate-200' }}">
-                                        <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5" aria-hidden="true">
-                                            <path d="M4 20V9.5L12 4l8 5.5V20M7.5 20v-8h9v8M4 10h16M9 14h.01M15 14h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                        </svg>
-                                    </span>
-                                    <span class="min-w-0">
-                                        <span class="block text-sm font-black text-slate-900">ایستگاه توزیع</span>
-                                        <span class="mt-1 block text-xs leading-5 text-slate-500">تحویل حضوری از مسیر گیت ورود، گیت‌های تحویل و گیت خروج.</span>
-                                    </span>
-                                    <span class="ms-auto mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border {{ $supportsGateDelivery ? 'border-cyan-600 bg-cyan-600 text-white' : 'border-slate-300 bg-white text-transparent' }}">
-                                        <svg viewBox="0 0 20 20" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
-                                            <path d="M5 10.5L8.2 13.5L15 6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                        </svg>
-                                    </span>
-                                </label>
-
-                                <label
-                                    class="group relative flex cursor-pointer gap-3 rounded-2xl border p-4 transition {{ $supportsHomeDelivery ? 'border-emerald-300 bg-emerald-50/70 shadow-sm shadow-emerald-100/60' : 'border-slate-200 bg-slate-50 hover:border-emerald-200 hover:bg-white' }}"
-                                >
-                                    <input type="checkbox" wire:model.live="supportsHomeDelivery" class="sr-only">
-                                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl {{ $supportsHomeDelivery ? 'bg-emerald-600 text-white' : 'bg-white text-slate-400 ring-1 ring-slate-200' }}">
-                                        <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5" aria-hidden="true">
-                                            <path d="M4 20V10.5L12 4l8 6.5V20M9 20v-6h6v6M8 9.5h.01M16 9.5h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                                        </svg>
-                                    </span>
-                                    <span class="min-w-0">
-                                        <span class="block text-sm font-black text-slate-900">تحویل در منزل</span>
-                                        <span class="mt-1 block text-xs leading-5 text-slate-500">تحویل توسط مددکاران از پنل اختصاصی و سهمیه تخصیص‌یافته.</span>
-                                    </span>
-                                    <span class="ms-auto mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border {{ $supportsHomeDelivery ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 bg-white text-transparent' }}">
-                                        <svg viewBox="0 0 20 20" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
-                                            <path d="M5 10.5L8.2 13.5L15 6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                        </svg>
-                                    </span>
-                                </label>
-                            </div>
-
-                            @error('supportsHomeDelivery') <p class="mt-2 text-sm font-bold text-rose-600">{{ $message }}</p> @enderror
-                        </div>
-
                         <div
                             x-data="{
                                 scrollToNewCategory(event) {
@@ -927,6 +871,83 @@
                                     <textarea wire:model.blur="statusNotes" rows="3" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-700 transition focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100"></textarea>
                                 </div>
                             </div>
+                        </div>
+
+                        <div
+                            x-data="{
+                                supportsGateDelivery: $wire.entangle('supportsGateDelivery'),
+                                supportsHomeDelivery: $wire.entangle('supportsHomeDelivery'),
+                            }"
+                            class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/40 xl:rounded-2xl"
+                        >
+                            <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between xl:items-start">
+                                <div class="min-w-0">
+                                    <h2 class="text-base font-bold text-slate-800">روش تحویل نهایی</h2>
+                                    <p class="mt-0.5 text-xs text-slate-500">برای این خدمت یک یا هر دو مسیر تحویل را فعال کنید.</p>
+                                </div>
+                                <span class="mt-0.5 inline-flex w-fit items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold leading-5 text-slate-500">
+                                    <span x-text="Number(supportsGateDelivery) + Number(supportsHomeDelivery)"></span>
+                                    <span class="ms-0.5">روش فعال</span>
+                                </span>
+                            </div>
+
+                            <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-1">
+                                <label
+                                    class="group relative order-2 flex cursor-pointer gap-3 rounded-2xl border p-4 transition xl:gap-2.5 xl:p-3"
+                                    :class="supportsGateDelivery ? 'border-cyan-300 bg-cyan-50/70 shadow-sm shadow-cyan-100/60' : 'border-slate-200 bg-slate-50 hover:border-cyan-200 hover:bg-white'"
+                                >
+                                    <input type="checkbox" x-model="supportsGateDelivery" class="sr-only">
+                                    <span
+                                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl xl:h-10 xl:w-10"
+                                        :class="supportsGateDelivery ? 'bg-cyan-600 text-white' : 'bg-white text-slate-400 ring-1 ring-slate-200'"
+                                    >
+                                        <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5" aria-hidden="true">
+                                            <path d="M5 20V7.5M19 20V7.5M3.5 20h17M4.5 7.5h15M7 7.5V5h10v2.5M8 12.5h8M8 16h8M12 10v8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block text-sm font-black text-slate-900">ایستگاه توزیع</span>
+                                        <span class="mt-1 block text-xs leading-5 text-slate-500"> گیت خدماتی حضوری</span>
+                                    </span>
+                                    <span
+                                        class="ms-auto mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border"
+                                        :class="supportsGateDelivery ? 'border-cyan-600 bg-cyan-600 text-white' : 'border-slate-300 bg-white text-transparent'"
+                                    >
+                                        <svg viewBox="0 0 20 20" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
+                                            <path d="M5 10.5L8.2 13.5L15 6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </span>
+                                </label>
+
+                                <label
+                                    class="group relative order-1 flex cursor-pointer gap-3 rounded-2xl border p-4 transition xl:gap-2.5 xl:p-3"
+                                    :class="supportsHomeDelivery ? 'border-emerald-300 bg-emerald-50/70 shadow-sm shadow-emerald-100/60' : 'border-slate-200 bg-slate-50 hover:border-emerald-200 hover:bg-white'"
+                                >
+                                    <input type="checkbox" x-model="supportsHomeDelivery" class="sr-only">
+                                    <span
+                                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl xl:h-10 xl:w-10"
+                                        :class="supportsHomeDelivery ? 'bg-emerald-600 text-white' : 'bg-white text-slate-400 ring-1 ring-slate-200'"
+                                    >
+                                        <svg viewBox="0 0 24 24" fill="none" class="h-5 w-5" aria-hidden="true">
+                                            <path d="M4 20V10.5L12 4l8 6.5V20M9 20v-6h6v6M8 9.5h.01M16 9.5h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block text-sm font-black text-slate-900">تحویل در منزل</span>
+                                        <span class="mt-1 block text-xs leading-5 text-slate-500">تحویل توسط مددکاران</span>
+                                    </span>
+                                    <span
+                                        class="ms-auto mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border"
+                                        :class="supportsHomeDelivery ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 bg-white text-transparent'"
+                                    >
+                                        <svg viewBox="0 0 20 20" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
+                                            <path d="M5 10.5L8.2 13.5L15 6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </span>
+                                </label>
+                            </div>
+
+                            @error('supportsHomeDelivery') <p class="mt-2 text-sm font-bold text-rose-600">{{ $message }}</p> @enderror
                         </div>
 
                         @php

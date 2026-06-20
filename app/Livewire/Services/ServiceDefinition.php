@@ -30,7 +30,7 @@ class ServiceDefinition extends Component
 
     public string $serviceType = 'individual';
 
-    public bool $supportsGateDelivery = true;
+    public bool $supportsGateDelivery = false;
 
     public bool $supportsHomeDelivery = true;
 
@@ -441,7 +441,7 @@ class ServiceDefinition extends Component
         ]);
 
         $this->serviceType = 'individual';
-        $this->supportsGateDelivery = true;
+        $this->supportsGateDelivery = false;
         $this->supportsHomeDelivery = true;
         $this->status = 'draft';
         $this->categories = [$this->emptyCategory()];
