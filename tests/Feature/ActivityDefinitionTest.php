@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Livewire\Activities\ActivityDefinition;
 use App\Models\Activity;
+use App\Models\Service;
+use App\Models\ServiceName;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -200,6 +202,76 @@ class ActivityDefinitionTest extends TestCase
         $activity = Activity::query()->where('name', 'Code Generation Workshop')->firstOrFail();
 
         $this->assertMatchesRegularExpression('/^ACT-\d{5}$/', (string) $activity->code);
+    }
+
+    public function test_activity_definition_saves_linked_activity_services_and_categories(): void
+    {
+        $user = $this->manager();
+        $this->actingAs($user);
+
+        Livewire::test(ActivityDefinition::class)
+            ->set('name', 'Ceremony With Services')
+            ->set('activityType', 'ceremony')
+            ->set('startsAt', '1405/03/28 10:00')
+            ->set('activityServices', [[
+                'id' => null,
+                'selectedServiceNameId' => null,
+                'serviceName' => 'Blessed Sweets',
+                'serviceType' => 'individual',
+                'description' => 'Served during ceremony',
+                'serviceDistrictId' => null,
+                'distributionStartDate' => '1405/03/28',
+                'distributionEndDate' => null,
+                'priority' => 'normal',
+                'status' => 'in_distribution',
+                'statusNotes' => '',
+                'categories' => [[
+                    'id' => null,
+                    'code' => '',
+                    'name' => 'Sweet Pack',
+                    'quantity' => '25',
+                    'unit' => 'pack',
+                    'value' => '10000',
+                ]],
+            ]])
+            ->call('save')
+            ->assertRedirect('/admin/dashboard?section=activity-list');
+
+        $activity = Activity::query()->where('name', 'Ceremony With Services')->firstOrFail();
+        $serviceName = ServiceName::query()->where('name', 'Blessed Sweets')->firstOrFail();
+        $service = Service::query()->where('activity_id', $activity->id)->firstOrFail();
+
+        $this->assertSame($serviceName->id, $service->service_name_id);
+        $this->assertFalse((bool) $service->supports_gate_delivery);
+        $this->assertFalse((bool) $service->supports_home_delivery);
+        $this->assertTrue((bool) $service->supports_activity_delivery);
+        $this->assertSame('25.00', (string) $service->total_quantity);
+
+        $this->assertDatabaseHas('service_categories', [
+            'service_id' => $service->id,
+            'service_name_id' => $serviceName->id,
+            'name' => 'Sweet Pack',
+            'unit' => 'pack',
+            'value' => 10000,
+        ]);
+    }
+
+    public function test_activity_service_category_fields_are_required(): void
+    {
+        $user = $this->manager();
+        $this->actingAs($user);
+
+        Livewire::test(ActivityDefinition::class)
+            ->set('name', 'Invalid Service Ceremony')
+            ->set('activityType', 'ceremony')
+            ->set('activityServices.0.serviceName', 'Food Service')
+            ->set('activityServices.0.categories.0.name', '')
+            ->call('save')
+            ->assertHasErrors(['activityServices.0.categories.0.name']);
+
+        $this->assertDatabaseMissing('activities', [
+            'name' => 'Invalid Service Ceremony',
+        ]);
     }
 
     public function test_new_activity_code_ignores_soft_deleted_rows_when_generating_sequence(): void

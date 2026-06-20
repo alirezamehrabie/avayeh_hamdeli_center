@@ -44,9 +44,12 @@ class Service extends Model
 
     public const DELIVERY_CHANNEL_HOME = 'home';
 
+    public const DELIVERY_CHANNEL_ACTIVITY = 'activity';
+
     public const DELIVERY_CHANNEL_OPTIONS = [
         self::DELIVERY_CHANNEL_GATE => 'ایستگاه توزیع',
         self::DELIVERY_CHANNEL_HOME => 'تحویل در منزل',
+        self::DELIVERY_CHANNEL_ACTIVITY => 'تحویل در فعالیت',
     ];
 
     public const UNIT_OPTION_ORDER = [
@@ -60,11 +63,13 @@ class Service extends Model
 
     protected $fillable = [
         'code',
+        'activity_id',
         'name',
         'service_name_id',
         'service_type',
         'supports_gate_delivery',
         'supports_home_delivery',
+        'supports_activity_delivery',
         'description',
         'total_quantity',
         'total_service_value',
@@ -85,6 +90,7 @@ class Service extends Model
             'distribution_end_date' => 'date',
             'supports_gate_delivery' => 'boolean',
             'supports_home_delivery' => 'boolean',
+            'supports_activity_delivery' => 'boolean',
             'total_quantity' => 'decimal:2',
             'quantity_delivered' => 'decimal:2',
             'total_service_value' => 'integer',
@@ -106,6 +112,10 @@ class Service extends Model
             if ($service->supports_home_delivery === null) {
                 $service->supports_home_delivery = true;
             }
+
+            if ($service->supports_activity_delivery === null) {
+                $service->supports_activity_delivery = false;
+            }
         });
     }
 
@@ -119,6 +129,11 @@ class Service extends Model
         return $query->where('supports_home_delivery', true);
     }
 
+    public function scopeSupportsActivityDelivery($query)
+    {
+        return $query->where('supports_activity_delivery', true);
+    }
+
     public function getDeliveryChannelLabelsAttribute(): array
     {
         $labels = [];
@@ -129,6 +144,10 @@ class Service extends Model
 
         if ($this->supports_home_delivery) {
             $labels[] = self::DELIVERY_CHANNEL_OPTIONS[self::DELIVERY_CHANNEL_HOME];
+        }
+
+        if ($this->supports_activity_delivery) {
+            $labels[] = self::DELIVERY_CHANNEL_OPTIONS[self::DELIVERY_CHANNEL_ACTIVITY];
         }
 
         return $labels;
@@ -186,6 +205,11 @@ class Service extends Model
     public function serviceName(): BelongsTo
     {
         return $this->belongsTo(ServiceName::class)->withTrashed();
+    }
+
+    public function activity(): BelongsTo
+    {
+        return $this->belongsTo(Activity::class);
     }
 
     public function serviceCategory(): HasOne

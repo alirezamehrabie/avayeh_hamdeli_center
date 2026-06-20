@@ -6,6 +6,8 @@ use App\Models\Activity;
 use App\Models\ActivityAttendance;
 use App\Models\Person;
 use App\Models\QrIdentity;
+use App\Models\Service;
+use App\Models\ServiceDelivery;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -101,8 +103,51 @@ class ActivityCheckInService
                 return new ActivityCheckInResult(true, 'duplicate', 'حضور این مددجو قبلاً ثبت شده است.', $lockedActivity, $person, $attendance);
             }
 
+            $this->recordActivityServiceDeliveries($lockedActivity, $person, $operator, $attendance);
+
             return new ActivityCheckInResult(true, 'checked_in', 'حضور مددجو با موفقیت ثبت شد.', $lockedActivity, $person, $attendance);
         });
+    }
+
+    private function recordActivityServiceDeliveries(Activity $activity, Person $person, User $operator, ActivityAttendance $attendance): void
+    {
+        $services = $activity->services()
+            ->supportsActivityDelivery()
+            ->with('categories')
+            ->get();
+
+        if ($services->isEmpty()) {
+            return;
+        }
+
+        $recipientName = trim(implode(' ', array_filter([$person->first_name, $person->last_name]))) ?: '-';
+
+        foreach ($services as $service) {
+            foreach ($service->categories as $category) {
+                ServiceDelivery::query()->firstOrCreate(
+                    [
+                        'activity_attendance_id' => $attendance->id,
+                        'service_category_id' => $category->id,
+                    ],
+                    [
+                        'service_id' => $service->id,
+                        'delivery_channel' => Service::DELIVERY_CHANNEL_ACTIVITY,
+                        'social_worker_id' => null,
+                        'person_id' => $person->id,
+                        'guardian_id' => null,
+                        'national_id' => (string) ($person->national_id ?: '0000000000'),
+                        'full_name' => $recipientName,
+                        'mobile' => $person->guardian?->guardian_phone_number,
+                        'delivered_quantity' => 1,
+                        'value_per_unit_snapshot' => (int) $category->value,
+                        'delivered_total_value' => (int) $category->value,
+                        'delivered_at' => ($attendance->checked_in_at ?? now())->toDateString(),
+                        'notes' => 'تحویل ثبت‌شده از طریق حضور در فعالیت',
+                        'created_by' => $operator->id,
+                    ]
+                );
+            }
+        }
     }
 
     private function resolvePublicCode(string $token): ?QrIdentity

@@ -97,6 +97,11 @@ class Activity extends Model
         return $this->hasMany(ActivityAttendance::class);
     }
 
+    public function services(): HasMany
+    {
+        return $this->hasMany(Service::class);
+    }
+
     public function participants(): BelongsToMany
     {
         return $this->belongsToMany(Person::class, 'activity_attendances')

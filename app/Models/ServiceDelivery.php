@@ -14,6 +14,8 @@ class ServiceDelivery extends Model
     protected $fillable = [
         'service_id',
         'service_category_id',
+        'activity_attendance_id',
+        'delivery_channel',
         'social_worker_id',
         'person_id',
         'guardian_id',
@@ -37,6 +39,7 @@ class ServiceDelivery extends Model
             'delivered_at' => 'date',
             'created_by' => 'integer',
             'service_category_id' => 'integer',
+            'activity_attendance_id' => 'integer',
         ];
     }
 
@@ -67,6 +70,11 @@ class ServiceDelivery extends Model
     public function serviceCategory(): BelongsTo
     {
         return $this->belongsTo(ServiceCategory::class)->withTrashed();
+    }
+
+    public function activityAttendance(): BelongsTo
+    {
+        return $this->belongsTo(ActivityAttendance::class);
     }
 
     public function socialWorker(): BelongsTo
