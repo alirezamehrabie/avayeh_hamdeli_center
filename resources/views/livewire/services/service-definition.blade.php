@@ -87,6 +87,7 @@
                                             }
                                         }"
                                         x-on:click.outside="open = false"
+                                        x-on:focusout="if (! $el.contains($event.relatedTarget)) open = false"
                                         class="relative"
                                     >
                                         <input
@@ -101,6 +102,7 @@
                                         >
                                         <button
                                             type="button"
+                                            tabindex="-1"
                                             x-cloak
                                             x-show="filterText"
                                             x-on:click.stop.prevent="clearServiceName()"
@@ -113,6 +115,7 @@
                                         </button>
                                         <button
                                             type="button"
+                                            tabindex="-1"
                                             x-on:click.stop.prevent="open = !open"
                                             class="absolute inset-y-0 end-0 flex items-center px-3 text-slate-400"
                                             aria-label="باز کردن فهرست نام خدمات"
@@ -170,6 +173,7 @@
                                             }
                                         }"
                                         x-on:click.outside="open = false"
+                                        x-on:focusout="if (! $el.contains($event.relatedTarget)) open = false"
                                         class="relative"
                                     >
                                         <button
@@ -326,6 +330,7 @@
                                                         }
                                                     }"
                                                     x-on:click.outside="open = false"
+                                                    x-on:focusout="if (! $el.contains($event.relatedTarget)) open = false"
                                                     class="relative"
                                                 >
                                                     <input
@@ -340,6 +345,7 @@
                                                     >
                                                     <button
                                                         type="button"
+                                                        tabindex="-1"
                                                         x-cloak
                                                         x-show="filterText"
                                                         x-on:click.stop.prevent="clearCategoryName()"
@@ -352,6 +358,7 @@
                                                     </button>
                                                     <button
                                                         type="button"
+                                                        tabindex="-1"
                                                         x-on:click.stop.prevent="open = !open"
                                                         class="absolute inset-y-0 end-0 flex items-center px-3 text-slate-400"
                                                         aria-label="باز کردن فهرست دسته‌های خدمت"
@@ -444,6 +451,7 @@
                                                         }
                                                     }"
                                                     x-on:click.outside="open = false"
+                                                    x-on:focusout="if (! $el.contains($event.relatedTarget)) open = false"
                                                     x-on:resize.window="open && positionUnitDropdown()"
                                                     x-on:scroll.window.throttle.100ms="open && positionUnitDropdown()"
                                                     class="relative"
@@ -564,6 +572,7 @@
                                             $watch('selectedDistrictId', () => filterText = selectedLabel);
                                         "
                                         x-on:click.outside="open = false"
+                                        x-on:focusout="if (! $el.contains($event.relatedTarget)) open = false"
                                         class="relative"
                                     >
                                         <input
@@ -578,6 +587,7 @@
                                         >
                                         <button
                                             type="button"
+                                            tabindex="-1"
                                             x-cloak
                                             x-show="selectedDistrictId || filterText"
                                             x-on:click.stop.prevent="clearDistrict()"
@@ -590,6 +600,7 @@
                                         </button>
                                         <button
                                             type="button"
+                                            tabindex="-1"
                                             x-on:click.stop.prevent="open = !open; filterText = selectedDistrictId ? selectedLabel : filterText"
                                             class="absolute inset-y-0 end-0 flex items-center px-3 text-slate-400"
                                             aria-label="باز کردن فهرست مناطق"
@@ -676,6 +687,7 @@
                                                 }
                                             }"
                                             x-on:click.outside="open = false"
+                                            x-on:focusout="if (! $el.contains($event.relatedTarget)) open = false"
                                             class="relative"
                                         >
                                             <button
@@ -743,6 +755,7 @@
                                                 }
                                             }"
                                             x-on:click.outside="open = false"
+                                            x-on:focusout="if (! $el.contains($event.relatedTarget)) open = false"
                                             class="relative"
                                         >
                                             <button
