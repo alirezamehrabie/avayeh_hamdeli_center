@@ -3,6 +3,7 @@
 namespace App\Livewire\Services;
 
 use App\Models\Service;
+use App\Models\ServiceDelivery;
 use App\Models\ServiceWorkerAllocation;
 use App\Models\SocialWorker;
 use Illuminate\Support\Collection;
@@ -243,6 +244,17 @@ class ServiceDeliveryManager extends Component
             }
         }
 
+        $shortfall = $this->firstExistingDeliveryAllocationShortfall($service, $workerRows);
+
+        if ($shortfall) {
+            $this->addError(
+                'allocations',
+                'سهمیه جدید نمی‌تواند کمتر از مقدار تحویل‌شده قبلی برای مددکار و آیتم مربوطه باشد.'
+            );
+
+            return collect();
+        }
+
         return $workerRows;
     }
 
@@ -370,6 +382,43 @@ class ServiceDeliveryManager extends Component
         $category = $this->selectedServiceCategories->firstWhere('id', $categoryId);
 
         return $category ? (float) $category->quantity : 0;
+    }
+
+    protected function firstExistingDeliveryAllocationShortfall(Service $service, Collection $workerRows): ?array
+    {
+        $proposedQuantities = $workerRows
+            ->mapWithKeys(fn (array $row): array => [
+                $this->workerCategoryKey((int) $row['worker_id'], (int) $row['category_id']) => (float) $row['quantity'],
+            ]);
+
+        $deliveredRows = ServiceDelivery::query()
+            ->selectRaw('social_worker_id, service_category_id, SUM(delivered_quantity) as delivered_quantity')
+            ->where('service_id', $service->id)
+            ->groupBy('social_worker_id', 'service_category_id')
+            ->get();
+
+        foreach ($deliveredRows as $deliveredRow) {
+            $workerId = (int) $deliveredRow->social_worker_id;
+            $categoryId = (int) $deliveredRow->service_category_id;
+            $deliveredQuantity = (float) $deliveredRow->delivered_quantity;
+            $proposedQuantity = (float) ($proposedQuantities->get($this->workerCategoryKey($workerId, $categoryId)) ?? 0);
+
+            if ($proposedQuantity < $deliveredQuantity) {
+                return [
+                    'worker_id' => $workerId,
+                    'category_id' => $categoryId,
+                    'delivered_quantity' => $deliveredQuantity,
+                    'proposed_quantity' => $proposedQuantity,
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    protected function workerCategoryKey(int $workerId, int $categoryId): string
+    {
+        return $workerId.':'.$categoryId;
     }
 
     protected function validationAttributes(): array

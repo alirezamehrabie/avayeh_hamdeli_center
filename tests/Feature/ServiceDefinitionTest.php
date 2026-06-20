@@ -9,6 +9,7 @@ use App\Livewire\Services\ServiceManagement;
 use App\Livewire\SocialWorkers\Dashboard as SocialWorkerDashboard;
 use App\Models\Service;
 use App\Models\ServiceCategoryTemplate;
+use App\Models\ServiceDelivery;
 use App\Models\ServiceName;
 use App\Models\SocialWorker;
 use App\Models\User;
@@ -178,6 +179,108 @@ class ServiceDefinitionTest extends TestCase
             'social_worker_id' => $worker->id,
             'allocated_quantity' => 4,
             'assigned_by_user_id' => $manager->id,
+        ]);
+    }
+
+    public function test_admin_cannot_reduce_worker_category_allocation_below_delivered_quantity(): void
+    {
+        $manager = $this->manager();
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 79,
+            'first_name' => 'Delivered',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+        $service = $this->serviceWithCategory($manager, 'Delivered Allocation Guard', true);
+        $category = $service->categories()->firstOrFail();
+
+        $service->workerAllocations()->create([
+            'social_worker_id' => $worker->id,
+            'service_category_id' => $category->id,
+            'allocated_quantity' => 5,
+            'assigned_by_user_id' => $manager->id,
+        ]);
+
+        ServiceDelivery::query()->create([
+            'service_id' => $service->id,
+            'social_worker_id' => $worker->id,
+            'person_id' => null,
+            'guardian_id' => null,
+            'national_id' => '1234567890',
+            'full_name' => 'Delivered Recipient',
+            'mobile' => null,
+            'delivered_quantity' => 3,
+            'service_category_id' => $category->id,
+            'value_per_unit_snapshot' => 1000,
+            'delivered_total_value' => 3000,
+            'delivered_at' => now()->toDateString(),
+            'created_by' => $manager->id,
+        ]);
+
+        $this->actingAs($manager);
+
+        Livewire::test(ServiceDeliveryManager::class)
+            ->set('selectedServiceId', $service->id)
+            ->set('allocations.' . $worker->id . '.' . $category->id, '2')
+            ->call('saveAllocations')
+            ->assertHasErrors(['allocations']);
+
+        $this->assertDatabaseHas('service_social_worker', [
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'allocated_quantity' => 5,
+        ]);
+    }
+
+    public function test_admin_cannot_remove_worker_with_existing_deliveries_from_allocations(): void
+    {
+        $manager = $this->manager();
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 80,
+            'first_name' => 'Removed',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+        $service = $this->serviceWithCategory($manager, 'Delivered Removal Guard', true);
+        $category = $service->categories()->firstOrFail();
+
+        $service->workerAllocations()->create([
+            'social_worker_id' => $worker->id,
+            'service_category_id' => $category->id,
+            'allocated_quantity' => 4,
+            'assigned_by_user_id' => $manager->id,
+        ]);
+
+        ServiceDelivery::query()->create([
+            'service_id' => $service->id,
+            'social_worker_id' => $worker->id,
+            'person_id' => null,
+            'guardian_id' => null,
+            'national_id' => '1234567891',
+            'full_name' => 'Delivered Recipient',
+            'mobile' => null,
+            'delivered_quantity' => 2,
+            'service_category_id' => $category->id,
+            'value_per_unit_snapshot' => 1000,
+            'delivered_total_value' => 2000,
+            'delivered_at' => now()->toDateString(),
+            'created_by' => $manager->id,
+        ]);
+
+        $this->actingAs($manager);
+
+        Livewire::test(ServiceDeliveryManager::class)
+            ->set('selectedServiceId', $service->id)
+            ->call('removeSocialWorker', $worker->id)
+            ->call('saveAllocations')
+            ->assertHasErrors(['allocations']);
+
+        $this->assertDatabaseHas('service_social_worker', [
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'allocated_quantity' => 4,
         ]);
     }
 
