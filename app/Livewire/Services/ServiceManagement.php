@@ -368,7 +368,11 @@ class ServiceManagement extends Component
                 ->get(),
             'serviceCategories' => ServiceCategoryTemplate::query()
                 ->with('serviceName')
-                ->when($this->selectedServiceNameId, fn ($query) => $query->where('service_name_id', $this->selectedServiceNameId))
+                ->when(
+                    $this->selectedServiceNameId,
+                    fn ($query) => $query->where('service_name_id', $this->selectedServiceNameId),
+                    fn ($query) => $query->whereRaw('0 = 1')
+                )
                 ->ordered()
                 ->get(),
             'serviceUnits' => ServiceUnit::query()->ordered()->get(),

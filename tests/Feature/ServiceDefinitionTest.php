@@ -259,6 +259,31 @@ class ServiceDefinitionTest extends TestCase
             ->assertSet('serviceName', '');
     }
 
+    public function test_archiving_last_service_name_does_not_show_all_categories(): void
+    {
+        $user = $this->manager();
+        $serviceName = ServiceName::query()->create([
+            'name' => 'Last Service Name',
+            'sort_id' => 1,
+            'created_by' => $user->id,
+        ]);
+        $template = ServiceCategoryTemplate::query()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'Hidden Template',
+            'sort_id' => 1,
+            'created_by' => $user->id,
+        ]);
+
+        $this->actingAs($user);
+
+        Livewire::test(ServiceManagement::class)
+            ->set('selectedServiceNameId', $serviceName->id)
+            ->call('archiveServiceName', $serviceName->id)
+            ->assertSet('selectedServiceNameId', null)
+            ->assertViewHas('serviceCategories', fn ($serviceCategories): bool => $serviceCategories->isEmpty())
+            ->assertDontSee($template->name);
+    }
+
     private function manager(): User
     {
         return User::factory()->create([

@@ -22,7 +22,7 @@
                 $selectedServiceName = $allServiceNames->firstWhere('id', (int) $selectedServiceNameId);
             @endphp
 
-            <div class="grid gap-4 xl:grid-cols-3">
+            <div class="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1.25fr)_minmax(260px,0.8fr)]">
                 <section class="flex flex-col rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
                     <div class="mb-3 flex items-center justify-between gap-2.5">
                         <div>
