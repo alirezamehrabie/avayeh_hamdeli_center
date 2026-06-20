@@ -153,6 +153,7 @@ class ServiceDeliveryManager extends Component
                     'social_worker_id' => $row['worker_id'],
                     'service_category_id' => $row['category_id'],
                     'allocated_quantity' => $row['quantity'],
+                    'assigned_by_user_id' => auth()->id(),
                 ]);
             }
         });

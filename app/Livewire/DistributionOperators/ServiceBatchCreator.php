@@ -174,6 +174,7 @@ class ServiceBatchCreator extends Component
                     ],
                     [
                         'allocated_quantity' => $block['total_quantity'],
+                        'assigned_by_user_id' => auth()->id(),
                     ]
                 );
 
@@ -225,6 +226,7 @@ class ServiceBatchCreator extends Component
                     'social_worker_id' => $block['social_worker_id'],
                     'service_category_id' => $category->id,
                     'allocated_quantity' => $block['total_quantity'],
+                    'assigned_by_user_id' => auth()->id(),
                 ]);
 
                 $service->refreshFinancialTotals();

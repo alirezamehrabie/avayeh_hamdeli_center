@@ -14,6 +14,7 @@ class ServiceWorkerAllocation extends Model
         'service_category_id',
         'social_worker_id',
         'allocated_quantity',
+        'assigned_by_user_id',
     ];
 
     protected function casts(): array
@@ -23,6 +24,7 @@ class ServiceWorkerAllocation extends Model
             'service_category_id' => 'integer',
             'social_worker_id' => 'integer',
             'allocated_quantity' => 'decimal:2',
+            'assigned_by_user_id' => 'integer',
         ];
     }
 
@@ -39,5 +41,10 @@ class ServiceWorkerAllocation extends Model
     public function socialWorker(): BelongsTo
     {
         return $this->belongsTo(SocialWorker::class);
+    }
+
+    public function assignedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_by_user_id');
     }
 }

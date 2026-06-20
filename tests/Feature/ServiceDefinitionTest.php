@@ -151,6 +151,36 @@ class ServiceDefinitionTest extends TestCase
             ->assertDontSee($stationOnlyService->code);
     }
 
+    public function test_admin_quota_assignment_records_assigning_user(): void
+    {
+        $manager = $this->manager();
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 78,
+            'first_name' => 'Quota',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+        $service = $this->serviceWithCategory($manager, 'Assigned By Admin', true);
+        $category = $service->categories()->firstOrFail();
+
+        $this->actingAs($manager);
+
+        Livewire::test(ServiceDeliveryManager::class)
+            ->set('selectedServiceId', $service->id)
+            ->call('addSocialWorker', $worker->id)
+            ->set('allocations.' . $worker->id . '.' . $category->id, '4')
+            ->call('saveAllocations')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('service_social_worker', [
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'allocated_quantity' => 4,
+            'assigned_by_user_id' => $manager->id,
+        ]);
+    }
+
     public function test_soft_deleted_template_is_restored_when_reused_in_service_definition(): void
     {
         $user = $this->manager();
