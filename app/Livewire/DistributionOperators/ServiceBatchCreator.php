@@ -20,7 +20,8 @@ class ServiceBatchCreator extends Component
 {
     public const MODE_PREDEFINED = 'predefined';
     public const MODE_MISC = 'misc';
-    protected const MISC_NAME_PREFIX = 'Misc - ';
+    protected const MISC_NAME_PREFIX = 'متفرقه - ';
+    protected const LEGACY_MISC_NAME_PREFIX = 'Misc - ';
 
     public string $mode = self::MODE_PREDEFINED;
 
@@ -293,7 +294,7 @@ class ServiceBatchCreator extends Component
                 'distribution_end_date' => $this->jalaliToGregorian($validated['date']),
                 'priority' => null,
                 'status' => 'in_distribution',
-                'status_notes' => 'Ad-hoc service created by distribution operator.',
+                'status_notes' => 'خدمت متفرقه ایجادشده توسط اپراتور توزیع.',
             ])->save();
 
             foreach (array_values($validated['miscCategories']) as $index => $categoryRow) {
@@ -509,12 +510,27 @@ class ServiceBatchCreator extends Component
             ->selectRaw('MAX(CAST(SUBSTRING(name, ?) AS UNSIGNED)) as sequence', [mb_strlen(self::MISC_NAME_PREFIX) + 1])
             ->value('sequence');
 
+        $maxLegacyServiceNumber = Service::query()
+            ->where('name', 'like', self::LEGACY_MISC_NAME_PREFIX . '%')
+            ->selectRaw('MAX(CAST(SUBSTRING(name, ?) AS UNSIGNED)) as sequence', [mb_strlen(self::LEGACY_MISC_NAME_PREFIX) + 1])
+            ->value('sequence');
+
         $maxServiceNameNumber = ServiceName::query()
             ->where('name', 'like', self::MISC_NAME_PREFIX . '%')
             ->selectRaw('MAX(CAST(SUBSTRING(name, ?) AS UNSIGNED)) as sequence', [mb_strlen(self::MISC_NAME_PREFIX) + 1])
             ->value('sequence');
 
-        return self::MISC_NAME_PREFIX . (((int) max($maxServiceNumber, $maxServiceNameNumber)) + 1);
+        $maxLegacyServiceNameNumber = ServiceName::query()
+            ->where('name', 'like', self::LEGACY_MISC_NAME_PREFIX . '%')
+            ->selectRaw('MAX(CAST(SUBSTRING(name, ?) AS UNSIGNED)) as sequence', [mb_strlen(self::LEGACY_MISC_NAME_PREFIX) + 1])
+            ->value('sequence');
+
+        return self::MISC_NAME_PREFIX . (((int) max(
+            $maxServiceNumber,
+            $maxLegacyServiceNumber,
+            $maxServiceNameNumber,
+            $maxLegacyServiceNameNumber
+        )) + 1);
     }
 
     protected function isValidJalaliDate(string $date): bool

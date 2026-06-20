@@ -46,7 +46,7 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         Livewire::test(ServiceBatchCreator::class)
             ->set('mode', ServiceBatchCreator::MODE_MISC)
             ->set('miscServiceType', 'individual')
-            ->set('miscCategories.0.name', 'Operator Package')
+            ->set('miscCategories.0.name', 'بسته اپراتور')
             ->set('miscCategories.0.quantity', '6')
             ->set('miscCategories.0.unit', 'pack')
             ->set('dateYear', '1405')
@@ -76,18 +76,18 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         ]);
         $worker = SocialWorker::query()->create([
             'worker_code' => 902,
-            'first_name' => 'Campaign',
-            'last_name' => 'Worker',
+            'first_name' => 'مددکار',
+            'last_name' => 'پویش',
             'is_active' => true,
         ]);
         $serviceName = ServiceName::query()->create([
-            'name' => 'Management Campaign',
+            'name' => 'پویش مدیریتی',
             'sort_id' => 1,
             'created_by' => $manager->id,
         ]);
         $service = Service::query()->create([
             'service_name_id' => $serviceName->id,
-            'name' => 'Management Campaign',
+            'name' => 'پویش مدیریتی',
             'service_type' => 'individual',
             'supports_gate_delivery' => true,
             'supports_home_delivery' => true,
@@ -102,7 +102,7 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         ]);
         $category = $service->categories()->create([
             'service_name_id' => $serviceName->id,
-            'name' => 'Rice',
+            'name' => 'برنج',
             'quantity' => 10,
             'unit' => 'pack',
             'value' => 0,
@@ -145,12 +145,12 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         ]);
         $worker = SocialWorker::query()->create([
             'worker_code' => 903,
-            'first_name' => 'Misc',
-            'last_name' => 'Worker',
+            'first_name' => 'مددکار',
+            'last_name' => 'متفرقه',
             'is_active' => true,
         ]);
         ServiceName::query()->create([
-            'name' => 'Misc - 19',
+            'name' => 'متفرقه - 19',
             'sort_id' => 1,
             'created_by' => $operator->id,
         ]);
@@ -160,7 +160,7 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         Livewire::test(ServiceBatchCreator::class)
             ->set('mode', ServiceBatchCreator::MODE_MISC)
             ->set('miscServiceType', 'individual')
-            ->set('miscCategories.0.name', 'Blankets')
+            ->set('miscCategories.0.name', 'پتو')
             ->set('miscCategories.0.quantity', '3')
             ->set('miscCategories.0.unit', 'pack')
             ->set('dateYear', '1405')
@@ -172,12 +172,56 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->assertHasNoErrors();
 
         $this->assertDatabaseHas('services', [
-            'name' => 'Misc - 20',
+            'name' => 'متفرقه - 20',
             'created_by' => $operator->id,
             'total_quantity' => 3,
         ]);
         $this->assertDatabaseHas('service_names', [
-            'name' => 'Misc - 20',
+            'name' => 'متفرقه - 20',
+        ]);
+    }
+
+    public function test_misc_mode_continues_numbering_from_legacy_english_misc_names_but_stores_persian_name(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 904,
+            'first_name' => 'مددکار',
+            'last_name' => 'میراثی',
+            'is_active' => true,
+        ]);
+        ServiceName::query()->create([
+            'name' => 'Misc - 21',
+            'sort_id' => 1,
+            'created_by' => $operator->id,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class)
+            ->set('mode', ServiceBatchCreator::MODE_MISC)
+            ->set('miscServiceType', 'individual')
+            ->set('miscCategories.0.name', 'کفش')
+            ->set('miscCategories.0.quantity', '2')
+            ->set('miscCategories.0.unit', 'pack')
+            ->set('dateYear', '1405')
+            ->set('dateMonth', '3')
+            ->set('dateDay', '30')
+            ->set('socialWorkerQuery', $worker->full_name)
+            ->set('socialWorkerId', $worker->id)
+            ->call('saveBatch')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('services', [
+            'name' => 'متفرقه - 22',
+            'created_by' => $operator->id,
+            'status_notes' => 'خدمت متفرقه ایجادشده توسط اپراتور توزیع.',
+        ]);
+        $this->assertDatabaseMissing('services', [
+            'name' => 'Misc - 22',
         ]);
     }
 }

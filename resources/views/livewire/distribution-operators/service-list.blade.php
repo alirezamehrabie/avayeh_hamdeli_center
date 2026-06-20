@@ -39,7 +39,7 @@
                     </div>
 
                     <div class="mt-4 space-y-2 text-sm text-slate-600">
-                        <p><span class="font-bold text-slate-800">دسته‌بندی:</span> {{ $service->serviceCategory?->name ?? 'Undefined' }}</p>
+                        <p><span class="font-bold text-slate-800">دسته‌بندی:</span> {{ $service->serviceCategory?->name ?? 'نامشخص' }}</p>
                         <p><span class="font-bold text-slate-800">تعداد:</span> {{ number_format((float) $service->total_quantity, 2) }} {{ $unitOptions[$service->service_unit] ?? ($service->service_unit ?? '-') }}</p>
                         <p><span class="font-bold text-slate-800">مددکار:</span> {{ $service->socialWorkers->first()?->full_name ?? '—' }}</p>
                         <p><span class="font-bold text-slate-800">تاریخ:</span> {{ \App\Helpers\Morilog\Jalalian::fromDateTime($service->distribution_start_date)->format('Y/m/d') }}</p>
