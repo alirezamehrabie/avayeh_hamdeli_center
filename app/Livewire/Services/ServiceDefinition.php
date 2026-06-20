@@ -64,6 +64,8 @@ class ServiceDefinition extends Component
     public function addCategory(): void
     {
         $this->categories[] = $this->emptyCategory();
+
+        $this->dispatch('service-category-added', index: array_key_last($this->categories));
     }
 
     public function removeCategory(int $index): void

@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-[1680px] space-y-6 px-4 2xl:max-w-[1760px]">
+<div class="mx-auto max-w-[1680px] space-y-6 px-0 2xl:max-w-[1760px]">
     <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div class="bg-gradient-to-l from-teal-600 via-cyan-600 to-sky-700 px-4 py-4 text-white sm:px-6 sm:py-6">
             <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between sm:gap-5">
@@ -225,7 +225,34 @@
                             </div>
                         </div>
 
-                        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/40">
+                        <div
+                            x-data="{
+                                scrollToNewCategory(event) {
+                                    const index = event.detail?.index;
+
+                                    this.$nextTick(() => {
+                                        requestAnimationFrame(() => {
+                                            const selector = index === undefined
+                                                ? '[data-service-category-index]:last-of-type'
+                                                : `[data-service-category-index='${index}']`;
+                                            const category = this.$el.querySelector(selector);
+
+                                            if (!category) {
+                                                return;
+                                            }
+
+                                            category.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                                            window.setTimeout(() => {
+                                                category.querySelector('[data-category-name-input]')?.focus({ preventScroll: true });
+                                            }, 350);
+                                        });
+                                    });
+                                }
+                            }"
+                            x-on:service-category-added.window="scrollToNewCategory($event)"
+                            class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/40"
+                        >
                             <div class="mb-4 flex flex-col gap-1 border-b border-slate-100 pb-4 sm:flex-row sm:items-end sm:justify-between">
                                 <div>
                                     <h2 class="text-base font-bold text-slate-800">دسته‌های خدمت</h2>
@@ -239,6 +266,7 @@
                             <div class="space-y-3">
                                 @foreach($categories as $index => $category)
                                     <div
+                                        data-service-category-index="{{ $index }}"
                                         x-data="{
                                             quantity: @entangle('categories.' . $index . '.quantity').live,
                                             value: @entangle('categories.' . $index . '.value').live,
@@ -335,6 +363,7 @@
                                                     class="relative"
                                                 >
                                                     <input
+                                                        data-category-name-input
                                                         type="text"
                                                         x-model="filterText"
                                                         x-on:focus="open = true"
