@@ -21,7 +21,7 @@
                 </div>
             @endif
 
-            <div class="mb-3 grid gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1.6fr)_auto_auto_auto] xl:items-end">
+            <div class="mb-3 grid gap-2 rounded-xl border border-slate-100 bg-slate-50/80 p-2.5 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_12rem_9rem] lg:items-end">
                 <div>
                     <label for="sponsor-search" class="mb-1.5 block text-xs font-bold text-slate-500">جستجو</label>
                     <input
@@ -29,7 +29,7 @@
                         type="text"
                         wire:model.live.debounce.400ms="search"
                         placeholder="کد حامی، نام، نام خانوادگی یا موبایل"
-                        class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+                        class="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
                     >
                 </div>
 
@@ -38,7 +38,7 @@
                     <select
                         id="sponsor-sort"
                         wire:model.live="sort"
-                        class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+                        class="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
                     >
                         <option value="latest">جدیدترین</option>
                         <option value="name_asc">نام حامی</option>
@@ -54,7 +54,7 @@
                     <select
                         id="sponsor-per-page"
                         wire:model.live="perPage"
-                        class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+                        class="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
                     >
                         @foreach($perPageOptions as $option)
                             <option value="{{ $option }}">{{ $this->persianNumber($option) }} مورد</option>
@@ -62,10 +62,6 @@
                     </select>
                 </div>
 
-                <div class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-500">
-                    {{ $this->persianNumber($sponsors->firstItem() ?? 0) }} تا {{ $this->persianNumber($sponsors->lastItem() ?? 0) }}
-                    از {{ $this->persianNumber($sponsors->total()) }}
-                </div>
             </div>
 
             <div class="mt-0 space-y-2 md:hidden">
@@ -93,12 +89,12 @@
                                 </div>
                             </div>
 
-                            <div class="mt-3 flex gap-2">
+                            <div class="mt-3 flex items-center gap-2">
                                 <button type="button" wire:click="showDetails({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="showDetails({{ $sponsor->id }})" class="flex h-10 flex-1 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 px-3 text-sm font-black text-indigo-700 transition hover:border-indigo-200 hover:bg-indigo-100 focus:outline-none focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-70">
                                     <span wire:loading.remove wire:target="showDetails({{ $sponsor->id }})">جزئیات</span>
                                     <span wire:loading wire:target="showDetails({{ $sponsor->id }})">در حال بارگذاری...</span>
                                 </button>
-                                <button type="button" wire:click="editSponsor({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="editSponsor({{ $sponsor->id }})" class="flex h-10 flex-1 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-black text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100 disabled:cursor-not-allowed disabled:opacity-70">
+                                <button type="button" wire:click="editSponsor({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="editSponsor({{ $sponsor->id }})" class="flex h-10 shrink-0 items-center justify-center rounded-lg px-3 text-sm font-black text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-100 disabled:cursor-not-allowed disabled:opacity-70">
                                     <span wire:loading.remove wire:target="editSponsor({{ $sponsor->id }})">ویرایش</span>
                                     <span wire:loading wire:target="editSponsor({{ $sponsor->id }})">در حال بارگذاری...</span>
                                 </button>
@@ -139,7 +135,7 @@
                                 <span wire:loading.remove wire:target="showDetails({{ $sponsor->id }})">جزئیات</span>
                                 <span wire:loading wire:target="showDetails({{ $sponsor->id }})">...</span>
                             </button>
-                            <button type="button" wire:click="editSponsor({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="editSponsor({{ $sponsor->id }})" class="flex h-10 flex-1 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-black text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100 disabled:cursor-not-allowed disabled:opacity-70 md:w-20">
+                            <button type="button" wire:click="editSponsor({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="editSponsor({{ $sponsor->id }})" class="flex h-10 flex-1 items-center justify-center rounded-lg px-3 text-sm font-black text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-100 disabled:cursor-not-allowed disabled:opacity-70 md:w-20">
                                 <span wire:loading.remove wire:target="editSponsor({{ $sponsor->id }})">ویرایش</span>
                                 <span wire:loading wire:target="editSponsor({{ $sponsor->id }})">...</span>
                             </button>
@@ -193,7 +189,7 @@
                                             <span wire:loading.remove wire:target="showDetails({{ $sponsor->id }})">جزئیات</span>
                                             <span wire:loading wire:target="showDetails({{ $sponsor->id }})">...</span>
                                         </button>
-                                        <button type="button" wire:click="editSponsor({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="editSponsor({{ $sponsor->id }})" class="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-black text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100 disabled:cursor-not-allowed disabled:opacity-70">
+                                        <button type="button" wire:click="editSponsor({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="editSponsor({{ $sponsor->id }})" class="inline-flex h-9 items-center justify-center rounded-lg px-3 text-xs font-black text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-100 disabled:cursor-not-allowed disabled:opacity-70">
                                             <span wire:loading.remove wire:target="editSponsor({{ $sponsor->id }})">ویرایش</span>
                                             <span wire:loading wire:target="editSponsor({{ $sponsor->id }})">...</span>
                                         </button>
