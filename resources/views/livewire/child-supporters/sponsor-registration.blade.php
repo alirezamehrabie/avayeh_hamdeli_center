@@ -140,12 +140,12 @@
 
             <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
                 <div class="mb-4 border-b border-slate-100 pb-3">
-                    <h2 class="text-base font-black text-slate-900">Assigned Beneficiaries</h2>
+                    <h2 class="text-base font-black text-slate-900">مددجویان اختصاص‌یافته</h2>
                 </div>
 
                 <div class="grid gap-3 lg:grid-cols-[1fr_auto_auto] lg:items-end">
                     <div>
-                        <label for="assigned-beneficiary-code" class="mb-1.5 block text-sm font-bold text-slate-700">Beneficiary code</label>
+                        <label for="assigned-beneficiary-code" class="mb-1.5 block text-sm font-bold text-slate-700">کد مددجو</label>
                         <input
                             id="assigned-beneficiary-code"
                             type="text"
@@ -158,11 +158,11 @@
                     </div>
 
                     <button type="button" wire:click="lookupBeneficiary" class="h-12 rounded-xl border border-indigo-100 bg-indigo-50 px-4 text-sm font-black text-indigo-700 transition hover:bg-indigo-100">
-                        Check
+                        بررسی
                     </button>
 
                     <button type="button" wire:click="addBeneficiary" class="h-12 rounded-xl bg-teal-600 px-4 text-sm font-black text-white transition hover:bg-teal-700">
-                        Add
+                        افزودن
                     </button>
                 </div>
 
@@ -173,7 +173,7 @@
                                 <p class="text-sm font-black text-slate-800">{{ $beneficiaryPreview['full_name'] }}</p>
                                 <p class="text-xs font-semibold text-slate-500" dir="ltr">{{ $beneficiaryPreview['person_code'] }}</p>
                             </div>
-                            <span class="text-xs font-bold text-indigo-700">{{ $beneficiaryPreview['supporters_count'] }} current supporter(s)</span>
+                            <span class="text-xs font-bold text-indigo-700">{{ $beneficiaryPreview['supporters_count'] }} حامی فعلی</span>
                         </div>
 
                         @if($beneficiaryPreview['supporters_count'] > 0)
@@ -196,11 +196,11 @@
                                 <p class="text-xs font-semibold text-slate-500" dir="ltr">{{ $beneficiary['person_code'] }}</p>
                             </div>
                             <button type="button" wire:click="removeBeneficiary({{ $beneficiary['id'] }})" class="rounded-lg bg-rose-50 px-3 py-2 text-xs font-black text-rose-700 transition hover:bg-rose-100">
-                                Remove
+                                حذف
                             </button>
                         </div>
                     @empty
-                        <p class="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-center text-sm font-semibold text-slate-500">No beneficiaries assigned yet.</p>
+                        <p class="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-center text-sm font-semibold text-slate-500">هنوز مددجویی اختصاص داده نشده است.</p>
                     @endforelse
                 </div>
             </section>

@@ -225,7 +225,7 @@ class SponsorList extends Component
         $this->authorizeAccess();
 
         $sponsors = SponsorProfile::query()
-            ->with('user')
+            ->with(['user', 'beneficiaries'])
             ->whereHas('user')
             ->latest()
             ->paginate(10);
@@ -250,6 +250,7 @@ class SponsorList extends Component
                 ->values()
                 ->all(),
             'childPreferences' => $sponsor->child_preferences ?: '-',
+            'beneficiariesCount' => $sponsor->beneficiaries->count(),
             'beneficiaries' => $sponsor->beneficiaries
                 ->map(fn (Person $beneficiary): array => [
                     'id' => $beneficiary->id,
@@ -292,7 +293,7 @@ class SponsorList extends Component
                     $amount = (int) preg_replace('/\D+/', '', (string) $value);
 
                     if ($amount < 1000) {
-                        $fail('Monthly donation amount is invalid.');
+                        $fail('مبلغ واریزی ماهیانه معتبر نیست.');
                     }
                 },
             ],
@@ -306,16 +307,16 @@ class SponsorList extends Component
     private function editMessages(): array
     {
         return [
-            'editFirstName.required' => 'First name is required.',
-            'editLastName.required' => 'Last name is required.',
-            'editMobile.required' => 'Mobile number is required.',
-            'editMobile.digits' => 'Mobile number must be exactly 11 digits.',
-            'editMobile.regex' => 'Mobile number must start with 09.',
-            'editMobile.unique' => 'This mobile number is already used by another account.',
-            'editMonthlyDonationAmount.required' => 'Monthly donation amount is required.',
-            'editMonthlyPaymentReminderMethods.required' => 'Select at least one reminder method.',
-            'editMonthlyPaymentReminderMethods.min' => 'Select at least one reminder method.',
-            'editIsSocialMediaActive.required' => 'Select social media status.',
+            'editFirstName.required' => 'نام الزامی است.',
+            'editLastName.required' => 'نام خانوادگی الزامی است.',
+            'editMobile.required' => 'شماره موبایل الزامی است.',
+            'editMobile.digits' => 'شماره موبایل باید دقیقاً ۱۱ رقم باشد.',
+            'editMobile.regex' => 'شماره موبایل باید با ۰۹ شروع شود.',
+            'editMobile.unique' => 'این شماره موبایل قبلاً برای حساب دیگری ثبت شده است.',
+            'editMonthlyDonationAmount.required' => 'مبلغ واریزی ماهیانه الزامی است.',
+            'editMonthlyPaymentReminderMethods.required' => 'حداقل یک روش یادآوری را انتخاب کنید.',
+            'editMonthlyPaymentReminderMethods.min' => 'حداقل یک روش یادآوری را انتخاب کنید.',
+            'editIsSocialMediaActive.required' => 'وضعیت فعالیت در فضای مجازی را انتخاب کنید.',
         ];
     }
 
