@@ -70,14 +70,14 @@
 
             <div class="mt-0 space-y-2 md:hidden">
                 @forelse($sponsors as $sponsor)
-                    <article wire:key="sponsor-row-{{ $sponsor->id }}" class="rounded-2xl border border-slate-200 bg-white p-3 transition hover:border-indigo-100 hover:bg-slate-50/60 sm:p-4 md:grid md:grid-cols-[0.75fr_1fr_1fr_1fr_1.1fr_0.9fr_auto] md:items-center md:gap-3">
+                    <article wire:key="sponsor-row-{{ $sponsor->id }}" class="rounded-2xl border border-slate-200 bg-white p-3 transition hover:border-slate-300 hover:bg-slate-50/60 sm:p-4 md:grid md:grid-cols-[0.75fr_1fr_1fr_1fr_1.1fr_0.9fr_auto] md:items-center md:gap-3">
                         <div class="md:hidden">
                             <div class="flex items-start justify-between gap-3">
                                 <div class="min-w-0">
                                     <p class="truncate text-sm font-black text-slate-900">{{ trim(($sponsor->user?->first_name ?? '') . ' ' . ($sponsor->user?->last_name ?? '')) ?: '-' }}</p>
-                                    <p class="mt-1 inline-flex rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-black text-indigo-700" dir="ltr">{{ $sponsor->supporter_code ?: '-' }}</p>
+                                    <p class="mt-1 inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600" dir="ltr">{{ $sponsor->supporter_code ?: '-' }}</p>
                                 </div>
-                                <span class="inline-flex rounded-lg bg-cyan-50 px-2.5 py-1 text-xs font-black text-cyan-700">
+                                <span class="inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">
                                     {{ $this->persianNumber((int) $sponsor->beneficiaries_count) }} نفر
                                 </span>
                             </div>
@@ -87,8 +87,8 @@
                                     <span class="text-xs font-bold text-slate-400">موبایل</span>
                                     <span class="text-sm font-semibold text-slate-700">{{ $this->persianNumber($sponsor->user?->mobile ?: $sponsor->user?->name ?: '-') }}</span>
                                 </div>
-                                <div class="flex items-center justify-between gap-3 rounded-xl bg-emerald-50/70 px-3 py-2">
-                                    <span class="text-xs font-bold text-emerald-700/70">مبلغ ماهیانه</span>
+                                <div class="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
+                                    <span class="text-xs font-bold text-slate-400">مبلغ ماهیانه</span>
                                     <span class="text-sm font-black text-emerald-700">{{ $this->persianNumber(number_format((int) $sponsor->monthly_donation_amount)) }} ریال</span>
                                 </div>
                             </div>
@@ -98,7 +98,7 @@
                                     <span wire:loading.remove wire:target="showDetails({{ $sponsor->id }})">جزئیات</span>
                                     <span wire:loading wire:target="showDetails({{ $sponsor->id }})">در حال بارگذاری...</span>
                                 </button>
-                                <button type="button" wire:click="editSponsor({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="editSponsor({{ $sponsor->id }})" class="flex h-10 flex-1 items-center justify-center rounded-lg border border-amber-100 bg-amber-50 px-3 text-sm font-black text-amber-700 transition hover:border-amber-200 hover:bg-amber-100 focus:outline-none focus:ring-4 focus:ring-amber-100 disabled:cursor-not-allowed disabled:opacity-70">
+                                <button type="button" wire:click="editSponsor({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="editSponsor({{ $sponsor->id }})" class="flex h-10 flex-1 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-black text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100 disabled:cursor-not-allowed disabled:opacity-70">
                                     <span wire:loading.remove wire:target="editSponsor({{ $sponsor->id }})">ویرایش</span>
                                     <span wire:loading wire:target="editSponsor({{ $sponsor->id }})">در حال بارگذاری...</span>
                                 </button>
@@ -106,7 +106,7 @@
                         </div>
 
                         <div class="hidden items-center justify-between gap-3 md:block">
-                            <span class="inline-flex rounded-lg bg-indigo-50 px-2.5 py-1 text-sm font-black text-indigo-700" dir="ltr">{{ $sponsor->supporter_code ?: '-' }}</span>
+                            <span class="inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-sm font-black text-slate-600" dir="ltr">{{ $sponsor->supporter_code ?: '-' }}</span>
                         </div>
 
                         <div class="hidden md:block">
@@ -124,12 +124,12 @@
                         <div class="hidden md:block">
                             <div class="min-w-0 text-left md:text-right">
                                 <span class="block text-sm font-black text-emerald-700">{{ $this->persianNumber(number_format((int) $sponsor->monthly_donation_amount)) }} ریال</span>
-                                <span class="mt-0.5 block truncate text-[11px] font-semibold leading-5 text-teal-700">{{ $this->donationAmountInTomanWords((int) $sponsor->monthly_donation_amount) }}</span>
+                                <span class="mt-0.5 block truncate text-[11px] font-semibold leading-5 text-slate-500">{{ $this->donationAmountInTomanWords((int) $sponsor->monthly_donation_amount) }}</span>
                             </div>
                         </div>
 
                         <div class="hidden md:block">
-                            <span class="inline-flex rounded-lg bg-cyan-50 px-2.5 py-1 text-sm font-black text-cyan-700">
+                            <span class="inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-sm font-black text-slate-600">
                                 {{ $this->persianNumber((int) $sponsor->beneficiaries_count) }} نفر
                             </span>
                         </div>
@@ -139,7 +139,7 @@
                                 <span wire:loading.remove wire:target="showDetails({{ $sponsor->id }})">جزئیات</span>
                                 <span wire:loading wire:target="showDetails({{ $sponsor->id }})">...</span>
                             </button>
-                            <button type="button" wire:click="editSponsor({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="editSponsor({{ $sponsor->id }})" class="flex h-10 flex-1 items-center justify-center rounded-lg border border-amber-100 bg-amber-50 px-3 text-sm font-black text-amber-700 transition hover:border-amber-200 hover:bg-amber-100 focus:outline-none focus:ring-4 focus:ring-amber-100 disabled:cursor-not-allowed disabled:opacity-70 md:w-20">
+                            <button type="button" wire:click="editSponsor({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="editSponsor({{ $sponsor->id }})" class="flex h-10 flex-1 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-black text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100 disabled:cursor-not-allowed disabled:opacity-70 md:w-20">
                                 <span wire:loading.remove wire:target="editSponsor({{ $sponsor->id }})">ویرایش</span>
                                 <span wire:loading wire:target="editSponsor({{ $sponsor->id }})">...</span>
                             </button>
@@ -168,7 +168,7 @@
                         @forelse($sponsors as $sponsor)
                             <tr wire:key="sponsor-table-row-{{ $sponsor->id }}" class="transition hover:bg-slate-50/80">
                                 <td class="whitespace-nowrap px-4 py-3">
-                                    <span class="inline-flex rounded-md bg-indigo-50 px-2.5 py-1 text-sm font-black text-indigo-700" dir="ltr">{{ $sponsor->supporter_code ?: '-' }}</span>
+                                    <span class="inline-flex rounded-md bg-slate-100 px-2.5 py-1 text-sm font-black text-slate-600" dir="ltr">{{ $sponsor->supporter_code ?: '-' }}</span>
                                 </td>
                                 <td class="min-w-0 px-4 py-3">
                                     <span class="block max-w-44 truncate text-sm font-bold text-slate-900">{{ trim(($sponsor->user?->first_name ?? '') . ' ' . ($sponsor->user?->last_name ?? '')) ?: '-' }}</span>
@@ -179,11 +179,11 @@
                                 <td class="px-4 py-3">
                                     <div class="min-w-0">
                                         <span class="block whitespace-nowrap text-sm font-black text-emerald-700">{{ $this->persianNumber(number_format((int) $sponsor->monthly_donation_amount)) }} ریال</span>
-                                        <span class="mt-0.5 block max-w-44 truncate text-[11px] font-semibold leading-5 text-teal-700">{{ $this->donationAmountInTomanWords((int) $sponsor->monthly_donation_amount) }}</span>
+                                        <span class="mt-0.5 block max-w-44 truncate text-[11px] font-semibold leading-5 text-slate-500">{{ $this->donationAmountInTomanWords((int) $sponsor->monthly_donation_amount) }}</span>
                                     </div>
                                 </td>
                                 <td class="whitespace-nowrap px-4 py-3 text-center">
-                                    <span class="inline-flex rounded-md bg-cyan-50 px-2.5 py-1 text-sm font-black text-cyan-700">
+                                    <span class="inline-flex rounded-md bg-slate-100 px-2.5 py-1 text-sm font-black text-slate-600">
                                         {{ $this->persianNumber((int) $sponsor->beneficiaries_count) }} نفر
                                     </span>
                                 </td>
@@ -193,7 +193,7 @@
                                             <span wire:loading.remove wire:target="showDetails({{ $sponsor->id }})">جزئیات</span>
                                             <span wire:loading wire:target="showDetails({{ $sponsor->id }})">...</span>
                                         </button>
-                                        <button type="button" wire:click="editSponsor({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="editSponsor({{ $sponsor->id }})" class="inline-flex h-9 items-center justify-center rounded-lg border border-amber-100 bg-amber-50 px-3 text-xs font-black text-amber-700 transition hover:border-amber-200 hover:bg-amber-100 focus:outline-none focus:ring-4 focus:ring-amber-100 disabled:cursor-not-allowed disabled:opacity-70">
+                                        <button type="button" wire:click="editSponsor({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="editSponsor({{ $sponsor->id }})" class="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-black text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100 disabled:cursor-not-allowed disabled:opacity-70">
                                             <span wire:loading.remove wire:target="editSponsor({{ $sponsor->id }})">ویرایش</span>
                                             <span wire:loading wire:target="editSponsor({{ $sponsor->id }})">...</span>
                                         </button>
@@ -386,7 +386,7 @@
                     <div class="mt-4 divide-y divide-slate-100 rounded-xl border border-slate-100">
                         <div class="grid grid-cols-[8rem_1fr] items-center gap-3 px-3 py-2.5">
                             <span class="text-xs font-bold text-slate-400">کد حامی</span>
-                            <span class="truncate text-left text-sm font-black text-indigo-700" dir="ltr">{{ $selectedSponsor['supporterCode'] ?? '-' }}</span>
+                            <span class="truncate text-left text-sm font-black text-slate-700" dir="ltr">{{ $selectedSponsor['supporterCode'] ?? '-' }}</span>
                         </div>
                         <div class="grid grid-cols-[8rem_1fr] items-center gap-3 px-3 py-2.5">
                             <span class="text-xs font-bold text-slate-400">شماره موبایل</span>
@@ -396,14 +396,14 @@
                             <span class="text-xs font-bold text-slate-400">مبلغ واریزی ماهیانه</span>
                             <div class="min-w-0">
                                 <span class="block truncate text-sm font-black text-emerald-700">{{ $selectedSponsor['monthlyDonationAmount'] }}</span>
-                                <span class="mt-0.5 block truncate text-[11px] font-semibold leading-5 text-teal-700">{{ $selectedSponsor['monthlyDonationAmountInWords'] }}</span>
+                                <span class="mt-0.5 block truncate text-[11px] font-semibold leading-5 text-slate-500">{{ $selectedSponsor['monthlyDonationAmountInWords'] }}</span>
                             </div>
                         </div>
                         <div class="px-3 py-2.5">
                             <span class="text-xs font-bold text-slate-400">روش‌های یادآوری</span>
                             <div class="mt-2 flex flex-wrap gap-1.5">
                                 @forelse($selectedSponsor['reminderMethods'] as $method)
-                                    <span class="rounded-md bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">{{ $method }}</span>
+                                    <span class="rounded-md bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600">{{ $method }}</span>
                                 @empty
                                     <span class="text-sm font-semibold text-slate-500">-</span>
                                 @endforelse
@@ -416,7 +416,7 @@
                         <div class="px-3 py-2.5">
                             <span class="text-xs font-bold text-slate-400">مددجویان اختصاص‌یافته</span>
                             <div class="mt-2 mb-3">
-                                <span class="inline-flex rounded-lg bg-cyan-50 px-2.5 py-1 text-sm font-black text-cyan-700">
+                                <span class="inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-sm font-black text-slate-600">
                                     {{ $this->persianNumber((int) ($selectedSponsor['beneficiariesCount'] ?? 0)) }} کودک مددجو
                                 </span>
                             </div>
