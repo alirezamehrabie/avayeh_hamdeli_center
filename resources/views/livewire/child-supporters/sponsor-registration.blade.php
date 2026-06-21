@@ -1,14 +1,14 @@
 <div class="{{ $embedded ? '' : 'mx-auto max-w-5xl' }}" dir="rtl">
     <div class="space-y-4 pb-4">
-        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+        <div class="border-b border-slate-200 bg-white/80 px-1 pb-4">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <p class="text-xs font-bold text-indigo-600">حامی کودک</p>
-                    <h1 class="mt-1 text-xl font-black text-slate-900 sm:text-2xl">{{ $isEditing ? 'ویرایش حامی' : 'ثبت نام حامی' }}</h1>
+                    <p class="text-xs font-semibold text-indigo-600">حامی کودک</p>
+                    <h1 class="mt-1 text-xl font-bold text-slate-900 sm:text-2xl">{{ $isEditing ? 'ویرایش حامی' : 'ثبت نام حامی' }}</h1>
                     <p class="mt-2 text-sm leading-6 text-slate-500">{{ $isEditing ? 'اطلاعات حامی را بررسی و بروزرسانی کنید.' : 'اطلاعات حامی جدید را با حداقل مراحل ثبت کنید.' }}</p>
                 </div>
                 @if($isEditing)
-                    <a href="{{ route('child-supporter.sponsor-list') }}" class="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-600 transition hover:bg-slate-50">
+                    <a href="{{ route('child-supporter.sponsor-list') }}" class="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50">
                         بازگشت به لیست
                     </a>
                 @endif
@@ -22,9 +22,40 @@
         @endif
 
         <form wire:submit.prevent="save" class="space-y-4 pb-20 sm:pb-0">
-            <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+            @php
+                $steps = [
+                    1 => 'اطلاعات حامی',
+                    2 => 'مبلغ حمایت',
+                    3 => 'مددجویان',
+                    4 => 'ترجیحات',
+                    5 => 'بازبینی',
+                ];
+            @endphp
+
+            <nav aria-label="مراحل ثبت نام" class="rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
+                <ol class="grid grid-cols-5 gap-2">
+                    @foreach($steps as $stepNumber => $stepLabel)
+                        <li>
+                            <button
+                                type="button"
+                                wire:click="goToStep({{ $stepNumber }})"
+                                class="flex w-full flex-col items-center gap-2 rounded-lg px-2 py-2 text-center transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                                aria-current="{{ $currentStep === $stepNumber ? 'step' : 'false' }}"
+                            >
+                                <span class="grid size-8 place-items-center rounded-full text-xs font-bold transition {{ $currentStep === $stepNumber ? 'bg-indigo-600 text-white' : ($currentStep > $stepNumber ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500') }}">
+                                    {{ $stepNumber }}
+                                </span>
+                                <span class="hidden text-xs font-bold sm:block {{ $currentStep === $stepNumber ? 'text-indigo-700' : 'text-slate-500' }}">{{ $stepLabel }}</span>
+                            </button>
+                        </li>
+                    @endforeach
+                </ol>
+            </nav>
+
+            @if($currentStep === 1)
+            <section class="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
                 <div class="mb-4 flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                    <h2 class="text-base font-black text-slate-900">اطلاعات اصلی</h2>
+                    <h2 class="text-base font-bold text-slate-900">اطلاعات اصلی</h2>
                     <span class="text-xs font-semibold text-slate-400">موارد ستاره دار الزامی هستند</span>
                 </div>
 
@@ -37,9 +68,16 @@
                             wire:model.live.debounce.400ms="firstName"
                             autocomplete="given-name"
                             placeholder="نام"
-                            class="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+                            class="h-12 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                            aria-describedby="sponsor-first-name-help"
                         >
-                        @error('firstName') <p class="mt-1.5 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                        <div id="sponsor-first-name-help" class="mt-1.5 min-h-5">
+                            @error('firstName')
+                                <p class="text-xs font-semibold text-rose-600">{{ $message }}</p>
+                            @else
+                                <p class="text-xs font-semibold text-slate-400">نام را مطابق اطلاعات شناسنامه‌ای وارد کنید.</p>
+                            @enderror
+                        </div>
                     </div>
 
                     <div>
@@ -50,30 +88,14 @@
                             wire:model.live.debounce.400ms="lastName"
                             autocomplete="family-name"
                             placeholder="نام خانوادگی"
-                            class="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+                            class="h-12 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                            aria-describedby="sponsor-last-name-help"
                         >
-                        @error('lastName') <p class="mt-1.5 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div>
-                        <label for="sponsor-monthly-donation" class="mb-1.5 block text-sm font-bold text-slate-700">مبلغ واریزی ماهیانه <span class="text-rose-500">*</span></label>
-                        <input
-                            id="sponsor-monthly-donation"
-                            type="text"
-                            inputmode="numeric"
-                            wire:model.live.debounce.400ms="monthlyDonationAmount"
-                            x-data
-                            x-on:input="$el.value = $el.value.replace(/[^\d]/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
-                            placeholder="مبلغ واریزی ماهیانه"
-                            class="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition ltr:text-left focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
-                        >
-                        <div class="mt-1.5 min-h-5">
-                            @error('monthlyDonationAmount')
+                        <div id="sponsor-last-name-help" class="mt-1.5 min-h-5">
+                            @error('lastName')
                                 <p class="text-xs font-semibold text-rose-600">{{ $message }}</p>
                             @else
-                                @if($this->formattedDonation)
-                                    <p class="text-xs font-semibold text-slate-500">{{ $this->formattedDonation }}</p>
-                                @endif
+                                <p class="text-xs font-semibold text-slate-400">حداقل دو حرف وارد شود.</p>
                             @enderror
                         </div>
                     </div>
@@ -91,27 +113,34 @@
                             autocomplete="tel"
                             maxlength="11"
                             pattern="[0-9]{11}"
-                            placeholder="شماره موبایل"
-                            class="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-left text-sm text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+                            placeholder="09123456789"
+                            class="h-12 w-full rounded-lg border border-slate-200 bg-white px-3 text-left text-sm text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                            aria-describedby="sponsor-mobile-help"
                         >
-                        @error('mobile') <p class="mt-1.5 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                        <div id="sponsor-mobile-help" class="mt-1.5 min-h-5">
+                            @error('mobile')
+                                <p class="text-xs font-semibold text-rose-600">{{ $message }}</p>
+                            @else
+                                <p class="text-xs font-semibold text-slate-400">شماره باید با 09 شروع شود و 11 رقم باشد.</p>
+                            @enderror
+                        </div>
                     </div>
 
                     <div class="md:col-span-2">
-                        <div class="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <div class="flex min-h-12 items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                             <span class="text-xs font-bold text-slate-500">نام کامل یکپارچه</span>
-                            <span class="truncate text-sm font-black text-slate-800">{{ $this->fullName !== '' ? $this->fullName : '-' }}</span>
+                            <span class="truncate text-sm font-bold text-slate-800">{{ $this->fullName !== '' ? $this->fullName : '-' }}</span>
                         </div>
                     </div>
 
                     <div>
                         <fieldset x-data="{ active: $wire.entangle('isSocialMediaActive').live }">
-                            <legend class="mb-1.5 block text-sm font-bold text-slate-700">آیا با همین شماره در فضای مجازی فعال هستید؟ <span class="text-rose-500">*</span></legend>
+                            <legend class="mb-1.5 block text-sm font-bold text-slate-700">فعال در پیام‌رسان با همین شماره؟ <span class="text-rose-500">*</span></legend>
                             <div class="grid grid-cols-2 gap-1.5">
                                 @foreach(['yes' => 'بله', 'no' => 'خیر'] as $value => $label)
                                     <label
-                                        class="flex min-h-11 cursor-pointer select-none items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold transition duration-150 ease-out active:scale-[0.99]"
-                                        x-bind:class="active === @js($value) ? 'border-teal-300 bg-teal-50 text-teal-800 shadow-[inset_0_0_0_1px_rgba(20,184,166,0.12)]' : 'border-slate-200 bg-white text-slate-600 hover:border-teal-200 hover:bg-teal-50/40'"
+                                        class="flex min-h-11 cursor-pointer select-none items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold transition duration-150 ease-out active:scale-[0.99]"
+                                        x-bind:class="active === @js($value) ? 'border-indigo-300 bg-indigo-50 text-indigo-800' : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:bg-indigo-50/40'"
                                     >
                                         <input
                                             type="radio"
@@ -121,7 +150,7 @@
                                         >
                                         <span
                                             class="grid size-5 shrink-0 place-items-center rounded-full border transition duration-150"
-                                            x-bind:class="active === @js($value) ? 'border-teal-500 bg-teal-500' : 'border-slate-300 bg-white'"
+                                            x-bind:class="active === @js($value) ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300 bg-white'"
                                             aria-hidden="true"
                                         >
                                             <svg
@@ -137,45 +166,95 @@
                                     </label>
                                 @endforeach
                             </div>
-                            @error('isSocialMediaActive') <p class="mt-1.5 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                            <div class="mt-1.5 min-h-5">
+                                @error('isSocialMediaActive')
+                                    <p class="text-xs font-semibold text-rose-600">{{ $message }}</p>
+                                @else
+                                    <p class="text-xs font-semibold text-slate-400">برای هماهنگی و یادآوری‌های بعدی استفاده می‌شود.</p>
+                                @enderror
+                            </div>
                         </fieldset>
                     </div>
                 </div>
             </section>
-
-            <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+            @elseif($currentStep === 2)
+            <section class="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
                 <div class="mb-4 border-b border-slate-100 pb-3">
-                    <h2 class="text-base font-black text-slate-900">مددجویان اختصاص‌یافته</h2>
+                    <h2 class="text-base font-bold text-slate-900">مبلغ حمایت ماهیانه</h2>
+                    <p class="mt-1 text-xs font-semibold text-slate-400">مبلغ تعهد ماهانه حامی را وارد کنید.</p>
+                </div>
+
+                <div class="max-w-xl">
+                    <label for="sponsor-monthly-donation" class="mb-1.5 block text-sm font-bold text-slate-700">مبلغ واریزی ماهیانه <span class="text-rose-500">*</span></label>
+                    <input
+                        id="sponsor-monthly-donation"
+                        type="text"
+                        inputmode="numeric"
+                        wire:model.live.debounce.400ms="monthlyDonationAmount"
+                        x-data
+                        x-on:input="$el.value = $el.value.replace(/[^\d]/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
+                        placeholder="مثلا 1,000,000"
+                        class="h-12 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition ltr:text-left focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                        aria-describedby="sponsor-monthly-donation-help"
+                    >
+                    <div id="sponsor-monthly-donation-help" class="mt-1.5 min-h-5">
+                        @error('monthlyDonationAmount')
+                            <p class="text-xs font-semibold text-rose-600">{{ $message }}</p>
+                        @else
+                            @if($this->formattedDonation)
+                                <p class="text-xs font-semibold text-slate-500">{{ $this->formattedDonation }}</p>
+                            @else
+                                <p class="text-xs font-semibold text-slate-400">مبلغ را به ریال و فقط با عدد وارد کنید.</p>
+                            @endif
+                        @enderror
+                    </div>
+                </div>
+            </section>
+            @elseif($currentStep === 3)
+
+            <section class="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+                <div class="mb-4 border-b border-slate-100 pb-3">
+                    <h2 class="text-base font-bold text-slate-900">مددجویان اختصاص‌یافته</h2>
                 </div>
 
                 <div class="grid gap-3 lg:grid-cols-[1fr_auto_auto] lg:items-end">
                     <div>
-                        <label for="assigned-beneficiary-code" class="mb-1.5 block text-sm font-bold text-slate-700">کد مددجو</label>
+                        <div class="mb-1.5 flex items-center justify-between gap-2">
+                            <label for="assigned-beneficiary-code" class="block text-sm font-bold text-slate-700">کد مددجو</label>
+                            <span class="text-xs font-semibold text-slate-400">اختیاری</span>
+                        </div>
                         <input
                             id="assigned-beneficiary-code"
                             type="text"
                             wire:model.live.debounce.400ms="beneficiaryCode"
                             dir="ltr"
                             placeholder="14000"
-                            class="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-left text-sm text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+                            class="h-12 w-full rounded-lg border border-slate-200 bg-white px-3 text-left text-sm text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                            aria-describedby="assigned-beneficiary-code-help"
                         >
-                        @error('beneficiaryCode') <p class="mt-1.5 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                        <div id="assigned-beneficiary-code-help" class="mt-1.5 min-h-5">
+                            @error('beneficiaryCode')
+                                <p class="text-xs font-semibold text-rose-600">{{ $message }}</p>
+                            @else
+                                <p class="text-xs font-semibold text-slate-400">در صورت داشتن کد، ابتدا بررسی و سپس اضافه کنید.</p>
+                            @enderror
+                        </div>
                     </div>
 
-                    <button type="button" wire:click="lookupBeneficiary" class="h-12 rounded-xl border border-indigo-100 bg-indigo-50 px-4 text-sm font-black text-indigo-700 transition hover:bg-indigo-100">
+                    <button type="button" wire:click="lookupBeneficiary" class="h-12 rounded-lg border border-indigo-100 bg-indigo-50 px-4 text-sm font-bold text-indigo-700 transition hover:bg-indigo-100">
                         بررسی
                     </button>
 
-                    <button type="button" wire:click="addBeneficiary" class="h-12 rounded-xl bg-teal-600 px-4 text-sm font-black text-white transition hover:bg-teal-700">
+                    <button type="button" wire:click="addBeneficiary" class="h-12 rounded-lg bg-indigo-600 px-4 text-sm font-bold text-white transition hover:bg-indigo-700">
                         افزودن
                     </button>
                 </div>
 
                 @if($beneficiaryPreview)
-                    <div class="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <div class="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
                         <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                             <div>
-                                <p class="text-sm font-black text-slate-800">{{ $beneficiaryPreview['full_name'] }}</p>
+                                <p class="text-sm font-bold text-slate-800">{{ $beneficiaryPreview['full_name'] }}</p>
                                 <p class="text-xs font-semibold text-slate-500" dir="ltr">{{ $beneficiaryPreview['person_code'] }}</p>
                             </div>
                             <span class="text-xs font-bold text-indigo-700">{{ $beneficiaryPreview['supporters_count'] }} حامی فعلی</span>
@@ -195,37 +274,48 @@
 
                 <div class="mt-3 space-y-2">
                     @forelse($assignedBeneficiaries as $beneficiary)
-                        <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                        <div class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2">
                             <div class="min-w-0">
                                 <p class="truncate text-sm font-bold text-slate-800">{{ $beneficiary['full_name'] }}</p>
                                 <p class="text-xs font-semibold text-slate-500" dir="ltr">{{ $beneficiary['person_code'] }}</p>
                             </div>
-                            <button type="button" wire:click="removeBeneficiary({{ $beneficiary['id'] }})" class="rounded-lg bg-rose-50 px-3 py-2 text-xs font-black text-rose-700 transition hover:bg-rose-100">
+                            <button type="button" wire:click="removeBeneficiary({{ $beneficiary['id'] }})" class="rounded-lg bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100">
                                 حذف
                             </button>
                         </div>
                     @empty
-                        <p class="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-center text-sm font-semibold text-slate-500">هنوز مددجویی اختصاص داده نشده است.</p>
+                        <p class="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-center text-sm font-semibold text-slate-500">هنوز مددجویی اختصاص داده نشده است.</p>
                     @endforelse
                 </div>
             </section>
+            @elseif($currentStep === 4)
 
-            <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+            <section class="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
                 <div class="mb-4 border-b border-slate-100 pb-3">
-                    <h2 class="text-base font-black text-slate-900">ترجیحات و یادآوری</h2>
+                    <h2 class="text-base font-bold text-slate-900">ترجیحات و یادآوری</h2>
                 </div>
 
                 <div class="grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
                     <div>
-                        <label for="sponsor-child-preferences" class="mb-1.5 block text-sm font-bold text-slate-700">مشخصات خاص کودک</label>
+                        <div class="mb-1.5 flex items-center justify-between gap-2">
+                            <label for="sponsor-child-preferences" class="block text-sm font-bold text-slate-700">مشخصات خاص کودک</label>
+                            <span class="text-xs font-semibold text-slate-400">اختیاری</span>
+                        </div>
                         <textarea
                             id="sponsor-child-preferences"
                             wire:model.blur="childPreferences"
                             rows="3"
-                            placeholder="مشخصات خاصی از کودک تحت پوشش مدنظر دارید؟"
-                            class="min-h-32 w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm leading-6 text-slate-800 outline-none transition focus:border-teal-300 focus:ring-4 focus:ring-teal-100"
+                            placeholder="مثلا سن، جنسیت، شرایط خاص یا توضیح مورد نیاز"
+                            class="min-h-32 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm leading-6 text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                            aria-describedby="sponsor-child-preferences-help"
                         ></textarea>
-                        @error('childPreferences') <p class="mt-1.5 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                        <div id="sponsor-child-preferences-help" class="mt-1.5 min-h-5">
+                            @error('childPreferences')
+                                <p class="text-xs font-semibold text-rose-600">{{ $message }}</p>
+                            @else
+                                <p class="text-xs font-semibold text-slate-400">اگر ترجیح خاصی وجود ندارد، این بخش را خالی بگذارید.</p>
+                            @enderror
+                        </div>
                     </div>
 
                     <fieldset x-data="{ selected: $wire.entangle('monthlyPaymentReminderMethods').live }">
@@ -233,8 +323,8 @@
                         <div class="grid gap-1.5 sm:grid-cols-3 lg:grid-cols-1">
                             @foreach($reminderMethods as $value => $label)
                                 <label
-                                    class="flex min-h-11 cursor-pointer select-none items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold transition duration-150 ease-out active:scale-[0.99]"
-                                    x-bind:class="selected.includes(@js($value)) ? 'border-teal-300 bg-teal-50 text-teal-800 shadow-[inset_0_0_0_1px_rgba(20,184,166,0.12)]' : 'border-slate-200 bg-white text-slate-600 hover:border-teal-200 hover:bg-teal-50/40'"
+                                    class="flex min-h-11 cursor-pointer select-none items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold transition duration-150 ease-out active:scale-[0.99]"
+                                    x-bind:class="selected.includes(@js($value)) ? 'border-indigo-300 bg-indigo-50 text-indigo-800' : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:bg-indigo-50/40'"
                                 >
                                     <input
                                         type="checkbox"
@@ -244,7 +334,7 @@
                                     >
                                     <span
                                         class="grid size-5 shrink-0 place-items-center rounded-md border transition duration-150"
-                                        x-bind:class="selected.includes(@js($value)) ? 'border-teal-500 bg-teal-500' : 'border-slate-300 bg-white'"
+                                        x-bind:class="selected.includes(@js($value)) ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300 bg-white'"
                                         aria-hidden="true"
                                     >
                                         <svg
@@ -260,21 +350,81 @@
                                 </label>
                             @endforeach
                         </div>
-                        @error('monthlyPaymentReminderMethods') <p class="mt-1.5 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                        <div class="mt-1.5 min-h-5">
+                            @error('monthlyPaymentReminderMethods')
+                                <p class="text-xs font-semibold text-rose-600">{{ $message }}</p>
+                            @else
+                                <p class="text-xs font-semibold text-slate-400">حداقل یک روش یادآوری انتخاب شود.</p>
+                            @enderror
+                        </div>
                     </fieldset>
                 </div>
             </section>
+            @elseif($currentStep === 5)
+            <section class="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+                <div class="mb-4 border-b border-slate-100 pb-3">
+                    <h2 class="text-base font-bold text-slate-900">بازبینی نهایی</h2>
+                    <p class="mt-1 text-xs font-semibold text-slate-400">اطلاعات وارد شده را پیش از ثبت بررسی کنید.</p>
+                </div>
 
-            <div class="sticky bottom-0 z-20 -mx-2 border-t border-slate-200 bg-white/95 px-2 py-3 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur sm:static sm:mx-0 sm:rounded-2xl sm:border sm:px-4 sm:shadow-sm">
-                <button
-                    type="submit"
-                    wire:loading.attr="disabled"
-                    wire:target="save"
-                    class="flex h-12 w-full items-center justify-center rounded-xl bg-indigo-600 px-4 text-sm font-black text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto sm:min-w-44"
-                >
-                    <span wire:loading.remove wire:target="save">{{ $isEditing ? 'ذخیره تغییرات' : 'ثبت نام حامی' }}</span>
-                    <span wire:loading wire:target="save">{{ $isEditing ? 'در حال ذخیره...' : 'در حال ثبت...' }}</span>
-                </button>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
+                        <p class="text-xs font-bold text-slate-500">نام کامل</p>
+                        <p class="mt-1 truncate text-sm font-bold text-slate-800">{{ $this->fullName !== '' ? $this->fullName : '-' }}</p>
+                    </div>
+                    <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
+                        <p class="text-xs font-bold text-slate-500">شماره موبایل</p>
+                        <p class="mt-1 text-sm font-bold text-slate-800" dir="ltr">{{ $mobile !== '' ? $mobile : '-' }}</p>
+                    </div>
+                    <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
+                        <p class="text-xs font-bold text-slate-500">مبلغ ماهیانه</p>
+                        <p class="mt-1 text-sm font-bold text-slate-800">{{ $this->formattedDonation !== '' ? $this->formattedDonation : '-' }}</p>
+                    </div>
+                    <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
+                        <p class="text-xs font-bold text-slate-500">تعداد مددجویان</p>
+                        <p class="mt-1 text-sm font-bold text-slate-800">{{ count($assignedBeneficiaries) }}</p>
+                    </div>
+                    <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 sm:col-span-2">
+                        <p class="text-xs font-bold text-slate-500">روش یادآوری</p>
+                        <p class="mt-1 text-sm font-bold text-slate-800">
+                            {{ collect($monthlyPaymentReminderMethods)->map(fn ($method) => $reminderMethods[$method] ?? $method)->join('، ') ?: '-' }}
+                        </p>
+                    </div>
+                </div>
+            </section>
+            @endif
+
+            <div class="sticky bottom-0 z-20 -mx-2 border-t border-slate-200 bg-white/95 px-2 py-3 backdrop-blur sm:static sm:mx-0 sm:rounded-xl sm:border sm:px-4">
+                <div class="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <button
+                        type="button"
+                        wire:click="previousStep"
+                        @disabled($currentStep === 1)
+                        class="flex h-12 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 sm:min-w-32"
+                    >
+                        مرحله قبل
+                    </button>
+
+                    @if($currentStep < 5)
+                        <button
+                            type="button"
+                            wire:click="nextStep"
+                            class="flex h-12 items-center justify-center rounded-lg bg-indigo-600 px-4 text-sm font-bold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 sm:min-w-44"
+                        >
+                            مرحله بعد
+                        </button>
+                    @else
+                        <button
+                            type="submit"
+                            wire:loading.attr="disabled"
+                            wire:target="save"
+                            class="flex h-12 items-center justify-center rounded-lg bg-indigo-600 px-4 text-sm font-bold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-70 sm:min-w-44"
+                        >
+                            <span wire:loading.remove wire:target="save">{{ $isEditing ? 'ذخیره تغییرات' : 'ثبت نام حامی' }}</span>
+                            <span wire:loading wire:target="save">{{ $isEditing ? 'در حال ذخیره...' : 'در حال ثبت...' }}</span>
+                        </button>
+                    @endif
+                </div>
             </div>
         </form>
     </div>

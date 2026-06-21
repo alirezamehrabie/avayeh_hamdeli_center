@@ -30,6 +30,7 @@ class SponsorRegistration extends Component
     public string $beneficiaryCode = '';
     public array $assignedBeneficiaries = [];
     public ?array $beneficiaryPreview = null;
+    public int $currentStep = 1;
 
     public function mount(bool $embedded = false): void
     {
@@ -113,6 +114,39 @@ class SponsorRegistration extends Component
             ->all();
     }
 
+    public function goToStep(int $step): void
+    {
+        $step = min(max($step, 1), 5);
+
+        if ($step <= $this->currentStep) {
+            $this->currentStep = $step;
+
+            return;
+        }
+
+        while ($this->currentStep < $step) {
+            $this->validateCurrentStep();
+            $this->currentStep++;
+        }
+    }
+
+    public function nextStep(): void
+    {
+        if ($this->currentStep >= 5) {
+            return;
+        }
+
+        $this->validateCurrentStep();
+        $this->currentStep++;
+    }
+
+    public function previousStep(): void
+    {
+        if ($this->currentStep > 1) {
+            $this->currentStep--;
+        }
+    }
+
     public function save(): void
     {
         $this->authorizeAccess();
@@ -166,6 +200,7 @@ class SponsorRegistration extends Component
             'assignedBeneficiaries',
             'beneficiaryPreview',
         ]);
+        $this->currentStep = 1;
 
         session()->flash('success', 'ثبت نام حامی با موفقیت انجام شد.');
     }
@@ -282,6 +317,26 @@ class SponsorRegistration extends Component
             'isSocialMediaActive.required' => 'وضعیت فعالیت در فضای مجازی را مشخص کنید.',
             'isSocialMediaActive.in' => 'گزینه انتخاب شده معتبر نیست.',
         ];
+    }
+
+    private function validateCurrentStep(): void
+    {
+        $fields = match ($this->currentStep) {
+            1 => ['firstName', 'lastName', 'mobile', 'isSocialMediaActive'],
+            2 => ['monthlyDonationAmount'],
+            4 => ['childPreferences', 'monthlyPaymentReminderMethods', 'monthlyPaymentReminderMethods.*'],
+            default => [],
+        };
+
+        if ($fields === []) {
+            return;
+        }
+
+        $rules = collect($this->rules())
+            ->only($fields)
+            ->all();
+
+        $this->validate($rules, $this->messages());
     }
 
     private function authorizeAccess(): void
