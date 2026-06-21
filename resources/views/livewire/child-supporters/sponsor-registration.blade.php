@@ -215,9 +215,10 @@
             <section class="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
                 <div class="mb-4 border-b border-slate-100 pb-3">
                     <h2 class="text-base font-bold text-slate-900">مددجویان اختصاص‌یافته</h2>
+                    <p class="mt-1 text-xs font-semibold text-slate-400">در صورت داشتن کد مددجو، او را به حامی اختصاص دهید. این مرحله اختیاری است.</p>
                 </div>
 
-                <div class="grid gap-3 lg:grid-cols-[1fr_auto_auto] lg:items-end">
+                <div class="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-end">
                     <div>
                         <div class="mb-1.5 flex items-center justify-between gap-2">
                             <label for="assigned-beneficiary-code" class="block text-sm font-bold text-slate-700">کد مددجو</label>
@@ -236,17 +237,13 @@
                             @error('beneficiaryCode')
                                 <p class="text-xs font-semibold text-rose-600">{{ $message }}</p>
                             @else
-                                <p class="text-xs font-semibold text-slate-400">در صورت داشتن کد، ابتدا بررسی و سپس اضافه کنید.</p>
+                                <p class="text-xs font-semibold text-slate-400">پس از وارد کردن کد معتبر، پیش‌نمایش مددجو به صورت خودکار نمایش داده می‌شود.</p>
                             @enderror
                         </div>
                     </div>
 
-                    <button type="button" wire:click="lookupBeneficiary" class="h-12 rounded-lg border border-indigo-100 bg-indigo-50 px-4 text-sm font-bold text-indigo-700 transition hover:bg-indigo-100">
-                        بررسی
-                    </button>
-
                     <button type="button" wire:click="addBeneficiary" class="h-12 rounded-lg bg-indigo-600 px-4 text-sm font-bold text-white transition hover:bg-indigo-700">
-                        افزودن
+                        افزودن مددجو
                     </button>
                 </div>
 
@@ -259,6 +256,7 @@
                             </div>
                             <span class="text-xs font-bold text-indigo-700">{{ $beneficiaryPreview['supporters_count'] }} حامی فعلی</span>
                         </div>
+                        <p class="mt-2 text-xs font-semibold text-slate-500">برای اختصاص این مددجو به حامی، دکمه افزودن مددجو را بزنید.</p>
 
                         @if($beneficiaryPreview['supporters_count'] > 0)
                             <div class="mt-2 flex flex-wrap gap-1.5">

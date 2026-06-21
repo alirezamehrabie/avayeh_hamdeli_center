@@ -70,6 +70,19 @@ class ChildSupporterRegistrationTest extends TestCase
             ->assertSet('beneficiaryPreview.supporters.0.full_name', 'Existing Supporter');
     }
 
+    public function test_beneficiary_preview_updates_when_code_changes(): void
+    {
+        $this->actingAs($this->manager());
+        $beneficiary = $this->child('98004', 'Preview', 'Child');
+
+        Livewire::test(SponsorRegistration::class)
+            ->set('beneficiaryCode', $beneficiary->person_code)
+            ->assertSet('beneficiaryPreview.person_code', '98004')
+            ->assertSet('beneficiaryPreview.full_name', 'Preview Child')
+            ->set('beneficiaryCode', '')
+            ->assertSet('beneficiaryPreview', null);
+    }
+
     public function test_non_child_beneficiary_code_is_rejected(): void
     {
         $this->actingAs($this->manager());

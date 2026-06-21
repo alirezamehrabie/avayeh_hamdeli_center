@@ -55,38 +55,22 @@ class SponsorRegistration extends Component
         ], true)) {
             $this->validateOnly($property, $this->rules(), $this->messages());
         }
+
+        if ($property === 'beneficiaryCode') {
+            $this->refreshBeneficiaryPreview();
+        }
     }
 
     public function lookupBeneficiary(): void
     {
         $this->authorizeAccess();
-        $this->resetErrorBag('beneficiaryCode');
-
-        $code = $this->normalizeBeneficiaryCode($this->beneficiaryCode);
-        $this->beneficiaryCode = $code;
-        $this->beneficiaryPreview = null;
-
-        if ($code === '') {
-            $this->addError('beneficiaryCode', 'کد مددجو را وارد کنید.');
-
-            return;
-        }
-
-        $beneficiary = $this->findAssignableBeneficiary($code);
-
-        if (! $beneficiary) {
-            $this->addError('beneficiaryCode', 'مددجوی کودک با این کد پیدا نشد.');
-
-            return;
-        }
-
-        $this->beneficiaryPreview = $this->formatBeneficiary($beneficiary);
+        $this->refreshBeneficiaryPreview(showErrors: true);
     }
 
     public function addBeneficiary(): void
     {
         $this->authorizeAccess();
-        $this->lookupBeneficiary();
+        $this->refreshBeneficiaryPreview(showErrors: true);
 
         if (! $this->beneficiaryPreview) {
             return;
@@ -384,6 +368,35 @@ class SponsorRegistration extends Component
         return SponsorProfile::query()
             ->whereKey($this->sponsorId)
             ->value('user_id');
+    }
+
+    private function refreshBeneficiaryPreview(bool $showErrors = false): void
+    {
+        $this->resetErrorBag('beneficiaryCode');
+
+        $code = $this->normalizeBeneficiaryCode($this->beneficiaryCode);
+        $this->beneficiaryCode = $code;
+        $this->beneficiaryPreview = null;
+
+        if ($code === '') {
+            if ($showErrors) {
+                $this->addError('beneficiaryCode', 'کد مددجو را وارد کنید.');
+            }
+
+            return;
+        }
+
+        $beneficiary = $this->findAssignableBeneficiary($code);
+
+        if (! $beneficiary) {
+            if ($showErrors) {
+                $this->addError('beneficiaryCode', 'مددجوی کودک با این کد پیدا نشد.');
+            }
+
+            return;
+        }
+
+        $this->beneficiaryPreview = $this->formatBeneficiary($beneficiary);
     }
 
     private function normalizeMobile(string $mobile): string
