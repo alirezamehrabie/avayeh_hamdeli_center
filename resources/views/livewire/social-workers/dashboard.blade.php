@@ -11,10 +11,10 @@
             <form wire:submit.prevent="saveDelivery"
                   class="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(300px,0.85fr)]">
                 <div class="space-y-4">
-                    <div class="rounded-3xl border border-slate-200 bg-slate-50 p-3.5">
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
 
-                        <label class="mb-3 block text-sm font-bold text-slate-700">
-                            خدمت تخصیص‌یافته
+                        <label class="mb-2 block text-xs font-bold text-slate-600">
+                            خدمت
                         </label>
 
                         <div
@@ -29,8 +29,8 @@
                             <button
                                 type="button"
                                 @click="open = !open"
-                                class="flex w-full items-center justify-between rounded-2xl border border-slate-300
-                                   bg-white px-4 py-3.5 text-right text-sm text-slate-700 shadow-sm
+                                class="flex w-full items-center justify-between rounded-xl border border-slate-300
+                                   bg-white px-3 py-2.5 text-right text-sm text-slate-700 shadow-sm
                                    transition active:scale-[0.98]"
                             >
                                 <span class="truncate" x-text="selectedText"></span>
@@ -56,7 +56,8 @@
                                 x-transition:leave-end="opacity-0 -translate-y-2"
                                 @click.outside="open = false"
                                 class="absolute z-50 mt-2 max-h-72 w-full overflow-y-auto overscroll-contain
-                                rounded-2xl border border-slate-200 bg-white shadow-xl"
+                                rounded-2xl border border-slate-200 bg-slate-50 p-1.5 shadow-xl sm:p-2"
+                                dir="rtl"
                                 style="display: none;"
                             >
                                 {{-- Default Option --}}
@@ -68,8 +69,8 @@
                                     open         = false;
                                     $wire.set('selectedServiceId', '')
                                 "
-                                    class="flex w-full items-center px-4 py-3.5 text-right text-sm text-slate-400
-                                    transition hover:bg-slate-50 active:bg-slate-100"
+                                    class="flex w-full items-center justify-start rounded-xl px-3 py-2.5 text-right text-xs text-slate-400
+                                    transition hover:bg-white active:bg-slate-100 sm:px-4 sm:py-3 sm:text-sm"
                                 >
                                     انتخاب خدمت
                                 </button>
@@ -78,40 +79,61 @@
                                 @foreach ($assignedServices as $service)
 
                                     @php
-                                        $remaining = number_format((float) ($service->worker_remaining_allocation ?? 0), 2);
                                         $serviceTypeLabel = $service->service_type === 'family' ? 'خانوادگی' : 'شخصی';
+                                        $serviceCategories = $service->categories?->sortBy('sort_id') ?? collect();
                                     @endphp
 
                                     <button
                                         type="button"
                                         @click="
                         selected     = '{{ $service->id }}';
-                        selectedText = '{{ $service->code }} - {{ $service->serviceName?->name }}';
+                        selectedText = '{{ $this->serviceDropdownLabel($service) }}';
                         open         = false;
                         $wire.set('selectedServiceId', '{{ $service->id }}')
                     "
-                                        :class="{ 'bg-blue-50': selected === '{{ $service->id }}' }"
-                                        class="flex w-full flex-col gap-0.5 border-t border-slate-100 px-4 py-3.5
-                           text-right transition hover:bg-blue-50 active:bg-blue-100"
+                                        :class="{ 'border-cyan-200 bg-cyan-50/80 shadow-cyan-100/70': selected === '{{ $service->id }}' }"
+                                        class="mb-1.5 flex w-full flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2.5
+                           text-right shadow-sm shadow-slate-200/70 transition hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100 sm:mb-2 sm:px-4 sm:py-3"
+                                        dir="rtl"
                                     >
-                                        {{-- Row 1: Code & Name --}}
-                                        <span class="text-sm font-semibold text-slate-800">
-                        {{ $service->code }} — {{ $service->serviceName?->name }}
-                    </span>
+                                        {{-- Row 1: Code - Name - Type --}}
+                                        <div class="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-right sm:gap-x-2">
+                                            <span class="text-[10px] font-medium tracking-wide text-slate-400">
+                                                {{ $this->persianNumber($service->code) }}
+                                            </span>
+                                            <span class="text-[13px] font-semibold text-slate-800 sm:text-sm">
+                                                {{ $service->serviceName?->name }}
+                                            </span>
+                                            <span class="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 sm:px-2">
+                                                {{ $serviceTypeLabel }}
+                                            </span>
+                                        </div>
 
-                                        <span class="mt-1 text-xs text-slate-500">
-                        {{ $service->description ?: 'بدون توضیحات' }}
-                    </span>
+                                        {{-- Row 2: Categories --}}
+                                        @if($serviceCategories->isNotEmpty())
+                                            <div class="grid grid-cols-2 gap-1">
+                                                @foreach($serviceCategories as $category)
+                                                    <div class="min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5">
+                                                        <p class="truncate text-[10px] font-medium leading-4 text-slate-600 sm:text-[11px]">
+                                                            <span class="text-slate-700">{{ $category->name }}</span>
+                                                            <span class="text-slate-400">
+                                                                : {{ $this->persianNumber(number_format((float) $category->quantity, 0)) }}
+                                                                {{ \App\Models\Service::unitOptions()[$category->unit] ?? $category->unit }}
+                                                            </span>
+                                                        </p>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            <p class="text-[11px] text-slate-400">
+                                                دسته‌بندی برای این خدمت ثبت نشده است.
+                                            </p>
+                                        @endif
 
-                                        {{-- Row 3: Remaining Balance --}}
-                                        <span
-                                            class="mt-1 inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
-                        <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        مانده: {{ $remaining }} - {{$serviceTypeLabel}}
-                    </span>
+                                        {{-- Row 3: Description --}}
+                                        <p class="text-[11px] leading-4 text-slate-500 sm:text-xs sm:leading-5">
+                                            {{ $service->description ?: 'بدون توضیحات' }}
+                                        </p>
                                     </button>
 
                                 @endforeach
@@ -134,29 +156,27 @@
 
                     </div>
 
-                    <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                    <div class="rounded-2xl border border-slate-200 bg-white p-3.5">
 
-                        <h2 class="text-sm font-semibold text-slate-500">سهمیه شما</h2>
+                        <h2 class="text-xs font-semibold text-slate-500">سهمیه</h2>
 
                         @if($selectedService)
 
-                            <div class="mt-3 flex items-start justify-between gap-2">
+                            <div class="mt-2.5 flex items-start justify-between gap-2">
                                 <div>
-                                    <p class="font-medium text-slate-700">
+                                    <p class="text-sm font-medium text-slate-700">
                                         {{ $selectedService->serviceName?->name }}
-                                        <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-50 text-slate-500">
-        {{ $selectedService->code }}
+                                        <span class="ml-2 inline-flex items-center rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-500">
+        {{ $this->persianNumber($selectedService->code) }}
             </span>
                                     </p>
 
-
-
-                                    <p class="mt-1 text-xs text-slate-400"> نوع: {{$this->selectedServiceTypeLabel }}</p>
+                                    <p class="mt-1 text-[11px] text-slate-400">{{ $this->selectedServiceTypeLabel }}</p>
                                 </div>
                             </div>
 
                             @if($selectedService->description)
-                                <p class="mt-2.5 rounded-full text-center border border-slate-50 p-2 text-xs text-slate-500">
+                                <p class="mt-2 rounded-2xl border border-slate-100 bg-slate-50/70 px-3 py-2 text-[11px] text-slate-500">
                                     {{ $selectedService->description }}
                                 </p>
                             @endif
@@ -164,23 +184,23 @@
                             <div class="mt-3 grid grid-cols-3 divide-x divide-x-reverse divide-slate-100">
 
                                 <div class="px-3 text-center first:pr-0 last:pl-0">
-                                    <p class="text-[11px] text-slate-400">تخصیص‌یافته</p>
+                                    <p class="text-[10px] text-slate-400">کل</p>
                                     <p class="mt-0.5 text-sm font-bold text-slate-700">
-                                        {{ number_format((float) $selectedServiceTotals['allocated'], 2) }}
+                                        {{ $this->persianNumber(number_format((float) $selectedServiceTotals['allocated'], 2)) }}
                                     </p>
                                 </div>
 
                                 <div class="px-3 text-center">
-                                    <p class="text-[11px] text-slate-400">تحویل‌شده</p>
+                                    <p class="text-[10px] text-slate-400">ثبت‌شده</p>
                                     <p class="mt-0.5 text-sm font-bold text-slate-700">
-                                        {{ number_format((float) $selectedServiceTotals['delivered'], 2) }}
+                                        {{ $this->persianNumber(number_format((float) $selectedServiceTotals['delivered'], 2)) }}
                                     </p>
                                 </div>
 
                                 <div class="px-3 text-center first:pr-0 last:pl-0">
-                                    <p class="text-[11px] text-slate-400">باقی‌مانده</p>
+                                    <p class="text-[10px] text-slate-400">باقی</p>
                                     <p class="mt-0.5 text-sm font-bold text-emerald-600">
-                                        {{ number_format((float) $selectedServiceTotals['remaining'], 2) }}
+                                        {{ $this->persianNumber(number_format((float) $selectedServiceTotals['remaining'], 2)) }}
                                     </p>
                                 </div>
 
@@ -189,7 +209,7 @@
 
 
                         @else
-                            <p class="mt-3 text-sm text-slate-400">ابتدا یک خدمت انتخاب کنید.</p>
+                            <p class="mt-2.5 text-xs text-slate-400">یک خدمت انتخاب کنید.</p>
                         @endif
 
                     </div>

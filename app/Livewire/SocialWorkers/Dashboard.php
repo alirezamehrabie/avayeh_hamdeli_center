@@ -93,6 +93,28 @@ class Dashboard extends Component
         $this->serviceSelectionWarning = 'لطفاً یک خدمت انتخاب کنید';
     }
 
+    public function persianNumber(mixed $value): string
+    {
+        return strtr((string) $value, [
+            '0' => '۰',
+            '1' => '۱',
+            '2' => '۲',
+            '3' => '۳',
+            '4' => '۴',
+            '5' => '۵',
+            '6' => '۶',
+            '7' => '۷',
+            '8' => '۸',
+            '9' => '۹',
+            ',' => '٬',
+        ]);
+    }
+
+    public function serviceDropdownLabel(Service $service): string
+    {
+        return trim($this->persianNumber((string) $service->code).' - '.(string) ($service->serviceName?->name ?? ''));
+    }
+
     public function addRecipientField(): void
     {
         $this->recipientEntries[] = $this->blankEntry($this->defaultServiceCategoryId($this->selectedService));
