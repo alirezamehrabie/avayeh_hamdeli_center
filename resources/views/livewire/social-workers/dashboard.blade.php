@@ -75,15 +75,10 @@
                                 </button>
 
                                 {{-- Service Options --}}
-                                @foreach ($this->assignedServices as $service)
+                                @foreach ($assignedServices as $service)
 
                                     @php
-                                        $remaining = number_format(
-                                            $service->remainingAllocationForWorker(
-                                                auth()->user()->social_worker_id
-                                            ),
-                                            2
-                                        );
+                                        $remaining = number_format((float) ($service->worker_remaining_allocation ?? 0), 2);
                                         $serviceTypeLabel = $service->service_type === 'family' ? 'خانوادگی' : 'شخصی';
                                     @endphp
 
@@ -143,14 +138,14 @@
 
                         <h2 class="text-sm font-semibold text-slate-500">سهمیه شما</h2>
 
-                        @if($this->selectedService)
+                        @if($selectedService)
 
                             <div class="mt-3 flex items-start justify-between gap-2">
                                 <div>
                                     <p class="font-medium text-slate-700">
-                                        {{ $this->selectedService->serviceName?->name }}
+                                        {{ $selectedService->serviceName?->name }}
                                         <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-50 text-slate-500">
-        {{ $this->selectedService->code }}
+        {{ $selectedService->code }}
             </span>
                                     </p>
 
@@ -160,9 +155,9 @@
                                 </div>
                             </div>
 
-                            @if($this->selectedService->description)
+                            @if($selectedService->description)
                                 <p class="mt-2.5 rounded-full text-center border border-slate-50 p-2 text-xs text-slate-500">
-                                    {{ $this->selectedService->description }}
+                                    {{ $selectedService->description }}
                                 </p>
                             @endif
 
@@ -171,21 +166,21 @@
                                 <div class="px-3 text-center first:pr-0 last:pl-0">
                                     <p class="text-[11px] text-slate-400">تخصیص‌یافته</p>
                                     <p class="mt-0.5 text-sm font-bold text-slate-700">
-                                        {{ number_format($this->currentAllocation, 2) }}
+                                        {{ number_format((float) $selectedServiceTotals['allocated'], 2) }}
                                     </p>
                                 </div>
 
                                 <div class="px-3 text-center">
                                     <p class="text-[11px] text-slate-400">تحویل‌شده</p>
                                     <p class="mt-0.5 text-sm font-bold text-slate-700">
-                                        {{ number_format($this->currentDelivered, 2) }}
+                                        {{ number_format((float) $selectedServiceTotals['delivered'], 2) }}
                                     </p>
                                 </div>
 
                                 <div class="px-3 text-center first:pr-0 last:pl-0">
                                     <p class="text-[11px] text-slate-400">باقی‌مانده</p>
                                     <p class="mt-0.5 text-sm font-bold text-emerald-600">
-                                        {{ number_format($this->currentRemainingAllocation, 2) }}
+                                        {{ number_format((float) $selectedServiceTotals['remaining'], 2) }}
                                     </p>
                                 </div>
 
@@ -206,8 +201,8 @@
                     @endif
 
 
-                    <div class="relative rounded-3xl border border-slate-100 bg-white p-4 shadow-sm {{ !$this->selectedService ? 'opacity-60' : '' }}">
-                        @if(!$this->selectedService)
+                    <div class="relative rounded-3xl border border-slate-100 bg-white p-4 shadow-sm {{ !$selectedService ? 'opacity-60' : '' }}">
+                        @if(!$selectedService)
                             <button type="button" wire:click="requireServiceSelection"
                                     class="absolute inset-0 z-10 cursor-not-allowed rounded-3xl"
                                     aria-label="Please select a service first"></button>
@@ -311,10 +306,11 @@
                                                 class="w-full rounded-xl border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all"
                                             >
                                                 <option value="">انتخاب دسته‌بندی</option>
-                                                @foreach($this->assignableCategories as $category)
-                                                    @php($remainingStock = $this->selectedService->remainingStockForCategory((int) $category->id))
+                                                @foreach($assignableCategories as $category)
+                                                    @php($metrics = $categoryMetrics[$category->id] ?? ['remaining_stock' => 0, 'remaining_allocation' => 0])
+                                                    @php($remainingStock = (float) $metrics['remaining_stock'])
                                                     <option value="{{ $category->id }}" @disabled($remainingStock <= 0)>
-                                                        {{ $category->name }} - مانده سهمیه: {{ number_format($this->selectedService->remainingAllocationForWorkerCategory(auth()->user()->social_worker_id, $category->id), 2) }} - موجودی: {{ number_format($remainingStock, 2) }} {{ \App\Models\Service::unitOptions()[$category->unit] ?? $category->unit }} - ارزش واحد: {{ number_format((int) $category->value) }}
+                                                        {{ $category->name }} - مانده سهمیه: {{ number_format((float) $metrics['remaining_allocation'], 2) }} - موجودی: {{ number_format($remainingStock, 2) }} {{ $unitOptions[$category->unit] ?? $category->unit }} - ارزش واحد: {{ number_format((int) $category->value) }}
                                                     </option>
                                                 @endforeach
                                             </select>
@@ -366,8 +362,8 @@
                     </div>
 
 
-                    <div class="relative rounded-3xl border border-slate-200 bg-white p-4 {{ !$this->selectedService ? 'opacity-60' : '' }}">
-                        @if(!$this->selectedService)
+                    <div class="relative rounded-3xl border border-slate-200 bg-white p-4 {{ !$selectedService ? 'opacity-60' : '' }}">
+                        @if(!$selectedService)
                             <button type="button" wire:click="requireServiceSelection"
                                     class="absolute inset-0 z-10 cursor-not-allowed rounded-3xl"
                                     aria-label="Please select a service first"></button>

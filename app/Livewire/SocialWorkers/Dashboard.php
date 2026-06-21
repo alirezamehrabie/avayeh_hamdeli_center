@@ -13,6 +13,7 @@ use App\Models\ServiceDelivery;
 use App\Services\QrIdentityService;
 use App\Traits\InteractsWithNotificationModal;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -34,6 +35,12 @@ class Dashboard extends Component
     public string $deliveredAt = '';
     public string $notes = '';
     public ?int $activeRecipientSearchIndex = null;
+    protected ?Collection $assignedServicesCache = null;
+    protected ?Service $selectedServiceCache = null;
+    protected ?Collection $assignableCategoriesCache = null;
+    protected ?array $selectedServiceTotalsCache = null;
+    protected ?array $selectedServiceCategoryMetricsCache = null;
+    protected ?array $unitOptionsCache = null;
 
     public function mount(): void
     {
@@ -44,6 +51,7 @@ class Dashboard extends Component
 
     public function updatedSelectedServiceId(): void
     {
+        $this->flushServiceMetricCaches();
         $this->recipientEntries = [$this->blankEntry($this->defaultServiceCategoryId())];
         $this->activeRecipientSearchIndex = null;
         $this->syncQuotaState();
@@ -373,6 +381,7 @@ class Dashboard extends Component
         $freshService = Service::query()
             ->with(['serviceName', 'categories', 'workerAllocations'])
             ->find($service->id);
+        $this->flushServiceMetricCaches();
 
         $this->openNotificationModal([
             'type' => 'success',
@@ -388,7 +397,9 @@ class Dashboard extends Component
                 'service_name' => $freshService?->serviceName?->name ?? '',
                 'code' => $freshService?->code ?? '',
                 'remaining_quota' => number_format(
-                    $freshService?->remainingAllocationForWorker($this->currentSocialWorkerId()) ?? 0,
+                    $freshService
+                        ? $this->remainingAllocationForService($freshService, $this->currentSocialWorkerId())
+                        : 0,
                     2
                 ),
             ],
@@ -398,9 +409,13 @@ class Dashboard extends Component
         $this->deliveredAt = $this->defaultDeliveredAt();
     }
 
-    public function getAssignedServicesProperty()
+    public function getAssignedServicesProperty(): Collection
     {
-        return Service::query()
+        if ($this->assignedServicesCache instanceof Collection) {
+            return $this->assignedServicesCache;
+        }
+
+        $services = Service::query()
             ->with(['serviceName', 'categories', 'workerAllocations'])
             ->whereHas('socialWorkers', function (Builder $query) {
                 $query->where('social_workers.id', $this->currentSocialWorkerId())
@@ -410,56 +425,162 @@ class Dashboard extends Component
             ->whereIn('status', ['approved', 'in_distribution'])
             ->latest()
             ->get();
+
+        $deliveredByService = $services->isEmpty()
+            ? collect()
+            : ServiceDelivery::query()
+                ->select('service_id')
+                ->selectRaw('COALESCE(SUM(delivered_quantity), 0) as delivered_quantity')
+                ->where('social_worker_id', $this->currentSocialWorkerId())
+                ->whereIn('service_id', $services->pluck('id')->all())
+                ->groupBy('service_id')
+                ->pluck('delivered_quantity', 'service_id');
+
+        $services->each(function (Service $service) use ($deliveredByService): void {
+            $allocated = $this->allocatedQuantityFromLoadedService($service, $this->currentSocialWorkerId());
+            $delivered = (float) ($deliveredByService[$service->id] ?? 0);
+
+            $service->setAttribute('worker_allocated_quantity', $allocated);
+            $service->setAttribute('worker_delivered_quantity', $delivered);
+            $service->setAttribute('worker_remaining_allocation', max(0, $allocated - $delivered));
+        });
+
+        return $this->assignedServicesCache = $services;
     }
 
     public function getSelectedServiceProperty(): ?Service
     {
+        if ($this->selectedServiceCache instanceof Service
+            && (int) $this->selectedServiceCache->id === (int) $this->selectedServiceId) {
+            return $this->selectedServiceCache;
+        }
+
         if (! $this->selectedServiceId) {
             return null;
         }
 
-        return Service::query()
-            ->with(['serviceName', 'categories', 'workerAllocations'])
-            ->whereHas('socialWorkers', function (Builder $query) {
-                $query->where('social_workers.id', $this->currentSocialWorkerId())
-                    ->where('service_social_worker.allocated_quantity', '>', 0);
-            })
-            ->supportsHomeDelivery()
-            ->whereIn('status', ['approved', 'in_distribution'])
-            ->find($this->selectedServiceId);
+        return $this->selectedServiceCache = $this->assignedServices
+            ->firstWhere('id', (int) $this->selectedServiceId);
     }
 
     public function getCurrentAllocationProperty(): float
     {
-        $service = $this->selectedService;
-
-        return $service ? $service->allocatedQuantityForWorker($this->currentSocialWorkerId()) : 0;
+        return (float) $this->selectedServiceTotals['allocated'];
     }
 
     public function getCurrentDeliveredProperty(): float
     {
-        $service = $this->selectedService;
-
-        return $service ? $service->deliveredQuantityForWorker($this->currentSocialWorkerId()) : 0;
+        return (float) $this->selectedServiceTotals['delivered'];
     }
 
     public function getCurrentRemainingAllocationProperty(): float
     {
-        return $this->remainingAllocationForCurrentWorker();
+        return (float) $this->selectedServiceTotals['remaining'];
     }
 
-    public function getAssignableCategoriesProperty()
+    public function getAssignableCategoriesProperty(): Collection
     {
+        if ($this->assignableCategoriesCache instanceof Collection) {
+            return $this->assignableCategoriesCache;
+        }
+
         $service = $this->selectedService;
 
         if (! $service) {
             return collect();
         }
 
-        return $service->categories
-            ->filter(fn ($category) => $service->allocatedQuantityForWorkerCategory($this->currentSocialWorkerId(), (int) $category->id) > 0)
+        $categoryMetrics = $this->selectedServiceCategoryMetrics;
+
+        return $this->assignableCategoriesCache = $service->categories
+            ->filter(fn ($category) => (float) ($categoryMetrics[$category->id]['allocated'] ?? 0) > 0)
             ->sortBy('sort_id')
             ->values();
+    }
+
+    public function getSelectedServiceTotalsProperty(): array
+    {
+        if (is_array($this->selectedServiceTotalsCache)) {
+            return $this->selectedServiceTotalsCache;
+        }
+
+        $service = $this->selectedService;
+
+        if (! $service) {
+            return $this->selectedServiceTotalsCache = [
+                'allocated' => 0.0,
+                'delivered' => 0.0,
+                'remaining' => 0.0,
+            ];
+        }
+
+        $allocated = (float) ($service->worker_allocated_quantity ?? 0);
+        $delivered = (float) ($service->worker_delivered_quantity ?? 0);
+
+        return $this->selectedServiceTotalsCache = [
+            'allocated' => $allocated,
+            'delivered' => $delivered,
+            'remaining' => max(0, $allocated - $delivered),
+        ];
+    }
+
+    public function getSelectedServiceCategoryMetricsProperty(): array
+    {
+        if (is_array($this->selectedServiceCategoryMetricsCache)) {
+            return $this->selectedServiceCategoryMetricsCache;
+        }
+
+        $service = $this->selectedService;
+
+        if (! $service) {
+            return $this->selectedServiceCategoryMetricsCache = [];
+        }
+
+        $categories = $service->categories;
+        $categoryIds = $categories->pluck('id')->map(fn ($id) => (int) $id)->all();
+
+        $deliveryRows = $categoryIds === []
+            ? collect()
+            : ServiceDelivery::query()
+                ->select('service_category_id')
+                ->selectRaw('COALESCE(SUM(delivered_quantity), 0) as delivered_quantity')
+                ->selectRaw(
+                    'COALESCE(SUM(CASE WHEN social_worker_id = ? THEN delivered_quantity ELSE 0 END), 0) as worker_delivered_quantity',
+                    [$this->currentSocialWorkerId()]
+                )
+                ->where('service_id', $service->id)
+                ->whereIn('service_category_id', $categoryIds)
+                ->groupBy('service_category_id')
+                ->get()
+                ->keyBy('service_category_id');
+
+        $metrics = [];
+
+        foreach ($categories as $category) {
+            $categoryId = (int) $category->id;
+            $allocated = $service->workerAllocations
+                ->where('social_worker_id', $this->currentSocialWorkerId())
+                ->where('service_category_id', $categoryId)
+                ->sum(fn ($allocation) => (float) $allocation->allocated_quantity);
+            $row = $deliveryRows->get($categoryId);
+            $delivered = (float) ($row?->delivered_quantity ?? 0);
+            $workerDelivered = (float) ($row?->worker_delivered_quantity ?? 0);
+
+            $metrics[$categoryId] = [
+                'allocated' => (float) $allocated,
+                'delivered' => $delivered,
+                'worker_delivered' => $workerDelivered,
+                'remaining_allocation' => max(0, (float) $allocated - $workerDelivered),
+                'remaining_stock' => max(0, (float) $category->quantity - $delivered),
+            ];
+        }
+
+        return $this->selectedServiceCategoryMetricsCache = $metrics;
+    }
+
+    public function getUnitOptionsProperty(): array
+    {
+        return $this->unitOptionsCache ??= Service::unitOptions();
     }
 
     public function getSelectedServiceTypeLabelProperty(): string
@@ -471,7 +592,14 @@ class Dashboard extends Component
 
     public function render()
     {
-        return view('livewire.social-workers.dashboard');
+        return view('livewire.social-workers.dashboard', [
+            'assignedServices' => $this->assignedServices,
+            'selectedService' => $this->selectedService,
+            'assignableCategories' => $this->assignableCategories,
+            'selectedServiceTotals' => $this->selectedServiceTotals,
+            'categoryMetrics' => $this->selectedServiceCategoryMetrics,
+            'unitOptions' => $this->unitOptions,
+        ]);
     }
 
     protected function showValidationErrorModal(array $errors): void
@@ -608,9 +736,7 @@ class Dashboard extends Component
 
     protected function remainingAllocationForCurrentWorker(): float
     {
-        $service = $this->selectedService;
-
-        return $service ? $service->remainingAllocationForWorker($this->currentSocialWorkerId()) : 0;
+        return (float) $this->selectedServiceTotals['remaining'];
     }
 
     protected function syncQuotaState(): void
@@ -628,8 +754,10 @@ class Dashboard extends Component
             return null;
         }
 
+        $categoryMetrics = $this->selectedServiceCategoryMetrics;
+
         return $this->assignableCategories
-            ->first(fn ($category) => $service->remainingStockForCategory((int) $category->id) > 0)?->id
+            ->first(fn ($category) => (float) ($categoryMetrics[$category->id]['remaining_stock'] ?? 0) > 0)?->id
             ?: $this->assignableCategories->first()?->id;
     }
 
@@ -796,5 +924,32 @@ class Dashboard extends Component
         }
 
         return $value;
+    }
+
+    protected function flushServiceMetricCaches(): void
+    {
+        $this->assignedServicesCache = null;
+        $this->selectedServiceCache = null;
+        $this->assignableCategoriesCache = null;
+        $this->selectedServiceTotalsCache = null;
+        $this->selectedServiceCategoryMetricsCache = null;
+    }
+
+    protected function allocatedQuantityFromLoadedService(Service $service, int $socialWorkerId): float
+    {
+        return (float) $service->workerAllocations
+            ->where('social_worker_id', $socialWorkerId)
+            ->sum(fn ($allocation) => (float) $allocation->allocated_quantity);
+    }
+
+    protected function remainingAllocationForService(Service $service, int $socialWorkerId): float
+    {
+        $allocated = $this->allocatedQuantityFromLoadedService($service, $socialWorkerId);
+        $delivered = ServiceDelivery::query()
+            ->where('service_id', $service->id)
+            ->where('social_worker_id', $socialWorkerId)
+            ->sum('delivered_quantity');
+
+        return max(0, $allocated - (float) $delivered);
     }
 }
