@@ -49,6 +49,7 @@
 
                         <div
                             class="relative"
+                            data-service-selector-panel
                             wire:key="social-worker-service-selector-{{ $selectedServiceId ?: 'empty' }}-{{ $serviceOptionsChecksum }}"
                             x-data="{
                                 open: false,
@@ -90,6 +91,7 @@
                             {{-- Trigger Button --}}
                             <button
                                 type="button"
+                                data-service-selector-trigger
                                 @click="open = !open; if (open) { $nextTick(() => $refs.serviceSearch?.focus()) }"
                                 class="flex w-full items-center justify-between rounded-xl border border-slate-300
                                    bg-white px-3 py-2.5 text-right text-sm text-slate-700 shadow-sm
@@ -309,13 +311,7 @@
                     @endif
 
 
-                    <div class="relative rounded-3xl border border-slate-100 bg-white p-4 shadow-sm {{ !$selectedService ? 'opacity-60' : '' }}">
-                        @if(!$selectedService)
-                            <button type="button" wire:click="requireServiceSelection"
-                                    class="absolute inset-0 z-10 cursor-not-allowed rounded-3xl"
-                                    aria-label="Please select a service first"></button>
-                        @endif
-
+                    <div class="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
                         <!-- Header Section -->
                         <div class="mb-5 flex items-center justify-between gap-4">
                             <div>
@@ -328,16 +324,49 @@
                                 @endphp
 
                                 <h2 class="text-base font-extrabold text-slate-800 md:text-lg">{{ $recipientSectionTitle }}</h2>
-                                <p class="mt-0.5 text-[11px] leading-relaxed text-slate-500 md:text-xs">کد ملی را وارد کرده و مقدار را مشخص کنید.</p>
+                                <p class="mt-0.5 text-[11px] leading-relaxed text-slate-500 md:text-xs">
+                                    @if($selectedService)
+                                        کد ملی را وارد کرده و مقدار را مشخص کنید.
+                                    @else
+                                        پس از انتخاب خدمت، ثبت گیرندگان و مقادیر فعال می‌شود.
+                                    @endif
+                                </p>
                             </div>
-                            <button type="button" wire:click="addRecipientField"
-                                    @disabled(!$this->selectedService)
-                                    class="hidden shrink-0 items-center gap-1 rounded-xl bg-cyan-600 px-3 py-2 text-xs font-bold text-white shadow-sm shadow-cyan-200 active:scale-95 transition-all md:inline-flex">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
-                                افزودن
-                            </button>
+                            @if($selectedService)
+                                <button type="button" wire:click="addRecipientField"
+                                        class="hidden shrink-0 items-center gap-1 rounded-xl bg-cyan-600 px-3 py-2 text-xs font-bold text-white shadow-sm shadow-cyan-200 active:scale-95 transition-all md:inline-flex">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
+                                    افزودن
+                                </button>
+                            @endif
                         </div>
 
+                        @if(!$selectedService)
+                            <div class="rounded-2xl border border-dashed border-cyan-200 bg-cyan-50/60 px-4 py-5 text-center">
+                                <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-cyan-600 shadow-sm">
+                                    <i class="bi bi-list-check text-lg"></i>
+                                </div>
+                                <h3 class="mt-3 text-sm font-extrabold text-slate-800">ابتدا خدمت را انتخاب کنید</h3>
+                                <p class="mx-auto mt-1 max-w-md text-xs leading-6 text-slate-500">
+                                    نوع گیرنده، دسته‌بندی‌ها و سهمیه قابل تحویل بر اساس خدمت انتخاب‌شده مشخص می‌شود.
+                                </p>
+                                <button
+                                    type="button"
+                                    wire:click="requireServiceSelection"
+                                    x-data
+                                    x-on:click="$nextTick(() => {
+                                        const panel = document.querySelector('[data-service-selector-panel]');
+                                        const trigger = document.querySelector('[data-service-selector-trigger]');
+                                        panel?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        window.setTimeout(() => trigger?.focus({ preventScroll: true }), 350);
+                                    })"
+                                    class="mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-cyan-600 px-4 text-xs font-black text-white shadow-sm shadow-cyan-200 transition hover:bg-cyan-500 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-cyan-500/20"
+                                >
+                                    <i class="bi bi-arrow-up-short text-base"></i>
+                                    انتخاب خدمت
+                                </button>
+                            </div>
+                        @else
                         <!-- Recipients List -->
                         <div class="space-y-3">
                             @foreach($recipientEntries as $index => $entry)
@@ -539,7 +568,6 @@
                         </div>
 
                         <button type="button" wire:click="addRecipientField"
-                                @disabled(!$this->selectedService)
                                 class="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-black text-cyan-700 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 md:hidden">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
                             افزودن گیرنده
@@ -856,34 +884,53 @@
                                 </div>
                             </div>
                         </div>
+                        @endif
                     </div>
 
 
-                    <div class="relative rounded-3xl border border-slate-200 bg-white p-4 {{ !$selectedService ? 'opacity-60' : '' }}">
+                    <div class="rounded-3xl border border-slate-200 bg-white p-4">
                         @if(!$selectedService)
-                            <button type="button" wire:click="requireServiceSelection"
-                                    class="absolute inset-0 z-10 cursor-not-allowed rounded-3xl"
-                                    aria-label="Please select a service first"></button>
+                            <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-center">
+                                <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-slate-500 shadow-sm">
+                                    <i class="bi bi-calendar2-check text-lg"></i>
+                                </div>
+                                <h3 class="mt-3 text-sm font-extrabold text-slate-800">جزئیات تحویل پس از انتخاب خدمت فعال می‌شود</h3>
+                                <p class="mx-auto mt-1 max-w-md text-xs leading-6 text-slate-500">
+                                    تاریخ و یادداشت تحویل به همان خدمت انتخاب‌شده متصل می‌شود.
+                                </p>
+                                <button
+                                    type="button"
+                                    wire:click="requireServiceSelection"
+                                    x-data
+                                    x-on:click="$nextTick(() => {
+                                        const panel = document.querySelector('[data-service-selector-panel]');
+                                        const trigger = document.querySelector('[data-service-selector-trigger]');
+                                        panel?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        window.setTimeout(() => trigger?.focus({ preventScroll: true }), 350);
+                                    })"
+                                    class="mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-xs font-black text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-slate-200"
+                                >
+                                    <i class="bi bi-arrow-up-short text-base"></i>
+                                    انتخاب خدمت
+                                </button>
+                            </div>
+                        @else
+                            <div class="grid gap-4 md:grid-cols-2">
+                                <div>
+                                    <label class="mb-2 block text-sm font-bold text-slate-700">تاریخ تحویل</label>
+                                    <input type="text" dir="ltr" inputmode="numeric" wire:model="deliveredAt"
+                                           class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
+                                    <p class="mt-1 text-xs text-slate-500">فرمت: 1405/03/16</p>
+                                    @error('deliveredAt') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
+                                </div>
+                                <div>
+                                    <label class="mb-2 block text-sm font-bold text-slate-700">یادداشت</label>
+                                    <textarea wire:model.blur="notes" rows="3"
+                                              class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"></textarea>
+                                    @error('notes') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
+                                </div>
+                            </div>
                         @endif
-                        <div class="grid gap-4 md:grid-cols-2">
-                            <div>
-                                <label class="mb-2 block text-sm font-bold text-slate-700">تاریخ تحویل</label>
-                                <input type="text" dir="ltr" inputmode="numeric" wire:model="deliveredAt"
-                                       @disabled(!$this->selectedService)
-                                       @readonly(!$this->selectedService)
-                                       class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
-                                <p class="mt-1 text-xs text-slate-500">فرمت: 1405/03/16</p>
-                                @error('deliveredAt') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
-                            </div>
-                            <div>
-                                <label class="mb-2 block text-sm font-bold text-slate-700">یادداشت</label>
-                                <textarea wire:model.blur="notes" rows="3"
-                                          @disabled(!$this->selectedService)
-                                          @readonly(!$this->selectedService)
-                                          class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"></textarea>
-                                @error('notes') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
-                            </div>
-                        </div>
                     </div>
 
                 <div class="space-y-4">
