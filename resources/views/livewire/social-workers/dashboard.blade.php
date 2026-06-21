@@ -44,16 +44,28 @@
                                     ])))),
                                 ];
                             })->values();
+                            $serviceOptionsChecksum = md5($serviceOptions->toJson(JSON_UNESCAPED_UNICODE));
                         @endphp
 
                         <div
                             class="relative"
+                            wire:key="social-worker-service-selector-{{ $selectedServiceId ?: 'empty' }}-{{ $serviceOptionsChecksum }}"
                             x-data="{
                                 open: false,
                                 query: '',
-                                selected: @js($selectedServiceId ? (string) $selectedServiceId : ''),
-                                selectedText: @js($selectedService ? $this->serviceDropdownLabel($selectedService) : 'انتخاب خدمت'),
+                                selected: @entangle('selectedServiceId').live,
                                 services: @js($serviceOptions),
+                                get selectedId() {
+                                    return this.selected === null || this.selected === undefined || this.selected === ''
+                                        ? ''
+                                        : String(this.selected);
+                                },
+                                get selectedService() {
+                                    return this.services.find((service) => service.id === this.selectedId) || null;
+                                },
+                                get selectedText() {
+                                    return this.selectedService?.label || 'انتخاب خدمت';
+                                },
                                 get filteredServices() {
                                     const value = this.query.trim().toLocaleLowerCase();
 
@@ -64,18 +76,14 @@
                                     return this.services.filter((service) => service.search.includes(value));
                                 },
                                 choose(service) {
-                                    this.selected = service.id;
-                                    this.selectedText = service.label;
+                                    this.selected = Number(service.id);
                                     this.query = '';
                                     this.open = false;
-                                    $wire.set('selectedServiceId', service.id);
                                 },
                                 clear() {
-                                    this.selected = '';
-                                    this.selectedText = 'انتخاب خدمت';
+                                    this.selected = null;
                                     this.query = '';
                                     this.open = false;
-                                    $wire.set('selectedServiceId', '');
                                 },
                             }"
                         >
@@ -147,7 +155,7 @@
                                     <button
                                         type="button"
                                         @click="choose(service)"
-                                        :class="{ 'border-cyan-200 bg-cyan-50/80 shadow-cyan-100/70': selected === service.id }"
+                                        :class="{ 'border-cyan-200 bg-cyan-50/80 shadow-cyan-100/70': selectedId === service.id }"
                                         class="mb-1.5 flex w-full flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-right shadow-sm shadow-slate-200/70 transition hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100 sm:mb-2 sm:px-4 sm:py-3"
                                         dir="rtl"
                                     >
