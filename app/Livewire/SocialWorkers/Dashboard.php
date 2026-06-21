@@ -204,7 +204,7 @@ class Dashboard extends Component
         }
 
         $token = $this->extractQrToken($rawToken);
-        $identity = $this->resolveQrIdentity($token, 'service-delivery');
+        $identity = $this->resolveServiceDeliveryQrIdentity($token);
 
         if (! $identity) {
             $this->clearResolvedEntry($index, preserveNationalId: false);
@@ -221,6 +221,16 @@ class Dashboard extends Component
             }
 
             $guardian = Guardian::query()
+                ->select([
+                    'id',
+                    'social_worker_id',
+                    'national_code',
+                    'first_name',
+                    'last_name',
+                    'guardian_phone_number',
+                    'children_count',
+                    'children_in_house',
+                ])
                 ->withCount('people')
                 ->where('social_worker_id', $this->currentSocialWorkerId())
                 ->find($identity->subject_id);
@@ -237,8 +247,10 @@ class Dashboard extends Component
         }
 
         $person = Person::query()
+            ->select(['id', 'guardian_id', 'national_id', 'first_name', 'last_name'])
             ->with('guardian:id,social_worker_id,children_count,children_in_house,national_code,first_name,last_name,guardian_phone_number')
-            ->whereHas('guardian', fn (Builder $query) => $query->where('social_worker_id', $this->currentSocialWorkerId()))
+            ->whereHas('guardian', fn (Builder $query) => $query
+                ->where('social_worker_id', $this->currentSocialWorkerId()))
             ->find($identity->subject_id);
 
         if (! $person) {
@@ -1150,41 +1162,40 @@ class Dashboard extends Component
         $this->recipientEntries[$index]['not_found_notice'] = 'این شخص در سامانه ثبت نشده است';
     }
 
-    protected function resolveQrIdentity(?string $token, string $context): ?QrIdentity
+    protected function resolveServiceDeliveryQrIdentity(?string $token): ?QrIdentity
     {
         if (! $token) {
             return null;
         }
 
-        $identity = app(QrIdentityService::class)->resolveToken($token, $context);
-
-        if ($identity) {
-            return $identity;
-        }
-
-        return $this->resolvePublicQrCode($token);
-    }
-
-    protected function resolvePublicQrCode(string $token): ?QrIdentity
-    {
-        $identity = QrIdentity::query()
-            ->where('public_code', strtoupper(trim($token)))
-            ->where('status', QrIdentity::STATUS_ACTIVE)
-            ->first();
+        $identity = $this->resolveTokenHashQrIdentity($token)
+            ?: $this->resolvePublicQrCode($token);
 
         if (! $identity) {
             return null;
         }
 
-        $subject = $identity->subject;
-
-        if (! $subject || method_exists($subject, 'trashed') && $subject->trashed()) {
-            return null;
-        }
-
         $identity->forceFill(['last_scanned_at' => now()])->save();
 
-        return $identity->setRelation('subject', $subject);
+        return $identity;
+    }
+
+    protected function resolveTokenHashQrIdentity(string $token): ?QrIdentity
+    {
+        return QrIdentity::query()
+            ->select(['id', 'subject_type', 'subject_id', 'status', 'last_scanned_at'])
+            ->where('token_hash', app(QrIdentityService::class)->hashToken($token))
+            ->where('status', QrIdentity::STATUS_ACTIVE)
+            ->first();
+    }
+
+    protected function resolvePublicQrCode(string $token): ?QrIdentity
+    {
+        return QrIdentity::query()
+            ->select(['id', 'subject_type', 'subject_id', 'status', 'last_scanned_at'])
+            ->where('public_code', strtoupper(trim($token)))
+            ->where('status', QrIdentity::STATUS_ACTIVE)
+            ->first();
     }
 
     protected function extractQrToken(string $value): ?string
