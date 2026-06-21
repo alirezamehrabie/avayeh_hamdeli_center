@@ -355,11 +355,22 @@
 
                                                     try {
                                                         await $nextTick();
+                                                        await this.waitForScannerFrame();
                                                         await this.waitForScannerBoot();
-                                                        await this.ensureCameraPermission();
                                                         await this.startCamera();
                                                     } finally {
                                                         this.openingScanner = false;
+                                                    }
+                                                },
+                                                async waitForScannerFrame() {
+                                                    for (let attempt = 0; attempt < 20; attempt++) {
+                                                        const rect = this.$refs.scanner?.getBoundingClientRect();
+
+                                                        if (rect?.width > 160 && rect?.height > 160) {
+                                                            return;
+                                                        }
+
+                                                        await new Promise((resolve) => requestAnimationFrame(resolve));
                                                     }
                                                 },
                                                 async waitForScannerBoot() {
@@ -385,14 +396,14 @@
                                             x-show="qrScannerOpen"
                                             x-cloak
                                             x-transition.opacity.duration.150ms
-                                            class="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-sm"
+                                            class="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/70 p-2 backdrop-blur-sm sm:p-3"
                                             role="dialog"
                                             aria-modal="true"
                                             style="display: none;"
                                         >
                                                 <div
                                                     @click.outside="closeScanner()"
-                                                    class="w-full max-w-md overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 text-white shadow-2xl"
+                                                    class="flex max-h-[calc(100svh-1rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 text-white shadow-2xl"
                                                     dir="rtl"
                                                 >
                                                     <div class="flex items-center justify-between border-b border-white/10 px-3 py-2.5">
@@ -411,7 +422,7 @@
                                                         </button>
                                                     </div>
 
-                                                    <div class="relative aspect-[3/4] max-h-[70svh] bg-slate-950 sm:aspect-square">
+                                                    <div class="relative min-h-[320px] flex-1 bg-slate-950 sm:aspect-square sm:flex-none">
                                                         <div wire:ignore x-ref="scanner" id="service-recipient-scanner-{{ $index }}" class="qr-scanner-reader h-full w-full"></div>
                                                         <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
                                                             <div class="aspect-square w-[min(72%,320px)] rounded-2xl border-2 border-cyan-300/90 shadow-[0_0_0_9999px_rgba(15,23,42,0.32)]"></div>
@@ -573,7 +584,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
 
                 <div class="space-y-4">
                     {{-- Submit Button --}}

@@ -16,6 +16,7 @@ use App\Traits\InteractsWithNotificationModal;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
@@ -27,23 +28,39 @@ class Dashboard extends Component
     use InteractsWithNotificationModal;
 
     public string $activeSection = 'service-delivery';
+
     public ?int $selectedServiceId = null;
+
     public array $quotaState = [
         'service_type' => '',
     ];
+
     public string $serviceSelectionWarning = '';
+
     public array $recipientEntries = [];
+
     public string $deliveredAt = '';
+
     public string $notes = '';
+
     public ?int $activeRecipientSearchIndex = null;
+
     protected ?Collection $assignedServicesCache = null;
+
     protected ?Service $selectedServiceCache = null;
+
     protected ?Collection $assignableCategoriesCache = null;
+
     protected ?array $selectedServiceTotalsCache = null;
+
     protected ?array $selectedServiceCategoryMetricsCache = null;
+
     protected ?int $assignableCategoriesCacheServiceId = null;
+
     protected ?int $selectedServiceTotalsCacheServiceId = null;
+
     protected ?int $selectedServiceCategoryMetricsCacheServiceId = null;
+
     protected ?array $unitOptionsCache = null;
 
     public function mount(): void
@@ -118,6 +135,7 @@ class Dashboard extends Component
 
         if ($query === '') {
             $this->activeRecipientSearchIndex = null;
+
             return;
         }
 
@@ -141,7 +159,7 @@ class Dashboard extends Component
                 ->first();
 
             if ($guardian) {
-                $this->fillGuardianEntry($index, $guardian, $guardian->people_count . ' نفر تحت تکفل');
+                $this->fillGuardianEntry($index, $guardian, $guardian->people_count.' نفر تحت تکفل');
                 $this->activeRecipientSearchIndex = null;
                 $this->recipientEntries[$index]['not_found_notice'] = '';
                 $this->recipientEntries[$index]['is_unregistered'] = false;
@@ -180,24 +198,24 @@ class Dashboard extends Component
         $rawToken = trim((string) ($this->recipientEntries[$index]['qr_token'] ?? ''));
 
         if ($rawToken === '') {
-            $this->addError('recipientEntries.' . $index . '.qr_token', 'وارد کردن توکن یا نشانی QR الزامی است.');
+            $this->addError('recipientEntries.'.$index.'.qr_token', 'وارد کردن توکن یا نشانی QR الزامی است.');
 
             return;
         }
 
-        $qrIdentityService = app(QrIdentityService::class);
-        $identity = $qrIdentityService->resolveToken($this->extractQrToken($rawToken), 'service-delivery');
+        $token = $this->extractQrToken($rawToken);
+        $identity = $this->resolveQrIdentity($token, 'service-delivery');
 
         if (! $identity) {
             $this->clearResolvedEntry($index, preserveNationalId: false);
-            $this->addError('recipientEntries.' . $index . '.qr_token', 'QR نامعتبر، ابطال‌شده یا غیرقابل دسترس است.');
+            $this->addError('recipientEntries.'.$index.'.qr_token', 'QR نامعتبر، ابطال‌شده یا غیرقابل دسترس است.');
 
             return;
         }
 
         if ($identity->subject_type === QrIdentity::SUBJECT_GUARDIAN) {
             if ($service->service_type !== 'family') {
-                $this->addError('recipientEntries.' . $index . '.qr_token', 'QR سرپرست فقط برای خدمات خانوادگی قابل استفاده است.');
+                $this->addError('recipientEntries.'.$index.'.qr_token', 'QR سرپرست فقط برای خدمات خانوادگی قابل استفاده است.');
 
                 return;
             }
@@ -208,12 +226,12 @@ class Dashboard extends Component
                 ->find($identity->subject_id);
 
             if (! $guardian) {
-                $this->addError('recipientEntries.' . $index . '.qr_token', 'این سرپرست به حساب شما تخصیص داده نشده است.');
+                $this->addError('recipientEntries.'.$index.'.qr_token', 'این سرپرست به حساب شما تخصیص داده نشده است.');
 
                 return;
             }
 
-            $this->fillGuardianEntry($index, $guardian, $guardian->people_count . ' نفر تحت تکفل');
+            $this->fillGuardianEntry($index, $guardian, $guardian->people_count.' نفر تحت تکفل');
 
             return;
         }
@@ -224,7 +242,7 @@ class Dashboard extends Component
             ->find($identity->subject_id);
 
         if (! $person) {
-            $this->addError('recipientEntries.' . $index . '.qr_token', 'این مددجو به حساب شما تخصیص داده نشده است.');
+            $this->addError('recipientEntries.'.$index.'.qr_token', 'این مددجو به حساب شما تخصیص داده نشده است.');
 
             return;
         }
@@ -233,13 +251,13 @@ class Dashboard extends Component
             $guardian = $person->guardian;
 
             if (! $guardian) {
-                $this->addError('recipientEntries.' . $index . '.qr_token', 'این مددجو برای ثبت خدمت خانوادگی سرپرست مرتبط ندارد.');
+                $this->addError('recipientEntries.'.$index.'.qr_token', 'این مددجو برای ثبت خدمت خانوادگی سرپرست مرتبط ندارد.');
 
                 return;
             }
 
             $guardian->loadCount('people');
-            $this->fillGuardianEntry($index, $guardian, $guardian->people_count . ' نفر تحت تکفل');
+            $this->fillGuardianEntry($index, $guardian, $guardian->people_count.' نفر تحت تکفل');
 
             return;
         }
@@ -249,7 +267,7 @@ class Dashboard extends Component
 
     public function resolveScannedRecipientQr(int $index, string $payload): array
     {
-        $field = 'recipientEntries.' . $index . '.qr_token';
+        $field = 'recipientEntries.'.$index.'.qr_token';
 
         if (! array_key_exists($index, $this->recipientEntries)) {
             return $this->recipientQrScanResponse(false, 'ردیف گیرنده پیدا نشد.');
@@ -291,7 +309,7 @@ class Dashboard extends Component
                 ->where('social_worker_id', $this->currentSocialWorkerId())
                 ->findOrFail($id);
 
-            $this->fillGuardianEntry($index, $guardian, $guardian->people_count . ' نفر تحت تکفل');
+            $this->fillGuardianEntry($index, $guardian, $guardian->people_count.' نفر تحت تکفل');
             $this->activeRecipientSearchIndex = null;
 
             return;
@@ -424,7 +442,7 @@ class Dashboard extends Component
 
                         if ($person) {
                             $personId = $person->id;
-                            $fullName = trim(($person->first_name ?? '') . ' ' . ($person->last_name ?? '')) ?: $fullName;
+                            $fullName = trim(($person->first_name ?? '').' '.($person->last_name ?? '')) ?: $fullName;
                         }
                     }
 
@@ -706,9 +724,9 @@ class Dashboard extends Component
         $this->openNotificationModal([
             'type' => 'error',
             'title' => 'خطا در اعتبارسنجی فرم',
-            'message' => "لطفاً موارد زیر را بررسی کنید:
-• " . implode("
-• ", $messages),
+            'message' => 'لطفاً موارد زیر را بررسی کنید:
+• '.implode('
+• ', $messages),
             'buttons' => [[
                 'label' => 'متوجه شدم',
                 'action' => 'close',
@@ -820,6 +838,7 @@ class Dashboard extends Component
 
             if ($rowDeliveries === []) {
                 $missingRows[] = $index + 1;
+
                 continue;
             }
 
@@ -855,10 +874,11 @@ class Dashboard extends Component
                 continue;
             }
 
-            $key = $nationalId . ':' . $categoryId;
+            $key = $nationalId.':'.$categoryId;
 
             if (isset($seen[$key])) {
                 $duplicateRows[] = $index + 1;
+
                 continue;
             }
 
@@ -1007,7 +1027,7 @@ class Dashboard extends Component
 
     protected function fillPersonEntry(int $index, Person $person, string $meta = ''): void
     {
-        $fullName = trim(($person->first_name ?? '') . ' ' . ($person->last_name ?? '')) ?: '-';
+        $fullName = trim(($person->first_name ?? '').' '.($person->last_name ?? '')) ?: '-';
         $guardian = $person->guardian;
 
         $this->recipientEntries[$index]['national_id'] = (string) ($person->national_id ?? '');
@@ -1046,6 +1066,7 @@ class Dashboard extends Component
         foreach ($this->recipientEntries as $index => $entry) {
             if ($this->activeRecipientSearchIndex !== $index || ! $service) {
                 $suggestions[$index] = collect();
+
                 continue;
             }
 
@@ -1053,6 +1074,7 @@ class Dashboard extends Component
 
             if (mb_strlen($query) < 2) {
                 $suggestions[$index] = collect();
+
                 continue;
             }
 
@@ -1070,11 +1092,11 @@ class Dashboard extends Component
             ->withCount('people')
             ->where('social_worker_id', $this->currentSocialWorkerId())
             ->where(function (Builder $guardianQuery) use ($query): void {
-                $guardianQuery->where('first_name', 'like', $query . '%')
-                    ->orWhere('last_name', 'like', $query . '%')
-                    ->orWhere('national_code', 'like', $query . '%')
-                    ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", [$query . '%'])
-                    ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", ['%' . $query . '%']);
+                $guardianQuery->where('first_name', 'like', $query.'%')
+                    ->orWhere('last_name', 'like', $query.'%')
+                    ->orWhere('national_code', 'like', $query.'%')
+                    ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", [$query.'%'])
+                    ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", ['%'.$query.'%']);
             })
             ->orderByRaw(
                 "CASE
@@ -1084,7 +1106,7 @@ class Dashboard extends Component
                     WHEN CONCAT_WS(' ', first_name, last_name) LIKE ? THEN 4
                     ELSE 5
                 END",
-                [$query . '%', $query . '%', $query . '%', $query . '%']
+                [$query.'%', $query.'%', $query.'%', $query.'%']
             )
             ->orderBy('first_name')
             ->orderBy('last_name')
@@ -1098,11 +1120,11 @@ class Dashboard extends Component
             ->with(['guardian:id,children_count,children_in_house'])
             ->whereHas('guardian', fn (Builder $guardianQuery) => $guardianQuery->where('social_worker_id', $this->currentSocialWorkerId()))
             ->where(function (Builder $personQuery) use ($query): void {
-                $personQuery->where('first_name', 'like', $query . '%')
-                    ->orWhere('last_name', 'like', $query . '%')
-                    ->orWhere('national_id', 'like', $query . '%')
-                    ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", [$query . '%'])
-                    ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", ['%' . $query . '%']);
+                $personQuery->where('first_name', 'like', $query.'%')
+                    ->orWhere('last_name', 'like', $query.'%')
+                    ->orWhere('national_id', 'like', $query.'%')
+                    ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", [$query.'%'])
+                    ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", ['%'.$query.'%']);
             })
             ->orderByRaw(
                 "CASE
@@ -1112,7 +1134,7 @@ class Dashboard extends Component
                     WHEN CONCAT_WS(' ', first_name, last_name) LIKE ? THEN 4
                     ELSE 5
                 END",
-                [$query . '%', $query . '%', $query . '%', $query . '%']
+                [$query.'%', $query.'%', $query.'%', $query.'%']
             )
             ->orderBy('first_name')
             ->orderBy('last_name')
@@ -1128,16 +1150,62 @@ class Dashboard extends Component
         $this->recipientEntries[$index]['not_found_notice'] = 'این شخص در سامانه ثبت نشده است';
     }
 
-    protected function extractQrToken(string $value): string
+    protected function resolveQrIdentity(?string $token, string $context): ?QrIdentity
     {
-        if (filter_var($value, FILTER_VALIDATE_URL)) {
-            $path = parse_url($value, PHP_URL_PATH);
-            $segments = array_values(array_filter(explode('/', (string) $path)));
-
-            return (string) end($segments);
+        if (! $token) {
+            return null;
         }
 
-        return $value;
+        $identity = app(QrIdentityService::class)->resolveToken($token, $context);
+
+        if ($identity) {
+            return $identity;
+        }
+
+        return $this->resolvePublicQrCode($token);
+    }
+
+    protected function resolvePublicQrCode(string $token): ?QrIdentity
+    {
+        $identity = QrIdentity::query()
+            ->where('public_code', strtoupper(trim($token)))
+            ->where('status', QrIdentity::STATUS_ACTIVE)
+            ->first();
+
+        if (! $identity) {
+            return null;
+        }
+
+        $subject = $identity->subject;
+
+        if (! $subject || method_exists($subject, 'trashed') && $subject->trashed()) {
+            return null;
+        }
+
+        $identity->forceFill(['last_scanned_at' => now()])->save();
+
+        return $identity->setRelation('subject', $subject);
+    }
+
+    protected function extractQrToken(string $value): ?string
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        if (! Str::contains($value, ['http://', 'https://'])) {
+            return $value;
+        }
+
+        $payloadPath = parse_url($value, PHP_URL_PATH) ?: $value;
+
+        if (! preg_match('/\/qr\/r\/([^\/?#]+)/', (string) $payloadPath, $matches)) {
+            return null;
+        }
+
+        return isset($matches[1]) ? urldecode($matches[1]) : null;
     }
 
     protected function flushServiceMetricCaches(): void

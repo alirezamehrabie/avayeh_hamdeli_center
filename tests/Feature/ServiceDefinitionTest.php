@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Livewire\Services\ServiceDefinition;
+use App\Helpers\Morilog\Jalalian;
 use App\Livewire\Services\ServiceArchive;
+use App\Livewire\Services\ServiceDefinition;
 use App\Livewire\Services\ServiceDeliveryManager;
 use App\Livewire\Services\ServiceManagement;
 use App\Livewire\SocialWorkers\Dashboard as SocialWorkerDashboard;
-use App\Helpers\Morilog\Jalalian;
 use App\Models\Service;
 use App\Models\ServiceCategoryTemplate;
 use App\Models\ServiceDelivery;
@@ -273,6 +273,101 @@ class ServiceDefinitionTest extends TestCase
             ->assertSet('recipientEntries.0.resolved_name', 'Scan Person');
     }
 
+    public function test_social_worker_scanned_public_qr_code_resolves_recipient_entry(): void
+    {
+        $manager = $this->manager();
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 82,
+            'first_name' => 'Public Scanner',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+        $socialWorkerUser = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_SOCIAL_WORKER,
+            'is_admin' => false,
+            'social_worker_id' => $worker->id,
+        ]);
+        $service = $this->serviceWithCategory($manager, 'Public Scanned Recipient', true);
+        $category = $service->categories()->firstOrFail();
+
+        $service->workerAllocations()->create([
+            'social_worker_id' => $worker->id,
+            'service_category_id' => $category->id,
+            'allocated_quantity' => 5,
+        ]);
+
+        $guardian = \App\Models\Guardian::query()->create([
+            'first_name' => 'Public',
+            'last_name' => 'Guardian',
+            'national_code' => '8811223355',
+            'guardian_code' => 882,
+            'social_worker_id' => $worker->id,
+        ]);
+        $person = \App\Models\Person::query()->create([
+            'first_name' => 'Public',
+            'last_name' => 'Person',
+            'national_id' => '9911223355',
+            'person_code' => '99002',
+            'guardian_id' => $guardian->id,
+        ]);
+        $issued = app(QrIdentityService::class)->issueFor($person, $manager->id);
+        $identity = $issued['identity'];
+
+        $this->actingAs($socialWorkerUser);
+
+        Livewire::test(SocialWorkerDashboard::class)
+            ->set('selectedServiceId', $service->id)
+            ->call('resolveScannedRecipientQr', 0, strtolower($identity->public_code))
+            ->assertReturned(fn (array $response): bool => $response['ok'] === true)
+            ->assertSet('recipientEntries.0.person_id', $person->id)
+            ->assertSet('recipientEntries.0.national_id', '9911223355')
+            ->assertSet('recipientEntries.0.resolved_name', 'Public Person');
+    }
+
+    public function test_social_worker_scanned_guardian_public_qr_code_resolves_family_recipient_entry(): void
+    {
+        $manager = $this->manager();
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 83,
+            'first_name' => 'Guardian Scanner',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+        $socialWorkerUser = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_SOCIAL_WORKER,
+            'is_admin' => false,
+            'social_worker_id' => $worker->id,
+        ]);
+        $service = $this->serviceWithCategory($manager, 'Public Scanned Family Recipient', true, 'family');
+        $category = $service->categories()->firstOrFail();
+
+        $service->workerAllocations()->create([
+            'social_worker_id' => $worker->id,
+            'service_category_id' => $category->id,
+            'allocated_quantity' => 5,
+        ]);
+
+        $guardian = \App\Models\Guardian::query()->create([
+            'first_name' => 'Family',
+            'last_name' => 'Guardian',
+            'national_code' => '8811223366',
+            'guardian_code' => 883,
+            'social_worker_id' => $worker->id,
+        ]);
+        $issued = app(QrIdentityService::class)->issueFor($guardian, $manager->id);
+        $identity = $issued['identity'];
+
+        $this->actingAs($socialWorkerUser);
+
+        Livewire::test(SocialWorkerDashboard::class)
+            ->set('selectedServiceId', $service->id)
+            ->call('resolveScannedRecipientQr', 0, strtolower($identity->public_code))
+            ->assertReturned(fn (array $response): bool => $response['ok'] === true)
+            ->assertSet('recipientEntries.0.guardian_id', $guardian->id)
+            ->assertSet('recipientEntries.0.national_id', '8811223366')
+            ->assertSet('recipientEntries.0.resolved_name', 'Family Guardian');
+    }
+
     public function test_social_worker_delivery_rejects_duplicate_recipient_in_same_category(): void
     {
         $manager = $this->manager();
@@ -384,7 +479,7 @@ class ServiceDefinitionTest extends TestCase
         Livewire::test(ServiceDeliveryManager::class)
             ->set('selectedServiceId', $service->id)
             ->call('addSocialWorker', $worker->id)
-            ->set('allocations.' . $worker->id . '.' . $category->id, '4')
+            ->set('allocations.'.$worker->id.'.'.$category->id, '4')
             ->call('saveAllocations')
             ->assertHasNoErrors();
 
@@ -436,7 +531,7 @@ class ServiceDefinitionTest extends TestCase
 
         Livewire::test(ServiceDeliveryManager::class)
             ->set('selectedServiceId', $service->id)
-            ->set('allocations.' . $worker->id . '.' . $category->id, '2')
+            ->set('allocations.'.$worker->id.'.'.$category->id, '2')
             ->call('saveAllocations')
             ->assertHasErrors(['allocations']);
 
@@ -707,7 +802,7 @@ class ServiceDefinitionTest extends TestCase
         ]);
     }
 
-    private function serviceWithCategory(User $creator, string $name, bool $supportsHomeDelivery): Service
+    private function serviceWithCategory(User $creator, string $name, bool $supportsHomeDelivery, string $serviceType = 'individual'): Service
     {
         $serviceName = ServiceName::query()->create([
             'name' => $name,
@@ -718,7 +813,7 @@ class ServiceDefinitionTest extends TestCase
         $service = Service::query()->create([
             'service_name_id' => $serviceName->id,
             'name' => $name,
-            'service_type' => 'individual',
+            'service_type' => $serviceType,
             'supports_gate_delivery' => true,
             'supports_home_delivery' => $supportsHomeDelivery,
             'total_quantity' => 10,
