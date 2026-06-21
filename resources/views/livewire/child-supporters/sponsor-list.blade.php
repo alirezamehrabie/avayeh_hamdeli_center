@@ -153,41 +153,41 @@
             </div>
 
             <div class="mt-3 hidden overflow-hidden rounded-2xl border border-slate-200 bg-white md:block">
-                <table class="min-w-full divide-y divide-slate-100">
+                <table class="min-w-full table-fixed divide-y divide-slate-100">
                     <thead class="sticky top-0 z-10 bg-slate-50">
                         <tr>
-                            <th scope="col" class="px-4 py-3 text-right text-xs font-black text-slate-500">کد حامی</th>
+                            <th scope="col" class="w-28 px-4 py-3 text-right text-xs font-black text-slate-500">کد حامی</th>
                             <th scope="col" class="px-4 py-3 text-right text-xs font-black text-slate-500">نام حامی</th>
-                            <th scope="col" class="px-4 py-3 text-right text-xs font-black text-slate-500">موبایل</th>
-                            <th scope="col" class="px-4 py-3 text-right text-xs font-black text-slate-500">مبلغ ماهیانه</th>
-                            <th scope="col" class="px-4 py-3 text-center text-xs font-black text-slate-500">مددجویان</th>
-                            <th scope="col" class="px-4 py-3 text-center text-xs font-black text-slate-500">عملیات</th>
+                            <th scope="col" class="w-36 px-4 py-3 text-right text-xs font-black text-slate-500">موبایل</th>
+                            <th scope="col" class="w-48 px-4 py-3 text-left text-xs font-black text-slate-500">مبلغ ماهیانه</th>
+                            <th scope="col" class="w-24 px-4 py-3 text-center text-xs font-black text-slate-500">مددجویان</th>
+                            <th scope="col" class="w-40 px-4 py-3 text-center text-xs font-black text-slate-500">عملیات</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
                         @forelse($sponsors as $sponsor)
-                            <tr wire:key="sponsor-table-row-{{ $sponsor->id }}" class="transition hover:bg-slate-50/80">
-                                <td class="whitespace-nowrap px-4 py-3">
-                                    <span class="inline-flex rounded-md bg-slate-100 px-2.5 py-1 text-sm font-black text-slate-600" dir="ltr">{{ $sponsor->supporter_code ?: '-' }}</span>
+                            <tr wire:key="sponsor-table-row-{{ $sponsor->id }}" class="transition hover:bg-slate-50/70">
+                                <td class="whitespace-nowrap px-4 py-3.5">
+                                    <span class="text-sm font-bold text-slate-600" dir="ltr">{{ $sponsor->supporter_code ?: '-' }}</span>
                                 </td>
-                                <td class="min-w-0 px-4 py-3">
-                                    <span class="block max-w-44 truncate text-sm font-bold text-slate-900">{{ trim(($sponsor->user?->first_name ?? '') . ' ' . ($sponsor->user?->last_name ?? '')) ?: '-' }}</span>
+                                <td class="min-w-0 px-4 py-3.5">
+                                    <span class="block truncate text-sm font-bold text-slate-900">{{ trim(($sponsor->user?->first_name ?? '') . ' ' . ($sponsor->user?->last_name ?? '')) ?: '-' }}</span>
                                 </td>
-                                <td class="whitespace-nowrap px-4 py-3">
+                                <td class="whitespace-nowrap px-4 py-3.5">
                                     <span class="text-sm font-semibold text-slate-700" dir="ltr">{{ $this->persianNumber($sponsor->user?->mobile ?: $sponsor->user?->name ?: '-') }}</span>
                                 </td>
-                                <td class="px-4 py-3">
-                                    <div class="min-w-0">
+                                <td class="px-4 py-3.5 text-left">
+                                    <div class="min-w-0" dir="rtl">
                                         <span class="block whitespace-nowrap text-sm font-black text-emerald-700">{{ $this->persianNumber(number_format((int) $sponsor->monthly_donation_amount)) }} ریال</span>
-                                        <span class="mt-0.5 block max-w-44 truncate text-[11px] font-semibold leading-5 text-slate-500">{{ $this->donationAmountInTomanWords((int) $sponsor->monthly_donation_amount) }}</span>
+                                        <span class="mt-0.5 block truncate text-[11px] font-semibold leading-5 text-slate-500">{{ $this->donationAmountInTomanWords((int) $sponsor->monthly_donation_amount) }}</span>
                                     </div>
                                 </td>
-                                <td class="whitespace-nowrap px-4 py-3 text-center">
-                                    <span class="inline-flex rounded-md bg-slate-100 px-2.5 py-1 text-sm font-black text-slate-600">
+                                <td class="whitespace-nowrap px-4 py-3.5 text-center">
+                                    <span class="text-sm font-black text-slate-700">
                                         {{ $this->persianNumber((int) $sponsor->beneficiaries_count) }} نفر
                                     </span>
                                 </td>
-                                <td class="whitespace-nowrap px-4 py-3">
+                                <td class="whitespace-nowrap px-4 py-3.5">
                                     <div class="flex justify-center gap-2">
                                         <button type="button" wire:click="showDetails({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="showDetails({{ $sponsor->id }})" class="inline-flex h-9 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 px-3 text-xs font-black text-indigo-700 transition hover:border-indigo-200 hover:bg-indigo-100 focus:outline-none focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-70">
                                             <span wire:loading.remove wire:target="showDetails({{ $sponsor->id }})">جزئیات</span>
