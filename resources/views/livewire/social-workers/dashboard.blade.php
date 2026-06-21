@@ -211,7 +211,15 @@
                         <!-- Header Section -->
                         <div class="mb-5 flex items-center justify-between gap-4">
                             <div>
-                                <h2 class="text-base font-extrabold text-slate-800 md:text-lg">گیرندگان خدمت</h2>
+                                @php
+                                    $recipientSectionTitle = match ($selectedService?->service_type) {
+                                        'family' => 'خانواده‌های دریافت‌کننده خدمت',
+                                        'individual' => 'مددجویان دریافت‌کننده خدمت',
+                                        default => 'گیرندگان خدمت',
+                                    };
+                                @endphp
+
+                                <h2 class="text-base font-extrabold text-slate-800 md:text-lg">{{ $recipientSectionTitle }}</h2>
                                 <p class="mt-0.5 text-[11px] leading-relaxed text-slate-500 md:text-xs">کد ملی را وارد کرده و مقدار را مشخص کنید.</p>
                             </div>
                             <button type="button" wire:click="addRecipientField"
