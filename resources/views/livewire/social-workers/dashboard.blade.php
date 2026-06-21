@@ -17,18 +17,72 @@
                             خدمت
                         </label>
 
+                        @php
+                            $serviceOptions = $assignedServices->map(function ($service) {
+                                $serviceTypeLabel = $service->service_type === 'family' ? 'خانوادگی' : 'شخصی';
+                                $serviceCategories = $service->categories?->sortBy('sort_id') ?? collect();
+                                $categoryNames = $serviceCategories->pluck('name')->filter()->values();
+                                $remainingAllocation = (float) ($service->worker_remaining_allocation ?? 0);
+
+                                return [
+                                    'id' => (string) $service->id,
+                                    'label' => $this->serviceDropdownLabel($service),
+                                    'code' => $this->persianNumber($service->code),
+                                    'name' => (string) ($service->serviceName?->name ?? ''),
+                                    'type' => $serviceTypeLabel,
+                                    'remaining' => $this->persianNumber(number_format($remainingAllocation, 2)),
+                                    'remainingRaw' => $remainingAllocation,
+                                    'description' => (string) ($service->description ?: ''),
+                                    'categories' => $categoryNames->take(4)->all(),
+                                    'categorySummary' => $categoryNames->implode('، '),
+                                    'search' => mb_strtolower(trim(implode(' ', array_filter([
+                                        (string) $service->code,
+                                        (string) ($service->serviceName?->name ?? ''),
+                                        $serviceTypeLabel,
+                                        (string) ($service->description ?? ''),
+                                        $categoryNames->implode(' '),
+                                    ])))),
+                                ];
+                            })->values();
+                        @endphp
+
                         <div
                             class="relative"
                             x-data="{
-                            open: false,
-                            selected: null,
-                            selectedText: 'انتخاب خدمت'
-                                        }"
+                                open: false,
+                                query: '',
+                                selected: @js($selectedServiceId ? (string) $selectedServiceId : ''),
+                                selectedText: @js($selectedService ? $this->serviceDropdownLabel($selectedService) : 'انتخاب خدمت'),
+                                services: @js($serviceOptions),
+                                get filteredServices() {
+                                    const value = this.query.trim().toLocaleLowerCase();
+
+                                    if (value === '') {
+                                        return this.services;
+                                    }
+
+                                    return this.services.filter((service) => service.search.includes(value));
+                                },
+                                choose(service) {
+                                    this.selected = service.id;
+                                    this.selectedText = service.label;
+                                    this.query = '';
+                                    this.open = false;
+                                    $wire.set('selectedServiceId', service.id);
+                                },
+                                clear() {
+                                    this.selected = '';
+                                    this.selectedText = 'انتخاب خدمت';
+                                    this.query = '';
+                                    this.open = false;
+                                    $wire.set('selectedServiceId', '');
+                                },
+                            }"
                         >
                             {{-- Trigger Button --}}
                             <button
                                 type="button"
-                                @click="open = !open"
+                                @click="open = !open; if (open) { $nextTick(() => $refs.serviceSearch?.focus()) }"
                                 class="flex w-full items-center justify-between rounded-xl border border-slate-300
                                    bg-white px-3 py-2.5 text-right text-sm text-slate-700 shadow-sm
                                    transition active:scale-[0.98]"
@@ -61,14 +115,27 @@
                                 style="display: none;"
                             >
                                 {{-- Default Option --}}
+                                <div class="sticky top-0 z-10 bg-slate-50 pb-2">
+                                    <div class="relative">
+                                        <input
+                                            type="search"
+                                            x-ref="serviceSearch"
+                                            x-model.debounce.100ms="query"
+                                            class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10"
+                                            placeholder="جستجو بر اساس نام، کد، نوع یا دسته‌بندی"
+                                            autocomplete="off"
+                                        >
+                                        <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                                             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z"/>
+                                        </svg>
+                                    </div>
+                                </div>
+
                                 <button
                                     type="button"
-                                    @click="
-                                    selected     = '';
-                                    selectedText = 'انتخاب خدمت';
-                                    open         = false;
-                                    $wire.set('selectedServiceId', '')
-                                "
+                                    @click="clear()"
                                     class="flex w-full items-center justify-start rounded-xl px-3 py-2.5 text-right text-xs text-slate-400
                                     transition hover:bg-white active:bg-slate-100 sm:px-4 sm:py-3 sm:text-sm"
                                 >
@@ -76,67 +143,45 @@
                                 </button>
 
                                 {{-- Service Options --}}
-                                @foreach ($assignedServices as $service)
-
-                                    @php
-                                        $serviceTypeLabel = $service->service_type === 'family' ? 'خانوادگی' : 'شخصی';
-                                        $serviceCategories = $service->categories?->sortBy('sort_id') ?? collect();
-                                    @endphp
-
+                                <template x-for="service in filteredServices" :key="service.id">
                                     <button
                                         type="button"
-                                        @click="
-                        selected     = '{{ $service->id }}';
-                        selectedText = '{{ $this->serviceDropdownLabel($service) }}';
-                        open         = false;
-                        $wire.set('selectedServiceId', '{{ $service->id }}')
-                    "
-                                        :class="{ 'border-cyan-200 bg-cyan-50/80 shadow-cyan-100/70': selected === '{{ $service->id }}' }"
-                                        class="mb-1.5 flex w-full flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2.5
-                           text-right shadow-sm shadow-slate-200/70 transition hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100 sm:mb-2 sm:px-4 sm:py-3"
+                                        @click="choose(service)"
+                                        :class="{ 'border-cyan-200 bg-cyan-50/80 shadow-cyan-100/70': selected === service.id }"
+                                        class="mb-1.5 flex w-full flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-right shadow-sm shadow-slate-200/70 transition hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100 sm:mb-2 sm:px-4 sm:py-3"
                                         dir="rtl"
                                     >
-                                        {{-- Row 1: Code - Name - Type --}}
-                                        <div class="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-right sm:gap-x-2">
-                                            <span class="text-[10px] font-medium tracking-wide text-slate-400">
-                                                {{ $this->persianNumber($service->code) }}
-                                            </span>
-                                            <span class="text-[13px] font-semibold text-slate-800 sm:text-sm">
-                                                {{ $service->serviceName?->name }}
-                                            </span>
-                                            <span class="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 sm:px-2">
-                                                {{ $serviceTypeLabel }}
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div class="min-w-0 flex-1">
+                                                <div class="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                                                    <span class="text-[10px] font-medium text-slate-400" x-text="service.code"></span>
+                                                    <span class="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 sm:px-2"
+                                                          x-text="service.type"></span>
+                                                </div>
+                                                <p class="mt-1 truncate text-[13px] font-extrabold text-slate-800 sm:text-sm"
+                                                   x-text="service.name"></p>
+                                            </div>
+
+                                            <span class="inline-flex shrink-0 flex-col items-center rounded-xl border px-2.5 py-1 text-center"
+                                                  :class="service.remainingRaw > 0 ? 'border-emerald-100 bg-emerald-50 text-emerald-700' : 'border-rose-100 bg-rose-50 text-rose-600'">
+                                                <span class="text-[9px] font-bold leading-none">باقی‌مانده</span>
+                                                <span class="mt-1 text-xs font-black leading-none" x-text="service.remaining"></span>
                                             </span>
                                         </div>
 
-                                        {{-- Row 2: Categories --}}
-                                        @if($serviceCategories->isNotEmpty())
-                                            <div class="grid grid-cols-2 gap-1">
-                                                @foreach($serviceCategories as $category)
-                                                    <div class="min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5">
-                                                        <p class="truncate text-[10px] font-medium leading-4 text-slate-600 sm:text-[11px]">
-                                                            <span class="text-slate-700">{{ $category->name }}</span>
-                                                            <span class="text-slate-400">
-                                                                : {{ $this->persianNumber(number_format((float) $category->quantity, 0)) }}
-                                                                {{ \App\Models\Service::unitOptions()[$category->unit] ?? $category->unit }}
-                                                            </span>
-                                                        </p>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        @else
-                                            <p class="text-[11px] text-slate-400">
-                                                دسته‌بندی برای این خدمت ثبت نشده است.
-                                            </p>
-                                        @endif
-
-                                        {{-- Row 3: Description --}}
-                                        <p class="text-[11px] leading-4 text-slate-500 sm:text-xs sm:leading-5">
-                                            {{ $service->description ?: 'بدون توضیحات' }}
+                                        <p class="truncate text-[11px] leading-4 text-slate-500"
+                                           x-text="service.categorySummary || 'دسته‌بندی برای این خدمت ثبت نشده است.'">
                                         </p>
                                     </button>
+                                </template>
 
-                                @endforeach
+                                <div
+                                    x-show="filteredServices.length === 0"
+                                    class="rounded-xl border border-dashed border-slate-200 bg-white px-3 py-4 text-center text-xs font-bold text-slate-400"
+                                    style="display: none;"
+                                >
+                                    خدمتی با این جستجو پیدا نشد.
+                                </div>
                             </div>
                         </div>
 
