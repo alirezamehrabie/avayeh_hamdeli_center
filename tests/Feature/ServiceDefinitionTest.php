@@ -7,6 +7,7 @@ use App\Livewire\Services\ServiceArchive;
 use App\Livewire\Services\ServiceDeliveryManager;
 use App\Livewire\Services\ServiceManagement;
 use App\Livewire\SocialWorkers\Dashboard as SocialWorkerDashboard;
+use App\Helpers\Morilog\Jalalian;
 use App\Models\Service;
 use App\Models\ServiceCategoryTemplate;
 use App\Models\ServiceDelivery;
@@ -150,6 +151,74 @@ class ServiceDefinitionTest extends TestCase
         Livewire::test(SocialWorkerDashboard::class)
             ->assertSee($homeService->code)
             ->assertDontSee($stationOnlyService->code);
+    }
+
+    public function test_social_worker_delivery_rechecks_worker_category_quota_when_saving(): void
+    {
+        $manager = $this->manager();
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 78,
+            'first_name' => 'Quota',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+        $socialWorkerUser = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_SOCIAL_WORKER,
+            'is_admin' => false,
+            'social_worker_id' => $worker->id,
+        ]);
+        $service = $this->serviceWithCategory($manager, 'Home Quota', true);
+        $category = $service->categories()->firstOrFail();
+
+        $service->workerAllocations()->create([
+            'social_worker_id' => $worker->id,
+            'service_category_id' => $category->id,
+            'allocated_quantity' => 5,
+        ]);
+
+        ServiceDelivery::query()->create([
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'national_id' => '1111111111',
+            'full_name' => 'Existing Recipient',
+            'delivered_quantity' => 4,
+            'value_per_unit_snapshot' => 1000,
+            'delivered_total_value' => 4000,
+            'delivered_at' => now()->toDateString(),
+            'created_by' => $socialWorkerUser->id,
+        ]);
+
+        $this->actingAs($socialWorkerUser);
+
+        Livewire::test(SocialWorkerDashboard::class)
+            ->set('selectedServiceId', $service->id)
+            ->set('recipientEntries', [[
+                'national_id' => '2222222222',
+                'full_name' => 'New Recipient',
+                'mobile' => null,
+                'quantity' => 2,
+                'service_category_id' => $category->id,
+                'is_unregistered' => true,
+                'not_found_notice' => '',
+                'resolved_name' => '',
+                'resolved_meta' => '',
+                'covered_dependents_count' => null,
+                'family_members_count' => null,
+                'person_id' => null,
+                'guardian_id' => null,
+                'qr_token' => '',
+            ]])
+            ->set('deliveredAt', Jalalian::fromDateTime(now())->format('Y/m/d'))
+            ->call('saveDelivery')
+            ->assertHasErrors(['recipientEntries']);
+
+        $this->assertDatabaseMissing('service_deliveries', [
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'national_id' => '2222222222',
+        ]);
     }
 
     public function test_admin_quota_assignment_records_assigning_user(): void

@@ -10,6 +10,7 @@ use App\Models\QrIdentity;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\ServiceDelivery;
+use App\Models\ServiceWorkerAllocation;
 use App\Services\QrIdentityService;
 use App\Traits\InteractsWithNotificationModal;
 use Illuminate\Database\Eloquent\Builder;
@@ -86,8 +87,12 @@ class Dashboard extends Component
         }
     }
 
-    public function updatedRecipientEntries($value, string $key): void
+    public function updatedRecipientEntries($value, ?string $key = null): void
     {
+        if ($key === null) {
+            return;
+        }
+
         if (str_ends_with($key, '.full_name') || str_ends_with($key, '.mobile')) {
             [$index] = explode('.', $key);
             $index = (int) $index;
@@ -283,39 +288,66 @@ class Dashboard extends Component
         $service = $this->selectedService;
         abort_unless($service, 404);
 
-        $entryQuantitiesByCategory = collect($validated['recipientEntries'])
-            ->groupBy(fn (array $entry) => (int) $entry['service_category_id'])
-            ->map(fn ($entries) => $entries->sum(fn (array $entry) => (float) $entry['quantity']));
-
-        foreach ($entryQuantitiesByCategory as $categoryId => $quantity) {
-            if ((float) $quantity <= $service->remainingAllocationForWorkerCategory($this->currentSocialWorkerId(), (int) $categoryId)) {
-                continue;
-            }
-
-            $message = 'جمع مقادیر ثبت‌شده از سهمیه تخصیص‌یافته شما برای این آیتم بیشتر است.';
-            $this->addError('recipientEntries', $message);
-            $this->showValidationErrorModal([$message]);
-
-            return;
-        }
-
         try {
             DB::transaction(function () use ($service, $validated): void {
                 $categoryQuantities = collect($validated['recipientEntries'])
                     ->groupBy(fn (array $entry) => (int) $entry['service_category_id'])
                     ->map(fn ($entries) => $entries->sum(fn (array $entry) => (float) $entry['quantity']));
+                $categoryIds = $categoryQuantities->keys()
+                    ->map(fn ($categoryId) => (int) $categoryId)
+                    ->values()
+                    ->all();
 
                 $lockedCategories = ServiceCategory::query()
                     ->where('service_id', $service->id)
-                    ->whereIn('id', $categoryQuantities->keys()->all())
+                    ->whereIn('id', $categoryIds)
                     ->lockForUpdate()
                     ->get()
                     ->keyBy('id');
 
-                foreach ($categoryQuantities as $categoryId => $quantity) {
-                    $category = $lockedCategories->get((int) $categoryId);
+                $lockedAllocations = ServiceWorkerAllocation::query()
+                    ->where('service_id', $service->id)
+                    ->where('social_worker_id', $this->currentSocialWorkerId())
+                    ->whereIn('service_category_id', $categoryIds)
+                    ->lockForUpdate()
+                    ->get()
+                    ->keyBy('service_category_id');
 
-                    if (! $category || $service->remainingStockForCategory((int) $categoryId) < (float) $quantity) {
+                $deliveredByCategory = ServiceDelivery::query()
+                    ->select('service_category_id')
+                    ->selectRaw('COALESCE(SUM(delivered_quantity), 0) as delivered_quantity')
+                    ->where('service_id', $service->id)
+                    ->whereIn('service_category_id', $categoryIds)
+                    ->groupBy('service_category_id')
+                    ->pluck('delivered_quantity', 'service_category_id');
+
+                $workerDeliveredByCategory = ServiceDelivery::query()
+                    ->select('service_category_id')
+                    ->selectRaw('COALESCE(SUM(delivered_quantity), 0) as delivered_quantity')
+                    ->where('service_id', $service->id)
+                    ->where('social_worker_id', $this->currentSocialWorkerId())
+                    ->whereIn('service_category_id', $categoryIds)
+                    ->groupBy('service_category_id')
+                    ->pluck('delivered_quantity', 'service_category_id');
+
+                foreach ($categoryQuantities as $categoryId => $quantity) {
+                    $categoryId = (int) $categoryId;
+                    $category = $lockedCategories->get($categoryId);
+                    $allocation = $lockedAllocations->get($categoryId);
+                    $allocatedQuantity = (float) ($allocation?->allocated_quantity ?? 0);
+                    $workerDeliveredQuantity = (float) ($workerDeliveredByCategory[$categoryId] ?? 0);
+                    $remainingWorkerAllocation = max(0, $allocatedQuantity - $workerDeliveredQuantity);
+
+                    if (! $allocation || (float) $quantity > $remainingWorkerAllocation) {
+                        throw ValidationException::withMessages([
+                            'recipientEntries' => 'جمع مقادیر ثبت‌شده از سهمیه تخصیص‌یافته شما برای این آیتم بیشتر است.',
+                        ]);
+                    }
+
+                    $deliveredQuantity = (float) ($deliveredByCategory[$categoryId] ?? 0);
+                    $remainingStock = $category ? max(0, (float) $category->quantity - $deliveredQuantity) : 0;
+
+                    if (! $category || $remainingStock < (float) $quantity) {
                         throw ValidationException::withMessages([
                             'recipientEntries' => 'مقدار تحویل برای یکی از دسته‌بندی‌ها از موجودی همان دسته‌بندی بیشتر است.',
                         ]);
