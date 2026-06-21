@@ -65,11 +65,13 @@
                             @endif
                             <button
                                 type="button"
+                                @if($currentStep !== $stepNumber)
                                 wire:click="goToStep({{ $stepNumber }})"
-                                class="relative z-10 flex min-h-20 w-full flex-col items-center justify-center gap-2 rounded-xl border px-1.5 py-2 text-center transition hover:border-indigo-100 hover:bg-indigo-50/50 focus:outline-none focus:ring-4 focus:ring-indigo-100 sm:px-2 {{ $currentStep === $stepNumber ? 'border-indigo-100 bg-indigo-50 shadow-sm' : 'border-transparent bg-white' }}"
+                                @endif
+                                class="relative z-10 flex min-h-20 w-full flex-col items-center justify-center gap-2 rounded-xl border px-1.5 py-2 text-center transition-colors duration-150 focus:outline-none focus:ring-4 focus:ring-indigo-100 sm:px-2 {{ $currentStep === $stepNumber ? 'border-indigo-100 bg-indigo-50 shadow-sm' : 'border-transparent bg-white hover:border-indigo-100 hover:bg-indigo-50/50' }}"
                                 aria-current="{{ $currentStep === $stepNumber ? 'step' : 'false' }}"
                             >
-                                <span class="grid size-9 place-items-center rounded-full border text-xs font-black transition {{ $currentStep === $stepNumber ? 'border-indigo-600 bg-indigo-600 text-white shadow-sm shadow-indigo-100' : ($currentStep > $stepNumber ? 'border-emerald-100 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500') }}">
+                                <span class="grid size-9 place-items-center rounded-full border text-xs font-black transition-colors duration-150 {{ $currentStep === $stepNumber ? 'border-indigo-600 bg-indigo-600 text-white shadow-sm shadow-indigo-100' : ($currentStep > $stepNumber ? 'border-emerald-100 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500') }}">
                                     @if($currentStep > $stepNumber)
                                         <svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                                             <path d="M3.5 8.2 6.6 11 12.5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
@@ -98,7 +100,7 @@
                         <input
                             id="sponsor-first-name"
                             type="text"
-                            wire:model.live.debounce.400ms="firstName"
+                            wire:model.blur="firstName"
                             autocomplete="given-name"
                             placeholder="نام"
                             class="h-12 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
@@ -118,7 +120,7 @@
                         <input
                             id="sponsor-last-name"
                             type="text"
-                            wire:model.live.debounce.400ms="lastName"
+                            wire:model.blur="lastName"
                             autocomplete="family-name"
                             placeholder="نام خانوادگی"
                             class="h-12 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
@@ -140,7 +142,7 @@
                             type="tel"
                             inputmode="numeric"
                             dir="ltr"
-                            x-data="{ mobile: $wire.entangle('mobile').live }"
+                            x-data="{ mobile: $wire.entangle('mobile') }"
                             x-model="mobile"
                             x-on:input="mobile = $el.value.replace(/\D/g, '').slice(0, 11)"
                             autocomplete="tel"
@@ -223,7 +225,7 @@
                         id="sponsor-monthly-donation"
                         type="text"
                         inputmode="numeric"
-                        wire:model.live.debounce.400ms="monthlyDonationAmount"
+                        wire:model.blur="monthlyDonationAmount"
                         x-data
                         x-on:input="$el.value = $el.value.replace(/[^\d]/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
                         placeholder="مثلا 1,000,000"
@@ -491,7 +493,7 @@
                         type="button"
                         wire:click="previousStep"
                         @disabled($currentStep === 1)
-                        class="flex h-9 flex-1 items-center justify-center rounded-md border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 sm:h-12 sm:min-w-32 sm:flex-none sm:rounded-lg sm:px-4 sm:text-sm"
+                        class="flex h-9 flex-1 items-center justify-center rounded-md border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-600 transition-colors duration-150 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 sm:h-12 sm:min-w-32 sm:flex-none sm:rounded-lg sm:px-4 sm:text-sm"
                     >
                         مرحله قبل
                     </button>
@@ -501,14 +503,14 @@
                             <button
                                 type="button"
                                 wire:click="skipStep"
-                                class="flex h-9 flex-1 items-center justify-center rounded-md border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-100 sm:h-12 sm:min-w-32 sm:flex-none sm:rounded-lg sm:px-4 sm:text-sm"
+                                class="flex h-9 flex-1 items-center justify-center rounded-md border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-600 transition-colors duration-150 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-100 sm:h-12 sm:min-w-32 sm:flex-none sm:rounded-lg sm:px-4 sm:text-sm"
                             >
                                 رد کردن
                             </button>
                             <button
                                 type="button"
                                 wire:click="nextStep"
-                                class="flex h-9 flex-1 items-center justify-center rounded-md bg-indigo-600 px-2.5 text-xs font-bold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 sm:h-12 sm:min-w-44 sm:flex-none sm:rounded-lg sm:px-4 sm:text-sm"
+                                class="flex h-9 flex-1 items-center justify-center rounded-md bg-indigo-600 px-2.5 text-xs font-bold text-white transition-colors duration-150 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 sm:h-12 sm:min-w-44 sm:flex-none sm:rounded-lg sm:px-4 sm:text-sm"
                             >
                                 مرحله بعد
                             </button>

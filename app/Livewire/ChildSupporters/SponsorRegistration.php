@@ -35,10 +35,12 @@ class SponsorRegistration extends Component
     public array $assignedBeneficiaries = [];
     public ?array $beneficiaryPreview = null;
     public int $currentStep = 1;
+    public array $reminderMethods = [];
 
     public function mount(bool $embedded = false): void
     {
         $this->embedded = $embedded;
+        $this->reminderMethods = SponsorProfile::reminderMethodOptions();
         $this->authorizeAccess();
 
         if ($this->sponsorId) {
@@ -92,16 +94,12 @@ class SponsorRegistration extends Component
 
     public function goToStep(int $step): void
     {
-        $this->currentStep = min(max($step, 1), 5);
+        $this->setCurrentStep($step);
     }
 
     public function nextStep(): void
     {
-        if ($this->currentStep >= 5) {
-            return;
-        }
-
-        $this->currentStep++;
+        $this->setCurrentStep($this->currentStep + 1);
     }
 
     public function skipStep(): void
@@ -111,9 +109,7 @@ class SponsorRegistration extends Component
 
     public function previousStep(): void
     {
-        if ($this->currentStep > 1) {
-            $this->currentStep--;
-        }
+        $this->setCurrentStep($this->currentStep - 1);
     }
 
     public function save(): void
@@ -358,6 +354,17 @@ class SponsorRegistration extends Component
         );
     }
 
+    private function setCurrentStep(int $step): void
+    {
+        $step = min(max($step, 1), 5);
+
+        if ($step === $this->currentStep) {
+            return;
+        }
+
+        $this->currentStep = $step;
+    }
+
     /**
      * @param  array<int, string>  $fields
      */
@@ -483,8 +490,6 @@ class SponsorRegistration extends Component
     {
         $this->authorizeAccess();
 
-        return view('livewire.child-supporters.sponsor-registration', [
-            'reminderMethods' => SponsorProfile::reminderMethodOptions(),
-        ]);
+        return view('livewire.child-supporters.sponsor-registration');
     }
 }
