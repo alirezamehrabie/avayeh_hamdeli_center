@@ -107,24 +107,24 @@ class ChildSupporterRegistrationTest extends TestCase
         ]);
     }
 
-    public function test_sponsor_list_can_edit_supporter_information(): void
+    public function test_sponsor_registration_page_can_edit_supporter_information(): void
     {
         $this->actingAs($this->manager());
         $profile = $this->sponsorProfile('09120000011', 'Old', 'Supporter');
 
-        Livewire::test(SponsorList::class)
-            ->call('editSponsor', $profile->id)
+        Livewire::test(SponsorRegistration::class, ['sponsorId' => $profile->id])
             ->assertSet('isEditing', true)
-            ->set('editFirstName', 'Updated')
-            ->set('editLastName', 'Person')
-            ->set('editMobile', '09120000012')
-            ->set('editMonthlyDonationAmount', '250000')
-            ->set('editChildPreferences', 'Updated preference')
-            ->set('editMonthlyPaymentReminderMethods', [SponsorProfile::REMINDER_SMS, SponsorProfile::REMINDER_PHONE])
-            ->set('editIsSocialMediaActive', 'no')
-            ->call('updateSponsor')
-            ->assertSet('isEditing', false)
-            ->assertSet('selectedSponsor.fullName', 'Updated Person');
+            ->assertSet('firstName', 'Old')
+            ->set('firstName', 'Updated')
+            ->set('lastName', 'Person')
+            ->set('mobile', '09120000012')
+            ->set('monthlyDonationAmount', '250000')
+            ->set('childPreferences', 'Updated preference')
+            ->set('monthlyPaymentReminderMethods', [SponsorProfile::REMINDER_SMS, SponsorProfile::REMINDER_PHONE])
+            ->set('isSocialMediaActive', 'no')
+            ->call('save')
+            ->assertSet('isEditing', true)
+            ->assertSet('firstName', 'Updated');
 
         $profile->refresh();
         $profile->user->refresh();
@@ -140,17 +140,16 @@ class ChildSupporterRegistrationTest extends TestCase
         $this->assertSame('09120000012', $profile->user->name);
     }
 
-    public function test_sponsor_edit_rejects_mobile_used_by_another_user(): void
+    public function test_sponsor_registration_edit_rejects_mobile_used_by_another_user(): void
     {
         $this->actingAs($this->manager());
         $profile = $this->sponsorProfile('09120000013', 'First', 'Supporter');
         $this->sponsorProfile('09120000014', 'Second', 'Supporter');
 
-        Livewire::test(SponsorList::class)
-            ->call('editSponsor', $profile->id)
-            ->set('editMobile', '09120000014')
-            ->call('updateSponsor')
-            ->assertHasErrors(['editMobile']);
+        Livewire::test(SponsorRegistration::class, ['sponsorId' => $profile->id])
+            ->set('mobile', '09120000014')
+            ->call('save')
+            ->assertHasErrors(['mobile']);
     }
 
     public function test_sponsor_list_can_filter_by_search_term(): void

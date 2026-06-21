@@ -5,8 +5,6 @@ namespace App\Livewire\ChildSupporters;
 use App\Helpers\PersianNumber;
 use App\Models\Person;
 use App\Models\SponsorProfile;
-use App\Models\User;
-use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -35,22 +33,6 @@ class SponsorList extends Component
     public string $beneficiaryCode = '';
 
     public ?array $beneficiaryPreview = null;
-
-    public bool $isEditing = false;
-
-    public string $editFirstName = '';
-
-    public string $editLastName = '';
-
-    public string $editMobile = '';
-
-    public string $editMonthlyDonationAmount = '';
-
-    public string $editChildPreferences = '';
-
-    public array $editMonthlyPaymentReminderMethods = [];
-
-    public ?string $editIsSocialMediaActive = null;
 
     public function persianNumber(mixed $value): string
     {
@@ -118,80 +100,7 @@ class SponsorList extends Component
         $this->selectedSponsor = $this->formatSponsorDetails($sponsor);
         $this->beneficiaryCode = '';
         $this->beneficiaryPreview = null;
-        $this->isEditing = false;
         $this->resetErrorBag('beneficiaryCode');
-    }
-
-    public function editSponsor(int $sponsorId): void
-    {
-        $this->authorizeAccess();
-
-        $sponsor = SponsorProfile::query()
-            ->with([
-                'user:id,first_name,last_name,mobile,name',
-                'beneficiaries:id,first_name,last_name,person_code,role',
-            ])
-            ->findOrFail($sponsorId);
-
-        $this->selectedSponsorId = $sponsor->id;
-        $this->selectedSponsor = $this->formatSponsorDetails($sponsor);
-        $this->isEditing = true;
-        $this->beneficiaryCode = '';
-        $this->beneficiaryPreview = null;
-        $this->editFirstName = (string) ($sponsor->user?->first_name ?? '');
-        $this->editLastName = (string) ($sponsor->user?->last_name ?? '');
-        $this->editMobile = (string) ($sponsor->user?->mobile ?: $sponsor->user?->name ?: '');
-        $this->editMonthlyDonationAmount = number_format((int) $sponsor->monthly_donation_amount);
-        $this->editChildPreferences = (string) ($sponsor->child_preferences ?? '');
-        $this->editMonthlyPaymentReminderMethods = array_values((array) $sponsor->monthly_payment_reminder_methods);
-        $this->editIsSocialMediaActive = $sponsor->is_social_media_active ? 'yes' : 'no';
-        $this->resetErrorBag();
-    }
-
-    public function cancelEdit(): void
-    {
-        $this->isEditing = false;
-        $this->resetEditFields();
-        $this->resetErrorBag();
-    }
-
-    public function updateSponsor(): void
-    {
-        $this->authorizeAccess();
-
-        if (! $this->selectedSponsorId) {
-            return;
-        }
-
-        $sponsor = SponsorProfile::query()
-            ->with('user')
-            ->findOrFail($this->selectedSponsorId);
-
-        $validated = $this->validate($this->editRules($sponsor), $this->editMessages());
-        $mobile = $this->normalizeMobile($validated['editMobile']);
-
-        $sponsor->user?->update([
-            'name' => $mobile,
-            'first_name' => $this->normalizeNamePart($validated['editFirstName']),
-            'last_name' => $this->normalizeNamePart($validated['editLastName']),
-            'email' => $mobile.'@local.system',
-            'mobile' => $mobile,
-            'access_level' => User::ACCESS_LEVEL_CHILD_SUPPORTER,
-            'is_admin' => false,
-            'permissions' => [],
-        ]);
-
-        $sponsor->update([
-            'monthly_donation_amount' => (int) preg_replace('/\D+/', '', $validated['editMonthlyDonationAmount']),
-            'child_preferences' => filled($validated['editChildPreferences'] ?? null) ? trim($validated['editChildPreferences']) : null,
-            'monthly_payment_reminder_methods' => array_values($validated['editMonthlyPaymentReminderMethods']),
-            'is_social_media_active' => $validated['editIsSocialMediaActive'] === 'yes',
-        ]);
-
-        $this->isEditing = false;
-        $this->resetEditFields();
-        $this->showDetails($sponsor->id);
-        session()->flash('success', 'Supporter information updated successfully.');
     }
 
     public function lookupBeneficiary(): void
@@ -260,8 +169,6 @@ class SponsorList extends Component
         $this->selectedSponsor = null;
         $this->beneficiaryCode = '';
         $this->beneficiaryPreview = null;
-        $this->isEditing = false;
-        $this->resetEditFields();
         $this->resetErrorBag();
     }
 
@@ -377,76 +284,6 @@ class SponsorList extends Component
             'beneficiaries_desc',
             'beneficiaries_asc',
         ];
-    }
-
-    private function editRules(SponsorProfile $sponsor): array
-    {
-        $userId = $sponsor->user_id;
-        $reminderKeys = array_keys(SponsorProfile::reminderMethodOptions());
-
-        return [
-            'editFirstName' => ['required', 'string', 'min:2', 'max:100'],
-            'editLastName' => ['required', 'string', 'min:2', 'max:100'],
-            'editMobile' => [
-                'required',
-                'digits:11',
-                'regex:/^09\d{9}$/',
-                Rule::unique('users', 'name')->ignore($userId),
-                Rule::unique('users', 'mobile')->ignore($userId),
-            ],
-            'editMonthlyDonationAmount' => [
-                'required',
-                'regex:/^[\d,\s]+$/',
-                function (string $attribute, mixed $value, \Closure $fail): void {
-                    $amount = (int) preg_replace('/\D+/', '', (string) $value);
-
-                    if ($amount < 1000) {
-                        $fail('مبلغ واریزی ماهیانه معتبر نیست.');
-                    }
-                },
-            ],
-            'editChildPreferences' => ['nullable', 'string', 'max:1000'],
-            'editMonthlyPaymentReminderMethods' => ['required', 'array', 'min:1'],
-            'editMonthlyPaymentReminderMethods.*' => ['string', Rule::in($reminderKeys)],
-            'editIsSocialMediaActive' => ['required', Rule::in(['yes', 'no'])],
-        ];
-    }
-
-    private function editMessages(): array
-    {
-        return [
-            'editFirstName.required' => 'نام الزامی است.',
-            'editLastName.required' => 'نام خانوادگی الزامی است.',
-            'editMobile.required' => 'شماره موبایل الزامی است.',
-            'editMobile.digits' => 'شماره موبایل باید دقیقاً ۱۱ رقم باشد.',
-            'editMobile.regex' => 'شماره موبایل باید با ۰۹ شروع شود.',
-            'editMobile.unique' => 'این شماره موبایل قبلاً برای حساب دیگری ثبت شده است.',
-            'editMonthlyDonationAmount.required' => 'مبلغ واریزی ماهیانه الزامی است.',
-            'editMonthlyPaymentReminderMethods.required' => 'حداقل یک روش یادآوری را انتخاب کنید.',
-            'editMonthlyPaymentReminderMethods.min' => 'حداقل یک روش یادآوری را انتخاب کنید.',
-            'editIsSocialMediaActive.required' => 'وضعیت فعالیت در فضای مجازی را انتخاب کنید.',
-        ];
-    }
-
-    private function resetEditFields(): void
-    {
-        $this->editFirstName = '';
-        $this->editLastName = '';
-        $this->editMobile = '';
-        $this->editMonthlyDonationAmount = '';
-        $this->editChildPreferences = '';
-        $this->editMonthlyPaymentReminderMethods = [];
-        $this->editIsSocialMediaActive = null;
-    }
-
-    private function normalizeMobile(string $mobile): string
-    {
-        return preg_replace('/\D+/', '', $mobile) ?: $mobile;
-    }
-
-    private function normalizeNamePart(string $value): string
-    {
-        return preg_replace('/\s+/u', ' ', trim($value)) ?: trim($value);
     }
 
     private function normalizeBeneficiaryCode(string $code): string

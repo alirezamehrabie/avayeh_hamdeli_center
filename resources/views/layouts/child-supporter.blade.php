@@ -7,7 +7,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
-<body class="min-h-screen bg-slate-100 text-slate-900">
+<body class="child-supporter-shell h-screen overflow-hidden bg-slate-100 text-slate-900">
     <div
         x-data="{
             sidebarOpen: window.innerWidth >= 1024,
@@ -36,7 +36,7 @@
             }
         }"
         x-init="init(); return () => destroy()"
-        class="flex h-screen overflow-hidden"
+        class="flex h-dvh overflow-hidden"
     >
         @include('layouts.partials.child-supporter-sidebar')
 
@@ -49,8 +49,8 @@
             style="display: none;"
         ></div>
 
-        <div class="flex w-full flex-1 flex-col overflow-y-auto">
-            <header class="flex items-center justify-between gap-4 border-b bg-white px-6 py-4 shadow-sm">
+        <div class="flex min-w-0 flex-1 flex-col overflow-hidden">
+            <header class="shrink-0 flex items-center justify-between gap-4 border-b bg-white px-6 py-4 shadow-sm">
                 <div class="flex items-center gap-4">
                     <button type="button" @click="toggleSidebar()" class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 text-indigo-700 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-indigo-100 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-indigo-100" aria-label="نمایش یا پنهان‌سازی منو">
                         <svg x-show="!sidebarOpen" class="h-6 w-6" viewBox="0 0 24 24" fill="none" style="display: none;"><path d="M4 6H20M4 12H20M4 18H11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -84,8 +84,8 @@
                 </div>
             </header>
 
-            <main class="px-1 py-4">
-                <div class="container mx-auto">
+            <main class="min-h-0 flex-1 overflow-y-auto px-1 py-4">
+                <div class="container mx-auto min-w-0">
                     {{ $slot }}
                 </div>
             </main>

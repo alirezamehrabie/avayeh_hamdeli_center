@@ -90,14 +90,15 @@
                             </div>
 
                             <div class="mt-3 flex items-center gap-2">
-                                <button type="button" wire:click="showDetails({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="showDetails({{ $sponsor->id }})" class="flex h-10 flex-1 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 px-3 text-sm font-black text-indigo-700 transition hover:border-indigo-200 hover:bg-indigo-100 focus:outline-none focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-70">
+                                <button type="button" title="جزئیات" wire:click="showDetails({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="showDetails({{ $sponsor->id }})" class="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-indigo-100 bg-indigo-50 px-3 text-sm font-black text-indigo-700 transition hover:border-indigo-200 hover:bg-indigo-100 focus:outline-none focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-70">
+                                    <i class="bi bi-eye text-base" aria-hidden="true"></i>
                                     <span wire:loading.remove wire:target="showDetails({{ $sponsor->id }})">جزئیات</span>
-                                    <span wire:loading wire:target="showDetails({{ $sponsor->id }})">در حال بارگذاری...</span>
+                                    <span wire:loading wire:target="showDetails({{ $sponsor->id }})">...</span>
                                 </button>
-                                <button type="button" wire:click="editSponsor({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="editSponsor({{ $sponsor->id }})" class="flex h-10 shrink-0 items-center justify-center rounded-lg px-3 text-sm font-black text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-100 disabled:cursor-not-allowed disabled:opacity-70">
-                                    <span wire:loading.remove wire:target="editSponsor({{ $sponsor->id }})">ویرایش</span>
-                                    <span wire:loading wire:target="editSponsor({{ $sponsor->id }})">در حال بارگذاری...</span>
-                                </button>
+                                <a href="{{ route('child-supporter.sponsor-registration', ['sponsor' => $sponsor->id]) }}" title="ویرایش" class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-100">
+                                    <span class="sr-only">ویرایش</span>
+                                    <i class="bi bi-pencil-square text-base" aria-hidden="true"></i>
+                                </a>
                             </div>
                         </div>
 
@@ -130,15 +131,16 @@
                             </span>
                         </div>
 
-                        <div class="hidden gap-2 md:mt-0 md:flex">
-                            <button type="button" wire:click="showDetails({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="showDetails({{ $sponsor->id }})" class="flex h-10 flex-1 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 px-3 text-sm font-black text-indigo-700 transition hover:border-indigo-200 hover:bg-indigo-100 focus:outline-none focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-70 md:w-24">
-                                <span wire:loading.remove wire:target="showDetails({{ $sponsor->id }})">جزئیات</span>
+                        <div class="hidden gap-1 md:mt-0 md:flex">
+                            <button type="button" title="جزئیات" wire:click="showDetails({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="showDetails({{ $sponsor->id }})" class="inline-flex h-10 w-10 items-center justify-center rounded-lg text-indigo-600 transition hover:bg-indigo-50 focus:outline-none focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-70">
+                                <span class="sr-only">جزئیات</span>
+                                <i class="bi bi-eye text-base" aria-hidden="true" wire:loading.remove wire:target="showDetails({{ $sponsor->id }})"></i>
                                 <span wire:loading wire:target="showDetails({{ $sponsor->id }})">...</span>
                             </button>
-                            <button type="button" wire:click="editSponsor({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="editSponsor({{ $sponsor->id }})" class="flex h-10 flex-1 items-center justify-center rounded-lg px-3 text-sm font-black text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-100 disabled:cursor-not-allowed disabled:opacity-70 md:w-20">
-                                <span wire:loading.remove wire:target="editSponsor({{ $sponsor->id }})">ویرایش</span>
-                                <span wire:loading wire:target="editSponsor({{ $sponsor->id }})">...</span>
-                            </button>
+                            <a href="{{ route('child-supporter.sponsor-registration', ['sponsor' => $sponsor->id]) }}" title="ویرایش" class="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-100">
+                                <span class="sr-only">ویرایش</span>
+                                <i class="bi bi-pencil-square text-base" aria-hidden="true"></i>
+                            </a>
                         </div>
                     </article>
                 @empty
@@ -157,7 +159,7 @@
                             <th scope="col" class="w-36 px-4 py-3 text-right text-xs font-black text-slate-500">موبایل</th>
                             <th scope="col" class="w-48 px-4 py-3 text-left text-xs font-black text-slate-500">مبلغ ماهیانه</th>
                             <th scope="col" class="w-24 px-4 py-3 text-center text-xs font-black text-slate-500">مددجویان</th>
-                            <th scope="col" class="w-40 px-4 py-3 text-center text-xs font-black text-slate-500">عملیات</th>
+                            <th scope="col" class="w-24 px-4 py-3 text-center text-xs font-black text-slate-500">عملیات</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
@@ -184,15 +186,16 @@
                                     </span>
                                 </td>
                                 <td class="whitespace-nowrap px-4 py-3.5">
-                                    <div class="flex justify-center gap-2">
-                                        <button type="button" wire:click="showDetails({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="showDetails({{ $sponsor->id }})" class="inline-flex h-9 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 px-3 text-xs font-black text-indigo-700 transition hover:border-indigo-200 hover:bg-indigo-100 focus:outline-none focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-70">
-                                            <span wire:loading.remove wire:target="showDetails({{ $sponsor->id }})">جزئیات</span>
+                                    <div class="flex justify-center gap-1">
+                                        <button type="button" title="جزئیات" wire:click="showDetails({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="showDetails({{ $sponsor->id }})" class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-indigo-600 transition hover:bg-indigo-50 focus:outline-none focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-70">
+                                            <span class="sr-only">جزئیات</span>
+                                            <i class="bi bi-eye text-base" aria-hidden="true" wire:loading.remove wire:target="showDetails({{ $sponsor->id }})"></i>
                                             <span wire:loading wire:target="showDetails({{ $sponsor->id }})">...</span>
                                         </button>
-                                        <button type="button" wire:click="editSponsor({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="editSponsor({{ $sponsor->id }})" class="inline-flex h-9 items-center justify-center rounded-lg px-3 text-xs font-black text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-100 disabled:cursor-not-allowed disabled:opacity-70">
-                                            <span wire:loading.remove wire:target="editSponsor({{ $sponsor->id }})">ویرایش</span>
-                                            <span wire:loading wire:target="editSponsor({{ $sponsor->id }})">...</span>
-                                        </button>
+                                        <a href="{{ route('child-supporter.sponsor-registration', ['sponsor' => $sponsor->id]) }}" title="ویرایش" class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-100">
+                                            <span class="sr-only">ویرایش</span>
+                                            <i class="bi bi-pencil-square text-base" aria-hidden="true"></i>
+                                        </a>
                                     </div>
                                 </td>
                             </tr>
@@ -243,7 +246,7 @@
                 lastFocused: null,
                 focusables: [],
                 refreshFocusables() {
-                    this.focusables = Array.from(this.$el.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex=\"-1\"])'))
+                    this.focusables = Array.from(this.$el.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex=&quot;-1&quot;])'))
                         .filter((element) => !element.hasAttribute('disabled'));
                 },
                 trap(event) {
@@ -271,13 +274,6 @@
                         this.refreshFocusables();
                         this.focusables[0]?.focus();
                     });
-
-                    this.$watch('$wire.isEditing', () => {
-                        this.$nextTick(() => {
-                            this.refreshFocusables();
-                            this.focusables[0]?.focus();
-                        });
-                    });
                 },
                 destroy() {
                     document.body.classList.remove('overflow-hidden');
@@ -293,7 +289,7 @@
             <div class="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-4 shadow-xl" role="dialog" aria-modal="true" aria-labelledby="selected-sponsor-title">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <p class="text-xs font-bold text-indigo-600">{{ $isEditing ? 'ویرایش حامی' : 'جزئیات حامی' }}</p>
+                        <p class="text-xs font-bold text-indigo-600">جزئیات حامی</p>
                         <h2 id="selected-sponsor-title" class="mt-1 text-lg font-black text-slate-900">{{ $selectedSponsor['fullName'] }}</h2>
                     </div>
                     <button type="button" wire:click="closeDetails" class="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition hover:bg-slate-200">
@@ -304,81 +300,6 @@
                     </button>
                 </div>
 
-                @if($isEditing)
-                    <form wire:submit.prevent="updateSponsor" class="mt-4 space-y-4">
-                        <div class="grid gap-3 sm:grid-cols-2">
-                            <div>
-                                <label class="mb-1.5 block text-sm font-bold text-slate-700">نام</label>
-                                <input type="text" wire:model.blur="editFirstName" class="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100">
-                                @error('editFirstName') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
-                            </div>
-
-                            <div>
-                                <label class="mb-1.5 block text-sm font-bold text-slate-700">نام خانوادگی</label>
-                                <input type="text" wire:model.blur="editLastName" class="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100">
-                                @error('editLastName') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
-                            </div>
-
-                            <div>
-                                <label class="mb-1.5 block text-sm font-bold text-slate-700">شماره موبایل</label>
-                                <input type="tel" wire:model.blur="editMobile" dir="ltr" maxlength="11" class="h-11 w-full rounded-lg border border-slate-200 px-3 text-left text-sm outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100">
-                                @error('editMobile') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
-                            </div>
-
-                            <div>
-                                <label class="mb-1.5 block text-sm font-bold text-slate-700">مبلغ واریزی ماهیانه</label>
-                                <input type="text" wire:model.blur="editMonthlyDonationAmount" dir="ltr" class="h-11 w-full rounded-lg border border-slate-200 px-3 text-left text-sm outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100">
-                                @error('editMonthlyDonationAmount') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="mb-1.5 block text-sm font-bold text-slate-700">مشخصات خاص کودک</label>
-                            <textarea wire:model.blur="editChildPreferences" rows="3" class="min-h-24 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"></textarea>
-                            @error('editChildPreferences') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div class="grid gap-3 sm:grid-cols-2">
-                            <fieldset>
-                                <legend class="mb-1.5 block text-sm font-bold text-slate-700">روش‌های یادآوری</legend>
-                                <div class="space-y-1.5">
-                                    @foreach(\App\Models\SponsorProfile::reminderMethodOptions() as $value => $label)
-                                        <label class="flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700">
-                                            <input type="checkbox" wire:model.defer="editMonthlyPaymentReminderMethods" value="{{ $value }}" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-                                            <span>{{ $label }}</span>
-                                        </label>
-                                    @endforeach
-                                </div>
-                                @error('editMonthlyPaymentReminderMethods') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
-                            </fieldset>
-
-                            <fieldset>
-                                <legend class="mb-1.5 block text-sm font-bold text-slate-700">آیا در فضای مجازی فعال است؟</legend>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <label class="flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700">
-                                        <input type="radio" wire:model.defer="editIsSocialMediaActive" value="yes" class="border-slate-300 text-teal-600 focus:ring-teal-500">
-                                        <span>بله</span>
-                                    </label>
-                                    <label class="flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700">
-                                        <input type="radio" wire:model.defer="editIsSocialMediaActive" value="no" class="border-slate-300 text-teal-600 focus:ring-teal-500">
-                                        <span>خیر</span>
-                                    </label>
-                                </div>
-                                @error('editIsSocialMediaActive') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
-                            </fieldset>
-                        </div>
-
-                        <div class="flex flex-col-reverse gap-2 border-t border-slate-100 pt-3 sm:flex-row sm:justify-end">
-                            <button type="button" wire:click="cancelEdit" class="h-11 rounded-lg border border-slate-200 px-4 text-sm font-black text-slate-600 transition hover:bg-slate-50">
-                                انصراف
-                            </button>
-                            <button type="submit" wire:loading.attr="disabled" wire:target="updateSponsor" class="h-11 rounded-lg bg-indigo-600 px-4 text-sm font-black text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-70">
-                                <span wire:loading.remove wire:target="updateSponsor">ذخیره تغییرات</span>
-                                <span wire:loading wire:target="updateSponsor">در حال ذخیره...</span>
-                            </button>
-                        </div>
-                    </form>
-                @else
                     <div class="mt-4 max-h-[70vh] space-y-4 overflow-y-auto pr-1">
                         <section>
                             <h3 class="text-xs font-black text-slate-400">اطلاعات حامی</h3>
@@ -475,7 +396,6 @@
                             @endif
                         </section>
                     </div>
-                @endif
             </div>
         </div>
     @endif

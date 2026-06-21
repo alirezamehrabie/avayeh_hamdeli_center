@@ -7,12 +7,17 @@ use App\Models\Person;
 use App\Models\User;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 #[Layout('layouts.child-supporter')]
 class SponsorRegistration extends Component
 {
     public bool $embedded = false;
+
+    #[Url(as: 'sponsor')]
+    public ?int $sponsorId = null;
+
     public bool $isEditing = false;
 
     public string $firstName = '';
@@ -30,6 +35,10 @@ class SponsorRegistration extends Component
     {
         $this->embedded = $embedded;
         $this->authorizeAccess();
+
+        if ($this->sponsorId) {
+            $this->loadSponsorForEditing($this->sponsorId);
+        }
     }
 
     public function updated(string $property): void
@@ -108,6 +117,12 @@ class SponsorRegistration extends Component
     {
         $this->authorizeAccess();
 
+        if ($this->isEditing) {
+            $this->updateSponsor();
+
+            return;
+        }
+
         $validated = $this->validate($this->rules(), $this->messages());
         $mobile = $this->normalizeMobile($validated['mobile']);
         $firstName = $this->normalizeNamePart($validated['firstName']);
@@ -155,12 +170,69 @@ class SponsorRegistration extends Component
         session()->flash('success', 'ثبت نام حامی با موفقیت انجام شد.');
     }
 
+    private function updateSponsor(): void
+    {
+        if (! $this->sponsorId) {
+            return;
+        }
+
+        $sponsor = SponsorProfile::query()
+            ->with('user')
+            ->findOrFail($this->sponsorId);
+
+        $validated = $this->validate($this->rules(), $this->messages());
+        $mobile = $this->normalizeMobile($validated['mobile']);
+
+        $sponsor->user?->update([
+            'name' => $mobile,
+            'first_name' => $this->normalizeNamePart($validated['firstName']),
+            'last_name' => $this->normalizeNamePart($validated['lastName']),
+            'email' => $mobile.'@local.system',
+            'mobile' => $mobile,
+            'access_level' => User::ACCESS_LEVEL_CHILD_SUPPORTER,
+            'is_admin' => false,
+            'permissions' => [],
+        ]);
+
+        $sponsor->update([
+            'monthly_donation_amount' => (int) preg_replace('/\D+/', '', $validated['monthlyDonationAmount']),
+            'child_preferences' => filled($validated['childPreferences'] ?? null) ? trim($validated['childPreferences']) : null,
+            'monthly_payment_reminder_methods' => array_values($validated['monthlyPaymentReminderMethods']),
+            'is_social_media_active' => $validated['isSocialMediaActive'] === 'yes',
+        ]);
+
+        $beneficiaryIds = collect($this->assignedBeneficiaries)
+            ->pluck('id')
+            ->map(fn (mixed $id): int => (int) $id)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        $sponsor->beneficiaries()->sync($beneficiaryIds);
+
+        $this->loadSponsorForEditing($sponsor->id);
+
+        session()->flash('success', 'اطلاعات حامی با موفقیت بروزرسانی شد.');
+    }
+
     /**
      * @return array<string, mixed>
      */
     protected function rules(): array
     {
         $reminderKeys = array_keys(SponsorProfile::reminderMethodOptions());
+
+        $mobileRules = [
+            'required',
+            'digits:11',
+            'regex:/^09\d{9}$/',
+        ];
+
+        if ($this->isEditing) {
+            $mobileRules[] = Rule::unique('users', 'name')->ignore($this->editingUserId());
+            $mobileRules[] = Rule::unique('users', 'mobile')->ignore($this->editingUserId());
+        }
 
         return [
             'firstName' => ['required', 'string', 'min:2', 'max:100'],
@@ -176,11 +248,7 @@ class SponsorRegistration extends Component
                     }
                 },
             ],
-            'mobile' => [
-                'required',
-                'digits:11',
-                'regex:/^09\d{9}$/',
-            ],
+            'mobile' => $mobileRules,
             'childPreferences' => ['nullable', 'string', 'max:1000'],
             'monthlyPaymentReminderMethods' => ['required', 'array', 'min:1'],
             'monthlyPaymentReminderMethods.*' => ['string', Rule::in($reminderKeys)],
@@ -223,6 +291,44 @@ class SponsorRegistration extends Component
             && (auth()->user()->can('access-child-supporter-panel') || auth()->user()->can('access-admin-panel')),
             403
         );
+    }
+
+    private function loadSponsorForEditing(int $sponsorId): void
+    {
+        $sponsor = SponsorProfile::query()
+            ->with([
+                'user:id,first_name,last_name,mobile,name',
+                'beneficiaries.sponsorProfiles.user:id,first_name,last_name,name,mobile',
+            ])
+            ->findOrFail($sponsorId);
+
+        $this->sponsorId = $sponsor->id;
+        $this->isEditing = true;
+        $this->firstName = (string) ($sponsor->user?->first_name ?? '');
+        $this->lastName = (string) ($sponsor->user?->last_name ?? '');
+        $this->mobile = (string) ($sponsor->user?->mobile ?: $sponsor->user?->name ?: '');
+        $this->monthlyDonationAmount = number_format((int) $sponsor->monthly_donation_amount);
+        $this->childPreferences = (string) ($sponsor->child_preferences ?? '');
+        $this->monthlyPaymentReminderMethods = array_values((array) $sponsor->monthly_payment_reminder_methods);
+        $this->isSocialMediaActive = $sponsor->is_social_media_active ? 'yes' : 'no';
+        $this->assignedBeneficiaries = $sponsor->beneficiaries
+            ->map(fn (Person $beneficiary): array => $this->formatBeneficiary($beneficiary))
+            ->values()
+            ->all();
+        $this->beneficiaryCode = '';
+        $this->beneficiaryPreview = null;
+        $this->resetErrorBag();
+    }
+
+    private function editingUserId(): ?int
+    {
+        if (! $this->isEditing || ! $this->sponsorId) {
+            return null;
+        }
+
+        return SponsorProfile::query()
+            ->whereKey($this->sponsorId)
+            ->value('user_id');
     }
 
     private function normalizeMobile(string $mobile): string

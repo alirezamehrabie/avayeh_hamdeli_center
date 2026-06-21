@@ -1,12 +1,17 @@
 <div class="{{ $embedded ? '' : 'mx-auto max-w-5xl' }}" dir="rtl">
-    <div class="space-y-4 pb-24 sm:pb-4">
+    <div class="space-y-4 pb-4">
         <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <p class="text-xs font-bold text-indigo-600">حامی کودک</p>
-                    <h1 class="mt-1 text-xl font-black text-slate-900 sm:text-2xl">ثبت نام حامی</h1>
-                    <p class="mt-2 text-sm leading-6 text-slate-500">اطلاعات حامی جدید را با حداقل مراحل ثبت کنید.</p>
+                    <h1 class="mt-1 text-xl font-black text-slate-900 sm:text-2xl">{{ $isEditing ? 'ویرایش حامی' : 'ثبت نام حامی' }}</h1>
+                    <p class="mt-2 text-sm leading-6 text-slate-500">{{ $isEditing ? 'اطلاعات حامی را بررسی و بروزرسانی کنید.' : 'اطلاعات حامی جدید را با حداقل مراحل ثبت کنید.' }}</p>
                 </div>
+                @if($isEditing)
+                    <a href="{{ route('child-supporter.sponsor-list') }}" class="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-600 transition hover:bg-slate-50">
+                        بازگشت به لیست
+                    </a>
+                @endif
             </div>
         </div>
 
@@ -16,7 +21,7 @@
             </div>
         @endif
 
-        <form wire:submit.prevent="save" class="space-y-4">
+        <form wire:submit.prevent="save" class="space-y-4 pb-20 sm:pb-0">
             <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
                 <div class="mb-4 flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
                     <h2 class="text-base font-black text-slate-900">اطلاعات اصلی</h2>
@@ -267,8 +272,8 @@
                     wire:target="save"
                     class="flex h-12 w-full items-center justify-center rounded-xl bg-indigo-600 px-4 text-sm font-black text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto sm:min-w-44"
                 >
-                    <span wire:loading.remove wire:target="save">ثبت نام حامی</span>
-                    <span wire:loading wire:target="save">در حال ثبت...</span>
+                    <span wire:loading.remove wire:target="save">{{ $isEditing ? 'ذخیره تغییرات' : 'ثبت نام حامی' }}</span>
+                    <span wire:loading wire:target="save">{{ $isEditing ? 'در حال ذخیره...' : 'در حال ثبت...' }}</span>
                 </button>
             </div>
         </form>
