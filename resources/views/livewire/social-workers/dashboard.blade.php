@@ -341,41 +341,32 @@
                                                         @forelse($assignableCategories as $category)
                                                             @php($metrics = $categoryMetrics[$category->id] ?? ['remaining_stock' => 0, 'remaining_allocation' => 0])
                                                             @php($remainingStock = (float) $metrics['remaining_stock'])
+                                                            @php($pendingCategoryQuantity = collect($recipientEntries)->sum(fn ($entry) => (float) data_get($entry, 'category_quantities.' . (int) $category->id, 0)))
+                                                            @php($liveRemainingAllocation = max(0, (float) $metrics['remaining_allocation'] - $pendingCategoryQuantity))
                                                             @php($isUnavailable = $remainingStock <= 0)
-                                                            <div class="rounded-xl border border-slate-200 bg-white p-3 text-right transition {{ $isUnavailable ? 'opacity-55' : 'hover:border-cyan-300 hover:bg-cyan-50/40' }}">
-                                                                <div>
-                                                                    <span class="flex items-start justify-between gap-3">
-                                                                        <span class="min-w-0">
-                                                                            <span class="block truncate text-sm font-extrabold text-slate-800">{{ $category->name }}</span>
-                                                                            <span class="mt-1 block text-[10px] font-bold text-slate-400">
-                                                                                ارزش واحد: {{ number_format((int) $category->value) }}
-                                                                            </span>
-                                                                        </span>
-                                                                        <span class="shrink-0 rounded-lg {{ $isUnavailable ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-700' }} px-2 py-1 text-[10px] font-black">
-                                                                            {{ $isUnavailable ? 'ناموجود' : 'قابل انتخاب' }}
-                                                                        </span>
-                                                                    </span>
-                                                                    <span class="mt-3 grid grid-cols-2 gap-2">
-                                                                        <span class="rounded-lg bg-slate-50 px-2 py-1.5">
-                                                                            <span class="block text-[9px] font-bold text-slate-400">مانده سهمیه</span>
-                                                                            <span class="mt-0.5 block text-xs font-black text-slate-700">{{ number_format((float) $metrics['remaining_allocation'], 2) }}</span>
-                                                                        </span>
-                                                                        <span class="rounded-lg bg-slate-50 px-2 py-1.5">
-                                                                            <span class="block text-[9px] font-bold text-slate-400">موجودی</span>
-                                                                            <span class="mt-0.5 block text-xs font-black text-slate-700">
-                                                                                {{ number_format($remainingStock, 2) }}
-                                                                                {{ $unitOptions[$category->unit] ?? $category->unit }}
-                                                                            </span>
-                                                                        </span>
-                                                                    </span>
+                                                            <div class="rounded-xl border border-slate-200 bg-white p-3 text-right transition {{ $isUnavailable ? 'opacity-55' : 'hover:border-cyan-200 hover:bg-slate-50/60' }}">
+                                                                <div class="flex items-start justify-between gap-3">
+                                                                    <div class="min-w-0">
+                                                                        <h4 class="truncate text-sm font-extrabold text-slate-800">{{ $category->name }}</h4>
+                                                                    </div>
+                                                                    <div class="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-cyan-100 bg-cyan-50 px-2.5 py-1 text-[10px] font-black text-cyan-700">
+                                                                        <span>باقی‌مانده</span>
+                                                                        <span dir="ltr">{{ number_format($liveRemainingAllocation, 2) }}</span>
+                                                                        <span class="font-bold text-cyan-600/80">{{ $unitOptions[$category->unit] ?? $category->unit }}</span>
+                                                                    </div>
                                                                 </div>
                                                                 <div class="mt-3">
-                                                                    <label class="mb-1.5 block text-[10px] font-bold text-slate-500">مقدار تحویلی این دسته‌بندی</label>
-                                                                    <input type="number" min="0.01" step="0.01"
-                                                                           wire:model.blur="recipientEntries.{{ $index }}.category_quantities.{{ $category->id }}"
-                                                                           @disabled(!$this->selectedService || $isUnavailable)
-                                                                           class="w-full rounded-xl border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all placeholder:text-slate-300"
-                                                                           placeholder="0">
+                                                                    <label class="mb-1.5 block text-[10px] font-bold text-slate-500">مقدار تحویلی</label>
+                                                                    <div class="relative">
+                                                                        <input type="number" min="0.01" step="0.01"
+                                                                               wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.category_quantities.{{ $category->id }}"
+                                                                               @disabled(!$this->selectedService || $isUnavailable)
+                                                                               class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 pl-14 text-sm font-bold text-slate-800 transition placeholder:text-slate-300 focus:border-cyan-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-500/10 disabled:cursor-not-allowed disabled:opacity-60"
+                                                                               placeholder="0">
+                                                                        <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">
+                                                                            {{ $unitOptions[$category->unit] ?? $category->unit }}
+                                                                        </span>
+                                                                    </div>
                                                                     @error('recipientEntries.' . $index . '.category_quantities.' . $category->id) <p class="mt-1 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror
                                                                 </div>
                                                             </div>
