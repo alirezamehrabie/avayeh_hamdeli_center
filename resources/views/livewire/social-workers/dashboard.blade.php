@@ -342,6 +342,7 @@
                                                     successSoundUrl: '/sounds/scan-card.wav',
                                                     enableResultBanner: false,
                                                     autoStart: false,
+                                                    autoResumeAfterError: false,
                                                 }),
                                                 qrScannerOpen: false,
                                                 openingScanner: false,
@@ -469,12 +470,13 @@
                                                                 <div class="mt-4 grid gap-2" x-show="!openingScanner && !startingCamera && status !== 'unsupported'" style="display: none;">
                                                                     <button
                                                                         type="button"
-                                                                        @click="startCamera()"
+                                                                        @click="status === 'scan_error' && cameraActive ? resumeScan() : startCamera()"
                                                                         class="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 px-3 text-xs font-black text-slate-950 transition hover:bg-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-200/60"
                                                                     >
                                                                         <i class="bi bi-camera-video"></i>
                                                                         <span x-show="status === 'ready'">شروع اسکن</span>
-                                                                        <span x-show="status !== 'ready'">تلاش دوباره</span>
+                                                                        <span x-show="status === 'scan_error'">اسکن دوباره</span>
+                                                                        <span x-show="!['ready', 'scan_error'].includes(status)">تلاش دوباره</span>
                                                                     </button>
                                                                 </div>
                                                             </div>
@@ -482,7 +484,29 @@
                                                     </div>
 
                                                     <div class="space-y-2 px-3 py-3">
-                                                        <p class="text-xs leading-5 text-slate-200" x-text="message"></p>
+                                                        <div
+                                                            x-show="status === 'scan_error'"
+                                                            x-transition.opacity.duration.150ms
+                                                            class="rounded-xl border border-rose-400/25 bg-rose-500/10 px-3 py-2 text-rose-100"
+                                                            style="display: none;"
+                                                        >
+                                                            <div class="flex items-start gap-2">
+                                                                <i class="bi bi-exclamation-triangle mt-0.5 shrink-0 text-sm"></i>
+                                                                <div class="min-w-0 flex-1">
+                                                                    <p class="text-xs font-extrabold">QR قابل ثبت نیست</p>
+                                                                    <p class="mt-1 text-[11px] leading-5 text-rose-100/90" x-text="message"></p>
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                @click="resumeScan()"
+                                                                class="mt-2 inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-lg bg-white px-3 text-xs font-black text-rose-700 transition hover:bg-rose-50 focus:outline-none focus:ring-2 focus:ring-white/60"
+                                                            >
+                                                                <i class="bi bi-qr-code-scan"></i>
+                                                                اسکن دوباره
+                                                            </button>
+                                                        </div>
+                                                        <p x-show="status !== 'scan_error'" class="text-xs leading-5 text-slate-200" x-text="message"></p>
                                                         <div class="grid gap-2" x-show="cameras.length > 1" style="display: none;">
                                                             <select
                                                                 x-model="selectedDeviceId"

@@ -139,6 +139,7 @@ Alpine.data('idCardScanner', ({
     activityName = '',
     enableResultBanner = true,
     autoStart = true,
+    autoResumeAfterError = true,
 }) => ({
     ...attendanceResultBanner(),
     cameras: [],
@@ -169,6 +170,7 @@ Alpine.data('idCardScanner', ({
     scanSuccessAudio: null,
     activityName,
     enableResultBanner,
+    autoResumeAfterError,
     successBanner: createAttendanceResultBannerState(),
     async init() {
         this.prepareSuccessSound();
@@ -411,7 +413,12 @@ Alpine.data('idCardScanner', ({
                 if (this.enableResultBanner) {
                     this.showResultBanner(response.result, response?.message);
                 }
-                this.scheduleResumeAfterSuccess();
+
+                if (response?.ok || this.autoResumeAfterError) {
+                    this.scheduleResumeAfterSuccess();
+                } else {
+                    this.resolvingScan = false;
+                }
             }
 
             this.setStatus(
