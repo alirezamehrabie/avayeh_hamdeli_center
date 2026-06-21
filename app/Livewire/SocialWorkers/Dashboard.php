@@ -41,6 +41,9 @@ class Dashboard extends Component
     protected ?Collection $assignableCategoriesCache = null;
     protected ?array $selectedServiceTotalsCache = null;
     protected ?array $selectedServiceCategoryMetricsCache = null;
+    protected ?int $assignableCategoriesCacheServiceId = null;
+    protected ?int $selectedServiceTotalsCacheServiceId = null;
+    protected ?int $selectedServiceCategoryMetricsCacheServiceId = null;
     protected ?array $unitOptionsCache = null;
 
     public function mount(): void
@@ -53,9 +56,10 @@ class Dashboard extends Component
     public function updatedSelectedServiceId(): void
     {
         $this->flushServiceMetricCaches();
-        $this->recipientEntries = [$this->blankEntry($this->defaultServiceCategoryId())];
+        $service = $this->selectedService;
+        $this->recipientEntries = [$this->blankEntry($this->defaultServiceCategoryId($service))];
         $this->activeRecipientSearchIndex = null;
-        $this->syncQuotaState();
+        $this->syncQuotaState($service);
         $this->serviceSelectionWarning = '';
         $this->closeNotificationModal();
         $this->resetValidation();
@@ -74,7 +78,7 @@ class Dashboard extends Component
 
     public function addRecipientField(): void
     {
-        $this->recipientEntries[] = $this->blankEntry($this->defaultServiceCategoryId());
+        $this->recipientEntries[] = $this->blankEntry($this->defaultServiceCategoryId($this->selectedService));
     }
 
     public function removeRecipientField(int $index): void
@@ -83,7 +87,7 @@ class Dashboard extends Component
         $this->recipientEntries = array_values($this->recipientEntries);
 
         if ($this->recipientEntries === []) {
-            $this->recipientEntries = [$this->blankEntry($this->defaultServiceCategoryId())];
+            $this->recipientEntries = [$this->blankEntry($this->defaultServiceCategoryId($this->selectedService))];
         }
     }
 
@@ -119,7 +123,9 @@ class Dashboard extends Component
 
         $this->activeRecipientSearchIndex = mb_strlen($query) >= 2 ? $index : null;
 
-        if (! $this->selectedService) {
+        $service = $this->selectedService;
+
+        if (! $service) {
             return;
         }
 
@@ -127,7 +133,7 @@ class Dashboard extends Component
             return;
         }
 
-        if ($this->selectedService->service_type === 'family') {
+        if ($service->service_type === 'family') {
             $guardian = Guardian::query()
                 ->withCount('people')
                 ->where('social_worker_id', $this->currentSocialWorkerId())
@@ -168,7 +174,8 @@ class Dashboard extends Component
 
     public function resolveRecipientQr(int $index): void
     {
-        abort_unless($this->selectedService, 404);
+        $service = $this->selectedService;
+        abort_unless($service, 404);
 
         $rawToken = trim((string) ($this->recipientEntries[$index]['qr_token'] ?? ''));
 
@@ -189,7 +196,7 @@ class Dashboard extends Component
         }
 
         if ($identity->subject_type === QrIdentity::SUBJECT_GUARDIAN) {
-            if ($this->selectedService->service_type !== 'family') {
+            if ($service->service_type !== 'family') {
                 $this->addError('recipientEntries.' . $index . '.qr_token', 'QR سرپرست فقط برای خدمات خانوادگی قابل استفاده است.');
 
                 return;
@@ -222,7 +229,7 @@ class Dashboard extends Component
             return;
         }
 
-        if ($this->selectedService->service_type === 'family') {
+        if ($service->service_type === 'family') {
             $guardian = $person->guardian;
 
             if (! $guardian) {
@@ -248,9 +255,10 @@ class Dashboard extends Component
 
     public function selectRecipientSuggestion(int $index, string $type, int $id): void
     {
-        abort_unless($this->selectedService, 404);
+        $service = $this->selectedService;
+        abort_unless($service, 404);
 
-        if ($this->selectedService->service_type === 'family') {
+        if ($service->service_type === 'family') {
             abort_unless($type === 'guardian', 404);
 
             $guardian = Guardian::query()
@@ -436,7 +444,7 @@ class Dashboard extends Component
                 ),
             ],
         ]);
-        $this->recipientEntries = [$this->blankEntry($this->defaultServiceCategoryId())];
+        $this->recipientEntries = [$this->blankEntry($this->defaultServiceCategoryId($freshService))];
         $this->notes = '';
         $this->deliveredAt = $this->defaultDeliveredAt();
     }
@@ -487,6 +495,8 @@ class Dashboard extends Component
             return $this->selectedServiceCache;
         }
 
+        $this->flushSelectedServiceDerivedCaches();
+
         if (! $this->selectedServiceId) {
             return null;
         }
@@ -512,7 +522,8 @@ class Dashboard extends Component
 
     public function getAssignableCategoriesProperty(): Collection
     {
-        if ($this->assignableCategoriesCache instanceof Collection) {
+        if ($this->assignableCategoriesCache instanceof Collection
+            && $this->assignableCategoriesCacheServiceId === (int) $this->selectedServiceId) {
             return $this->assignableCategoriesCache;
         }
 
@@ -524,6 +535,8 @@ class Dashboard extends Component
 
         $categoryMetrics = $this->selectedServiceCategoryMetrics;
 
+        $this->assignableCategoriesCacheServiceId = (int) $service->id;
+
         return $this->assignableCategoriesCache = $service->categories
             ->filter(fn ($category) => (float) ($categoryMetrics[$category->id]['allocated'] ?? 0) > 0)
             ->sortBy('sort_id')
@@ -532,13 +545,16 @@ class Dashboard extends Component
 
     public function getSelectedServiceTotalsProperty(): array
     {
-        if (is_array($this->selectedServiceTotalsCache)) {
+        if (is_array($this->selectedServiceTotalsCache)
+            && $this->selectedServiceTotalsCacheServiceId === (int) $this->selectedServiceId) {
             return $this->selectedServiceTotalsCache;
         }
 
         $service = $this->selectedService;
 
         if (! $service) {
+            $this->selectedServiceTotalsCacheServiceId = null;
+
             return $this->selectedServiceTotalsCache = [
                 'allocated' => 0.0,
                 'delivered' => 0.0,
@@ -548,6 +564,7 @@ class Dashboard extends Component
 
         $allocated = (float) ($service->worker_allocated_quantity ?? 0);
         $delivered = (float) ($service->worker_delivered_quantity ?? 0);
+        $this->selectedServiceTotalsCacheServiceId = (int) $service->id;
 
         return $this->selectedServiceTotalsCache = [
             'allocated' => $allocated,
@@ -558,13 +575,16 @@ class Dashboard extends Component
 
     public function getSelectedServiceCategoryMetricsProperty(): array
     {
-        if (is_array($this->selectedServiceCategoryMetricsCache)) {
+        if (is_array($this->selectedServiceCategoryMetricsCache)
+            && $this->selectedServiceCategoryMetricsCacheServiceId === (int) $this->selectedServiceId) {
             return $this->selectedServiceCategoryMetricsCache;
         }
 
         $service = $this->selectedService;
 
         if (! $service) {
+            $this->selectedServiceCategoryMetricsCacheServiceId = null;
+
             return $this->selectedServiceCategoryMetricsCache = [];
         }
 
@@ -607,6 +627,8 @@ class Dashboard extends Component
             ];
         }
 
+        $this->selectedServiceCategoryMetricsCacheServiceId = (int) $service->id;
+
         return $this->selectedServiceCategoryMetricsCache = $metrics;
     }
 
@@ -624,9 +646,11 @@ class Dashboard extends Component
 
     public function render()
     {
+        $selectedService = $this->selectedService;
+
         return view('livewire.social-workers.dashboard', [
             'assignedServices' => $this->assignedServices,
-            'selectedService' => $this->selectedService,
+            'selectedService' => $selectedService,
             'assignableCategories' => $this->assignableCategories,
             'selectedServiceTotals' => $this->selectedServiceTotals,
             'categoryMetrics' => $this->selectedServiceCategoryMetrics,
@@ -771,16 +795,18 @@ class Dashboard extends Component
         return (float) $this->selectedServiceTotals['remaining'];
     }
 
-    protected function syncQuotaState(): void
+    protected function syncQuotaState(?Service $service = null): void
     {
+        $service ??= $this->selectedService;
+
         $this->quotaState = [
-            'service_type' => $this->serviceTypeLabel($this->selectedService?->service_type),
+            'service_type' => $this->serviceTypeLabel($service?->service_type),
         ];
     }
 
-    protected function defaultServiceCategoryId(): ?int
+    protected function defaultServiceCategoryId(?Service $service = null): ?int
     {
-        $service = $this->selectedService;
+        $service ??= $this->selectedService;
 
         if (! $service) {
             return null;
@@ -860,9 +886,10 @@ class Dashboard extends Component
     public function getRecipientSuggestionsProperty(): array
     {
         $suggestions = [];
+        $service = $this->selectedService;
 
         foreach ($this->recipientEntries as $index => $entry) {
-            if ($this->activeRecipientSearchIndex !== $index || ! $this->selectedService) {
+            if ($this->activeRecipientSearchIndex !== $index || ! $service) {
                 $suggestions[$index] = collect();
                 continue;
             }
@@ -874,7 +901,7 @@ class Dashboard extends Component
                 continue;
             }
 
-            $suggestions[$index] = $this->selectedService->service_type === 'family'
+            $suggestions[$index] = $service->service_type === 'family'
                 ? $this->guardianSuggestions($query)
                 : $this->personSuggestions($query);
         }
@@ -962,9 +989,17 @@ class Dashboard extends Component
     {
         $this->assignedServicesCache = null;
         $this->selectedServiceCache = null;
+        $this->flushSelectedServiceDerivedCaches();
+    }
+
+    protected function flushSelectedServiceDerivedCaches(): void
+    {
         $this->assignableCategoriesCache = null;
         $this->selectedServiceTotalsCache = null;
         $this->selectedServiceCategoryMetricsCache = null;
+        $this->assignableCategoriesCacheServiceId = null;
+        $this->selectedServiceTotalsCacheServiceId = null;
+        $this->selectedServiceCategoryMetricsCacheServiceId = null;
     }
 
     protected function allocatedQuantityFromLoadedService(Service $service, int $socialWorkerId): float
