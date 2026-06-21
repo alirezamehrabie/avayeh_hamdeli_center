@@ -150,6 +150,8 @@ Alpine.data('idCardScanner', ({
     fallbackTimer: null,
     cameraCapabilities: {},
     cameraSettings: {},
+    torchEnabled: false,
+    zoomLevel: 1,
     cameraActive: false,
     startingCamera: false,
     scanning: false,
@@ -295,6 +297,16 @@ Alpine.data('idCardScanner', ({
 
         await this.startCamera();
     },
+    async cycleCamera() {
+        if (this.cameras.length < 2) {
+            return;
+        }
+
+        const currentIndex = this.cameras.findIndex((camera) => camera.id === this.selectedDeviceId);
+        const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % this.cameras.length : 0;
+        this.selectedDeviceId = this.cameras[nextIndex].id;
+        await this.switchCamera();
+    },
     pauseFromWire() {
         this.scanning = false;
         this.stopFallbackLoop();
@@ -334,6 +346,8 @@ Alpine.data('idCardScanner', ({
         this.scanning = false;
         this.resolvingScan = false;
         this.stopFallbackLoop();
+        this.torchEnabled = false;
+        this.zoomLevel = 1;
 
         if (this.html5QrCode && (this.cameraActive || this.html5QrCode.isScanning)) {
             try {
@@ -770,10 +784,6 @@ Alpine.data('idCardScanner', ({
                     advanced.push({ exposureMode: 'continuous' });
                 }
 
-                if (capabilities.torch) {
-                    advanced.push({ torch: true });
-                }
-
                 if (capabilities.zoom?.max && capabilities.zoom.max > 1) {
                     const zoom = Math.min(capabilities.zoom.max, Math.max(capabilities.zoom.min || 1, 2));
                     advanced.push({ zoom });
@@ -781,10 +791,59 @@ Alpine.data('idCardScanner', ({
 
                 await this.html5QrCode.applyVideoConstraints(constraints);
                 this.cameraSettings = this.html5QrCode.getRunningTrackSettings?.() || {};
+                this.torchEnabled = Boolean(this.cameraSettings.torch);
+                this.zoomLevel = Number(this.cameraSettings.zoom || 1);
             } catch (error) {
                 // Some webcams do not expose focus/exposure constraints; scanning can continue.
             }
         });
+    },
+    supportsTorch() {
+        return Boolean(this.cameraCapabilities?.torch);
+    },
+    supportsZoom() {
+        return Boolean(this.cameraCapabilities?.zoom?.max && this.cameraCapabilities.zoom.max > 1);
+    },
+    zoomMin() {
+        return Number(this.cameraCapabilities?.zoom?.min || 1);
+    },
+    zoomMax() {
+        return Number(this.cameraCapabilities?.zoom?.max || 1);
+    },
+    zoomStep() {
+        return Number(this.cameraCapabilities?.zoom?.step || 0.1);
+    },
+    async applyCameraAdvancedConstraints(advancedConstraints) {
+        if (!this.html5QrCode?.isScanning) {
+            return;
+        }
+
+        try {
+            await this.html5QrCode.applyVideoConstraints({
+                advanced: [advancedConstraints],
+            });
+            this.cameraSettings = this.html5QrCode.getRunningTrackSettings?.() || {};
+            this.torchEnabled = Boolean(this.cameraSettings.torch);
+            this.zoomLevel = Number(this.cameraSettings.zoom || this.zoomLevel || 1);
+        } catch (error) {
+            this.cameraSettings = this.html5QrCode.getRunningTrackSettings?.() || this.cameraSettings;
+        }
+    },
+    async toggleTorch() {
+        if (!this.supportsTorch()) {
+            return;
+        }
+
+        await this.applyCameraAdvancedConstraints({ torch: !this.torchEnabled });
+    },
+    async applyZoom() {
+        if (!this.supportsZoom()) {
+            return;
+        }
+
+        const zoom = Math.min(this.zoomMax(), Math.max(this.zoomMin(), Number(this.zoomLevel || this.zoomMin())));
+        this.zoomLevel = zoom;
+        await this.applyCameraAdvancedConstraints({ zoom });
     },
     setStatus(status, message = '') {
         this.status = status;
