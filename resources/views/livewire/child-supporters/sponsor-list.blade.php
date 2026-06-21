@@ -1,4 +1,4 @@
-<div class="{{ $embedded ? '' : 'mx-auto max-w-5xl' }}" dir="rtl">
+<div id="sponsor-list-top" class="{{ $embedded ? '' : 'mx-auto max-w-5xl' }}" dir="rtl">
     <div class="space-y-4 pb-6">
         <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -68,7 +68,7 @@
                 </div>
             </div>
 
-            <div class="hidden rounded-xl bg-slate-50 px-4 py-2 text-xs font-bold text-slate-500 md:grid md:grid-cols-[0.75fr_1fr_1fr_1fr_1.1fr_0.9fr_auto] md:items-center md:gap-3">
+            <div class="sticky top-0 z-10 hidden rounded-xl bg-slate-50 px-4 py-2 text-xs font-bold text-slate-500 md:grid md:grid-cols-[0.75fr_1fr_1fr_1fr_1.1fr_0.9fr_auto] md:items-center md:gap-3">
                 <span>کد حامی</span>
                 <span>نام</span>
                 <span>نام خانوادگی</span>
@@ -163,8 +163,29 @@
             </div>
 
             @if($sponsors->hasPages())
-                <div class="mt-4">
-                    {{ $sponsors->links() }}
+                <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
+                    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        <div class="flex flex-col gap-1 text-xs font-bold text-slate-500 sm:text-sm">
+                            <span>
+                                نمایش {{ $this->persianNumber($sponsors->firstItem() ?? 0) }}
+                                تا {{ $this->persianNumber($sponsors->lastItem() ?? 0) }}
+                                از {{ $this->persianNumber($sponsors->total()) }} حامی
+                            </span>
+                            <span>
+                                صفحه {{ $this->persianNumber($sponsors->currentPage()) }}
+                                از {{ $this->persianNumber($sponsors->lastPage()) }}
+                                • {{ $this->persianNumber($perPage) }} مورد در هر صفحه
+                            </span>
+                        </div>
+
+                        <div class="text-xs font-bold text-slate-500">
+                            جستجو، مرتب‌سازی و تعداد نمایش در آدرس صفحه حفظ می‌شود.
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        {{ $sponsors->onEachSide(1)->links('vendor.livewire.tailwind-mobile-persian', ['scrollTo' => '#sponsor-list-top']) }}
+                    </div>
                 </div>
             @endif
         </section>
