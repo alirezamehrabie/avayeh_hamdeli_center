@@ -233,7 +233,7 @@
                         <!-- Recipients List -->
                         <div class="space-y-3">
                             @foreach($recipientEntries as $index => $entry)
-                                <div class="relative rounded-2xl border border-slate-100 bg-slate-50/50 p-3 md:p-4 transition-all">
+                                <div x-data="{ qrScannerOpen: false }" class="relative rounded-2xl border border-slate-100 bg-slate-50/50 p-3 md:p-4 transition-all">
 
                                     <!-- Remove Button (Top Left for Mobile) -->
                                     @if(count($recipientEntries) > 1)
@@ -262,10 +262,20 @@
                                                             wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.national_id"
                                                             wire:focus="setActiveRecipientSearch({{ $index }})"
                                                             @disabled(!$this->selectedService)
-                                                            class="w-full rounded-xl border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all placeholder:text-slate-400"
+                                                            class="w-full rounded-xl border-slate-200 bg-white py-2.5 pl-11 pr-3.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all placeholder:text-slate-400"
                                                             placeholder="درج و جستجوی مددجو / سرپرست"
                                                             autocomplete="off"
                                                         >
+                                                        <button
+                                                            type="button"
+                                                            @click="qrScannerOpen = true"
+                                                            @disabled(!$this->selectedService)
+                                                            class="absolute left-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                                            title="اسکن QR"
+                                                            aria-label="اسکن QR"
+                                                        >
+                                                            <i class="bi bi-qr-code-scan text-base"></i>
+                                                        </button>
 
                                                         <!-- Search Suggestions -->
                                                         @if(!empty($this->recipientSuggestions[$index]) && $this->activeRecipientSearchIndex === $index)
@@ -289,7 +299,7 @@
                                                     </div>
                                                 </div>
 
-                                                <div class="md:col-span-12">
+                                                <div class="hidden">
                                                     <div class="rounded-xl border border-slate-100 bg-slate-50 p-2.5">
                                                         <label class="mb-1.5 block text-[10px] font-bold text-slate-400 mr-1">روش جایگزین: QR card token or URL</label>
                                                         <div class="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto]">
@@ -313,8 +323,78 @@
                                                         @error('recipientEntries.' . $index . '.qr_token') <p class="mt-1 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror
                                                     </div>
                                                 </div>
+                                                @error('recipientEntries.' . $index . '.qr_token') <p class="md:col-span-12 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror
                                             </div>
                                         </div>
+
+                                        <template x-if="qrScannerOpen">
+                                            <div
+                                                x-cloak
+                                                x-transition.opacity.duration.150ms
+                                                x-on:keydown.escape.window="qrScannerOpen = false"
+                                                class="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-sm"
+                                                role="dialog"
+                                                aria-modal="true"
+                                            >
+                                                <div
+                                                    @click.outside="qrScannerOpen = false"
+                                                    x-data="idCardScanner({
+                                                        resolveScan: async (payload) => {
+                                                            const response = await $wire.resolveScannedRecipientQr({{ $index }}, payload);
+
+                                                            if (response?.ok) {
+                                                                window.setTimeout(() => { qrScannerOpen = false }, 250);
+                                                            }
+
+                                                            return response;
+                                                        },
+                                                        successSoundUrl: '/sounds/scan-card.wav',
+                                                        enableResultBanner: false,
+                                                    })"
+                                                    x-init="init()"
+                                                    class="w-full max-w-md overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 text-white shadow-2xl"
+                                                    dir="rtl"
+                                                >
+                                                    <div class="flex items-center justify-between border-b border-white/10 px-3 py-2.5">
+                                                        <div class="inline-flex items-center gap-2 text-xs font-bold">
+                                                            <span class="inline-flex h-2 w-2 rounded-full"
+                                                                  :class="{
+                                                                    'bg-emerald-400': ['ready', 'scanning'].includes(status),
+                                                                    'bg-amber-400': status === 'paused',
+                                                                    'bg-rose-400': ['camera_denied', 'scan_error', 'unsupported'].includes(status),
+                                                                    'bg-slate-400': status === 'initializing',
+                                                                  }"></span>
+                                                            <span x-text="statusLabel()"></span>
+                                                        </div>
+                                                        <button type="button" @click="qrScannerOpen = false" class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 transition hover:bg-white/10 hover:text-white" aria-label="بستن">
+                                                            <i class="bi bi-x-lg"></i>
+                                                        </button>
+                                                    </div>
+
+                                                    <div class="relative aspect-[3/4] max-h-[70svh] bg-slate-950 sm:aspect-square">
+                                                        <div wire:ignore x-ref="scanner" id="service-recipient-scanner-{{ $index }}" class="qr-scanner-reader h-full w-full"></div>
+                                                        <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
+                                                            <div class="aspect-square w-[min(72%,320px)] rounded-2xl border-2 border-cyan-300/90 shadow-[0_0_0_9999px_rgba(15,23,42,0.32)]"></div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="space-y-2 px-3 py-3">
+                                                        <p class="text-xs leading-5 text-slate-200" x-text="message"></p>
+                                                        <div class="grid gap-2" x-show="cameras.length > 1" style="display: none;">
+                                                            <select
+                                                                x-model="selectedDeviceId"
+                                                                @change="switchCamera()"
+                                                                class="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2 text-xs text-white focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+                                                            >
+                                                                <template x-for="camera in cameras" :key="camera.id">
+                                                                    <option :value="camera.id" x-text="camera.label"></option>
+                                                                </template>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
 
                                         <div class="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(220px,0.55fr)]">
                                             <div class="rounded-2xl border border-slate-100 bg-white p-3">

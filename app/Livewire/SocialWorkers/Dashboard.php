@@ -247,6 +247,31 @@ class Dashboard extends Component
         $this->fillPersonEntry($index, $person, 'مددجو');
     }
 
+    public function resolveScannedRecipientQr(int $index, string $payload): array
+    {
+        $field = 'recipientEntries.' . $index . '.qr_token';
+
+        if (! array_key_exists($index, $this->recipientEntries)) {
+            return $this->recipientQrScanResponse(false, 'ردیف گیرنده پیدا نشد.');
+        }
+
+        $this->resetErrorBag($field);
+        $this->recipientEntries[$index]['qr_token'] = trim($payload);
+        $this->resolveRecipientQr($index);
+
+        if ($this->getErrorBag()->has($field)) {
+            return $this->recipientQrScanResponse(false, (string) $this->getErrorBag()->first($field));
+        }
+
+        $name = (string) ($this->recipientEntries[$index]['resolved_name'] ?? '');
+
+        return $this->recipientQrScanResponse(
+            $name !== '',
+            $name !== '' ? 'گیرنده خدمت شناسایی شد.' : 'اطلاعات گیرنده از QR پیدا نشد.',
+            $name
+        );
+    }
+
     public function setActiveRecipientSearch(int $index): void
     {
         $query = trim((string) ($this->recipientEntries[$index]['national_id'] ?? ''));
@@ -996,6 +1021,21 @@ class Dashboard extends Component
         $this->recipientEntries[$index]['resolved_meta'] = $meta;
         $this->recipientEntries[$index]['covered_dependents_count'] = (int) ($guardian?->children_count ?? 0);
         $this->recipientEntries[$index]['family_members_count'] = (int) ($guardian?->children_in_house ?? 0);
+    }
+
+    protected function recipientQrScanResponse(bool $ok, string $message, string $name = ''): array
+    {
+        return [
+            'ok' => $ok,
+            'status' => $ok ? 'paused' : 'scan_error',
+            'message' => $message,
+            'result' => [
+                'ok' => $ok,
+                'code' => $ok ? 'resolved' : 'invalid_qr',
+                'message' => $message,
+                'name' => $name,
+            ],
+        ];
     }
 
     public function getRecipientSuggestionsProperty(): array

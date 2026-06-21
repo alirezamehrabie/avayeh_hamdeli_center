@@ -14,6 +14,7 @@ use App\Models\ServiceDelivery;
 use App\Models\ServiceName;
 use App\Models\SocialWorker;
 use App\Models\User;
+use App\Services\QrIdentityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -219,6 +220,57 @@ class ServiceDefinitionTest extends TestCase
             'social_worker_id' => $worker->id,
             'national_id' => '2222222222',
         ]);
+    }
+
+    public function test_social_worker_scanned_qr_resolves_recipient_entry(): void
+    {
+        $manager = $this->manager();
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 81,
+            'first_name' => 'Scanner',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+        $socialWorkerUser = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_SOCIAL_WORKER,
+            'is_admin' => false,
+            'social_worker_id' => $worker->id,
+        ]);
+        $service = $this->serviceWithCategory($manager, 'Scanned Recipient', true);
+        $category = $service->categories()->firstOrFail();
+
+        $service->workerAllocations()->create([
+            'social_worker_id' => $worker->id,
+            'service_category_id' => $category->id,
+            'allocated_quantity' => 5,
+        ]);
+
+        $guardian = \App\Models\Guardian::query()->create([
+            'first_name' => 'Scan',
+            'last_name' => 'Guardian',
+            'national_code' => '8811223344',
+            'guardian_code' => 881,
+            'social_worker_id' => $worker->id,
+        ]);
+        $person = \App\Models\Person::query()->create([
+            'first_name' => 'Scan',
+            'last_name' => 'Person',
+            'national_id' => '9911223344',
+            'person_code' => '99001',
+            'guardian_id' => $guardian->id,
+        ]);
+        $issued = app(QrIdentityService::class)->issueFor($person, $manager->id);
+        $token = $issued['token'] ?? $issued['identity']->token_encrypted;
+
+        $this->actingAs($socialWorkerUser);
+
+        Livewire::test(SocialWorkerDashboard::class)
+            ->set('selectedServiceId', $service->id)
+            ->call('resolveScannedRecipientQr', 0, $token)
+            ->assertReturned(fn (array $response): bool => $response['ok'] === true)
+            ->assertSet('recipientEntries.0.person_id', $person->id)
+            ->assertSet('recipientEntries.0.national_id', '9911223344')
+            ->assertSet('recipientEntries.0.resolved_name', 'Scan Person');
     }
 
     public function test_social_worker_delivery_rejects_duplicate_recipient_in_same_category(): void
