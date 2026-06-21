@@ -466,52 +466,107 @@
 
                                         <div class="grid grid-cols-1 gap-3">
                                             <div class="rounded-2xl border border-slate-100 bg-white p-2.5 md:p-3">
-                                                <div class="mb-3 flex items-center gap-2">
-                                                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-600 text-[11px] font-black text-white">۲</span>
-                                                    <h3 class="text-xs font-extrabold text-slate-700">انتخاب دسته‌بندی و مقدار</h3>
-                                                </div>
+                                                @php
+                                                    $rowCategoryQuantities = collect($entry['category_quantities'] ?? []);
+                                                    $enteredCategoryCount = $rowCategoryQuantities
+                                                        ->filter(fn ($quantity) => (float) $quantity > 0)
+                                                        ->count();
+                                                    $rowTotalQuantity = $rowCategoryQuantities
+                                                        ->sum(fn ($quantity) => (float) $quantity);
+                                                    $visibleCategories = $assignableCategories
+                                                        ->filter(function ($category) use ($categoryMetrics, $entry) {
+                                                            $remainingStock = (float) ($categoryMetrics[$category->id]['remaining_stock'] ?? 0);
+                                                            $currentQuantity = (float) data_get($entry, 'category_quantities.' . (int) $category->id, 0);
 
-                                                <!-- Category Select -->
-                                                <div>
-                                                    <p class="mb-2 block text-[11px] font-bold text-slate-500 mr-1">برای هر دسته‌بندی مقدار تحویلی همان دسته را وارد کنید.</p>
-                                                    <div class="space-y-2">
-                                                        @forelse($assignableCategories as $category)
-                                                            @php($metrics = $categoryMetrics[$category->id] ?? ['remaining_stock' => 0, 'remaining_allocation' => 0])
-                                                            @php($remainingStock = (float) $metrics['remaining_stock'])
-                                                            @php($pendingCategoryQuantity = collect($recipientEntries)->sum(fn ($entry) => (float) data_get($entry, 'category_quantities.' . (int) $category->id, 0)))
-                                                            @php($liveRemainingAllocation = max(0, (float) $metrics['remaining_allocation'] - $pendingCategoryQuantity))
-                                                            @php($isUnavailable = $remainingStock <= 0)
-                                                            <div class="rounded-xl border border-slate-200 bg-white p-3 text-right transition {{ $isUnavailable ? 'opacity-55' : 'hover:border-cyan-200 hover:bg-slate-50/60' }}">
-                                                                <div class="flex items-start justify-between gap-3">
+                                                            return $remainingStock > 0 || $currentQuantity > 0;
+                                                        })
+                                                        ->values();
+                                                    $hiddenUnavailableCount = max(0, $assignableCategories->count() - $visibleCategories->count());
+                                                @endphp
+
+                                                <details class="group" open>
+                                                    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-1 py-1.5 focus:outline-none focus:ring-4 focus:ring-cyan-500/10">
+                                                        <div class="flex min-w-0 items-center gap-2">
+                                                            <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-600 text-[11px] font-black text-white">۲</span>
+                                                            <div class="min-w-0">
+                                                                <h3 class="truncate text-xs font-extrabold text-slate-700">دسته‌بندی و مقدار</h3>
+                                                                <p class="mt-0.5 text-[10px] font-bold text-slate-400">
+                                                                    {{ $enteredCategoryCount > 0 ? $this->persianNumber($enteredCategoryCount) . ' دسته انتخاب شده' : 'مقادیر قابل تحویل را وارد کنید' }}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="flex shrink-0 items-center gap-2">
+                                                            @if($rowTotalQuantity > 0)
+                                                                <span class="rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[10px] font-black text-emerald-700">
+                                                                    جمع: {{ $this->persianNumber(number_format($rowTotalQuantity, 2)) }}
+                                                                </span>
+                                                            @endif
+                                                            <i class="bi bi-chevron-down text-xs text-slate-400 transition group-open:rotate-180"></i>
+                                                        </div>
+                                                    </summary>
+
+                                                    <div class="mt-2">
+                                                        <p class="mb-2 block text-[11px] font-bold text-slate-500">
+                                                            فقط دسته‌بندی‌های قابل تحویل نمایش داده می‌شوند؛ برای هر مورد مقدار همان دسته را وارد کنید.
+                                                        </p>
+
+                                                        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                                                            @forelse($visibleCategories as $category)
+                                                                @php
+                                                                    $metrics = $categoryMetrics[$category->id] ?? ['remaining_stock' => 0, 'remaining_allocation' => 0];
+                                                                    $remainingStock = (float) $metrics['remaining_stock'];
+                                                                    $currentQuantity = (float) data_get($entry, 'category_quantities.' . (int) $category->id, 0);
+                                                                    $pendingCategoryQuantity = collect($recipientEntries)->sum(fn ($entry) => (float) data_get($entry, 'category_quantities.' . (int) $category->id, 0));
+                                                                    $liveRemainingAllocation = max(0, (float) $metrics['remaining_allocation'] - $pendingCategoryQuantity);
+                                                                    $isUnavailable = $remainingStock <= 0;
+                                                                @endphp
+
+                                                                <div class="grid grid-cols-[minmax(0,1fr)_7.5rem] items-center gap-2 border-b border-slate-200 bg-white px-3 py-2.5 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_9rem]">
                                                                     <div class="min-w-0">
-                                                                        <h4 class="truncate text-sm font-extrabold text-slate-800">{{ $category->name }}</h4>
+                                                                        <div class="flex min-w-0 flex-wrap items-center gap-1.5">
+                                                                            <h4 class="max-w-full truncate text-xs font-extrabold text-slate-800 sm:text-sm">{{ $category->name }}</h4>
+                                                                            @if($isUnavailable)
+                                                                                <span class="rounded-full bg-rose-50 px-2 py-0.5 text-[9px] font-black text-rose-600">ناموجود</span>
+                                                                            @endif
+                                                                        </div>
+                                                                        <p class="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] font-bold text-slate-400">
+                                                                            <span>باقی‌مانده:</span>
+                                                                            <span dir="ltr">{{ $this->persianNumber(number_format($liveRemainingAllocation, 2)) }}</span>
+                                                                            <span>{{ $unitOptions[$category->unit] ?? $category->unit }}</span>
+                                                                        </p>
                                                                     </div>
-                                                                    <div class="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-cyan-100 bg-cyan-50 px-2.5 py-1 text-[10px] font-black text-cyan-700">
-                                                                        <span>باقی‌مانده</span>
-                                                                        <span dir="ltr">{{ number_format($liveRemainingAllocation, 2) }}</span>
-                                                                        <span class="font-bold text-cyan-600/80">{{ $unitOptions[$category->unit] ?? $category->unit }}</span>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="mt-3">
-                                                                    <label class="mb-1.5 block text-[10px] font-bold text-slate-500">مقدار تحویلی</label>
+
                                                                     <div>
-                                                                        <input type="number" min="0.01" step="0.01"
+                                                                        <label class="sr-only" for="recipient-{{ $index }}-category-{{ $category->id }}">مقدار تحویلی {{ $category->name }}</label>
+                                                                        <input id="recipient-{{ $index }}-category-{{ $category->id }}"
+                                                                               type="number"
+                                                                               min="0.01"
+                                                                               step="0.01"
+                                                                               inputmode="decimal"
                                                                                wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.category_quantities.{{ $category->id }}"
-                                                                               @disabled(!$this->selectedService || $isUnavailable)
-                                                                               class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold text-slate-800 transition placeholder:text-slate-300 focus:border-cyan-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-500/10 disabled:cursor-not-allowed disabled:opacity-60"
+                                                                               @disabled(!$this->selectedService || ($isUnavailable && $currentQuantity <= 0))
+                                                                               class="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-2.5 text-center text-sm font-black text-slate-800 transition placeholder:text-slate-300 focus:border-cyan-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-500/10 disabled:cursor-not-allowed disabled:opacity-60"
                                                                                placeholder="0">
+                                                                        @error('recipientEntries.' . $index . '.category_quantities.' . $category->id) <p class="mt-1 text-[10px] font-bold text-rose-500">{{ $message }}</p> @enderror
                                                                     </div>
-                                                                    @error('recipientEntries.' . $index . '.category_quantities.' . $category->id) <p class="mt-1 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror
                                                                 </div>
-                                                            </div>
-                                                        @empty
-                                                            <div class="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">
-                                                                دسته‌بندی قابل تخصیص برای این خدمت وجود ندارد.
-                                                            </div>
-                                                        @endforelse
+                                                            @empty
+                                                                <div class="bg-amber-50 px-3 py-3 text-xs font-bold text-amber-700">
+                                                                    دسته‌بندی قابل تخصیص برای این خدمت وجود ندارد.
+                                                                </div>
+                                                            @endforelse
+                                                        </div>
+
+                                                        @if($hiddenUnavailableCount > 0)
+                                                            <p class="mt-2 text-[10px] font-bold text-slate-400">
+                                                                {{ $this->persianNumber($hiddenUnavailableCount) }} دسته‌بندی بدون موجودی از این فهرست پنهان شده است.
+                                                            </p>
+                                                        @endif
+
+                                                        @error('recipientEntries.' . $index . '.service_category_id') <p class="mt-1 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror
                                                     </div>
-                                                    @error('recipientEntries.' . $index . '.service_category_id') <p class="mt-1 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror
-                                                </div>
+                                                </details>
                                             </div>
                                         </div>
                                     </div>
