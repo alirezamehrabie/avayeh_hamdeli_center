@@ -323,21 +323,54 @@
 
                                                 <!-- Category Select -->
                                                 <div>
-                                                    <label class="mb-1.5 block text-[11px] font-bold text-slate-500 mr-1">دسته‌بندی خدمت</label>
-                                                    <select
-                                                        wire:model.live="recipientEntries.{{ $index }}.service_category_id"
-                                                        @disabled(!$this->selectedService)
-                                                        class="w-full rounded-xl border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all"
-                                                    >
-                                                        <option value="">انتخاب دسته‌بندی</option>
-                                                        @foreach($assignableCategories as $category)
+                                                    <p class="mb-2 block text-[11px] font-bold text-slate-500 mr-1">دسته‌بندی خدمت</p>
+                                                    <div class="space-y-2">
+                                                        @forelse($assignableCategories as $category)
                                                             @php($metrics = $categoryMetrics[$category->id] ?? ['remaining_stock' => 0, 'remaining_allocation' => 0])
                                                             @php($remainingStock = (float) $metrics['remaining_stock'])
-                                                            <option value="{{ $category->id }}" @disabled($remainingStock <= 0)>
-                                                                {{ $category->name }} - مانده سهمیه: {{ number_format((float) $metrics['remaining_allocation'], 2) }} - موجودی: {{ number_format($remainingStock, 2) }} {{ $unitOptions[$category->unit] ?? $category->unit }} - ارزش واحد: {{ number_format((int) $category->value) }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
+                                                            @php($isUnavailable = $remainingStock <= 0)
+                                                            <label class="block">
+                                                                <input
+                                                                    type="radio"
+                                                                    name="recipient-category-{{ $index }}"
+                                                                    value="{{ $category->id }}"
+                                                                    wire:model.live="recipientEntries.{{ $index }}.service_category_id"
+                                                                    @disabled(!$this->selectedService || $isUnavailable)
+                                                                    class="peer sr-only"
+                                                                >
+                                                                <span class="block rounded-xl border border-slate-200 bg-white p-3 text-right transition peer-checked:border-cyan-500 peer-checked:bg-cyan-50 peer-checked:ring-2 peer-checked:ring-cyan-500/10 {{ $isUnavailable ? 'cursor-not-allowed opacity-55' : 'cursor-pointer hover:border-cyan-300 hover:bg-cyan-50/40' }}">
+                                                                    <span class="flex items-start justify-between gap-3">
+                                                                        <span class="min-w-0">
+                                                                            <span class="block truncate text-sm font-extrabold text-slate-800">{{ $category->name }}</span>
+                                                                            <span class="mt-1 block text-[10px] font-bold text-slate-400">
+                                                                                ارزش واحد: {{ number_format((int) $category->value) }}
+                                                                            </span>
+                                                                        </span>
+                                                                        <span class="shrink-0 rounded-lg {{ $isUnavailable ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-700' }} px-2 py-1 text-[10px] font-black">
+                                                                            {{ $isUnavailable ? 'ناموجود' : 'قابل انتخاب' }}
+                                                                        </span>
+                                                                    </span>
+                                                                    <span class="mt-3 grid grid-cols-2 gap-2">
+                                                                        <span class="rounded-lg bg-slate-50 px-2 py-1.5">
+                                                                            <span class="block text-[9px] font-bold text-slate-400">مانده سهمیه</span>
+                                                                            <span class="mt-0.5 block text-xs font-black text-slate-700">{{ number_format((float) $metrics['remaining_allocation'], 2) }}</span>
+                                                                        </span>
+                                                                        <span class="rounded-lg bg-slate-50 px-2 py-1.5">
+                                                                            <span class="block text-[9px] font-bold text-slate-400">موجودی</span>
+                                                                            <span class="mt-0.5 block text-xs font-black text-slate-700">
+                                                                                {{ number_format($remainingStock, 2) }}
+                                                                                {{ $unitOptions[$category->unit] ?? $category->unit }}
+                                                                            </span>
+                                                                        </span>
+                                                                    </span>
+                                                                </span>
+                                                            </label>
+                                                        @empty
+                                                            <div class="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">
+                                                                دسته‌بندی قابل تخصیص برای این خدمت وجود ندارد.
+                                                            </div>
+                                                        @endforelse
+                                                    </div>
                                                     @error('recipientEntries.' . $index . '.service_category_id') <p class="mt-1 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror
                                                 </div>
                                             </div>
