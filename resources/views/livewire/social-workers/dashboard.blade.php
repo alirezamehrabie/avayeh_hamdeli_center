@@ -233,7 +233,7 @@
                         <!-- Recipients List -->
                         <div class="space-y-3">
                             @foreach($recipientEntries as $index => $entry)
-                                <div x-data="{ qrScannerOpen: false }" class="relative rounded-2xl border border-slate-100 bg-slate-50/50 p-3 md:p-4 transition-all">
+                                <div class="relative rounded-2xl border border-slate-100 bg-slate-50/50 p-3 md:p-4 transition-all">
 
                                     <!-- Remove Button (Top Left for Mobile) -->
                                     @if(count($recipientEntries) > 1)
@@ -268,7 +268,7 @@
                                                         >
                                                         <button
                                                             type="button"
-                                                            @click="qrScannerOpen = true"
+                                                            x-on:click.prevent="$dispatch('open-recipient-qr-scanner-{{ $index }}')"
                                                             @disabled(!$this->selectedService)
                                                             class="absolute left-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-50"
                                                             title="اسکن QR"
@@ -327,31 +327,71 @@
                                             </div>
                                         </div>
 
-                                        <template x-if="qrScannerOpen">
-                                            <div
-                                                x-cloak
-                                                x-transition.opacity.duration.150ms
-                                                x-on:keydown.escape.window="qrScannerOpen = false"
-                                                class="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-sm"
-                                                role="dialog"
-                                                aria-modal="true"
-                                            >
+                                        <div
+                                            x-data="{
+                                                ...idCardScanner({
+                                                    resolveScan: async (payload) => {
+                                                        const response = await $wire.resolveScannedRecipientQr({{ $index }}, payload);
+
+                                                        if (response?.ok) {
+                                                            window.setTimeout(() => window.dispatchEvent(new CustomEvent('close-recipient-qr-scanner-{{ $index }}')), 250);
+                                                        }
+
+                                                        return response;
+                                                    },
+                                                    successSoundUrl: '/sounds/scan-card.wav',
+                                                    enableResultBanner: false,
+                                                    autoStart: false,
+                                                }),
+                                                qrScannerOpen: false,
+                                                openingScanner: false,
+                                                async openScanner() {
+                                                    if (this.openingScanner) {
+                                                        return;
+                                                    }
+
+                                                    this.openingScanner = true;
+                                                    this.qrScannerOpen = true;
+
+                                                    try {
+                                                        await $nextTick();
+                                                        await this.waitForScannerBoot();
+                                                        await this.ensureCameraPermission();
+                                                        await this.startCamera();
+                                                    } finally {
+                                                        this.openingScanner = false;
+                                                    }
+                                                },
+                                                async waitForScannerBoot() {
+                                                    for (let attempt = 0; attempt < 50; attempt++) {
+                                                        if (this.html5QrCode && this.Html5Qrcode) {
+                                                            return;
+                                                        }
+
+                                                        await new Promise((resolve) => setTimeout(resolve, 100));
+                                                    }
+
+                                                    await this.init();
+                                                },
+                                                closeScanner() {
+                                                    this.qrScannerOpen = false;
+                                                    this.stopCamera();
+                                                },
+                                            }"
+                                            x-init="init(); $watch('qrScannerOpen', (open) => document.documentElement.classList.toggle('overflow-hidden', open))"
+                                            x-on:open-recipient-qr-scanner-{{ $index }}.window="openScanner()"
+                                            x-on:close-recipient-qr-scanner-{{ $index }}.window="closeScanner()"
+                                            x-on:keydown.escape.window="if (qrScannerOpen) closeScanner()"
+                                            x-show="qrScannerOpen"
+                                            x-cloak
+                                            x-transition.opacity.duration.150ms
+                                            class="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-sm"
+                                            role="dialog"
+                                            aria-modal="true"
+                                            style="display: none;"
+                                        >
                                                 <div
-                                                    @click.outside="qrScannerOpen = false"
-                                                    x-data="idCardScanner({
-                                                        resolveScan: async (payload) => {
-                                                            const response = await $wire.resolveScannedRecipientQr({{ $index }}, payload);
-
-                                                            if (response?.ok) {
-                                                                window.setTimeout(() => { qrScannerOpen = false }, 250);
-                                                            }
-
-                                                            return response;
-                                                        },
-                                                        successSoundUrl: '/sounds/scan-card.wav',
-                                                        enableResultBanner: false,
-                                                    })"
-                                                    x-init="init()"
+                                                    @click.outside="closeScanner()"
                                                     class="w-full max-w-md overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 text-white shadow-2xl"
                                                     dir="rtl"
                                                 >
@@ -366,7 +406,7 @@
                                                                   }"></span>
                                                             <span x-text="statusLabel()"></span>
                                                         </div>
-                                                        <button type="button" @click="qrScannerOpen = false" class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 transition hover:bg-white/10 hover:text-white" aria-label="بستن">
+                                                        <button type="button" @click="closeScanner()" class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 transition hover:bg-white/10 hover:text-white" aria-label="بستن">
                                                             <i class="bi bi-x-lg"></i>
                                                         </button>
                                                     </div>
@@ -394,7 +434,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                        </template>
+                                        </div>
 
                                         <div class="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(220px,0.55fr)]">
                                             <div class="rounded-2xl border border-slate-100 bg-white p-3">

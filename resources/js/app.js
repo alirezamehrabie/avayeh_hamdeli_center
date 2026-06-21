@@ -138,6 +138,7 @@ Alpine.data('idCardScanner', ({
     successSoundUrl = '',
     activityName = '',
     enableResultBanner = true,
+    autoStart = true,
 }) => ({
     ...attendanceResultBanner(),
     cameras: [],
@@ -185,8 +186,6 @@ Alpine.data('idCardScanner', ({
             this.Html5QrcodeSupportedFormats = dependencies.Html5QrcodeSupportedFormats;
             this.createEnhancedQrScanner = dependencies.createEnhancedQrScanner;
 
-            await this.ensureCameraPermission();
-            await this.loadCameras();
             this.scannerElementId = this.$refs.scanner.id;
             this.enhancedScanner = this.createEnhancedQrScanner();
             this.html5QrCode = new this.Html5Qrcode(this.scannerElementId, {
@@ -194,7 +193,14 @@ Alpine.data('idCardScanner', ({
                 formatsToSupport: [this.Html5QrcodeSupportedFormats.QR_CODE],
                 useBarCodeDetectorIfSupported: true,
             });
-            await this.startCamera();
+
+            if (autoStart) {
+                await this.ensureCameraPermission();
+                await this.loadCameras();
+                await this.startCamera();
+            } else {
+                this.setStatus('ready', 'دوربین آماده فعال‌سازی است.');
+            }
         } catch (error) {
             this.setStatus('camera_denied', 'فعال‌سازی دوربین انجام نشد. دسترسی مرورگر به دوربین را بررسی کنید.');
         }
