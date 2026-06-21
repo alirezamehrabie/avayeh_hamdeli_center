@@ -181,29 +181,64 @@
                                 </p>
                             @endif
 
-                            <div class="mt-3 grid grid-cols-3 divide-x divide-x-reverse divide-slate-100">
+                            @php
+                                $serviceCategories = $selectedService->categories?->sortBy('sort_id') ?? collect();
+                            @endphp
 
-                                <div class="px-3 text-center first:pr-0 last:pl-0">
-                                    <p class="text-[10px] text-slate-400">کل</p>
-                                    <p class="mt-0.5 text-sm font-bold text-slate-700">
-                                        {{ $this->persianNumber(number_format((float) $selectedServiceTotals['allocated'], 2)) }}
-                                    </p>
-                                </div>
+                            <div class="mt-3 grid gap-2 sm:grid-cols-2">
+                                @forelse($serviceCategories as $category)
+                                        @php
+                                            $metrics = $categoryMetrics[$category->id] ?? [
+                                                'allocated' => 0,
+                                                'worker_delivered' => 0,
+                                                'remaining_allocation' => 0,
+                                            ];
+                                            $allocated = (float) $metrics['allocated'];
+                                            $delivered = (float) $metrics['worker_delivered'];
+                                            $remaining = (float) $metrics['remaining_allocation'];
+                                            $unitLabel = \App\Models\Service::unitOptions()[$category->unit] ?? $category->unit;
+                                        @endphp
 
-                                <div class="px-3 text-center">
-                                    <p class="text-[10px] text-slate-400">ثبت‌شده</p>
-                                    <p class="mt-0.5 text-sm font-bold text-slate-700">
-                                        {{ $this->persianNumber(number_format((float) $selectedServiceTotals['delivered'], 2)) }}
-                                    </p>
-                                </div>
+                                    <div class="rounded-2xl border border-slate-100 bg-slate-50/80 px-3 py-2">
+                                        <div class="text-center">
+                                            <div>
+                                                <p class="truncate text-[11px] font-semibold text-slate-700">
+                                                    {{ $category->name }}
+                                                </p>
+                                                <p class="mt-0.5 truncate text-[10px] text-slate-400">
+                                                    {{ $unitLabel }}
+                                                </p>
+                                            </div>
 
-                                <div class="px-3 text-center first:pr-0 last:pl-0">
-                                    <p class="text-[10px] text-slate-400">باقی</p>
-                                    <p class="mt-0.5 text-sm font-bold text-emerald-600">
-                                        {{ $this->persianNumber(number_format((float) $selectedServiceTotals['remaining'], 2)) }}
-                                    </p>
-                                </div>
+                                            <div class="mt-2 grid grid-cols-3 gap-1.5">
+                                                <div class="rounded-xl border border-white bg-white px-2 py-1 text-center shadow-sm">
+                                                    <p class="text-[9px] leading-none text-slate-400">سهمیه</p>
+                                                    <p class="mt-1 text-xs font-bold leading-none text-slate-700">
+                                                        {{ $this->persianNumber(number_format($allocated, 2)) }}
+                                                    </p>
+                                                </div>
 
+                                                <div class="rounded-xl border border-white bg-white px-2 py-1 text-center shadow-sm">
+                                                    <p class="text-[9px] leading-none text-slate-400">تحویل‌شده</p>
+                                                    <p class="mt-1 text-xs font-bold leading-none text-emerald-600">
+                                                        {{ $this->persianNumber(number_format($delivered, 2)) }}
+                                                    </p>
+                                                </div>
+
+                                                <div class="rounded-xl border border-white bg-white px-2 py-1 text-center shadow-sm">
+                                                    <p class="text-[9px] leading-none text-slate-400">باقی‌مانده</p>
+                                                    <p class="mt-1 text-xs font-bold leading-none text-amber-600">
+                                                        {{ $this->persianNumber(number_format($remaining, 2)) }}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-400">
+                                        برای این خدمت سهمیه‌ای ثبت نشده است.
+                                    </div>
+                                @endforelse
                             </div>
 
 
@@ -377,15 +412,12 @@
                                                                 </div>
                                                                 <div class="mt-3">
                                                                     <label class="mb-1.5 block text-[10px] font-bold text-slate-500">مقدار تحویلی</label>
-                                                                    <div class="relative">
+                                                                    <div>
                                                                         <input type="number" min="0.01" step="0.01"
                                                                                wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.category_quantities.{{ $category->id }}"
                                                                                @disabled(!$this->selectedService || $isUnavailable)
-                                                                               class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 pl-14 text-sm font-bold text-slate-800 transition placeholder:text-slate-300 focus:border-cyan-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-500/10 disabled:cursor-not-allowed disabled:opacity-60"
+                                                                               class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold text-slate-800 transition placeholder:text-slate-300 focus:border-cyan-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-500/10 disabled:cursor-not-allowed disabled:opacity-60"
                                                                                placeholder="0">
-                                                                        <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">
-                                                                            {{ $unitOptions[$category->unit] ?? $category->unit }}
-                                                                        </span>
                                                                     </div>
                                                                     @error('recipientEntries.' . $index . '.category_quantities.' . $category->id) <p class="mt-1 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror
                                                                 </div>
