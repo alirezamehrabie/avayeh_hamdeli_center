@@ -30,6 +30,48 @@ class ChildSupporterRegistrationTest extends TestCase
         ]);
     }
 
+    public function test_sponsor_management_routes_are_admin_only(): void
+    {
+        $sponsor = $this->sponsorUser();
+
+        $this->actingAs($sponsor)
+            ->get(route('child-supporter.sponsor-registration'))
+            ->assertForbidden();
+
+        $this->actingAs($sponsor)
+            ->get(route('child-supporter.sponsor-list'))
+            ->assertForbidden();
+
+        $this->actingAs($this->manager())
+            ->get(route('child-supporter.sponsor-registration'))
+            ->assertOk();
+
+        $this->actingAs($this->manager())
+            ->get(route('child-supporter.sponsor-list'))
+            ->assertOk();
+    }
+
+    public function test_sponsor_sidebar_does_not_show_registration_or_edit_options(): void
+    {
+        $this->actingAs($this->sponsorUser());
+
+        $this->get(route('child-supporter.dashboard'))
+            ->assertOk()
+            ->assertDontSee('ثبت نام حامی')
+            ->assertDontSee('لیست حامیان');
+    }
+
+    public function test_admin_dashboard_can_open_embedded_sponsor_edit_section(): void
+    {
+        $this->actingAs($this->manager());
+        $profile = $this->sponsorProfile('09120000999', 'Admin', 'Editable');
+
+        Livewire::test(\App\Livewire\Admin\DashboardHome::class)
+            ->call('selectSection', 'child-supporter-sponsor-edit', $profile->id)
+            ->assertSet('activeSection', 'child-supporter-sponsor-edit')
+            ->assertSet('editingSponsorId', $profile->id);
+    }
+
     public function test_registration_assigns_beneficiaries_by_person_code(): void
     {
         $this->actingAs($this->manager());
@@ -282,6 +324,19 @@ class ChildSupporterRegistrationTest extends TestCase
             'access_level' => User::ACCESS_LEVEL_ADMIN,
             'is_admin' => true,
             'permissions' => [User::PERMISSION_FULL_ACCESS],
+        ]);
+    }
+
+    private function sponsorUser(): User
+    {
+        return User::registerSponsorAccount([
+            'mobile' => '09129999999',
+            'first_name' => 'Sponsor',
+            'last_name' => 'User',
+            'monthly_donation_amount' => 100000,
+            'monthly_payment_reminder_methods' => [SponsorProfile::REMINDER_SMS],
+            'is_social_media_active' => true,
+            'created_by' => null,
         ]);
     }
 }

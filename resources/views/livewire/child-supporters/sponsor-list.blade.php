@@ -95,10 +95,17 @@
                                     <span wire:loading.remove wire:target="showDetails({{ $sponsor->id }})">جزئیات</span>
                                     <span wire:loading wire:target="showDetails({{ $sponsor->id }})">...</span>
                                 </button>
-                                <a href="{{ route('child-supporter.sponsor-registration', ['sponsor' => $sponsor->id]) }}" title="ویرایش" class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-100">
-                                    <span class="sr-only">ویرایش</span>
-                                    <i class="bi bi-pencil-square text-base" aria-hidden="true"></i>
-                                </a>
+                                @if($embedded)
+                                    <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'child-supporter-sponsor-edit', id: {{ $sponsor->id }} })" title="ویرایش" class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-100">
+                                        <span class="sr-only">ویرایش</span>
+                                        <i class="bi bi-pencil-square text-base" aria-hidden="true"></i>
+                                    </button>
+                                @else
+                                    <a href="{{ route('child-supporter.sponsor-registration', ['sponsor' => $sponsor->id]) }}" title="ویرایش" class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-100">
+                                        <span class="sr-only">ویرایش</span>
+                                        <i class="bi bi-pencil-square text-base" aria-hidden="true"></i>
+                                    </a>
+                                @endif
                             </div>
                         </div>
 
@@ -137,10 +144,17 @@
                                 <i class="bi bi-eye text-base" aria-hidden="true" wire:loading.remove wire:target="showDetails({{ $sponsor->id }})"></i>
                                 <span wire:loading wire:target="showDetails({{ $sponsor->id }})">...</span>
                             </button>
-                            <a href="{{ route('child-supporter.sponsor-registration', ['sponsor' => $sponsor->id]) }}" title="ویرایش" class="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-100">
-                                <span class="sr-only">ویرایش</span>
-                                <i class="bi bi-pencil-square text-base" aria-hidden="true"></i>
-                            </a>
+                            @if($embedded)
+                                <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'child-supporter-sponsor-edit', id: {{ $sponsor->id }} })" title="ویرایش" class="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-100">
+                                    <span class="sr-only">ویرایش</span>
+                                    <i class="bi bi-pencil-square text-base" aria-hidden="true"></i>
+                                </button>
+                            @else
+                                <a href="{{ route('child-supporter.sponsor-registration', ['sponsor' => $sponsor->id]) }}" title="ویرایش" class="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-100">
+                                    <span class="sr-only">ویرایش</span>
+                                    <i class="bi bi-pencil-square text-base" aria-hidden="true"></i>
+                                </a>
+                            @endif
                         </div>
                     </article>
                 @empty
@@ -192,10 +206,17 @@
                                             <i class="bi bi-eye text-base" aria-hidden="true" wire:loading.remove wire:target="showDetails({{ $sponsor->id }})"></i>
                                             <span wire:loading wire:target="showDetails({{ $sponsor->id }})">...</span>
                                         </button>
-                                        <a href="{{ route('child-supporter.sponsor-registration', ['sponsor' => $sponsor->id]) }}" title="ویرایش" class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-100">
-                                            <span class="sr-only">ویرایش</span>
-                                            <i class="bi bi-pencil-square text-base" aria-hidden="true"></i>
-                                        </a>
+                                        @if($embedded)
+                                            <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'child-supporter-sponsor-edit', id: {{ $sponsor->id }} })" title="ویرایش" class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-100">
+                                                <span class="sr-only">ویرایش</span>
+                                                <i class="bi bi-pencil-square text-base" aria-hidden="true"></i>
+                                            </button>
+                                        @else
+                                            <a href="{{ route('child-supporter.sponsor-registration', ['sponsor' => $sponsor->id]) }}" title="ویرایش" class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-100">
+                                                <span class="sr-only">ویرایش</span>
+                                                <i class="bi bi-pencil-square text-base" aria-hidden="true"></i>
+                                            </a>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>

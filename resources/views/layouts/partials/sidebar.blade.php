@@ -58,7 +58,7 @@
         $reportsOpen = $dashboardMode ? $isActive(['advanced-reports', 'advanced-service-report', 'advanced-beneficiary-report', 'advanced-operator-report', 'advanced-supervisor-report', 'advanced-social-worker-report']) : false;
         $servicesOpen = $dashboardMode ? $isActive(['service-definition', 'service-management', 'service-list', 'service-delivery', 'service-archive']) : false;
         $activitiesOpen = $dashboardMode ? $isActive(['activity-definition', 'activity-list', 'activity-scanner']) : false;
-        $childSupporterOpen = $dashboardMode ? $isActive(['child-supporter-sponsor-registration', 'child-supporter-sponsor-list']) : false;
+        $childSupporterOpen = $dashboardMode ? $isActive(['child-supporter-sponsor-registration', 'child-supporter-sponsor-edit', 'child-supporter-sponsor-list']) : false;
         $specialFeaturesOpen = $dashboardMode ? $isActive(['special-features-id-card-scanner']) : false;
         $systemSettingsOpen = $dashboardMode ? $isActive(['system-settings-user-definition', 'system-settings-user-list', 'system-settings-user-account']) : request()->routeIs('admin.user-definition') || request()->routeIs('admin.user-management') || request()->routeIs('admin.user-list') || request()->routeIs('admin.user-account');
         $dashboardReportsLinkActive = ! $dashboardMode && request()->routeIs('admin.dashboard') && request()->query('section') && in_array(request()->query('section'), ['advanced-reports', 'advanced-operator-report'], true);
@@ -111,7 +111,7 @@
             ],
             'child-supporter' => [
                 ['section' => 'child-supporter-sponsor-registration', 'label' => 'ثبت نام حامی'],
-                ['section' => 'child-supporter-sponsor-list', 'label' => 'لیست حامیان'],
+                ['section' => 'child-supporter-sponsor-list', 'label' => 'لیست حامیان', 'active' => ['child-supporter-sponsor-list', 'child-supporter-sponsor-edit']],
             ],
             'special-features' => [
                 ['section' => 'special-features-id-card-scanner', 'label' => 'اسکن کارت شناسایی'],

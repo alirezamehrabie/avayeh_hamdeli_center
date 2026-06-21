@@ -170,11 +170,11 @@ Route::get('/child-supporter/dashboard', ChildSupporterDashboard::class)
     ->name('child-supporter.dashboard');
 
 Route::get('/child-supporter/sponsor-registration', SponsorRegistration::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'can:access-admin-panel'])
     ->name('child-supporter.sponsor-registration');
 
 Route::get('/child-supporter/sponsors', SponsorList::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'can:access-admin-panel'])
     ->name('child-supporter.sponsor-list');
 
 Route::get('/child-supporter/system-settings/user-account', ChildSupporterUserAccount::class)

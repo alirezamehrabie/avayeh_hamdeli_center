@@ -8,6 +8,7 @@ use App\Models\District;
 use App\Models\Guardian;
 use App\Models\Person;
 use App\Models\SocialWorker;
+use App\Models\SponsorProfile;
 use Livewire\Component;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
@@ -22,6 +23,7 @@ class DashboardHome extends Component
     public ?int $editingPersonId = null;
     public ?int $editingSocialWorkerId = null;
     public ?int $editingGuardianId = null;
+    public ?int $editingSponsorId = null;
     public ?int $editingServiceId = null;
     public ?int $editingActivityId = null;
     public ?int $scanningActivityId = null;
@@ -71,6 +73,7 @@ class DashboardHome extends Component
         $this->editingPersonId = in_array($section, ['person-edit', 'people-fast-create'], true) ? $id : null;
         $this->editingSocialWorkerId = $section === 'social-worker-edit' ? $id : null;
         $this->editingGuardianId = $section === 'guardian-edit' ? $id : null;
+        $this->editingSponsorId = $section === 'child-supporter-sponsor-edit' ? $id : null;
         $this->editingServiceId = $this->activeSection === 'service-definition' ? $id : null;
         $this->editingActivityId = $this->activeSection === 'activity-definition' ? $id : null;
         $this->scanningActivityId = $this->activeSection === 'activity-scanner' ? $id : null;
@@ -147,6 +150,7 @@ class DashboardHome extends Component
             $validSections[] = 'advanced-service-report';
             $validSections[] = 'advanced-operator-report';
             $validSections[] = 'child-supporter-sponsor-registration';
+            $validSections[] = 'child-supporter-sponsor-edit';
             $validSections[] = 'child-supporter-sponsor-list';
             $validSections[] = 'special-features-id-card-scanner';
             $validSections[] = 'activity-list';
@@ -178,6 +182,7 @@ class DashboardHome extends Component
                 'service-archive',
                 'activity-definition',
                 'child-supporter-sponsor-registration',
+                'child-supporter-sponsor-edit',
                 'child-supporter-sponsor-list',
                 'special-features-id-card-scanner'
             );
@@ -281,6 +286,7 @@ class DashboardHome extends Component
             'editingPerson' => $this->editingPersonId ? Person::find($this->editingPersonId) : null,
             'editingSocialWorker' => $this->editingSocialWorkerId ? SocialWorker::find($this->editingSocialWorkerId) : null,
             'editingGuardian' => $this->editingGuardianId ? Guardian::find($this->editingGuardianId) : null,
+            'editingSponsor' => $this->editingSponsorId ? SponsorProfile::find($this->editingSponsorId) : null,
             'serviceReportServiceId' => $this->serviceReportServiceId,
         ]);
     }

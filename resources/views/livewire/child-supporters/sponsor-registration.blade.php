@@ -1,26 +1,32 @@
 <div class="{{ $embedded ? '' : 'mx-auto max-w-5xl' }}" dir="rtl">
-    <div class="space-y-4 pb-4">
-        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div class="space-y-3 pb-4 sm:space-y-4">
+        <div class="rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:rounded-2xl sm:p-5">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                 <div class="min-w-0">
-                    <div class="flex flex-wrap items-center gap-2">
-                        <span class="inline-flex items-center rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700">حامی کودک</span>
-                        <span class="inline-flex items-center rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
+                    <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                        <span class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-0.5 text-[11px] font-bold text-indigo-700 sm:rounded-lg sm:px-2.5 sm:py-1 sm:text-xs">حامی کودک</span>
+                        <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600 sm:rounded-lg sm:px-2.5 sm:py-1 sm:text-xs">
                             {{ $isEditing ? 'ویرایش اطلاعات' : 'ثبت حامی جدید' }}
                         </span>
                     </div>
-                    <h1 class="mt-3 text-xl font-black text-slate-900 sm:text-2xl">{{ $isEditing ? 'ویرایش حامی' : 'ثبت نام حامی' }}</h1>
-                    <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">{{ $isEditing ? 'اطلاعات حامی را بررسی و بروزرسانی کنید.' : 'اطلاعات حامی جدید را مرحله به مرحله و با کنترل کامل ثبت کنید.' }}</p>
+                    <h1 class="mt-1.5 text-lg font-black leading-6 text-slate-900 sm:mt-3 sm:text-2xl sm:leading-8">{{ $isEditing ? 'ویرایش حامی' : 'ثبت نام حامی' }}</h1>
+                    <p class="mt-1 max-w-2xl text-xs font-semibold leading-5 text-slate-500 sm:mt-2 sm:text-sm sm:font-normal sm:leading-6">{{ $isEditing ? 'اطلاعات حامی را بررسی و بروزرسانی کنید.' : 'اطلاعات حامی جدید را مرحله به مرحله و با کنترل کامل ثبت کنید.' }}</p>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-2 sm:justify-end">
-                    <div class="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-600">
+                <div class="flex flex-wrap items-center gap-1.5 sm:justify-end sm:gap-2">
+                    <div class="inline-flex h-8 items-center rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-[11px] font-bold text-slate-600 sm:h-10 sm:rounded-xl sm:px-3 sm:text-xs">
                         مرحله {{ $currentStep }} از ۵
                     </div>
                     @if($isEditing)
-                        <a href="{{ route('child-supporter.sponsor-list') }}" class="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100">
-                            بازگشت به لیست
-                        </a>
+                        @if($embedded)
+                            <button type="button" wire:click="$dispatch('open-dashboard-section', { section: 'child-supporter-sponsor-list' })" class="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100 sm:h-10 sm:px-4 sm:text-sm">
+                                بازگشت به لیست
+                            </button>
+                        @else
+                            <a href="{{ route('child-supporter.sponsor-list') }}" class="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100 sm:h-10 sm:px-4 sm:text-sm">
+                                بازگشت به لیست
+                            </a>
+                        @endif
                     @endif
                 </div>
             </div>
@@ -32,7 +38,7 @@
             </div>
         @endif
 
-        <form wire:submit.prevent="save" class="space-y-4 pb-0 sm:pb-0">
+        <form wire:submit.prevent="save" class="space-y-3 pb-0 sm:space-y-4 sm:pb-0">
             @php
                 $steps = [
                     1 => 'اطلاعات حامی',
@@ -43,21 +49,21 @@
                 ];
             @endphp
 
-            <nav aria-label="مراحل ثبت نام" class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
-                <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <p class="text-xs font-bold text-slate-400">پیشرفت ثبت نام</p>
-                        <h2 class="mt-1 text-sm font-black text-slate-900">مرحله {{ $currentStep }}: {{ $steps[$currentStep] }}</h2>
+            <nav aria-label="مراحل ثبت نام" class="rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm sm:rounded-2xl sm:p-4">
+                <div class="mb-2 flex items-center justify-between gap-2 sm:mb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                    <div class="min-w-0">
+                        <p class="hidden text-xs font-bold text-slate-400 sm:block">پیشرفت ثبت نام</p>
+                        <h2 class="truncate text-xs font-black text-slate-900 sm:mt-1 sm:text-sm">مرحله {{ $currentStep }}: {{ $steps[$currentStep] }}</h2>
                     </div>
-                    <div class="flex items-center gap-2 text-xs font-bold text-slate-500">
+                    <div class="flex shrink-0 items-center gap-1.5 text-[11px] font-bold text-slate-500 sm:gap-2 sm:text-xs">
                         <span>{{ $currentStep }} از {{ count($steps) }}</span>
-                        <div class="h-2 w-28 overflow-hidden rounded-full bg-slate-100">
+                        <div class="h-1.5 w-20 overflow-hidden rounded-full bg-slate-100 sm:h-2 sm:w-28">
                             <div class="h-full rounded-full bg-indigo-600 transition-all duration-300" style="width: {{ ($currentStep / count($steps)) * 100 }}%"></div>
                         </div>
                     </div>
                 </div>
 
-                <ol class="grid grid-cols-5 gap-1.5 sm:gap-2">
+                <ol class="grid grid-cols-5 gap-1 sm:gap-2">
                     @foreach($steps as $stepNumber => $stepLabel)
                         <li class="relative">
                             @if(!$loop->last)
@@ -68,12 +74,12 @@
                                 @if($currentStep !== $stepNumber)
                                 wire:click="goToStep({{ $stepNumber }})"
                                 @endif
-                                class="relative z-10 flex min-h-20 w-full flex-col items-center justify-center gap-2 rounded-xl border px-1.5 py-2 text-center transition-colors duration-150 focus:outline-none focus:ring-4 focus:ring-indigo-100 sm:px-2 {{ $currentStep === $stepNumber ? 'border-indigo-100 bg-indigo-50 shadow-sm' : 'border-transparent bg-white hover:border-indigo-100 hover:bg-indigo-50/50' }}"
+                                class="relative z-10 flex min-h-9 w-full flex-col items-center justify-center gap-1 rounded-lg border px-1 py-1 text-center transition-colors duration-150 focus:outline-none focus:ring-4 focus:ring-indigo-100 sm:min-h-20 sm:gap-2 sm:rounded-xl sm:px-2 sm:py-2 {{ $currentStep === $stepNumber ? 'border-indigo-100 bg-indigo-50 shadow-sm' : 'border-transparent bg-white hover:border-indigo-100 hover:bg-indigo-50/50' }}"
                                 aria-current="{{ $currentStep === $stepNumber ? 'step' : 'false' }}"
                             >
-                                <span class="grid size-9 place-items-center rounded-full border text-xs font-black transition-colors duration-150 {{ $currentStep === $stepNumber ? 'border-indigo-600 bg-indigo-600 text-white shadow-sm shadow-indigo-100' : ($currentStep > $stepNumber ? 'border-emerald-100 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500') }}">
+                                <span class="grid size-7 place-items-center rounded-full border text-[11px] font-black transition-colors duration-150 sm:size-9 sm:text-xs {{ $currentStep === $stepNumber ? 'border-indigo-600 bg-indigo-600 text-white shadow-sm shadow-indigo-100' : ($currentStep > $stepNumber ? 'border-emerald-100 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500') }}">
                                     @if($currentStep > $stepNumber)
-                                        <svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                        <svg class="size-3.5 sm:size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                                             <path d="M3.5 8.2 6.6 11 12.5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
                                         </svg>
                                     @else

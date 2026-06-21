@@ -37,10 +37,11 @@ class SponsorRegistration extends Component
     public int $currentStep = 1;
     public array $reminderMethods = [];
 
-    public function mount(bool $embedded = false): void
+    public function mount(bool $embedded = false, ?int $sponsorId = null): void
     {
         $this->embedded = $embedded;
         $this->reminderMethods = SponsorProfile::reminderMethodOptions();
+        $this->sponsorId = $sponsorId ?: $this->sponsorId;
         $this->authorizeAccess();
 
         if ($this->sponsorId) {
@@ -302,7 +303,7 @@ class SponsorRegistration extends Component
     {
         abort_unless(
             auth()->check()
-            && (auth()->user()->can('access-child-supporter-panel') || auth()->user()->can('access-admin-panel')),
+            && auth()->user()->can('access-admin-panel'),
             403
         );
     }

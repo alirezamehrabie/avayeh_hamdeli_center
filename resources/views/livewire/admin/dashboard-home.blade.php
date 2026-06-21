@@ -330,6 +330,17 @@
                         <livewire:child-supporters.sponsor-registration :embedded="true" :key="'child-supporter-sponsor-registration'" />
                         @break
 
+                    @case('child-supporter-sponsor-edit')
+                        @if($editingSponsor)
+                            <livewire:child-supporters.sponsor-registration :embedded="true" :sponsor-id="$editingSponsor->id" :key="'child-supporter-sponsor-edit-'.$editingSponsor->id" />
+                        @else
+                            <div class="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+                                <p class="mb-4 text-red-600">حامی انتخاب شده یافت نشد.</p>
+                                <button type="button" wire:click="selectSection('child-supporter-sponsor-list')" class="btn btn-primary">بازگشت به لیست حامیان</button>
+                            </div>
+                        @endif
+                        @break
+
                     @case('child-supporter-sponsor-list')
                         <livewire:child-supporters.sponsor-list :embedded="true" :key="'child-supporter-sponsor-list'" />
                         @break

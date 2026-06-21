@@ -238,7 +238,7 @@ class SponsorList extends Component
     {
         abort_unless(
             auth()->check()
-            && (auth()->user()->can('access-child-supporter-panel') || auth()->user()->can('access-admin-panel')),
+            && auth()->user()->can('access-admin-panel'),
             403
         );
     }
