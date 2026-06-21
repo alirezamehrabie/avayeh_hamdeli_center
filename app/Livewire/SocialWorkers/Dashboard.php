@@ -297,7 +297,8 @@ class Dashboard extends Component
         abort_unless($service, 404);
 
         try {
-            $this->validateNoDuplicateRecipientCategoryRows($validated['recipientEntries']);
+            $deliveryEntries = $this->normalizedDeliveryEntries($validated['recipientEntries']);
+            $this->validateNoDuplicateRecipientCategoryRows($deliveryEntries);
         } catch (ValidationException $exception) {
             $this->showValidationErrorModal($exception->validator->errors()->all());
 
@@ -305,8 +306,8 @@ class Dashboard extends Component
         }
 
         try {
-            DB::transaction(function () use ($service, $validated): void {
-                $categoryQuantities = collect($validated['recipientEntries'])
+            DB::transaction(function () use ($service, $validated, $deliveryEntries): void {
+                $categoryQuantities = collect($deliveryEntries)
                     ->groupBy(fn (array $entry) => (int) $entry['service_category_id'])
                     ->map(fn ($entries) => $entries->sum(fn (array $entry) => (float) $entry['quantity']));
                 $categoryIds = $categoryQuantities->keys()
@@ -370,7 +371,7 @@ class Dashboard extends Component
                     }
                 }
 
-                foreach ($validated['recipientEntries'] as $entry) {
+                foreach ($deliveryEntries as $entry) {
                     $personId = null;
                     $guardianId = null;
                     $fullName = trim((string) ($entry['full_name'] ?? ''));
@@ -718,12 +719,14 @@ class Dashboard extends Component
                 },
             ],
             'recipientEntries.*.mobile' => ['nullable', 'regex:/^09[0-9]{9}$/'],
-            'recipientEntries.*.quantity' => ['required', 'numeric', 'min:0.01'],
+            'recipientEntries.*.quantity' => ['nullable', 'numeric', 'min:0.01'],
             'recipientEntries.*.service_category_id' => [
-                'required',
+                'nullable',
                 'integer',
                 Rule::in($this->assignableCategories->pluck('id')->all()),
             ],
+            'recipientEntries.*.category_quantities' => ['nullable', 'array'],
+            'recipientEntries.*.category_quantities.*' => ['nullable', 'numeric', 'min:0.01'],
             'deliveredAt' => [
                 'required',
                 'string',
@@ -745,9 +748,73 @@ class Dashboard extends Component
             'recipientEntries.*.full_name' => 'نام و نام خانوادگی',
             'recipientEntries.*.mobile' => 'موبایل',
             'recipientEntries.*.quantity' => 'مقدار',
+            'recipientEntries.*.category_quantities.*' => 'مقدار دسته‌بندی',
             'deliveredAt' => 'تاریخ تحویل',
             'notes' => 'یادداشت',
         ];
+    }
+
+    protected function normalizedDeliveryEntries(array $recipientEntries): array
+    {
+        $assignableCategoryIds = $this->assignableCategories
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+        $assignableCategoryLookup = array_flip($assignableCategoryIds);
+        $deliveryEntries = [];
+        $missingRows = [];
+
+        foreach ($recipientEntries as $index => $entry) {
+            $rowDeliveries = [];
+
+            foreach (($entry['category_quantities'] ?? []) as $categoryId => $quantity) {
+                $categoryId = (int) $categoryId;
+                $quantity = (float) $quantity;
+
+                if ($categoryId <= 0 || $quantity <= 0) {
+                    continue;
+                }
+
+                if (! isset($assignableCategoryLookup[$categoryId])) {
+                    throw ValidationException::withMessages([
+                        'recipientEntries' => 'دسته‌بندی انتخاب‌شده برای این خدمت معتبر نیست.',
+                    ]);
+                }
+
+                $rowDeliveries[$categoryId] = ($rowDeliveries[$categoryId] ?? 0) + $quantity;
+            }
+
+            if ($rowDeliveries === [] && filled($entry['service_category_id'] ?? null) && filled($entry['quantity'] ?? null)) {
+                $categoryId = (int) $entry['service_category_id'];
+                $quantity = (float) $entry['quantity'];
+
+                if ($categoryId > 0 && $quantity > 0) {
+                    $rowDeliveries[$categoryId] = $quantity;
+                }
+            }
+
+            if ($rowDeliveries === []) {
+                $missingRows[] = $index + 1;
+                continue;
+            }
+
+            foreach ($rowDeliveries as $categoryId => $quantity) {
+                $deliveryEntries[] = array_merge($entry, [
+                    'service_category_id' => (int) $categoryId,
+                    'quantity' => (float) $quantity,
+                ]);
+            }
+        }
+
+        if ($missingRows !== []) {
+            $rows = implode('، ', $missingRows);
+
+            throw ValidationException::withMessages([
+                'recipientEntries' => "برای ردیف‌های {$rows} حداقل یک مقدار تحویل در دسته‌بندی‌ها وارد کنید.",
+            ]);
+        }
+
+        return $deliveryEntries;
     }
 
     protected function validateNoDuplicateRecipientCategoryRows(array $recipientEntries): void
@@ -802,6 +869,7 @@ class Dashboard extends Component
             'mobile' => '',
             'quantity' => '',
             'service_category_id' => $categoryId,
+            'category_quantities' => $categoryId ? [$categoryId => ''] : [],
             'is_unregistered' => false,
             'not_found_notice' => '',
             'resolved_name' => '',
