@@ -268,7 +268,7 @@
                                                         >
                                                         <button
                                                             type="button"
-                                                            x-on:click.prevent="$dispatch('open-recipient-qr-scanner-{{ $index }}')"
+                                                            x-on:click.prevent="$dispatch('open-recipient-qr-scanner', { index: {{ $index }} })"
                                                             @disabled(!$this->selectedService)
                                                             class="absolute left-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-50"
                                                             title="اسکن QR"
@@ -324,202 +324,6 @@
                                                     </div>
                                                 </div>
                                                 @error('recipientEntries.' . $index . '.qr_token') <p class="md:col-span-12 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror
-                                            </div>
-                                        </div>
-
-                                        <div
-                                            x-data="{
-                                                ...idCardScanner({
-                                                    resolveScan: async (payload) => {
-                                                        const response = await $wire.resolveScannedRecipientQr({{ $index }}, payload);
-
-                                                        if (response?.ok) {
-                                                            window.setTimeout(() => window.dispatchEvent(new CustomEvent('close-recipient-qr-scanner-{{ $index }}')), 700);
-                                                        }
-
-                                                        return response;
-                                                    },
-                                                    successSoundUrl: '/sounds/scan-card.wav',
-                                                    enableResultBanner: false,
-                                                    autoStart: false,
-                                                    autoResumeAfterError: false,
-                                                }),
-                                                qrScannerOpen: false,
-                                                openingScanner: false,
-                                                async openScanner() {
-                                                    if (this.openingScanner) {
-                                                        return;
-                                                    }
-
-                                                    this.openingScanner = true;
-                                                    this.qrScannerOpen = true;
-
-                                                    try {
-                                                        await $nextTick();
-                                                        await this.waitForScannerFrame();
-                                                        await this.waitForScannerBoot();
-                                                        await this.startCamera();
-                                                    } finally {
-                                                        this.openingScanner = false;
-                                                    }
-                                                },
-                                                async waitForScannerFrame() {
-                                                    for (let attempt = 0; attempt < 20; attempt++) {
-                                                        const rect = this.$refs.scanner?.getBoundingClientRect();
-
-                                                        if (rect?.width > 160 && rect?.height > 160) {
-                                                            return;
-                                                        }
-
-                                                        await new Promise((resolve) => requestAnimationFrame(resolve));
-                                                    }
-                                                },
-                                                async waitForScannerBoot() {
-                                                    for (let attempt = 0; attempt < 50; attempt++) {
-                                                        if (this.html5QrCode && this.Html5Qrcode) {
-                                                            return;
-                                                        }
-
-                                                        await new Promise((resolve) => setTimeout(resolve, 100));
-                                                    }
-
-                                                    await this.init();
-                                                },
-                                                closeScanner() {
-                                                    this.qrScannerOpen = false;
-                                                    this.stopCamera();
-                                                },
-                                            }"
-                                            x-init="init(); $watch('qrScannerOpen', (open) => document.documentElement.classList.toggle('overflow-hidden', open))"
-                                            x-on:open-recipient-qr-scanner-{{ $index }}.window="openScanner()"
-                                            x-on:close-recipient-qr-scanner-{{ $index }}.window="closeScanner()"
-                                            x-on:keydown.escape.window="if (qrScannerOpen) closeScanner()"
-                                            x-show="qrScannerOpen"
-                                            x-cloak
-                                            x-transition.opacity.duration.150ms
-                                            class="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/70 p-2 backdrop-blur-sm sm:p-3"
-                                            role="dialog"
-                                            aria-modal="true"
-                                            style="display: none;"
-                                        >
-                                                <div
-                                                    @click.outside="closeScanner()"
-                                                    class="flex max-h-[calc(100svh-1rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 text-white shadow-2xl"
-                                                    dir="rtl"
-                                                >
-                                                    <div class="flex items-center justify-between border-b border-white/10 px-3 py-2.5">
-                                                        <div class="inline-flex items-center gap-2 text-xs font-bold">
-                                                            <span class="inline-flex h-2 w-2 rounded-full"
-                                                                  :class="{
-                                                                    'bg-emerald-400': ['ready', 'scanning'].includes(status),
-                                                                    'bg-amber-400': status === 'paused',
-                                                                    'bg-rose-400': ['camera_denied', 'scan_error', 'unsupported'].includes(status),
-                                                                    'bg-slate-400': status === 'initializing',
-                                                                  }"></span>
-                                                            <span x-text="statusLabel()"></span>
-                                                        </div>
-                                                        <button type="button" @click="closeScanner()" class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 transition hover:bg-white/10 hover:text-white" aria-label="بستن">
-                                                            <i class="bi bi-x-lg"></i>
-                                                        </button>
-                                                    </div>
-
-                                                    <div class="relative min-h-[320px] flex-1 bg-slate-950 sm:aspect-square sm:flex-none">
-                                                        <div wire:ignore x-ref="scanner" id="service-recipient-scanner-{{ $index }}" class="qr-scanner-reader h-full w-full"></div>
-                                                        <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
-                                                            <div class="aspect-square w-[min(72%,320px)] rounded-2xl border-2 border-cyan-300/90 shadow-[0_0_0_9999px_rgba(15,23,42,0.32)]"></div>
-                                                        </div>
-                                                        <div
-                                                            x-show="openingScanner || startingCamera || (!cameraActive && ['ready', 'camera_denied', 'scan_error', 'unsupported'].includes(status))"
-                                                            x-transition.opacity.duration.150ms
-                                                            class="absolute inset-0 flex items-center justify-center bg-slate-950/78 px-5 text-center backdrop-blur-sm"
-                                                            style="display: none;"
-                                                        >
-                                                            <div class="w-full max-w-xs rounded-2xl border border-white/10 bg-slate-900/90 p-4 shadow-xl">
-                                                                <div
-                                                                    x-show="openingScanner || startingCamera || status === 'initializing'"
-                                                                    class="mx-auto mb-3 h-9 w-9 animate-spin rounded-full border-2 border-cyan-200/30 border-t-cyan-200"
-                                                                    style="display: none;"
-                                                                    aria-hidden="true"
-                                                                ></div>
-                                                                <div
-                                                                    x-show="['camera_denied', 'scan_error', 'unsupported'].includes(status)"
-                                                                    class="mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-rose-500/15 text-rose-200"
-                                                                    style="display: none;"
-                                                                    aria-hidden="true"
-                                                                >
-                                                                    <i class="bi bi-camera-video-off text-lg"></i>
-                                                                </div>
-                                                                <div
-                                                                    x-show="status === 'ready' && !startingCamera"
-                                                                    class="mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-cyan-500/15 text-cyan-200"
-                                                                    style="display: none;"
-                                                                    aria-hidden="true"
-                                                                >
-                                                                    <i class="bi bi-camera-video text-lg"></i>
-                                                                </div>
-
-                                                                <p class="text-sm font-extrabold text-white">
-                                                                    <span x-show="openingScanner || startingCamera || status === 'initializing'">در حال فعال‌سازی دوربین</span>
-                                                                    <span x-show="status === 'ready' && !startingCamera">دوربین آماده شروع است</span>
-                                                                    <span x-show="status === 'camera_denied'">دسترسی به دوربین انجام نشد</span>
-                                                                    <span x-show="status === 'scan_error'">اسکن انجام نشد</span>
-                                                                    <span x-show="status === 'unsupported'">دوربین پشتیبانی نمی‌شود</span>
-                                                                </p>
-                                                                <p class="mt-2 text-xs leading-5 text-slate-300" x-text="message"></p>
-
-                                                                <div class="mt-4 grid gap-2" x-show="!openingScanner && !startingCamera && status !== 'unsupported'" style="display: none;">
-                                                                    <button
-                                                                        type="button"
-                                                                        @click="status === 'scan_error' && cameraActive ? resumeScan() : startCamera()"
-                                                                        class="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 px-3 text-xs font-black text-slate-950 transition hover:bg-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-200/60"
-                                                                    >
-                                                                        <i class="bi bi-camera-video"></i>
-                                                                        <span x-show="status === 'ready'">شروع اسکن</span>
-                                                                        <span x-show="status === 'scan_error'">اسکن دوباره</span>
-                                                                        <span x-show="!['ready', 'scan_error'].includes(status)">تلاش دوباره</span>
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="space-y-2 px-3 py-3">
-                                                        <div
-                                                            x-show="status === 'scan_error'"
-                                                            x-transition.opacity.duration.150ms
-                                                            class="rounded-xl border border-rose-400/25 bg-rose-500/10 px-3 py-2 text-rose-100"
-                                                            style="display: none;"
-                                                        >
-                                                            <div class="flex items-start gap-2">
-                                                                <i class="bi bi-exclamation-triangle mt-0.5 shrink-0 text-sm"></i>
-                                                                <div class="min-w-0 flex-1">
-                                                                    <p class="text-xs font-extrabold">QR قابل ثبت نیست</p>
-                                                                    <p class="mt-1 text-[11px] leading-5 text-rose-100/90" x-text="message"></p>
-                                                                </div>
-                                                            </div>
-                                                            <button
-                                                                type="button"
-                                                                @click="resumeScan()"
-                                                                class="mt-2 inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-lg bg-white px-3 text-xs font-black text-rose-700 transition hover:bg-rose-50 focus:outline-none focus:ring-2 focus:ring-white/60"
-                                                            >
-                                                                <i class="bi bi-qr-code-scan"></i>
-                                                                اسکن دوباره
-                                                            </button>
-                                                        </div>
-                                                        <p x-show="status !== 'scan_error'" class="text-xs leading-5 text-slate-200" x-text="message"></p>
-                                                        <div class="grid gap-2" x-show="cameras.length > 1" style="display: none;">
-                                                            <select
-                                                                x-model="selectedDeviceId"
-                                                                @change="switchCamera()"
-                                                                class="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2 text-xs text-white focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
-                                                            >
-                                                                <template x-for="camera in cameras" :key="camera.id">
-                                                                    <option :value="camera.id" x-text="camera.label"></option>
-                                                                </template>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                </div>
                                             </div>
                                         </div>
 
@@ -648,6 +452,219 @@
                                     @endif
                                 </div>
                             @endforeach
+                        </div>
+
+                        <div
+                            x-data="{
+                                ...idCardScanner({
+                                    resolveScan: async (payload, scanner) => {
+                                        const index = scanner.activeRecipientIndex;
+
+                                        if (index === null || index === undefined) {
+                                            return {
+                                                ok: false,
+                                                status: 'scan_error',
+                                                message: 'ردیف گیرنده برای ثبت QR مشخص نیست.',
+                                                result: {
+                                                    ok: false,
+                                                    code: 'missing_recipient_row',
+                                                    message: 'ردیف گیرنده برای ثبت QR مشخص نیست.',
+                                                },
+                                            };
+                                        }
+
+                                        const response = await $wire.resolveScannedRecipientQr(index, payload);
+
+                                        if (response?.ok) {
+                                            window.setTimeout(() => window.dispatchEvent(new CustomEvent('close-recipient-qr-scanner')), 700);
+                                        }
+
+                                        return response;
+                                    },
+                                    successSoundUrl: '/sounds/scan-card.wav',
+                                    enableResultBanner: false,
+                                    autoStart: false,
+                                    autoResumeAfterError: false,
+                                }),
+                                qrScannerOpen: false,
+                                openingScanner: false,
+                                activeRecipientIndex: null,
+                                async openScanner(index) {
+                                    if (this.openingScanner) {
+                                        return;
+                                    }
+
+                                    this.activeRecipientIndex = index;
+                                    this.openingScanner = true;
+                                    this.qrScannerOpen = true;
+
+                                    try {
+                                        await $nextTick();
+                                        await this.waitForScannerFrame();
+                                        await this.waitForScannerBoot();
+                                        await this.startCamera();
+                                    } finally {
+                                        this.openingScanner = false;
+                                    }
+                                },
+                                async waitForScannerFrame() {
+                                    for (let attempt = 0; attempt < 20; attempt++) {
+                                        const rect = this.$refs.scanner?.getBoundingClientRect();
+
+                                        if (rect?.width > 160 && rect?.height > 160) {
+                                            return;
+                                        }
+
+                                        await new Promise((resolve) => requestAnimationFrame(resolve));
+                                    }
+                                },
+                                async waitForScannerBoot() {
+                                    for (let attempt = 0; attempt < 50; attempt++) {
+                                        if (this.html5QrCode && this.Html5Qrcode) {
+                                            return;
+                                        }
+
+                                        await new Promise((resolve) => setTimeout(resolve, 100));
+                                    }
+
+                                    await this.init();
+                                },
+                                closeScanner() {
+                                    this.qrScannerOpen = false;
+                                    this.activeRecipientIndex = null;
+                                    this.stopCamera();
+                                },
+                            }"
+                            x-init="init(); $watch('qrScannerOpen', (open) => document.documentElement.classList.toggle('overflow-hidden', open))"
+                            x-on:open-recipient-qr-scanner.window="openScanner($event.detail.index)"
+                            x-on:close-recipient-qr-scanner.window="closeScanner()"
+                            x-on:keydown.escape.window="if (qrScannerOpen) closeScanner()"
+                            x-show="qrScannerOpen"
+                            x-cloak
+                            x-transition.opacity.duration.150ms
+                            class="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/70 p-2 backdrop-blur-sm sm:p-3"
+                            role="dialog"
+                            aria-modal="true"
+                            style="display: none;"
+                        >
+                            <div
+                                @click.outside="closeScanner()"
+                                class="flex max-h-[calc(100svh-1rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 text-white shadow-2xl"
+                                dir="rtl"
+                            >
+                                <div class="flex items-center justify-between border-b border-white/10 px-3 py-2.5">
+                                    <div class="inline-flex items-center gap-2 text-xs font-bold">
+                                        <span class="inline-flex h-2 w-2 rounded-full"
+                                              :class="{
+                                                'bg-emerald-400': ['ready', 'scanning'].includes(status),
+                                                'bg-amber-400': status === 'paused',
+                                                'bg-rose-400': ['camera_denied', 'scan_error', 'unsupported'].includes(status),
+                                                'bg-slate-400': status === 'initializing',
+                                              }"></span>
+                                        <span x-text="statusLabel()"></span>
+                                    </div>
+                                    <button type="button" @click="closeScanner()" class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 transition hover:bg-white/10 hover:text-white" aria-label="بستن">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </div>
+
+                                <div class="relative min-h-[320px] flex-1 bg-slate-950 sm:aspect-square sm:flex-none">
+                                    <div wire:ignore x-ref="scanner" id="service-recipient-scanner" class="qr-scanner-reader h-full w-full"></div>
+                                    <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
+                                        <div class="aspect-square w-[min(72%,320px)] rounded-2xl border-2 border-cyan-300/90 shadow-[0_0_0_9999px_rgba(15,23,42,0.32)]"></div>
+                                    </div>
+                                    <div
+                                        x-show="openingScanner || startingCamera || (!cameraActive && ['ready', 'camera_denied', 'scan_error', 'unsupported'].includes(status))"
+                                        x-transition.opacity.duration.150ms
+                                        class="absolute inset-0 flex items-center justify-center bg-slate-950/78 px-5 text-center backdrop-blur-sm"
+                                        style="display: none;"
+                                    >
+                                        <div class="w-full max-w-xs rounded-2xl border border-white/10 bg-slate-900/90 p-4 shadow-xl">
+                                            <div
+                                                x-show="openingScanner || startingCamera || status === 'initializing'"
+                                                class="mx-auto mb-3 h-9 w-9 animate-spin rounded-full border-2 border-cyan-200/30 border-t-cyan-200"
+                                                style="display: none;"
+                                                aria-hidden="true"
+                                            ></div>
+                                            <div
+                                                x-show="['camera_denied', 'scan_error', 'unsupported'].includes(status)"
+                                                class="mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-rose-500/15 text-rose-200"
+                                                style="display: none;"
+                                                aria-hidden="true"
+                                            >
+                                                <i class="bi bi-camera-video-off text-lg"></i>
+                                            </div>
+                                            <div
+                                                x-show="status === 'ready' && !startingCamera"
+                                                class="mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-cyan-500/15 text-cyan-200"
+                                                style="display: none;"
+                                                aria-hidden="true"
+                                            >
+                                                <i class="bi bi-camera-video text-lg"></i>
+                                            </div>
+
+                                            <p class="text-sm font-extrabold text-white">
+                                                <span x-show="openingScanner || startingCamera || status === 'initializing'">در حال فعال‌سازی دوربین</span>
+                                                <span x-show="status === 'ready' && !startingCamera">دوربین آماده شروع است</span>
+                                                <span x-show="status === 'camera_denied'">دسترسی به دوربین انجام نشد</span>
+                                                <span x-show="status === 'scan_error'">اسکن انجام نشد</span>
+                                                <span x-show="status === 'unsupported'">دوربین پشتیبانی نمی‌شود</span>
+                                            </p>
+                                            <p class="mt-2 text-xs leading-5 text-slate-300" x-text="message"></p>
+
+                                            <div class="mt-4 grid gap-2" x-show="!openingScanner && !startingCamera && status !== 'unsupported'" style="display: none;">
+                                                <button
+                                                    type="button"
+                                                    @click="status === 'scan_error' && cameraActive ? resumeScan() : startCamera()"
+                                                    class="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 px-3 text-xs font-black text-slate-950 transition hover:bg-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-200/60"
+                                                >
+                                                    <i class="bi bi-camera-video"></i>
+                                                    <span x-show="status === 'ready'">شروع اسکن</span>
+                                                    <span x-show="status === 'scan_error'">اسکن دوباره</span>
+                                                    <span x-show="!['ready', 'scan_error'].includes(status)">تلاش دوباره</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-2 px-3 py-3">
+                                    <div
+                                        x-show="status === 'scan_error'"
+                                        x-transition.opacity.duration.150ms
+                                        class="rounded-xl border border-rose-400/25 bg-rose-500/10 px-3 py-2 text-rose-100"
+                                        style="display: none;"
+                                    >
+                                        <div class="flex items-start gap-2">
+                                            <i class="bi bi-exclamation-triangle mt-0.5 shrink-0 text-sm"></i>
+                                            <div class="min-w-0 flex-1">
+                                                <p class="text-xs font-extrabold">QR قابل ثبت نیست</p>
+                                                <p class="mt-1 text-[11px] leading-5 text-rose-100/90" x-text="message"></p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            @click="resumeScan()"
+                                            class="mt-2 inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-lg bg-white px-3 text-xs font-black text-rose-700 transition hover:bg-rose-50 focus:outline-none focus:ring-2 focus:ring-white/60"
+                                        >
+                                            <i class="bi bi-qr-code-scan"></i>
+                                            اسکن دوباره
+                                        </button>
+                                    </div>
+                                    <p x-show="status !== 'scan_error'" class="text-xs leading-5 text-slate-200" x-text="message"></p>
+                                    <div class="grid gap-2" x-show="cameras.length > 1" style="display: none;">
+                                        <select
+                                            x-model="selectedDeviceId"
+                                            @change="switchCamera()"
+                                            class="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2 text-xs text-white focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/20"
+                                        >
+                                            <template x-for="camera in cameras" :key="camera.id">
+                                                <option :value="camera.id" x-text="camera.label"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

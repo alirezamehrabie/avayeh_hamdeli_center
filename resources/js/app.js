@@ -400,7 +400,7 @@ Alpine.data('idCardScanner', ({
         this.html5QrCode?.pause(false);
         this.setStatus('paused', 'QR شناسایی شد. در حال دریافت اطلاعات...');
         try {
-            const response = await resolveScan(value);
+            const response = await resolveScan(value, this);
 
             if (response?.result) {
                 const feedbackVariant = response?.result?.code === 'duplicate' ? 'warning' : 'success';
