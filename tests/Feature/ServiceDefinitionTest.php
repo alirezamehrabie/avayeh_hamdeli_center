@@ -222,6 +222,54 @@ class ServiceDefinitionTest extends TestCase
         ]);
     }
 
+    public function test_social_worker_quota_statistics_refresh_after_delivery_is_saved(): void
+    {
+        $manager = $this->manager();
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 79,
+            'first_name' => 'Live',
+            'last_name' => 'Quota',
+            'is_active' => true,
+        ]);
+        $socialWorkerUser = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_SOCIAL_WORKER,
+            'is_admin' => false,
+            'social_worker_id' => $worker->id,
+        ]);
+        $service = $this->serviceWithCategory($manager, 'Live Quota Refresh', true);
+        $category = $service->categories()->firstOrFail();
+
+        $service->workerAllocations()->create([
+            'social_worker_id' => $worker->id,
+            'service_category_id' => $category->id,
+            'allocated_quantity' => 5,
+        ]);
+
+        $this->actingAs($socialWorkerUser);
+
+        Livewire::test(SocialWorkerDashboard::class)
+            ->set('selectedServiceId', $service->id)
+            ->assertViewHas('categoryMetrics', function (array $metrics) use ($category): bool {
+                return (float) $metrics[$category->id]['worker_delivered'] === 0.0
+                    && (float) $metrics[$category->id]['remaining_allocation'] === 5.0;
+            })
+            ->set('recipientEntries', [
+                $this->deliveryEntry('2222222222', $category->id, 2, 'Live Recipient'),
+            ])
+            ->set('deliveredAt', Jalalian::fromDateTime(now())->format('Y/m/d'))
+            ->call('saveDelivery')
+            ->assertHasNoErrors()
+            ->assertViewHas('selectedServiceTotals', function (array $totals): bool {
+                return (float) $totals['allocated'] === 5.0
+                    && (float) $totals['delivered'] === 2.0
+                    && (float) $totals['remaining'] === 3.0;
+            })
+            ->assertViewHas('categoryMetrics', function (array $metrics) use ($category): bool {
+                return (float) $metrics[$category->id]['worker_delivered'] === 2.0
+                    && (float) $metrics[$category->id]['remaining_allocation'] === 3.0;
+            });
+    }
+
     public function test_social_worker_scanned_qr_resolves_recipient_entry(): void
     {
         $manager = $this->manager();

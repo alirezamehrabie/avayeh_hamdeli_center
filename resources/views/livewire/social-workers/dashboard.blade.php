@@ -176,7 +176,7 @@
                             </div>
 
                             @if($selectedService->description)
-                                <p class="mt-2 rounded-2xl border border-slate-100 bg-slate-50/70 px-3 py-2 text-[11px] text-slate-500">
+                                <p class="mt-2 rounded-2xl border border-slate-100 bg-slate-50/60 px-2.5 py-1.5 text-[10px] leading-4  text-slate-500">
                                     {{ $selectedService->description }}
                                 </p>
                             @endif

@@ -504,10 +504,7 @@ class Dashboard extends Component
             throw $exception;
         }
 
-        $freshService = Service::query()
-            ->with(['serviceName', 'categories', 'workerAllocations'])
-            ->find($service->id);
-        $this->flushServiceMetricCaches();
+        $freshService = $this->refreshSelectedServiceQuotaStats();
 
         $this->openNotificationModal([
             'type' => 'success',
@@ -533,6 +530,7 @@ class Dashboard extends Component
         $this->recipientEntries = [$this->blankEntry($this->defaultServiceCategoryId($freshService))];
         $this->notes = '';
         $this->deliveredAt = $this->defaultDeliveredAt();
+        $this->flushSelectedServiceDerivedCaches();
     }
 
     public function getAssignedServicesProperty(): Collection
@@ -648,15 +646,9 @@ class Dashboard extends Component
             ];
         }
 
-        $allocated = (float) ($service->worker_allocated_quantity ?? 0);
-        $delivered = (float) ($service->worker_delivered_quantity ?? 0);
         $this->selectedServiceTotalsCacheServiceId = (int) $service->id;
 
-        return $this->selectedServiceTotalsCache = [
-            'allocated' => $allocated,
-            'delivered' => $delivered,
-            'remaining' => max(0, $allocated - $delivered),
-        ];
+        return $this->selectedServiceTotalsCache = $this->buildSelectedServiceTotals($service);
     }
 
     public function getSelectedServiceCategoryMetricsProperty(): array
@@ -674,48 +666,9 @@ class Dashboard extends Component
             return $this->selectedServiceCategoryMetricsCache = [];
         }
 
-        $categories = $service->categories;
-        $categoryIds = $categories->pluck('id')->map(fn ($id) => (int) $id)->all();
-
-        $deliveryRows = $categoryIds === []
-            ? collect()
-            : ServiceDelivery::query()
-                ->select('service_category_id')
-                ->selectRaw('COALESCE(SUM(delivered_quantity), 0) as delivered_quantity')
-                ->selectRaw(
-                    'COALESCE(SUM(CASE WHEN social_worker_id = ? THEN delivered_quantity ELSE 0 END), 0) as worker_delivered_quantity',
-                    [$this->currentSocialWorkerId()]
-                )
-                ->where('service_id', $service->id)
-                ->whereIn('service_category_id', $categoryIds)
-                ->groupBy('service_category_id')
-                ->get()
-                ->keyBy('service_category_id');
-
-        $metrics = [];
-
-        foreach ($categories as $category) {
-            $categoryId = (int) $category->id;
-            $allocated = $service->workerAllocations
-                ->where('social_worker_id', $this->currentSocialWorkerId())
-                ->where('service_category_id', $categoryId)
-                ->sum(fn ($allocation) => (float) $allocation->allocated_quantity);
-            $row = $deliveryRows->get($categoryId);
-            $delivered = (float) ($row?->delivered_quantity ?? 0);
-            $workerDelivered = (float) ($row?->worker_delivered_quantity ?? 0);
-
-            $metrics[$categoryId] = [
-                'allocated' => (float) $allocated,
-                'delivered' => $delivered,
-                'worker_delivered' => $workerDelivered,
-                'remaining_allocation' => max(0, (float) $allocated - $workerDelivered),
-                'remaining_stock' => max(0, (float) $category->quantity - $delivered),
-            ];
-        }
-
         $this->selectedServiceCategoryMetricsCacheServiceId = (int) $service->id;
 
-        return $this->selectedServiceCategoryMetricsCache = $metrics;
+        return $this->selectedServiceCategoryMetricsCache = $this->buildSelectedServiceCategoryMetrics($service);
     }
 
     public function getUnitOptionsProperty(): array
@@ -733,13 +686,20 @@ class Dashboard extends Component
     public function render()
     {
         $selectedService = $this->selectedService;
+        $categoryMetrics = $this->buildSelectedServiceCategoryMetrics($selectedService);
+        $assignableCategories = $selectedService
+            ? $selectedService->categories
+                ->filter(fn ($category) => (float) ($categoryMetrics[$category->id]['allocated'] ?? 0) > 0)
+                ->sortBy('sort_id')
+                ->values()
+            : collect();
 
         return view('livewire.social-workers.dashboard', [
             'assignedServices' => $this->assignedServices,
             'selectedService' => $selectedService,
-            'assignableCategories' => $this->assignableCategories,
-            'selectedServiceTotals' => $this->selectedServiceTotals,
-            'categoryMetrics' => $this->selectedServiceCategoryMetrics,
+            'assignableCategories' => $assignableCategories,
+            'selectedServiceTotals' => $this->buildSelectedServiceTotals($selectedService),
+            'categoryMetrics' => $categoryMetrics,
             'unitOptions' => $this->unitOptions,
         ]);
     }
@@ -996,6 +956,87 @@ class Dashboard extends Component
         $this->quotaState = [
             'service_type' => $this->serviceTypeLabel($service?->service_type),
         ];
+    }
+
+    protected function buildSelectedServiceTotals(?Service $service): array
+    {
+        if (! $service) {
+            return [
+                'allocated' => 0.0,
+                'delivered' => 0.0,
+                'remaining' => 0.0,
+            ];
+        }
+
+        $allocated = $this->allocatedQuantityFromLoadedService($service, $this->currentSocialWorkerId());
+        $delivered = (float) ServiceDelivery::query()
+            ->where('service_id', $service->id)
+            ->where('social_worker_id', $this->currentSocialWorkerId())
+            ->sum('delivered_quantity');
+
+        return [
+            'allocated' => $allocated,
+            'delivered' => $delivered,
+            'remaining' => max(0, $allocated - $delivered),
+        ];
+    }
+
+    protected function buildSelectedServiceCategoryMetrics(?Service $service): array
+    {
+        if (! $service) {
+            return [];
+        }
+
+        $categories = $service->categories;
+        $categoryIds = $categories->pluck('id')->map(fn ($id) => (int) $id)->all();
+
+        $deliveryRows = $categoryIds === []
+            ? collect()
+            : ServiceDelivery::query()
+                ->select('service_category_id')
+                ->selectRaw('COALESCE(SUM(delivered_quantity), 0) as delivered_quantity')
+                ->selectRaw(
+                    'COALESCE(SUM(CASE WHEN social_worker_id = ? THEN delivered_quantity ELSE 0 END), 0) as worker_delivered_quantity',
+                    [$this->currentSocialWorkerId()]
+                )
+                ->where('service_id', $service->id)
+                ->whereIn('service_category_id', $categoryIds)
+                ->groupBy('service_category_id')
+                ->get()
+                ->keyBy('service_category_id');
+
+        $metrics = [];
+
+        foreach ($categories as $category) {
+            $categoryId = (int) $category->id;
+            $allocated = $service->workerAllocations
+                ->where('social_worker_id', $this->currentSocialWorkerId())
+                ->where('service_category_id', $categoryId)
+                ->sum(fn ($allocation) => (float) $allocation->allocated_quantity);
+            $row = $deliveryRows->get($categoryId);
+            $delivered = (float) ($row?->delivered_quantity ?? 0);
+            $workerDelivered = (float) ($row?->worker_delivered_quantity ?? 0);
+
+            $metrics[$categoryId] = [
+                'allocated' => (float) $allocated,
+                'delivered' => $delivered,
+                'worker_delivered' => $workerDelivered,
+                'remaining_allocation' => max(0, (float) $allocated - $workerDelivered),
+                'remaining_stock' => max(0, (float) $category->quantity - $delivered),
+            ];
+        }
+
+        return $metrics;
+    }
+
+    protected function refreshSelectedServiceQuotaStats(): ?Service
+    {
+        $this->flushServiceMetricCaches();
+
+        $service = $this->selectedService;
+        $this->syncQuotaState($service);
+
+        return $service;
     }
 
     protected function defaultServiceCategoryId(?Service $service = null): ?int
