@@ -371,6 +371,39 @@
                         <div class="space-y-3">
                             @foreach($recipientEntries as $index => $entry)
                                 <div class="relative transition-all md:rounded-2xl md:border md:border-slate-100 md:bg-slate-50/50 md:p-4">
+                                    @php
+                                        $rowCategoryQuantitiesForHeader = collect($entry['category_quantities'] ?? []);
+                                        $rowEnteredCategoryCountForHeader = $rowCategoryQuantitiesForHeader
+                                            ->filter(fn ($quantity) => (float) $quantity > 0)
+                                            ->count();
+                                        $rowTotalQuantityForHeader = $rowCategoryQuantitiesForHeader
+                                            ->sum(fn ($quantity) => (float) $quantity);
+                                        $recipientDisplayName = trim((string) ($entry['resolved_name'] ?: $entry['full_name'] ?? ''));
+                                        $recipientNationalId = trim((string) ($entry['national_id'] ?? ''));
+                                        $isUnregisteredRecipient = (bool) ($entry['is_unregistered'] ?? false);
+                                        $recipientStatus = match (true) {
+                                            $recipientDisplayName !== '' && $isUnregisteredRecipient => [
+                                                'label' => 'ثبت دستی',
+                                                'class' => 'border-amber-200 bg-amber-50 text-amber-700',
+                                            ],
+                                            $recipientDisplayName !== '' => [
+                                                'label' => 'شناسایی شده',
+                                                'class' => 'border-emerald-200 bg-emerald-50 text-emerald-700',
+                                            ],
+                                            $recipientNationalId !== '' && $isUnregisteredRecipient => [
+                                                'label' => 'نیاز به تکمیل',
+                                                'class' => 'border-amber-200 bg-amber-50 text-amber-700',
+                                            ],
+                                            $recipientNationalId !== '' => [
+                                                'label' => 'در حال جستجو',
+                                                'class' => 'border-cyan-200 bg-cyan-50 text-cyan-700',
+                                            ],
+                                            default => [
+                                                'label' => 'خالی',
+                                                'class' => 'border-slate-200 bg-slate-50 text-slate-500',
+                                            ],
+                                        };
+                                    @endphp
 
                                     <!-- Remove Button (Top Left for Mobile) -->
                                     @if(count($recipientEntries) > 1)
@@ -380,6 +413,46 @@
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                                         </button>
                                     @endif
+
+                                    <div class="mb-3 rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-sm md:mb-4 md:me-9">
+                                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                            <div class="min-w-0">
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <h3 class="text-sm font-black text-slate-800">
+                                                        گیرنده {{ $this->persianNumber($index + 1) }}
+                                                    </h3>
+                                                    <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-black {{ $recipientStatus['class'] }}">
+                                                        {{ $recipientStatus['label'] }}
+                                                    </span>
+                                                </div>
+
+                                                <p class="mt-1 truncate text-xs font-bold text-slate-600">
+                                                    {{ $recipientDisplayName !== '' ? $recipientDisplayName : 'گیرنده هنوز مشخص نشده است' }}
+                                                </p>
+
+                                                @if($recipientNationalId !== '')
+                                                    <p class="mt-0.5 text-[10px] font-bold text-slate-400" dir="ltr">
+                                                        {{ $recipientNationalId }}
+                                                    </p>
+                                                @endif
+                                            </div>
+
+                                            <div class="grid grid-cols-2 gap-2 sm:w-56">
+                                                <div class="rounded-xl bg-slate-50 px-2.5 py-2">
+                                                    <span class="block text-[9px] font-bold text-slate-400">دسته‌ها</span>
+                                                    <span class="mt-0.5 block text-xs font-black text-slate-700">
+                                                        {{ $this->persianNumber($rowEnteredCategoryCountForHeader) }}
+                                                    </span>
+                                                </div>
+                                                <div class="rounded-xl bg-slate-50 px-2.5 py-2">
+                                                    <span class="block text-[9px] font-bold text-slate-400">جمع مقدار</span>
+                                                    <span class="mt-0.5 block truncate text-xs font-black text-slate-700">
+                                                        {{ $this->persianNumber(number_format($rowTotalQuantityForHeader, 2)) }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
 
                                     <div class="space-y-3 md:space-y-4">
                                         <div class="rounded-2xl border border-slate-100 bg-white p-2.5 md:p-3">
