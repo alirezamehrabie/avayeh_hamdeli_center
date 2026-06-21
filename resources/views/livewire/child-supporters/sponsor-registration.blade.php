@@ -365,28 +365,88 @@
                     <p class="mt-1 text-xs font-semibold text-slate-400">اطلاعات وارد شده را پیش از ثبت بررسی کنید.</p>
                 </div>
 
-                <div class="grid gap-3 sm:grid-cols-2">
+                <div class="mb-4 rounded-lg border px-3 py-3 {{ $this->isReadyForReview ? 'border-emerald-100 bg-emerald-50 text-emerald-800' : 'border-amber-100 bg-amber-50 text-amber-800' }}">
+                    <p class="text-sm font-bold">{{ $this->isReadyForReview ? 'آماده ثبت نهایی' : 'نیازمند تکمیل اطلاعات' }}</p>
+                    <p class="mt-1 text-xs font-semibold opacity-80">
+                        {{ $this->isReadyForReview ? 'اطلاعات ضروری تکمیل شده است. پیش از ثبت، جزئیات زیر را مرور کنید.' : 'برای ثبت نهایی، مراحل قبل را بررسی و موارد الزامی را تکمیل کنید.' }}
+                    </p>
+                </div>
+
+                <div class="space-y-3">
                     <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
-                        <p class="text-xs font-bold text-slate-500">نام کامل</p>
-                        <p class="mt-1 truncate text-sm font-bold text-slate-800">{{ $this->fullName !== '' ? $this->fullName : '-' }}</p>
+                        <div class="mb-3 flex items-center justify-between gap-3">
+                            <h3 class="text-sm font-bold text-slate-800">اطلاعات حامی</h3>
+                            <button type="button" wire:click="goToStep(1)" class="text-xs font-bold text-indigo-700 transition hover:text-indigo-900">
+                                ویرایش
+                            </button>
+                        </div>
+                        <div class="grid gap-3 sm:grid-cols-3">
+                            <div>
+                                <p class="text-xs font-bold text-slate-500">نام کامل</p>
+                                <p class="mt-1 truncate text-sm font-bold text-slate-800">{{ $this->fullName !== '' ? $this->fullName : '-' }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-500">شماره موبایل</p>
+                                <p class="mt-1 text-sm font-bold text-slate-800" dir="ltr">{{ $mobile !== '' ? $mobile : '-' }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-500">وضعیت پیام‌رسان</p>
+                                <p class="mt-1 text-sm font-bold text-slate-800">{{ $isSocialMediaActive === 'yes' ? 'فعال' : ($isSocialMediaActive === 'no' ? 'غیرفعال' : '-') }}</p>
+                            </div>
+                        </div>
                     </div>
+
                     <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
-                        <p class="text-xs font-bold text-slate-500">شماره موبایل</p>
-                        <p class="mt-1 text-sm font-bold text-slate-800" dir="ltr">{{ $mobile !== '' ? $mobile : '-' }}</p>
-                    </div>
-                    <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
+                        <div class="mb-3 flex items-center justify-between gap-3">
+                            <h3 class="text-sm font-bold text-slate-800">مبلغ حمایت</h3>
+                            <button type="button" wire:click="goToStep(2)" class="text-xs font-bold text-indigo-700 transition hover:text-indigo-900">
+                                ویرایش
+                            </button>
+                        </div>
                         <p class="text-xs font-bold text-slate-500">مبلغ ماهیانه</p>
                         <p class="mt-1 text-sm font-bold text-slate-800">{{ $this->formattedDonation !== '' ? $this->formattedDonation : '-' }}</p>
                     </div>
+
                     <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
-                        <p class="text-xs font-bold text-slate-500">تعداد مددجویان</p>
-                        <p class="mt-1 text-sm font-bold text-slate-800">{{ count($assignedBeneficiaries) }}</p>
+                        <div class="mb-3 flex items-center justify-between gap-3">
+                            <h3 class="text-sm font-bold text-slate-800">مددجویان اختصاص‌یافته</h3>
+                            <button type="button" wire:click="goToStep(3)" class="text-xs font-bold text-indigo-700 transition hover:text-indigo-900">
+                                ویرایش
+                            </button>
+                        </div>
+                        @if(count($assignedBeneficiaries) > 0)
+                            <div class="space-y-2">
+                                @foreach($assignedBeneficiaries as $beneficiary)
+                                    <div class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2">
+                                        <p class="truncate text-sm font-bold text-slate-800">{{ $beneficiary['full_name'] }}</p>
+                                        <p class="text-xs font-semibold text-slate-500" dir="ltr">{{ $beneficiary['person_code'] }}</p>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-sm font-semibold text-slate-500">مددجویی اختصاص داده نشده است.</p>
+                        @endif
                     </div>
-                    <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 sm:col-span-2">
-                        <p class="text-xs font-bold text-slate-500">روش یادآوری</p>
-                        <p class="mt-1 text-sm font-bold text-slate-800">
-                            {{ collect($monthlyPaymentReminderMethods)->map(fn ($method) => $reminderMethods[$method] ?? $method)->join('، ') ?: '-' }}
-                        </p>
+
+                    <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
+                        <div class="mb-3 flex items-center justify-between gap-3">
+                            <h3 class="text-sm font-bold text-slate-800">ترجیحات و یادآوری</h3>
+                            <button type="button" wire:click="goToStep(4)" class="text-xs font-bold text-indigo-700 transition hover:text-indigo-900">
+                                ویرایش
+                            </button>
+                        </div>
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <div>
+                                <p class="text-xs font-bold text-slate-500">روش یادآوری</p>
+                                <p class="mt-1 text-sm font-bold text-slate-800">
+                                    {{ collect($monthlyPaymentReminderMethods)->map(fn ($method) => $reminderMethods[$method] ?? $method)->join('، ') ?: '-' }}
+                                </p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-500">ترجیحات کودک</p>
+                                <p class="mt-1 text-sm font-bold text-slate-800">{{ filled($childPreferences) ? $childPreferences : 'ثبت نشده' }}</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -416,7 +476,8 @@
                             type="submit"
                             wire:loading.attr="disabled"
                             wire:target="save"
-                            class="flex h-12 items-center justify-center rounded-lg bg-indigo-600 px-4 text-sm font-bold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-70 sm:min-w-44"
+                            @disabled(! $this->isReadyForReview)
+                            class="flex h-12 items-center justify-center rounded-lg bg-indigo-600 px-4 text-sm font-bold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-60 sm:min-w-44"
                         >
                             <span wire:loading.remove wire:target="save">{{ $isEditing ? 'ذخیره تغییرات' : 'ثبت نام حامی' }}</span>
                             <span wire:loading wire:target="save">{{ $isEditing ? 'در حال ذخیره...' : 'در حال ثبت...' }}</span>

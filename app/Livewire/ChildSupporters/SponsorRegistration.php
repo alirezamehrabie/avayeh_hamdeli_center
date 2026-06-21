@@ -460,6 +460,15 @@ class SponsorRegistration extends Component
         return $amount > 0 ? number_format($amount) . ' ریال' : '';
     }
 
+    public function getIsReadyForReviewProperty(): bool
+    {
+        return $this->combineFullName($this->firstName, $this->lastName) !== ''
+            && preg_match('/^09\d{9}$/', $this->normalizeMobile($this->mobile)) === 1
+            && (int) preg_replace('/\D+/', '', $this->monthlyDonationAmount) >= 1000
+            && in_array($this->isSocialMediaActive, ['yes', 'no'], true)
+            && count($this->monthlyPaymentReminderMethods) > 0;
+    }
+
     public function render()
     {
         $this->authorizeAccess();
