@@ -427,6 +427,58 @@
                                                         <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
                                                             <div class="aspect-square w-[min(72%,320px)] rounded-2xl border-2 border-cyan-300/90 shadow-[0_0_0_9999px_rgba(15,23,42,0.32)]"></div>
                                                         </div>
+                                                        <div
+                                                            x-show="openingScanner || startingCamera || (!cameraActive && ['ready', 'camera_denied', 'scan_error', 'unsupported'].includes(status))"
+                                                            x-transition.opacity.duration.150ms
+                                                            class="absolute inset-0 flex items-center justify-center bg-slate-950/78 px-5 text-center backdrop-blur-sm"
+                                                            style="display: none;"
+                                                        >
+                                                            <div class="w-full max-w-xs rounded-2xl border border-white/10 bg-slate-900/90 p-4 shadow-xl">
+                                                                <div
+                                                                    x-show="openingScanner || startingCamera || status === 'initializing'"
+                                                                    class="mx-auto mb-3 h-9 w-9 animate-spin rounded-full border-2 border-cyan-200/30 border-t-cyan-200"
+                                                                    style="display: none;"
+                                                                    aria-hidden="true"
+                                                                ></div>
+                                                                <div
+                                                                    x-show="['camera_denied', 'scan_error', 'unsupported'].includes(status)"
+                                                                    class="mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-rose-500/15 text-rose-200"
+                                                                    style="display: none;"
+                                                                    aria-hidden="true"
+                                                                >
+                                                                    <i class="bi bi-camera-video-off text-lg"></i>
+                                                                </div>
+                                                                <div
+                                                                    x-show="status === 'ready' && !startingCamera"
+                                                                    class="mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-cyan-500/15 text-cyan-200"
+                                                                    style="display: none;"
+                                                                    aria-hidden="true"
+                                                                >
+                                                                    <i class="bi bi-camera-video text-lg"></i>
+                                                                </div>
+
+                                                                <p class="text-sm font-extrabold text-white">
+                                                                    <span x-show="openingScanner || startingCamera || status === 'initializing'">در حال فعال‌سازی دوربین</span>
+                                                                    <span x-show="status === 'ready' && !startingCamera">دوربین آماده شروع است</span>
+                                                                    <span x-show="status === 'camera_denied'">دسترسی به دوربین انجام نشد</span>
+                                                                    <span x-show="status === 'scan_error'">اسکن انجام نشد</span>
+                                                                    <span x-show="status === 'unsupported'">دوربین پشتیبانی نمی‌شود</span>
+                                                                </p>
+                                                                <p class="mt-2 text-xs leading-5 text-slate-300" x-text="message"></p>
+
+                                                                <div class="mt-4 grid gap-2" x-show="!openingScanner && !startingCamera && status !== 'unsupported'" style="display: none;">
+                                                                    <button
+                                                                        type="button"
+                                                                        @click="startCamera()"
+                                                                        class="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 px-3 text-xs font-black text-slate-950 transition hover:bg-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-200/60"
+                                                                    >
+                                                                        <i class="bi bi-camera-video"></i>
+                                                                        <span x-show="status === 'ready'">شروع اسکن</span>
+                                                                        <span x-show="status !== 'ready'">تلاش دوباره</span>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
 
                                                     <div class="space-y-2 px-3 py-3">
