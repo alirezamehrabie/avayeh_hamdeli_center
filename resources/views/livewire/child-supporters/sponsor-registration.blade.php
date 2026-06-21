@@ -368,7 +368,7 @@
                 <div class="mb-4 rounded-lg border px-3 py-3 {{ $this->isReadyForReview ? 'border-emerald-100 bg-emerald-50 text-emerald-800' : 'border-amber-100 bg-amber-50 text-amber-800' }}">
                     <p class="text-sm font-bold">{{ $this->isReadyForReview ? 'آماده ثبت نهایی' : 'نیازمند تکمیل اطلاعات' }}</p>
                     <p class="mt-1 text-xs font-semibold opacity-80">
-                        {{ $this->isReadyForReview ? 'اطلاعات ضروری تکمیل شده است. پیش از ثبت، جزئیات زیر را مرور کنید.' : 'برای ثبت نهایی، مراحل قبل را بررسی و موارد الزامی را تکمیل کنید.' }}
+                        {{ $this->isReadyForReview ? 'اطلاعات ضروری تکمیل شده است. پیش از ثبت، جزئیات زیر را مرور کنید.' : 'می‌توانید ثبت نهایی را بزنید تا خطاهای فرم فقط در همین مرحله بررسی و نمایش داده شوند.' }}
                     </p>
                 </div>
 
@@ -464,19 +464,27 @@
                     </button>
 
                     @if($currentStep < 5)
-                        <button
-                            type="button"
-                            wire:click="nextStep"
-                            class="flex h-12 items-center justify-center rounded-lg bg-indigo-600 px-4 text-sm font-bold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 sm:min-w-44"
-                        >
-                            مرحله بعد
-                        </button>
+                        <div class="flex flex-col gap-2 sm:flex-row">
+                            <button
+                                type="button"
+                                wire:click="skipStep"
+                                class="flex h-12 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-100 sm:min-w-32"
+                            >
+                                رد کردن
+                            </button>
+                            <button
+                                type="button"
+                                wire:click="nextStep"
+                                class="flex h-12 items-center justify-center rounded-lg bg-indigo-600 px-4 text-sm font-bold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 sm:min-w-44"
+                            >
+                                مرحله بعد
+                            </button>
+                        </div>
                     @else
                         <button
                             type="submit"
                             wire:loading.attr="disabled"
                             wire:target="save"
-                            @disabled(! $this->isReadyForReview)
                             class="flex h-12 items-center justify-center rounded-lg bg-indigo-600 px-4 text-sm font-bold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-60 sm:min-w-44"
                         >
                             <span wire:loading.remove wire:target="save">{{ $isEditing ? 'ذخیره تغییرات' : 'ثبت نام حامی' }}</span>

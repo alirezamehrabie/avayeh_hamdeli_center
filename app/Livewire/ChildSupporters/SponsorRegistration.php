@@ -5,7 +5,9 @@ namespace App\Livewire\ChildSupporters;
 use App\Models\SponsorProfile;
 use App\Models\Person;
 use App\Models\User;
+use App\Traits\InteractsWithNotificationModal;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -13,6 +15,8 @@ use Livewire\Component;
 #[Layout('layouts.child-supporter')]
 class SponsorRegistration extends Component
 {
+    use InteractsWithNotificationModal;
+
     public bool $embedded = false;
 
     #[Url(as: 'sponsor')]
@@ -44,18 +48,6 @@ class SponsorRegistration extends Component
 
     public function updated(string $property): void
     {
-        if (in_array($property, [
-            'firstName',
-            'lastName',
-            'monthlyDonationAmount',
-            'mobile',
-            'monthlyPaymentReminderMethods',
-            'isSocialMediaActive',
-            'beneficiaryCode',
-        ], true)) {
-            $this->validateOnly($property, $this->rules(), $this->messages());
-        }
-
         if ($property === 'beneficiaryCode') {
             $this->refreshBeneficiaryPreview();
         }
@@ -100,18 +92,7 @@ class SponsorRegistration extends Component
 
     public function goToStep(int $step): void
     {
-        $step = min(max($step, 1), 5);
-
-        if ($step <= $this->currentStep) {
-            $this->currentStep = $step;
-
-            return;
-        }
-
-        while ($this->currentStep < $step) {
-            $this->validateCurrentStep();
-            $this->currentStep++;
-        }
+        $this->currentStep = min(max($step, 1), 5);
     }
 
     public function nextStep(): void
@@ -120,8 +101,12 @@ class SponsorRegistration extends Component
             return;
         }
 
-        $this->validateCurrentStep();
         $this->currentStep++;
+    }
+
+    public function skipStep(): void
+    {
+        $this->nextStep();
     }
 
     public function previousStep(): void
@@ -141,7 +126,14 @@ class SponsorRegistration extends Component
             return;
         }
 
-        $validated = $this->validate($this->rules(), $this->messages());
+        try {
+            $validated = $this->validate($this->rules(), $this->messages());
+        } catch (ValidationException $exception) {
+            $this->handleFinalValidationFailure($exception);
+
+            throw $exception;
+        }
+
         $mobile = $this->normalizeMobile($validated['mobile']);
         $firstName = $this->normalizeNamePart($validated['firstName']);
         $lastName = $this->normalizeNamePart($validated['lastName']);
@@ -199,7 +191,14 @@ class SponsorRegistration extends Component
             ->with('user')
             ->findOrFail($this->sponsorId);
 
-        $validated = $this->validate($this->rules(), $this->messages());
+        try {
+            $validated = $this->validate($this->rules(), $this->messages());
+        } catch (ValidationException $exception) {
+            $this->handleFinalValidationFailure($exception);
+
+            throw $exception;
+        }
+
         $mobile = $this->normalizeMobile($validated['mobile']);
 
         $sponsor->user?->update([
@@ -303,26 +302,6 @@ class SponsorRegistration extends Component
         ];
     }
 
-    private function validateCurrentStep(): void
-    {
-        $fields = match ($this->currentStep) {
-            1 => ['firstName', 'lastName', 'mobile', 'isSocialMediaActive'],
-            2 => ['monthlyDonationAmount'],
-            4 => ['childPreferences', 'monthlyPaymentReminderMethods', 'monthlyPaymentReminderMethods.*'],
-            default => [],
-        };
-
-        if ($fields === []) {
-            return;
-        }
-
-        $rules = collect($this->rules())
-            ->only($fields)
-            ->all();
-
-        $this->validate($rules, $this->messages());
-    }
-
     private function authorizeAccess(): void
     {
         abort_unless(
@@ -368,6 +347,37 @@ class SponsorRegistration extends Component
         return SponsorProfile::query()
             ->whereKey($this->sponsorId)
             ->value('user_id');
+    }
+
+    private function handleFinalValidationFailure(ValidationException $exception): void
+    {
+        $this->currentStep = $this->stepForValidationErrors(array_keys($exception->errors()));
+        $this->openValidationErrorModal(
+            $exception->errors(),
+            'اطلاعات ثبت نام کامل نیست'
+        );
+    }
+
+    /**
+     * @param  array<int, string>  $fields
+     */
+    private function stepForValidationErrors(array $fields): int
+    {
+        foreach ($fields as $field) {
+            if (in_array($field, ['firstName', 'lastName', 'mobile', 'isSocialMediaActive'], true)) {
+                return 1;
+            }
+
+            if ($field === 'monthlyDonationAmount') {
+                return 2;
+            }
+
+            if (str_starts_with($field, 'monthlyPaymentReminderMethods') || $field === 'childPreferences') {
+                return 4;
+            }
+        }
+
+        return 5;
     }
 
     private function refreshBeneficiaryPreview(bool $showErrors = false): void

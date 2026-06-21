@@ -100,6 +100,34 @@ class ChildSupporterRegistrationTest extends TestCase
             ->assertHasErrors(['beneficiaryCode']);
     }
 
+    public function test_registration_steps_can_be_skipped_without_validation(): void
+    {
+        $this->actingAs($this->manager());
+
+        Livewire::test(SponsorRegistration::class)
+            ->call('nextStep')
+            ->assertSet('currentStep', 2)
+            ->assertHasNoErrors()
+            ->call('skipStep')
+            ->assertSet('currentStep', 3)
+            ->assertHasNoErrors()
+            ->call('goToStep', 5)
+            ->assertSet('currentStep', 5)
+            ->assertHasNoErrors();
+    }
+
+    public function test_final_submission_shows_validation_modal_for_missing_required_fields(): void
+    {
+        $this->actingAs($this->manager());
+
+        Livewire::test(SponsorRegistration::class)
+            ->call('goToStep', 5)
+            ->call('save')
+            ->assertSet('currentStep', 1)
+            ->assertHasErrors(['firstName', 'lastName', 'monthlyDonationAmount', 'mobile', 'monthlyPaymentReminderMethods', 'isSocialMediaActive'])
+            ->assertDispatched('open-notification-modal');
+    }
+
     public function test_sponsor_list_can_add_and_remove_assignments(): void
     {
         $this->actingAs($this->manager());
