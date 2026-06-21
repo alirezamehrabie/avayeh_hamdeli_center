@@ -224,7 +224,7 @@
                             </div>
                             <button type="button" wire:click="addRecipientField"
                                     @disabled(!$this->selectedService)
-                                    class="inline-flex shrink-0 items-center gap-1 rounded-xl bg-cyan-600 px-3 py-2 text-xs font-bold text-white shadow-sm shadow-cyan-200 active:scale-95 transition-all">
+                                    class="hidden shrink-0 items-center gap-1 rounded-xl bg-cyan-600 px-3 py-2 text-xs font-bold text-white shadow-sm shadow-cyan-200 active:scale-95 transition-all md:inline-flex">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
                                 افزودن
                             </button>
@@ -233,7 +233,7 @@
                         <!-- Recipients List -->
                         <div class="space-y-3">
                             @foreach($recipientEntries as $index => $entry)
-                                <div class="relative rounded-2xl border border-slate-100 bg-slate-50/50 p-3 md:p-4 transition-all">
+                                <div class="relative transition-all md:rounded-2xl md:border md:border-slate-100 md:bg-slate-50/50 md:p-4">
 
                                     <!-- Remove Button (Top Left for Mobile) -->
                                     @if(count($recipientEntries) > 1)
@@ -244,8 +244,8 @@
                                         </button>
                                     @endif
 
-                                    <div class="space-y-4">
-                                        <div class="rounded-2xl border border-slate-100 bg-white p-3">
+                                    <div class="space-y-3 md:space-y-4">
+                                        <div class="rounded-2xl border border-slate-100 bg-white p-2.5 md:p-3">
                                             <div class="mb-3 flex items-center gap-2">
                                                 <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-600 text-[11px] font-black text-white">۱</span>
                                                 <h3 class="text-xs font-extrabold text-slate-700">شناسایی گیرنده</h3>
@@ -327,8 +327,8 @@
                                             </div>
                                         </div>
 
-                                        <div class="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(220px,0.55fr)]">
-                                            <div class="rounded-2xl border border-slate-100 bg-white p-3">
+                                        <div class="grid grid-cols-1 gap-3">
+                                            <div class="rounded-2xl border border-slate-100 bg-white p-2.5 md:p-3">
                                                 <div class="mb-3 flex items-center gap-2">
                                                     <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-600 text-[11px] font-black text-white">۲</span>
                                                     <h3 class="text-xs font-extrabold text-slate-700">انتخاب دسته‌بندی و مقدار</h3>
@@ -388,18 +388,6 @@
                                                     @error('recipientEntries.' . $index . '.service_category_id') <p class="mt-1 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror
                                                 </div>
                                             </div>
-
-                                            <div class="rounded-2xl border border-slate-100 bg-white p-3">
-                                                <div class="mb-3 flex items-center gap-2">
-                                                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-600 text-[11px] font-black text-white">۳</span>
-                                                    <h3 class="text-xs font-extrabold text-slate-700">بررسی مقادیر</h3>
-                                                </div>
-
-                                                <!-- Quantity Input -->
-                                                <div class="rounded-xl border border-cyan-100 bg-cyan-50/50 px-3 py-2 text-xs leading-6 text-cyan-800">
-                                                    مقدار هر دسته‌بندی را در کارت همان دسته وارد کنید. هنگام ثبت، برای هر دسته‌بندی دارای مقدار، یک تحویل جداگانه برای همین گیرنده ذخیره می‌شود.
-                                                </div>
-                                            </div>
                                         </div>
                                     </div>
 
@@ -453,6 +441,13 @@
                                 </div>
                             @endforeach
                         </div>
+
+                        <button type="button" wire:click="addRecipientField"
+                                @disabled(!$this->selectedService)
+                                class="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-black text-cyan-700 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 md:hidden">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
+                            افزودن گیرنده
+                        </button>
 
                         <div
                             x-data="{
