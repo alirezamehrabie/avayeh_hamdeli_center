@@ -107,6 +107,52 @@ class ChildSupporterRegistrationTest extends TestCase
         ]);
     }
 
+    public function test_sponsor_list_can_edit_supporter_information(): void
+    {
+        $this->actingAs($this->manager());
+        $profile = $this->sponsorProfile('09120000011', 'Old', 'Supporter');
+
+        Livewire::test(SponsorList::class)
+            ->call('editSponsor', $profile->id)
+            ->assertSet('isEditing', true)
+            ->set('editFirstName', 'Updated')
+            ->set('editLastName', 'Person')
+            ->set('editMobile', '09120000012')
+            ->set('editMonthlyDonationAmount', '250000')
+            ->set('editChildPreferences', 'Updated preference')
+            ->set('editMonthlyPaymentReminderMethods', [SponsorProfile::REMINDER_SMS, SponsorProfile::REMINDER_PHONE])
+            ->set('editIsSocialMediaActive', 'no')
+            ->call('updateSponsor')
+            ->assertSet('isEditing', false)
+            ->assertSet('selectedSponsor.fullName', 'Updated Person');
+
+        $profile->refresh();
+        $profile->user->refresh();
+
+        $this->assertSame('CS-0001', $profile->supporter_code);
+        $this->assertSame(250000, (int) $profile->monthly_donation_amount);
+        $this->assertSame('Updated preference', $profile->child_preferences);
+        $this->assertFalse((bool) $profile->is_social_media_active);
+        $this->assertSame(['sms', 'phone'], $profile->monthly_payment_reminder_methods);
+        $this->assertSame('Updated', $profile->user->first_name);
+        $this->assertSame('Person', $profile->user->last_name);
+        $this->assertSame('09120000012', $profile->user->mobile);
+        $this->assertSame('09120000012', $profile->user->name);
+    }
+
+    public function test_sponsor_edit_rejects_mobile_used_by_another_user(): void
+    {
+        $this->actingAs($this->manager());
+        $profile = $this->sponsorProfile('09120000013', 'First', 'Supporter');
+        $this->sponsorProfile('09120000014', 'Second', 'Supporter');
+
+        Livewire::test(SponsorList::class)
+            ->call('editSponsor', $profile->id)
+            ->set('editMobile', '09120000014')
+            ->call('updateSponsor')
+            ->assertHasErrors(['editMobile']);
+    }
+
     private function registerSponsor(string $mobile, string $firstName): void
     {
         Livewire::test(SponsorRegistration::class)
