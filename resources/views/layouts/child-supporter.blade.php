@@ -11,6 +11,7 @@
     <div
         x-data="{
             sidebarOpen: window.innerWidth >= 1024,
+            resizeHandler: null,
             toggleSidebar() {
                 this.sidebarOpen = !this.sidebarOpen;
             },
@@ -18,9 +19,23 @@
                 if (window.innerWidth >= 1024) {
                     this.sidebarOpen = true;
                 }
+            },
+            init() {
+                this.syncSidebar();
+                this.resizeHandler = () => this.syncSidebar();
+                window.addEventListener('resize', this.resizeHandler);
+                this.$watch('sidebarOpen', (value) => {
+                    document.body.classList.toggle('overflow-hidden', value && window.innerWidth < 1024);
+                });
+            },
+            destroy() {
+                if (this.resizeHandler) {
+                    window.removeEventListener('resize', this.resizeHandler);
+                }
+                document.body.classList.remove('overflow-hidden');
             }
         }"
-        x-init="syncSidebar(); window.addEventListener('resize', () => syncSidebar())"
+        x-init="init(); return () => destroy()"
         class="flex h-screen overflow-hidden"
     >
         @include('layouts.partials.child-supporter-sidebar')
@@ -30,6 +45,7 @@
             x-transition.opacity.duration.300ms
             @click="sidebarOpen = false"
             class="fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-sm lg:hidden"
+            aria-hidden="true"
             style="display: none;"
         ></div>
 

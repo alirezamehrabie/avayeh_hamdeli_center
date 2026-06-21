@@ -153,6 +153,53 @@ class ChildSupporterRegistrationTest extends TestCase
             ->assertHasErrors(['editMobile']);
     }
 
+    public function test_sponsor_list_can_filter_by_search_term(): void
+    {
+        $this->actingAs($this->manager());
+        $matched = $this->sponsorProfile('09120000015', 'Matched', 'Supporter');
+        $this->sponsorProfile('09120000016', 'Other', 'Person');
+
+        Livewire::test(SponsorList::class)
+            ->set('search', 'Matched')
+            ->assertSee('Matched')
+            ->assertDontSee('Other')
+            ->assertSee($matched->supporter_code);
+    }
+
+    public function test_sponsor_list_can_sort_by_donation_amount(): void
+    {
+        $this->actingAs($this->manager());
+        $low = $this->sponsorProfile('09120000017', 'Low', 'Amount');
+        $high = $this->sponsorProfile('09120000018', 'High', 'Amount');
+
+        $low->update(['monthly_donation_amount' => 100000]);
+        $high->update(['monthly_donation_amount' => 500000]);
+
+        Livewire::test(SponsorList::class)
+            ->set('sort', 'donation_desc')
+            ->assertSeeInOrder(['High', 'Low']);
+    }
+
+    public function test_sponsor_list_can_change_page_size(): void
+    {
+        $this->actingAs($this->manager());
+
+        foreach (range(1, 12) as $index) {
+            $this->sponsorProfile(
+                '091200001'.str_pad((string) $index, 2, '0', STR_PAD_LEFT),
+                'Supporter',
+                (string) $index
+            );
+        }
+
+        Livewire::test(SponsorList::class)
+            ->set('perPage', 10)
+            ->assertSee('Supporter 1')
+            ->assertDontSee('Supporter 12')
+            ->set('perPage', 25)
+            ->assertSee('Supporter 12');
+    }
+
     private function registerSponsor(string $mobile, string $firstName): void
     {
         Livewire::test(SponsorRegistration::class)

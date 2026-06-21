@@ -21,6 +21,53 @@
                 </div>
             @endif
 
+            <div class="mb-3 grid gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1.6fr)_auto_auto_auto] xl:items-end">
+                <div>
+                    <label for="sponsor-search" class="mb-1.5 block text-xs font-bold text-slate-500">جستجو</label>
+                    <input
+                        id="sponsor-search"
+                        type="text"
+                        wire:model.live.debounce.400ms="search"
+                        placeholder="کد حامی، نام، نام خانوادگی یا موبایل"
+                        class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+                    >
+                </div>
+
+                <div>
+                    <label for="sponsor-sort" class="mb-1.5 block text-xs font-bold text-slate-500">مرتب‌سازی</label>
+                    <select
+                        id="sponsor-sort"
+                        wire:model.live="sort"
+                        class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+                    >
+                        <option value="latest">جدیدترین</option>
+                        <option value="name_asc">نام حامی</option>
+                        <option value="donation_desc">بیشترین مبلغ</option>
+                        <option value="donation_asc">کمترین مبلغ</option>
+                        <option value="beneficiaries_desc">بیشترین مددجو</option>
+                        <option value="beneficiaries_asc">کمترین مددجو</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="sponsor-per-page" class="mb-1.5 block text-xs font-bold text-slate-500">نمایش</label>
+                    <select
+                        id="sponsor-per-page"
+                        wire:model.live="perPage"
+                        class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+                    >
+                        @foreach($perPageOptions as $option)
+                            <option value="{{ $option }}">{{ $this->persianNumber($option) }} مورد</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-500">
+                    {{ $this->persianNumber($sponsors->firstItem() ?? 0) }} تا {{ $this->persianNumber($sponsors->lastItem() ?? 0) }}
+                    از {{ $this->persianNumber($sponsors->total()) }}
+                </div>
+            </div>
+
             <div class="hidden rounded-xl bg-slate-50 px-4 py-2 text-xs font-bold text-slate-500 md:grid md:grid-cols-[0.75fr_1fr_1fr_1fr_1.1fr_0.9fr_auto] md:items-center md:gap-3">
                 <span>کد حامی</span>
                 <span>نام</span>
@@ -33,48 +80,78 @@
 
             <div class="mt-0 space-y-2 md:mt-2">
                 @forelse($sponsors as $sponsor)
-                    <article class="rounded-xl border border-slate-200 bg-white p-3 transition hover:border-indigo-100 hover:bg-slate-50/60 sm:p-4 md:grid md:grid-cols-[0.75fr_1fr_1fr_1fr_1.1fr_0.9fr_auto] md:items-center md:gap-3">
-                        <div class="flex items-center justify-between gap-3 md:block">
-                            <span class="text-xs font-bold text-slate-400 md:hidden">کد حامی</span>
+                    <article wire:key="sponsor-row-{{ $sponsor->id }}" class="rounded-2xl border border-slate-200 bg-white p-3 transition hover:border-indigo-100 hover:bg-slate-50/60 sm:p-4 md:grid md:grid-cols-[0.75fr_1fr_1fr_1fr_1.1fr_0.9fr_auto] md:items-center md:gap-3">
+                        <div class="md:hidden">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="truncate text-sm font-black text-slate-900">{{ trim(($sponsor->user?->first_name ?? '') . ' ' . ($sponsor->user?->last_name ?? '')) ?: '-' }}</p>
+                                    <p class="mt-1 inline-flex rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-black text-indigo-700" dir="ltr">{{ $sponsor->supporter_code ?: '-' }}</p>
+                                </div>
+                                <span class="inline-flex rounded-lg bg-cyan-50 px-2.5 py-1 text-xs font-black text-cyan-700">
+                                    {{ $this->persianNumber((int) $sponsor->beneficiaries_count) }} نفر
+                                </span>
+                            </div>
+
+                            <div class="mt-3 grid gap-2 text-sm text-slate-600">
+                                <div class="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
+                                    <span class="text-xs font-bold text-slate-400">موبایل</span>
+                                    <span class="text-sm font-semibold text-slate-700">{{ $this->persianNumber($sponsor->user?->mobile ?: $sponsor->user?->name ?: '-') }}</span>
+                                </div>
+                                <div class="flex items-center justify-between gap-3 rounded-xl bg-emerald-50/70 px-3 py-2">
+                                    <span class="text-xs font-bold text-emerald-700/70">مبلغ ماهیانه</span>
+                                    <span class="text-sm font-black text-emerald-700">{{ $this->persianNumber(number_format((int) $sponsor->monthly_donation_amount)) }} ریال</span>
+                                </div>
+                            </div>
+
+                            <div class="mt-3 flex gap-2">
+                                <button type="button" wire:click="showDetails({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="showDetails({{ $sponsor->id }})" class="flex h-10 flex-1 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 px-3 text-sm font-black text-indigo-700 transition hover:border-indigo-200 hover:bg-indigo-100 focus:outline-none focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-70">
+                                    <span wire:loading.remove wire:target="showDetails({{ $sponsor->id }})">جزئیات</span>
+                                    <span wire:loading wire:target="showDetails({{ $sponsor->id }})">در حال بارگذاری...</span>
+                                </button>
+                                <button type="button" wire:click="editSponsor({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="editSponsor({{ $sponsor->id }})" class="flex h-10 flex-1 items-center justify-center rounded-lg border border-amber-100 bg-amber-50 px-3 text-sm font-black text-amber-700 transition hover:border-amber-200 hover:bg-amber-100 focus:outline-none focus:ring-4 focus:ring-amber-100 disabled:cursor-not-allowed disabled:opacity-70">
+                                    <span wire:loading.remove wire:target="editSponsor({{ $sponsor->id }})">ویرایش</span>
+                                    <span wire:loading wire:target="editSponsor({{ $sponsor->id }})">در حال بارگذاری...</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="hidden items-center justify-between gap-3 md:block">
                             <span class="inline-flex rounded-lg bg-indigo-50 px-2.5 py-1 text-sm font-black text-indigo-700" dir="ltr">{{ $sponsor->supporter_code ?: '-' }}</span>
                         </div>
 
-                        <div class="mt-2 flex items-center justify-between gap-3 md:mt-0 md:block">
-                            <span class="text-xs font-bold text-slate-400 md:hidden">نام</span>
+                        <div class="hidden md:block">
                             <span class="truncate text-sm font-bold text-slate-800">{{ $sponsor->user?->first_name ?: '-' }}</span>
                         </div>
 
-                        <div class="mt-2 flex items-center justify-between gap-3 md:mt-0 md:block">
-                            <span class="text-xs font-bold text-slate-400 md:hidden">نام خانوادگی</span>
+                        <div class="hidden md:block">
                             <span class="truncate text-sm font-bold text-slate-800">{{ $sponsor->user?->last_name ?: '-' }}</span>
                         </div>
 
-                        <div class="mt-2 flex items-center justify-between gap-3 md:mt-0 md:block">
-                            <span class="text-xs font-bold text-slate-400 md:hidden">موبایل</span>
+                        <div class="hidden md:block">
                             <span class="inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-700">{{ $this->persianNumber($sponsor->user?->mobile ?: $sponsor->user?->name ?: '-') }}</span>
                         </div>
 
-                        <div class="mt-2 flex items-center justify-between gap-3 md:mt-0 md:block">
-                            <span class="text-xs font-bold text-slate-400 md:hidden">مبلغ ماهیانه</span>
+                        <div class="hidden md:block">
                             <div class="min-w-0 text-left md:text-right">
                                 <span class="block text-sm font-black text-emerald-700">{{ $this->persianNumber(number_format((int) $sponsor->monthly_donation_amount)) }} ریال</span>
                                 <span class="mt-0.5 block truncate text-[11px] font-semibold leading-5 text-teal-700">{{ $this->donationAmountInTomanWords((int) $sponsor->monthly_donation_amount) }}</span>
                             </div>
                         </div>
 
-                        <div class="mt-2 flex items-center justify-between gap-3 md:mt-0 md:block">
-                            <span class="text-xs font-bold text-slate-400 md:hidden">تعداد مددجویان</span>
+                        <div class="hidden md:block">
                             <span class="inline-flex rounded-lg bg-cyan-50 px-2.5 py-1 text-sm font-black text-cyan-700">
-                                {{ $this->persianNumber((int) $sponsor->beneficiaries->count()) }} نفر
+                                {{ $this->persianNumber((int) $sponsor->beneficiaries_count) }} نفر
                             </span>
                         </div>
 
-                        <div class="mt-3 flex gap-2 md:mt-0">
-                            <button type="button" wire:click="showDetails({{ $sponsor->id }})" class="flex h-10 flex-1 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 px-3 text-sm font-black text-indigo-700 transition hover:border-indigo-200 hover:bg-indigo-100 focus:outline-none focus:ring-4 focus:ring-indigo-100 md:w-24">
-                                جزئیات
+                        <div class="hidden gap-2 md:mt-0 md:flex">
+                            <button type="button" wire:click="showDetails({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="showDetails({{ $sponsor->id }})" class="flex h-10 flex-1 items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 px-3 text-sm font-black text-indigo-700 transition hover:border-indigo-200 hover:bg-indigo-100 focus:outline-none focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-70 md:w-24">
+                                <span wire:loading.remove wire:target="showDetails({{ $sponsor->id }})">جزئیات</span>
+                                <span wire:loading wire:target="showDetails({{ $sponsor->id }})">...</span>
                             </button>
-                            <button type="button" wire:click="editSponsor({{ $sponsor->id }})" class="flex h-10 flex-1 items-center justify-center rounded-lg border border-amber-100 bg-amber-50 px-3 text-sm font-black text-amber-700 transition hover:border-amber-200 hover:bg-amber-100 focus:outline-none focus:ring-4 focus:ring-amber-100 md:w-20">
-                                ویرایش
+                            <button type="button" wire:click="editSponsor({{ $sponsor->id }})" wire:loading.attr="disabled" wire:target="editSponsor({{ $sponsor->id }})" class="flex h-10 flex-1 items-center justify-center rounded-lg border border-amber-100 bg-amber-50 px-3 text-sm font-black text-amber-700 transition hover:border-amber-200 hover:bg-amber-100 focus:outline-none focus:ring-4 focus:ring-amber-100 disabled:cursor-not-allowed disabled:opacity-70 md:w-20">
+                                <span wire:loading.remove wire:target="editSponsor({{ $sponsor->id }})">ویرایش</span>
+                                <span wire:loading wire:target="editSponsor({{ $sponsor->id }})">...</span>
                             </button>
                         </div>
                     </article>
@@ -94,12 +171,64 @@
     </div>
 
     @if($selectedSponsor)
-        <div class="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/35 p-2 sm:items-center sm:p-4" wire:click.self="closeDetails">
-            <div class="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
+        <div
+            x-data="{
+                open: true,
+                lastFocused: null,
+                focusables: [],
+                refreshFocusables() {
+                    this.focusables = Array.from(this.$el.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex=\"-1\"])'))
+                        .filter((element) => !element.hasAttribute('disabled'));
+                },
+                trap(event) {
+                    this.refreshFocusables();
+                    if (this.focusables.length === 0) {
+                        return;
+                    }
+
+                    const first = this.focusables[0];
+                    const last = this.focusables[this.focusables.length - 1];
+
+                    if (event.shiftKey && document.activeElement === first) {
+                        event.preventDefault();
+                        last.focus();
+                    } else if (!event.shiftKey && document.activeElement === last) {
+                        event.preventDefault();
+                        first.focus();
+                    }
+                },
+                init() {
+                    this.lastFocused = document.activeElement;
+                    document.body.classList.add('overflow-hidden');
+
+                    this.$nextTick(() => {
+                        this.refreshFocusables();
+                        this.focusables[0]?.focus();
+                    });
+
+                    this.$watch('$wire.isEditing', () => {
+                        this.$nextTick(() => {
+                            this.refreshFocusables();
+                            this.focusables[0]?.focus();
+                        });
+                    });
+                },
+                destroy() {
+                    document.body.classList.remove('overflow-hidden');
+                    this.lastFocused?.focus?.();
+                }
+            }"
+            x-init="init(); return () => destroy()"
+            x-on:keydown.escape.window.prevent="$wire.closeDetails()"
+            x-on:keydown.tab.prevent="trap($event)"
+            class="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/35 p-2 sm:items-center sm:p-4"
+            wire:click.self="closeDetails"
+        >
+            <div class="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-4 shadow-xl" role="dialog" aria-modal="true" aria-labelledby="selected-sponsor-title">
                 <div class="flex items-start justify-between gap-3">
                     <div>
                         <p class="text-xs font-bold text-indigo-600">{{ $isEditing ? 'ویرایش حامی' : 'جزئیات حامی' }}</p>
-                        <h2 class="mt-1 text-lg font-black text-slate-900">{{ $selectedSponsor['fullName'] }}</h2>
+                        <h2 id="selected-sponsor-title" class="mt-1 text-lg font-black text-slate-900">{{ $selectedSponsor['fullName'] }}</h2>
                     </div>
                     <button type="button" wire:click="closeDetails" class="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition hover:bg-slate-200">
                         <span class="sr-only">بستن</span>
@@ -114,25 +243,25 @@
                         <div class="grid gap-3 sm:grid-cols-2">
                             <div>
                                 <label class="mb-1.5 block text-sm font-bold text-slate-700">نام</label>
-                                <input type="text" wire:model.live.debounce.400ms="editFirstName" class="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100">
+                                <input type="text" wire:model.blur="editFirstName" class="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100">
                                 @error('editFirstName') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
                             </div>
 
                             <div>
                                 <label class="mb-1.5 block text-sm font-bold text-slate-700">نام خانوادگی</label>
-                                <input type="text" wire:model.live.debounce.400ms="editLastName" class="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100">
+                                <input type="text" wire:model.blur="editLastName" class="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100">
                                 @error('editLastName') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
                             </div>
 
                             <div>
                                 <label class="mb-1.5 block text-sm font-bold text-slate-700">شماره موبایل</label>
-                                <input type="tel" wire:model.live.debounce.400ms="editMobile" dir="ltr" maxlength="11" class="h-11 w-full rounded-lg border border-slate-200 px-3 text-left text-sm outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100">
+                                <input type="tel" wire:model.blur="editMobile" dir="ltr" maxlength="11" class="h-11 w-full rounded-lg border border-slate-200 px-3 text-left text-sm outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100">
                                 @error('editMobile') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
                             </div>
 
                             <div>
                                 <label class="mb-1.5 block text-sm font-bold text-slate-700">مبلغ واریزی ماهیانه</label>
-                                <input type="text" wire:model.live.debounce.400ms="editMonthlyDonationAmount" dir="ltr" class="h-11 w-full rounded-lg border border-slate-200 px-3 text-left text-sm outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100">
+                                <input type="text" wire:model.blur="editMonthlyDonationAmount" dir="ltr" class="h-11 w-full rounded-lg border border-slate-200 px-3 text-left text-sm outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100">
                                 @error('editMonthlyDonationAmount') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
                             </div>
                         </div>
@@ -149,7 +278,7 @@
                                 <div class="space-y-1.5">
                                     @foreach(\App\Models\SponsorProfile::reminderMethodOptions() as $value => $label)
                                         <label class="flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700">
-                                            <input type="checkbox" wire:model.live="editMonthlyPaymentReminderMethods" value="{{ $value }}" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+                                            <input type="checkbox" wire:model.defer="editMonthlyPaymentReminderMethods" value="{{ $value }}" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500">
                                             <span>{{ $label }}</span>
                                         </label>
                                     @endforeach
@@ -161,11 +290,11 @@
                                 <legend class="mb-1.5 block text-sm font-bold text-slate-700">آیا در فضای مجازی فعال است؟</legend>
                                 <div class="grid grid-cols-2 gap-2">
                                     <label class="flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700">
-                                        <input type="radio" wire:model.live="editIsSocialMediaActive" value="yes" class="border-slate-300 text-teal-600 focus:ring-teal-500">
+                                        <input type="radio" wire:model.defer="editIsSocialMediaActive" value="yes" class="border-slate-300 text-teal-600 focus:ring-teal-500">
                                         <span>بله</span>
                                     </label>
                                     <label class="flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700">
-                                        <input type="radio" wire:model.live="editIsSocialMediaActive" value="no" class="border-slate-300 text-teal-600 focus:ring-teal-500">
+                                        <input type="radio" wire:model.defer="editIsSocialMediaActive" value="no" class="border-slate-300 text-teal-600 focus:ring-teal-500">
                                         <span>خیر</span>
                                     </label>
                                 </div>
@@ -178,7 +307,8 @@
                                 انصراف
                             </button>
                             <button type="submit" wire:loading.attr="disabled" wire:target="updateSponsor" class="h-11 rounded-lg bg-indigo-600 px-4 text-sm font-black text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-70">
-                                ذخیره تغییرات
+                                <span wire:loading.remove wire:target="updateSponsor">ذخیره تغییرات</span>
+                                <span wire:loading wire:target="updateSponsor">در حال ذخیره...</span>
                             </button>
                         </div>
                     </form>
@@ -235,9 +365,15 @@
                             </div>
 
                             <div class="mt-3 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
-                                <input type="text" wire:model.live.debounce.400ms="beneficiaryCode" dir="ltr" placeholder="کد مددجو" class="h-10 rounded-lg border border-slate-200 px-3 text-left text-sm outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100">
-                                <button type="button" wire:click="lookupBeneficiary" class="h-10 rounded-lg border border-indigo-100 bg-indigo-50 px-3 text-xs font-black text-indigo-700 transition hover:bg-indigo-100">بررسی</button>
-                                <button type="button" wire:click="addBeneficiaryToSelectedSponsor" class="h-10 rounded-lg bg-teal-600 px-3 text-xs font-black text-white transition hover:bg-teal-700">افزودن</button>
+                                <input type="text" wire:model.blur="beneficiaryCode" dir="ltr" placeholder="کد مددجو" class="h-10 rounded-lg border border-slate-200 px-3 text-left text-sm outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100">
+                                <button type="button" wire:click="lookupBeneficiary" wire:loading.attr="disabled" wire:target="lookupBeneficiary" class="h-10 rounded-lg border border-indigo-100 bg-indigo-50 px-3 text-xs font-black text-indigo-700 transition hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-70">
+                                    <span wire:loading.remove wire:target="lookupBeneficiary">بررسی</span>
+                                    <span wire:loading wire:target="lookupBeneficiary">در حال بررسی...</span>
+                                </button>
+                                <button type="button" wire:click="addBeneficiaryToSelectedSponsor" wire:loading.attr="disabled" wire:target="addBeneficiaryToSelectedSponsor" class="h-10 rounded-lg bg-teal-600 px-3 text-xs font-black text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-70">
+                                    <span wire:loading.remove wire:target="addBeneficiaryToSelectedSponsor">افزودن</span>
+                                    <span wire:loading wire:target="addBeneficiaryToSelectedSponsor">در حال افزودن...</span>
+                                </button>
                             </div>
                             @error('beneficiaryCode') <p class="mt-1.5 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
 

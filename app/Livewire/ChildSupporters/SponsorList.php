@@ -8,6 +8,7 @@ use App\Models\SponsorProfile;
 use App\Models\User;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -16,18 +17,39 @@ class SponsorList extends Component
 {
     use WithPagination;
 
+    #[Url(as: 'q', history: true)]
+    public string $search = '';
+
+    #[Url(history: true)]
+    public string $sort = 'latest';
+
+    #[Url(as: 'size', history: true)]
+    public int $perPage = 10;
+
     public bool $embedded = false;
+
     public ?int $selectedSponsorId = null;
+
     public ?array $selectedSponsor = null;
+
     public string $beneficiaryCode = '';
+
     public ?array $beneficiaryPreview = null;
+
     public bool $isEditing = false;
+
     public string $editFirstName = '';
+
     public string $editLastName = '';
+
     public string $editMobile = '';
+
     public string $editMonthlyDonationAmount = '';
+
     public string $editChildPreferences = '';
+
     public array $editMonthlyPaymentReminderMethods = [];
+
     public ?string $editIsSocialMediaActive = null;
 
     public function persianNumber(mixed $value): string
@@ -56,6 +78,29 @@ class SponsorList extends Component
     {
         $this->embedded = $embedded;
         $this->authorizeAccess();
+        $this->sort = in_array($this->sort, $this->sortOptions(), true) ? $this->sort : 'latest';
+        $this->perPage = in_array($this->perPage, $this->perPageOptions(), true) ? $this->perPage : 10;
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSort(string $value): void
+    {
+        if (! in_array($value, $this->sortOptions(), true)) {
+            $this->sort = 'latest';
+        }
+
+        $this->resetPage();
+    }
+
+    public function updatedPerPage(int|string $value): void
+    {
+        $perPage = (int) $value;
+        $this->perPage = in_array($perPage, $this->perPageOptions(), true) ? $perPage : 10;
+        $this->resetPage();
     }
 
     public function showDetails(int $sponsorId): void
@@ -129,7 +174,7 @@ class SponsorList extends Component
             'name' => $mobile,
             'first_name' => $this->normalizeNamePart($validated['editFirstName']),
             'last_name' => $this->normalizeNamePart($validated['editLastName']),
-            'email' => $mobile . '@local.system',
+            'email' => $mobile.'@local.system',
             'mobile' => $mobile,
             'access_level' => User::ACCESS_LEVEL_CHILD_SUPPORTER,
             'is_admin' => false,
@@ -222,17 +267,37 @@ class SponsorList extends Component
 
     public function render()
     {
-        $this->authorizeAccess();
-
         $sponsors = SponsorProfile::query()
-            ->with(['user', 'beneficiaries'])
+            ->with([
+                'user:id,first_name,last_name,mobile,name',
+            ])
+            ->withCount('beneficiaries')
             ->whereHas('user')
-            ->latest()
-            ->paginate(10);
+            ->when($this->search !== '', function ($query): void {
+                $search = '%'.trim($this->search).'%';
+
+                $query->where(function ($builder) use ($search): void {
+                    $builder
+                        ->where('supporter_code', 'like', $search)
+                        ->orWhereHas('user', function ($userQuery) use ($search): void {
+                            $userQuery
+                                ->where('first_name', 'like', $search)
+                                ->orWhere('last_name', 'like', $search)
+                                ->orWhere('mobile', 'like', $search)
+                                ->orWhere('name', 'like', $search);
+                        });
+                });
+            });
+
+        $this->applySorting($sponsors);
+
+        $sponsors = $sponsors->paginate($this->perPage);
 
         return view('livewire.child-supporters.sponsor-list', [
             'sponsors' => $sponsors,
             'selectedSponsor' => $this->selectedSponsor,
+            'sortOptions' => $this->sortOptions(),
+            'perPageOptions' => $this->perPageOptions(),
         ]);
     }
 
@@ -241,9 +306,9 @@ class SponsorList extends Component
         return [
             'id' => $sponsor->id,
             'supporterCode' => $sponsor->supporter_code ?: '-',
-            'fullName' => trim(($sponsor->user?->first_name ?? '') . ' ' . ($sponsor->user?->last_name ?? '')) ?: '-',
+            'fullName' => trim(($sponsor->user?->first_name ?? '').' '.($sponsor->user?->last_name ?? '')) ?: '-',
             'mobile' => $this->persianNumber($sponsor->user?->mobile ?: $sponsor->user?->name ?: '-'),
-            'monthlyDonationAmount' => $this->persianNumber(number_format((int) $sponsor->monthly_donation_amount)) . ' ریال',
+            'monthlyDonationAmount' => $this->persianNumber(number_format((int) $sponsor->monthly_donation_amount)).' ریال',
             'monthlyDonationAmountInWords' => $this->donationAmountInTomanWords((int) $sponsor->monthly_donation_amount),
             'reminderMethods' => collect((array) $sponsor->monthly_payment_reminder_methods)
                 ->map(fn (string $method): string => SponsorProfile::reminderMethodOptions()[$method] ?? $method)
@@ -255,7 +320,7 @@ class SponsorList extends Component
                 ->map(fn (Person $beneficiary): array => [
                     'id' => $beneficiary->id,
                     'person_code' => $beneficiary->person_code,
-                    'full_name' => trim($beneficiary->first_name . ' ' . $beneficiary->last_name),
+                    'full_name' => trim($beneficiary->first_name.' '.$beneficiary->last_name),
                 ])
                 ->values()
                 ->all(),
@@ -269,6 +334,49 @@ class SponsorList extends Component
             && (auth()->user()->can('access-child-supporter-panel') || auth()->user()->can('access-admin-panel')),
             403
         );
+    }
+
+    /**
+     * @param  \Illuminate\Database\Eloquent\Builder<SponsorProfile>  $query
+     */
+    private function applySorting($query): void
+    {
+        match ($this->sort) {
+            'donation_desc' => $query->orderByDesc('monthly_donation_amount')->latest('id'),
+            'donation_asc' => $query->orderBy('monthly_donation_amount')->latest('id'),
+            'beneficiaries_desc' => $query->orderByDesc('beneficiaries_count')->latest('id'),
+            'beneficiaries_asc' => $query->orderBy('beneficiaries_count')->latest('id'),
+            'name_asc' => $query
+                ->join('users', 'users.id', '=', 'sponsor_profiles.user_id')
+                ->select('sponsor_profiles.*')
+                ->orderBy('users.first_name')
+                ->orderBy('users.last_name')
+                ->latest('sponsor_profiles.id'),
+            default => $query->latest(),
+        };
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    private function perPageOptions(): array
+    {
+        return [10, 25, 50];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function sortOptions(): array
+    {
+        return [
+            'latest',
+            'name_asc',
+            'donation_desc',
+            'donation_asc',
+            'beneficiaries_desc',
+            'beneficiaries_asc',
+        ];
     }
 
     private function editRules(SponsorProfile $sponsor): array
@@ -361,7 +469,7 @@ class SponsorList extends Component
             ->map(fn (SponsorProfile $profile): array => [
                 'id' => $profile->id,
                 'supporter_code' => $profile->supporter_code ?: '-',
-                'full_name' => trim(($profile->user?->first_name ?? '') . ' ' . ($profile->user?->last_name ?? '')) ?: ($profile->user?->name ?: '-'),
+                'full_name' => trim(($profile->user?->first_name ?? '').' '.($profile->user?->last_name ?? '')) ?: ($profile->user?->name ?: '-'),
             ])
             ->values()
             ->all();
@@ -369,7 +477,7 @@ class SponsorList extends Component
         return [
             'id' => $beneficiary->id,
             'person_code' => $beneficiary->person_code,
-            'full_name' => trim($beneficiary->first_name . ' ' . $beneficiary->last_name),
+            'full_name' => trim($beneficiary->first_name.' '.$beneficiary->last_name),
             'supporters_count' => count($supporters),
             'supporters' => $supporters,
         ];
