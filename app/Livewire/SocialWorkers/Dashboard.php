@@ -297,6 +297,14 @@ class Dashboard extends Component
         abort_unless($service, 404);
 
         try {
+            $this->validateNoDuplicateRecipientCategoryRows($validated['recipientEntries']);
+        } catch (ValidationException $exception) {
+            $this->showValidationErrorModal($exception->validator->errors()->all());
+
+            throw $exception;
+        }
+
+        try {
             DB::transaction(function () use ($service, $validated): void {
                 $categoryQuantities = collect($validated['recipientEntries'])
                     ->groupBy(fn (array $entry) => (int) $entry['service_category_id'])
@@ -740,6 +748,45 @@ class Dashboard extends Component
             'deliveredAt' => 'تاریخ تحویل',
             'notes' => 'یادداشت',
         ];
+    }
+
+    protected function validateNoDuplicateRecipientCategoryRows(array $recipientEntries): void
+    {
+        $seen = [];
+        $duplicateRows = [];
+
+        foreach ($recipientEntries as $index => $entry) {
+            $nationalId = $this->normalizedNationalId((string) ($entry['national_id'] ?? ''));
+            $categoryId = (int) ($entry['service_category_id'] ?? 0);
+
+            if ($nationalId === '' || $categoryId <= 0) {
+                continue;
+            }
+
+            $key = $nationalId . ':' . $categoryId;
+
+            if (isset($seen[$key])) {
+                $duplicateRows[] = $index + 1;
+                continue;
+            }
+
+            $seen[$key] = $index;
+        }
+
+        if ($duplicateRows === []) {
+            return;
+        }
+
+        $rows = implode('، ', array_unique($duplicateRows));
+
+        throw ValidationException::withMessages([
+            'recipientEntries' => "گیرنده تکراری در همان دسته‌بندی خدمت ثبت شده است. لطفاً ردیف‌های {$rows} را ادغام یا حذف کنید.",
+        ]);
+    }
+
+    protected function normalizedNationalId(string $nationalId): string
+    {
+        return preg_replace('/\D+/', '', trim($nationalId)) ?? '';
     }
 
     protected function currentSocialWorkerId(): int
