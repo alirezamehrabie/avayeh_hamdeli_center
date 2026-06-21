@@ -270,7 +270,7 @@
                                                             type="button"
                                                             x-on:click.prevent="$dispatch('open-recipient-qr-scanner', { index: {{ $index }} })"
                                                             @disabled(!$this->selectedService)
-                                                            class="absolute left-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                                            class="absolute left-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
                                                             title="اسکن QR"
                                                             aria-label="اسکن QR"
                                                         >
@@ -542,28 +542,28 @@
                             x-show="qrScannerOpen"
                             x-cloak
                             x-transition.opacity.duration.150ms
-                            class="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/70 p-2 backdrop-blur-sm sm:p-3"
+                            class="fixed inset-0 z-[90] flex items-center justify-center bg-slate-900/45 p-2 backdrop-blur-[2px] sm:p-3"
                             role="dialog"
                             aria-modal="true"
                             style="display: none;"
                         >
                             <div
                                 @click.outside="closeScanner()"
-                                class="flex max-h-[calc(100svh-1rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 text-white shadow-2xl"
+                                class="flex max-h-[calc(100svh-1rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-xl shadow-slate-900/15"
                                 dir="rtl"
                             >
-                                <div class="flex items-center justify-between border-b border-white/10 px-3 py-2.5">
-                                    <div class="inline-flex items-center gap-2 text-xs font-bold">
+                                <div class="flex items-center justify-between border-b border-slate-100 px-3 py-2.5">
+                                    <div class="inline-flex items-center gap-2 text-xs font-bold text-slate-600">
                                         <span class="inline-flex h-2 w-2 rounded-full"
                                               :class="{
-                                                'bg-emerald-400': ['ready', 'scanning'].includes(status),
-                                                'bg-amber-400': status === 'paused',
-                                                'bg-rose-400': ['camera_denied', 'scan_error', 'unsupported'].includes(status),
-                                                'bg-slate-400': status === 'initializing',
+                                                'bg-emerald-500': ['ready', 'scanning'].includes(status),
+                                                'bg-amber-500': status === 'paused',
+                                                'bg-rose-500': ['camera_denied', 'scan_error', 'unsupported'].includes(status),
+                                                'bg-slate-300': status === 'initializing',
                                               }"></span>
                                         <span x-text="statusLabel()"></span>
                                     </div>
-                                    <button type="button" @click="closeScanner()" class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 transition hover:bg-white/10 hover:text-white" aria-label="بستن">
+                                    <button type="button" @click="closeScanner()" class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="بستن">
                                         <i class="bi bi-x-lg"></i>
                                     </button>
                                 </div>
@@ -571,24 +571,24 @@
                                 <div class="relative min-h-[320px] flex-1 bg-slate-950 sm:aspect-square sm:flex-none">
                                     <div wire:ignore x-ref="scanner" id="service-recipient-scanner" class="qr-scanner-reader h-full w-full"></div>
                                     <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
-                                        <div class="aspect-square w-[min(72%,320px)] rounded-2xl border-2 border-cyan-300/90 shadow-[0_0_0_9999px_rgba(15,23,42,0.32)]"></div>
+                                        <div class="aspect-square w-[min(70%,300px)] rounded-2xl border border-white/90 shadow-[0_0_0_9999px_rgba(15,23,42,0.24)]"></div>
                                     </div>
                                     <div
                                         x-show="openingScanner || startingCamera || (!cameraActive && ['ready', 'camera_denied', 'scan_error', 'unsupported'].includes(status))"
                                         x-transition.opacity.duration.150ms
-                                        class="absolute inset-0 flex items-center justify-center bg-slate-950/78 px-5 text-center backdrop-blur-sm"
+                                        class="absolute inset-0 flex items-center justify-center bg-white/92 px-5 text-center backdrop-blur-sm"
                                         style="display: none;"
                                     >
-                                        <div class="w-full max-w-xs rounded-2xl border border-white/10 bg-slate-900/90 p-4 shadow-xl">
+                                        <div class="w-full max-w-xs rounded-2xl border border-slate-200 bg-white p-4 shadow-lg shadow-slate-900/10">
                                             <div
                                                 x-show="openingScanner || startingCamera || status === 'initializing'"
-                                                class="mx-auto mb-3 h-9 w-9 animate-spin rounded-full border-2 border-cyan-200/30 border-t-cyan-200"
+                                                class="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-cyan-500"
                                                 style="display: none;"
                                                 aria-hidden="true"
                                             ></div>
                                             <div
                                                 x-show="['camera_denied', 'scan_error', 'unsupported'].includes(status)"
-                                                class="mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-rose-500/15 text-rose-200"
+                                                class="mx-auto mb-3 flex h-8 w-8 items-center justify-center rounded-full bg-rose-50 text-rose-500"
                                                 style="display: none;"
                                                 aria-hidden="true"
                                             >
@@ -596,27 +596,27 @@
                                             </div>
                                             <div
                                                 x-show="status === 'ready' && !startingCamera"
-                                                class="mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-cyan-500/15 text-cyan-200"
+                                                class="mx-auto mb-3 flex h-8 w-8 items-center justify-center rounded-full bg-cyan-50 text-cyan-600"
                                                 style="display: none;"
                                                 aria-hidden="true"
                                             >
                                                 <i class="bi bi-camera-video text-lg"></i>
                                             </div>
 
-                                            <p class="text-sm font-extrabold text-white">
+                                            <p class="text-sm font-extrabold text-slate-800">
                                                 <span x-show="openingScanner || startingCamera || status === 'initializing'">در حال فعال‌سازی دوربین</span>
                                                 <span x-show="status === 'ready' && !startingCamera">دوربین آماده شروع است</span>
                                                 <span x-show="status === 'camera_denied'">دسترسی به دوربین انجام نشد</span>
                                                 <span x-show="status === 'scan_error'">اسکن انجام نشد</span>
                                                 <span x-show="status === 'unsupported'">دوربین پشتیبانی نمی‌شود</span>
                                             </p>
-                                            <p class="mt-2 text-xs leading-5 text-slate-300" x-text="message"></p>
+                                            <p class="mt-2 text-xs leading-5 text-slate-500" x-text="message"></p>
 
                                             <div class="mt-4 grid gap-2" x-show="!openingScanner && !startingCamera && status !== 'unsupported'" style="display: none;">
                                                 <button
                                                     type="button"
                                                     @click="status === 'scan_error' && cameraActive ? resumeScan() : startCamera()"
-                                                    class="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 px-3 text-xs font-black text-slate-950 transition hover:bg-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-200/60"
+                                                    class="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-3 text-xs font-black text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
                                                 >
                                                     <i class="bi bi-camera-video"></i>
                                                     <span x-show="status === 'ready'">شروع اسکن</span>
@@ -632,33 +632,33 @@
                                     <div
                                         x-show="status === 'scan_error'"
                                         x-transition.opacity.duration.150ms
-                                        class="rounded-xl border border-rose-400/25 bg-rose-500/10 px-3 py-2 text-rose-100"
+                                        class="rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-rose-700"
                                         style="display: none;"
                                     >
                                         <div class="flex items-start gap-2">
                                             <i class="bi bi-exclamation-triangle mt-0.5 shrink-0 text-sm"></i>
                                             <div class="min-w-0 flex-1">
                                                 <p class="text-xs font-extrabold">QR قابل ثبت نیست</p>
-                                                <p class="mt-1 text-[11px] leading-5 text-rose-100/90" x-text="message"></p>
+                                                <p class="mt-1 text-[11px] leading-5 text-rose-600" x-text="message"></p>
                                             </div>
                                         </div>
                                         <button
                                             type="button"
                                             @click="resumeScan()"
-                                            class="mt-2 inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-lg bg-white px-3 text-xs font-black text-rose-700 transition hover:bg-rose-50 focus:outline-none focus:ring-2 focus:ring-white/60"
+                                            class="mt-2 inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-lg border border-rose-100 bg-white px-3 text-xs font-black text-rose-700 transition hover:bg-rose-50 focus:outline-none focus:ring-2 focus:ring-rose-100"
                                         >
                                             <i class="bi bi-qr-code-scan"></i>
                                             اسکن دوباره
                                         </button>
                                     </div>
-                                    <p x-show="status !== 'scan_error'" class="text-xs leading-5 text-slate-200" x-text="message"></p>
+                                    <p x-show="status !== 'scan_error'" class="text-xs leading-5 text-slate-500" x-text="message"></p>
                                     <div class="grid gap-2">
                                         <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
                                             <button
                                                 type="button"
                                                 @click="status === 'scan_error' && cameraActive ? resumeScan() : startCamera()"
                                                 :disabled="startingCamera"
-                                                class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-cyan-500 px-2 text-[11px] font-black text-slate-950 transition hover:bg-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-200/60 disabled:cursor-wait disabled:opacity-60"
+                                                class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-2 text-[11px] font-black text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300 disabled:cursor-wait disabled:opacity-60"
                                             >
                                                 <i class="bi bi-arrow-clockwise"></i>
                                                 <span>شروع / تلاش دوباره</span>
@@ -668,7 +668,7 @@
                                                 type="button"
                                                 @click="cycleCamera()"
                                                 :disabled="startingCamera || cameras.length < 2"
-                                                class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-slate-900 px-2 text-[11px] font-black text-slate-100 transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-cyan-200/40 disabled:cursor-not-allowed disabled:opacity-45"
+                                                class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2 text-[11px] font-black text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-45"
                                             >
                                                 <i class="bi bi-camera-video"></i>
                                                 <span>تعویض دوربین</span>
@@ -678,8 +678,8 @@
                                                 type="button"
                                                 @click="toggleTorch()"
                                                 :disabled="!cameraActive || !supportsTorch()"
-                                                class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-white/10 px-2 text-[11px] font-black transition focus:outline-none focus:ring-2 focus:ring-cyan-200/40 disabled:cursor-not-allowed disabled:opacity-45"
-                                                :class="torchEnabled ? 'bg-amber-300 text-slate-950 hover:bg-amber-200' : 'bg-slate-900 text-slate-100 hover:bg-white/10'"
+                                                class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border px-2 text-[11px] font-black transition focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-45"
+                                                :class="torchEnabled ? 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'"
                                             >
                                                 <i class="bi" :class="torchEnabled ? 'bi-lightbulb-fill' : 'bi-lightbulb'"></i>
                                                 <span x-text="torchEnabled ? 'چراغ روشن' : 'چراغ'"></span>
@@ -688,7 +688,7 @@
                                             <button
                                                 type="button"
                                                 @click="closeScanner()"
-                                                class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-slate-900 px-2 text-[11px] font-black text-slate-100 transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-cyan-200/40"
+                                                class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2 text-[11px] font-black text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200"
                                             >
                                                 <i class="bi bi-x-lg"></i>
                                                 <span>بستن</span>
@@ -700,7 +700,7 @@
                                                 x-model="selectedDeviceId"
                                                 @change="switchCamera()"
                                                 :disabled="startingCamera"
-                                                class="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2 text-xs text-white focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400/20 disabled:cursor-wait disabled:opacity-60"
+                                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 focus:border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-100 disabled:cursor-wait disabled:opacity-60"
                                             >
                                                 <template x-for="camera in cameras" :key="camera.id">
                                                     <option :value="camera.id" x-text="camera.label"></option>
@@ -710,10 +710,10 @@
 
                                         <div
                                             x-show="cameraActive && supportsZoom()"
-                                            class="rounded-xl border border-white/10 bg-slate-900 px-3 py-2"
+                                            class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"
                                             style="display: none;"
                                         >
-                                            <div class="mb-1 flex items-center justify-between gap-3 text-[11px] font-bold text-slate-200">
+                                            <div class="mb-1 flex items-center justify-between gap-3 text-[11px] font-bold text-slate-500">
                                                 <span>بزرگنمایی</span>
                                                 <span dir="ltr" x-text="`${Number(zoomLevel || 1).toFixed(1)}x`"></span>
                                             </div>
@@ -724,7 +724,7 @@
                                                 :min="zoomMin()"
                                                 :max="zoomMax()"
                                                 :step="zoomStep()"
-                                                class="w-full accent-cyan-300"
+                                                class="w-full accent-slate-700"
                                             >
                                         </div>
                                     </div>
@@ -774,4 +774,3 @@
         </div>
     </div>
 </div>
-
