@@ -489,6 +489,30 @@
                                 qrScannerOpen: false,
                                 openingScanner: false,
                                 activeRecipientIndex: null,
+                                scannerHistoryActive: false,
+                                pushScannerHistory() {
+                                    if (this.scannerHistoryActive) {
+                                        return;
+                                    }
+
+                                    try {
+                                        window.history.pushState({
+                                            ...(window.history.state || {}),
+                                            serviceRecipientQrScanner: true,
+                                        }, '', window.location.href);
+                                        this.scannerHistoryActive = true;
+                                    } catch (error) {
+                                        this.scannerHistoryActive = false;
+                                    }
+                                },
+                                handleScannerPopState() {
+                                    if (!this.qrScannerOpen) {
+                                        this.scannerHistoryActive = false;
+                                        return;
+                                    }
+
+                                    this.closeScanner({ syncHistory: false });
+                                },
                                 async openScanner(index) {
                                     if (this.openingScanner) {
                                         return;
@@ -497,6 +521,7 @@
                                     this.activeRecipientIndex = index;
                                     this.openingScanner = true;
                                     this.qrScannerOpen = true;
+                                    this.pushScannerHistory();
 
                                     try {
                                         await $nextTick();
@@ -529,13 +554,22 @@
 
                                     await this.init();
                                 },
-                                closeScanner() {
+                                closeScanner({ syncHistory = true } = {}) {
+                                    const shouldRestoreHistory = syncHistory && this.scannerHistoryActive;
+
                                     this.qrScannerOpen = false;
                                     this.activeRecipientIndex = null;
                                     this.stopCamera();
+
+                                    if (shouldRestoreHistory) {
+                                        this.scannerHistoryActive = false;
+                                        window.history.back();
+                                    } else if (!syncHistory) {
+                                        this.scannerHistoryActive = false;
+                                    }
                                 },
                             }"
-                            x-init="init(); $watch('qrScannerOpen', (open) => document.documentElement.classList.toggle('overflow-hidden', open))"
+                            x-init="init(); window.addEventListener('popstate', () => handleScannerPopState()); $watch('qrScannerOpen', (open) => document.documentElement.classList.toggle('overflow-hidden', open))"
                             x-on:open-recipient-qr-scanner.window="openScanner($event.detail.index)"
                             x-on:close-recipient-qr-scanner.window="closeScanner()"
                             x-on:keydown.escape.window="if (qrScannerOpen) closeScanner()"
