@@ -244,95 +244,120 @@
                                         </button>
                                     @endif
 
-                                    <div class="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-end">
-                                        <div class="md:col-span-12">
-                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-500 mr-1">QR card token or URL</label>
-                                            <div class="grid gap-2 md:grid-cols-[1fr_auto]">
-                                                <input
-                                                    type="text"
-                                                    wire:model.defer="recipientEntries.{{ $index }}.qr_token"
-                                                    @disabled(!$this->selectedService)
-                                                    class="w-full rounded-xl border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all placeholder:text-slate-400"
-                                                    placeholder="Paste scanned QR payload"
-                                                    autocomplete="off"
-                                                >
-                                                <button
-                                                    type="button"
-                                                    wire:click="resolveRecipientQr({{ $index }})"
-                                                    @disabled(!$this->selectedService)
-                                                    class="inline-flex items-center justify-center rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2.5 text-xs font-black text-cyan-700 transition hover:bg-cyan-100"
-                                                >
-                                                    Resolve QR
-                                                </button>
+                                    <div class="space-y-4">
+                                        <div class="rounded-2xl border border-slate-100 bg-white p-3">
+                                            <div class="mb-3 flex items-center gap-2">
+                                                <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-600 text-[11px] font-black text-white">۱</span>
+                                                <h3 class="text-xs font-extrabold text-slate-700">شناسایی گیرنده</h3>
                                             </div>
-                                            @error('recipientEntries.' . $index . '.qr_token') <p class="mt-1 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror
-                                        </div>
 
-                                        <!-- National ID Input -->
-                                        <div class="md:col-span-8">
-                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-500 mr-1">کد ملی یا نام</label>
-                                            <div class="relative">
-                                                <input
-                                                    type="text"
-                                                    maxlength="10"
-                                                    wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.national_id"
-                                                    wire:focus="setActiveRecipientSearch({{ $index }})"
-                                                    @disabled(!$this->selectedService)
-                                                    class="w-full rounded-xl border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all placeholder:text-slate-400"
-                                                    placeholder="درج و جستجوی مددجو / سرپرست"
-                                                    autocomplete="off"
-                                                >
+                                            <div class="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-end">
+                                                <div class="md:col-span-12">
+                                                    <label class="mb-1.5 block text-[11px] font-bold text-slate-500 mr-1">QR card token or URL</label>
+                                                    <div class="grid gap-2 md:grid-cols-[1fr_auto]">
+                                                        <input
+                                                            type="text"
+                                                            wire:model.defer="recipientEntries.{{ $index }}.qr_token"
+                                                            @disabled(!$this->selectedService)
+                                                            class="w-full rounded-xl border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all placeholder:text-slate-400"
+                                                            placeholder="Paste scanned QR payload"
+                                                            autocomplete="off"
+                                                        >
+                                                        <button
+                                                            type="button"
+                                                            wire:click="resolveRecipientQr({{ $index }})"
+                                                            @disabled(!$this->selectedService)
+                                                            class="inline-flex items-center justify-center rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2.5 text-xs font-black text-cyan-700 transition hover:bg-cyan-100"
+                                                        >
+                                                            Resolve QR
+                                                        </button>
+                                                    </div>
+                                                    @error('recipientEntries.' . $index . '.qr_token') <p class="mt-1 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror
+                                                </div>
 
-                                                <!-- Search Suggestions -->
-                                                @if(!empty($this->recipientSuggestions[$index]) && $this->activeRecipientSearchIndex === $index)
-                                                    <div class="absolute z-20 mt-1 max-h-52 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5">
-                                                        @foreach($this->recipientSuggestions[$index] as $suggestion)
-                                                            <button type="button"
-                                                                    wire:click="selectRecipientSuggestion({{ $index }}, '{{ $this->selectedService?->service_type === 'family' ? 'guardian' : 'person' }}', {{ $suggestion->id }})"
-                                                                    class="flex w-full items-center justify-between gap-3 border-b border-slate-50 px-4 py-3 text-right hover:bg-slate-50 last:border-b-0"
-                                                            >
+                                                <!-- National ID Input -->
+                                                <div class="md:col-span-8">
+                                                    <label class="mb-1.5 block text-[11px] font-bold text-slate-500 mr-1">کد ملی یا نام</label>
+                                                    <div class="relative">
+                                                        <input
+                                                            type="text"
+                                                            maxlength="10"
+                                                            wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.national_id"
+                                                            wire:focus="setActiveRecipientSearch({{ $index }})"
+                                                            @disabled(!$this->selectedService)
+                                                            class="w-full rounded-xl border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all placeholder:text-slate-400"
+                                                            placeholder="درج و جستجوی مددجو / سرپرست"
+                                                            autocomplete="off"
+                                                        >
+
+                                                        <!-- Search Suggestions -->
+                                                        @if(!empty($this->recipientSuggestions[$index]) && $this->activeRecipientSearchIndex === $index)
+                                                            <div class="absolute z-20 mt-1 max-h-52 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5">
+                                                                @foreach($this->recipientSuggestions[$index] as $suggestion)
+                                                                    <button type="button"
+                                                                            wire:click="selectRecipientSuggestion({{ $index }}, '{{ $this->selectedService?->service_type === 'family' ? 'guardian' : 'person' }}', {{ $suggestion->id }})"
+                                                                            class="flex w-full items-center justify-between gap-3 border-b border-slate-50 px-4 py-3 text-right hover:bg-slate-50 last:border-b-0"
+                                                                    >
                                             <span class="block">
                                                 <span class="block text-sm font-bold text-slate-800">{{ trim(($suggestion->first_name ?? '') . ' ' . ($suggestion->last_name ?? '')) ?: '-' }}</span>
                                                 <span class="text-[10px] text-slate-400">{{ $this->selectedService?->service_type === 'family' ? 'سرپرست' : 'مددجو' }}</span>
                                             </span>
-                                                                <span class="rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-mono font-bold text-slate-600">
+                                                                        <span class="rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-mono font-bold text-slate-600">
                                                 {{ $this->selectedService?->service_type === 'family' ? $suggestion->national_code : $suggestion->national_id }}
                                             </span>
-                                                            </button>
-                                                        @endforeach
+                                                                    </button>
+                                                                @endforeach
+                                                            </div>
+                                                        @endif
                                                     </div>
-                                                @endif
+                                                </div>
                                             </div>
                                         </div>
 
-                                        <!-- Category Select -->
-                                        <div class="md:col-span-6">
-                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-500 mr-1">دسته‌بندی خدمت</label>
-                                            <select
-                                                wire:model.live="recipientEntries.{{ $index }}.service_category_id"
-                                                @disabled(!$this->selectedService)
-                                                class="w-full rounded-xl border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all"
-                                            >
-                                                <option value="">انتخاب دسته‌بندی</option>
-                                                @foreach($assignableCategories as $category)
-                                                    @php($metrics = $categoryMetrics[$category->id] ?? ['remaining_stock' => 0, 'remaining_allocation' => 0])
-                                                    @php($remainingStock = (float) $metrics['remaining_stock'])
-                                                    <option value="{{ $category->id }}" @disabled($remainingStock <= 0)>
-                                                        {{ $category->name }} - مانده سهمیه: {{ number_format((float) $metrics['remaining_allocation'], 2) }} - موجودی: {{ number_format($remainingStock, 2) }} {{ $unitOptions[$category->unit] ?? $category->unit }} - ارزش واحد: {{ number_format((int) $category->value) }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            @error('recipientEntries.' . $index . '.service_category_id') <p class="mt-1 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror
-                                        </div>
+                                        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                            <div class="rounded-2xl border border-slate-100 bg-white p-3">
+                                                <div class="mb-3 flex items-center gap-2">
+                                                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-600 text-[11px] font-black text-white">۲</span>
+                                                    <h3 class="text-xs font-extrabold text-slate-700">انتخاب دسته‌بندی</h3>
+                                                </div>
 
-                                        <!-- Quantity Input -->
-                                        <div class="md:col-span-6">
-                                            <label class="mb-1.5 block text-[11px] font-bold text-slate-500 mr-1">مقدار تحویلی</label>
-                                            <input type="number" min="0.01" step="0.01"
-                                                   wire:model.blur="recipientEntries.{{ $index }}.quantity"
-                                                   @disabled(!$this->selectedService)
-                                                   class="w-full rounded-xl border-slate-200 bg-white px-3.5 py-2.5 text-sm font-bold text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all placeholder:text-slate-300"
-                                                   placeholder="0">
+                                                <!-- Category Select -->
+                                                <div>
+                                                    <label class="mb-1.5 block text-[11px] font-bold text-slate-500 mr-1">دسته‌بندی خدمت</label>
+                                                    <select
+                                                        wire:model.live="recipientEntries.{{ $index }}.service_category_id"
+                                                        @disabled(!$this->selectedService)
+                                                        class="w-full rounded-xl border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all"
+                                                    >
+                                                        <option value="">انتخاب دسته‌بندی</option>
+                                                        @foreach($assignableCategories as $category)
+                                                            @php($metrics = $categoryMetrics[$category->id] ?? ['remaining_stock' => 0, 'remaining_allocation' => 0])
+                                                            @php($remainingStock = (float) $metrics['remaining_stock'])
+                                                            <option value="{{ $category->id }}" @disabled($remainingStock <= 0)>
+                                                                {{ $category->name }} - مانده سهمیه: {{ number_format((float) $metrics['remaining_allocation'], 2) }} - موجودی: {{ number_format($remainingStock, 2) }} {{ $unitOptions[$category->unit] ?? $category->unit }} - ارزش واحد: {{ number_format((int) $category->value) }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                    @error('recipientEntries.' . $index . '.service_category_id') <p class="mt-1 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror
+                                                </div>
+                                            </div>
+
+                                            <div class="rounded-2xl border border-slate-100 bg-white p-3">
+                                                <div class="mb-3 flex items-center gap-2">
+                                                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-600 text-[11px] font-black text-white">۳</span>
+                                                    <h3 class="text-xs font-extrabold text-slate-700">مقدار تحویل</h3>
+                                                </div>
+
+                                                <!-- Quantity Input -->
+                                                <div>
+                                                    <label class="mb-1.5 block text-[11px] font-bold text-slate-500 mr-1">مقدار تحویلی</label>
+                                                    <input type="number" min="0.01" step="0.01"
+                                                           wire:model.blur="recipientEntries.{{ $index }}.quantity"
+                                                           @disabled(!$this->selectedService)
+                                                           class="w-full rounded-xl border-slate-200 bg-white px-3.5 py-2.5 text-sm font-bold text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all placeholder:text-slate-300"
+                                                           placeholder="0">
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
