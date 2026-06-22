@@ -249,7 +249,7 @@
 
                     </div>
 
-                    <div class="rounded-2xl border border-slate-200 bg-white p-3.5">
+                    <section class="border-t border-slate-100 pt-4">
 
                         <h2 class="text-xs font-semibold text-slate-500">سهمیه</h2>
 
@@ -269,7 +269,7 @@
                             </div>
 
                             @if($selectedService->description)
-                                <p class="mt-2 rounded-2xl border border-slate-100 bg-slate-50/60 px-2.5 py-1.5 text-[10px] leading-4  text-slate-500">
+                                <p class="mt-2 rounded-xl bg-slate-50 px-2.5 py-1.5 text-[10px] leading-4 text-slate-500">
                                     {{ $selectedService->description }}
                                 </p>
                             @endif
@@ -340,7 +340,7 @@
                             <p class="mt-2.5 text-xs text-slate-400">یک خدمت انتخاب کنید.</p>
                         @endif
 
-                    </div>
+                    </section>
 
                     @if($serviceSelectionWarning !== '')
                         <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
@@ -349,7 +349,7 @@
                     @endif
 
 
-                    <div class="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+                    <section class="border-t border-slate-100 pt-4">
                         <!-- Header Section -->
                         <div class="mb-5 flex items-center justify-between gap-4">
                             <div>
@@ -521,7 +521,7 @@
                                     </div>
 
                                     <div class="space-y-3 md:space-y-4">
-                                        <div class="rounded-2xl border border-slate-100 bg-white p-2.5 md:p-3">
+                                        <div class="border-b border-slate-100 pb-3">
                                             <div class="mb-3 flex items-center gap-2">
                                                 <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-600 text-[11px] font-black text-white">۱</span>
                                                 <h3 class="text-xs font-extrabold text-slate-700">شناسایی گیرنده</h3>
@@ -609,7 +609,7 @@
                                         </div>
 
                                         <div class="grid grid-cols-1 gap-3">
-                                            <div class="rounded-2xl border border-slate-100 bg-white p-2.5 md:p-3">
+                                            <div class="pt-1">
                                                 @php
                                                     $rowCategoryQuantities = collect($entry['category_quantities'] ?? []);
                                                     $enteredCategoryCount = $rowCategoryQuantities
@@ -628,7 +628,7 @@
                                                     $hiddenUnavailableCount = max(0, $assignableCategories->count() - $visibleCategories->count());
                                                 @endphp
 
-                                                <details class="group" open>
+                                                <details class="group rounded-2xl bg-slate-50 p-2.5" open>
                                                     <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-1 py-1.5 focus:outline-none focus:ring-4 focus:ring-cyan-500/10">
                                                         <div class="flex min-w-0 items-center gap-2">
                                                             <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-600 text-[11px] font-black text-white">۲</span>
@@ -1144,10 +1144,10 @@
                             </div>
                         </div>
                         @endif
-                    </div>
+                    </section>
 
 
-                    <div class="rounded-3xl border border-slate-200 bg-white p-4">
+                    <section class="border-t border-slate-100 pt-4">
                         @if(!$selectedService)
                             <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-center">
                                 <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-slate-500 shadow-sm">
@@ -1190,7 +1190,7 @@
                                 </div>
                             </div>
                         @endif
-                    </div>
+                    </section>
 
                 <div class="space-y-4">
                     @if($selectedService)
@@ -1220,7 +1220,7 @@
                             $totalCategoryCount = $categoryReviewTotals->count();
                         @endphp
 
-                        <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <div class="border-t border-slate-100 pt-4">
                             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                 <div class="min-w-0">
                                     <h2 class="text-sm font-black text-slate-800">مرور نهایی تحویل</h2>
@@ -1250,7 +1250,7 @@
                                 </div>
                             </div>
 
-                            <div class="mt-3 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
+                            <div class="mt-3 rounded-2xl bg-slate-50 px-3 py-2">
                                 <div class="mb-2 flex items-center justify-between gap-2">
                                     <h3 class="text-[11px] font-black text-slate-700">جمع مقادیر بر اساس دسته‌بندی</h3>
                                 </div>
