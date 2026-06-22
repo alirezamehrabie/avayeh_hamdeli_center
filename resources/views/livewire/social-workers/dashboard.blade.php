@@ -650,22 +650,7 @@
                                                 </div>
                                             </div>
 
-                                            <div class="flex flex-col gap-2 md:w-72">
-                                                <div class="flex min-h-9 items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5">
-                                                    <div class="inline-flex min-w-0 items-center gap-1.5">
-                                                        <i class="bi bi-tags text-xs text-slate-400"></i>
-                                                        <span class="text-[10px] font-bold text-slate-400">دسته</span>
-                                                        <span class="text-xs font-black text-slate-800">{{ $this->persianNumber($rowEnteredCategoryCountForHeader) }}</span>
-                                                    </div>
-                                                    <div class="inline-flex min-w-0 items-center gap-1.5 border-r border-slate-200 pr-2">
-                                                        <i class="bi bi-calculator text-xs text-slate-400"></i>
-                                                        <span class="text-[10px] font-bold text-slate-400">جمع</span>
-                                                        <span class="max-w-24 truncate text-xs font-black text-slate-800">
-                                                            {{ $this->persianNumber(number_format($rowTotalQuantityForHeader, 2)) }}
-                                                        </span>
-                                                    </div>
-                                                </div>
-
+                                            <div class="flex flex-col gap-2 md:w-44">
                                                 @if(count($recipientEntries) > 1)
                                                     <button type="button"
                                                             wire:click="removeRecipientField({{ $index }})"
@@ -711,6 +696,11 @@
                                                         $recipientSuggestionItems = collect($this->recipientSuggestions[$index] ?? []);
                                                         $recipientSuggestionType = $this->selectedService?->service_type === 'family' ? 'guardian' : 'person';
                                                         $recipientSuggestionTypeLabel = $recipientSuggestionType === 'guardian' ? 'سرپرست' : 'مددجو';
+                                                        $recipientNationalDigits = preg_replace('/\D+/', '', $recipientNationalId) ?? '';
+                                                        $showManualRecipientNotice = $isUnregisteredRecipient
+                                                            && strlen($recipientNationalDigits) === 10
+                                                            && $recipientSuggestionItems->isEmpty()
+                                                            && $this->activeRecipientSearchIndex === $index;
                                                     @endphp
                                                     <div
                                                         class="rounded-2xl border p-2.5 transition {{ $recipientDisplayName === '' && $recipientNationalId === '' ? 'border-cyan-200 bg-cyan-50/70 shadow-sm shadow-cyan-100/70' : 'border-slate-200 bg-slate-50' }}"
@@ -915,6 +905,32 @@
                                                                             </span>
                                                                         </button>
                                                                     @endforeach
+                                                                @elseif($showManualRecipientNotice)
+                                                                    <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-right shadow-sm shadow-amber-100/80">
+                                                                        <div class="flex items-start gap-3">
+                                                                            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-amber-600 shadow-sm">
+                                                                                <i class="bi bi-person-exclamation text-lg"></i>
+                                                                            </span>
+                                                                            <div class="min-w-0 flex-1">
+                                                                                <p class="text-sm font-black leading-6 text-amber-900">ثبت دستی گیرنده</p>
+                                                                                <p class="mt-1 text-xs font-bold leading-5 text-amber-800">
+                                                                                    این کد ملی در پرونده‌ها یافت نشد.
+                                                                                </p>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    @click="closeRecipientSheet(); $wire.set('activeRecipientSearchIndex', null); $nextTick(() => window.setTimeout(() => {
+                                                                                        const field = document.getElementById('recipient-{{ $index }}-full-name');
+                                                                                        field?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                                                        field?.focus({ preventScroll: true });
+                                                                                    }, 250))"
+                                                                                    class="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-amber-300 bg-white px-3 text-xs font-black text-amber-800 shadow-sm transition hover:bg-amber-100 focus:outline-none focus:ring-4 focus:ring-amber-400/20"
+                                                                                >
+                                                                                    <i class="bi bi-pencil-square text-sm"></i>
+                                                                                    تکمیل اطلاعات دستی
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
                                                                 @elseif(mb_strlen(trim((string) ($entry['national_id'] ?? ''))) >= 2 && $this->activeRecipientSearchIndex === $index)
                                                                     <div class="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-6 text-center">
                                                                         <i class="bi bi-search text-xl text-slate-300"></i>
@@ -1092,6 +1108,7 @@
                                                         <span class="text-rose-600">*</span>
                                                     </label>
                                                     <input type="text"
+                                                           id="recipient-{{ $index }}-full-name"
                                                            data-error-field="recipientEntries.{{ $index }}.full_name"
                                                            wire:model.blur="recipientEntries.{{ $index }}.full_name"
                                                            class="h-11 w-full rounded-xl border border-amber-200 bg-white px-3 text-sm font-bold text-slate-800 shadow-sm transition placeholder:text-slate-300 focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-400/15"
