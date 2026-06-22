@@ -462,18 +462,19 @@
                                             </div>
 
                                             <div class="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-end">
-                                                <!-- National ID Input -->
+                                                <!-- Recipient Search Input -->
                                                 <div class="md:col-span-12">
-                                                    <label class="mb-1.5 block text-[11px] font-bold text-slate-500 mr-1">کد ملی یا نام</label>
+                                                    <label class="mb-1.5 block text-[11px] font-bold text-slate-500 mr-1">
+                                                        جستجوی گیرنده
+                                                    </label>
                                                     <div class="relative">
                                                         <input
                                                             type="text"
-                                                            maxlength="10"
                                                             wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.national_id"
                                                             wire:focus="setActiveRecipientSearch({{ $index }})"
                                                             @disabled(!$this->selectedService)
                                                             class="w-full rounded-xl border-slate-200 bg-white py-2.5 pl-11 pr-3.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all placeholder:text-slate-400"
-                                                            placeholder="درج و جستجوی مددجو / سرپرست"
+                                                            placeholder="نام یا کد ملی مددجو / سرپرست"
                                                             autocomplete="off"
                                                         >
                                                         <button
@@ -507,6 +508,9 @@
                                                             </div>
                                                         @endif
                                                     </div>
+                                                    <p class="mt-1.5 text-[10px] font-bold leading-5 text-slate-400">
+                                                        برای جستجو می‌توانید نام یا کد ملی را وارد کنید؛ برای ثبت نهایی، انتخاب گیرنده یا کد ملی ۱۰ رقمی الزامی است.
+                                                    </p>
                                                 </div>
 
                                                 <div class="hidden">
