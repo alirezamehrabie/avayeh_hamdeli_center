@@ -380,9 +380,9 @@
                             </div>
                             @if($selectedService)
                                 <button type="button" wire:click="addRecipientField"
-                                        class="hidden shrink-0 items-center gap-1 rounded-xl bg-cyan-600 px-3 py-2 text-xs font-bold text-white shadow-sm shadow-cyan-200 active:scale-95 transition-all md:inline-flex">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
-                                    افزودن
+                                        class="hidden min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-4 text-sm font-black text-cyan-700 shadow-sm shadow-cyan-100/70 transition hover:border-cyan-300 hover:bg-cyan-100 focus:outline-none focus:ring-4 focus:ring-cyan-500/15 active:scale-[0.98] md:inline-flex">
+                                    <i class="bi bi-plus-lg text-base"></i>
+                                    <span>افزودن گیرنده</span>
                                 </button>
                             @endif
                         </div>
@@ -811,9 +811,9 @@
                         </div>
 
                         <button type="button" wire:click="addRecipientField"
-                                class="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-black text-cyan-700 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 md:hidden">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
-                            افزودن گیرنده
+                                class="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-black text-cyan-700 shadow-sm shadow-cyan-100/70 transition hover:border-cyan-300 hover:bg-cyan-100 focus:outline-none focus:ring-4 focus:ring-cyan-500/15 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 md:hidden">
+                            <i class="bi bi-plus-lg text-base"></i>
+                            <span>افزودن گیرنده</span>
                         </button>
 
                         <div
