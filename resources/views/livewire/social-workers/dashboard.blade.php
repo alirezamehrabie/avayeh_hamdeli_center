@@ -419,6 +419,11 @@
                                         $recipientDisplayName = trim((string) ($entry['resolved_name'] ?: $entry['full_name'] ?? ''));
                                         $recipientNationalId = trim((string) ($entry['national_id'] ?? ''));
                                         $isUnregisteredRecipient = (bool) ($entry['is_unregistered'] ?? false);
+                                        $familyMemberCount = $selectedService?->service_type === 'family'
+                                            && array_key_exists('family_members_count', $entry)
+                                            && $entry['family_members_count'] !== null
+                                                ? (int) $entry['family_members_count']
+                                                : null;
                                         $recipientStatus = match (true) {
                                             $recipientDisplayName !== '' && $isUnregisteredRecipient => [
                                                 'label' => 'ثبت دستی',
@@ -472,8 +477,15 @@
                                                     </span>
                                                 </div>
 
-                                                <p class="mt-1 truncate text-xs font-bold text-slate-600">
-                                                    {{ $recipientDisplayName !== '' ? $recipientDisplayName : 'گیرنده هنوز مشخص نشده است' }}
+                                                <p class="mt-2 flex flex-wrap items-center gap-1.5 text-xs font-bold text-slate-600">
+                                                    <span class="truncate">
+                                                        {{ $recipientDisplayName !== '' ? $recipientDisplayName : 'گیرنده هنوز مشخص نشده است' }}
+                                                    </span>
+                                                    @if($familyMemberCount !== null)
+                                                        <span class="shrink-0 text-[10px] font-semibold text-slate-400">
+                                                            خانواده {{ $this->persianNumber($familyMemberCount) }}  نفره
+                                                        </span>
+                                                    @endif
                                                 </p>
 
                                                 @if($recipientNationalId !== '')
