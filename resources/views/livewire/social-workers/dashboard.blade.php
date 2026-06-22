@@ -102,6 +102,9 @@
                                 query: '',
                                 selected: @entangle('selectedServiceId').live,
                                 services: @js($serviceOptions),
+                                get isMobileSheet() {
+                                    return window.matchMedia('(max-width: 639px)').matches;
+                                },
                                 get selectedId() {
                                     return this.selected === null || this.selected === undefined || this.selected === ''
                                         ? ''
@@ -122,26 +125,42 @@
 
                                     return this.services.filter((service) => service.search.includes(value));
                                 },
+                                openSelector() {
+                                    this.open = true;
+                                    this.$nextTick(() => this.$refs.serviceSearch?.focus());
+                                },
+                                closeSelector() {
+                                    this.open = false;
+                                },
+                                toggleSelector() {
+                                    this.open ? this.closeSelector() : this.openSelector();
+                                },
                                 choose(service) {
                                     this.selected = Number(service.id);
                                     this.query = '';
-                                    this.open = false;
+                                    this.closeSelector();
                                 },
                                 clear() {
                                     this.selected = null;
                                     this.query = '';
-                                    this.open = false;
+                                    this.closeSelector();
                                 },
                             }"
+                            x-init="$watch('open', (value) => {
+                                document.documentElement.classList.toggle('overflow-hidden', value && isMobileSheet);
+                            })"
+                            x-on:keydown.escape.window="closeSelector()"
                         >
                             {{-- Trigger Button --}}
                             <button
                                 type="button"
                                 data-service-selector-trigger
-                                @click="open = !open; if (open) { $nextTick(() => $refs.serviceSearch?.focus()) }"
+                                @click="toggleSelector()"
+                                :aria-expanded="open.toString()"
+                                aria-haspopup="dialog"
                                 class="flex w-full items-center justify-between rounded-xl border border-slate-300
                                    bg-white px-3 py-2.5 text-right text-sm text-slate-700 shadow-sm
-                                   transition active:scale-[0.98]"
+                                   transition hover:border-slate-400 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10 active:scale-[0.98]"
                             >
                                 <span class="truncate" x-text="selectedText"></span>
 
@@ -155,21 +174,46 @@
                                 </svg>
                             </button>
 
-                            {{-- Dropdown Panel --}}
                             <div
                                 x-show="open"
-                                x-transition:enter="transition ease-out duration-150"
-                                x-transition:enter-start="opacity-0 -translate-y-2"
+                                x-transition.opacity.duration.150ms
+                                @click="closeSelector()"
+                                class="fixed inset-0 z-40 bg-slate-900/45 backdrop-blur-[2px] sm:hidden"
+                                style="display: none;"
+                                aria-hidden="true"
+                            ></div>
+
+                            {{-- Mobile Bottom Sheet / Desktop Dropdown Panel --}}
+                            <div
+                                x-show="open"
+                                x-transition:enter="transition ease-out duration-200"
+                                x-transition:enter-start="translate-y-full opacity-80 sm:-translate-y-2 sm:opacity-0"
                                 x-transition:enter-end="opacity-100 translate-y-0"
-                                x-transition:leave="transition ease-in duration-100"
+                                x-transition:leave="transition ease-in duration-150"
                                 x-transition:leave-start="opacity-100 translate-y-0"
-                                x-transition:leave-end="opacity-0 -translate-y-2"
-                                @click.outside="open = false"
-                                class="absolute z-50 mt-2 max-h-72 w-full overflow-y-auto overscroll-contain
-                                rounded-2xl border border-slate-200 bg-slate-50 p-1.5 shadow-xl sm:p-2"
+                                x-transition:leave-end="translate-y-full opacity-80 sm:-translate-y-2 sm:opacity-0"
+                                @click.outside="closeSelector()"
+                                class="fixed inset-x-0 bottom-0 z-50 flex max-h-[85svh] flex-col rounded-t-2xl border border-slate-200 bg-slate-50 p-3 shadow-2xl shadow-slate-900/20
+                                sm:absolute sm:inset-auto sm:mt-2 sm:max-h-72 sm:w-full sm:overflow-y-auto sm:overscroll-contain sm:rounded-2xl sm:p-2 sm:shadow-xl"
                                 dir="rtl"
+                                role="dialog"
+                                aria-modal="true"
                                 style="display: none;"
                             >
+                                <div class="mb-3 flex items-center justify-between gap-3 sm:hidden">
+                                    <div class="min-w-0">
+                                        <h3 class="text-sm font-black text-slate-800">انتخاب خدمت</h3>
+                                        <p class="mt-0.5 text-[11px] font-bold text-slate-500">جستجو و انتخاب از فهرست خدمات تخصیص‌داده‌شده</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        @click="closeSelector()"
+                                        class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                                        aria-label="بستن"
+                                    >
+                                        <i class="bi bi-x-lg text-sm"></i>
+                                    </button>
+                                </div>
                                 {{-- Default Option --}}
                                 <div class="sticky top-0 z-10 bg-slate-50 pb-2">
                                     <div class="relative">
@@ -177,7 +221,7 @@
                                             type="search"
                                             x-ref="serviceSearch"
                                             x-model.debounce.100ms="query"
-                                            class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10"
+                                            class="min-h-11 w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10"
                                             placeholder="جستجو بر اساس نام، کد، نوع یا دسته‌بندی"
                                             autocomplete="off"
                                         >
@@ -189,23 +233,17 @@
                                     </div>
                                 </div>
 
-                                <button
-                                    type="button"
-                                    @click="clear()"
-                                    class="flex w-full items-center justify-start rounded-xl px-3 py-2.5 text-right text-xs text-slate-400
-                                    transition hover:bg-white active:bg-slate-100 sm:px-4 sm:py-3 sm:text-sm"
-                                >
-                                    انتخاب خدمت
-                                </button>
-
+                                <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-0.5 sm:overflow-visible sm:pr-0">
                                 {{-- Service Options --}}
                                 <template x-for="service in filteredServices" :key="service.id">
                                     <button
                                         type="button"
                                         @click="choose(service)"
                                         :class="{ 'border-cyan-200 bg-cyan-50/80 shadow-cyan-100/70': selectedId === service.id }"
-                                        class="mb-1.5 flex w-full flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-right shadow-sm shadow-slate-200/70 transition hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100 sm:mb-2 sm:px-4 sm:py-3"
+                                        class="mb-2 flex min-h-[4.75rem] w-full flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-right shadow-sm shadow-slate-200/70 transition hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100 sm:mb-2 sm:min-h-0 sm:px-4 sm:py-3"
                                         dir="rtl"
+                                        role="option"
+                                        :aria-selected="(selectedId === service.id).toString()"
                                     >
                                         <div class="flex items-start justify-between gap-3">
                                             <div class="min-w-0 flex-1">
@@ -214,7 +252,7 @@
                                                     <span class="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 sm:px-2"
                                                           x-text="service.type"></span>
                                                 </div>
-                                                <p class="mt-1 truncate text-[13px] font-extrabold text-slate-800 sm:text-sm"
+                                                <p class="mt-1 line-clamp-2 text-[13px] font-extrabold leading-5 text-slate-800 sm:truncate sm:text-sm"
                                                    x-text="service.name"></p>
                                             </div>
 
@@ -225,7 +263,7 @@
                                             </span>
                                         </div>
 
-                                        <p class="truncate text-[11px] leading-4 text-slate-500"
+                                        <p class="line-clamp-2 text-[11px] leading-4 text-slate-500 sm:truncate"
                                            x-text="service.categorySummary || 'دسته‌بندی برای این خدمت ثبت نشده است.'">
                                         </p>
                                     </button>
@@ -238,6 +276,7 @@
                                 >
                                     خدمتی با این جستجو پیدا نشد.
                                 </div>
+                            </div>
                             </div>
                         </div>
 
