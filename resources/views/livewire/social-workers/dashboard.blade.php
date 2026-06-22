@@ -42,9 +42,6 @@
             <div class="flex items-center justify-between gap-3">
                 <div class="min-w-0">
                     <h1 class="text-lg font-black text-slate-900 sm:text-2xl">ثبت تحویل خدمت</h1>
-                    <p class="mt-0.5 max-w-3xl truncate text-[11px] font-medium leading-5 text-slate-500 sm:text-xs">
-                        تحویل خدمات توسط مددکاران
-                    </p>
                 </div>
             </div>
         </div>
@@ -90,7 +87,6 @@
                             <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-600 text-sm font-black text-white">۱</span>
                             <div class="min-w-0">
                                 <h2 class="text-sm font-black text-slate-900">انتخاب خدمت</h2>
-                                <p class="mt-0.5 text-xs font-bold leading-5 text-slate-500">ابتدا خدمت را انتخاب کنید تا سهمیه، گیرندگان و مقدارهای قابل تحویل مشخص شود.</p>
                             </div>
                         </div>
 
@@ -274,7 +270,6 @@
                                 <div class="mb-3 flex items-center justify-between gap-3 sm:hidden">
                                     <div class="min-w-0">
                                         <h3 class="text-sm font-black text-slate-800">انتخاب خدمت</h3>
-                                        <p class="mt-0.5 text-[11px] font-bold text-slate-500">جستجو و انتخاب از فهرست خدمات تخصیص‌داده‌شده</p>
                                     </div>
                                     <button
                                         type="button"
@@ -376,7 +371,6 @@
                                 </span>
                                 <div class="min-w-0">
                                     <h2 class="text-sm font-black text-slate-800">سهمیه خدمت</h2>
-                                    <p class="mt-0.5 text-[11px] font-bold leading-5 text-slate-500">کنترل موجودی و سهمیه قابل تحویل.</p>
                                 </div>
                             </div>
                             @if($selectedService)
@@ -495,7 +489,7 @@
                                             برای این خدمت سهمیه قابل تحویل ثبت نشده است.
                                         </p>
                                         <p class="mt-1 text-xs leading-5 text-slate-500">
-                                            ابتدا باید سهمیه‌ای برای این خدمت تعریف شود تا مقدارهای تخصیص و تحویل نمایش داده شوند.
+                                            سهمیه‌ای ثبت نشده است.
                                         </p>
                                     </div>
                                 @endforelse
@@ -504,7 +498,7 @@
 
 
                         @else
-                            <p class="mt-2.5 text-xs leading-5 text-slate-400">یک خدمت انتخاب کنید تا سهمیه، مقدار تحویل‌شده و باقی‌مانده نمایش داده شود.</p>
+                            <p class="mt-2.5 text-xs leading-5 text-slate-400">ابتدا خدمت را انتخاب کنید.</p>
                         @endif
 
                     </section>
@@ -531,13 +525,6 @@
                                 @endphp
 
                                 <h2 class="text-base font-extrabold text-slate-800 md:text-lg">{{ $recipientSectionTitle }}</h2>
-                                <p class="mt-0.5 text-[11px] leading-relaxed text-slate-500 md:text-xs">
-                                    @if($selectedService)
-                                        کد ملی را وارد کرده و مقدار را مشخص کنید.
-                                    @else
-                                        پس از انتخاب خدمت، ثبت گیرندگان و مقادیر فعال می‌شود.
-                                    @endif
-                                </p>
                                 </div>
                             </div>
                             @if($selectedService)
@@ -555,9 +542,6 @@
                                     <i class="bi bi-list-check text-lg"></i>
                                 </div>
                                 <h3 class="mt-3 text-sm font-extrabold text-slate-800">ابتدا خدمت را انتخاب کنید</h3>
-                                <p class="mx-auto mt-1 max-w-md text-xs leading-6 text-slate-500">
-                                    نوع گیرنده، دسته‌بندی‌ها و سهمیه قابل تحویل بر اساس خدمت انتخاب‌شده مشخص می‌شود.
-                                </p>
                                 <button
                                     type="button"
                                     wire:click="requireServiceSelection"
@@ -666,17 +650,17 @@
                                                 </div>
                                             </div>
 
-                                            <div class="flex flex-col gap-2 md:w-80">
-                                                <div class="grid grid-cols-2 overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
-                                                    <div class="border-l border-slate-200 px-3 py-2">
-                                                        <span class="block text-[10px] font-bold text-slate-400">دسته‌ها</span>
-                                                        <span class="mt-0.5 block text-sm font-black text-slate-800">
-                                                            {{ $this->persianNumber($rowEnteredCategoryCountForHeader) }}
-                                                        </span>
+                                            <div class="flex flex-col gap-2 md:w-72">
+                                                <div class="flex min-h-9 items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5">
+                                                    <div class="inline-flex min-w-0 items-center gap-1.5">
+                                                        <i class="bi bi-tags text-xs text-slate-400"></i>
+                                                        <span class="text-[10px] font-bold text-slate-400">دسته</span>
+                                                        <span class="text-xs font-black text-slate-800">{{ $this->persianNumber($rowEnteredCategoryCountForHeader) }}</span>
                                                     </div>
-                                                    <div class="px-3 py-2">
-                                                        <span class="block text-[10px] font-bold text-slate-400">جمع مقدار</span>
-                                                        <span class="mt-0.5 block truncate text-sm font-black text-slate-800">
+                                                    <div class="inline-flex min-w-0 items-center gap-1.5 border-r border-slate-200 pr-2">
+                                                        <i class="bi bi-calculator text-xs text-slate-400"></i>
+                                                        <span class="text-[10px] font-bold text-slate-400">جمع</span>
+                                                        <span class="max-w-24 truncate text-xs font-black text-slate-800">
                                                             {{ $this->persianNumber(number_format($rowTotalQuantityForHeader, 2)) }}
                                                         </span>
                                                     </div>
@@ -931,9 +915,6 @@
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <p class="mt-1.5 text-[10px] font-bold leading-5 text-slate-400">
-                                                        برای جستجو می‌توانید نام یا کد ملی را وارد کنید؛ برای ثبت نهایی، انتخاب گیرنده یا کد ملی ۱۰ رقمی الزامی است.
-                                                    </p>
                                                 </div>
 
                                                 <div class="hidden">
@@ -990,9 +971,6 @@
                                                             <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-600 text-[11px] font-black text-white">۲</span>
                                                             <div class="min-w-0">
                                                                 <h3 class="truncate text-xs font-extrabold text-slate-700">دسته‌بندی و مقدار</h3>
-                                                                <p class="mt-0.5 text-[10px] font-bold text-slate-400">
-                                                                    {{ $enteredCategoryCount > 0 ? $this->persianNumber($enteredCategoryCount) . ' دسته انتخاب شده' : 'مقادیر قابل تحویل را وارد کنید' }}
-                                                                </p>
                                                             </div>
                                                         </div>
 
@@ -1007,10 +985,6 @@
                                                     </summary>
 
                                                     <div class="mt-2">
-                                                        <p class="mb-2 block text-[11px] font-bold text-slate-500">
-                                                            فقط دسته‌بندی‌های قابل تحویل نمایش داده می‌شوند؛ برای هر مورد مقدار همان دسته را وارد کنید.
-                                                        </p>
-
                                                         <div class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
                                                             @forelse($visibleCategories as $category)
                                                                 @php
@@ -1061,7 +1035,7 @@
 
                                                         @if($hiddenUnavailableCount > 0)
                                                             <p class="mt-2 text-[10px] font-bold text-slate-400">
-                                                                {{ $this->persianNumber($hiddenUnavailableCount) }} دسته‌بندی بدون موجودی از این فهرست پنهان شده است.
+                                                                {{ $this->persianNumber($hiddenUnavailableCount) }} دسته ناموجود پنهان شد.
                                                             </p>
                                                         @endif
 
@@ -1092,8 +1066,7 @@
                                                         </span>
                                                     </div>
                                                     <p class="mt-1 text-[11px] font-bold leading-5 text-amber-800">
-                                                        {{ $entry['not_found_notice'] ?: 'این فرد در پرونده‌های شما یافت نشد.' }}
-                                                        ثبت این ردیف به صورت دستی انجام می‌شود؛ نام کامل را با دقت وارد کنید.
+                                                        {{ $entry['not_found_notice'] ?: 'در پرونده‌ها یافت نشد.' }}
                                                     </p>
                                                 </div>
                                             </div>
@@ -1478,7 +1451,6 @@
                             <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl {{ $selectedService ? 'bg-cyan-600 text-white' : 'bg-slate-100 text-slate-400' }} text-xs font-black">۳</span>
                             <div class="min-w-0">
                                 <h2 class="text-sm font-black text-slate-900">جزئیات تحویل</h2>
-                                <p class="mt-0.5 text-[11px] font-bold leading-5 text-slate-500">تاریخ پیش‌فرض امروز است؛ در صورت نیاز تغییر دهید.</p>
                             </div>
                         </div>
                         @if(!$selectedService)
@@ -1487,9 +1459,6 @@
                                     <i class="bi bi-calendar2-check text-lg"></i>
                                 </div>
                                 <h3 class="mt-3 text-sm font-extrabold text-slate-800">جزئیات تحویل پس از انتخاب خدمت فعال می‌شود</h3>
-                                <p class="mx-auto mt-1 max-w-md text-xs leading-6 text-slate-500">
-                                    تاریخ و یادداشت تحویل به همان خدمت انتخاب‌شده متصل می‌شود.
-                                </p>
                                 <button
                                     type="button"
                                     wire:click="requireServiceSelection"
@@ -1534,7 +1503,6 @@
                                             <i class="bi bi-calendar2-event text-sm"></i>
                                         </span>
                                     </div>
-                                    <p class="mt-1 text-[10px] font-bold leading-4 text-slate-400">برای تغییر تاریخ، تقویم را باز و تأیید کنید.</p>
                                     @error('deliveredAt') <p class="mt-1 rounded-lg bg-rose-50 px-2 py-1 text-xs font-bold text-rose-700">{{ $message }}</p> @enderror
                                 </div>
                                 <div>
@@ -1637,10 +1605,10 @@
                             @if($manualRecipientCount > 0 || $unresolvedRecipientCount > 0)
                                 <div class="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-bold leading-5 text-amber-800">
                                     @if($manualRecipientCount > 0)
-                                        <p>{{ $this->persianNumber($manualRecipientCount) }} گیرنده به صورت دستی ثبت می‌شود.</p>
+                                        <p>{{ $this->persianNumber($manualRecipientCount) }} ثبت دستی</p>
                                     @endif
                                     @if($unresolvedRecipientCount > 0)
-                                        <p>{{ $this->persianNumber($unresolvedRecipientCount) }} گیرنده هنوز از فهرست انتخاب یا شناسایی نشده است.</p>
+                                        <p>{{ $this->persianNumber($unresolvedRecipientCount) }} گیرنده شناسایی‌نشده</p>
                                     @endif
                                 </div>
                             @endif
