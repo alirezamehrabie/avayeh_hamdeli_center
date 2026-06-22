@@ -74,6 +74,9 @@
                         <p class="text-xs font-semibold text-slate-500">سهمیه باقی‌مانده این خدمت</p>
                         <p class="mt-1 text-2xl font-extrabold" :class="typeClasses(modal.type).accent" dir="ltr" x-text="modal.meta.remaining_quota || '0'"></p>
                     </div>
+                    <template x-if="modal.meta.next_action_hint">
+                        <p class="mt-3 rounded-2xl bg-white/70 px-3 py-2 text-xs font-bold leading-5 text-slate-600" x-text="modal.meta.next_action_hint"></p>
+                    </template>
                 </div>
             </template>
 

@@ -519,12 +519,19 @@ class Dashboard extends Component
             'type' => 'success',
             'template' => 'service-delivery-success',
             'title' => 'ثبت موفق تحویل',
-            'message' => 'تحویل خدمت با موفقیت ثبت شد.',
-            'buttons' => [[
-                'label' => 'متوجه شدم',
-                'action' => 'close',
-                'variant' => 'success',
-            ]],
+            'message' => 'تحویل ثبت شد و فرم برای ثبت تحویل بعدی همین خدمت آماده است.',
+            'buttons' => [
+                [
+                    'label' => 'ثبت تحویل جدید برای همین خدمت',
+                    'action' => 'close',
+                    'variant' => 'success',
+                ],
+                [
+                    'label' => 'مشاهده سوابق',
+                    'href' => route('social-worker.delivery-history'),
+                    'variant' => 'secondary',
+                ],
+            ],
             'meta' => [
                 'service_name' => $freshService?->serviceName?->name ?? '',
                 'code' => $freshService?->code ?? '',
@@ -534,6 +541,7 @@ class Dashboard extends Component
                         : 0,
                     2
                 ),
+                'next_action_hint' => 'برای ادامه، گیرنده بعدی را وارد کنید یا سوابق ثبت‌شده را بررسی کنید.',
             ],
         ]);
         $this->recipientEntries = [$this->blankEntry($this->defaultServiceCategoryId($freshService))];
