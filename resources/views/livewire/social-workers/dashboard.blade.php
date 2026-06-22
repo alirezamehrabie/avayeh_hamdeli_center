@@ -38,26 +38,61 @@
         })
      ">
     <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div class="border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="border-b border-slate-200 bg-white px-4 py-3 sm:px-6 sm:py-4">
+            <div class="flex items-center justify-between gap-3">
                 <div class="min-w-0">
-                    <h1 class="text-xl font-black text-slate-900 sm:text-2xl">ثبت تحویل خدمت</h1>
-                    <p class="mt-1 max-w-3xl text-xs font-medium leading-5 text-slate-500">
-                تحویل خدمات توسط مددکاران
+                    <h1 class="text-lg font-black text-slate-900 sm:text-2xl">ثبت تحویل خدمت</h1>
+                    <p class="mt-0.5 max-w-3xl truncate text-[11px] font-medium leading-5 text-slate-500 sm:text-xs">
+                        تحویل خدمات توسط مددکاران
                     </p>
                 </div>
-                <span class="inline-flex w-fit items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">
-                    <i class="bi bi-clipboard2-check text-sm text-cyan-600"></i>
-                    جریان ثبت تحویل
-                </span>
             </div>
         </div>
 
-        <div class="px-3 py-6">
+        <div class="px-3 py-4 sm:px-4 sm:py-6">
             <form wire:submit.prevent="saveDelivery"
-                  class="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(300px,0.85fr)]">
-                <div class="space-y-4">
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
+                  class="space-y-5">
+                @php
+                    $workflowHasRecipients = $selectedService
+                        && collect($recipientEntries)->contains(fn ($entry) => filled($entry['national_id'] ?? '') || filled($entry['resolved_name'] ?? '') || filled($entry['full_name'] ?? '') || collect($entry['category_quantities'] ?? [])->contains(fn ($quantity) => (float) $quantity > 0));
+                    $workflowHasQuantities = $selectedService
+                        && collect($recipientEntries)->contains(fn ($entry) => collect($entry['category_quantities'] ?? [])->contains(fn ($quantity) => (float) $quantity > 0));
+                    $workflowSteps = [
+                        ['number' => '۱', 'label' => 'انتخاب خدمت', 'short' => 'خدمت', 'active' => true, 'done' => (bool) $selectedService],
+                        ['number' => '۲', 'label' => 'گیرندگان و مقدار', 'short' => 'گیرندگان', 'active' => (bool) $selectedService, 'done' => (bool) $workflowHasRecipients && (bool) $workflowHasQuantities],
+                        ['number' => '۳', 'label' => 'جزئیات تحویل', 'short' => 'جزئیات', 'active' => (bool) $selectedService, 'done' => (bool) $selectedService && filled($deliveredAt)],
+                        ['number' => '۴', 'label' => 'مرور و ثبت', 'short' => 'ثبت', 'active' => (bool) $selectedService, 'done' => false],
+                    ];
+                @endphp
+
+                <nav class="rounded-xl border border-slate-200 bg-slate-50/80 px-2 py-1.5" aria-label="مراحل ثبت تحویل">
+                    <ol class="grid grid-cols-4 gap-1.5">
+                        @foreach($workflowSteps as $step)
+                            <li class="flex min-w-0 items-center justify-center gap-1 rounded-lg px-1 py-1 text-[9px] font-black transition sm:justify-start sm:px-2 sm:text-[10px] {{ $step['done'] ? 'bg-emerald-50 text-emerald-700' : ($step['active'] ? 'bg-white text-slate-800 shadow-sm ring-1 ring-cyan-100' : 'text-slate-400') }}">
+                                <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[9px] sm:text-[10px] {{ $step['done'] ? 'bg-emerald-600 text-white' : ($step['active'] ? 'bg-cyan-600 text-white' : 'bg-white text-slate-400 ring-1 ring-slate-200') }}">
+                                    @if($step['done'])
+                                        <i class="bi bi-check2 text-xs"></i>
+                                    @else
+                                        {{ $step['number'] }}
+                                    @endif
+                                </span>
+                                <span class="min-w-0 truncate leading-4 sm:hidden">{{ $step['short'] }}</span>
+                                <span class="hidden min-w-0 truncate sm:inline">{{ $step['label'] }}</span>
+                            </li>
+                        @endforeach
+                    </ol>
+                </nav>
+
+                <div class="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] xl:items-start">
+                    <div class="space-y-5">
+                    <section class="rounded-2xl border border-cyan-100 bg-white p-3 shadow-sm shadow-slate-100 sm:p-4">
+                        <div class="mb-3 flex items-start gap-3">
+                            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-600 text-sm font-black text-white">۱</span>
+                            <div class="min-w-0">
+                                <h2 class="text-sm font-black text-slate-900">انتخاب خدمت</h2>
+                                <p class="mt-0.5 text-xs font-bold leading-5 text-slate-500">ابتدا خدمت را انتخاب کنید تا سهمیه، گیرندگان و مقدارهای قابل تحویل مشخص شود.</p>
+                            </div>
+                        </div>
 
                         <label class="mb-2 block text-xs font-bold text-slate-600">
                             خدمت
@@ -330,12 +365,20 @@
                         </p>
                         @enderror
 
-                    </div>
+                    </section>
 
-                    <section class="border-t border-slate-100 pt-4">
+                    <section class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-100 sm:p-4">
 
-                        <div class="flex items-center justify-between gap-3">
-                            <h2 class="text-sm font-black text-slate-800">سهمیه خدمت</h2>
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex min-w-0 items-start gap-3">
+                                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-sm font-black text-slate-600">
+                                    <i class="bi bi-box-seam"></i>
+                                </span>
+                                <div class="min-w-0">
+                                    <h2 class="text-sm font-black text-slate-800">سهمیه خدمت</h2>
+                                    <p class="mt-0.5 text-[11px] font-bold leading-5 text-slate-500">کنترل موجودی و سهمیه قابل تحویل.</p>
+                                </div>
+                            </div>
                             @if($selectedService)
                                 <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-black text-slate-500 shadow-sm">
                                     {{ $this->selectedServiceTypeLabel }}
@@ -364,7 +407,7 @@
                                 $serviceCategories = $selectedService->categories?->sortBy('sort_id') ?? collect();
                             @endphp
 
-                            <div class="mt-3 grid gap-2.5 sm:grid-cols-2">
+                            <div class="mt-2.5 grid gap-2 sm:grid-cols-2">
                                 @forelse($serviceCategories as $category)
                                         @php
                                             $metrics = $categoryMetrics[$category->id] ?? [
@@ -402,58 +445,45 @@
                                             $unitLabel = \App\Models\Service::unitOptions()[$category->unit] ?? $category->unit;
                                         @endphp
 
-                                    <div class="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm shadow-slate-100/70">
-                                        <div class="flex items-start justify-between gap-2.5">
+                                    <div class="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm shadow-slate-100/60">
+                                        <div class="flex items-start justify-between gap-2">
                                             <div class="min-w-0">
-                                                <p class="truncate text-sm font-black text-slate-800">
+                                                <p class="truncate text-sm font-black leading-5 text-slate-800">
                                                     {{ $category->name }}
                                                 </p>
-                                                <p class="mt-0.5 text-[11px] font-bold text-slate-500">
+                                                <p class="mt-0.5 text-[10px] font-bold leading-4 text-slate-400">
                                                     {{ $unitLabel }}
                                                 </p>
                                             </div>
 
-                                            <span class="inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-black {{ $quotaState['badge'] }}">
+                                            <span class="inline-flex shrink-0 items-center rounded-lg border px-2 py-0.5 text-[9px] font-black leading-4 {{ $quotaState['badge'] }}">
                                                 {{ $quotaState['label'] }}
                                             </span>
                                         </div>
 
-                                        <div class="mt-2 flex items-baseline justify-between gap-3">
+                                        <div class="mt-1.5 flex items-end justify-between gap-3">
                                             <div class="min-w-0">
-                                                <p class="text-[10px] font-bold text-slate-500">باقی‌مانده</p>
-                                                <p class="text-base font-black leading-6 {{ $quotaState['value'] }} sm:text-lg">
+                                                <span class="block text-[9px] font-bold leading-4 text-slate-400">باقی‌مانده</span>
+                                                <span class="block truncate text-base font-black leading-6 {{ $quotaState['value'] }}">
                                                     {{ $this->persianNumber(number_format($remaining, 2)) }}
-                                                    <span class="text-xs font-bold text-slate-500">{{ $unitLabel }}</span>
-                                                </p>
+                                                    <span class="text-[10px] font-bold text-slate-400">{{ $unitLabel }}</span>
+                                                </span>
                                             </div>
 
-                                            <p class="shrink-0 text-right text-[11px] font-bold text-slate-500">
-                                                تحویل‌شده
-                                                <span class="block text-xs font-black text-slate-700">
-                                                    {{ $this->persianNumber(number_format($delivered, 2)) }}
-                                                </span>
-                                            </p>
+                                            <div class="shrink-0 text-left text-[10px] font-bold leading-4 text-slate-500">
+                                                <span class="block">تحویل {{ $this->persianNumber(number_format($delivered, 2)) }}</span>
+                                                <span class="block text-slate-400">از {{ $this->persianNumber(number_format($allocated, 2)) }}</span>
+                                            </div>
                                         </div>
 
-                                        <div class="mt-2">
-                                            <div class="flex items-center justify-between gap-2 text-[10px] font-bold text-slate-500">
-                                                <span>سهمیه</span>
-                                                <span dir="ltr">{{ $this->persianNumber(number_format($progress, 0)) }}%</span>
-                                            </div>
-                                            <div class="mt-1 h-1.5 rounded-full {{ $quotaState['track'] }}">
+                                        <div class="mt-2 flex items-center gap-2">
+                                            <div class="h-1.5 min-w-0 flex-1 rounded-full {{ $quotaState['track'] }}">
                                                 <div
                                                     class="h-1.5 rounded-full {{ $quotaState['fill'] }}"
                                                     style="width: {{ $progress }}%"
                                                 ></div>
                                             </div>
-                                            <div class="mt-1.5 flex items-center justify-between gap-3 text-[10px] font-bold text-slate-500">
-                                                <span>
-                                                    تخصیص: {{ $this->persianNumber(number_format($allocated, 2)) }} {{ $unitLabel }}
-                                                </span>
-                                                <span>
-                                                    تحویل: {{ $this->persianNumber(number_format($delivered, 2)) }} {{ $unitLabel }}
-                                                </span>
-                                            </div>
+                                            <span class="shrink-0 text-[9px] font-black text-slate-400" dir="ltr">{{ $this->persianNumber(number_format($progress, 0)) }}%</span>
                                         </div>
                                     </div>
                                 @empty
@@ -486,10 +516,12 @@
                     @endif
 
 
-                    <section class="border-t border-slate-100 pt-4">
+                    <section class="rounded-2xl border border-cyan-100 bg-white p-3 shadow-sm shadow-slate-100 sm:p-4">
                         <!-- Header Section -->
                         <div class="mb-5 flex items-center justify-between gap-4">
-                            <div>
+                            <div class="flex min-w-0 items-start gap-3">
+                                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl {{ $selectedService ? 'bg-cyan-600 text-white' : 'bg-slate-100 text-slate-400' }} text-sm font-black">۲</span>
+                                <div class="min-w-0">
                                 @php
                                     $recipientSectionTitle = match ($selectedService?->service_type) {
                                         'family' => 'خانواده‌های دریافت‌کننده خدمت',
@@ -506,6 +538,7 @@
                                         پس از انتخاب خدمت، ثبت گیرندگان و مقادیر فعال می‌شود.
                                     @endif
                                 </p>
+                                </div>
                             </div>
                             @if($selectedService)
                                 <button type="button" wire:click="addRecipientField"
@@ -1440,7 +1473,14 @@
                     </section>
 
 
-                    <section class="border-t border-slate-100 pt-4">
+                    <section class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-100 sm:p-4">
+                        <div class="mb-4 flex items-start gap-3">
+                            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl {{ $selectedService ? 'bg-cyan-600 text-white' : 'bg-slate-100 text-slate-400' }} text-sm font-black">۳</span>
+                            <div class="min-w-0">
+                                <h2 class="text-sm font-black text-slate-900">جزئیات تحویل</h2>
+                                <p class="mt-0.5 text-xs font-bold leading-5 text-slate-500">تاریخ و یادداشت این تحویل را ثبت کنید.</p>
+                            </div>
+                        </div>
                         @if(!$selectedService)
                             <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-center">
                                 <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-slate-500 shadow-sm">
@@ -1485,7 +1525,9 @@
                         @endif
                     </section>
 
-                <div class="space-y-4">
+                    </div>
+
+                    <aside class="space-y-4 xl:sticky xl:top-4">
                     @if($selectedService)
                         @php
                             $filledRecipientCount = collect($recipientEntries)
@@ -1513,15 +1555,18 @@
                             $totalCategoryCount = $categoryReviewTotals->count();
                         @endphp
 
-                        <div class="border-t border-slate-100 pt-4">
+                        <section class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-100 sm:p-4">
                             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                                <div class="min-w-0">
+                                <div class="flex min-w-0 items-start gap-3">
+                                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-600 text-sm font-black text-white">۴</span>
+                                    <div class="min-w-0">
                                     <h2 class="text-sm font-black text-slate-800">مرور نهایی تحویل</h2>
                                     <p class="mt-1 truncate text-xs font-bold text-slate-500">
                                         {{ $selectedService->serviceName?->name }}
                                         <span class="text-slate-300">|</span>
                                         {{ $this->persianNumber($selectedService->code) }}
                                     </p>
+                                    </div>
                                 </div>
                                 <span class="inline-flex w-fit items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black text-slate-600">
                                     تاریخ: {{ $deliveredAt !== '' ? $this->persianNumber($deliveredAt) : '-' }}
@@ -1576,7 +1621,7 @@
                                     @endif
                                 </div>
                             @endif
-                        </div>
+                        </section>
                     @endif
 
                     {{-- Submit Button --}}
@@ -1594,7 +1639,7 @@
                             در حال ثبت تحویل...
                         </span>
                     </button>
-                </div>
+                    </aside>
                 </div>
             </form>
         </div>
