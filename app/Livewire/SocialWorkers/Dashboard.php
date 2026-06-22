@@ -365,7 +365,10 @@ class Dashboard extends Component
         try {
             $validated = $this->validate($this->rules(), [], $this->validationAttributes());
         } catch (ValidationException $exception) {
-            $this->showValidationErrorModal($exception->validator->errors()->all());
+            $this->showValidationErrorModal(
+                $exception->validator->errors()->all(),
+                (string) $exception->validator->errors()->keys()[0]
+            );
 
             throw $exception;
         }
@@ -377,7 +380,10 @@ class Dashboard extends Component
             $deliveryEntries = $this->normalizedDeliveryEntries($validated['recipientEntries']);
             $this->validateNoDuplicateRecipientCategoryRows($deliveryEntries);
         } catch (ValidationException $exception) {
-            $this->showValidationErrorModal($exception->validator->errors()->all());
+            $this->showValidationErrorModal(
+                $exception->validator->errors()->all(),
+                (string) $exception->validator->errors()->keys()[0]
+            );
 
             throw $exception;
         }
@@ -499,7 +505,10 @@ class Dashboard extends Component
                 }
             });
         } catch (ValidationException $exception) {
-            $this->showValidationErrorModal($exception->validator->errors()->all());
+            $this->showValidationErrorModal(
+                $exception->validator->errors()->all(),
+                (string) $exception->validator->errors()->keys()[0]
+            );
 
             throw $exception;
         }
@@ -704,7 +713,7 @@ class Dashboard extends Component
         ]);
     }
 
-    protected function showValidationErrorModal(array $errors): void
+    protected function showValidationErrorModal(array $errors, ?string $firstErrorKey = null): void
     {
         $messages = collect($errors)
             ->filter(fn ($message) => filled($message))
@@ -727,6 +736,8 @@ class Dashboard extends Component
                 'variant' => 'danger',
             ]],
         ]);
+
+        $this->dispatch('social-worker-delivery-validation-failed', field: $firstErrorKey);
     }
 
     protected function rules(): array

@@ -1,4 +1,25 @@
-<div class="space-y-6">
+<div class="space-y-6"
+     x-data
+     x-on:social-worker-delivery-validation-failed.window="
+        $nextTick(() => {
+            const field = $event.detail?.field;
+            const selector = field ? `[data-error-field='${field}']` : null;
+            const target = selector ? document.querySelector(selector) : document.querySelector('[data-error-field]');
+            const fallback = document.querySelector('.ring-rose-100');
+            const element = target || fallback;
+
+            if (!element) {
+                return;
+            }
+
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            window.setTimeout(() => {
+                if (typeof element.focus === 'function' && !element.disabled) {
+                    element.focus({ preventScroll: true });
+                }
+            }, 350);
+        })
+     ">
     <div class="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
         <div class="bg-gradient-to-l from-sky-700  to-indigo-600 px-6 py-4 text-white">
             <h1 class="text-2xl font-extrabold">ثبت تحویل خدمت</h1>
@@ -403,6 +424,12 @@
                                                 'class' => 'border-slate-200 bg-slate-50 text-slate-500',
                                             ],
                                         };
+                                        $rowErrorPrefix = 'recipientEntries.' . $index . '.';
+                                        $rowErrors = collect($errors->getMessages())
+                                            ->filter(fn ($messages, $key) => $key === 'recipientEntries' || str_starts_with($key, $rowErrorPrefix))
+                                            ->flatMap(fn ($messages) => $messages)
+                                            ->values();
+                                        $hasRowErrors = $rowErrors->isNotEmpty();
                                     @endphp
 
                                     <!-- Remove Button (Top Left for Mobile) -->
@@ -414,13 +441,19 @@
                                         </button>
                                     @endif
 
-                                    <div class="mb-3 rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-sm md:mb-4 md:me-9">
+                                    <div class="mb-3 rounded-2xl border bg-white px-3 py-3 shadow-sm md:mb-4 md:me-9 {{ $hasRowErrors ? 'border-rose-300 ring-4 ring-rose-100' : 'border-slate-200' }}">
                                         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                             <div class="min-w-0">
                                                 <div class="flex flex-wrap items-center gap-2">
                                                     <h3 class="text-sm font-black text-slate-800">
                                                         گیرنده {{ $this->persianNumber($index + 1) }}
                                                     </h3>
+                                                    @if($hasRowErrors)
+                                                        <span class="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[10px] font-black text-rose-700">
+                                                            <i class="bi bi-exclamation-circle text-xs"></i>
+                                                            نیاز به اصلاح
+                                                        </span>
+                                                    @endif
                                                     <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-black {{ $recipientStatus['class'] }}">
                                                         {{ $recipientStatus['label'] }}
                                                     </span>
@@ -452,6 +485,22 @@
                                                 </div>
                                             </div>
                                         </div>
+
+                                        @if($hasRowErrors)
+                                            <div class="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-rose-700">
+                                                <div class="flex items-start gap-2">
+                                                    <i class="bi bi-exclamation-triangle mt-0.5 shrink-0 text-sm"></i>
+                                                    <div class="min-w-0 flex-1">
+                                                        <p class="text-xs font-black">این ردیف نیاز به اصلاح دارد</p>
+                                                        <ul class="mt-1 space-y-1 text-[11px] font-bold leading-5">
+                                                            @foreach($rowErrors->take(3) as $rowError)
+                                                                <li>{{ $rowError }}</li>
+                                                            @endforeach
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endif
                                     </div>
 
                                     <div class="space-y-3 md:space-y-4">
@@ -470,6 +519,7 @@
                                                     <div class="relative">
                                                         <input
                                                             type="text"
+                                                            data-error-field="recipientEntries.{{ $index }}.national_id"
                                                             wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.national_id"
                                                             wire:focus="setActiveRecipientSearch({{ $index }})"
                                                             @disabled(!$this->selectedService)
@@ -537,7 +587,7 @@
                                                         @error('recipientEntries.' . $index . '.qr_token') <p class="mt-1 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror
                                                     </div>
                                                 </div>
-                                                @error('recipientEntries.' . $index . '.qr_token') <p class="md:col-span-12 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror
+                                                @error('recipientEntries.' . $index . '.qr_token') <p class="md:col-span-12 rounded-lg bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{{ $message }}</p> @enderror
                                             </div>
                                         </div>
 
@@ -618,6 +668,7 @@
                                                                         <label class="sr-only" for="recipient-{{ $index }}-category-{{ $category->id }}">مقدار تحویلی {{ $category->name }}</label>
                                                                         <input id="recipient-{{ $index }}-category-{{ $category->id }}"
                                                                                type="number"
+                                                                               data-error-field="recipientEntries.{{ $index }}.category_quantities.{{ $category->id }}"
                                                                                min="0.01"
                                                                                step="0.01"
                                                                                inputmode="decimal"
@@ -625,7 +676,7 @@
                                                                                @disabled(!$this->selectedService || ($isUnavailable && $currentQuantity <= 0))
                                                                                class="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-2.5 text-center text-sm font-black text-slate-800 transition placeholder:text-slate-300 focus:border-cyan-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-500/10 disabled:cursor-not-allowed disabled:opacity-60"
                                                                                placeholder="0">
-                                                                        @error('recipientEntries.' . $index . '.category_quantities.' . $category->id) <p class="mt-1 text-[10px] font-bold text-rose-500">{{ $message }}</p> @enderror
+                                                                        @error('recipientEntries.' . $index . '.category_quantities.' . $category->id) <p class="mt-1 rounded-lg bg-rose-50 px-2 py-1.5 text-[11px] font-bold text-rose-700">{{ $message }}</p> @enderror
                                                                     </div>
                                                                 </div>
                                                             @empty
@@ -641,7 +692,7 @@
                                                             </p>
                                                         @endif
 
-                                                        @error('recipientEntries.' . $index . '.service_category_id') <p class="mt-1 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror
+                                                        @error('recipientEntries.' . $index . '.service_category_id') <p class="mt-2 rounded-lg bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{{ $message }}</p> @enderror
                                                     </div>
                                                 </details>
                                             </div>
@@ -649,9 +700,9 @@
                                     </div>
 
                                     <!-- Errors -->
-                                    @error('recipientEntries.' . $index . '.national_id') <p class="mt-1 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror
-                                    @error('recipientEntries.' . $index . '.quantity') <p class="mt-1 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror
-                                    @error('recipientEntries') <p class="mt-1 text-[10px] font-bold text-rose-500 mr-1">{{ $message }}</p> @enderror
+                                    @error('recipientEntries.' . $index . '.national_id') <p class="mt-2 rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{{ $message }}</p> @enderror
+                                    @error('recipientEntries.' . $index . '.quantity') <p class="mt-2 rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{{ $message }}</p> @enderror
+                                    @error('recipientEntries') <p class="mt-2 rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{{ $message }}</p> @enderror
 
                                     <!-- Unregistered User Fields -->
                                     @if($entry['is_unregistered'] ?? false)
@@ -681,10 +732,11 @@
                                                         <span class="text-rose-600">*</span>
                                                     </label>
                                                     <input type="text"
+                                                           data-error-field="recipientEntries.{{ $index }}.full_name"
                                                            wire:model.blur="recipientEntries.{{ $index }}.full_name"
                                                            class="h-11 w-full rounded-xl border border-amber-200 bg-white px-3 text-sm font-bold text-slate-800 shadow-sm transition placeholder:text-slate-300 focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-400/15"
                                                            placeholder="نام و نام خانوادگی">
-                                                    @error('recipientEntries.' . $index . '.full_name') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                                    @error('recipientEntries.' . $index . '.full_name') <p class="mt-1 rounded-lg bg-rose-50 px-2 py-1.5 text-[11px] font-bold text-rose-700">{{ $message }}</p> @enderror
                                                 </div>
 
                                                 <div>
@@ -693,6 +745,7 @@
                                                         <span class="font-bold text-amber-700">(اختیاری)</span>
                                                     </label>
                                                     <input type="tel"
+                                                           data-error-field="recipientEntries.{{ $index }}.mobile"
                                                            inputmode="numeric"
                                                            pattern="[0-9]*"
                                                            oninput="this.value=this.value.replace(/[^0-9]/g,'')"
@@ -700,7 +753,7 @@
                                                            class="h-11 w-full rounded-xl border border-amber-200 bg-white px-3 text-sm font-bold text-slate-800 shadow-sm transition placeholder:text-slate-300 focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-400/15"
                                                            placeholder="09xxxxxxxxx"
                                                            maxlength="11">
-                                                    @error('recipientEntries.' . $index . '.mobile') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                                    @error('recipientEntries.' . $index . '.mobile') <p class="mt-1 rounded-lg bg-rose-50 px-2 py-1.5 text-[11px] font-bold text-rose-700">{{ $message }}</p> @enderror
                                                 </div>
                                             </div>
                                         </div>
