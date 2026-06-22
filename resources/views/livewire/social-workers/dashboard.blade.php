@@ -1033,12 +1033,12 @@
                                     </div>
                                     <p x-show="status !== 'scan_error'" class="text-xs leading-5 text-slate-500" x-text="message"></p>
                                     <div class="grid gap-2">
-                                        <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                        <div class="grid grid-cols-2 gap-2">
                                             <button
                                                 type="button"
                                                 @click="status === 'scan_error' && cameraActive ? resumeScan() : startCamera()"
                                                 :disabled="startingCamera"
-                                                class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-2 text-[11px] font-black text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300 disabled:cursor-wait disabled:opacity-60"
+                                                class="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-3 text-xs font-black text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300 disabled:cursor-wait disabled:opacity-60"
                                             >
                                                 <i class="bi bi-arrow-clockwise"></i>
                                                 <span>شروع / تلاش دوباره</span>
@@ -1046,67 +1046,82 @@
 
                                             <button
                                                 type="button"
-                                                @click="cycleCamera()"
-                                                :disabled="startingCamera || cameras.length < 2"
-                                                class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2 text-[11px] font-black text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-45"
-                                            >
-                                                <i class="bi bi-camera-video"></i>
-                                                <span>تعویض دوربین</span>
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                @click="toggleTorch()"
-                                                :disabled="!cameraActive || !supportsTorch()"
-                                                class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border px-2 text-[11px] font-black transition focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-45"
-                                                :class="torchEnabled ? 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'"
-                                            >
-                                                <i class="bi" :class="torchEnabled ? 'bi-lightbulb-fill' : 'bi-lightbulb'"></i>
-                                                <span x-text="torchEnabled ? 'چراغ روشن' : 'چراغ'"></span>
-                                            </button>
-
-                                            <button
-                                                type="button"
                                                 @click="closeScanner()"
-                                                class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2 text-[11px] font-black text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                                                class="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-black text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200"
                                             >
                                                 <i class="bi bi-x-lg"></i>
                                                 <span>بستن</span>
                                             </button>
                                         </div>
 
-                                        <div class="grid gap-2" x-show="cameras.length > 1" style="display: none;">
-                                            <select
-                                                x-model="selectedDeviceId"
-                                                @change="switchCamera()"
-                                                :disabled="startingCamera"
-                                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 focus:border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-100 disabled:cursor-wait disabled:opacity-60"
-                                            >
-                                                <template x-for="camera in cameras" :key="camera.id">
-                                                    <option :value="camera.id" x-text="camera.label"></option>
-                                                </template>
-                                            </select>
-                                        </div>
+                                        <details class="group rounded-xl border border-slate-200 bg-slate-50">
+                                            <summary class="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 px-3 text-xs font-black text-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-200">
+                                                <span class="inline-flex items-center gap-2">
+                                                    <i class="bi bi-sliders"></i>
+                                                    تنظیمات دوربین
+                                                </span>
+                                                <i class="bi bi-chevron-down text-[10px] text-slate-400 transition group-open:rotate-180"></i>
+                                            </summary>
 
-                                        <div
-                                            x-show="cameraActive && supportsZoom()"
-                                            class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"
-                                            style="display: none;"
-                                        >
-                                            <div class="mb-1 flex items-center justify-between gap-3 text-[11px] font-bold text-slate-500">
-                                                <span>بزرگنمایی</span>
-                                                <span dir="ltr" x-text="`${Number(zoomLevel || 1).toFixed(1)}x`"></span>
+                                            <div class="grid gap-2 border-t border-slate-200 px-3 py-3">
+                                                <div class="grid grid-cols-2 gap-2">
+                                                    <button
+                                                        type="button"
+                                                        @click="cycleCamera()"
+                                                        :disabled="startingCamera || cameras.length < 2"
+                                                        class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2 text-[11px] font-black text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-45"
+                                                    >
+                                                        <i class="bi bi-camera-video"></i>
+                                                        <span>تعویض دوربین</span>
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        @click="toggleTorch()"
+                                                        :disabled="!cameraActive || !supportsTorch()"
+                                                        class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border px-2 text-[11px] font-black transition focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-45"
+                                                        :class="torchEnabled ? 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'"
+                                                    >
+                                                        <i class="bi" :class="torchEnabled ? 'bi-lightbulb-fill' : 'bi-lightbulb'"></i>
+                                                        <span x-text="torchEnabled ? 'چراغ روشن' : 'چراغ'"></span>
+                                                    </button>
+                                                </div>
+
+                                                <div class="grid gap-2" x-show="cameras.length > 1" style="display: none;">
+                                                    <label class="text-[10px] font-bold text-slate-500">انتخاب دوربین</label>
+                                                    <select
+                                                        x-model="selectedDeviceId"
+                                                        @change="switchCamera()"
+                                                        :disabled="startingCamera"
+                                                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 focus:border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-100 disabled:cursor-wait disabled:opacity-60"
+                                                    >
+                                                        <template x-for="camera in cameras" :key="camera.id">
+                                                            <option :value="camera.id" x-text="camera.label"></option>
+                                                        </template>
+                                                    </select>
+                                                </div>
+
+                                                <div
+                                                    x-show="cameraActive && supportsZoom()"
+                                                    class="rounded-xl border border-slate-200 bg-white px-3 py-2"
+                                                    style="display: none;"
+                                                >
+                                                    <div class="mb-1 flex items-center justify-between gap-3 text-[11px] font-bold text-slate-500">
+                                                        <span>بزرگنمایی</span>
+                                                        <span dir="ltr" x-text="`${Number(zoomLevel || 1).toFixed(1)}x`"></span>
+                                                    </div>
+                                                    <input
+                                                        type="range"
+                                                        x-model.number="zoomLevel"
+                                                        @input.debounce.120ms="applyZoom()"
+                                                        :min="zoomMin()"
+                                                        :max="zoomMax()"
+                                                        :step="zoomStep()"
+                                                        class="w-full accent-slate-700"
+                                                    >
+                                                </div>
                                             </div>
-                                            <input
-                                                type="range"
-                                                x-model.number="zoomLevel"
-                                                @input.debounce.120ms="applyZoom()"
-                                                :min="zoomMin()"
-                                                :max="zoomMax()"
-                                                :step="zoomStep()"
-                                                class="w-full accent-slate-700"
-                                            >
-                                        </div>
+                                        </details>
                                     </div>
                                 </div>
                             </div>
