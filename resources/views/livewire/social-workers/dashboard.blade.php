@@ -334,25 +334,28 @@
 
                     <section class="border-t border-slate-100 pt-4">
 
-                        <h2 class="text-xs font-semibold text-slate-500">سهمیه</h2>
+                        <div class="flex items-center justify-between gap-3">
+                            <h2 class="text-sm font-black text-slate-800">سهمیه خدمت</h2>
+                            @if($selectedService)
+                                <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-black text-slate-500 shadow-sm">
+                                    {{ $this->selectedServiceTypeLabel }}
+                                </span>
+                            @endif
+                        </div>
 
                         @if($selectedService)
 
-                            <div class="mt-2.5 flex items-start justify-between gap-2">
-                                <div>
-                                    <p class="text-sm font-medium text-slate-700">
-                                        {{ $selectedService->serviceName?->name }}
-                                        <span class="ml-2 inline-flex items-center rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-500">
-        {{ $this->persianNumber($selectedService->code) }}
-            </span>
-                                    </p>
-
-                                    <p class="mt-1 text-[11px] text-slate-400">{{ $this->selectedServiceTypeLabel }}</p>
-                                </div>
+                            <div class="mt-3 flex flex-wrap items-center gap-2">
+                                <p class="min-w-0 text-sm font-bold text-slate-700 sm:text-base">
+                                    <span class="block truncate">{{ $selectedService->serviceName?->name }}</span>
+                                </p>
+                                <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black text-slate-500">
+                                    {{ $this->persianNumber($selectedService->code) }}
+                                </span>
                             </div>
 
                             @if($selectedService->description)
-                                <p class="mt-2 rounded-xl bg-slate-50 px-2.5 py-1.5 text-[10px] leading-4 text-slate-500">
+                                <p class="mt-2 line-clamp-1 text-xs leading-5 text-slate-500">
                                     {{ $selectedService->description }}
                                 </p>
                             @endif
@@ -361,7 +364,7 @@
                                 $serviceCategories = $selectedService->categories?->sortBy('sort_id') ?? collect();
                             @endphp
 
-                            <div class="mt-3 grid gap-2 sm:grid-cols-2">
+                            <div class="mt-3 grid gap-2.5 sm:grid-cols-2">
                                 @forelse($serviceCategories as $category)
                                         @php
                                             $metrics = $categoryMetrics[$category->id] ?? [
@@ -372,47 +375,98 @@
                                             $allocated = (float) $metrics['allocated'];
                                             $delivered = (float) $metrics['worker_delivered'];
                                             $remaining = (float) $metrics['remaining_allocation'];
+                                            $progress = $allocated > 0 ? min(100, max(0, ($delivered / $allocated) * 100)) : 0;
+                                            $quotaState = match (true) {
+                                                $remaining <= 0 => [
+                                                    'label' => 'اتمام سهمیه',
+                                                    'badge' => 'border-rose-200 bg-rose-50 text-rose-700',
+                                                    'value' => 'text-rose-700',
+                                                    'track' => 'bg-rose-100',
+                                                    'fill' => 'bg-rose-500',
+                                                ],
+                                                $remaining / max($allocated, 1) <= 0.25 => [
+                                                    'label' => 'رو به اتمام',
+                                                    'badge' => 'border-amber-200 bg-amber-50 text-amber-700',
+                                                    'value' => 'text-amber-700',
+                                                    'track' => 'bg-amber-100',
+                                                    'fill' => 'bg-amber-500',
+                                                ],
+                                                default => [
+                                                    'label' => 'قابل تحویل',
+                                                    'badge' => 'border-emerald-200 bg-emerald-50 text-emerald-700',
+                                                    'value' => 'text-emerald-700',
+                                                    'track' => 'bg-emerald-100',
+                                                    'fill' => 'bg-emerald-500',
+                                                ],
+                                            };
                                             $unitLabel = \App\Models\Service::unitOptions()[$category->unit] ?? $category->unit;
                                         @endphp
 
-                                    <div class="rounded-2xl border border-slate-100 bg-slate-50/80 px-3 py-2">
-                                        <div class="text-center">
-                                            <div>
-                                                <p class="truncate text-[11px] font-semibold text-slate-700">
+                                    <div class="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm shadow-slate-100/70">
+                                        <div class="flex items-start justify-between gap-2.5">
+                                            <div class="min-w-0">
+                                                <p class="truncate text-sm font-black text-slate-800">
                                                     {{ $category->name }}
                                                 </p>
-                                                <p class="mt-0.5 truncate text-[10px] text-slate-400">
+                                                <p class="mt-0.5 text-[11px] font-bold text-slate-500">
                                                     {{ $unitLabel }}
                                                 </p>
                                             </div>
 
-                                            <div class="mt-2 grid grid-cols-3 gap-1.5">
-                                                <div class="rounded-xl border border-white bg-white px-2 py-1 text-center shadow-sm">
-                                                    <p class="text-[9px] leading-none text-slate-400">سهمیه</p>
-                                                    <p class="mt-1 text-xs font-bold leading-none text-slate-700">
-                                                        {{ $this->persianNumber(number_format($allocated, 2)) }}
-                                                    </p>
-                                                </div>
+                                            <span class="inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-black {{ $quotaState['badge'] }}">
+                                                {{ $quotaState['label'] }}
+                                            </span>
+                                        </div>
 
-                                                <div class="rounded-xl border border-white bg-white px-2 py-1 text-center shadow-sm">
-                                                    <p class="text-[9px] leading-none text-slate-400">تحویل‌شده</p>
-                                                    <p class="mt-1 text-xs font-bold leading-none text-emerald-600">
-                                                        {{ $this->persianNumber(number_format($delivered, 2)) }}
-                                                    </p>
-                                                </div>
+                                        <div class="mt-2 flex items-baseline justify-between gap-3">
+                                            <div class="min-w-0">
+                                                <p class="text-[10px] font-bold text-slate-500">باقی‌مانده</p>
+                                                <p class="text-base font-black leading-6 {{ $quotaState['value'] }} sm:text-lg">
+                                                    {{ $this->persianNumber(number_format($remaining, 2)) }}
+                                                    <span class="text-xs font-bold text-slate-500">{{ $unitLabel }}</span>
+                                                </p>
+                                            </div>
 
-                                                <div class="rounded-xl border border-white bg-white px-2 py-1 text-center shadow-sm">
-                                                    <p class="text-[9px] leading-none text-slate-400">باقی‌مانده</p>
-                                                    <p class="mt-1 text-xs font-bold leading-none text-amber-600">
-                                                        {{ $this->persianNumber(number_format($remaining, 2)) }}
-                                                    </p>
-                                                </div>
+                                            <p class="shrink-0 text-right text-[11px] font-bold text-slate-500">
+                                                تحویل‌شده
+                                                <span class="block text-xs font-black text-slate-700">
+                                                    {{ $this->persianNumber(number_format($delivered, 2)) }}
+                                                </span>
+                                            </p>
+                                        </div>
+
+                                        <div class="mt-2">
+                                            <div class="flex items-center justify-between gap-2 text-[10px] font-bold text-slate-500">
+                                                <span>سهمیه</span>
+                                                <span dir="ltr">{{ $this->persianNumber(number_format($progress, 0)) }}%</span>
+                                            </div>
+                                            <div class="mt-1 h-1.5 rounded-full {{ $quotaState['track'] }}">
+                                                <div
+                                                    class="h-1.5 rounded-full {{ $quotaState['fill'] }}"
+                                                    style="width: {{ $progress }}%"
+                                                ></div>
+                                            </div>
+                                            <div class="mt-1.5 flex items-center justify-between gap-3 text-[10px] font-bold text-slate-500">
+                                                <span>
+                                                    تخصیص: {{ $this->persianNumber(number_format($allocated, 2)) }} {{ $unitLabel }}
+                                                </span>
+                                                <span>
+                                                    تحویل: {{ $this->persianNumber(number_format($delivered, 2)) }} {{ $unitLabel }}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
                                 @empty
-                                    <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-400">
-                                        برای این خدمت سهمیه‌ای ثبت نشده است.
+                                    <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-center">
+                                        <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-slate-400 shadow-sm">
+                                            <i class="bi bi-inbox text-lg"></i>
+                                        </div>
+                                        <p class="mt-3 text-sm font-bold text-slate-700">
+                                            برای این خدمت سهمیه قابل تحویل ثبت نشده است.
+                                        </p>
+                                        <p class="mt-1 text-xs leading-5 text-slate-500">
+                                            ابتدا باید سهمیه‌ای برای این خدمت تعریف شود تا مقدارهای تخصیص و تحویل نمایش داده شوند.
+                                        </p>
                                     </div>
                                 @endforelse
                             </div>
@@ -420,7 +474,7 @@
 
 
                         @else
-                            <p class="mt-2.5 text-xs text-slate-400">یک خدمت انتخاب کنید.</p>
+                            <p class="mt-2.5 text-xs leading-5 text-slate-400">یک خدمت انتخاب کنید تا سهمیه، مقدار تحویل‌شده و باقی‌مانده نمایش داده شود.</p>
                         @endif
 
                     </section>
