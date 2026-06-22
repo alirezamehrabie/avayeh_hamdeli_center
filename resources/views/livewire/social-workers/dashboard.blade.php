@@ -598,53 +598,52 @@
                                 <article class="relative overflow-hidden rounded-2xl border bg-white shadow-sm ring-1 transition-all {{ $hasRowErrors ? 'border-rose-300 ring-4 ring-rose-100' : 'border-slate-200 ring-slate-100' }}">
                                     <div class="h-1 w-full {{ $hasRowErrors ? 'bg-rose-200' : 'bg-cyan-500/70' }}"></div>
                                     <div class="p-3 sm:p-4">
-                                    <div class="mb-3 rounded-2xl border bg-slate-50/70 px-3 py-3 shadow-sm md:mb-4 {{ $hasRowErrors ? 'border-rose-300 ring-4 ring-rose-100' : 'border-slate-200' }}">
-                                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                            <div class="min-w-0">
+                                    <div class="mb-3 border-b border-slate-100 pb-3 md:mb-4 md:pb-4">
+                                        <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                                            <div class="min-w-0 flex-1">
                                                 <div class="flex flex-wrap items-center gap-2">
-                                                    <h3 class="text-sm font-black text-slate-800">
+                                                    <h3 class="text-sm font-black text-slate-900">
                                                         گیرنده {{ $this->persianNumber($index + 1) }}
                                                     </h3>
+                                                    <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-black {{ $recipientStatus['class'] }}">
+                                                        {{ $recipientStatus['label'] }}
+                                                    </span>
                                                     @if($hasRowErrors)
                                                         <span class="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[10px] font-black text-rose-700">
                                                             <i class="bi bi-exclamation-circle text-xs"></i>
                                                             نیاز به اصلاح
                                                         </span>
                                                     @endif
-                                                    <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-black {{ $recipientStatus['class'] }}">
-                                                        {{ $recipientStatus['label'] }}
-                                                    </span>
                                                 </div>
 
-                                                <p class="mt-2 flex flex-wrap items-center gap-1.5 text-xs font-bold text-slate-600">
-                                                    <span class="truncate">
+                                                <div class="mt-2 flex min-w-0 flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2">
+                                                    <p class="min-w-0 truncate text-sm font-extrabold text-slate-700">
                                                         {{ $recipientDisplayName !== '' ? $recipientDisplayName : 'گیرنده هنوز مشخص نشده است' }}
-                                                    </span>
-                                                    @if($familyMemberCount !== null)
-                                                        <span class="shrink-0 text-[10px] font-semibold text-slate-400">
-                                                            خانواده {{ $this->persianNumber($familyMemberCount) }}  نفره
+                                                    </p>
+                                                    @if($recipientNationalId !== '')
+                                                        <span class="w-fit rounded-lg bg-slate-50 px-2 py-0.5 text-[11px] font-bold text-slate-500" dir="ltr">
+                                                            {{ $this->persianNumber($recipientNationalId) }}
                                                         </span>
                                                     @endif
-                                                </p>
-
-                                                @if($recipientNationalId !== '')
-                                                    <p class="mt-0.5 text-[10px] font-bold text-slate-400" dir="ltr">
-                                                        {{ $this->persianNumber($recipientNationalId) }}
-                                                    </p>
-                                                @endif
+                                                    @if($familyMemberCount !== null)
+                                                        <span class="w-fit text-[11px] font-bold text-slate-400">
+                                                            خانواده {{ $this->persianNumber($familyMemberCount) }} نفره
+                                                        </span>
+                                                    @endif
+                                                </div>
                                             </div>
 
-                                            <div class="flex flex-col gap-2 sm:w-72">
-                                                <div class="grid grid-cols-2 gap-2">
-                                                    <div class="rounded-xl bg-slate-50 px-2.5 py-2">
-                                                        <span class="block text-[9px] font-bold text-slate-400">دسته‌ها</span>
-                                                        <span class="mt-0.5 block text-xs font-black text-slate-700">
+                                            <div class="flex flex-col gap-2 md:w-80">
+                                                <div class="grid grid-cols-2 overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                                                    <div class="border-l border-slate-200 px-3 py-2">
+                                                        <span class="block text-[10px] font-bold text-slate-400">دسته‌ها</span>
+                                                        <span class="mt-0.5 block text-sm font-black text-slate-800">
                                                             {{ $this->persianNumber($rowEnteredCategoryCountForHeader) }}
                                                         </span>
                                                     </div>
-                                                    <div class="rounded-xl bg-slate-50 px-2.5 py-2">
-                                                        <span class="block text-[9px] font-bold text-slate-400">جمع مقدار</span>
-                                                        <span class="mt-0.5 block truncate text-xs font-black text-slate-700">
+                                                    <div class="px-3 py-2">
+                                                        <span class="block text-[10px] font-bold text-slate-400">جمع مقدار</span>
+                                                        <span class="mt-0.5 block truncate text-sm font-black text-slate-800">
                                                             {{ $this->persianNumber(number_format($rowTotalQuantityForHeader, 2)) }}
                                                         </span>
                                                     </div>
@@ -656,7 +655,7 @@
                                                             @if($rowHasEnteredData)
                                                                 wire:confirm="اطلاعات واردشده برای این گیرنده حذف می‌شود. ادامه می‌دهید؟"
                                                             @endif
-                                                            class="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-rose-100 bg-rose-50 px-3 text-xs font-black text-rose-700 transition hover:bg-rose-100 focus:outline-none focus:ring-4 focus:ring-rose-100">
+                                                            class="inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-xl border border-rose-100 bg-white px-3 text-xs font-black text-rose-600 transition hover:bg-rose-50 focus:outline-none focus:ring-4 focus:ring-rose-100">
                                                         <i class="bi bi-trash3 text-sm"></i>
                                                         حذف گیرنده
                                                     </button>
