@@ -545,7 +545,6 @@
                         <!-- Recipients List -->
                         <div class="space-y-3">
                             @foreach($recipientEntries as $index => $entry)
-                                <div class="relative transition-all md:rounded-2xl md:border md:border-slate-100 md:bg-slate-50/50 md:p-4">
                                     @php
                                         $rowCategoryQuantitiesForHeader = collect($entry['category_quantities'] ?? []);
                                         $rowEnteredCategoryCountForHeader = $rowCategoryQuantitiesForHeader
@@ -596,7 +595,10 @@
                                             || filled($entry['qr_token'] ?? '');
                                     @endphp
 
-                                    <div class="mb-3 rounded-2xl border bg-white px-3 py-3 shadow-sm md:mb-4 {{ $hasRowErrors ? 'border-rose-300 ring-4 ring-rose-100' : 'border-slate-200' }}">
+                                <article class="relative overflow-hidden rounded-2xl border bg-white shadow-sm ring-1 transition-all {{ $hasRowErrors ? 'border-rose-300 ring-4 ring-rose-100' : 'border-slate-200 ring-slate-100' }}">
+                                    <div class="h-1 w-full {{ $hasRowErrors ? 'bg-rose-200' : 'bg-cyan-500/70' }}"></div>
+                                    <div class="p-3 sm:p-4">
+                                    <div class="mb-3 rounded-2xl border bg-slate-50/70 px-3 py-3 shadow-sm md:mb-4 {{ $hasRowErrors ? 'border-rose-300 ring-4 ring-rose-100' : 'border-slate-200' }}">
                                         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                             <div class="min-w-0">
                                                 <div class="flex flex-wrap items-center gap-2">
@@ -935,7 +937,8 @@
                                         </div>
                                     @endif
 
-                                </div>
+                                    </div>
+                                </article>
                             @endforeach
                         </div>
 
