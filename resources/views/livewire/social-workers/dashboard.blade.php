@@ -786,37 +786,6 @@
                                         </div>
                                     @endif
 
-                                    <!-- Resolved Info (Result) -->
-                                    @if($entry['resolved_name'])
-                                        <div class="mt-3 rounded-xl border border-emerald-100 bg-emerald-50/60 p-3">
-                                            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-                                                <div class="min-w-0">
-                                                    <span class="block text-[9px] font-bold text-emerald-600">گیرنده خدمت</span>
-                                                    <span class="block truncate text-sm font-extrabold text-emerald-950">{{ $entry['resolved_name'] }}</span>
-                                                </div>
-                                                @if(!empty($entry['qr_token']))
-                                                    <span class="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-200 bg-white px-2.5 py-1 text-[10px] font-black text-emerald-700">
-                                                        <i class="bi bi-qr-code-scan text-xs"></i>
-                                                        QR شناسایی شد
-                                                    </span>
-                                                @endif
-                                            </div>
-                                            <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                                                <div class="rounded-lg bg-white/75 px-2.5 py-2">
-                                                    <span class="block text-[9px] font-bold text-emerald-600">نوع</span>
-                                                    <span class="mt-0.5 block truncate text-xs font-extrabold text-emerald-900">{{ $entry['resolved_meta'] ?: '-' }}</span>
-                                                </div>
-                                                <div class="rounded-lg bg-white/75 px-2.5 py-2">
-                                                    <span class="block text-[9px] font-bold text-emerald-600">کد ملی</span>
-                                                    <span class="mt-0.5 block truncate text-xs font-extrabold text-emerald-900" dir="ltr">{{ $entry['national_id'] ? $this->persianNumber($entry['national_id']) : '-' }}</span>
-                                                </div>
-                                                <div class="rounded-lg bg-white/75 px-2.5 py-2">
-                                                    <span class="block text-[9px] font-bold text-emerald-600">اعضای خانواده</span>
-                                                    <span class="mt-0.5 block text-xs font-extrabold text-emerald-900">{{ $entry['family_members_count'] ?? 0 }} نفر</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endif
                                 </div>
                             @endforeach
                         </div>
