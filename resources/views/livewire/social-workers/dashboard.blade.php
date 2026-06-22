@@ -1164,8 +1164,17 @@
                     {{-- Submit Button --}}
                     <button type="submit"
                             @disabled(!$this->selectedService)
-                            class="w-full rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition active:scale-[0.98] hover:bg-emerald-500">
-                        ثبت تحویل
+                            wire:loading.attr="disabled"
+                            wire:target="saveDelivery"
+                            class="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black text-white shadow-sm shadow-emerald-200 transition hover:bg-emerald-500 active:scale-[0.98] disabled:cursor-wait disabled:bg-emerald-500 disabled:opacity-80">
+                        <span wire:loading.remove wire:target="saveDelivery" class="inline-flex items-center justify-center gap-2">
+                            <i class="bi bi-check2-circle text-base"></i>
+                            ثبت تحویل
+                        </span>
+                        <span wire:loading wire:target="saveDelivery" class="inline-flex items-center justify-center gap-2">
+                            <span class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true"></span>
+                            در حال ثبت تحویل...
+                        </span>
                     </button>
                 </div>
                 </div>
