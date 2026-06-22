@@ -195,8 +195,8 @@
                                 :aria-expanded="open.toString()"
                                 aria-haspopup="dialog"
                                 class="flex w-full items-center justify-between rounded-xl border border-slate-300
-                                   bg-white px-3 py-2.5 text-right text-sm text-slate-700 shadow-sm
-                                   transition hover:border-slate-400 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10 active:scale-[0.98]"
+                                   bg-white px-3 py-2.5 text-right text-sm font-bold text-slate-700 shadow-sm
+                                   transition hover:border-cyan-300 hover:bg-cyan-50/50 hover:text-cyan-800 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10 active:scale-[0.98]"
                             >
                                 <span class="truncate" x-text="selectedText"></span>
 
@@ -244,7 +244,7 @@
                                     <button
                                         type="button"
                                         @click="closeSelector()"
-                                        class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                                        class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-200"
                                         aria-label="بستن"
                                     >
                                         <i class="bi bi-x-lg text-sm"></i>
@@ -276,7 +276,7 @@
                                         type="button"
                                         @click="choose(service)"
                                         :class="{ 'border-cyan-200 bg-cyan-50/80 shadow-cyan-100/70': selectedId === service.id }"
-                                        class="mb-2 flex min-h-[4.75rem] w-full flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-right shadow-sm shadow-slate-200/70 transition hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100 sm:mb-2 sm:min-h-0 sm:px-4 sm:py-3"
+                                        class="mb-2 flex min-h-[4.75rem] w-full flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-right shadow-sm shadow-slate-200/70 transition hover:border-cyan-200 hover:bg-cyan-50/50 active:bg-cyan-50 sm:mb-2 sm:min-h-0 sm:px-4 sm:py-3"
                                         dir="rtl"
                                         role="option"
                                         :aria-selected="(selectedId === service.id).toString()"
@@ -509,7 +509,7 @@
                             </div>
                             @if($selectedService)
                                 <button type="button" wire:click="addRecipientField"
-                                        class="hidden min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-4 text-sm font-black text-cyan-700 shadow-sm shadow-cyan-100/70 transition hover:border-cyan-300 hover:bg-cyan-100 focus:outline-none focus:ring-4 focus:ring-cyan-500/15 active:scale-[0.98] md:inline-flex">
+                                        class="hidden min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-cyan-700 bg-cyan-600 px-4 text-sm font-black text-white shadow-sm shadow-cyan-200 transition hover:border-cyan-600 hover:bg-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/20 active:scale-[0.98] md:inline-flex">
                                     <i class="bi bi-plus-lg text-base"></i>
                                     <span>افزودن گیرنده</span>
                                 </button>
@@ -535,7 +535,7 @@
                                         panel?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                                         window.setTimeout(() => trigger?.focus({ preventScroll: true }), 350);
                                     })"
-                                    class="mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-cyan-600 px-4 text-xs font-black text-white shadow-sm shadow-cyan-200 transition hover:bg-cyan-500 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-cyan-500/20"
+                                    class="mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-cyan-200 bg-white px-4 text-xs font-black text-cyan-700 shadow-sm transition hover:bg-cyan-50 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-cyan-500/15"
                                 >
                                     <i class="bi bi-arrow-up-short text-base"></i>
                                     انتخاب خدمت
@@ -655,7 +655,7 @@
                                                             @if($rowHasEnteredData)
                                                                 wire:confirm="اطلاعات واردشده برای این گیرنده حذف می‌شود. ادامه می‌دهید؟"
                                                             @endif
-                                                            class="inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-xl border border-rose-100 bg-white px-3 text-xs font-black text-rose-600 transition hover:bg-rose-50 focus:outline-none focus:ring-4 focus:ring-rose-100">
+                                                            class="inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-black text-rose-600 transition hover:border-rose-200 hover:bg-rose-50 focus:outline-none focus:ring-4 focus:ring-rose-100">
                                                         <i class="bi bi-trash3 text-sm"></i>
                                                         حذف گیرنده
                                                     </button>
@@ -772,7 +772,7 @@
                                                             type="button"
                                                             x-on:click.prevent="$dispatch('open-recipient-qr-scanner', { index: {{ $index }} })"
                                                             @disabled(!$this->selectedService)
-                                                            class="absolute left-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                                            class="absolute left-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg border border-cyan-200 bg-cyan-50 text-cyan-700 transition hover:border-cyan-300 hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-50"
                                                             title="اسکن QR"
                                                             aria-label="اسکن QR"
                                                         >
@@ -785,7 +785,7 @@
                                                                 @foreach($recipientSuggestionItems as $suggestion)
                                                                     <button type="button"
                                                                             wire:click="selectRecipientSuggestion({{ $index }}, '{{ $recipientSuggestionType }}', {{ $suggestion->id }})"
-                                                                            class="flex min-h-16 w-full items-center justify-between gap-3 border-b border-slate-50 px-4 py-3 text-right transition hover:bg-slate-50 focus:bg-cyan-50 focus:outline-none last:border-b-0"
+                                                                    class="flex min-h-16 w-full items-center justify-between gap-3 border-b border-slate-50 px-4 py-3 text-right transition hover:bg-cyan-50/70 focus:bg-cyan-50 focus:outline-none last:border-b-0"
                                                                     >
                                             <span class="block">
                                                 <span class="block text-sm font-bold text-slate-800">{{ trim(($suggestion->first_name ?? '') . ' ' . ($suggestion->last_name ?? '')) ?: '-' }}</span>
@@ -835,7 +835,7 @@
                                                                 <button
                                                                     type="button"
                                                                     @click="closeRecipientSheet(); $wire.set('activeRecipientSearchIndex', null)"
-                                                                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                                                                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-200"
                                                                     aria-label="بستن جستجوی گیرنده"
                                                                 >
                                                                     <i class="bi bi-x-lg text-sm"></i>
@@ -873,7 +873,7 @@
                                                                         <button type="button"
                                                                                 wire:click="selectRecipientSuggestion({{ $index }}, '{{ $recipientSuggestionType }}', {{ $suggestion->id }})"
                                                                                 @click="closeRecipientSheet()"
-                                                                                class="flex min-h-[5rem] w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-right shadow-sm shadow-slate-200/70 transition active:bg-slate-100 focus:outline-none focus:ring-4 focus:ring-cyan-500/10"
+                                                                                class="flex min-h-[5rem] w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-right shadow-sm shadow-slate-200/70 transition hover:border-cyan-200 hover:bg-cyan-50/60 active:bg-cyan-50 focus:outline-none focus:ring-4 focus:ring-cyan-500/10"
                                                                         >
                                                                             <span class="min-w-0 flex-1">
                                                                                 <span class="block truncate text-sm font-black leading-5 text-slate-800">{{ $mobileSuggestionName }}</span>
@@ -919,7 +919,7 @@
                                                                 type="button"
                                                                 wire:click="resolveRecipientQr({{ $index }})"
                                                                 @disabled(!$this->selectedService)
-                                                                class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-black text-slate-600 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700"
+                                                                class="inline-flex items-center justify-center rounded-lg border border-cyan-200 bg-white px-3 py-2 text-[11px] font-black text-cyan-700 transition hover:bg-cyan-50 focus:outline-none focus:ring-2 focus:ring-cyan-500/15"
                                                             >
                                                                 Resolve QR
                                                             </button>
@@ -1105,7 +1105,7 @@
                         </div>
 
                         <button type="button" wire:click="addRecipientField"
-                                class="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-black text-cyan-700 shadow-sm shadow-cyan-100/70 transition hover:border-cyan-300 hover:bg-cyan-100 focus:outline-none focus:ring-4 focus:ring-cyan-500/15 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 md:hidden">
+                                class="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-cyan-700 bg-cyan-600 px-4 py-3 text-sm font-black text-white shadow-sm shadow-cyan-200 transition hover:border-cyan-600 hover:bg-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 md:hidden">
                             <i class="bi bi-plus-lg text-base"></i>
                             <span>افزودن گیرنده</span>
                         </button>
@@ -1306,7 +1306,7 @@
                                                 <button
                                                     type="button"
                                                     @click="status === 'scan_error' && cameraActive ? resumeScan() : startCamera()"
-                                                    class="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-3 text-xs font-black text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
+                                                    class="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-cyan-700 bg-cyan-600 px-3 text-xs font-black text-white transition hover:border-cyan-600 hover:bg-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/20"
                                                 >
                                                     <i class="bi bi-camera-video"></i>
                                                     <span x-show="status === 'ready'">شروع اسکن</span>
@@ -1335,7 +1335,7 @@
                                         <button
                                             type="button"
                                             @click="resumeScan()"
-                                            class="mt-2 inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-lg border border-rose-100 bg-white px-3 text-xs font-black text-rose-700 transition hover:bg-rose-50 focus:outline-none focus:ring-2 focus:ring-rose-100"
+                                            class="mt-2 inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-lg border border-cyan-200 bg-white px-3 text-xs font-black text-cyan-700 transition hover:bg-cyan-50 focus:outline-none focus:ring-2 focus:ring-cyan-500/15"
                                         >
                                             <i class="bi bi-qr-code-scan"></i>
                                             اسکن دوباره
@@ -1348,7 +1348,7 @@
                                                 type="button"
                                                 @click="status === 'scan_error' && cameraActive ? resumeScan() : startCamera()"
                                                 :disabled="startingCamera"
-                                                class="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-3 text-xs font-black text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300 disabled:cursor-wait disabled:opacity-60"
+                                                class="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-cyan-700 bg-cyan-600 px-3 text-xs font-black text-white transition hover:border-cyan-600 hover:bg-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/20 disabled:cursor-wait disabled:opacity-60"
                                             >
                                                 <i class="bi bi-arrow-clockwise"></i>
                                                 <span>شروع / تلاش دوباره</span>
@@ -1357,7 +1357,7 @@
                                             <button
                                                 type="button"
                                                 @click="closeScanner()"
-                                                class="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-black text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                                                class="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-black text-slate-600 transition hover:bg-slate-50 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-200"
                                             >
                                                 <i class="bi bi-x-lg"></i>
                                                 <span>بستن</span>
@@ -1379,7 +1379,7 @@
                                                         type="button"
                                                         @click="cycleCamera()"
                                                         :disabled="startingCamera || cameras.length < 2"
-                                                        class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2 text-[11px] font-black text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-45"
+                                                        class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2 text-[11px] font-black text-slate-600 transition hover:bg-slate-50 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-45"
                                                     >
                                                         <i class="bi bi-camera-video"></i>
                                                         <span>تعویض دوربین</span>
@@ -1390,7 +1390,7 @@
                                                         @click="toggleTorch()"
                                                         :disabled="!cameraActive || !supportsTorch()"
                                                         class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border px-2 text-[11px] font-black transition focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-45"
-                                                        :class="torchEnabled ? 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'"
+                                                        :class="torchEnabled ? 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-800'"
                                                     >
                                                         <i class="bi" :class="torchEnabled ? 'bi-lightbulb-fill' : 'bi-lightbulb'"></i>
                                                         <span x-text="torchEnabled ? 'چراغ روشن' : 'چراغ'"></span>
@@ -1460,7 +1460,7 @@
                                         panel?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                                         window.setTimeout(() => trigger?.focus({ preventScroll: true }), 350);
                                     })"
-                                    class="mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-xs font-black text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-slate-200"
+                                    class="mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-cyan-200 bg-white px-4 text-xs font-black text-cyan-700 shadow-sm transition hover:bg-cyan-50 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-cyan-500/15"
                                 >
                                     <i class="bi bi-arrow-up-short text-base"></i>
                                     انتخاب خدمت
@@ -1584,7 +1584,7 @@
                             @disabled(!$this->selectedService)
                             wire:loading.attr="disabled"
                             wire:target="saveDelivery"
-                            class="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-black text-white shadow-sm shadow-emerald-200 transition hover:bg-emerald-500 active:scale-[0.98] disabled:cursor-wait disabled:bg-emerald-500 disabled:opacity-80">
+                            class="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border border-emerald-800 bg-emerald-700 px-5 py-3.5 text-base font-black text-white shadow-lg shadow-emerald-200/80 transition hover:border-emerald-700 hover:bg-emerald-600 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-emerald-500/25 disabled:cursor-wait disabled:border-emerald-500 disabled:bg-emerald-500 disabled:opacity-80">
                         <span wire:loading.remove wire:target="saveDelivery" class="inline-flex items-center justify-center gap-2">
                             <i class="bi bi-check2-circle text-base"></i>
                             ثبت تحویل
