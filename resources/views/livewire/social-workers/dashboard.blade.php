@@ -633,18 +633,26 @@
                                                     @endif
                                                 </div>
 
-                                                <div class="mt-2 flex min-w-0 flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2">
-                                                    <p class="min-w-0 truncate text-sm font-extrabold text-slate-700">
-                                                        {{ $recipientDisplayName !== '' ? $recipientDisplayName : 'گیرنده هنوز مشخص نشده است' }}
-                                                    </p>
+                                                <div class="mt-2 space-y-1">
+                                                    <div class="flex min-w-0 flex-wrap items-center gap-2">
+                                                        @if($recipientDisplayName !== '')
+                                                            <p class="min-w-0 truncate text-sm font-extrabold text-slate-700">
+                                                                {{ $recipientDisplayName }}
+                                                            </p>
+                                                        @else
+                                                            <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-500">
+                                                                هنوز ثبت نشده
+                                                            </span>
+                                                        @endif
+                                                        @if($familyMemberCount !== null)
+                                                            <span class="inline-flex shrink-0 items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-black text-slate-500">
+                                                                {{ $this->persianNumber($familyMemberCount) }} خانوار
+                                                            </span>
+                                                        @endif
+                                                    </div>
                                                     @if($recipientNationalId !== '')
-                                                        <span class="w-fit rounded-lg bg-slate-50 px-2 py-0.5 text-[11px] font-bold text-slate-500" dir="ltr">
+                                                        <span class="inline-flex w-fit items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold text-slate-500" dir="ltr">
                                                             {{ $this->persianNumber($recipientNationalId) }}
-                                                        </span>
-                                                    @endif
-                                                    @if($familyMemberCount !== null)
-                                                        <span class="w-fit text-[11px] font-bold text-slate-400">
-                                                            خانواده {{ $this->persianNumber($familyMemberCount) }} نفره
                                                         </span>
                                                     @endif
                                                 </div>
@@ -703,7 +711,7 @@
                                                             && $this->activeRecipientSearchIndex === $index;
                                                     @endphp
                                                     <div
-                                                        class="rounded-2xl border p-2.5 transition {{ $recipientDisplayName === '' && $recipientNationalId === '' ? 'border-cyan-200 bg-cyan-50/70 shadow-sm shadow-cyan-100/70' : 'border-slate-200 bg-slate-50' }}"
+                                                        class="rounded-2xl border p-2.5 transition {{ $recipientDisplayName === '' && $recipientNationalId === '' ? 'border-cyan-300 bg-cyan-50/70' : 'border-slate-200 bg-slate-50' }}"
                                                         x-data="{
                                                             recipientSheetOpen: false,
                                                             recipientSheetHistoryActive: false,
@@ -767,9 +775,7 @@
                                                                 </span>
                                                                 <span class="truncate">افزودن گیرنده</span>
                                                             </label>
-                                                            <span class="hidden rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-400 sm:inline">
-                                                                نام یا کد ملی
-                                                            </span>
+                                                            <span class="hidden rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-400 sm:inline">جستجو</span>
                                                         </div>
 
                                                         <div class="relative">
@@ -781,8 +787,8 @@
                                                             x-on:focus="openRecipientSheet()"
                                                             x-on:click="openRecipientSheet()"
                                                             @disabled(!$this->selectedService)
-                                                            class="h-12 w-full rounded-xl border border-cyan-200 bg-white py-2.5 pl-12 pr-10 text-sm font-bold text-slate-800 shadow-sm transition-all placeholder:text-slate-400 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/15"
-                                                            placeholder="کد ملی یا نام گیرنده را وارد کنید"
+                                                            class="h-12 w-full rounded-xl border border-cyan-300 bg-white py-2.5 pl-12 pr-10 text-sm font-bold text-slate-800 transition-all placeholder:text-xs placeholder:font-normal placeholder:text-slate-400 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10"
+                                                            placeholder="نام یا کدملی گیرنده خدمت"
                                                             autocomplete="off"
                                                         >
                                                         <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-cyan-600">
@@ -792,7 +798,7 @@
                                                             type="button"
                                                             x-on:click.prevent="$dispatch('open-recipient-qr-scanner', { index: {{ $index }} })"
                                                             @disabled(!$this->selectedService)
-                                                            class="absolute left-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg border border-cyan-200 bg-cyan-50 text-cyan-700 transition hover:border-cyan-300 hover:bg-cyan-100 focus:outline-none focus:ring-4 focus:ring-cyan-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+                                                            class="absolute left-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-200/80 disabled:cursor-not-allowed disabled:opacity-50"
                                                             title="اسکن QR"
                                                             aria-label="اسکن QR"
                                                         >
@@ -872,8 +878,8 @@
                                                                         wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.national_id"
                                                                         wire:focus="setActiveRecipientSearch({{ $index }})"
                                                                         @disabled(!$this->selectedService)
-                                                                        class="min-h-12 w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10"
-                                                                        placeholder="نام یا کد ملی مددجو / سرپرست"
+                                                                        class="min-h-12 w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm text-slate-700 shadow-sm transition placeholder:text-xs placeholder:font-normal placeholder:text-slate-400 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10"
+                                                                        placeholder="نام یا کدملی گیرنده خدمت"
                                                                         autocomplete="off"
                                                                     >
                                                                     <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
