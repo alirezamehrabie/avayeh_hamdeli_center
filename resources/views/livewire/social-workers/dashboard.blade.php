@@ -1474,11 +1474,11 @@
 
 
                     <section class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-100 sm:p-4">
-                        <div class="mb-4 flex items-start gap-3">
-                            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl {{ $selectedService ? 'bg-cyan-600 text-white' : 'bg-slate-100 text-slate-400' }} text-sm font-black">۳</span>
+                        <div class="mb-3 flex items-start gap-3">
+                            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl {{ $selectedService ? 'bg-cyan-600 text-white' : 'bg-slate-100 text-slate-400' }} text-xs font-black">۳</span>
                             <div class="min-w-0">
                                 <h2 class="text-sm font-black text-slate-900">جزئیات تحویل</h2>
-                                <p class="mt-0.5 text-xs font-bold leading-5 text-slate-500">تاریخ و یادداشت این تحویل را ثبت کنید.</p>
+                                <p class="mt-0.5 text-[11px] font-bold leading-5 text-slate-500">تاریخ پیش‌فرض امروز است؛ در صورت نیاز تغییر دهید.</p>
                             </div>
                         </div>
                         @if(!$selectedService)
@@ -1507,19 +1507,42 @@
                                 </button>
                             </div>
                         @else
-                            <div class="grid gap-4 md:grid-cols-2">
-                                <div>
-                                    <label class="mb-2 block text-sm font-bold text-slate-700">تاریخ تحویل</label>
-                                    <input type="text" dir="ltr" inputmode="numeric" wire:model="deliveredAt"
-                                           class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
-                                    <p class="mt-1 text-xs text-slate-500">فرمت: {{ $this->persianNumber('1405/03/16') }}</p>
-                                    @error('deliveredAt') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
+                            <div class="grid gap-3 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+                                <div x-data="jalaliDateTimeField($wire.entangle('deliveredAt').live)">
+                                    <label class="mb-1.5 block text-xs font-black text-slate-600">تاریخ تحویل</label>
+                                    <div class="relative">
+                                        <input
+                                            type="text"
+                                            x-ref="input"
+                                            x-model="draft"
+                                            x-on:change="syncFromInput()"
+                                            x-on:blur="syncFromInput()"
+                                            x-on:jalali-picker-open="handlePickerOpen()"
+                                            x-on:jalali-picker-close="handlePickerClose()"
+                                            x-on:jalali-picker-confirm="confirm()"
+                                            readonly
+                                            inputmode="none"
+                                            autocomplete="off"
+                                            data-error-field="deliveredAt"
+                                            data-jdp-readonly
+                                            data-jdp
+                                            data-jdp-only-date
+                                            placeholder="۱۴۰۵/۰۳/۱۶"
+                                            class="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 pe-10 text-sm font-bold text-slate-700 outline-none transition ltr:text-left focus:border-cyan-400 focus:bg-white focus:ring-4 focus:ring-cyan-500/10"
+                                        >
+                                        <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                                            <i class="bi bi-calendar2-event text-sm"></i>
+                                        </span>
+                                    </div>
+                                    <p class="mt-1 text-[10px] font-bold leading-4 text-slate-400">برای تغییر تاریخ، تقویم را باز و تأیید کنید.</p>
+                                    @error('deliveredAt') <p class="mt-1 rounded-lg bg-rose-50 px-2 py-1 text-xs font-bold text-rose-700">{{ $message }}</p> @enderror
                                 </div>
                                 <div>
-                                    <label class="mb-2 block text-sm font-bold text-slate-700">یادداشت</label>
-                                    <textarea wire:model.blur="notes" rows="3"
-                                              class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"></textarea>
-                                    @error('notes') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
+                                    <label class="mb-1.5 block text-xs font-black text-slate-600">یادداشت</label>
+                                    <textarea wire:model.blur="notes" rows="2"
+                                              placeholder="اختیاری"
+                                              class="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-cyan-400 focus:bg-white focus:ring-4 focus:ring-cyan-500/10"></textarea>
+                                    @error('notes') <p class="mt-1 rounded-lg bg-rose-50 px-2 py-1 text-xs font-bold text-rose-700">{{ $message }}</p> @enderror
                                 </div>
                             </div>
                         @endif

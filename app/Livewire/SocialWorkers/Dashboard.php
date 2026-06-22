@@ -947,7 +947,8 @@ class Dashboard extends Component
 
     protected function isValidJalaliDate(string $date): bool
     {
-        $parts = explode('/', trim($date));
+        $date = $this->normalizeJalaliDate($date);
+        $parts = explode('/', $date);
 
         if (count($parts) !== 3) {
             return false;
@@ -960,7 +961,20 @@ class Dashboard extends Component
 
     protected function jalaliToGregorian(string $date): string
     {
-        return Jalalian::fromFormat('Y/m/d', trim($date))->toCarbon()->toDateString();
+        return Jalalian::fromFormat('Y/m/d', $this->normalizeJalaliDate($date))->toCarbon()->toDateString();
+    }
+
+    protected function normalizeJalaliDate(string $date): string
+    {
+        $persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+        $arabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+
+        $date = str_replace($persianDigits, range('0', '9'), $date);
+        $date = str_replace($arabicDigits, range('0', '9'), $date);
+        $date = str_replace(['-', '.', '‌', '‏', ' '], ['/', '/', ' ', ' ', ' '], $date);
+        $date = trim(preg_replace('/\s+/', ' ', $date) ?? $date);
+
+        return explode(' ', $date)[0] ?? '';
     }
 
     protected function remainingAllocationForCurrentWorker(): float
