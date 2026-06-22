@@ -1161,6 +1161,99 @@
                     </div>
 
                 <div class="space-y-4">
+                    @if($selectedService)
+                        @php
+                            $filledRecipientCount = collect($recipientEntries)
+                                ->filter(fn ($entry) => filled($entry['national_id'] ?? '') || filled($entry['resolved_name'] ?? '') || filled($entry['full_name'] ?? ''))
+                                ->count();
+                            $manualRecipientCount = collect($recipientEntries)
+                                ->filter(fn ($entry) => (bool) ($entry['is_unregistered'] ?? false))
+                                ->count();
+                            $unresolvedRecipientCount = collect($recipientEntries)
+                                ->filter(fn ($entry) => filled($entry['national_id'] ?? '') && blank($entry['resolved_name'] ?? '') && ! (bool) ($entry['is_unregistered'] ?? false))
+                                ->count();
+                            $categoryReviewTotals = $assignableCategories
+                                ->map(function ($category) use ($recipientEntries) {
+                                    $quantity = collect($recipientEntries)
+                                        ->sum(fn ($entry) => (float) data_get($entry, 'category_quantities.' . (int) $category->id, 0));
+
+                                    return [
+                                        'name' => $category->name,
+                                        'unit' => $unitOptions[$category->unit] ?? $category->unit,
+                                        'quantity' => $quantity,
+                                    ];
+                                })
+                                ->filter(fn ($row) => (float) $row['quantity'] > 0)
+                                ->values();
+                            $totalCategoryCount = $categoryReviewTotals->count();
+                        @endphp
+
+                        <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                <div class="min-w-0">
+                                    <h2 class="text-sm font-black text-slate-800">مرور نهایی تحویل</h2>
+                                    <p class="mt-1 truncate text-xs font-bold text-slate-500">
+                                        {{ $selectedService->serviceName?->name }}
+                                        <span class="text-slate-300">|</span>
+                                        {{ $this->persianNumber($selectedService->code) }}
+                                    </p>
+                                </div>
+                                <span class="inline-flex w-fit items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black text-slate-600">
+                                    تاریخ: {{ $deliveredAt !== '' ? $this->persianNumber($deliveredAt) : '-' }}
+                                </span>
+                            </div>
+
+                            <div class="mt-4 grid grid-cols-3 gap-2">
+                                <div class="rounded-2xl bg-slate-50 px-2.5 py-2.5">
+                                    <span class="block text-[9px] font-bold text-slate-400">گیرندگان</span>
+                                    <span class="mt-1 block text-sm font-black text-slate-800">{{ $this->persianNumber($filledRecipientCount) }}</span>
+                                </div>
+                                <div class="rounded-2xl bg-amber-50 px-2.5 py-2.5">
+                                    <span class="block text-[9px] font-bold text-amber-600">ثبت دستی</span>
+                                    <span class="mt-1 block text-sm font-black text-amber-800">{{ $this->persianNumber($manualRecipientCount) }}</span>
+                                </div>
+                                <div class="rounded-2xl bg-cyan-50 px-2.5 py-2.5">
+                                    <span class="block text-[9px] font-bold text-cyan-600">دسته‌ها</span>
+                                    <span class="mt-1 block text-sm font-black text-cyan-800">{{ $this->persianNumber($totalCategoryCount) }}</span>
+                                </div>
+                            </div>
+
+                            <div class="mt-3 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
+                                <div class="mb-2 flex items-center justify-between gap-2">
+                                    <h3 class="text-[11px] font-black text-slate-700">جمع مقادیر بر اساس دسته‌بندی</h3>
+                                </div>
+                                @if($categoryReviewTotals->isNotEmpty())
+                                    <div class="space-y-1.5">
+                                        @foreach($categoryReviewTotals as $row)
+                                            <div class="flex items-center justify-between gap-3 rounded-xl bg-white px-2.5 py-2">
+                                                <span class="min-w-0 truncate text-xs font-bold text-slate-700">{{ $row['name'] }}</span>
+                                                <span class="shrink-0 text-xs font-black text-slate-800">
+                                                    {{ $this->persianNumber(number_format((float) $row['quantity'], 2)) }}
+                                                    <span class="text-[10px] text-slate-400">{{ $row['unit'] }}</span>
+                                                </span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <p class="rounded-xl bg-white px-2.5 py-2 text-xs font-bold text-slate-400">
+                                        هنوز مقداری برای تحویل وارد نشده است.
+                                    </p>
+                                @endif
+                            </div>
+
+                            @if($manualRecipientCount > 0 || $unresolvedRecipientCount > 0)
+                                <div class="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-bold leading-5 text-amber-800">
+                                    @if($manualRecipientCount > 0)
+                                        <p>{{ $this->persianNumber($manualRecipientCount) }} گیرنده به صورت دستی ثبت می‌شود.</p>
+                                    @endif
+                                    @if($unresolvedRecipientCount > 0)
+                                        <p>{{ $this->persianNumber($unresolvedRecipientCount) }} گیرنده هنوز از فهرست انتخاب یا شناسایی نشده است.</p>
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+
                     {{-- Submit Button --}}
                     <button type="submit"
                             @disabled(!$this->selectedService)
