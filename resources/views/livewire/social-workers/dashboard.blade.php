@@ -707,16 +707,13 @@
                                             <div class="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-end">
                                                 <!-- Recipient Search Input -->
                                                 <div class="md:col-span-12">
-                                                    <label class="mb-1.5 block text-[11px] font-bold text-slate-500 mr-1">
-                                                        جستجوی گیرنده
-                                                    </label>
                                                     @php
                                                         $recipientSuggestionItems = collect($this->recipientSuggestions[$index] ?? []);
                                                         $recipientSuggestionType = $this->selectedService?->service_type === 'family' ? 'guardian' : 'person';
                                                         $recipientSuggestionTypeLabel = $recipientSuggestionType === 'guardian' ? 'سرپرست' : 'مددجو';
                                                     @endphp
                                                     <div
-                                                        class="relative"
+                                                        class="rounded-2xl border p-2.5 transition {{ $recipientDisplayName === '' && $recipientNationalId === '' ? 'border-cyan-200 bg-cyan-50/70 shadow-sm shadow-cyan-100/70' : 'border-slate-200 bg-slate-50' }}"
                                                         x-data="{
                                                             recipientSheetOpen: false,
                                                             recipientSheetHistoryActive: false,
@@ -773,6 +770,19 @@
                                                         })"
                                                         x-on:keydown.escape.window="closeRecipientSheet()"
                                                     >
+                                                        <div class="mb-2 flex items-center justify-between gap-2">
+                                                            <label class="inline-flex min-w-0 items-center gap-2 text-xs font-black text-slate-700">
+                                                                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-cyan-700 shadow-sm">
+                                                                    <i class="bi bi-person-plus text-sm"></i>
+                                                                </span>
+                                                                <span class="truncate">افزودن گیرنده</span>
+                                                            </label>
+                                                            <span class="hidden rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-400 sm:inline">
+                                                                نام یا کد ملی
+                                                            </span>
+                                                        </div>
+
+                                                        <div class="relative">
                                                         <input
                                                             type="text"
                                                             data-error-field="recipientEntries.{{ $index }}.national_id"
@@ -781,20 +791,24 @@
                                                             x-on:focus="openRecipientSheet()"
                                                             x-on:click="openRecipientSheet()"
                                                             @disabled(!$this->selectedService)
-                                                            class="w-full rounded-xl border-slate-200 bg-white py-2.5 pl-11 pr-3.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all placeholder:text-slate-400"
-                                                            placeholder="نام یا کد ملی مددجو / سرپرست"
+                                                            class="h-12 w-full rounded-xl border border-cyan-200 bg-white py-2.5 pl-12 pr-10 text-sm font-bold text-slate-800 shadow-sm transition-all placeholder:text-slate-400 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/15"
+                                                            placeholder="کد ملی یا نام گیرنده را وارد کنید"
                                                             autocomplete="off"
                                                         >
+                                                        <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-cyan-600">
+                                                            <i class="bi bi-search text-base"></i>
+                                                        </span>
                                                         <button
                                                             type="button"
                                                             x-on:click.prevent="$dispatch('open-recipient-qr-scanner', { index: {{ $index }} })"
                                                             @disabled(!$this->selectedService)
-                                                            class="absolute left-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg border border-cyan-200 bg-cyan-50 text-cyan-700 transition hover:border-cyan-300 hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                                            class="absolute left-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg border border-cyan-200 bg-cyan-50 text-cyan-700 transition hover:border-cyan-300 hover:bg-cyan-100 focus:outline-none focus:ring-4 focus:ring-cyan-500/10 disabled:cursor-not-allowed disabled:opacity-50"
                                                             title="اسکن QR"
                                                             aria-label="اسکن QR"
                                                         >
                                                             <i class="bi bi-qr-code-scan text-base"></i>
                                                         </button>
+                                                        </div>
 
                                                         <!-- Search Suggestions -->
                                                         @if($recipientSuggestionItems->isNotEmpty() && $this->activeRecipientSearchIndex === $index)
