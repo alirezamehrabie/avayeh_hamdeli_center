@@ -102,6 +102,7 @@
                                 query: '',
                                 selected: @entangle('selectedServiceId').live,
                                 services: @js($serviceOptions),
+                                historyActive: false,
                                 get isMobileSheet() {
                                     return window.matchMedia('(max-width: 639px)').matches;
                                 },
@@ -127,13 +128,48 @@
                                 },
                                 openSelector() {
                                     this.open = true;
-                                    this.$nextTick(() => this.$refs.serviceSearch?.focus());
+                                    this.pushSelectorHistory();
+                                    if (!this.isMobileSheet) {
+                                        this.$nextTick(() => this.$refs.serviceSearch?.focus());
+                                    }
                                 },
-                                closeSelector() {
+                                closeSelector({ syncHistory = true } = {}) {
+                                    const shouldRestoreHistory = syncHistory && this.historyActive;
+
                                     this.open = false;
+
+                                    if (shouldRestoreHistory) {
+                                        this.historyActive = false;
+                                        window.history.back();
+                                    } else if (!syncHistory) {
+                                        this.historyActive = false;
+                                    }
                                 },
                                 toggleSelector() {
                                     this.open ? this.closeSelector() : this.openSelector();
+                                },
+                                pushSelectorHistory() {
+                                    if (!this.isMobileSheet || this.historyActive) {
+                                        return;
+                                    }
+
+                                    try {
+                                        window.history.pushState({
+                                            ...(window.history.state || {}),
+                                            socialWorkerServiceSelector: true,
+                                        }, '', window.location.href);
+                                        this.historyActive = true;
+                                    } catch (error) {
+                                        this.historyActive = false;
+                                    }
+                                },
+                                handleSelectorPopState() {
+                                    if (!this.open) {
+                                        this.historyActive = false;
+                                        return;
+                                    }
+
+                                    this.closeSelector({ syncHistory: false });
                                 },
                                 choose(service) {
                                     this.selected = Number(service.id);
@@ -146,7 +182,7 @@
                                     this.closeSelector();
                                 },
                             }"
-                            x-init="$watch('open', (value) => {
+                            x-init="window.addEventListener('popstate', () => handleSelectorPopState()); $watch('open', (value) => {
                                 document.documentElement.classList.toggle('overflow-hidden', value && isMobileSheet);
                             })"
                             x-on:keydown.escape.window="closeSelector()"
