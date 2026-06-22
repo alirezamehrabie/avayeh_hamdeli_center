@@ -1,5 +1,22 @@
 <div class="space-y-6"
-     x-data
+     x-data="{
+        persianNumber(value) {
+            return String(value ?? '').replace(/[0-9.,]/g, (char) => ({
+                '0': '۰',
+                '1': '۱',
+                '2': '۲',
+                '3': '۳',
+                '4': '۴',
+                '5': '۵',
+                '6': '۶',
+                '7': '۷',
+                '8': '۸',
+                '9': '۹',
+                '.': '٫',
+                ',': '٬',
+            })[char] ?? char);
+        },
+     }"
      x-on:social-worker-delivery-validation-failed.window="
         $nextTick(() => {
             const field = $event.detail?.field;
@@ -465,7 +482,7 @@
 
                                                 @if($recipientNationalId !== '')
                                                     <p class="mt-0.5 text-[10px] font-bold text-slate-400" dir="ltr">
-                                                        {{ $recipientNationalId }}
+                                                        {{ $this->persianNumber($recipientNationalId) }}
                                                     </p>
                                                 @endif
                                             </div>
@@ -659,7 +676,7 @@
                                                                         </div>
                                                                         <p class="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] font-bold text-slate-400">
                                                                             <span>باقی‌مانده:</span>
-                                                                            <span dir="ltr">{{ $this->persianNumber(number_format($liveRemainingAllocation, 2)) }}</span>
+                                                                                       <span>{{ $this->persianNumber(number_format($liveRemainingAllocation, 2)) }}</span>
                                                                             <span>{{ $unitOptions[$category->unit] ?? $category->unit }}</span>
                                                                         </p>
                                                                     </div>
@@ -675,7 +692,7 @@
                                                                                wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.category_quantities.{{ $category->id }}"
                                                                                @disabled(!$this->selectedService || ($isUnavailable && $currentQuantity <= 0))
                                                                                class="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-2.5 text-center text-sm font-black text-slate-800 transition placeholder:text-slate-300 focus:border-cyan-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-500/10 disabled:cursor-not-allowed disabled:opacity-60"
-                                                                               placeholder="0">
+                                                                               placeholder="۰">
                                                                         @error('recipientEntries.' . $index . '.category_quantities.' . $category->id) <p class="mt-1 rounded-lg bg-rose-50 px-2 py-1.5 text-[11px] font-bold text-rose-700">{{ $message }}</p> @enderror
                                                                     </div>
                                                                 </div>
@@ -751,7 +768,7 @@
                                                            oninput="this.value=this.value.replace(/[^0-9]/g,'')"
                                                            wire:model.blur="recipientEntries.{{ $index }}.mobile"
                                                            class="h-11 w-full rounded-xl border border-amber-200 bg-white px-3 text-sm font-bold text-slate-800 shadow-sm transition placeholder:text-slate-300 focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-400/15"
-                                                           placeholder="09xxxxxxxxx"
+                                                           placeholder="۰۹xxxxxxxxx"
                                                            maxlength="11">
                                                     @error('recipientEntries.' . $index . '.mobile') <p class="mt-1 rounded-lg bg-rose-50 px-2 py-1.5 text-[11px] font-bold text-rose-700">{{ $message }}</p> @enderror
                                                 </div>
@@ -781,7 +798,7 @@
                                                 </div>
                                                 <div class="rounded-lg bg-white/75 px-2.5 py-2">
                                                     <span class="block text-[9px] font-bold text-emerald-600">کد ملی</span>
-                                                    <span class="mt-0.5 block truncate text-xs font-extrabold text-emerald-900" dir="ltr">{{ $entry['national_id'] ?: '-' }}</span>
+                                                    <span class="mt-0.5 block truncate text-xs font-extrabold text-emerald-900" dir="ltr">{{ $entry['national_id'] ? $this->persianNumber($entry['national_id']) : '-' }}</span>
                                                 </div>
                                                 <div class="rounded-lg bg-white/75 px-2.5 py-2">
                                                     <span class="block text-[9px] font-bold text-emerald-600">اعضای خانواده</span>
@@ -1108,7 +1125,7 @@
                                                 >
                                                     <div class="mb-1 flex items-center justify-between gap-3 text-[11px] font-bold text-slate-500">
                                                         <span>بزرگنمایی</span>
-                                                        <span dir="ltr" x-text="`${Number(zoomLevel || 1).toFixed(1)}x`"></span>
+                                                        <span dir="ltr" x-text="`${persianNumber(Number(zoomLevel || 1).toFixed(1))}x`"></span>
                                                     </div>
                                                     <input
                                                         type="range"
@@ -1162,7 +1179,7 @@
                                     <label class="mb-2 block text-sm font-bold text-slate-700">تاریخ تحویل</label>
                                     <input type="text" dir="ltr" inputmode="numeric" wire:model="deliveredAt"
                                            class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
-                                    <p class="mt-1 text-xs text-slate-500">فرمت: 1405/03/16</p>
+                                    <p class="mt-1 text-xs text-slate-500">فرمت: {{ $this->persianNumber('1405/03/16') }}</p>
                                     @error('deliveredAt') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                                 </div>
                                 <div>
