@@ -447,18 +447,14 @@
                                             ->flatMap(fn ($messages) => $messages)
                                             ->values();
                                         $hasRowErrors = $rowErrors->isNotEmpty();
+                                        $rowHasEnteredData = $recipientDisplayName !== ''
+                                            || $recipientNationalId !== ''
+                                            || filled($entry['mobile'] ?? '')
+                                            || $rowEnteredCategoryCountForHeader > 0
+                                            || filled($entry['qr_token'] ?? '');
                                     @endphp
 
-                                    <!-- Remove Button (Top Left for Mobile) -->
-                                    @if(count($recipientEntries) > 1)
-                                        <button type="button" wire:click="removeRecipientField({{ $index }})"
-                                                @disabled(!$this->selectedService)
-                                                class="absolute -left-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full border border-rose-100 bg-white text-rose-500 shadow-sm hover:bg-rose-50 md:left-2 md:top-2">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                                        </button>
-                                    @endif
-
-                                    <div class="mb-3 rounded-2xl border bg-white px-3 py-3 shadow-sm md:mb-4 md:me-9 {{ $hasRowErrors ? 'border-rose-300 ring-4 ring-rose-100' : 'border-slate-200' }}">
+                                    <div class="mb-3 rounded-2xl border bg-white px-3 py-3 shadow-sm md:mb-4 {{ $hasRowErrors ? 'border-rose-300 ring-4 ring-rose-100' : 'border-slate-200' }}">
                                         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                             <div class="min-w-0">
                                                 <div class="flex flex-wrap items-center gap-2">
@@ -487,19 +483,33 @@
                                                 @endif
                                             </div>
 
-                                            <div class="grid grid-cols-2 gap-2 sm:w-56">
-                                                <div class="rounded-xl bg-slate-50 px-2.5 py-2">
-                                                    <span class="block text-[9px] font-bold text-slate-400">دسته‌ها</span>
-                                                    <span class="mt-0.5 block text-xs font-black text-slate-700">
-                                                        {{ $this->persianNumber($rowEnteredCategoryCountForHeader) }}
-                                                    </span>
+                                            <div class="flex flex-col gap-2 sm:w-72">
+                                                <div class="grid grid-cols-2 gap-2">
+                                                    <div class="rounded-xl bg-slate-50 px-2.5 py-2">
+                                                        <span class="block text-[9px] font-bold text-slate-400">دسته‌ها</span>
+                                                        <span class="mt-0.5 block text-xs font-black text-slate-700">
+                                                            {{ $this->persianNumber($rowEnteredCategoryCountForHeader) }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="rounded-xl bg-slate-50 px-2.5 py-2">
+                                                        <span class="block text-[9px] font-bold text-slate-400">جمع مقدار</span>
+                                                        <span class="mt-0.5 block truncate text-xs font-black text-slate-700">
+                                                            {{ $this->persianNumber(number_format($rowTotalQuantityForHeader, 2)) }}
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                                <div class="rounded-xl bg-slate-50 px-2.5 py-2">
-                                                    <span class="block text-[9px] font-bold text-slate-400">جمع مقدار</span>
-                                                    <span class="mt-0.5 block truncate text-xs font-black text-slate-700">
-                                                        {{ $this->persianNumber(number_format($rowTotalQuantityForHeader, 2)) }}
-                                                    </span>
-                                                </div>
+
+                                                @if(count($recipientEntries) > 1)
+                                                    <button type="button"
+                                                            wire:click="removeRecipientField({{ $index }})"
+                                                            @if($rowHasEnteredData)
+                                                                wire:confirm="اطلاعات واردشده برای این گیرنده حذف می‌شود. ادامه می‌دهید؟"
+                                                            @endif
+                                                            class="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-rose-100 bg-rose-50 px-3 text-xs font-black text-rose-700 transition hover:bg-rose-100 focus:outline-none focus:ring-4 focus:ring-rose-100">
+                                                        <i class="bi bi-trash3 text-sm"></i>
+                                                        حذف گیرنده
+                                                    </button>
+                                                @endif
                                             </div>
                                         </div>
 
