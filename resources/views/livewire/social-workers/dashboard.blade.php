@@ -37,12 +37,20 @@
             }, 350);
         })
      ">
-    <div class="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
-        <div class="bg-gradient-to-l from-sky-700  to-indigo-600 px-6 py-4 text-white">
-            <h1 class="text-2xl font-extrabold">ثبت تحویل خدمت</h1>
-            <p class="mt-1 max-w-3xl text-xs text-cyan-50/90">
+    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div class="min-w-0">
+                    <h1 class="text-xl font-black text-slate-900 sm:text-2xl">ثبت تحویل خدمت</h1>
+                    <p class="mt-1 max-w-3xl text-xs font-medium leading-5 text-slate-500">
                 تحویل خدمات توسط مددکاران
-            </p>
+                    </p>
+                </div>
+                <span class="inline-flex w-fit items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">
+                    <i class="bi bi-clipboard2-check text-sm text-cyan-600"></i>
+                    جریان ثبت تحویل
+                </span>
+            </div>
         </div>
 
         <div class="px-3 py-6">
