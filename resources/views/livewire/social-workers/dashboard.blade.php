@@ -694,12 +694,76 @@
                                                     <label class="mb-1.5 block text-[11px] font-bold text-slate-500 mr-1">
                                                         جستجوی گیرنده
                                                     </label>
-                                                    <div class="relative">
+                                                    @php
+                                                        $recipientSuggestionItems = collect($this->recipientSuggestions[$index] ?? []);
+                                                        $recipientSuggestionType = $this->selectedService?->service_type === 'family' ? 'guardian' : 'person';
+                                                        $recipientSuggestionTypeLabel = $recipientSuggestionType === 'guardian' ? 'سرپرست' : 'مددجو';
+                                                    @endphp
+                                                    <div
+                                                        class="relative"
+                                                        x-data="{
+                                                            recipientSheetOpen: false,
+                                                            recipientSheetHistoryActive: false,
+                                                            get isMobileRecipientSheet() {
+                                                                return window.matchMedia('(max-width: 639px)').matches;
+                                                            },
+                                                            openRecipientSheet() {
+                                                                if (!this.isMobileRecipientSheet) {
+                                                                    return;
+                                                                }
+
+                                                                this.recipientSheetOpen = true;
+                                                                this.pushRecipientSheetHistory();
+                                                                this.$nextTick(() => this.$refs.recipientSheetSearch?.focus());
+                                                            },
+                                                            closeRecipientSheet({ syncHistory = true } = {}) {
+                                                                const shouldRestoreHistory = syncHistory && this.recipientSheetHistoryActive;
+
+                                                                this.recipientSheetOpen = false;
+
+                                                                if (shouldRestoreHistory) {
+                                                                    this.recipientSheetHistoryActive = false;
+                                                                    window.history.back();
+                                                                } else if (!syncHistory) {
+                                                                    this.recipientSheetHistoryActive = false;
+                                                                }
+                                                            },
+                                                            pushRecipientSheetHistory() {
+                                                                if (!this.isMobileRecipientSheet || this.recipientSheetHistoryActive) {
+                                                                    return;
+                                                                }
+
+                                                                try {
+                                                                    window.history.pushState({
+                                                                        ...(window.history.state || {}),
+                                                                        socialWorkerRecipientSearch: {{ $index }},
+                                                                    }, '', window.location.href);
+                                                                    this.recipientSheetHistoryActive = true;
+                                                                } catch (error) {
+                                                                    this.recipientSheetHistoryActive = false;
+                                                                }
+                                                            },
+                                                            handleRecipientSheetPopState() {
+                                                                if (!this.recipientSheetOpen) {
+                                                                    this.recipientSheetHistoryActive = false;
+                                                                    return;
+                                                                }
+
+                                                                this.closeRecipientSheet({ syncHistory: false });
+                                                            },
+                                                        }"
+                                                        x-init="window.addEventListener('popstate', () => handleRecipientSheetPopState()); $watch('recipientSheetOpen', (value) => {
+                                                            document.documentElement.classList.toggle('overflow-hidden', value && isMobileRecipientSheet);
+                                                        })"
+                                                        x-on:keydown.escape.window="closeRecipientSheet()"
+                                                    >
                                                         <input
                                                             type="text"
                                                             data-error-field="recipientEntries.{{ $index }}.national_id"
                                                             wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.national_id"
                                                             wire:focus="setActiveRecipientSearch({{ $index }})"
+                                                            x-on:focus="openRecipientSheet()"
+                                                            x-on:click="openRecipientSheet()"
                                                             @disabled(!$this->selectedService)
                                                             class="w-full rounded-xl border-slate-200 bg-white py-2.5 pl-11 pr-3.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all placeholder:text-slate-400"
                                                             placeholder="نام یا کد ملی مددجو / سرپرست"
@@ -717,24 +781,123 @@
                                                         </button>
 
                                                         <!-- Search Suggestions -->
-                                                        @if(!empty($this->recipientSuggestions[$index]) && $this->activeRecipientSearchIndex === $index)
-                                                            <div class="absolute z-20 mt-1 max-h-52 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5">
-                                                                @foreach($this->recipientSuggestions[$index] as $suggestion)
+                                                        @if($recipientSuggestionItems->isNotEmpty() && $this->activeRecipientSearchIndex === $index)
+                                                            <div class="absolute z-20 mt-1 hidden max-h-72 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5 sm:block">
+                                                                @foreach($recipientSuggestionItems as $suggestion)
                                                                     <button type="button"
-                                                                            wire:click="selectRecipientSuggestion({{ $index }}, '{{ $this->selectedService?->service_type === 'family' ? 'guardian' : 'person' }}', {{ $suggestion->id }})"
-                                                                            class="flex w-full items-center justify-between gap-3 border-b border-slate-50 px-4 py-3 text-right hover:bg-slate-50 last:border-b-0"
+                                                                            wire:click="selectRecipientSuggestion({{ $index }}, '{{ $recipientSuggestionType }}', {{ $suggestion->id }})"
+                                                                            class="flex min-h-16 w-full items-center justify-between gap-3 border-b border-slate-50 px-4 py-3 text-right transition hover:bg-slate-50 focus:bg-cyan-50 focus:outline-none last:border-b-0"
                                                                     >
                                             <span class="block">
                                                 <span class="block text-sm font-bold text-slate-800">{{ trim(($suggestion->first_name ?? '') . ' ' . ($suggestion->last_name ?? '')) ?: '-' }}</span>
-                                                <span class="text-[10px] text-slate-400">{{ $this->selectedService?->service_type === 'family' ? 'سرپرست' : 'مددجو' }}</span>
+                                                <span class="text-[10px] text-slate-400">{{ $recipientSuggestionTypeLabel }}</span>
                                             </span>
                                                                         <span class="rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-mono font-bold text-slate-600">
-                                                {{ $this->selectedService?->service_type === 'family' ? $suggestion->national_code : $suggestion->national_id }}
+                                                {{ $recipientSuggestionType === 'guardian' ? $suggestion->national_code : $suggestion->national_id }}
                                             </span>
                                                                     </button>
                                                                 @endforeach
                                                             </div>
                                                         @endif
+
+                                                        <div
+                                                            x-show="recipientSheetOpen"
+                                                            x-transition.opacity.duration.150ms
+                                                            @click="closeRecipientSheet()"
+                                                            class="fixed inset-0 z-40 bg-slate-900/45 backdrop-blur-[2px] sm:hidden"
+                                                            style="display: none;"
+                                                            aria-hidden="true"
+                                                        ></div>
+                                                        <div
+                                                            x-show="recipientSheetOpen"
+                                                            x-transition:enter="transition ease-out duration-200"
+                                                            x-transition:enter-start="translate-y-full opacity-80"
+                                                            x-transition:enter-end="translate-y-0 opacity-100"
+                                                            x-transition:leave="transition ease-in duration-150"
+                                                            x-transition:leave-start="translate-y-0 opacity-100"
+                                                            x-transition:leave-end="translate-y-full opacity-80"
+                                                            @click.outside="closeRecipientSheet()"
+                                                            class="fixed inset-x-0 bottom-0 z-50 flex max-h-[86svh] min-h-[44svh] flex-col rounded-t-2xl border border-slate-200 bg-slate-50 p-3 shadow-2xl shadow-slate-900/20 sm:hidden"
+                                                            role="dialog"
+                                                            aria-modal="true"
+                                                            aria-label="جستجوی گیرنده"
+                                                            dir="rtl"
+                                                            style="display: none;"
+                                                        >
+                                                            <div class="mb-3 flex items-center justify-between gap-3">
+                                                                <div class="min-w-0">
+                                                                    <h4 class="text-sm font-black leading-5 text-slate-800">
+                                                                        جستجوی {{ $recipientSuggestionTypeLabel }}
+                                                                    </h4>
+                                                                    <p class="mt-0.5 truncate text-[11px] font-bold leading-5 text-slate-500">
+                                                                        {{ $recipientSuggestionItems->isNotEmpty() ? $this->persianNumber($recipientSuggestionItems->count()) . ' مورد پیدا شد' : 'نام یا کد ملی را وارد کنید' }}
+                                                                    </p>
+                                                                </div>
+                                                                <button
+                                                                    type="button"
+                                                                    @click="closeRecipientSheet(); $wire.set('activeRecipientSearchIndex', null)"
+                                                                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                                                                    aria-label="بستن جستجوی گیرنده"
+                                                                >
+                                                                    <i class="bi bi-x-lg text-sm"></i>
+                                                                </button>
+                                                            </div>
+
+                                                            <div class="sticky top-0 z-10 bg-slate-50 pb-2">
+                                                                <div class="relative">
+                                                                    <input
+                                                                        type="search"
+                                                                        x-ref="recipientSheetSearch"
+                                                                        data-error-field="recipientEntries.{{ $index }}.national_id"
+                                                                        wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.national_id"
+                                                                        wire:focus="setActiveRecipientSearch({{ $index }})"
+                                                                        @disabled(!$this->selectedService)
+                                                                        class="min-h-12 w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10"
+                                                                        placeholder="نام یا کد ملی مددجو / سرپرست"
+                                                                        autocomplete="off"
+                                                                    >
+                                                                    <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                                                                         fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                              d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z"/>
+                                                                    </svg>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pb-[calc(env(safe-area-inset-bottom)+0.5rem)]">
+                                                                @if($recipientSuggestionItems->isNotEmpty() && $this->activeRecipientSearchIndex === $index)
+                                                                    @foreach($recipientSuggestionItems as $suggestion)
+                                                                        @php
+                                                                            $mobileSuggestionName = trim(($suggestion->first_name ?? '') . ' ' . ($suggestion->last_name ?? '')) ?: '-';
+                                                                            $mobileSuggestionNationalId = $recipientSuggestionType === 'guardian' ? $suggestion->national_code : $suggestion->national_id;
+                                                                        @endphp
+                                                                        <button type="button"
+                                                                                wire:click="selectRecipientSuggestion({{ $index }}, '{{ $recipientSuggestionType }}', {{ $suggestion->id }})"
+                                                                                @click="closeRecipientSheet()"
+                                                                                class="flex min-h-[5rem] w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-right shadow-sm shadow-slate-200/70 transition active:bg-slate-100 focus:outline-none focus:ring-4 focus:ring-cyan-500/10"
+                                                                        >
+                                                                            <span class="min-w-0 flex-1">
+                                                                                <span class="block truncate text-sm font-black leading-5 text-slate-800">{{ $mobileSuggestionName }}</span>
+                                                                                <span class="mt-1 inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black leading-4 text-slate-500">{{ $recipientSuggestionTypeLabel }}</span>
+                                                                            </span>
+                                                                            <span class="shrink-0 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-black text-slate-700" dir="ltr">
+                                                                                {{ $this->persianNumber($mobileSuggestionNationalId) }}
+                                                                            </span>
+                                                                        </button>
+                                                                    @endforeach
+                                                                @elseif(mb_strlen(trim((string) ($entry['national_id'] ?? ''))) >= 2 && $this->activeRecipientSearchIndex === $index)
+                                                                    <div class="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-6 text-center">
+                                                                        <i class="bi bi-search text-xl text-slate-300"></i>
+                                                                        <p class="mt-2 text-xs font-black text-slate-500">نتیجه‌ای پیدا نشد.</p>
+                                                                    </div>
+                                                                @else
+                                                                    <div class="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-6 text-center">
+                                                                        <i class="bi bi-search text-xl text-slate-300"></i>
+                                                                        <p class="mt-2 text-xs font-black text-slate-500">برای جستجو حداقل دو کاراکتر وارد کنید.</p>
+                                                                    </div>
+                                                                @endif
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                     <p class="mt-1.5 text-[10px] font-bold leading-5 text-slate-400">
                                                         برای جستجو می‌توانید نام یا کد ملی را وارد کنید؛ برای ثبت نهایی، انتخاب گیرنده یا کد ملی ۱۰ رقمی الزامی است.
