@@ -655,11 +655,53 @@
 
                                     <!-- Unregistered User Fields -->
                                     @if($entry['is_unregistered'] ?? false)
-                                        <div class="mt-3 rounded-xl border border-amber-100 bg-amber-50/50 p-3">
-                                            <p class="mb-2 text-[11px] font-bold text-amber-700">{{ $entry['not_found_notice'] ?: 'فرد در سیستم یافت نشد.' }}</p>
-                                            <div class="grid grid-cols-1 gap-2">
-                                                <input type="text" wire:model.blur="recipientEntries.{{ $index }}.full_name" class="rounded-lg border-slate-200 bg-white px-3 py-2 text-xs" placeholder="نام کامل">
-                                                <input type="tel" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" wire:model.blur="recipientEntries.{{ $index }}.mobile" class="rounded-lg border-slate-200 bg-white px-3 py-2 text-xs" placeholder="موبایل" maxlength="11">
+                                        <div class="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3">
+                                            <div class="flex items-start gap-2.5">
+                                                <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-amber-600 shadow-sm">
+                                                    <i class="bi bi-exclamation-triangle text-sm"></i>
+                                                </span>
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="flex flex-wrap items-center gap-2">
+                                                        <h4 class="text-xs font-black text-amber-900">ثبت دستی گیرنده</h4>
+                                                        <span class="rounded-full border border-amber-200 bg-white px-2 py-0.5 text-[9px] font-black text-amber-700">
+                                                            نیازمند تکمیل اطلاعات
+                                                        </span>
+                                                    </div>
+                                                    <p class="mt-1 text-[11px] font-bold leading-5 text-amber-800">
+                                                        {{ $entry['not_found_notice'] ?: 'این فرد در پرونده‌های شما یافت نشد.' }}
+                                                        ثبت این ردیف به صورت دستی انجام می‌شود؛ نام کامل را با دقت وارد کنید.
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                                <div>
+                                                    <label class="mb-1.5 block text-[10px] font-black text-amber-900">
+                                                        نام کامل
+                                                        <span class="text-rose-600">*</span>
+                                                    </label>
+                                                    <input type="text"
+                                                           wire:model.blur="recipientEntries.{{ $index }}.full_name"
+                                                           class="h-11 w-full rounded-xl border border-amber-200 bg-white px-3 text-sm font-bold text-slate-800 shadow-sm transition placeholder:text-slate-300 focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-400/15"
+                                                           placeholder="نام و نام خانوادگی">
+                                                    @error('recipientEntries.' . $index . '.full_name') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                                </div>
+
+                                                <div>
+                                                    <label class="mb-1.5 block text-[10px] font-black text-amber-900">
+                                                        موبایل
+                                                        <span class="font-bold text-amber-700">(اختیاری)</span>
+                                                    </label>
+                                                    <input type="tel"
+                                                           inputmode="numeric"
+                                                           pattern="[0-9]*"
+                                                           oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+                                                           wire:model.blur="recipientEntries.{{ $index }}.mobile"
+                                                           class="h-11 w-full rounded-xl border border-amber-200 bg-white px-3 text-sm font-bold text-slate-800 shadow-sm transition placeholder:text-slate-300 focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-400/15"
+                                                           placeholder="09xxxxxxxxx"
+                                                           maxlength="11">
+                                                    @error('recipientEntries.' . $index . '.mobile') <p class="mt-1 text-[10px] font-bold text-rose-600">{{ $message }}</p> @enderror
+                                                </div>
                                             </div>
                                         </div>
                                     @endif
