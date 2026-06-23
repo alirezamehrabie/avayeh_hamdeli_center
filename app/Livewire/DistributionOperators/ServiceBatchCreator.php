@@ -27,6 +27,8 @@ class ServiceBatchCreator extends Component
 
     public ?int $selectedServiceId = null;
 
+    public string $serviceSearch = '';
+
     public ?int $socialWorkerId = null;
 
     public string $socialWorkerQuery = '';
@@ -56,6 +58,10 @@ class ServiceBatchCreator extends Component
     public string $dateYear = '';
 
     public string $date = '';
+
+    protected ?Collection $predefinedServicesCache = null;
+
+    protected ?Service $selectedPredefinedServiceCache = null;
 
     public function mount(?int $editingServiceId = null): void
     {
@@ -93,6 +99,35 @@ class ServiceBatchCreator extends Component
     public function updatedSelectedServiceId(): void
     {
         $this->predefinedAllocations = [];
+        $this->selectedPredefinedServiceCache = null;
+        $this->resetValidation();
+    }
+
+    public function updatedServiceSearch(mixed $value): void
+    {
+        $this->serviceSearch = trim((string) $value);
+        $this->predefinedServicesCache = null;
+    }
+
+    public function selectPredefinedService(int $serviceId): void
+    {
+        $service = $this->resolvePredefinedService($serviceId);
+
+        $this->selectedServiceId = $service->id;
+        $this->predefinedAllocations = [];
+        $this->serviceSearch = '';
+        $this->selectedPredefinedServiceCache = $service;
+        $this->predefinedServicesCache = null;
+        $this->resetValidation();
+    }
+
+    public function clearPredefinedServiceSelection(): void
+    {
+        $this->selectedServiceId = null;
+        $this->predefinedAllocations = [];
+        $this->serviceSearch = '';
+        $this->selectedPredefinedServiceCache = null;
+        $this->predefinedServicesCache = null;
         $this->resetValidation();
     }
 
@@ -175,8 +210,11 @@ class ServiceBatchCreator extends Component
 
     public function render()
     {
+        $services = $this->predefinedServices();
+
         return view('livewire.distribution-operators.service-batch-creator', [
-            'services' => $this->predefinedServices(),
+            'services' => $services,
+            'serviceOptions' => $this->predefinedServiceOptions($services),
             'selectedService' => $this->selectedPredefinedService,
             'selectedServiceCategories' => $this->selectedPredefinedServiceCategories,
             'socialWorkerSuggestions' => $this->socialWorkerSuggestions,
@@ -448,7 +486,13 @@ class ServiceBatchCreator extends Component
 
     protected function predefinedServices(): Collection
     {
-        return Service::query()
+        if ($this->predefinedServicesCache instanceof Collection) {
+            return $this->predefinedServicesCache;
+        }
+
+        $search = trim($this->serviceSearch);
+
+        $services = Service::query()
             ->with(['serviceName', 'categories' => fn ($query) => $query->orderBy('sort_id')->orderBy('id')])
             ->whereIn('status', ['approved', 'in_distribution'])
             ->where(function (Builder $query): void {
@@ -456,8 +500,30 @@ class ServiceBatchCreator extends Component
                     ->orWhereDoesntHave('creator', fn (Builder $creatorQuery) => $creatorQuery
                         ->where('access_level', User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR));
             })
+            ->whereRaw('(select coalesce(sum(quantity), 0) from service_categories where service_categories.service_id = services.id and service_categories.deleted_at is null) > (select coalesce(sum(allocated_quantity), 0) from service_social_worker where service_social_worker.service_id = services.id)')
+            ->when($search !== '', function (Builder $query) use ($search): void {
+                $query->where(function (Builder $searchQuery) use ($search): void {
+                    $searchQuery->where('code', 'like', '%' . $search . '%')
+                        ->orWhere('name', 'like', '%' . $search . '%')
+                        ->orWhereHas('serviceName', fn (Builder $serviceNameQuery) => $serviceNameQuery
+                            ->where('name', 'like', '%' . $search . '%'))
+                        ->orWhereHas('categories', fn (Builder $categoryQuery) => $categoryQuery
+                            ->where('name', 'like', '%' . $search . '%'));
+                });
+            })
             ->latest()
+            ->limit(25)
             ->get();
+
+        if ($this->selectedServiceId && ! $services->contains('id', (int) $this->selectedServiceId)) {
+            $selectedService = $this->selectedPredefinedService;
+
+            if ($selectedService) {
+                $services->prepend($selectedService);
+            }
+        }
+
+        return $this->predefinedServicesCache = $services->unique('id')->values();
     }
 
     public function getSelectedPredefinedServiceProperty(): ?Service
@@ -466,7 +532,12 @@ class ServiceBatchCreator extends Component
             return null;
         }
 
-        return $this->predefinedServices()->firstWhere('id', $this->selectedServiceId);
+        if ($this->selectedPredefinedServiceCache instanceof Service
+            && (int) $this->selectedPredefinedServiceCache->id === (int) $this->selectedServiceId) {
+            return $this->selectedPredefinedServiceCache;
+        }
+
+        return $this->selectedPredefinedServiceCache = $this->resolvePredefinedService((int) $this->selectedServiceId);
     }
 
     public function getSelectedPredefinedServiceCategoriesProperty(): Collection
@@ -519,6 +590,52 @@ class ServiceBatchCreator extends Component
             ->sum('allocated_quantity');
 
         return max(0, (float) $category->quantity - $allocatedQuantity);
+    }
+
+    protected function predefinedServiceOptions(Collection $services): array
+    {
+        if ($services->isEmpty()) {
+            return [];
+        }
+
+        $categoryIds = $services
+            ->flatMap(fn (Service $service) => $service->categories->pluck('id'))
+            ->map(fn ($categoryId) => (int) $categoryId)
+            ->filter()
+            ->values();
+
+        $allocatedByCategory = $categoryIds->isEmpty()
+            ? collect()
+            : ServiceWorkerAllocation::query()
+                ->select('service_category_id')
+                ->selectRaw('COALESCE(SUM(allocated_quantity), 0) as allocated_quantity')
+                ->whereIn('service_category_id', $categoryIds->all())
+                ->groupBy('service_category_id')
+                ->pluck('allocated_quantity', 'service_category_id');
+
+        return $services
+            ->map(function (Service $service) use ($allocatedByCategory): array {
+                $categories = $service->categories->values();
+                $remainingAssignable = $categories->sum(function (ServiceCategory $category) use ($allocatedByCategory): float {
+                    $allocated = (float) ($allocatedByCategory[$category->id] ?? 0);
+
+                    return max(0, (float) $category->quantity - $allocated);
+                });
+
+                return [
+                    'id' => (int) $service->id,
+                    'code' => (string) $service->code,
+                    'name' => $service->name ?: ($service->serviceName?->name ?? 'بدون عنوان'),
+                    'status' => Service::STATUS_OPTIONS[$service->status] ?? $service->status,
+                    'remaining' => $remainingAssignable,
+                    'remainingLabel' => number_format($remainingAssignable, 2),
+                    'categoriesCount' => $categories->count(),
+                    'categorySummary' => $categories->pluck('name')->filter()->take(4)->implode('، '),
+                ];
+            })
+            ->filter(fn (array $service): bool => $service['remaining'] > 0 || (int) $service['id'] === (int) $this->selectedServiceId)
+            ->values()
+            ->all();
     }
 
     public function getSocialWorkerSuggestionsProperty(): Collection
