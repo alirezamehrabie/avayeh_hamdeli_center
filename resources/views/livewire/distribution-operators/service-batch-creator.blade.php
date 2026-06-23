@@ -71,7 +71,7 @@
         @endif
     </div>
 
-    <form wire:submit.prevent="saveBatch" class="space-y-4">
+    <form wire:submit.prevent="requestSaveConfirmation" class="space-y-4">
         @if($mode === 'predefined' && !$isEditing)
             <section class="overflow-visible rounded-2xl border border-cyan-100 bg-white shadow-sm">
                 <div class="border-b border-cyan-100 bg-cyan-50/60 px-4 py-3 sm:px-5">
@@ -546,10 +546,116 @@
             <button
                 type="submit"
                 @disabled($hasPredefinedOverAllocation)
+                wire:loading.attr="disabled"
+                wire:target="requestSaveConfirmation"
                 class="inline-flex w-full items-center justify-center rounded-2xl bg-emerald-700 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-700/20 transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none sm:w-auto"
             >
-                {{ $mode === 'predefined' && !$isEditing ? 'ثبت تخصیص خدمت موجود' : 'ثبت و تخصیص خدمت متفرقه' }}
+                <span wire:loading.remove wire:target="requestSaveConfirmation">
+                    {{ $mode === 'predefined' && !$isEditing ? 'مرور و تأیید تخصیص' : 'مرور و تأیید خدمت متفرقه' }}
+                </span>
+                <span wire:loading wire:target="requestSaveConfirmation">در حال بررسی...</span>
             </button>
         </div>
     </form>
+
+    @if($confirmingBatchSave)
+        <div class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 p-0 backdrop-blur-sm sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="operator-confirmation-title">
+            <div class="flex max-h-[92svh] w-full max-w-3xl flex-col rounded-t-3xl border border-slate-200 bg-white shadow-2xl sm:max-h-[88vh] sm:rounded-3xl">
+                <div class="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-4 sm:px-5">
+                    <div class="min-w-0">
+                        <h3 id="operator-confirmation-title" class="text-lg font-black text-slate-900">{{ $confirmationSummary['title'] ?? 'تأیید نهایی' }}</h3>
+                        <p class="mt-1 text-xs leading-5 text-slate-500">پیش از ثبت نهایی، خدمت، مددکار و مقادیر را بررسی کنید.</p>
+                    </div>
+                    <button
+                        type="button"
+                        wire:click="cancelSaveConfirmation"
+                        class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50"
+                        aria-label="بستن"
+                    >
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+
+                <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                            <p class="text-xs font-bold text-slate-500">خدمت</p>
+                            <p class="mt-1 text-sm font-black text-slate-900">{{ $confirmationSummary['service_name'] ?? '-' }}</p>
+                            @if(!empty($confirmationSummary['service_code']))
+                                <p class="mt-1 text-xs font-bold text-slate-500">{{ $confirmationSummary['service_code'] }}</p>
+                            @endif
+                            @if(!empty($confirmationSummary['service_type']))
+                                <p class="mt-2 inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-700">{{ $confirmationSummary['service_type'] }}</p>
+                            @endif
+                        </div>
+
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                            <p class="text-xs font-bold text-slate-500">مددکار</p>
+                            <p class="mt-1 text-sm font-black text-slate-900">{{ $confirmationSummary['worker_name'] ?? '-' }}</p>
+                            @if(!empty($confirmationSummary['worker_code']))
+                                <p class="mt-1 text-xs font-bold text-slate-500">کد {{ $confirmationSummary['worker_code'] }}</p>
+                            @endif
+                            <p class="mt-2 text-xs font-bold text-slate-500">{{ $confirmationSummary['date_label'] ?? '' }}</p>
+                        </div>
+                    </div>
+
+                    @if(!empty($confirmationSummary['description']))
+                        <div class="mt-3 rounded-2xl border border-slate-200 bg-white p-3">
+                            <p class="text-xs font-bold text-slate-500">توضیحات</p>
+                            <p class="mt-1 line-clamp-3 text-sm leading-6 text-slate-700">{{ $confirmationSummary['description'] }}</p>
+                        </div>
+                    @endif
+
+                    <div class="mt-3 rounded-2xl border border-slate-200 bg-white">
+                        <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-3 py-3">
+                            <p class="text-sm font-black text-slate-900">مقادیر ثبت‌شونده</p>
+                            <span class="rounded-full bg-cyan-50 px-3 py-1 text-xs font-black text-cyan-700">جمع: {{ $confirmationSummary['total_quantity_label'] ?? '0.00' }}</span>
+                        </div>
+                        <div class="max-h-72 divide-y divide-slate-100 overflow-y-auto">
+                            @forelse($confirmationSummary['rows'] ?? [] as $row)
+                                <div class="grid gap-2 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
+                                    <div class="min-w-0">
+                                        <p class="truncate text-sm font-black text-slate-800">{{ $row['name'] }}</p>
+                                        <p class="mt-1 text-xs font-bold text-slate-500">{{ $row['unit_label'] }}</p>
+                                    </div>
+                                    <div class="rounded-xl bg-slate-50 px-3 py-2 text-right">
+                                        <p class="text-[10px] font-bold text-slate-500">مقدار</p>
+                                        <p class="text-sm font-black text-slate-900">{{ $row['quantity_label'] }}</p>
+                                    </div>
+                                    @if(($confirmationSummary['mode'] ?? '') === 'predefined')
+                                        <div class="rounded-xl bg-emerald-50 px-3 py-2 text-right">
+                                            <p class="text-[10px] font-bold text-emerald-700">مانده بعد از ثبت</p>
+                                            <p class="text-sm font-black text-emerald-800">{{ $row['remaining_label'] }}</p>
+                                        </div>
+                                    @endif
+                                </div>
+                            @empty
+                                <div class="px-4 py-8 text-center text-sm font-bold text-slate-500">مقداری برای ثبت انتخاب نشده است.</div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col-reverse gap-2 border-t border-slate-200 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 sm:flex-row sm:justify-end sm:px-5 sm:pb-4">
+                    <button
+                        type="button"
+                        wire:click="cancelSaveConfirmation"
+                        class="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-50"
+                    >
+                        بازگشت به ویرایش
+                    </button>
+                    <button
+                        type="button"
+                        wire:click="confirmSaveBatch"
+                        wire:loading.attr="disabled"
+                        wire:target="confirmSaveBatch"
+                        class="inline-flex items-center justify-center rounded-2xl bg-emerald-700 px-5 py-3 text-sm font-black text-white shadow-lg shadow-emerald-700/20 transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+                    >
+                        <span wire:loading.remove wire:target="confirmSaveBatch">تأیید و ثبت نهایی</span>
+                        <span wire:loading wire:target="confirmSaveBatch">در حال ثبت...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

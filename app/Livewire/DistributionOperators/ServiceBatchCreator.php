@@ -37,6 +37,8 @@ class ServiceBatchCreator extends Component
 
     public ?int $editingServiceId = null;
 
+    public bool $confirmingBatchSave = false;
+
     /**
      * @var array<int, string|int|float|null>
      */
@@ -101,6 +103,7 @@ class ServiceBatchCreator extends Component
         }
 
         $this->resetValidation();
+        $this->confirmingBatchSave = false;
     }
 
     public function updatedSelectedServiceId(): void
@@ -108,6 +111,7 @@ class ServiceBatchCreator extends Component
         $this->predefinedAllocations = [];
         $this->selectedPredefinedServiceCache = null;
         $this->flushSelectedPredefinedServiceMetrics();
+        $this->confirmingBatchSave = false;
         $this->resetValidation();
     }
 
@@ -146,6 +150,7 @@ class ServiceBatchCreator extends Component
         $this->selectedPredefinedServiceCache = $service;
         $this->flushSelectedPredefinedServiceMetrics();
         $this->predefinedServicesCache = null;
+        $this->confirmingBatchSave = false;
         $this->resetValidation();
     }
 
@@ -157,6 +162,7 @@ class ServiceBatchCreator extends Component
         $this->selectedPredefinedServiceCache = null;
         $this->flushSelectedPredefinedServiceMetrics();
         $this->predefinedServicesCache = null;
+        $this->confirmingBatchSave = false;
         $this->resetValidation();
     }
 
@@ -169,21 +175,41 @@ class ServiceBatchCreator extends Component
         if ($this->socialWorkerQuery === '') {
             $this->socialWorkerId = null;
         }
+
+        $this->confirmingBatchSave = false;
     }
 
     public function updatedDateDay(): void
     {
+        $this->confirmingBatchSave = false;
         $this->synchronizeDate();
     }
 
     public function updatedDateMonth(): void
     {
+        $this->confirmingBatchSave = false;
         $this->synchronizeDate();
     }
 
     public function updatedDateYear(): void
     {
+        $this->confirmingBatchSave = false;
         $this->synchronizeDate();
+    }
+
+    public function updatedMiscServiceType(): void
+    {
+        $this->confirmingBatchSave = false;
+    }
+
+    public function updatedMiscDescription(): void
+    {
+        $this->confirmingBatchSave = false;
+    }
+
+    public function updatedMiscCategories(): void
+    {
+        $this->confirmingBatchSave = false;
     }
 
     public function selectSocialWorker(int $socialWorkerId): void
@@ -195,6 +221,7 @@ class ServiceBatchCreator extends Component
         $this->socialWorkerId = $worker->id;
         $this->socialWorkerQuery = trim($worker->full_name . ' - کد ' . $worker->worker_code);
         $this->showSocialWorkerSuggestions = false;
+        $this->confirmingBatchSave = false;
     }
 
     public function clearSocialWorkerSelection(): void
@@ -202,6 +229,7 @@ class ServiceBatchCreator extends Component
         $this->socialWorkerId = null;
         $this->socialWorkerQuery = '';
         $this->showSocialWorkerSuggestions = true;
+        $this->confirmingBatchSave = false;
     }
 
     public function useMaxPredefinedAllocation(int $categoryId): void
@@ -209,18 +237,21 @@ class ServiceBatchCreator extends Component
         $assignableQuantity = $this->predefinedAssignableForCategory($categoryId);
 
         $this->predefinedAllocations[$categoryId] = $this->formatDecimal($assignableQuantity);
+        $this->confirmingBatchSave = false;
         $this->resetValidation('predefinedAllocations.' . $categoryId);
     }
 
     public function clearPredefinedAllocation(int $categoryId): void
     {
         unset($this->predefinedAllocations[$categoryId]);
+        $this->confirmingBatchSave = false;
         $this->resetValidation('predefinedAllocations.' . $categoryId);
     }
 
     public function addCategory(): void
     {
         $this->miscCategories[] = $this->makeMiscCategory();
+        $this->confirmingBatchSave = false;
     }
 
     public function removeCategory(int $index): void
@@ -231,15 +262,49 @@ class ServiceBatchCreator extends Component
 
         unset($this->miscCategories[$index]);
         $this->miscCategories = array_values($this->miscCategories);
+        $this->confirmingBatchSave = false;
     }
 
-    public function saveBatch()
+    public function requestSaveConfirmation(): void
     {
         $this->synchronizeDate();
+
+        if ($this->mode === self::MODE_MISC || $this->editingServiceId) {
+            $this->validate($this->miscRules(), [], $this->validationAttributes());
+        } else {
+            $this->validate($this->predefinedRules(), [], $this->validationAttributes());
+            $this->validatePredefinedAllocationRowsForConfirmation();
+        }
+
+        $this->confirmingBatchSave = true;
+    }
+
+    public function cancelSaveConfirmation(): void
+    {
+        $this->confirmingBatchSave = false;
+    }
+
+    public function confirmSaveBatch()
+    {
+        if (! $this->confirmingBatchSave) {
+            $this->requestSaveConfirmation();
+
+            return null;
+        }
+
+        $this->synchronizeDate();
+        $this->confirmingBatchSave = false;
 
         return ($this->mode === self::MODE_MISC || $this->editingServiceId)
             ? $this->saveMiscService()
             : $this->savePredefinedAllocation();
+    }
+
+    public function saveBatch()
+    {
+        $this->confirmingBatchSave = true;
+
+        return $this->confirmSaveBatch();
     }
 
     public function cancelEditing()
@@ -263,6 +328,7 @@ class ServiceBatchCreator extends Component
             'selectedServiceCategories' => $this->selectedPredefinedServiceCategories,
             'selectedServiceCategoryMetrics' => $selectedService ? $this->selectedPredefinedCategoryMetrics() : [],
             'hasPredefinedOverAllocation' => $this->hasPredefinedOverAllocation(),
+            'confirmationSummary' => $this->confirmingBatchSave ? $this->confirmationSummary() : [],
             'socialWorkerSuggestions' => $this->socialWorkerSuggestions,
             'isEditing' => $this->editingServiceId !== null,
             'typeOptions' => Service::TYPE_OPTIONS,
@@ -337,6 +403,33 @@ class ServiceBatchCreator extends Component
         session()->flash('success', 'تخصیص خدمت انتخاب‌شده با موفقیت ثبت شد.');
 
         return redirect()->route('distribution-operator.service-list');
+    }
+
+    protected function validatePredefinedAllocationRowsForConfirmation(): void
+    {
+        $rows = collect($this->predefinedAllocations)
+            ->map(fn ($quantity, $categoryId): array => [
+                'category_id' => (int) $categoryId,
+                'quantity' => (float) $quantity,
+            ])
+            ->filter(fn (array $row): bool => $row['quantity'] > 0)
+            ->values();
+
+        if ($rows->isEmpty()) {
+            throw ValidationException::withMessages([
+                'predefinedAllocations' => 'حداقل برای یک دسته‌بندی مقدار تخصیص وارد کنید.',
+            ]);
+        }
+
+        foreach ($rows as $row) {
+            $assignableQuantity = $this->predefinedAssignableForCategory((int) $row['category_id']);
+
+            if ((float) $row['quantity'] > $assignableQuantity) {
+                throw ValidationException::withMessages([
+                    'predefinedAllocations.' . $row['category_id'] => 'مقدار واردشده از موجودی قابل تخصیص این دسته‌بندی بیشتر است.',
+                ]);
+            }
+        }
     }
 
     protected function saveMiscService()
@@ -663,6 +756,101 @@ class ServiceBatchCreator extends Component
         }
 
         $this->resetValidation($field);
+    }
+
+    protected function confirmationSummary(): array
+    {
+        return ($this->mode === self::MODE_MISC || $this->editingServiceId)
+            ? $this->miscConfirmationSummary()
+            : $this->predefinedConfirmationSummary();
+    }
+
+    protected function predefinedConfirmationSummary(): array
+    {
+        $service = $this->selectedPredefinedService;
+        $worker = $this->selectedSocialWorker();
+        $metrics = $this->selectedPredefinedCategoryMetrics();
+        $rows = $this->selectedPredefinedServiceCategories
+            ->map(function (ServiceCategory $category) use ($metrics): ?array {
+                $quantity = $this->predefinedAllocationForCategory((int) $category->id);
+
+                if ($quantity <= 0) {
+                    return null;
+                }
+
+                $assignable = (float) ($metrics[$category->id]['assignable'] ?? 0);
+
+                return [
+                    'name' => $category->name,
+                    'unit' => $category->unit,
+                    'unit_label' => Service::unitOptions()[$category->unit] ?? $category->unit,
+                    'quantity' => $quantity,
+                    'quantity_label' => number_format($quantity, 2),
+                    'remaining_label' => number_format(max(0, $assignable - $quantity), 2),
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+
+        return [
+            'mode' => self::MODE_PREDEFINED,
+            'title' => 'تأیید تخصیص خدمت موجود',
+            'service_name' => $service?->name ?: ($service?->serviceName?->name ?? 'خدمت انتخاب‌شده'),
+            'service_code' => (string) ($service?->code ?? ''),
+            'worker_name' => $worker?->full_name ?? $this->socialWorkerQuery,
+            'worker_code' => $worker?->worker_code ? (string) $worker->worker_code : '',
+            'date_label' => 'ثبت تخصیص پس از تأیید نهایی انجام می‌شود',
+            'total_quantity_label' => number_format(collect($rows)->sum('quantity'), 2),
+            'rows' => $rows,
+        ];
+    }
+
+    protected function miscConfirmationSummary(): array
+    {
+        $worker = $this->selectedSocialWorker();
+        $rows = collect($this->miscCategories)
+            ->map(function (array $category): array {
+                $quantity = (float) ($category['quantity'] ?? 0);
+                $unit = (string) ($category['unit'] ?? '');
+
+                return [
+                    'name' => trim((string) ($category['name'] ?? '')),
+                    'unit' => $unit,
+                    'unit_label' => Service::unitOptions()[$unit] ?? $unit,
+                    'quantity' => $quantity,
+                    'quantity_label' => number_format($quantity, 2),
+                    'remaining_label' => '0.00',
+                ];
+            })
+            ->filter(fn (array $row): bool => $row['name'] !== '' && $row['quantity'] > 0)
+            ->values()
+            ->all();
+
+        return [
+            'mode' => self::MODE_MISC,
+            'title' => $this->editingServiceId ? 'تأیید ویرایش خدمت متفرقه' : 'تأیید ایجاد خدمت متفرقه',
+            'service_name' => $this->nextMiscName(),
+            'service_code' => '',
+            'service_type' => Service::TYPE_OPTIONS[$this->miscServiceType] ?? $this->miscServiceType,
+            'worker_name' => $worker?->full_name ?? $this->socialWorkerQuery,
+            'worker_code' => $worker?->worker_code ? (string) $worker->worker_code : '',
+            'date_label' => $this->date,
+            'description' => trim($this->miscDescription),
+            'total_quantity_label' => number_format(collect($rows)->sum('quantity'), 2),
+            'rows' => $rows,
+        ];
+    }
+
+    protected function selectedSocialWorker(): ?SocialWorker
+    {
+        if (! $this->socialWorkerId) {
+            return null;
+        }
+
+        return SocialWorker::query()
+            ->select(['id', 'first_name', 'last_name', 'worker_code'])
+            ->find($this->socialWorkerId);
     }
 
     /**

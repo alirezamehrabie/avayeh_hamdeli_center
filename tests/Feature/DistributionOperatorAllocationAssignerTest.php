@@ -343,6 +343,99 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->assertDontSee('برای ثبت، مقدار را اصلاح کنید یا از گزینه حداکثر استفاده کنید');
     }
 
+    public function test_predefined_mode_requires_confirmation_before_saving(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 921,
+            'first_name' => 'مددکار',
+            'last_name' => 'تأیید',
+            'is_active' => true,
+        ]);
+        $manager = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_MANAGER,
+            'is_admin' => true,
+        ]);
+        $serviceName = ServiceName::query()->create([
+            'name' => 'پویش تأیید',
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+        $service = Service::query()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'پویش تأیید',
+            'service_type' => 'individual',
+            'supports_gate_delivery' => true,
+            'supports_home_delivery' => true,
+            'description' => null,
+            'total_quantity' => 8,
+            'total_service_value' => 0,
+            'distribution_start_date' => '2026-06-20',
+            'distribution_end_date' => '2026-06-20',
+            'status' => 'approved',
+            'quantity_delivered' => 0,
+            'created_by' => $manager->id,
+        ]);
+        $category = $service->categories()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'بسته تأیید',
+            'quantity' => 8,
+            'unit' => 'pack',
+            'value' => 0,
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class)
+            ->set('mode', ServiceBatchCreator::MODE_PREDEFINED)
+            ->set('selectedServiceId', $service->id)
+            ->call('selectSocialWorker', $worker->id)
+            ->set('predefinedAllocations.' . $category->id, '4')
+            ->call('requestSaveConfirmation')
+            ->assertSet('confirmingBatchSave', true)
+            ->assertSee('تأیید تخصیص خدمت موجود')
+            ->assertSee('پویش تأیید')
+            ->assertSee('مددکار تأیید')
+            ->assertSee('بسته تأیید')
+            ->assertSee('4.00')
+            ->assertSee('مانده بعد از ثبت');
+
+        $this->assertDatabaseMissing('service_social_worker', [
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+        ]);
+
+        Livewire::test(ServiceBatchCreator::class)
+            ->set('mode', ServiceBatchCreator::MODE_PREDEFINED)
+            ->set('selectedServiceId', $service->id)
+            ->call('selectSocialWorker', $worker->id)
+            ->set('predefinedAllocations.' . $category->id, '4')
+            ->call('requestSaveConfirmation')
+            ->call('cancelSaveConfirmation')
+            ->assertSet('confirmingBatchSave', false);
+
+        Livewire::test(ServiceBatchCreator::class)
+            ->set('mode', ServiceBatchCreator::MODE_PREDEFINED)
+            ->set('selectedServiceId', $service->id)
+            ->call('selectSocialWorker', $worker->id)
+            ->set('predefinedAllocations.' . $category->id, '4')
+            ->call('requestSaveConfirmation')
+            ->call('confirmSaveBatch');
+
+        $this->assertDatabaseHas('service_social_worker', [
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'allocated_quantity' => 4,
+        ]);
+    }
+
     public function test_misc_mode_auto_names_created_service(): void
     {
         $operator = User::factory()->create([
