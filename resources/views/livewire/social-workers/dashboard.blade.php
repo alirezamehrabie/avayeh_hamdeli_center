@@ -1028,7 +1028,13 @@
                                                                     $remainingStock = (float) $metrics['remaining_stock'];
                                                                     $currentQuantity = (float) data_get($entry, 'category_quantities.' . (int) $category->id, 0);
                                                                     $pendingCategoryQuantity = collect($recipientEntries)->sum(fn ($entry) => (float) data_get($entry, 'category_quantities.' . (int) $category->id, 0));
-                                                                    $liveRemainingAllocation = max(0, (float) $metrics['remaining_allocation'] - $pendingCategoryQuantity);
+                                                                    $otherRowsPendingQuantity = max(0, $pendingCategoryQuantity - $currentQuantity);
+                                                                    $availableForCurrentInput = max(0, min(
+                                                                        $remainingStock,
+                                                                        (float) $metrics['remaining_allocation'] - $otherRowsPendingQuantity
+                                                                    ));
+                                                                    $liveRemainingAllocation = max(0, $availableForCurrentInput - $currentQuantity);
+                                                                    $exceedsRemainingQuota = $currentQuantity > 0 && $currentQuantity > $availableForCurrentInput;
                                                                     $isUnavailable = $remainingStock <= 0;
                                                                 @endphp
 
@@ -1053,12 +1059,22 @@
                                                                                type="number"
                                                                                data-error-field="recipientEntries.{{ $index }}.category_quantities.{{ $category->id }}"
                                                                                min="0.01"
+                                                                               max="{{ number_format($availableForCurrentInput, 2, '.', '') }}"
                                                                                step="0.01"
                                                                                inputmode="decimal"
                                                                                wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.category_quantities.{{ $category->id }}"
                                                                                @disabled(!$this->selectedService || ($isUnavailable && $currentQuantity <= 0))
-                                                                               class="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-2.5 text-center text-sm font-black text-slate-800 transition placeholder:text-slate-300 focus:border-cyan-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-500/10 disabled:cursor-not-allowed disabled:opacity-60"
+                                                                               @class([
+                                                                                   'h-11 w-full rounded-xl border bg-slate-50 px-2.5 text-center text-sm font-black text-slate-800 transition placeholder:text-slate-300 focus:bg-white focus:outline-none disabled:cursor-not-allowed disabled:opacity-60',
+                                                                                   'border-rose-300 bg-rose-50 text-rose-700 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10' => $exceedsRemainingQuota,
+                                                                                   'border-slate-200 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10' => ! $exceedsRemainingQuota,
+                                                                               ])
                                                                                placeholder="۰">
+                                                                        @if($exceedsRemainingQuota)
+                                                                            <p class="mt-1.5 text-[10px] font-bold text-rose-600">
+                                                                                بیشتر از سهمیۀ مجاز
+                                                                            </p>
+                                                                        @endif
                                                                         @error('recipientEntries.' . $index . '.category_quantities.' . $category->id) <p class="mt-1 rounded-lg bg-rose-50 px-2 py-1.5 text-[11px] font-bold text-rose-700">{{ $message }}</p> @enderror
                                                                     </div>
                                                                 </div>
