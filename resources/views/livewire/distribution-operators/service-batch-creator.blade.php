@@ -39,7 +39,64 @@
         </div>
 
         @if(!$isEditing)
-            <div class="grid gap-3 p-4 sm:grid-cols-2 sm:p-5">
+            <div class="space-y-4 p-4 sm:p-5">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <p class="text-sm font-black text-slate-900">اول مشخص کنید خدمت از کدام مسیر ثبت می‌شود.</p>
+                    <p class="mt-1 text-xs leading-5 text-slate-500">مسیر پیشنهادی، تخصیص از خدمت‌های تاییدشده موجود است. فقط وقتی خدمت در فهرست وجود ندارد، خدمت یک‌باره بسازید.</p>
+                </div>
+
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <label class="group relative flex min-h-40 cursor-pointer flex-col justify-between rounded-2xl border p-4 transition focus-within:ring-2 focus-within:ring-cyan-500 focus-within:ring-offset-2 {{ $mode === 'predefined' ? 'border-cyan-500 bg-cyan-50 shadow-sm ring-1 ring-cyan-200' : 'border-slate-200 bg-white hover:border-cyan-300 hover:bg-cyan-50/40' }}">
+                        <input type="radio" value="predefined" wire:model.live="mode" class="sr-only">
+                        <span class="flex items-start justify-between gap-3">
+                            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl {{ $mode === 'predefined' ? 'bg-cyan-600 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-cyan-100 group-hover:text-cyan-700' }}">
+                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M4 7.5h16M7 12h10M9 16.5h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                </svg>
+                            </span>
+                            <span class="rounded-full {{ $mode === 'predefined' ? 'bg-cyan-600 text-white' : 'bg-cyan-50 text-cyan-700' }} px-3 py-1 text-[11px] font-black">پیشنهادی</span>
+                        </span>
+                        <span class="mt-4 block">
+                            <span class="block text-base font-black text-slate-900">تخصیص خدمت تاییدشده موجود</span>
+                            <span class="mt-2 block text-sm leading-6 text-slate-600">برای وقتی که خدمت قبلا ثبت و تایید شده است. فقط خدمت، مددکار و مقدار تخصیص را انتخاب می‌کنید.</span>
+                        </span>
+                        <span class="mt-4 flex items-center justify-between rounded-xl {{ $mode === 'predefined' ? 'bg-white/80 text-cyan-800' : 'bg-slate-50 text-slate-500' }} px-3 py-2 text-xs font-bold">
+                            <span>{{ $mode === 'predefined' ? 'همین مسیر فعال است' : 'انتخاب این مسیر' }}</span>
+                            <span class="h-3 w-3 rounded-full {{ $mode === 'predefined' ? 'bg-cyan-600' : 'bg-slate-300' }}"></span>
+                        </span>
+                    </label>
+
+                    <label class="group relative flex min-h-40 cursor-pointer flex-col justify-between rounded-2xl border p-4 transition focus-within:ring-2 focus-within:ring-emerald-500 focus-within:ring-offset-2 {{ $mode === 'misc' ? 'border-emerald-500 bg-emerald-50 shadow-sm ring-1 ring-emerald-200' : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/40' }}">
+                        <input type="radio" value="misc" wire:model.live="mode" class="sr-only">
+                        <span class="flex items-start justify-between gap-3">
+                            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl {{ $mode === 'misc' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-emerald-100 group-hover:text-emerald-700' }}">
+                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                </svg>
+                            </span>
+                            <span class="rounded-full {{ $mode === 'misc' ? 'bg-emerald-600 text-white' : 'bg-amber-50 text-amber-700' }} px-3 py-1 text-[11px] font-black">فقط در صورت نبودن خدمت</span>
+                        </span>
+                        <span class="mt-4 block">
+                            <span class="block text-base font-black text-slate-900">ایجاد خدمت یک‌باره جدید</span>
+                            <span class="mt-2 block text-sm leading-6 text-slate-600">برای موارد خارج از فهرست تاییدشده. سیستم {{ $nextMiscName }} را می‌سازد و همان‌جا به مددکار تخصیص می‌دهد.</span>
+                        </span>
+                        <span class="mt-4 flex items-center justify-between rounded-xl {{ $mode === 'misc' ? 'bg-white/80 text-emerald-800' : 'bg-slate-50 text-slate-500' }} px-3 py-2 text-xs font-bold">
+                            <span>{{ $mode === 'misc' ? 'همین مسیر فعال است' : 'انتخاب این مسیر' }}</span>
+                            <span class="h-3 w-3 rounded-full {{ $mode === 'misc' ? 'bg-emerald-600' : 'bg-slate-300' }}"></span>
+                        </span>
+                    </label>
+                </div>
+
+                <div class="rounded-2xl border border-dashed {{ $mode === 'predefined' ? 'border-cyan-200 bg-cyan-50/70 text-cyan-800' : 'border-emerald-200 bg-emerald-50/70 text-emerald-800' }} px-4 py-3 text-xs font-bold leading-6">
+                    @if($mode === 'predefined')
+                        اکنون فقط فرم تخصیص خدمت موجود نمایش داده می‌شود؛ فیلدهای ایجاد خدمت جدید مخفی هستند.
+                    @else
+                        اکنون فقط فرم ایجاد خدمت یک‌باره نمایش داده می‌شود؛ فیلدهای تخصیص خدمت موجود مخفی هستند.
+                    @endif
+                </div>
+            </div>
+
+            <div class="hidden">
                 <label class="group relative flex cursor-pointer gap-3 rounded-2xl border p-4 transition focus-within:ring-2 focus-within:ring-cyan-500 focus-within:ring-offset-2 {{ $mode === 'predefined' ? 'border-cyan-500 bg-cyan-50 shadow-sm ring-1 ring-cyan-200' : 'border-slate-200 bg-white hover:border-cyan-300 hover:bg-cyan-50/40' }}">
                     <input type="radio" value="predefined" wire:model.live="mode" class="sr-only">
                     <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl {{ $mode === 'predefined' ? 'bg-cyan-600 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-cyan-100 group-hover:text-cyan-700' }}">
