@@ -16,38 +16,56 @@
         </div>
     @endif
 
-    <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-                <h1 class="text-2xl font-black text-slate-900">{{ $isEditing ? 'ویرایش خدمت متفرقه' : 'تخصیص خدمت و ایجاد خدمت متفرقه' }}</h1>
-                <p class="mt-2 text-sm leading-6 text-slate-500">
-                    برای خدمات آماده، فقط از موجودی تأییدشده به مددکار تخصیص دهید. برای موارد خارج از فهرست، یک خدمت متفرقه جدید ایجاد و همان‌جا تخصیص داده می‌شود.
-                </p>
-            </div>
+    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="border-b border-slate-100 bg-slate-50/70 p-4 sm:p-5">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                    <h1 class="text-2xl font-black text-slate-900">{{ $isEditing ? 'ویرایش خدمت متفرقه' : 'تخصیص خدمت و ایجاد خدمت متفرقه' }}</h1>
+                    <p class="mt-2 text-sm leading-6 text-slate-500">
+                        برای خدمات آماده، فقط از موجودی تأییدشده به مددکار تخصیص دهید. برای موارد خارج از فهرست، یک خدمت متفرقه جدید ایجاد و همان‌جا تخصیص داده می‌شود.
+                    </p>
+                </div>
 
-            @if($isEditing)
-                <button
-                    type="button"
-                    wire:click="cancelEditing"
-                    class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
-                >
-                    انصراف
-                </button>
-            @endif
+                @if($isEditing)
+                    <button
+                        type="button"
+                        wire:click="cancelEditing"
+                        class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                    >
+                        انصراف
+                    </button>
+                @endif
+            </div>
         </div>
 
         @if(!$isEditing)
-            <div class="mt-5 grid gap-3 sm:grid-cols-2">
-                <label class="cursor-pointer rounded-2xl border p-4 transition {{ $mode === 'predefined' ? 'border-cyan-400 bg-cyan-50' : 'border-slate-200 bg-white hover:border-cyan-200' }}">
+            <div class="grid gap-3 p-4 sm:grid-cols-2 sm:p-5">
+                <label class="group relative flex cursor-pointer gap-3 rounded-2xl border p-4 transition focus-within:ring-2 focus-within:ring-cyan-500 focus-within:ring-offset-2 {{ $mode === 'predefined' ? 'border-cyan-500 bg-cyan-50 shadow-sm ring-1 ring-cyan-200' : 'border-slate-200 bg-white hover:border-cyan-300 hover:bg-cyan-50/40' }}">
                     <input type="radio" value="predefined" wire:model.live="mode" class="sr-only">
-                    <span class="block text-sm font-black text-slate-900">تخصیص خدمت موجود</span>
-                    <span class="mt-1 block text-xs leading-5 text-slate-500">انتخاب خدمت تأییدشده و تخصیص مقدار از موجودی دسته‌بندی‌های آن.</span>
+                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl {{ $mode === 'predefined' ? 'bg-cyan-600 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-cyan-100 group-hover:text-cyan-700' }}">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M4 7.5h16M7 12h10M9 16.5h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        </svg>
+                    </span>
+                    <span class="min-w-0">
+                        <span class="block text-sm font-black text-slate-900">تخصیص خدمت موجود</span>
+                        <span class="mt-1 block text-xs leading-5 text-slate-500">انتخاب خدمت تأییدشده و تخصیص مقدار از موجودی دسته‌بندی‌های آن.</span>
+                    </span>
+                    <span class="absolute left-4 top-4 h-3 w-3 rounded-full {{ $mode === 'predefined' ? 'bg-cyan-600' : 'bg-slate-200' }}"></span>
                 </label>
 
-                <label class="cursor-pointer rounded-2xl border p-4 transition {{ $mode === 'misc' ? 'border-emerald-400 bg-emerald-50' : 'border-slate-200 bg-white hover:border-emerald-200' }}">
+                <label class="group relative flex cursor-pointer gap-3 rounded-2xl border p-4 transition focus-within:ring-2 focus-within:ring-emerald-500 focus-within:ring-offset-2 {{ $mode === 'misc' ? 'border-emerald-500 bg-emerald-50 shadow-sm ring-1 ring-emerald-200' : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/40' }}">
                     <input type="radio" value="misc" wire:model.live="mode" class="sr-only">
-                    <span class="block text-sm font-black text-slate-900">ایجاد خدمت متفرقه</span>
-                    <span class="mt-1 block text-xs leading-5 text-slate-500">ثبت {{ $nextMiscName }} برای موارد خارج از فهرست و تخصیص آن به مددکار.</span>
+                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl {{ $mode === 'misc' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-emerald-100 group-hover:text-emerald-700' }}">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        </svg>
+                    </span>
+                    <span class="min-w-0">
+                        <span class="block text-sm font-black text-slate-900">ایجاد خدمت متفرقه</span>
+                        <span class="mt-1 block text-xs leading-5 text-slate-500">ثبت {{ $nextMiscName }} برای موارد خارج از فهرست و تخصیص آن به مددکار.</span>
+                    </span>
+                    <span class="absolute left-4 top-4 h-3 w-3 rounded-full {{ $mode === 'misc' ? 'bg-emerald-600' : 'bg-slate-200' }}"></span>
                 </label>
             </div>
         @endif
@@ -55,8 +73,22 @@
 
     <form wire:submit.prevent="saveBatch" class="space-y-4">
         @if($mode === 'predefined' && !$isEditing)
-            <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <section class="overflow-visible rounded-2xl border border-cyan-100 bg-white shadow-sm">
+                <div class="border-b border-cyan-100 bg-cyan-50/60 px-4 py-3 sm:px-5">
+                    <div class="flex items-center gap-3">
+                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-600 text-white">
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M4 7.5h16M7 12h10M9 16.5h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                            </svg>
+                        </span>
+                        <div class="min-w-0">
+                            <h2 class="text-base font-black text-slate-900">تخصیص خدمت موجود</h2>
+                            <p class="mt-0.5 text-xs leading-5 text-slate-500">ابتدا خدمت و مددکار را انتخاب کنید، سپس مقدار هر دسته‌بندی را وارد کنید.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_320px]">
                     <div>
                         <label class="mb-2 block text-sm font-bold text-slate-700">خدمت موجود برای تخصیص</label>
                         <select
@@ -108,7 +140,7 @@
                 </div>
 
                 @if($selectedService)
-                    <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div class="mx-4 mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:mx-5 sm:mb-5">
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <h2 class="text-base font-black text-slate-900">{{ $selectedService->name ?: ($selectedService->serviceName?->name ?? 'خدمت انتخاب‌شده') }}</h2>
@@ -156,16 +188,25 @@
                 @endif
             </section>
         @else
-            <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div class="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h2 class="text-lg font-black text-slate-900">{{ $isEditing ? 'ویرایش خدمت متفرقه' : 'ایجاد ' . $nextMiscName }}</h2>
-                        <p class="mt-1 text-sm text-slate-500">دسته‌بندی‌ها را برای خدمت متفرقه وارد کنید؛ مجموع آن‌ها موجودی اولیه و مقدار تخصیص به مددکار می‌شود.</p>
+            <section class="overflow-visible rounded-2xl border border-emerald-100 bg-white shadow-sm">
+                <div class="border-b border-emerald-100 bg-emerald-50/60 px-4 py-3 sm:px-5">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white">
+                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                </svg>
+                            </span>
+                            <div class="min-w-0">
+                                <h2 class="text-base font-black text-slate-900">{{ $isEditing ? 'ویرایش خدمت متفرقه' : 'ایجاد ' . $nextMiscName }}</h2>
+                                <p class="mt-0.5 text-xs leading-5 text-slate-500">دسته‌بندی‌ها را وارد کنید؛ مجموع آن‌ها موجودی اولیه و مقدار تخصیص به مددکار می‌شود.</p>
+                            </div>
+                        </div>
+                        <span class="self-start rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800 sm:self-auto">ایجاد و تخصیص</span>
                     </div>
-                    <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">ایجاد و تخصیص</span>
                 </div>
 
-                <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div class="grid gap-4 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-4">
                     <div>
                         <label class="mb-2 block text-sm font-bold text-slate-700">نوع خدمت</label>
                         <select wire:model="miscServiceType" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
@@ -215,9 +256,9 @@
                     </div>
                 </div>
 
-                <div class="mt-5 space-y-3">
+                <div class="space-y-3 px-4 pb-4 sm:px-5">
                     @foreach($miscCategories as $index => $category)
-                        <div class="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-[minmax(0,1fr)_160px_160px_auto]">
+                        <div class="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-[minmax(0,1fr)_160px_160px] xl:grid-cols-[minmax(0,1fr)_160px_160px_auto]">
                             <div>
                                 <label class="mb-2 block text-xs font-bold text-slate-600">نام دسته‌بندی</label>
                                 <input type="text" wire:model.blur="miscCategories.{{ $index }}.name" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm" placeholder="مثال: بسته غذایی">
@@ -236,8 +277,8 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="flex items-end">
-                                <button type="button" wire:click="removeCategory({{ $index }})" class="rounded-xl border border-rose-200 bg-white px-4 py-2 text-sm font-bold text-rose-700 transition hover:bg-rose-50">
+                            <div class="flex items-end md:col-span-2 xl:col-span-1">
+                                <button type="button" wire:click="removeCategory({{ $index }})" class="w-full rounded-xl border border-rose-200 bg-white px-4 py-2 text-sm font-bold text-rose-700 transition hover:bg-rose-50 xl:w-auto">
                                     حذف
                                 </button>
                             </div>
@@ -245,20 +286,22 @@
                     @endforeach
                 </div>
 
-                <button
-                    type="button"
-                    wire:click="addCategory"
-                    class="mt-4 inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
-                >
-                    + افزودن دسته‌بندی
-                </button>
+                <div class="px-4 pb-5 sm:px-5">
+                    <button
+                        type="button"
+                        wire:click="addCategory"
+                        class="inline-flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 sm:w-auto"
+                    >
+                        + افزودن دسته‌بندی
+                    </button>
+                </div>
             </section>
         @endif
 
         <div class="flex justify-end">
             <button
                 type="submit"
-                class="inline-flex items-center justify-center rounded-2xl bg-emerald-700 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-700/20 transition hover:bg-emerald-800"
+                class="inline-flex w-full items-center justify-center rounded-2xl bg-emerald-700 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-700/20 transition hover:bg-emerald-800 sm:w-auto"
             >
                 {{ $mode === 'predefined' && !$isEditing ? 'ثبت تخصیص خدمت موجود' : 'ثبت و تخصیص خدمت متفرقه' }}
             </button>
