@@ -48,7 +48,7 @@
 
         <div class="px-3 py-4 sm:px-4 sm:py-6">
             <form wire:submit.prevent="saveDelivery"
-                  class="space-y-5">
+                  class="space-y-5 pb-20 md:pb-0">
                 @php
                     $workflowHasRecipients = $selectedService
                         && collect($recipientEntries)->contains(fn ($entry) => filled($entry['national_id'] ?? '') || filled($entry['resolved_name'] ?? '') || filled($entry['full_name'] ?? '') || collect($entry['category_quantities'] ?? [])->contains(fn ($quantity) => (float) $quantity > 0));
@@ -1691,6 +1691,24 @@
                                 </div>
                             @endif
                         </section>
+
+                        <div class="fixed inset-x-0 bottom-0 z-30 rounded-t-3xl border-t border-slate-200 bg-white/95 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 shadow-[0_-10px_24px_rgba(15,23,42,0.10)] backdrop-blur md:hidden">
+                            <div class="mx-auto max-w-xl">
+                                <button type="submit"
+                                        wire:loading.attr="disabled"
+                                        wire:target="saveDelivery"
+                                        class="inline-flex min-h-[3.25rem] w-full items-center justify-center gap-2 rounded-2xl border border-emerald-800 bg-emerald-700 px-5 py-3 text-sm font-black text-white shadow-lg shadow-emerald-200/80 transition hover:border-emerald-700 hover:bg-emerald-600 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-emerald-500/25 disabled:cursor-wait disabled:border-emerald-500 disabled:bg-emerald-500 disabled:opacity-80">
+                                    <span wire:loading.remove wire:target="saveDelivery" class="inline-flex items-center justify-center gap-2">
+                                        <i class="bi bi-check2-circle text-base"></i>
+                                        ثبت تحویل
+                                    </span>
+                                    <span wire:loading wire:target="saveDelivery" class="inline-flex items-center justify-center gap-2">
+                                        <span class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true"></span>
+                                        در حال ثبت...
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
                     @endif
 
                     {{-- Submit Button --}}
@@ -1698,7 +1716,7 @@
                             @disabled(!$this->selectedService)
                             wire:loading.attr="disabled"
                             wire:target="saveDelivery"
-                            class="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border border-emerald-800 bg-emerald-700 px-5 py-3.5 text-base font-black text-white shadow-lg shadow-emerald-200/80 transition hover:border-emerald-700 hover:bg-emerald-600 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-emerald-500/25 disabled:cursor-wait disabled:border-emerald-500 disabled:bg-emerald-500 disabled:opacity-80">
+                            class="hidden min-h-14 w-full items-center justify-center gap-2 rounded-2xl border border-emerald-800 bg-emerald-700 px-5 py-3.5 text-base font-black text-white shadow-lg shadow-emerald-200/80 transition hover:border-emerald-700 hover:bg-emerald-600 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-emerald-500/25 disabled:cursor-wait disabled:border-emerald-500 disabled:bg-emerald-500 disabled:opacity-80 md:inline-flex">
                         <span wire:loading.remove wire:target="saveDelivery" class="inline-flex items-center justify-center gap-2">
                             <i class="bi bi-check2-circle text-base"></i>
                             ثبت تحویل
