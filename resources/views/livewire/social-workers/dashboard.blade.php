@@ -245,7 +245,7 @@
                                 x-show="open"
                                 x-transition.opacity.duration.150ms
                                 @click="closeSelector()"
-                                class="fixed inset-0 z-40 bg-slate-900/45 backdrop-blur-[2px] sm:hidden"
+                                class="fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-sm sm:hidden"
                                 style="display: none;"
                                 aria-hidden="true"
                             ></div>
@@ -260,21 +260,21 @@
                                 x-transition:leave-start="opacity-100 translate-y-0"
                                 x-transition:leave-end="translate-y-full opacity-80 sm:-translate-y-2 sm:opacity-0"
                                 @click.outside="closeSelector()"
-                                class="fixed inset-x-0 bottom-0 z-50 flex max-h-[85svh] flex-col rounded-t-2xl border border-slate-200 bg-slate-50 p-3 shadow-2xl shadow-slate-900/20
+                                class="fixed inset-x-0 bottom-0 z-50 flex max-h-[85svh] flex-col rounded-t-3xl border border-slate-200 bg-slate-50 p-3 shadow-[0_-18px_45px_rgba(15,23,42,0.22)]
                                 sm:absolute sm:inset-auto sm:mt-2 sm:max-h-72 sm:w-full sm:overflow-y-auto sm:overscroll-contain sm:rounded-2xl sm:p-2 sm:shadow-xl"
                                 dir="rtl"
                                 role="dialog"
                                 aria-modal="true"
                                 style="display: none;"
                             >
-                                <div class="mb-3 flex items-center justify-between gap-3 sm:hidden">
+                                <div class="mb-3 flex items-center justify-between gap-3 border-b border-slate-200/70 pb-3 sm:hidden">
                                     <div class="min-w-0">
                                         <h3 class="text-sm font-black text-slate-800">انتخاب خدمت</h3>
                                     </div>
                                     <button
                                         type="button"
                                         @click="closeSelector()"
-                                        class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                                        class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-200"
                                         aria-label="بستن"
                                     >
                                         <i class="bi bi-x-lg text-sm"></i>
@@ -854,7 +854,7 @@
                                                             x-show="recipientSheetOpen"
                                                             x-transition.opacity.duration.150ms
                                                             @click="closeRecipientSheet()"
-                                                            class="fixed inset-0 z-40 bg-slate-900/45 backdrop-blur-[2px] sm:hidden"
+                                                            class="fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-sm sm:hidden"
                                                             style="display: none;"
                                                             aria-hidden="true"
                                                         ></div>
@@ -867,14 +867,14 @@
                                                             x-transition:leave-start="translate-y-0 opacity-100"
                                                             x-transition:leave-end="translate-y-full opacity-80"
                                                             @click.outside="closeRecipientSheet()"
-                                                            class="fixed inset-x-0 bottom-0 z-50 flex max-h-[86svh] min-h-[44svh] flex-col rounded-t-2xl border border-slate-200 bg-slate-50 p-3 shadow-2xl shadow-slate-900/20 sm:hidden"
+                                                            class="fixed inset-x-0 bottom-0 z-50 flex max-h-[86svh] min-h-[44svh] flex-col rounded-t-3xl border border-slate-200 bg-slate-50 p-3 shadow-[0_-18px_45px_rgba(15,23,42,0.22)] sm:hidden"
                                                             role="dialog"
                                                             aria-modal="true"
                                                             aria-label="جستجوی گیرنده"
                                                             dir="rtl"
                                                             style="display: none;"
                                                         >
-                                                            <div class="mb-3 flex items-center justify-between gap-3">
+                                                            <div class="mb-3 flex items-center justify-between gap-3 border-b border-slate-200/70 pb-3">
                                                                 <div class="min-w-0">
                                                                     <h4 class="text-sm font-black leading-5 text-slate-800">
                                                                         جستجوی {{ $recipientSuggestionTypeLabel }}
@@ -886,7 +886,7 @@
                                                                 <button
                                                                     type="button"
                                                                     @click="closeRecipientSheet(); $wire.set('activeRecipientSearchIndex', null)"
-                                                                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                                                                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-200"
                                                                     aria-label="بستن جستجوی گیرنده"
                                                                 >
                                                                     <i class="bi bi-x-lg text-sm"></i>
@@ -1315,17 +1315,17 @@
                             x-show="qrScannerOpen"
                             x-cloak
                             x-transition.opacity.duration.150ms
-                            class="fixed inset-0 z-[90] flex items-center justify-center bg-slate-900/45 p-2 backdrop-blur-[2px] sm:p-3"
+                            class="fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/50 p-0 backdrop-blur-sm sm:items-center sm:p-3"
                             role="dialog"
                             aria-modal="true"
                             style="display: none;"
                         >
                             <div
                                 @click.outside="closeScanner()"
-                                class="flex max-h-[calc(100svh-1rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-xl shadow-slate-900/15"
+                                class="flex max-h-[calc(100svh-1rem)] w-full max-w-md flex-col overflow-hidden rounded-t-3xl border border-slate-200 bg-white text-slate-900 shadow-[0_-18px_45px_rgba(15,23,42,0.22)] sm:rounded-2xl sm:shadow-xl sm:shadow-slate-900/15"
                                 dir="rtl"
                             >
-                                <div class="flex items-center justify-between border-b border-slate-100 px-3 py-2.5">
+                                <div class="flex items-center justify-between border-b border-slate-200/70 px-3 py-3">
                                     <div class="inline-flex items-center gap-2 text-xs font-bold text-slate-600">
                                         <span class="inline-flex h-2 w-2 rounded-full"
                                               :class="{
@@ -1336,7 +1336,7 @@
                                               }"></span>
                                         <span x-text="statusLabel()"></span>
                                     </div>
-                                    <button type="button" @click="closeScanner()" class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="بستن">
+                                    <button type="button" @click="closeScanner()" class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-200" aria-label="بستن">
                                         <i class="bi bi-x-lg"></i>
                                     </button>
                                 </div>
