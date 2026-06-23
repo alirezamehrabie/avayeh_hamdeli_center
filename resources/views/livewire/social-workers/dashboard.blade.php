@@ -610,6 +610,8 @@
                                             || filled($entry['mobile'] ?? '')
                                             || $rowEnteredCategoryCountForHeader > 0
                                             || filled($entry['qr_token'] ?? '');
+                                        $rowNeedsInput = $recipientDisplayName === '' || $rowEnteredCategoryCountForHeader === 0;
+                                        $recipientEditorOpen = $hasRowErrors || $rowNeedsInput || $loop->last;
                                     @endphp
 
                                 <article class="relative overflow-hidden rounded-2xl border bg-white shadow-sm ring-1 transition-all {{ $hasRowErrors ? 'border-rose-300 ring-4 ring-rose-100' : 'border-slate-200 ring-slate-100' }}">
@@ -690,7 +692,29 @@
                                         @endif
                                     </div>
 
-                                    <div class="space-y-3 md:space-y-4">
+                                    <details class="group" @if($recipientEditorOpen) open @endif>
+                                        <summary class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-right transition hover:border-cyan-200 hover:bg-cyan-50/50 focus:outline-none focus:ring-4 focus:ring-cyan-500/10">
+                                            <div class="min-w-0">
+                                                <span class="block text-xs font-black text-slate-700">
+                                                    {{ $recipientEditorOpen ? 'تکمیل گیرنده و مقدار' : 'ویرایش گیرنده و مقادیر' }}
+                                                </span>
+                                                <span class="mt-0.5 block truncate text-[10px] font-bold text-slate-400">
+                                                    @if($recipientDisplayName !== '' && $rowEnteredCategoryCountForHeader > 0)
+                                                        {{ $recipientDisplayName }} / {{ $this->persianNumber($rowEnteredCategoryCountForHeader) }} دسته / جمع {{ $this->persianNumber(number_format($rowTotalQuantityForHeader, 2)) }}
+                                                    @elseif($recipientDisplayName !== '')
+                                                        مقدار تحویل هنوز وارد نشده است.
+                                                    @else
+                                                        گیرنده هنوز شناسایی نشده است.
+                                                    @endif
+                                                </span>
+                                            </div>
+                                            <span class="inline-flex shrink-0 items-center gap-2 text-[10px] font-black text-cyan-700">
+                                                <span class="hidden sm:inline">جزئیات</span>
+                                                <i class="bi bi-chevron-down text-xs text-slate-400 transition group-open:rotate-180"></i>
+                                            </span>
+                                        </summary>
+
+                                    <div class="mt-3 space-y-3 md:space-y-4">
                                         <div class="border-b border-slate-100 pb-3">
                                             <div class="mb-3 flex items-center gap-2">
                                                 <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-600 text-[11px] font-black text-white">۱</span>
@@ -1159,6 +1183,7 @@
                                     @endif
 
                                     </div>
+                                    </details>
                                 </article>
                             @endforeach
                         </div>
