@@ -128,6 +128,76 @@
         @endif
     </div>
 
+    @php
+        $isPredefinedWorkflow = $mode === 'predefined' && ! $isEditing;
+        $serviceStepComplete = $isPredefinedWorkflow ? (bool) $selectedService : true;
+        $workerStepUnlocked = $serviceStepComplete;
+        $workerStepComplete = (bool) $socialWorkerId;
+        $quantityStepUnlocked = $serviceStepComplete && $workerStepComplete;
+        $quantityStepComplete = $canRequestSaveConfirmation;
+        $reviewStepUnlocked = $canRequestSaveConfirmation;
+        $workflowAccent = $isPredefinedWorkflow ? 'cyan' : 'emerald';
+        $workflowSteps = [
+            [
+                'number' => 1,
+                'title' => $isPredefinedWorkflow ? 'انتخاب خدمت' : 'مشخصات خدمت',
+                'status' => $serviceStepComplete ? 'done' : 'active',
+            ],
+            [
+                'number' => 2,
+                'title' => 'انتخاب مددکار',
+                'status' => ! $workerStepUnlocked ? 'locked' : ($workerStepComplete ? 'done' : 'active'),
+            ],
+            [
+                'number' => 3,
+                'title' => $isPredefinedWorkflow ? 'ثبت مقدارها' : 'ثبت دسته‌بندی‌ها',
+                'status' => ! $quantityStepUnlocked ? 'locked' : ($quantityStepComplete ? 'done' : 'active'),
+            ],
+            [
+                'number' => 4,
+                'title' => 'مرور و ثبت',
+                'status' => ! $reviewStepUnlocked ? 'locked' : 'active',
+            ],
+        ];
+    @endphp
+
+    <div class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
+        <div class="grid gap-2 sm:grid-cols-4">
+            @foreach($workflowSteps as $step)
+                @php
+                    $isDone = $step['status'] === 'done';
+                    $isActive = $step['status'] === 'active';
+                    $isLocked = $step['status'] === 'locked';
+                    $stepCircleClass = $isDone
+                        ? 'bg-emerald-600 text-white'
+                        : ($isActive
+                            ? ($workflowAccent === 'cyan' ? 'bg-cyan-600 text-white' : 'bg-emerald-600 text-white')
+                            : 'bg-slate-100 text-slate-400');
+                    $stepCardClass = $isDone
+                        ? 'border-emerald-200 bg-emerald-50'
+                        : ($isActive
+                            ? ($workflowAccent === 'cyan' ? 'border-cyan-200 bg-cyan-50' : 'border-emerald-200 bg-emerald-50')
+                            : 'border-slate-200 bg-slate-50');
+                @endphp
+                <div class="flex items-center gap-2 rounded-xl border px-3 py-2 {{ $stepCardClass }}">
+                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-black {{ $stepCircleClass }}">
+                        @if($isDone)
+                            <i class="bi bi-check-lg text-sm"></i>
+                        @else
+                            {{ $step['number'] }}
+                        @endif
+                    </span>
+                    <div class="min-w-0">
+                        <p class="truncate text-xs font-black {{ $isLocked ? 'text-slate-400' : 'text-slate-900' }}">{{ $step['title'] }}</p>
+                        <p class="mt-0.5 text-[11px] font-bold {{ $isLocked ? 'text-slate-400' : 'text-slate-500' }}">
+                            {{ $isDone ? 'تکمیل شد' : ($isActive ? 'مرحله فعلی' : 'در انتظار مرحله قبل') }}
+                        </p>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
+
     <form wire:submit.prevent="requestSaveConfirmation" class="space-y-4">
         @if($mode === 'predefined' && !$isEditing)
             <section wire:key="predefined-service-batch-section" class="overflow-visible rounded-2xl border border-cyan-100 bg-white shadow-sm">
@@ -348,13 +418,25 @@
                         @error('selectedServiceId') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                     </div>
 
-                    @include('livewire.distribution-operators.partials.social-worker-selector', [
-                        'accent' => 'cyan',
-                        'selectorId' => 'predefined-social-worker-selector',
-                    ])
+                    @if($workerStepUnlocked)
+                        @include('livewire.distribution-operators.partials.social-worker-selector', [
+                            'accent' => 'cyan',
+                            'selectorId' => 'predefined-social-worker-selector',
+                        ])
+                    @else
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                            <p class="text-sm font-black text-slate-500">۲. انتخاب مددکار</p>
+                            <p class="mt-1 text-xs font-bold leading-5 text-slate-400">ابتدا خدمت را انتخاب کنید تا انتخاب مددکار فعال شود.</p>
+                        </div>
+                    @endif
                 </div>
 
-                @if($selectedService)
+                @if($selectedService && ! $quantityStepUnlocked)
+                    <div class="mx-4 mb-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-5 text-center sm:mx-5 sm:mb-5">
+                        <p class="text-sm font-black text-slate-600">۳. ثبت مقدارها</p>
+                        <p class="mt-1 text-xs font-bold leading-5 text-slate-400">پس از انتخاب مددکار، مقدارهای قابل تخصیص نمایش داده می‌شود.</p>
+                    </div>
+                @elseif($selectedService)
                     <div class="mx-4 mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:mx-5 sm:mb-5">
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <div>
@@ -506,6 +588,12 @@
                     </div>
                 </div>
 
+                @if(! $quantityStepUnlocked)
+                    <div class="mx-4 mb-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-5 text-center sm:mx-5">
+                        <p class="text-sm font-black text-slate-600">۳. ثبت دسته‌بندی‌ها</p>
+                        <p class="mt-1 text-xs font-bold leading-5 text-slate-400">پس از انتخاب مددکار، دسته‌بندی‌ها و مقدار خدمت را وارد کنید.</p>
+                    </div>
+                @else
                 <div class="space-y-3 px-4 pb-4 sm:px-5">
                     @foreach($miscCategories as $index => $category)
                         <div class="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-[minmax(0,1fr)_160px_160px] xl:grid-cols-[minmax(0,1fr)_160px_160px_auto]">
@@ -545,6 +633,7 @@
                         + افزودن دسته‌بندی
                     </button>
                 </div>
+                @endif
             </section>
         @endif
 
@@ -564,14 +653,19 @@
                 </ul>
             </div>
         @endif
-
-        <div class="flex justify-end">
+        <div class="rounded-2xl border {{ $reviewStepUnlocked ? 'border-emerald-200 bg-emerald-50/70' : 'border-slate-200 bg-slate-50' }} px-4 py-4 sm:flex sm:items-center sm:justify-between sm:gap-4">
+            <div class="min-w-0">
+                <p class="text-sm font-black {{ $reviewStepUnlocked ? 'text-emerald-900' : 'text-slate-600' }}">۴. مرور و ثبت نهایی</p>
+                <p class="mt-1 text-xs font-bold leading-5 {{ $reviewStepUnlocked ? 'text-emerald-700' : 'text-slate-400' }}">
+                    {{ $reviewStepUnlocked ? 'همه اطلاعات لازم کامل است. برای بازبینی نهایی ادامه دهید.' : 'پس از تکمیل مرحله‌های قبل، مرور نهایی فعال می‌شود.' }}
+                </p>
+            </div>
             <button
                 type="submit"
                 @disabled(! $canRequestSaveConfirmation)
                 wire:loading.attr="disabled"
                 wire:target="requestSaveConfirmation"
-                class="inline-flex w-full items-center justify-center rounded-2xl bg-emerald-700 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-700/20 transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none sm:w-auto"
+                class="mt-3 inline-flex w-full items-center justify-center rounded-2xl bg-emerald-700 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-700/20 transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none sm:mt-0 sm:w-auto"
             >
                 <span wire:loading.remove wire:target="requestSaveConfirmation">
                     {{ $mode === 'predefined' && !$isEditing ? 'مرور و تأیید تخصیص' : 'مرور و تأیید خدمت متفرقه' }}
