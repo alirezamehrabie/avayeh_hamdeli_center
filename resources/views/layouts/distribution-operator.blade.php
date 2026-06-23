@@ -65,8 +65,8 @@
                     href="{{ route('distribution-operator.define-service') }}"
                     class="flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors {{ request()->routeIs('distribution-operator.define-service') ? 'bg-indigo-700' : 'hover:bg-indigo-800' }}"
                 >
-                    <span>تعریف خدمت</span>
-                    <span class="text-xs text-indigo-100/80">پیش‌فرض</span>
+                    <span>تخصیص / خدمت متفرقه</span>
+                    <span class="text-xs text-indigo-100/80">ثبت عملیات</span>
                 </a>
 
                 <a

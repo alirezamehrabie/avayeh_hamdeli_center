@@ -19,9 +19,9 @@
     <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-                <h1 class="text-2xl font-black text-slate-900">داشبورد اپراتور توزیع</h1>
+                <h1 class="text-2xl font-black text-slate-900">{{ $isEditing ? 'ویرایش خدمت متفرقه' : 'تخصیص خدمت و ایجاد خدمت متفرقه' }}</h1>
                 <p class="mt-2 text-sm leading-6 text-slate-500">
-                    در حالت خدمت / پویش فقط تخصیص از موجودی خدمات موجود انجام می‌شود. در حالت متفرقه، خدمت جدید با نام خودکار ایجاد می‌شود.
+                    برای خدمات آماده، فقط از موجودی تأییدشده به مددکار تخصیص دهید. برای موارد خارج از فهرست، یک خدمت متفرقه جدید ایجاد و همان‌جا تخصیص داده می‌شود.
                 </p>
             </div>
 
@@ -40,14 +40,14 @@
             <div class="mt-5 grid gap-3 sm:grid-cols-2">
                 <label class="cursor-pointer rounded-2xl border p-4 transition {{ $mode === 'predefined' ? 'border-cyan-400 bg-cyan-50' : 'border-slate-200 bg-white hover:border-cyan-200' }}">
                     <input type="radio" value="predefined" wire:model.live="mode" class="sr-only">
-                    <span class="block text-sm font-black text-slate-900">خدمت / پویش</span>
-                    <span class="mt-1 block text-xs leading-5 text-slate-500">انتخاب خدمت موجود و تخصیص مقدار از دسته‌بندی‌های تعریف‌شده.</span>
+                    <span class="block text-sm font-black text-slate-900">تخصیص خدمت موجود</span>
+                    <span class="mt-1 block text-xs leading-5 text-slate-500">انتخاب خدمت تأییدشده و تخصیص مقدار از موجودی دسته‌بندی‌های آن.</span>
                 </label>
 
                 <label class="cursor-pointer rounded-2xl border p-4 transition {{ $mode === 'misc' ? 'border-emerald-400 bg-emerald-50' : 'border-slate-200 bg-white hover:border-emerald-200' }}">
                     <input type="radio" value="misc" wire:model.live="mode" class="sr-only">
-                    <span class="block text-sm font-black text-slate-900">متفرقه / تک موردی</span>
-                    <span class="mt-1 block text-xs leading-5 text-slate-500">ایجاد خودکار {{ $nextMiscName }} و افزودن آزادانه دسته‌بندی‌ها.</span>
+                    <span class="block text-sm font-black text-slate-900">ایجاد خدمت متفرقه</span>
+                    <span class="mt-1 block text-xs leading-5 text-slate-500">ثبت {{ $nextMiscName }} برای موارد خارج از فهرست و تخصیص آن به مددکار.</span>
                 </label>
             </div>
         @endif
@@ -58,12 +58,12 @@
             <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
                     <div>
-                        <label class="mb-2 block text-sm font-bold text-slate-700">انتخاب خدمت / پویش</label>
+                        <label class="mb-2 block text-sm font-bold text-slate-700">خدمت موجود برای تخصیص</label>
                         <select
                             wire:model.live="selectedServiceId"
                             class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
                         >
-                            <option value="">انتخاب کنید</option>
+                            <option value="">یک خدمت تأییدشده را انتخاب کنید</option>
                             @foreach($services as $service)
                                 <option value="{{ $service->id }}">
                                     {{ $service->code }} - {{ $service->name ?: ($service->serviceName?->name ?? 'بدون عنوان') }}
@@ -114,7 +114,7 @@
                                 <h2 class="text-base font-black text-slate-900">{{ $selectedService->name ?: ($selectedService->serviceName?->name ?? 'خدمت انتخاب‌شده') }}</h2>
                                 <p class="mt-1 text-xs font-bold text-slate-500">{{ $selectedService->code }} - موجودی کل: {{ number_format((float) $selectedService->total_quantity, 2) }}</p>
                             </div>
-                            <span class="rounded-full bg-cyan-100 px-3 py-1 text-xs font-bold text-cyan-800">تخصیص از موجودی موجود</span>
+                            <span class="rounded-full bg-cyan-100 px-3 py-1 text-xs font-bold text-cyan-800">فقط تخصیص موجودی</span>
                         </div>
 
                         <div class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -159,10 +159,10 @@
             <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div class="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h2 class="text-lg font-black text-slate-900">{{ $isEditing ? 'ویرایش خدمت متفرقه' : $nextMiscName }}</h2>
-                        <p class="mt-1 text-sm text-slate-500">دسته‌بندی‌ها را آزادانه اضافه کنید؛ مجموع آن‌ها موجودی اولیه خدمت متفرقه می‌شود.</p>
+                        <h2 class="text-lg font-black text-slate-900">{{ $isEditing ? 'ویرایش خدمت متفرقه' : 'ایجاد ' . $nextMiscName }}</h2>
+                        <p class="mt-1 text-sm text-slate-500">دسته‌بندی‌ها را برای خدمت متفرقه وارد کنید؛ مجموع آن‌ها موجودی اولیه و مقدار تخصیص به مددکار می‌شود.</p>
                     </div>
-                    <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">ایجاد + تخصیص</span>
+                    <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">ایجاد و تخصیص</span>
                 </div>
 
                 <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -260,7 +260,7 @@
                 type="submit"
                 class="inline-flex items-center justify-center rounded-2xl bg-emerald-700 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-700/20 transition hover:bg-emerald-800"
             >
-                {{ $mode === 'predefined' && !$isEditing ? 'ثبت تخصیص' : 'ثبت خدمت متفرقه' }}
+                {{ $mode === 'predefined' && !$isEditing ? 'ثبت تخصیص خدمت موجود' : 'ثبت و تخصیص خدمت متفرقه' }}
             </button>
         </div>
     </form>

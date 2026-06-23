@@ -6,7 +6,7 @@
                 <p class="mt-2 text-sm leading-6 text-slate-500">در این بخش فقط خدمات ایجادشده توسط حساب فعلی نمایش داده می‌شوند و ویرایش به فیلدهای مجاز محدود است.</p>
             </div>
             <a href="{{ route('distribution-operator.define-service') }}" class="inline-flex items-center justify-center rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-violet-700">
-                تعریف خدمت جدید
+                تخصیص یا ایجاد خدمت متفرقه
             </a>
         </div>
     </div>
