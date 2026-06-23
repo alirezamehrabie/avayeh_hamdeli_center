@@ -73,7 +73,7 @@
 
     <form wire:submit.prevent="requestSaveConfirmation" class="space-y-4">
         @if($mode === 'predefined' && !$isEditing)
-            <section class="overflow-visible rounded-2xl border border-cyan-100 bg-white shadow-sm">
+            <section wire:key="predefined-service-batch-section" class="overflow-visible rounded-2xl border border-cyan-100 bg-white shadow-sm">
                 <div class="border-b border-cyan-100 bg-cyan-50/60 px-4 py-3 sm:px-5">
                     <div class="flex items-center gap-3">
                         <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-600 text-white">
@@ -291,38 +291,10 @@
                         @error('selectedServiceId') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                     </div>
 
-                    <div class="relative">
-                        <label class="mb-2 block text-sm font-bold text-slate-700">مددکار</label>
-                        <input
-                            type="text"
-                            wire:model.live.debounce.250ms="socialWorkerQuery"
-                            wire:focus="$set('showSocialWorkerSuggestions', true)"
-                            class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
-                            placeholder="نام یا کد مددکار"
-                            autocomplete="off"
-                        >
-                        @if($socialWorkerQuery !== '')
-                            <button type="button" wire:click="clearSocialWorkerSelection" class="absolute left-3 top-10 text-slate-400 hover:text-rose-600">×</button>
-                        @endif
-                        @error('socialWorkerId') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
-
-                        @if($showSocialWorkerSuggestions && mb_strlen(trim($socialWorkerQuery)) >= 2)
-                            <div class="absolute z-20 mt-2 max-h-60 w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-lg">
-                                @forelse($socialWorkerSuggestions as $worker)
-                                    <button
-                                        type="button"
-                                        wire:click="selectSocialWorker({{ $worker->id }})"
-                                        class="flex w-full items-center justify-between gap-3 px-4 py-3 text-right text-sm text-slate-700 transition hover:bg-cyan-50"
-                                    >
-                                        <span class="font-semibold">{{ $worker->full_name }}</span>
-                                        <span class="text-xs text-slate-500">کد {{ $worker->worker_code }}</span>
-                                    </button>
-                                @empty
-                                    <div class="px-4 py-3 text-sm text-slate-500">مددکاری یافت نشد.</div>
-                                @endforelse
-                            </div>
-                        @endif
-                    </div>
+                    @include('livewire.distribution-operators.partials.social-worker-selector', [
+                        'accent' => 'cyan',
+                        'selectorId' => 'predefined-social-worker-selector',
+                    ])
                 </div>
 
                 @if($selectedService)
@@ -426,7 +398,7 @@
                 @endif
             </section>
         @else
-            <section class="overflow-visible rounded-2xl border border-emerald-100 bg-white shadow-sm">
+            <section wire:key="misc-service-batch-section" class="overflow-visible rounded-2xl border border-emerald-100 bg-white shadow-sm">
                 <div class="border-b border-emerald-100 bg-emerald-50/60 px-4 py-3 sm:px-5">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div class="flex items-center gap-3">
@@ -454,30 +426,10 @@
                         </select>
                     </div>
 
-                    <div class="relative">
-                        <label class="mb-2 block text-sm font-bold text-slate-700">مددکار</label>
-                        <input
-                            type="text"
-                            wire:model.live.debounce.250ms="socialWorkerQuery"
-                            wire:focus="$set('showSocialWorkerSuggestions', true)"
-                            class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
-                            placeholder="نام یا کد مددکار"
-                            autocomplete="off"
-                        >
-                        @if($showSocialWorkerSuggestions && mb_strlen(trim($socialWorkerQuery)) >= 2)
-                            <div class="absolute z-20 mt-2 max-h-60 w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-lg">
-                                @forelse($socialWorkerSuggestions as $worker)
-                                    <button type="button" wire:click="selectSocialWorker({{ $worker->id }})" class="flex w-full items-center justify-between gap-3 px-4 py-3 text-right text-sm text-slate-700 transition hover:bg-emerald-50">
-                                        <span class="font-semibold">{{ $worker->full_name }}</span>
-                                        <span class="text-xs text-slate-500">کد {{ $worker->worker_code }}</span>
-                                    </button>
-                                @empty
-                                    <div class="px-4 py-3 text-sm text-slate-500">مددکاری یافت نشد.</div>
-                                @endforelse
-                            </div>
-                        @endif
-                        @error('socialWorkerId') <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
-                    </div>
+                    @include('livewire.distribution-operators.partials.social-worker-selector', [
+                        'accent' => 'emerald',
+                        'selectorId' => 'misc-social-worker-selector',
+                    ])
 
                     <div class="sm:col-span-2">
                         <label class="mb-2 block text-sm font-bold text-slate-700">تاریخ ثبت</label>

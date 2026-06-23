@@ -964,18 +964,102 @@ class ServiceBatchCreator extends Component
             return collect();
         }
 
-        return SocialWorker::query()
-            ->select(['id', 'first_name', 'last_name', 'worker_code'])
+        $workers = SocialWorker::query()
+            ->with('district:id,name')
+            ->withCount([
+                'workerAllocations as open_allocations_count' => fn (Builder $allocationQuery) => $allocationQuery
+                    ->whereHas('service', fn (Builder $serviceQuery) => $serviceQuery
+                        ->whereIn('status', ['approved', 'in_distribution'])),
+            ])
+            ->select([
+                'id',
+                'first_name',
+                'last_name',
+                'worker_code',
+                'mobile',
+                'district_id',
+                'covered_people_count',
+                'covered_households_count',
+                'covered_children_count',
+            ])
             ->where(function (Builder $workerQuery) use ($query): void {
                 $workerQuery->where('first_name', 'like', $query . '%')
                     ->orWhere('last_name', 'like', $query . '%')
                     ->orWhere('worker_code', 'like', $query . '%')
+                    ->orWhere('mobile', 'like', $query . '%')
                     ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", [$query . '%'])
                     ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", ['%' . $query . '%']);
             })
             ->orderBy('worker_code')
-            ->limit(6)
+            ->limit(10)
             ->get();
+
+        $workerIds = $workers->pluck('id')->map(fn ($id): int => (int) $id)->all();
+        $allocatedQuantities = $workerIds === []
+            ? collect()
+            : ServiceWorkerAllocation::query()
+                ->select('social_worker_id')
+                ->selectRaw('COALESCE(SUM(allocated_quantity), 0) as allocated_quantity')
+                ->whereIn('social_worker_id', $workerIds)
+                ->whereHas('service', fn (Builder $serviceQuery) => $serviceQuery
+                    ->whereIn('status', ['approved', 'in_distribution']))
+                ->groupBy('social_worker_id')
+                ->pluck('allocated_quantity', 'social_worker_id');
+
+        if ($this->socialWorkerId && ! $workers->contains('id', (int) $this->socialWorkerId)) {
+            $selectedWorker = SocialWorker::query()
+                ->with('district:id,name')
+                ->withCount([
+                    'workerAllocations as open_allocations_count' => fn (Builder $allocationQuery) => $allocationQuery
+                        ->whereHas('service', fn (Builder $serviceQuery) => $serviceQuery
+                            ->whereIn('status', ['approved', 'in_distribution'])),
+                ])
+                ->select([
+                    'id',
+                    'first_name',
+                    'last_name',
+                    'worker_code',
+                    'mobile',
+                    'district_id',
+                    'covered_people_count',
+                    'covered_households_count',
+                    'covered_children_count',
+                ])
+                ->find($this->socialWorkerId);
+
+            if ($selectedWorker) {
+                $workers->prepend($selectedWorker);
+
+                if (! $allocatedQuantities->has($selectedWorker->id)) {
+                    $allocatedQuantities->put($selectedWorker->id, ServiceWorkerAllocation::query()
+                        ->where('social_worker_id', $selectedWorker->id)
+                        ->whereHas('service', fn (Builder $serviceQuery) => $serviceQuery
+                            ->whereIn('status', ['approved', 'in_distribution']))
+                        ->sum('allocated_quantity'));
+                }
+            }
+        }
+
+        return $workers
+            ->unique('id')
+            ->map(fn (SocialWorker $worker): array => $this->socialWorkerSuggestionPayload($worker, (float) ($allocatedQuantities[$worker->id] ?? 0)))
+            ->values();
+    }
+
+    protected function socialWorkerSuggestionPayload(SocialWorker $worker, float $allocatedQuantity): array
+    {
+        return [
+            'id' => (int) $worker->id,
+            'name' => trim($worker->full_name) ?: 'مددکار بدون نام',
+            'code' => $worker->worker_code ? (string) $worker->worker_code : '-',
+            'mobile' => $worker->mobile ?: '-',
+            'district' => $worker->district?->name ?: 'بدون منطقه',
+            'covered_people' => (int) ($worker->covered_people_count ?? 0),
+            'covered_households' => (int) ($worker->covered_households_count ?? 0),
+            'covered_children' => (int) ($worker->covered_children_count ?? 0),
+            'open_allocations' => (int) ($worker->open_allocations_count ?? 0),
+            'allocated_quantity_label' => number_format($allocatedQuantity, 2),
+        ];
     }
 
     protected function nextMiscName(): string
