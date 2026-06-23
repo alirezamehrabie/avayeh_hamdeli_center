@@ -338,9 +338,10 @@
                         <div class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                             @foreach($selectedServiceCategories as $category)
                                 @php
+                                    $categoryMetrics = $selectedServiceCategoryMetrics[(int) $category->id] ?? ['allocated' => 0.0, 'assignable' => 0.0];
                                     $allocatedPreview = $this->predefinedAllocationForCategory((int) $category->id);
-                                    $assignableQuantity = $this->predefinedAssignableForCategory((int) $category->id);
-                                    $remainingPreview = $this->predefinedRemainingForCategory((int) $category->id);
+                                    $assignableQuantity = (float) $categoryMetrics['assignable'];
+                                    $remainingPreview = max(0, $assignableQuantity - $allocatedPreview);
                                     $isOverAllocated = $allocatedPreview > $assignableQuantity;
                                 @endphp
                                 <div class="rounded-2xl border border-slate-200 bg-white p-4">
