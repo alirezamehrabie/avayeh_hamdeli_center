@@ -416,6 +416,7 @@
                                             step="0.01"
                                             max="{{ $assignableQuantity }}"
                                             wire:model.live.debounce.250ms="predefinedAllocations.{{ $category->id }}"
+                                            inputmode="decimal"
                                             class="min-w-0 rounded-xl border {{ $isOverAllocated ? 'border-rose-300 bg-rose-50 text-rose-900 focus:border-rose-400 focus:ring-rose-100' : 'border-slate-300 bg-white text-slate-900 focus:border-cyan-400 focus:ring-cyan-100' }} px-3 py-2 text-center text-sm font-black outline-none transition focus:ring-4"
                                             placeholder="0"
                                             aria-describedby="predefined-allocation-help-{{ $category->id }}"
@@ -443,6 +444,8 @@
                                     <p id="predefined-allocation-help-{{ $category->id }}" class="mt-2 text-[11px] font-semibold {{ $isOverAllocated ? 'text-rose-700' : 'text-slate-500' }}">
                                         @if($isOverAllocated)
                                             مقدار واردشده از موجودی قابل تخصیص این دسته‌بندی بیشتر است.
+                                        @elseif($assignableQuantity <= 0)
+                                            موجودی قابل تخصیصی برای این دسته‌بندی باقی نمانده است.
                                         @else
                                             از {{ number_format($assignableQuantity, 2) }} واحد قابل تخصیص، {{ number_format($allocatedPreview, 2) }} واحد در این ثبت وارد شده است.
                                         @endif
@@ -551,10 +554,21 @@
             </div>
         @endif
 
+        @if(! $canRequestSaveConfirmation && !empty($savePreventionMessages))
+            <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <p class="font-black">برای ادامه، این موارد را کامل کنید:</p>
+                <ul class="mt-2 list-disc space-y-1 pr-5 text-xs font-bold leading-6">
+                    @foreach($savePreventionMessages as $message)
+                        <li>{{ $message }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <div class="flex justify-end">
             <button
                 type="submit"
-                @disabled($hasPredefinedOverAllocation)
+                @disabled(! $canRequestSaveConfirmation)
                 wire:loading.attr="disabled"
                 wire:target="requestSaveConfirmation"
                 class="inline-flex w-full items-center justify-center rounded-2xl bg-emerald-700 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-700/20 transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none sm:w-auto"

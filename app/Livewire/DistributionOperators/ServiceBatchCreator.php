@@ -257,7 +257,7 @@ class ServiceBatchCreator extends Component
     {
         $assignableQuantity = $this->predefinedAssignableForCategory($categoryId);
 
-        $this->predefinedAllocations[$categoryId] = $this->formatDecimal($assignableQuantity);
+        $this->predefinedAllocations[$categoryId] = $this->formatDecimal(max(0, $assignableQuantity));
         $this->confirmingBatchSave = false;
         $this->resetValidation('predefinedAllocations.' . $categoryId);
     }
@@ -339,6 +339,8 @@ class ServiceBatchCreator extends Component
 
     public function render()
     {
+        $this->synchronizeDate();
+
         $isPredefinedMode = $this->mode === self::MODE_PREDEFINED && ! $this->editingServiceId;
         $services = $isPredefinedMode ? $this->predefinedServices() : collect();
         $selectedService = $isPredefinedMode ? $this->selectedPredefinedService : null;
@@ -352,6 +354,8 @@ class ServiceBatchCreator extends Component
             'selectedServiceCategories' => $selectedServiceCategories,
             'selectedServiceCategoryMetrics' => $selectedServiceCategoryMetrics,
             'hasPredefinedOverAllocation' => $isPredefinedMode && $this->hasPredefinedOverAllocation($selectedServiceCategoryMetrics),
+            'canRequestSaveConfirmation' => $this->canRequestSaveConfirmation($selectedServiceCategoryMetrics),
+            'savePreventionMessages' => $this->savePreventionMessages($selectedServiceCategoryMetrics),
             'confirmationSummary' => $this->confirmingBatchSave ? $this->confirmationSummary() : [],
             'socialWorkerSuggestions' => $this->showSocialWorkerSuggestions ? $this->socialWorkerSuggestions : collect(),
             'isEditing' => $this->editingServiceId !== null,
@@ -747,6 +751,73 @@ class ServiceBatchCreator extends Component
             $this->predefinedAssignableForCategory($categoryId)
                 - $this->predefinedAllocationForCategory($categoryId)
         );
+    }
+
+    public function hasPositivePredefinedAllocation(): bool
+    {
+        return collect($this->predefinedAllocations)
+            ->contains(fn ($quantity): bool => (float) $quantity > 0);
+    }
+
+    protected function hasValidMiscCategoryRows(): bool
+    {
+        return collect($this->miscCategories)
+            ->contains(fn (array $category): bool => trim((string) ($category['name'] ?? '')) !== ''
+                && (float) ($category['quantity'] ?? 0) > 0
+                && in_array((string) ($category['unit'] ?? ''), Service::unitKeys(), true));
+    }
+
+    protected function canRequestSaveConfirmation(?array $predefinedMetrics = null): bool
+    {
+        if ($this->mode === self::MODE_PREDEFINED && ! $this->editingServiceId) {
+            return $this->selectedServiceId !== null
+                && $this->socialWorkerId !== null
+                && $this->hasPositivePredefinedAllocation()
+                && ! $this->hasPredefinedOverAllocation($predefinedMetrics);
+        }
+
+        return $this->socialWorkerId !== null
+            && $this->hasValidMiscCategoryRows()
+            && $this->isValidJalaliDate($this->date);
+    }
+
+    protected function savePreventionMessages(?array $predefinedMetrics = null): array
+    {
+        $messages = [];
+
+        if ($this->mode === self::MODE_PREDEFINED && ! $this->editingServiceId) {
+            if (! $this->selectedServiceId) {
+                $messages[] = 'ابتدا خدمت تاییدشده را انتخاب کنید.';
+            }
+
+            if (! $this->socialWorkerId) {
+                $messages[] = 'مددکار دریافت‌کننده را انتخاب کنید.';
+            }
+
+            if (! $this->hasPositivePredefinedAllocation()) {
+                $messages[] = 'برای حداقل یک دسته‌بندی مقدار تخصیص وارد کنید.';
+            }
+
+            if ($this->hasPredefinedOverAllocation($predefinedMetrics)) {
+                $messages[] = 'مقدارهای بیشتر از موجودی را اصلاح کنید یا دکمه حداکثر را بزنید.';
+            }
+
+            return $messages;
+        }
+
+        if (! $this->socialWorkerId) {
+            $messages[] = 'مددکار دریافت‌کننده را انتخاب کنید.';
+        }
+
+        if (! $this->hasValidMiscCategoryRows()) {
+            $messages[] = 'حداقل یک دسته‌بندی با نام، مقدار معتبر و واحد انتخاب‌شده وارد کنید.';
+        }
+
+        if (! $this->isValidJalaliDate($this->date)) {
+            $messages[] = 'تاریخ ثبت را به‌صورت معتبر وارد کنید.';
+        }
+
+        return $messages;
     }
 
     protected function remainingAssignableForPredefinedCategory(Service $service, int $categoryId): float
