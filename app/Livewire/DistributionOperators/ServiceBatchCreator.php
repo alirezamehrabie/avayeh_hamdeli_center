@@ -63,6 +63,10 @@ class ServiceBatchCreator extends Component
 
     protected ?Collection $predefinedServicesCache = null;
 
+    protected ?array $predefinedServiceOptionsCache = null;
+
+    protected ?string $predefinedServiceOptionsCacheKey = null;
+
     protected ?Service $selectedPredefinedServiceCache = null;
 
     /**
@@ -71,6 +75,16 @@ class ServiceBatchCreator extends Component
     protected ?array $selectedPredefinedAllocatedByCategoryCache = null;
 
     protected ?int $selectedPredefinedAllocatedByCategoryCacheServiceId = null;
+
+    protected ?array $selectedPredefinedCategoryMetricsCache = null;
+
+    protected ?int $selectedPredefinedCategoryMetricsCacheServiceId = null;
+
+    protected ?Collection $socialWorkerSuggestionsCache = null;
+
+    protected ?string $socialWorkerSuggestionsCacheKey = null;
+
+    protected ?string $nextMiscNameCache = null;
 
     public function mount(?int $editingServiceId = null): void
     {
@@ -111,6 +125,7 @@ class ServiceBatchCreator extends Component
         $this->predefinedAllocations = [];
         $this->selectedPredefinedServiceCache = null;
         $this->flushSelectedPredefinedServiceMetrics();
+        $this->flushPredefinedServiceOptions();
         $this->confirmingBatchSave = false;
         $this->resetValidation();
     }
@@ -119,6 +134,7 @@ class ServiceBatchCreator extends Component
     {
         $this->serviceSearch = trim((string) $value);
         $this->predefinedServicesCache = null;
+        $this->flushPredefinedServiceOptions();
     }
 
     public function updatedPredefinedAllocations(mixed $value, ?string $key = null): void
@@ -149,6 +165,7 @@ class ServiceBatchCreator extends Component
         $this->serviceSearch = '';
         $this->selectedPredefinedServiceCache = $service;
         $this->flushSelectedPredefinedServiceMetrics();
+        $this->flushPredefinedServiceOptions();
         $this->predefinedServicesCache = null;
         $this->confirmingBatchSave = false;
         $this->resetValidation();
@@ -161,6 +178,7 @@ class ServiceBatchCreator extends Component
         $this->serviceSearch = '';
         $this->selectedPredefinedServiceCache = null;
         $this->flushSelectedPredefinedServiceMetrics();
+        $this->flushPredefinedServiceOptions();
         $this->predefinedServicesCache = null;
         $this->confirmingBatchSave = false;
         $this->resetValidation();
@@ -171,6 +189,7 @@ class ServiceBatchCreator extends Component
         $this->socialWorkerQuery = trim((string) $value);
         $this->socialWorkerId = null;
         $this->showSocialWorkerSuggestions = true;
+        $this->flushSocialWorkerSuggestions();
 
         if ($this->socialWorkerQuery === '') {
             $this->socialWorkerId = null;
@@ -221,6 +240,7 @@ class ServiceBatchCreator extends Component
         $this->socialWorkerId = $worker->id;
         $this->socialWorkerQuery = trim($worker->full_name . ' - کد ' . $worker->worker_code);
         $this->showSocialWorkerSuggestions = false;
+        $this->flushSocialWorkerSuggestions();
         $this->confirmingBatchSave = false;
     }
 
@@ -229,6 +249,7 @@ class ServiceBatchCreator extends Component
         $this->socialWorkerId = null;
         $this->socialWorkerQuery = '';
         $this->showSocialWorkerSuggestions = true;
+        $this->flushSocialWorkerSuggestions();
         $this->confirmingBatchSave = false;
     }
 
@@ -318,18 +339,21 @@ class ServiceBatchCreator extends Component
 
     public function render()
     {
-        $services = $this->predefinedServices();
-        $selectedService = $this->selectedPredefinedService;
+        $isPredefinedMode = $this->mode === self::MODE_PREDEFINED && ! $this->editingServiceId;
+        $services = $isPredefinedMode ? $this->predefinedServices() : collect();
+        $selectedService = $isPredefinedMode ? $this->selectedPredefinedService : null;
+        $selectedServiceCategories = $selectedService ? $this->selectedPredefinedServiceCategories : collect();
+        $selectedServiceCategoryMetrics = $selectedService ? $this->selectedPredefinedCategoryMetrics() : [];
 
         return view('livewire.distribution-operators.service-batch-creator', [
             'services' => $services,
-            'serviceOptions' => $this->predefinedServiceOptions($services),
+            'serviceOptions' => $isPredefinedMode ? $this->predefinedServiceOptions($services) : [],
             'selectedService' => $selectedService,
-            'selectedServiceCategories' => $this->selectedPredefinedServiceCategories,
-            'selectedServiceCategoryMetrics' => $selectedService ? $this->selectedPredefinedCategoryMetrics() : [],
-            'hasPredefinedOverAllocation' => $this->hasPredefinedOverAllocation(),
+            'selectedServiceCategories' => $selectedServiceCategories,
+            'selectedServiceCategoryMetrics' => $selectedServiceCategoryMetrics,
+            'hasPredefinedOverAllocation' => $isPredefinedMode && $this->hasPredefinedOverAllocation($selectedServiceCategoryMetrics),
             'confirmationSummary' => $this->confirmingBatchSave ? $this->confirmationSummary() : [],
-            'socialWorkerSuggestions' => $this->socialWorkerSuggestions,
+            'socialWorkerSuggestions' => $this->showSocialWorkerSuggestions ? $this->socialWorkerSuggestions : collect(),
             'isEditing' => $this->editingServiceId !== null,
             'typeOptions' => Service::TYPE_OPTIONS,
             'unitOptions' => Service::unitOptions(),
@@ -696,14 +720,14 @@ class ServiceBatchCreator extends Component
         return max(0, (float) ($this->predefinedAllocations[$categoryId] ?? 0));
     }
 
-    public function hasPredefinedOverAllocation(): bool
+    public function hasPredefinedOverAllocation(?array $metrics = null): bool
     {
         if ($this->mode !== self::MODE_PREDEFINED || $this->editingServiceId || ! $this->selectedServiceId) {
             return false;
         }
 
-        foreach ($this->selectedPredefinedCategoryMetrics() as $categoryId => $metrics) {
-            if ($this->predefinedAllocationForCategory((int) $categoryId) > (float) $metrics['assignable']) {
+        foreach (($metrics ?? $this->selectedPredefinedCategoryMetrics()) as $categoryId => $categoryMetrics) {
+            if ($this->predefinedAllocationForCategory((int) $categoryId) > (float) $categoryMetrics['assignable']) {
                 return true;
             }
         }
@@ -864,9 +888,16 @@ class ServiceBatchCreator extends Component
             return [];
         }
 
+        if (is_array($this->selectedPredefinedCategoryMetricsCache)
+            && $this->selectedPredefinedCategoryMetricsCacheServiceId === (int) $service->id) {
+            return $this->selectedPredefinedCategoryMetricsCache;
+        }
+
         $allocatedByCategory = $this->allocatedQuantitiesByCategoryForSelectedPredefinedService($service);
 
-        return $service->categories
+        $this->selectedPredefinedCategoryMetricsCacheServiceId = (int) $service->id;
+
+        return $this->selectedPredefinedCategoryMetricsCache = $service->categories
             ->mapWithKeys(function (ServiceCategory $category) use ($allocatedByCategory): array {
                 $quantity = (float) $category->quantity;
                 $allocated = (float) ($allocatedByCategory[$category->id] ?? 0);
@@ -908,12 +939,20 @@ class ServiceBatchCreator extends Component
     {
         $this->selectedPredefinedAllocatedByCategoryCache = null;
         $this->selectedPredefinedAllocatedByCategoryCacheServiceId = null;
+        $this->selectedPredefinedCategoryMetricsCache = null;
+        $this->selectedPredefinedCategoryMetricsCacheServiceId = null;
     }
 
     protected function predefinedServiceOptions(Collection $services): array
     {
         if ($services->isEmpty()) {
             return [];
+        }
+
+        $cacheKey = $services->pluck('id')->implode(',') . '|' . (int) $this->selectedServiceId;
+
+        if ($this->predefinedServiceOptionsCacheKey === $cacheKey && is_array($this->predefinedServiceOptionsCache)) {
+            return $this->predefinedServiceOptionsCache;
         }
 
         $categoryIds = $services
@@ -931,7 +970,9 @@ class ServiceBatchCreator extends Component
                 ->groupBy('service_category_id')
                 ->pluck('allocated_quantity', 'service_category_id');
 
-        return $services
+        $this->predefinedServiceOptionsCacheKey = $cacheKey;
+
+        return $this->predefinedServiceOptionsCache = $services
             ->map(function (Service $service) use ($allocatedByCategory): array {
                 $categories = $service->categories->values();
                 $remainingAssignable = $categories->sum(function (ServiceCategory $category) use ($allocatedByCategory): float {
@@ -956,12 +997,24 @@ class ServiceBatchCreator extends Component
             ->all();
     }
 
+    protected function flushPredefinedServiceOptions(): void
+    {
+        $this->predefinedServiceOptionsCache = null;
+        $this->predefinedServiceOptionsCacheKey = null;
+    }
+
     public function getSocialWorkerSuggestionsProperty(): Collection
     {
         $query = trim($this->socialWorkerQuery);
 
         if (! $this->showSocialWorkerSuggestions || mb_strlen($query) < 2) {
             return collect();
+        }
+
+        $cacheKey = mb_strtolower($query) . '|' . (int) $this->socialWorkerId;
+
+        if ($this->socialWorkerSuggestionsCacheKey === $cacheKey && $this->socialWorkerSuggestionsCache instanceof Collection) {
+            return $this->socialWorkerSuggestionsCache;
         }
 
         $workers = SocialWorker::query()
@@ -1040,10 +1093,18 @@ class ServiceBatchCreator extends Component
             }
         }
 
-        return $workers
+        $this->socialWorkerSuggestionsCacheKey = $cacheKey;
+
+        return $this->socialWorkerSuggestionsCache = $workers
             ->unique('id')
             ->map(fn (SocialWorker $worker): array => $this->socialWorkerSuggestionPayload($worker, (float) ($allocatedQuantities[$worker->id] ?? 0)))
             ->values();
+    }
+
+    protected function flushSocialWorkerSuggestions(): void
+    {
+        $this->socialWorkerSuggestionsCache = null;
+        $this->socialWorkerSuggestionsCacheKey = null;
     }
 
     protected function socialWorkerSuggestionPayload(SocialWorker $worker, float $allocatedQuantity): array
@@ -1064,8 +1125,12 @@ class ServiceBatchCreator extends Component
 
     protected function nextMiscName(): string
     {
+        if ($this->nextMiscNameCache !== null) {
+            return $this->nextMiscNameCache;
+        }
+
         if ($this->editingServiceId) {
-            return (string) $this->resolveEditableService($this->editingServiceId)->name;
+            return $this->nextMiscNameCache = (string) $this->resolveEditableService($this->editingServiceId)->name;
         }
 
         $maxServiceNumber = Service::query()
@@ -1088,7 +1153,7 @@ class ServiceBatchCreator extends Component
             ->selectRaw('MAX(CAST(SUBSTRING(name, ?) AS UNSIGNED)) as sequence', [mb_strlen(self::LEGACY_MISC_NAME_PREFIX) + 1])
             ->value('sequence');
 
-        return self::MISC_NAME_PREFIX . (((int) max(
+        return $this->nextMiscNameCache = self::MISC_NAME_PREFIX . (((int) max(
             $maxServiceNumber,
             $maxLegacyServiceNumber,
             $maxServiceNameNumber,
