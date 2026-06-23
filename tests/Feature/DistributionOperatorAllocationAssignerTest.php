@@ -279,7 +279,10 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->set('selectedServiceId', $service->id)
             ->set('predefinedAllocations.' . $rice->id, '3')
             ->set('predefinedAllocations.' . $oil->id, '2')
-            ->assertSee('مانده پس از تخصیص')
+            ->assertSee('موجودی کل')
+            ->assertSee('قبلاً تخصیص‌یافته')
+            ->assertSee('قابل تخصیص اکنون')
+            ->assertSee('مانده پس از این ثبت')
             ->assertSee('7.00')
             ->assertSee('3.00')
             ->assertDontSee('واردشده');

@@ -338,35 +338,65 @@
                         <div class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                             @foreach($selectedServiceCategories as $category)
                                 @php
-                                    $categoryMetrics = $selectedServiceCategoryMetrics[(int) $category->id] ?? ['allocated' => 0.0, 'assignable' => 0.0];
-                                    $allocatedPreview = $this->predefinedAllocationForCategory((int) $category->id);
+                                    $categoryMetrics = $selectedServiceCategoryMetrics[(int) $category->id] ?? ['quantity' => (float) $category->quantity, 'allocated' => 0.0, 'assignable' => 0.0];
+                                    $totalStockQuantity = (float) $categoryMetrics['quantity'];
+                                    $alreadyAllocatedQuantity = (float) $categoryMetrics['allocated'];
                                     $assignableQuantity = (float) $categoryMetrics['assignable'];
+                                    $allocatedPreview = $this->predefinedAllocationForCategory((int) $category->id);
                                     $remainingPreview = max(0, $assignableQuantity - $allocatedPreview);
                                     $isOverAllocated = $allocatedPreview > $assignableQuantity;
                                 @endphp
-                                <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                                <div class="rounded-2xl border bg-white p-4 shadow-sm transition {{ $isOverAllocated ? 'border-rose-200 ring-2 ring-rose-100' : 'border-slate-200' }}">
                                     <div class="mb-3 flex items-start justify-between gap-3">
                                         <div class="min-w-0">
                                             <p class="truncate text-sm font-black text-slate-900">{{ $category->name }}</p>
-                                            <p class="mt-1 text-xs font-bold text-slate-500">موجودی: {{ number_format((float) $category->quantity, 2) }}</p>
+                                            <p class="mt-1 text-xs font-bold text-slate-500">وضعیت موجودی این دسته‌بندی</p>
                                         </div>
                                         <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">
                                             {{ $unitOptions[$category->unit] ?? $category->unit }}
                                         </span>
                                     </div>
+
+                                    <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                        <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                                            <p class="text-[10px] font-bold text-slate-500">موجودی کل</p>
+                                            <p class="mt-1 text-sm font-black text-slate-900">{{ number_format($totalStockQuantity, 2) }}</p>
+                                        </div>
+                                        <div class="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2">
+                                            <p class="text-[10px] font-bold text-amber-700">قبلاً تخصیص‌یافته</p>
+                                            <p class="mt-1 text-sm font-black text-amber-800">{{ number_format($alreadyAllocatedQuantity, 2) }}</p>
+                                        </div>
+                                        <div class="rounded-xl border border-cyan-100 bg-cyan-50 px-3 py-2">
+                                            <p class="text-[10px] font-bold text-cyan-700">قابل تخصیص اکنون</p>
+                                            <p class="mt-1 text-sm font-black text-cyan-800">{{ number_format($assignableQuantity, 2) }}</p>
+                                        </div>
+                                        <div class="rounded-xl border {{ $isOverAllocated ? 'border-rose-200 bg-rose-50' : 'border-emerald-100 bg-emerald-50' }} px-3 py-2">
+                                            <p class="text-[10px] font-bold {{ $isOverAllocated ? 'text-rose-700' : 'text-emerald-700' }}">مانده پس از این ثبت</p>
+                                            <p class="mt-1 text-sm font-black {{ $isOverAllocated ? 'text-rose-800' : 'text-emerald-800' }}">{{ number_format($remainingPreview, 2) }}</p>
+                                        </div>
+                                    </div>
+
+                                    <label class="mt-3 block text-xs font-bold text-slate-600" for="predefined-allocation-{{ $category->id }}">
+                                        مقدار تخصیص در این ثبت
+                                    </label>
                                     <input
+                                        id="predefined-allocation-{{ $category->id }}"
                                         type="number"
                                         min="0"
                                         step="0.01"
                                         max="{{ $assignableQuantity }}"
                                         wire:model.live.debounce.250ms="predefinedAllocations.{{ $category->id }}"
-                                        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-sm font-black text-slate-900"
+                                        class="mt-1 w-full rounded-xl border {{ $isOverAllocated ? 'border-rose-300 bg-rose-50 text-rose-900 focus:border-rose-400 focus:ring-rose-100' : 'border-slate-300 bg-white text-slate-900 focus:border-cyan-400 focus:ring-cyan-100' }} px-3 py-2 text-center text-sm font-black outline-none transition focus:ring-4"
                                         placeholder="0"
+                                        aria-describedby="predefined-allocation-help-{{ $category->id }}"
                                     >
-                                    <div class="mt-3 flex items-center justify-between gap-3 rounded-xl {{ $isOverAllocated ? 'bg-rose-50 text-rose-800' : 'bg-emerald-50 text-emerald-800' }} px-3 py-2">
-                                        <span class="text-xs font-bold">مانده پس از تخصیص</span>
-                                        <span class="text-sm font-black">{{ number_format($remainingPreview, 2) }}</span>
-                                    </div>
+                                    <p id="predefined-allocation-help-{{ $category->id }}" class="mt-2 text-[11px] font-semibold {{ $isOverAllocated ? 'text-rose-700' : 'text-slate-500' }}">
+                                        @if($isOverAllocated)
+                                            مقدار واردشده از موجودی قابل تخصیص این دسته‌بندی بیشتر است.
+                                        @else
+                                            از {{ number_format($assignableQuantity, 2) }} واحد قابل تخصیص، {{ number_format($allocatedPreview, 2) }} واحد در این ثبت وارد شده است.
+                                        @endif
+                                    </p>
                                     @error('predefinedAllocations.' . $category->id) <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                                 </div>
                             @endforeach
