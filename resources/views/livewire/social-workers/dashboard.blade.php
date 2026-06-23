@@ -370,11 +370,11 @@
                                     <i class="bi bi-box-seam"></i>
                                 </span>
                                 <div class="min-w-0">
-                                    <h2 class="text-sm font-black text-slate-800">خلاصه سهمیه خدمت</h2>
+                                    <h2 class="text-sm font-extrabold text-slate-800">خلاصه سهمیه خدمت</h2>
                                 </div>
                             </div>
                             @if($selectedService)
-                                <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-black text-slate-500 shadow-sm">
+                                <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-bold text-slate-500 shadow-sm">
                                     {{ $this->selectedServiceTypeLabel }}
                                 </span>
                             @endif
@@ -386,7 +386,7 @@
                                 <p class="min-w-0 text-sm font-bold text-slate-700 sm:text-base">
                                     <span class="block truncate">{{ $selectedService->serviceName?->name }}</span>
                                 </p>
-                                <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black text-slate-500">
+                                <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-500">
                                     {{ $this->persianNumber($selectedService->code) }}
                                 </span>
                             </div>
@@ -439,10 +439,10 @@
                                             $unitLabel = \App\Models\Service::unitOptions()[$category->unit] ?? $category->unit;
                                         @endphp
 
-                                    <div class="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm shadow-slate-100/60">
+                                    <div class="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm shadow-slate-100/50">
                                         <div class="flex items-start justify-between gap-2">
                                             <div class="min-w-0">
-                                                <p class="truncate text-sm font-black leading-5 text-slate-800">
+                                                <p class="truncate text-sm font-extrabold leading-5 text-slate-800">
                                                     {{ $category->name }}
                                                 </p>
                                                 <p class="mt-0.5 text-[10px] font-bold leading-4 text-slate-400">
@@ -450,7 +450,7 @@
                                                 </p>
                                             </div>
 
-                                            <span class="inline-flex shrink-0 items-center rounded-lg border px-2 py-0.5 text-[9px] font-black leading-4 {{ $quotaState['badge'] }}">
+                                            <span class="inline-flex shrink-0 items-center rounded-lg border px-2 py-0.5 text-[9px] font-bold leading-4 {{ $quotaState['badge'] }}">
                                                 {{ $quotaState['label'] }}
                                             </span>
                                         </div>
@@ -458,7 +458,7 @@
                                         <div class="mt-1.5 flex items-end justify-between gap-3">
                                             <div class="min-w-0">
                                                 <span class="block text-[9px] font-bold leading-4 text-slate-400">باقی‌مانده</span>
-                                                <span class="block truncate text-base font-black leading-6 {{ $quotaState['value'] }}">
+                                                <span class="block truncate text-base font-extrabold leading-6 {{ $quotaState['value'] }}">
                                                     {{ $this->persianNumber(number_format($remaining, 2)) }}
                                                     <span class="text-[10px] font-bold text-slate-400">{{ $unitLabel }}</span>
                                                 </span>
@@ -477,7 +477,7 @@
                                                     style="width: {{ $progress }}%"
                                                 ></div>
                                             </div>
-                                            <span class="shrink-0 text-[9px] font-black text-slate-400" dir="ltr">{{ $this->persianNumber(number_format($progress, 0)) }}%</span>
+                                            <span class="shrink-0 text-[9px] font-bold text-slate-400" dir="ltr">{{ $this->persianNumber(number_format($progress, 0)) }}%</span>
                                         </div>
                                     </div>
                                 @empty
@@ -512,7 +512,7 @@
 
                     <section class="rounded-2xl border border-cyan-100 bg-white p-3 shadow-sm shadow-slate-100 sm:p-4">
                         <!-- Header Section -->
-                        <div class="mb-5 flex items-center justify-between gap-4">
+                        <div class="mb-4 flex items-center justify-between gap-4">
                             <div class="flex min-w-0 items-start gap-3">
                                 <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl {{ $selectedService ? 'bg-cyan-600 text-white' : 'bg-slate-100 text-slate-400' }} text-sm font-black">۲</span>
                                 <div class="min-w-0">
@@ -614,17 +614,17 @@
                                         $recipientEditorOpen = $hasRowErrors || $rowNeedsInput || $loop->last;
                                     @endphp
 
-                                <article class="relative overflow-hidden rounded-2xl border bg-white shadow-sm ring-1 transition-all {{ $hasRowErrors ? 'border-rose-300 ring-4 ring-rose-100' : 'border-slate-200 ring-slate-100' }}">
-                                    <div class="h-1 w-full {{ $hasRowErrors ? 'bg-rose-200' : 'bg-cyan-500/70' }}"></div>
+                                <article class="relative overflow-hidden rounded-2xl border bg-white shadow-sm transition-all {{ $hasRowErrors ? 'border-rose-300 ring-4 ring-rose-100' : 'border-slate-200' }}">
+                                    <div class="h-1 w-full {{ $hasRowErrors ? 'bg-rose-200' : ($recipientEditorOpen ? 'bg-cyan-500/70' : 'bg-slate-200') }}"></div>
                                     <div class="p-3 sm:p-4">
-                                    <div class="mb-3 border-b border-slate-100 pb-3 md:mb-4 md:pb-4">
+                                    <div class="mb-3 border-b border-slate-100 pb-1 md:mb-4 md:pb-4">
                                         <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                                             <div class="min-w-0 flex-1">
                                                 <div class="flex flex-wrap items-center gap-2">
-                                                    <h3 class="text-sm font-black text-slate-900">
+                                                    <h3 class="text-sm font-extrabold text-slate-900">
                                                         گیرنده {{ $this->persianNumber($index + 1) }}
                                                     </h3>
-                                                    <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-black {{ $recipientStatus['class'] }}">
+                                                    <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold {{ $recipientStatus['class'] }}">
                                                         {{ $recipientStatus['label'] }}
                                                     </span>
                                                     @if($hasRowErrors)
@@ -638,7 +638,7 @@
                                                 <div class="mt-2 space-y-1">
                                                     <div class="flex min-w-0 flex-wrap items-center gap-2">
                                                         @if($recipientDisplayName !== '')
-                                                            <p class="min-w-0 truncate text-sm font-extrabold text-slate-700">
+                                                            <p class="min-w-0 truncate text-sm font-semibold text-slate-700">
                                                                 {{ $recipientDisplayName }}
                                                             </p>
                                                         @else
@@ -647,7 +647,7 @@
                                                             </span>
                                                         @endif
                                                         @if($familyMemberCount !== null)
-                                                            <span class="inline-flex shrink-0 items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-black text-slate-500">
+                                                            <span class="inline-flex shrink-0 items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-500">
                                                                 {{ $this->persianNumber($familyMemberCount) }} خانوار
                                                             </span>
                                                         @endif
@@ -693,9 +693,9 @@
                                     </div>
 
                                     <details class="group" @if($recipientEditorOpen) open @endif>
-                                        <summary class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-right transition hover:border-cyan-200 hover:bg-cyan-50/50 focus:outline-none focus:ring-4 focus:ring-cyan-500/10">
+                                        <summary class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-right transition hover:border-slate-300 hover:bg-slate-100/70 focus:outline-none focus:ring-4 focus:ring-slate-200">
                                             <div class="min-w-0">
-                                                <span class="block text-xs font-black text-slate-700">
+                                                <span class="block text-xs font-extrabold text-slate-700">
                                                     {{ $recipientEditorOpen ? 'تکمیل گیرنده و مقدار' : 'ویرایش گیرنده و مقادیر' }}
                                                 </span>
                                                 <span class="mt-0.5 block truncate text-[10px] font-bold text-slate-400">
@@ -708,7 +708,7 @@
                                                     @endif
                                                 </span>
                                             </div>
-                                            <span class="inline-flex shrink-0 items-center gap-2 text-[10px] font-black text-cyan-700">
+                                            <span class="inline-flex shrink-0 items-center gap-2 text-[10px] font-bold text-slate-500 group-open:text-cyan-700">
                                                 <span class="hidden sm:inline">جزئیات</span>
                                                 <i class="bi bi-chevron-down text-xs text-slate-400 transition group-open:rotate-180"></i>
                                             </span>
@@ -717,7 +717,7 @@
                                     <div class="mt-3 space-y-3 md:space-y-4">
                                         <div class="border-b border-slate-100 pb-3">
                                             <div class="mb-3 flex items-center gap-2">
-                                                <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-600 text-[11px] font-black text-white">۱</span>
+                                                <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[11px] font-bold text-slate-600 group-open:bg-cyan-600 group-open:text-white">۱</span>
                                                 <h3 class="text-xs font-extrabold text-slate-700">شناسایی گیرنده</h3>
                                             </div>
 
@@ -1026,9 +1026,9 @@
                                                 @endphp
 
                                                 <details class="group rounded-2xl bg-slate-50 p-2.5" open>
-                                                    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-1 py-1.5 focus:outline-none focus:ring-4 focus:ring-cyan-500/10">
+                                                    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-1 py-1.5 focus:outline-none focus:ring-4 focus:ring-slate-200">
                                                         <div class="flex min-w-0 items-center gap-2">
-                                                            <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-600 text-[11px] font-black text-white">۲</span>
+                                                            <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[11px] font-bold text-slate-600 group-open:bg-cyan-600 group-open:text-white">۲</span>
                                                             <div class="min-w-0">
                                                                 <h3 class="truncate text-xs font-extrabold text-slate-700">دسته‌بندی و مقدار</h3>
                                                             </div>
@@ -1036,7 +1036,7 @@
 
                                                         <div class="flex shrink-0 items-center gap-2">
                                                             @if($rowTotalQuantity > 0)
-                                                                <span class="rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[10px] font-black text-emerald-700">
+                                                                <span class="rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
                                                                     جمع: {{ $this->persianNumber(number_format($rowTotalQuantity, 2)) }}
                                                                 </span>
                                                             @endif
@@ -1064,12 +1064,12 @@
                                                                 <div class="grid grid-cols-[minmax(0,1fr)_7.5rem] items-center gap-2 border-b border-slate-200 bg-white px-3 py-2.5 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_9rem]">
                                                                     <div class="min-w-0">
                                                                         <div class="flex min-w-0 flex-wrap items-center gap-1.5">
-                                                                            <h4 class="max-w-full truncate text-xs font-extrabold text-slate-800 sm:text-sm">{{ $category->name }}</h4>
+                                                                            <h4 class="max-w-full truncate text-xs font-bold text-slate-800 sm:text-sm">{{ $category->name }}</h4>
                                                                             @if($isUnavailable)
-                                                                                <span class="rounded-full bg-rose-50 px-2 py-0.5 text-[9px] font-black text-rose-600">ناموجود</span>
+                                                                                <span class="rounded-full bg-rose-50 px-2 py-0.5 text-[9px] font-bold text-rose-600">ناموجود</span>
                                                                             @endif
                                                                         </div>
-                                                                        <p class="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] font-bold text-slate-400">
+                                                                        <p class="mt-1 flex flex-wrap items-center gap-1 text-[10px] font-bold text-slate-400">
                                                                             <span>باقی‌مانده:</span>
                                                                             <span>{{ $this->persianNumber(number_format($availableForCurrentInput, 2)) }}</span>
                                                                             <span>{{ $unitOptions[$category->unit] ?? $category->unit }}</span>
@@ -1644,15 +1644,15 @@
                             <div class="mt-4 grid grid-cols-3 gap-2">
                                 <div class="rounded-2xl bg-slate-50 px-2.5 py-2.5">
                                     <span class="block text-[9px] font-bold text-slate-400">گیرندگان</span>
-                                    <span class="mt-1 block text-sm font-black text-slate-800">{{ $this->persianNumber($filledRecipientCount) }}</span>
+                                    <span class="mt-1 block text-sm font-extrabold text-slate-800">{{ $this->persianNumber($filledRecipientCount) }}</span>
                                 </div>
                                 <div class="rounded-2xl bg-amber-50 px-2.5 py-2.5">
                                     <span class="block text-[9px] font-bold text-amber-600">ثبت دستی</span>
-                                    <span class="mt-1 block text-sm font-black text-amber-800">{{ $this->persianNumber($manualRecipientCount) }}</span>
+                                    <span class="mt-1 block text-sm font-extrabold text-amber-800">{{ $this->persianNumber($manualRecipientCount) }}</span>
                                 </div>
                                 <div class="rounded-2xl bg-cyan-50 px-2.5 py-2.5">
                                     <span class="block text-[9px] font-bold text-cyan-600">دسته‌ها</span>
-                                    <span class="mt-1 block text-sm font-black text-cyan-800">{{ $this->persianNumber($totalCategoryCount) }}</span>
+                                    <span class="mt-1 block text-sm font-extrabold text-slate-800">{{ $this->persianNumber($totalCategoryCount) }}</span>
                                 </div>
                             </div>
 
@@ -1665,7 +1665,7 @@
                                         @foreach($categoryReviewTotals as $row)
                                             <div class="flex items-center justify-between gap-3 rounded-xl bg-white px-2.5 py-2">
                                                 <span class="min-w-0 truncate text-xs font-bold text-slate-700">{{ $row['name'] }}</span>
-                                                <span class="shrink-0 text-xs font-black text-slate-800">
+                                                <span class="shrink-0 text-xs font-extrabold text-slate-800">
                                                     {{ $this->persianNumber(number_format((float) $row['quantity'], 2)) }}
                                                     <span class="text-[10px] text-slate-400">{{ $row['unit'] }}</span>
                                                 </span>
