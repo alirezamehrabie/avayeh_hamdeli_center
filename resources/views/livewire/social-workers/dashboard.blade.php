@@ -370,7 +370,7 @@
                                     <i class="bi bi-box-seam"></i>
                                 </span>
                                 <div class="min-w-0">
-                                    <h2 class="text-sm font-black text-slate-800">سهمیه خدمت</h2>
+                                    <h2 class="text-sm font-black text-slate-800">خلاصه سهمیه خدمت</h2>
                                 </div>
                             </div>
                             @if($selectedService)
@@ -498,7 +498,7 @@
 
 
                         @else
-                            <p class="mt-2.5 text-xs leading-5 text-slate-400">ابتدا خدمت را انتخاب کنید.</p>
+                            <p class="mt-2.5 text-xs leading-5 text-slate-400">ابتدا خدمت را انتخاب کنید تا خلاصه سهمیه نمایش داده شود.</p>
                         @endif
 
                     </section>
@@ -1057,7 +1057,6 @@
                                                                         $remainingStock,
                                                                         (float) $metrics['remaining_allocation'] - $otherRowsPendingQuantity
                                                                     ));
-                                                                    $liveRemainingAllocation = max(0, $availableForCurrentInput - $currentQuantity);
                                                                     $exceedsRemainingQuota = $currentQuantity > 0 && $currentQuantity > $availableForCurrentInput;
                                                                     $isUnavailable = $remainingStock <= 0;
                                                                 @endphp
@@ -1072,7 +1071,7 @@
                                                                         </div>
                                                                         <p class="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] font-bold text-slate-400">
                                                                             <span>باقی‌مانده:</span>
-                                                                                       <span>{{ $this->persianNumber(number_format($liveRemainingAllocation, 2)) }}</span>
+                                                                            <span>{{ $this->persianNumber(number_format($availableForCurrentInput, 2)) }}</span>
                                                                             <span>{{ $unitOptions[$category->unit] ?? $category->unit }}</span>
                                                                         </p>
                                                                     </div>
