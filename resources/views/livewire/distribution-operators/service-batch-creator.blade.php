@@ -379,17 +379,38 @@
                                     <label class="mt-3 block text-xs font-bold text-slate-600" for="predefined-allocation-{{ $category->id }}">
                                         مقدار تخصیص در این ثبت
                                     </label>
-                                    <input
-                                        id="predefined-allocation-{{ $category->id }}"
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        max="{{ $assignableQuantity }}"
-                                        wire:model.live.debounce.250ms="predefinedAllocations.{{ $category->id }}"
-                                        class="mt-1 w-full rounded-xl border {{ $isOverAllocated ? 'border-rose-300 bg-rose-50 text-rose-900 focus:border-rose-400 focus:ring-rose-100' : 'border-slate-300 bg-white text-slate-900 focus:border-cyan-400 focus:ring-cyan-100' }} px-3 py-2 text-center text-sm font-black outline-none transition focus:ring-4"
-                                        placeholder="0"
-                                        aria-describedby="predefined-allocation-help-{{ $category->id }}"
-                                    >
+                                    <div class="mt-1 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+                                        <input
+                                            id="predefined-allocation-{{ $category->id }}"
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            max="{{ $assignableQuantity }}"
+                                            wire:model.live.debounce.250ms="predefinedAllocations.{{ $category->id }}"
+                                            class="min-w-0 rounded-xl border {{ $isOverAllocated ? 'border-rose-300 bg-rose-50 text-rose-900 focus:border-rose-400 focus:ring-rose-100' : 'border-slate-300 bg-white text-slate-900 focus:border-cyan-400 focus:ring-cyan-100' }} px-3 py-2 text-center text-sm font-black outline-none transition focus:ring-4"
+                                            placeholder="0"
+                                            aria-describedby="predefined-allocation-help-{{ $category->id }}"
+                                            aria-invalid="{{ $isOverAllocated ? 'true' : 'false' }}"
+                                        >
+                                        <div class="flex gap-1.5">
+                                            <button
+                                                type="button"
+                                                wire:click="useMaxPredefinedAllocation({{ $category->id }})"
+                                                @disabled($assignableQuantity <= 0)
+                                                class="rounded-xl border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs font-black text-cyan-700 transition hover:border-cyan-200 hover:bg-cyan-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400"
+                                            >
+                                                حداکثر
+                                            </button>
+                                            <button
+                                                type="button"
+                                                wire:click="clearPredefinedAllocation({{ $category->id }})"
+                                                @disabled($allocatedPreview <= 0)
+                                                class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-300"
+                                            >
+                                                پاک
+                                            </button>
+                                        </div>
+                                    </div>
                                     <p id="predefined-allocation-help-{{ $category->id }}" class="mt-2 text-[11px] font-semibold {{ $isOverAllocated ? 'text-rose-700' : 'text-slate-500' }}">
                                         @if($isOverAllocated)
                                             مقدار واردشده از موجودی قابل تخصیص این دسته‌بندی بیشتر است.
@@ -515,10 +536,17 @@
             </section>
         @endif
 
+        @if($hasPredefinedOverAllocation)
+            <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
+                مقدار یک یا چند دسته‌بندی از موجودی قابل تخصیص بیشتر است. برای ثبت، مقدار را اصلاح کنید یا از گزینه حداکثر استفاده کنید.
+            </div>
+        @endif
+
         <div class="flex justify-end">
             <button
                 type="submit"
-                class="inline-flex w-full items-center justify-center rounded-2xl bg-emerald-700 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-700/20 transition hover:bg-emerald-800 sm:w-auto"
+                @disabled($hasPredefinedOverAllocation)
+                class="inline-flex w-full items-center justify-center rounded-2xl bg-emerald-700 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-700/20 transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none sm:w-auto"
             >
                 {{ $mode === 'predefined' && !$isEditing ? 'ثبت تخصیص خدمت موجود' : 'ثبت و تخصیص خدمت متفرقه' }}
             </button>

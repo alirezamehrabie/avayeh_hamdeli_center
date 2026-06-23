@@ -117,6 +117,25 @@ class ServiceBatchCreator extends Component
         $this->predefinedServicesCache = null;
     }
 
+    public function updatedPredefinedAllocations(mixed $value, ?string $key = null): void
+    {
+        if ($key === null) {
+            return;
+        }
+
+        $categoryId = (int) str($key)->before('.')->toString();
+
+        if ($categoryId <= 0) {
+            $categoryId = (int) $key;
+        }
+
+        if ($categoryId <= 0) {
+            return;
+        }
+
+        $this->validatePredefinedAllocationField($categoryId);
+    }
+
     public function selectPredefinedService(int $serviceId): void
     {
         $service = $this->resolvePredefinedService($serviceId);
@@ -185,6 +204,20 @@ class ServiceBatchCreator extends Component
         $this->showSocialWorkerSuggestions = true;
     }
 
+    public function useMaxPredefinedAllocation(int $categoryId): void
+    {
+        $assignableQuantity = $this->predefinedAssignableForCategory($categoryId);
+
+        $this->predefinedAllocations[$categoryId] = $this->formatDecimal($assignableQuantity);
+        $this->resetValidation('predefinedAllocations.' . $categoryId);
+    }
+
+    public function clearPredefinedAllocation(int $categoryId): void
+    {
+        unset($this->predefinedAllocations[$categoryId]);
+        $this->resetValidation('predefinedAllocations.' . $categoryId);
+    }
+
     public function addCategory(): void
     {
         $this->miscCategories[] = $this->makeMiscCategory();
@@ -229,6 +262,7 @@ class ServiceBatchCreator extends Component
             'selectedService' => $selectedService,
             'selectedServiceCategories' => $this->selectedPredefinedServiceCategories,
             'selectedServiceCategoryMetrics' => $selectedService ? $this->selectedPredefinedCategoryMetrics() : [],
+            'hasPredefinedOverAllocation' => $this->hasPredefinedOverAllocation(),
             'socialWorkerSuggestions' => $this->socialWorkerSuggestions,
             'isEditing' => $this->editingServiceId !== null,
             'typeOptions' => Service::TYPE_OPTIONS,
@@ -569,6 +603,21 @@ class ServiceBatchCreator extends Component
         return max(0, (float) ($this->predefinedAllocations[$categoryId] ?? 0));
     }
 
+    public function hasPredefinedOverAllocation(): bool
+    {
+        if ($this->mode !== self::MODE_PREDEFINED || $this->editingServiceId || ! $this->selectedServiceId) {
+            return false;
+        }
+
+        foreach ($this->selectedPredefinedCategoryMetrics() as $categoryId => $metrics) {
+            if ($this->predefinedAllocationForCategory((int) $categoryId) > (float) $metrics['assignable']) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function predefinedAssignableForCategory(int $categoryId): float
     {
         return $this->selectedPredefinedCategoryMetrics()[$categoryId]['assignable'] ?? 0.0;
@@ -599,6 +648,21 @@ class ServiceBatchCreator extends Component
             ->sum('allocated_quantity');
 
         return max(0, (float) $category->quantity - $allocatedQuantity);
+    }
+
+    protected function validatePredefinedAllocationField(int $categoryId): void
+    {
+        $field = 'predefinedAllocations.' . $categoryId;
+        $quantity = $this->predefinedAllocationForCategory($categoryId);
+        $assignableQuantity = $this->predefinedAssignableForCategory($categoryId);
+
+        if ($quantity > $assignableQuantity) {
+            $this->addError($field, 'مقدار واردشده از موجودی قابل تخصیص این دسته‌بندی بیشتر است.');
+
+            return;
+        }
+
+        $this->resetValidation($field);
     }
 
     /**

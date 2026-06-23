@@ -288,6 +288,61 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->assertDontSee('واردشده');
     }
 
+    public function test_predefined_mode_prevents_over_allocation_before_submit(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $manager = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_MANAGER,
+            'is_admin' => true,
+        ]);
+        $serviceName = ServiceName::query()->create([
+            'name' => 'پویش کنترل موجودی',
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+        $service = Service::query()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'پویش کنترل موجودی',
+            'service_type' => 'individual',
+            'supports_gate_delivery' => true,
+            'supports_home_delivery' => true,
+            'description' => null,
+            'total_quantity' => 5,
+            'total_service_value' => 0,
+            'distribution_start_date' => '2026-06-20',
+            'distribution_end_date' => '2026-06-20',
+            'status' => 'approved',
+            'quantity_delivered' => 0,
+            'created_by' => $manager->id,
+        ]);
+        $category = $service->categories()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'سبد کالا',
+            'quantity' => 5,
+            'unit' => 'pack',
+            'value' => 0,
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class)
+            ->set('mode', ServiceBatchCreator::MODE_PREDEFINED)
+            ->set('selectedServiceId', $service->id)
+            ->set('predefinedAllocations.' . $category->id, '7')
+            ->assertHasErrors(['predefinedAllocations.' . $category->id])
+            ->assertSee('برای ثبت، مقدار را اصلاح کنید یا از گزینه حداکثر استفاده کنید')
+            ->assertSeeHtml('disabled')
+            ->call('useMaxPredefinedAllocation', $category->id)
+            ->assertSet('predefinedAllocations.' . $category->id, '5')
+            ->assertHasNoErrors(['predefinedAllocations.' . $category->id])
+            ->assertDontSee('برای ثبت، مقدار را اصلاح کنید یا از گزینه حداکثر استفاده کنید');
+    }
+
     public function test_misc_mode_auto_names_created_service(): void
     {
         $operator = User::factory()->create([
