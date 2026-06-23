@@ -1,4 +1,7 @@
 <div class="space-y-4">
+    @php
+        $hasSelectedMode = $isEditing || in_array($mode, ['predefined', 'misc'], true);
+    @endphp
     @if (session()->has('success'))
         <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
             {{ session('success') }}
@@ -43,7 +46,7 @@
 
                 <div class="grid gap-3 sm:grid-cols-2">
                     <label class="group relative flex min-h-20 cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition focus-within:ring-2 focus-within:ring-cyan-500 focus-within:ring-offset-2 {{ $mode === 'predefined' ? 'border-cyan-400 bg-cyan-50/60 ring-1 ring-cyan-100' : 'border-slate-200 bg-white hover:border-cyan-200 hover:bg-cyan-50/30' }}">
-                        <input type="radio" value="predefined" wire:model.live="mode" class="sr-only">
+                        <input type="radio" value="predefined" wire:model.change="mode" class="sr-only">
                         <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg {{ $mode === 'predefined' ? 'bg-cyan-500 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-cyan-100 group-hover:text-cyan-700' }}">
                                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                     <path d="M4 7.5h16M7 12h10M9 16.5h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
@@ -56,7 +59,7 @@
                     </label>
 
                     <label class="group relative flex min-h-20 cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition focus-within:ring-2 focus-within:ring-emerald-500 focus-within:ring-offset-2 {{ $mode === 'misc' ? 'border-emerald-400 bg-emerald-50/60 ring-1 ring-emerald-100' : 'border-slate-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/30' }}">
-                        <input type="radio" value="misc" wire:model.live="mode" class="sr-only">
+                        <input type="radio" value="misc" wire:model.change="mode" class="sr-only">
                         <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg {{ $mode === 'misc' ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-emerald-100 group-hover:text-emerald-700' }}">
                                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                     <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
@@ -68,6 +71,9 @@
                         <span class="h-2.5 w-2.5 rounded-full {{ $mode === 'misc' ? 'bg-emerald-500' : 'bg-slate-300' }}"></span>
                     </label>
                 </div>
+                @unless($hasSelectedMode)
+                    <p class="text-xs font-bold text-slate-400">برای ادامه، یکی از دو حالت بالا را انتخاب کنید.</p>
+                @endunless
             </div>
 
             <div class="hidden">
@@ -158,36 +164,35 @@
             : 'text-emerald-700';
     @endphp
 
-    <div class="rounded-2xl border border-slate-200/80 bg-white px-3 py-3 shadow-sm sm:px-4">
-        <div class="h-2.5 overflow-hidden rounded-full {{ $workflowTrackClass }}">
-            <div
-                class="h-full rounded-full bg-gradient-to-l {{ $workflowProgressClass }} transition-all duration-300"
-                style="width: {{ $workflowProgressPercent }}%;"
-            ></div>
-        </div>
-        <div class="mt-2 flex items-center justify-between gap-3 text-[11px] font-bold">
-            <p class="truncate text-slate-500">
-                {{ $activeWorkflowStep ? 'مرحله فعلی: ' . $activeWorkflowStep['title'] : 'همه مراحل تکمیل شده است' }}
-            </p>
-            <p class="shrink-0 {{ $workflowLabelClass }}">
-                {{ $completedWorkflowSteps }} از {{ count($workflowSteps) }} مرحله
-            </p>
-        </div>
-    </div>
-
-    <form wire:submit.prevent="requestSaveConfirmation" class="space-y-4">
+    @if($hasSelectedMode)
+    <form wire:submit.prevent="requestSaveConfirmation" class="space-y-3">
         @if($mode === 'predefined' && !$isEditing)
             <section wire:key="predefined-service-batch-section" class="overflow-visible rounded-2xl border border-cyan-100 bg-white shadow-sm">
-                <div class="border-b border-cyan-100 bg-cyan-50/60 px-4 py-3 sm:px-5">
-                    <div class="flex items-center gap-3">
-                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-600 text-white">
-                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <div class="border-b border-cyan-100 bg-cyan-50/30 px-4 py-3 sm:px-5">
+                    <div class="h-2.5 overflow-hidden rounded-full {{ $workflowTrackClass }}">
+                        <div
+                            class="h-full rounded-full bg-gradient-to-l {{ $workflowProgressClass }} transition-all duration-300"
+                            style="width: {{ $workflowProgressPercent }}%;"
+                        ></div>
+                    </div>
+                    <div class="mt-2 flex items-center justify-between gap-3 text-[11px] font-bold">
+                        <p class="truncate text-slate-500">
+                            {{ $activeWorkflowStep ? 'مرحله فعلی: ' . $activeWorkflowStep['title'] : 'همه مراحل تکمیل شده است' }}
+                        </p>
+                        <p class="shrink-0 {{ $workflowLabelClass }}">
+                            {{ $completedWorkflowSteps }} از {{ count($workflowSteps) }} مرحله
+                        </p>
+                    </div>
+                </div>
+                <div class="border-b border-cyan-100 bg-cyan-50/40 px-4 py-2.5 sm:px-5">
+                    <div class="flex items-center gap-2.5">
+                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-500 text-white">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                 <path d="M4 7.5h16M7 12h10M9 16.5h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                             </svg>
                         </span>
                         <div class="min-w-0">
-                            <h2 class="text-base font-black text-slate-900">تخصیص خدمت موجود</h2>
-                            <p class="mt-0.5 text-xs leading-5 text-slate-500">ابتدا خدمت و مددکار را انتخاب کنید، سپس مقدار هر دسته‌بندی را وارد کنید.</p>
+                            <h2 class="text-sm font-black text-slate-900">تخصیص خدمت موجود</h2>
                         </div>
                     </div>
                 </div>
@@ -518,20 +523,32 @@
             </section>
         @else
             <section wire:key="misc-service-batch-section" class="overflow-visible rounded-2xl border border-emerald-100 bg-white shadow-sm">
-                <div class="border-b border-emerald-100 bg-emerald-50/60 px-4 py-3 sm:px-5">
-                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div class="flex items-center gap-3">
-                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white">
-                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <div class="border-b border-emerald-100 bg-emerald-50/30 px-4 py-3 sm:px-5">
+                    <div class="h-2.5 overflow-hidden rounded-full {{ $workflowTrackClass }}">
+                        <div
+                            class="h-full rounded-full bg-gradient-to-l {{ $workflowProgressClass }} transition-all duration-300"
+                            style="width: {{ $workflowProgressPercent }}%;"
+                        ></div>
+                    </div>
+                    <div class="mt-2 flex items-center justify-between gap-3 text-[11px] font-bold">
+                        <p class="truncate text-slate-500">
+                            {{ $activeWorkflowStep ? 'مرحله فعلی: ' . $activeWorkflowStep['title'] : 'همه مراحل تکمیل شده است' }}
+                        </p>
+                        <p class="shrink-0 {{ $workflowLabelClass }}">
+                            {{ $completedWorkflowSteps }} از {{ count($workflowSteps) }} مرحله
+                        </p>
+                    </div>
+                </div>
+                <div class="border-b border-emerald-100 bg-emerald-50/40 px-4 py-2.5 sm:px-5">
+                    <div class="flex items-center gap-2.5">
+                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-white">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                     <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                                </svg>
-                            </span>
-                            <div class="min-w-0">
-                                <h2 class="text-base font-black text-slate-900">{{ $isEditing ? 'ویرایش خدمت متفرقه' : 'ایجاد ' . $nextMiscName }}</h2>
-                                <p class="mt-0.5 text-xs leading-5 text-slate-500">دسته‌بندی‌ها را وارد کنید؛ مجموع آن‌ها موجودی اولیه و مقدار تخصیص به مددکار می‌شود.</p>
-                            </div>
+                            </svg>
+                        </span>
+                        <div class="min-w-0">
+                            <h2 class="text-sm font-black text-slate-900">{{ $isEditing ? 'ویرایش خدمت متفرقه' : 'ایجاد خدمت جدید' }}</h2>
                         </div>
-                        <span class="self-start rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800 sm:self-auto">ایجاد و تخصیص</span>
                     </div>
                 </div>
 
@@ -751,5 +768,6 @@
                 </div>
             </div>
         </div>
+    @endif
     @endif
 </div>

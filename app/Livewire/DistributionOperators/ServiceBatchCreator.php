@@ -23,7 +23,7 @@ class ServiceBatchCreator extends Component
     protected const MISC_NAME_PREFIX = 'متفرقه - ';
     protected const LEGACY_MISC_NAME_PREFIX = 'Misc - ';
 
-    public string $mode = self::MODE_PREDEFINED;
+    public string $mode = '';
 
     public ?int $selectedServiceId = null;
 
@@ -113,7 +113,9 @@ class ServiceBatchCreator extends Component
         }
 
         if (! in_array($this->mode, [self::MODE_PREDEFINED, self::MODE_MISC], true)) {
-            $this->mode = self::MODE_PREDEFINED;
+            $this->mode = '';
+
+            return;
         }
 
         $this->resetValidation();
