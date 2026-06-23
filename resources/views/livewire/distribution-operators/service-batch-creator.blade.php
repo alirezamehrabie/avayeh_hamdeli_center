@@ -212,7 +212,6 @@
                                 openSelector() {
                                     this.open = true;
                                     this.pushSelectorHistory();
-                                    this.$nextTick(() => this.$refs.serviceSearch?.focus());
                                 },
                                 closeSelector({ syncHistory = true } = {}) {
                                     const shouldRestoreHistory = syncHistory && this.historyActive;

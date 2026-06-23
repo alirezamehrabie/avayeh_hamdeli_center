@@ -36,7 +36,6 @@
                 this.open = true;
                 $wire.set('showSocialWorkerSuggestions', true);
                 this.pushSelectorHistory();
-                this.$nextTick(() => this.$refs.workerSearch?.focus());
             },
             closeSelector({ syncHistory = true } = {}) {
                 const shouldRestoreHistory = syncHistory && this.historyActive;
