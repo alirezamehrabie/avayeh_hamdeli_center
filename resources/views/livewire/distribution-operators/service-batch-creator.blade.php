@@ -133,42 +133,45 @@
                 'status' => ! $reviewStepUnlocked ? 'locked' : 'active',
             ],
         ];
+        $completedWorkflowSteps = count(array_filter($workflowSteps, fn ($step) => $step['status'] === 'done'));
+        $activeWorkflowStep = null;
+
+        foreach ($workflowSteps as $workflowStep) {
+            if ($workflowStep['status'] === 'active') {
+                $activeWorkflowStep = $workflowStep;
+                break;
+            }
+        }
+
+        $workflowProgressPercent = count($workflowSteps) > 0
+            ? (($completedWorkflowSteps + ($activeWorkflowStep ? 0.5 : 0)) / count($workflowSteps)) * 100
+            : 0;
+        $workflowProgressPercent = max(8, min(100, $workflowProgressPercent));
+        $workflowProgressClass = $workflowAccent === 'cyan'
+            ? 'from-cyan-500 via-sky-500 to-cyan-400'
+            : 'from-emerald-500 via-teal-500 to-emerald-400';
+        $workflowTrackClass = $workflowAccent === 'cyan'
+            ? 'bg-cyan-50'
+            : 'bg-emerald-50';
+        $workflowLabelClass = $workflowAccent === 'cyan'
+            ? 'text-cyan-700'
+            : 'text-emerald-700';
     @endphp
 
-    <div class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
-        <div class="grid gap-2 sm:grid-cols-4">
-            @foreach($workflowSteps as $step)
-                @php
-                    $isDone = $step['status'] === 'done';
-                    $isActive = $step['status'] === 'active';
-                    $isLocked = $step['status'] === 'locked';
-                    $stepCircleClass = $isDone
-                        ? 'bg-emerald-600 text-white'
-                        : ($isActive
-                            ? ($workflowAccent === 'cyan' ? 'bg-cyan-600 text-white' : 'bg-emerald-600 text-white')
-                            : 'bg-slate-100 text-slate-400');
-                    $stepCardClass = $isDone
-                        ? 'border-emerald-200 bg-emerald-50'
-                        : ($isActive
-                            ? ($workflowAccent === 'cyan' ? 'border-cyan-200 bg-cyan-50' : 'border-emerald-200 bg-emerald-50')
-                            : 'border-slate-200 bg-slate-50');
-                @endphp
-                <div class="flex items-center gap-2 rounded-xl border px-3 py-2 {{ $stepCardClass }}">
-                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-black {{ $stepCircleClass }}">
-                        @if($isDone)
-                            <i class="bi bi-check-lg text-sm"></i>
-                        @else
-                            {{ $step['number'] }}
-                        @endif
-                    </span>
-                    <div class="min-w-0">
-                        <p class="truncate text-xs font-black {{ $isLocked ? 'text-slate-400' : 'text-slate-900' }}">{{ $step['title'] }}</p>
-                        <p class="mt-0.5 text-[11px] font-bold {{ $isLocked ? 'text-slate-400' : 'text-slate-500' }}">
-                            {{ $isDone ? 'تکمیل شد' : ($isActive ? 'مرحله فعلی' : 'در انتظار مرحله قبل') }}
-                        </p>
-                    </div>
-                </div>
-            @endforeach
+    <div class="rounded-2xl border border-slate-200/80 bg-white px-3 py-3 shadow-sm sm:px-4">
+        <div class="h-2.5 overflow-hidden rounded-full {{ $workflowTrackClass }}">
+            <div
+                class="h-full rounded-full bg-gradient-to-l {{ $workflowProgressClass }} transition-all duration-300"
+                style="width: {{ $workflowProgressPercent }}%;"
+            ></div>
+        </div>
+        <div class="mt-2 flex items-center justify-between gap-3 text-[11px] font-bold">
+            <p class="truncate text-slate-500">
+                {{ $activeWorkflowStep ? 'مرحله فعلی: ' . $activeWorkflowStep['title'] : 'همه مراحل تکمیل شده است' }}
+            </p>
+            <p class="shrink-0 {{ $workflowLabelClass }}">
+                {{ $completedWorkflowSteps }} از {{ count($workflowSteps) }} مرحله
+            </p>
         </div>
     </div>
 

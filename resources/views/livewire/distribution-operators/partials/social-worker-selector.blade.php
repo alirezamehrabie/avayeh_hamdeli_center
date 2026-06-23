@@ -8,7 +8,7 @@
             'focus' => 'focus:border-emerald-500 focus:ring-emerald-500/10',
             'activeCard' => 'border-emerald-300 bg-emerald-50/80',
             'hoverCard' => 'hover:border-emerald-200 hover:bg-emerald-50/60 active:bg-emerald-50 focus:ring-emerald-500/10',
-            'badge' => 'bg-emerald-50 text-emerald-700',
+            'meta' => 'text-emerald-700',
             'icon' => 'text-emerald-600',
         ]
         : [
@@ -16,7 +16,7 @@
             'focus' => 'focus:border-cyan-500 focus:ring-cyan-500/10',
             'activeCard' => 'border-cyan-300 bg-cyan-50/80',
             'hoverCard' => 'hover:border-cyan-200 hover:bg-cyan-50/60 active:bg-cyan-50 focus:ring-cyan-500/10',
-            'badge' => 'bg-cyan-50 text-cyan-700',
+            'meta' => 'text-cyan-700',
             'icon' => 'text-cyan-600',
         ];
 @endphp
@@ -105,7 +105,7 @@
                     {{ $socialWorkerId ? $socialWorkerQuery : 'نام یا کد مددکار را جستجو کنید' }}
                 </span>
                 <span class="mt-0.5 block truncate text-xs font-semibold text-slate-500">
-                    {{ $socialWorkerId ? 'مددکار برای تخصیص انتخاب شده است' : 'جستجو، بررسی ظرفیت پوشش و انتخاب سریع' }}
+                    {{ $socialWorkerId ? 'مددکار برای تخصیص انتخاب شده است' : 'جستجو بر اساس نام، کد، منطقه یا موبایل' }}
                 </span>
             </span>
             <span class="ms-3 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500">
@@ -187,27 +187,22 @@
                         <button
                             type="button"
                             @click="choose({{ (int) $worker['id'] }})"
-                            class="group flex w-full items-center gap-2 rounded-xl border px-2.5 py-2 text-right transition focus:outline-none focus:ring-4 sm:px-3 {{ (int) $socialWorkerId === (int) $worker['id'] ? $accentClasses['activeCard'] : 'border-slate-200 bg-white' }} {{ $accentClasses['hoverCard'] }}"
+                            class="group flex w-full items-center gap-2.5 rounded-xl border px-3 py-2.5 text-right transition focus:outline-none focus:ring-4 {{ (int) $socialWorkerId === (int) $worker['id'] ? $accentClasses['activeCard'] : 'border-slate-200 bg-white' }} {{ $accentClasses['hoverCard'] }}"
                         >
                             <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-50 {{ $accentClasses['icon'] }}">
                                 <i class="bi bi-person-badge text-sm"></i>
                             </span>
 
                             <span class="min-w-0 flex-1">
-                                <span class="flex min-w-0 items-center gap-1.5">
+                                <span class="flex min-w-0 items-center gap-2">
                                     <span class="min-w-0 flex-1 truncate text-sm font-black leading-5 text-slate-900">{{ $worker['name'] }}</span>
-                                    <span class="shrink-0 rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-black leading-4 text-slate-600">کد {{ $worker['code'] }}</span>
-                                    <span class="max-w-24 shrink-0 truncate rounded-md px-1.5 py-0.5 text-[10px] font-black leading-4 sm:max-w-32 {{ $accentClasses['badge'] }}">{{ $worker['district'] }}</span>
+                                    <span class="shrink-0 text-[11px] font-bold text-slate-400">کد {{ $worker['code'] }}</span>
                                 </span>
 
-                                <span class="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-bold leading-5 text-slate-500">
-                                    <span class="truncate">موبایل: {{ $worker['mobile'] }}</span>
-                                    <span class="text-slate-300">|</span>
-                                    <span class="whitespace-nowrap">افراد: {{ number_format($worker['covered_people']) }}</span>
-                                    <span class="whitespace-nowrap">خانوار: {{ number_format($worker['covered_households']) }}</span>
-                                    <span class="whitespace-nowrap">کودک: {{ number_format($worker['covered_children']) }}</span>
-                                    <span class="whitespace-nowrap text-amber-700">باز: {{ number_format($worker['open_allocations']) }}</span>
-                                    <span class="min-w-0 truncate text-slate-600">حجم: {{ $worker['allocated_quantity_label'] }}</span>
+                                <span class="mt-1 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-bold leading-5 text-slate-500">
+                                    <span class="truncate {{ $accentClasses['meta'] }}">{{ $worker['district'] }}</span>
+                                    <span class="text-slate-300">•</span>
+                                    <span class="truncate dir-ltr">{{ $worker['mobile'] }}</span>
                                 </span>
                             </span>
                             <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border {{ (int) $socialWorkerId === (int) $worker['id'] ? 'border-current bg-white/70 ' . $accentClasses['icon'] : 'border-slate-200 text-slate-300 group-hover:border-slate-300 group-hover:text-slate-400' }}">
