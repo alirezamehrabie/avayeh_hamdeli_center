@@ -60,27 +60,81 @@
                         ['number' => '۳', 'label' => 'جزئیات تحویل', 'short' => 'جزئیات', 'active' => (bool) $selectedService, 'done' => (bool) $selectedService && filled($deliveredAt)],
                         ['number' => '۴', 'label' => 'مرور و ثبت', 'short' => 'ثبت', 'active' => (bool) $selectedService, 'done' => false],
                     ];
+                    $currentWorkflowStep = match (true) {
+                        ! $selectedService => 1,
+                        ! $workflowHasRecipients || ! $workflowHasQuantities => 2,
+                        blank($deliveredAt) => 3,
+                        default => 4,
+                    };
                 @endphp
 
-                <nav class="rounded-xl border border-slate-200 bg-slate-50/80 px-2 py-1.5" aria-label="مراحل ثبت تحویل">
-                    <ol class="grid grid-cols-4 gap-1.5">
-                        @foreach($workflowSteps as $step)
-                            <li class="flex min-w-0 items-center justify-center gap-1 rounded-lg px-1 py-1 text-[9px] font-black transition sm:justify-start sm:px-2 sm:text-[10px] {{ $step['done'] ? 'bg-emerald-50 text-emerald-700' : ($step['active'] ? 'bg-white text-slate-800 shadow-sm ring-1 ring-cyan-100' : 'text-slate-400') }}">
-                                <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[9px] sm:text-[10px] {{ $step['done'] ? 'bg-emerald-600 text-white' : ($step['active'] ? 'bg-cyan-600 text-white' : 'bg-white text-slate-400 ring-1 ring-slate-200') }}">
-                                    @if($step['done'])
-                                        <i class="bi bi-check2 text-xs"></i>
-                                    @else
-                                        {{ $step['number'] }}
-                                    @endif
-                                </span>
-                                <span class="min-w-0 truncate leading-4 sm:hidden">{{ $step['short'] }}</span>
-                                <span class="hidden min-w-0 truncate sm:inline">{{ $step['label'] }}</span>
+                <nav class="rounded-2xl border border-slate-200/80 bg-transparent px-2.5 py-2 sm:px-3 sm:py-2.5" aria-label="مراحل ثبت تحویل">
+                    <div class="hidden">
+                        <svg class="h-full w-full" viewBox="0 0 800 130" preserveAspectRatio="none" aria-hidden="true">
+                            <defs>
+                                <linearGradient id="social-worker-workflow-orb-grid" x1="0" x2="1" y1="0" y2="1">
+                                    <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.14"/>
+                                    <stop offset="55%" stop-color="#14b8a6" stop-opacity="0.08"/>
+                                    <stop offset="100%" stop-color="#64748b" stop-opacity="0.04"/>
+                                </linearGradient>
+                            </defs>
+                            <path d="M0 66 C 150 22, 248 108, 400 62 S 648 28, 800 76" fill="none" stroke="url(#social-worker-workflow-orb-grid)" stroke-width="24" stroke-linecap="round"/>
+                            <path d="M0 66 C 150 22, 248 108, 400 62 S 648 28, 800 76" fill="none" stroke="#ffffff" stroke-opacity="0.64" stroke-width="1" stroke-dasharray="4 12"/>
+                        </svg>
+                    </div>
+
+                    <ol class="grid grid-cols-4 items-start gap-1 sm:gap-2.5">
+                        @foreach($workflowSteps as $stepIndex => $step)
+                            @php
+                                $stepPosition = $stepIndex + 1;
+                                $isCurrentStep = $stepPosition === $currentWorkflowStep;
+                                $isCompletedStep = (bool) $step['done'];
+                                $isLockedStep = ! $step['active'] && ! $isCurrentStep && ! $isCompletedStep;
+                            @endphp
+                            <li class="relative min-w-0 text-center" @if($isCurrentStep) aria-current="step" @endif>
+                                @if(! $loop->last)
+                                    <span class="absolute right-1/2 top-3.5 h-px w-full translate-x-1/2 rounded-full sm:top-4 {{ $isCompletedStep ? 'bg-emerald-200' : ($stepPosition < $currentWorkflowStep ? 'bg-cyan-100' : 'bg-slate-200') }}" aria-hidden="true"></span>
+                                @endif
+
+                                <div class="relative z-10 mx-auto flex h-7 w-7 items-center justify-center rounded-full border bg-white transition duration-200 sm:h-8 sm:w-8 {{ $isCompletedStep ? 'border-emerald-200 text-emerald-700' : ($isCurrentStep ? 'border-cyan-300 text-cyan-700 shadow-[0_0_0_3px_rgba(6,182,212,0.08)]' : 'border-slate-200 text-slate-400') }}">
+                                    <span class="relative flex h-full w-full items-center justify-center overflow-hidden rounded-full">
+                                        @if($isCompletedStep)
+                                            <i class="bi bi-check2 text-sm text-emerald-600"></i>
+                                        @else
+                                            <span class="text-[10px] font-black sm:text-xs">{{ $step['number'] }}</span>
+                                        @endif
+
+                                        @if($isCurrentStep)
+                                            <svg class="pointer-events-none absolute -inset-1 h-[calc(100%+0.5rem)] w-[calc(100%+0.5rem)] animate-spin text-cyan-300/70 [animation-duration:10s]" viewBox="0 0 64 64" aria-hidden="true">
+                                                <circle cx="32" cy="32" r="29" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="12 172" stroke-linecap="round"/>
+                                            </svg>
+                                        @endif
+                                    </span>
+                                </div>
+
+                                <div class="mt-1 min-w-0">
+                                    <p class="truncate text-[9px] font-black leading-3.5 sm:text-[10px] {{ $isCurrentStep ? 'text-cyan-800' : ($isCompletedStep ? 'text-emerald-700' : ($isLockedStep ? 'text-slate-400' : 'text-slate-600')) }}">
+                                        <span class="sm:hidden">{{ $step['short'] }}</span>
+                                        <span class="hidden sm:inline">{{ $step['label'] }}</span>
+                                    </p>
+                                    <span class="mt-0.5 hidden text-[8px] font-bold leading-3 text-slate-400 sm:block">
+                                        @if($isCompletedStep)
+                                            تکمیل شده
+                                        @elseif($isCurrentStep)
+                                            مرحله فعلی
+                                        @elseif($isLockedStep)
+                                            در انتظار
+                                        @else
+                                            آماده
+                                        @endif
+                                    </span>
+                                </div>
                             </li>
                         @endforeach
                     </ol>
                 </nav>
 
-                <div class="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] xl:items-start">
+                <div class="grid gap-4 xl:gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] xl:items-start">
                     <div class="space-y-5">
                     <section class="rounded-2xl border border-cyan-100 bg-white p-3 shadow-sm shadow-slate-100 sm:p-4">
                         <div class="mb-3 flex items-start gap-3">
@@ -1731,3 +1785,4 @@
         </div>
     </div>
 </div>
+
