@@ -439,7 +439,32 @@
                         <p class="mt-1 text-xs font-bold leading-5 text-slate-400">پس از انتخاب مددکار، دسته‌بندی‌ها و مقدار خدمت را وارد کنید.</p>
                     </div>
                 @elseif($quantityStepUnlocked)
-                <div class="space-y-4 px-4 pb-4 sm:px-5">
+                <div
+                    x-data="{
+                        scrollToNewCategory(event) {
+                            const index = event.detail?.index;
+
+                            this.$nextTick(() => {
+                                const selector = Number.isInteger(index)
+                                    ? `[data-service-category-index='${index}']`
+                                    : '[data-service-category-index]:last-of-type';
+                                const category = this.$el.querySelector(selector);
+
+                                if (! category) {
+                                    return;
+                                }
+
+                                category.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                                window.setTimeout(() => {
+                                    category.querySelector('[data-category-name-input]')?.focus({ preventScroll: true });
+                                }, 350);
+                            });
+                        }
+                    }"
+                    x-on:service-category-added.window="scrollToNewCategory($event)"
+                    class="space-y-4 px-4 pb-4 sm:px-5"
+                >
                     <div class="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
                         <div class="min-w-0">
                             <p class="text-sm font-black text-slate-800">دسته‌بندی‌های خدمت</p>
@@ -449,7 +474,7 @@
                     </div>
 
                     @foreach($miscCategories as $index => $category)
-                        <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/40">
+                        <div data-service-category-index="{{ $index }}" class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/40">
                             <div class="flex items-start justify-between gap-3">
                                 <div>
                                     <p class="text-xs font-black tracking-wide text-slate-400">دسته‌بندی {{ $index + 1 }}</p>
@@ -473,6 +498,7 @@
                                     <input
                                         type="text"
                                         wire:model.blur="miscCategories.{{ $index }}.name"
+                                        data-category-name-input
                                         class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
                                         placeholder="مثال: بسته غذایی"
                                     >

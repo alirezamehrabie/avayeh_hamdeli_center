@@ -257,6 +257,8 @@ class ServiceBatchCreator extends Component
     {
         $this->miscCategories[] = $this->makeMiscCategory();
         $this->confirmingBatchSave = false;
+
+        $this->dispatch('service-category-added', index: array_key_last($this->miscCategories));
     }
 
     public function removeCategory(int $index): void
