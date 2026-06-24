@@ -337,6 +337,8 @@ class ServiceBatchCreator extends Component
             'hasPredefinedOverAllocation' => $isPredefinedMode && $this->hasPredefinedOverAllocation($selectedServiceCategoryMetrics),
             'canRequestSaveConfirmation' => $this->canRequestSaveConfirmation($selectedServiceCategoryMetrics),
             'savePreventionMessages' => $this->savePreventionMessages($selectedServiceCategoryMetrics),
+            'reviewSummary' => $this->confirmationSummary(),
+            'reviewWarnings' => $this->reviewWarnings($selectedServiceCategoryMetrics),
             'confirmationSummary' => $this->confirmingBatchSave ? $this->confirmationSummary() : [],
             'socialWorkerSuggestions' => $this->showSocialWorkerSuggestions ? $this->socialWorkerSuggestions : collect(),
             'isEditing' => $this->editingServiceId !== null,
@@ -791,6 +793,17 @@ class ServiceBatchCreator extends Component
         }
 
         return $messages;
+    }
+
+    protected function reviewWarnings(?array $predefinedMetrics = null): array
+    {
+        $warnings = $this->savePreventionMessages($predefinedMetrics);
+
+        if (($this->mode === self::MODE_MISC || $this->editingServiceId) && trim($this->miscDescription) === '') {
+            $warnings[] = 'توضیحات ثبت نشده است؛ اگر این خدمت نیاز به توضیح دارد، قبل از تأیید آن را کامل کنید.';
+        }
+
+        return array_values(array_unique($warnings));
     }
 
     protected function remainingAssignableForPredefinedCategory(Service $service, int $categoryId): float

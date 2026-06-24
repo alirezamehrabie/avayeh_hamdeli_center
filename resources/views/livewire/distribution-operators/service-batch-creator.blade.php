@@ -581,25 +581,53 @@
                 </div>
             </div>
         @endif
-        <div class="rounded-2xl border {{ $reviewStepUnlocked ? 'border-emerald-200 bg-emerald-50/70' : 'border-slate-200 bg-slate-50' }} px-4 py-4 sm:flex sm:items-center sm:justify-between sm:gap-4">
-            <div class="min-w-0">
-                <p class="text-sm font-black {{ $reviewStepUnlocked ? 'text-emerald-900' : 'text-slate-600' }}">۴. مرور و ثبت نهایی</p>
-                <p class="mt-1 text-xs font-bold leading-5 {{ $reviewStepUnlocked ? 'text-emerald-700' : 'text-slate-400' }}">
-                    {{ $reviewStepUnlocked ? 'همه اطلاعات لازم کامل است. برای بازبینی نهایی ادامه دهید.' : 'پس از تکمیل مرحله‌های قبل، مرور نهایی فعال می‌شود.' }}
-                </p>
+
+        @php
+            $reviewRows = $reviewSummary['rows'] ?? [];
+            $reviewItemCount = count($reviewRows);
+        @endphp
+        <div class="rounded-2xl border {{ $reviewStepUnlocked ? 'border-emerald-200 bg-white shadow-sm shadow-emerald-900/5' : 'border-slate-200 bg-slate-50' }} px-3 py-2.5">
+            <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                <div class="min-w-0 flex-1">
+                    <div class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+{{--                        <span class="inline-flex h-6 items-center rounded-lg {{ $reviewStepUnlocked ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100' : 'bg-slate-100 text-slate-500 ring-1 ring-slate-200' }} px-2.5 text-[11px] font-black">۴</span>--}}
+                        <span class="max-w-full truncate text-sm font-black {{ $reviewStepUnlocked ? 'text-slate-900' : 'text-slate-500' }}">{{ $reviewSummary['service_name'] ?? '-' }}</span>
+                        @if(!empty($reviewSummary['service_type']))
+                            <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500">{{ $reviewSummary['service_type'] }}</span>
+                        @elseif(!empty($reviewSummary['service_code']))
+                            <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500">{{ $reviewSummary['service_code'] }}</span>
+                        @endif
+                    </div>
+                    <p class="mt-1 truncate text-[11px] font-bold leading-5 text-slate-500">
+                        {{ $reviewSummary['worker_name'] ?? '-' }}
+                        <span class="mx-1 text-slate-300">/</span>
+                        {{ $reviewSummary['date_label'] ?? '-' }}
+                        <span class="mx-1 text-slate-300">/</span>
+                        {{ $reviewItemCount }} قلم
+                        <span class="mx-1 text-slate-300">/</span>
+                        جمع {{ $reviewSummary['total_quantity_label'] ?? '0.00' }}
+                    </p>
+                </div>
+                <button
+                    type="submit"
+                    @disabled(! $canRequestSaveConfirmation)
+                    wire:loading.attr="disabled"
+                    wire:target="requestSaveConfirmation"
+                    class="inline-flex w-full items-center justify-center rounded-xl bg-emerald-700 px-4 py-3 text-xs font-black text-white shadow-sm shadow-emerald-700/20 transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none sm:w-auto"
+                >
+                    <span wire:loading.remove wire:target="requestSaveConfirmation">
+                        {{ $mode === 'predefined' && !$isEditing ? 'تأیید تحویل' : 'تأیید خدمت' }}
+                    </span>
+                    <span wire:loading wire:target="requestSaveConfirmation">در حال بررسی...</span>
+                </button>
             </div>
-            <button
-                type="submit"
-                @disabled(! $canRequestSaveConfirmation)
-                wire:loading.attr="disabled"
-                wire:target="requestSaveConfirmation"
-                class="mt-3 inline-flex w-full items-center justify-center rounded-2xl bg-emerald-700 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-700/20 transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none sm:mt-0 sm:w-auto"
-            >
-                <span wire:loading.remove wire:target="requestSaveConfirmation">
-                    {{ $mode === 'predefined' && !$isEditing ? 'مرور و تأیید تحویل' : 'مرور و تأیید خدمت جدید' }}
-                </span>
-                <span wire:loading wire:target="requestSaveConfirmation">در حال بررسی...</span>
-            </button>
+
+            @if(!empty($reviewSummary['description']))
+                <p class="mt-2 line-clamp-1 rounded-xl bg-slate-50 px-3 py-2 text-[11px] font-semibold leading-5 text-slate-600">
+                    <span class="font-black text-slate-500">توضیحات:</span>
+                    {{ $reviewSummary['description'] }}
+                </p>
+            @endif
         </div>
     </form>
 
@@ -609,7 +637,7 @@
                 <div class="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-4 sm:px-5">
                     <div class="min-w-0">
                         <h3 id="operator-confirmation-title" class="text-lg font-black text-slate-900">{{ $confirmationSummary['title'] ?? 'تأیید نهایی' }}</h3>
-                        <p class="mt-1 text-xs leading-5 text-slate-500">پیش از ثبت نهایی، خدمت، مددکار و مقادیر را بررسی کنید.</p>
+                        <p class="mt-1 text-xs leading-5 text-slate-500">اگر خلاصه زیر درست است، ثبت نهایی را تأیید کنید.</p>
                     </div>
                     <button
                         type="button"
@@ -622,7 +650,42 @@
                 </div>
 
                 <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
-                    <div class="grid gap-3 sm:grid-cols-2">
+                    @php
+                        $confirmationRows = $confirmationSummary['rows'] ?? [];
+                        $confirmationItemCount = count($confirmationRows);
+                    @endphp
+                    <div class="rounded-3xl border border-emerald-200 bg-emerald-50 p-4">
+                        <div class="grid gap-3 sm:grid-cols-3">
+                            <div>
+                                <p class="text-[11px] font-bold text-emerald-700">اقلام</p>
+                                <p class="mt-1 text-xl font-black text-emerald-950">{{ $confirmationItemCount }}</p>
+                            </div>
+                            <div>
+                                <p class="text-[11px] font-bold text-emerald-700">جمع مقدار</p>
+                                <p class="mt-1 text-xl font-black text-emerald-950">{{ $confirmationSummary['total_quantity_label'] ?? '0.00' }}</p>
+                            </div>
+                            <div>
+                                <p class="text-[11px] font-bold text-emerald-700">تاریخ</p>
+                                <p class="mt-1 text-sm font-black text-emerald-950">{{ $confirmationSummary['date_label'] ?? '-' }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if(!empty($reviewWarnings))
+                        <div class="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2.5">
+                            <p class="text-xs font-black text-amber-800">هشدارها</p>
+                            <ul class="mt-1.5 space-y-1 text-xs font-semibold leading-5 text-amber-700">
+                                @foreach($reviewWarnings as $warning)
+                                    <li class="flex items-start gap-1.5">
+                                        <span class="mt-[8px] h-1 w-1 shrink-0 rounded-full bg-amber-500"></span>
+                                        <span>{{ $warning }}</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    <div class="mt-3 grid gap-3 sm:grid-cols-2">
                         <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3">
                             <p class="text-xs font-bold text-slate-500">خدمت</p>
                             <p class="mt-1 text-sm font-black text-slate-900">{{ $confirmationSummary['service_name'] ?? '-' }}</p>
@@ -640,24 +703,23 @@
                             @if(!empty($confirmationSummary['worker_code']))
                                 <p class="mt-1 text-xs font-bold text-slate-500">کد {{ $confirmationSummary['worker_code'] }}</p>
                             @endif
-                            <p class="mt-2 text-xs font-bold text-slate-500">{{ $confirmationSummary['date_label'] ?? '' }}</p>
                         </div>
                     </div>
 
                     @if(!empty($confirmationSummary['description']))
                         <div class="mt-3 rounded-2xl border border-slate-200 bg-white p-3">
                             <p class="text-xs font-bold text-slate-500">توضیحات</p>
-                            <p class="mt-1 line-clamp-3 text-sm leading-6 text-slate-700">{{ $confirmationSummary['description'] }}</p>
+                            <p class="mt-1 line-clamp-2 text-sm leading-6 text-slate-700">{{ $confirmationSummary['description'] }}</p>
                         </div>
                     @endif
 
                     <div class="mt-3 rounded-2xl border border-slate-200 bg-white">
                         <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-3 py-3">
-                            <p class="text-sm font-black text-slate-900">مقادیر ثبت‌شونده</p>
-                            <span class="rounded-full bg-cyan-50 px-3 py-1 text-xs font-black text-cyan-700">جمع: {{ $confirmationSummary['total_quantity_label'] ?? '0.00' }}</span>
+                            <p class="text-sm font-black text-slate-900">جزئیات اقلام</p>
+                            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-700">{{ $confirmationItemCount }} قلم</span>
                         </div>
-                        <div class="max-h-72 divide-y divide-slate-100 overflow-y-auto">
-                            @forelse($confirmationSummary['rows'] ?? [] as $row)
+                        <div class="max-h-56 divide-y divide-slate-100 overflow-y-auto">
+                            @forelse($confirmationRows as $row)
                                 <div class="grid gap-2 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
                                     <div class="min-w-0">
                                         <p class="truncate text-sm font-black text-slate-800">{{ $row['name'] }}</p>
@@ -705,4 +767,3 @@
     @endif
     @endif
 </div>
-
