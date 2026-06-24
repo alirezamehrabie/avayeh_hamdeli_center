@@ -53,12 +53,6 @@ class ServiceBatchCreator extends Component
 
     public string $miscDescription = '';
 
-    public string $dateDay = '';
-
-    public string $dateMonth = '';
-
-    public string $dateYear = '';
-
     public string $date = '';
 
     protected ?Collection $predefinedServicesCache = null;
@@ -92,11 +86,7 @@ class ServiceBatchCreator extends Component
 
         $this->editingServiceId = $editingServiceId;
 
-        $today = Jalalian::now();
-        $this->dateDay = (string) $today->getDay();
-        $this->dateMonth = (string) $today->getMonth();
-        $this->dateYear = (string) $today->getYear();
-        $this->date = $today->format('Y/m/d');
+        $this->date = Jalalian::now()->format('Y/m/d');
         $this->miscCategories = [$this->makeMiscCategory()];
 
         if ($this->editingServiceId) {
@@ -200,22 +190,10 @@ class ServiceBatchCreator extends Component
         $this->confirmingBatchSave = false;
     }
 
-    public function updatedDateDay(): void
+    public function updatedDate(): void
     {
+        $this->date = $this->normalizeJalaliDate($this->date);
         $this->confirmingBatchSave = false;
-        $this->synchronizeDate();
-    }
-
-    public function updatedDateMonth(): void
-    {
-        $this->confirmingBatchSave = false;
-        $this->synchronizeDate();
-    }
-
-    public function updatedDateYear(): void
-    {
-        $this->confirmingBatchSave = false;
-        $this->synchronizeDate();
     }
 
     public function updatedMiscServiceType(): void
@@ -290,7 +268,7 @@ class ServiceBatchCreator extends Component
 
     public function requestSaveConfirmation(): void
     {
-        $this->synchronizeDate();
+        $this->date = $this->normalizeJalaliDate($this->date);
 
         if ($this->mode === self::MODE_MISC || $this->editingServiceId) {
             $this->validate($this->miscRules(), [], $this->validationAttributes());
@@ -315,7 +293,6 @@ class ServiceBatchCreator extends Component
             return null;
         }
 
-        $this->synchronizeDate();
         $this->confirmingBatchSave = false;
 
         return ($this->mode === self::MODE_MISC || $this->editingServiceId)
@@ -341,8 +318,6 @@ class ServiceBatchCreator extends Component
 
     public function render()
     {
-        $this->synchronizeDate();
-
         $isPredefinedMode = $this->mode === self::MODE_PREDEFINED && ! $this->editingServiceId;
         $services = $isPredefinedMode ? $this->predefinedServices() : collect();
         $selectedService = $isPredefinedMode ? $this->selectedPredefinedService : null;
@@ -554,9 +529,6 @@ class ServiceBatchCreator extends Component
         return [
             'miscServiceType' => ['required', Rule::in(array_keys(Service::TYPE_OPTIONS))],
             'miscDescription' => ['nullable', 'string', 'max:5000'],
-            'dateDay' => ['required', 'integer', 'min:1', 'max:31'],
-            'dateMonth' => ['required', 'integer', 'min:1', 'max:12'],
-            'dateYear' => ['required', 'integer', 'min:1300', 'max:1600'],
             'date' => ['required', 'string', function (string $attribute, mixed $value, \Closure $fail): void {
                 if (! $this->isValidJalaliDate((string) $value)) {
                     $fail('تاریخ واردشده معتبر نیست.');
@@ -578,9 +550,6 @@ class ServiceBatchCreator extends Component
             'predefinedAllocations.*' => 'مقدار تخصیص',
             'miscServiceType' => 'نوع خدمت',
             'miscDescription' => 'توضیحات',
-            'dateDay' => 'روز',
-            'dateMonth' => 'ماه',
-            'dateYear' => 'سال',
             'date' => 'تاریخ',
             'miscCategories.*.name' => 'نام دسته‌بندی',
             'miscCategories.*.quantity' => 'مقدار دسته‌بندی',
@@ -608,9 +577,6 @@ class ServiceBatchCreator extends Component
         $this->mode = self::MODE_MISC;
         $this->miscServiceType = (string) $service->service_type;
         $this->miscDescription = (string) $service->description;
-        $this->dateDay = (string) $jalaliDate->getDay();
-        $this->dateMonth = (string) $jalaliDate->getMonth();
-        $this->dateYear = (string) $jalaliDate->getYear();
         $this->date = $jalaliDate->format('Y/m/d');
         $this->socialWorkerId = $worker?->id;
         $this->socialWorkerQuery = $worker ? trim($worker->full_name . ' - کد ' . $worker->worker_code) : '';
@@ -624,15 +590,6 @@ class ServiceBatchCreator extends Component
             ])
             ->values()
             ->all() ?: [$this->makeMiscCategory()];
-    }
-
-    protected function synchronizeDate(): void
-    {
-        $year = str_pad(trim($this->dateYear), 4, '0', STR_PAD_LEFT);
-        $month = str_pad(trim($this->dateMonth), 2, '0', STR_PAD_LEFT);
-        $day = str_pad(trim($this->dateDay), 2, '0', STR_PAD_LEFT);
-
-        $this->date = implode('/', [$year, $month, $day]);
     }
 
     protected function resolvePredefinedService(int $serviceId): Service
@@ -1236,7 +1193,7 @@ class ServiceBatchCreator extends Component
 
     protected function isValidJalaliDate(string $date): bool
     {
-        $parts = explode('/', trim($date));
+        $parts = explode('/', $this->normalizeJalaliDate($date));
 
         if (count($parts) !== 3) {
             return false;
@@ -1249,7 +1206,18 @@ class ServiceBatchCreator extends Component
 
     protected function jalaliToGregorian(string $date): string
     {
-        return Jalalian::fromFormat('Y/m/d', trim($date))->toCarbon()->toDateString();
+        return Jalalian::fromFormat('Y/m/d', $this->normalizeJalaliDate($date))->toCarbon()->toDateString();
+    }
+
+    protected function normalizeJalaliDate(?string $value): string
+    {
+        $normalized = trim((string) $value);
+
+        if ($normalized === '') {
+            return '';
+        }
+
+        return (string) str($normalized)->before(' ')->trim();
     }
 
     protected function formatDecimal(string|int|float|null $value): string
@@ -1263,3 +1231,5 @@ class ServiceBatchCreator extends Component
         return number_format($number, 2, '.', '');
     }
 }
+
+

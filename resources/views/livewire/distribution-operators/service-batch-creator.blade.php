@@ -20,11 +20,11 @@
     @endif
 
     <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div class="border-b border-slate-100 bg-slate-50/70 p-4 sm:p-5">
-            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div class="border-b border-slate-100 bg-slate-50/60 px-4 py-3 sm:px-5 sm:py-3.5">
+            <div class="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                    <h1 class="text-2xl font-black text-slate-900">{{ $isEditing ? 'ویرایش خدمت متفرقه' : 'تخصیص خدمت' }}</h1>
-                    <p class="mt-2 text-xs leading-6 text-slate-500">
+                    <h1 class="text-xl font-black leading-tight text-slate-900 sm:text-[1.35rem]">{{ $isEditing ? 'ویرایش خدمت متفرقه' : 'تخصیص خدمت' }}</h1>
+                    <p class="mt-1 text-[11px] leading-5 text-slate-500 sm:text-xs">
                         تعریف و تحویل خدمات به مددکاران اجتماعی
                     </p>
                 </div>
@@ -33,7 +33,7 @@
                     <button
                         type="button"
                         wire:click="cancelEditing"
-                        class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                        class="inline-flex items-center justify-center self-start rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 lg:self-auto"
                     >
                         انصراف
                     </button>
@@ -85,7 +85,7 @@
                         </svg>
                     </span>
                     <span class="min-w-0">
-                        <span class="block text-sm font-black text-slate-900">تخصیص خدمت موجود</span>
+                        <span class="block text-sm font-black text-slate-900">انتخاب خدمت / پویش</span>
                         <span class="mt-1 block text-xs leading-5 text-slate-500">انتخاب خدمت تأییدشده و تخصیص مقدار از موجودی دسته‌بندی‌های آن.</span>
                     </span>
                     <span class="absolute left-4 top-4 h-3 w-3 rounded-full {{ $mode === 'predefined' ? 'bg-cyan-600' : 'bg-slate-200' }}"></span>
@@ -653,11 +653,32 @@
 
                 <div class="grid gap-4 px-4 pb-5 sm:grid-cols-2 sm:px-5 xl:grid-cols-4">
                     <div class="sm:col-span-2">
-                        <label class="mb-2 block text-sm font-bold text-slate-700">تاریخ ثبت</label>
-                        <div class="grid grid-cols-3 gap-2">
-                            <input type="number" min="1" max="31" wire:model.blur="dateDay" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700" placeholder="روز">
-                            <input type="number" min="1" max="12" wire:model.blur="dateMonth" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700" placeholder="ماه">
-                            <input type="number" min="1300" max="1600" wire:model.blur="dateYear" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700" placeholder="سال">
+                        <div x-data="jalaliDateTimeField($wire.entangle('date').live)">
+                            <label class="mb-2 block text-sm font-bold text-slate-700">تاریخ ثبت</label>
+                            <div class="relative">
+                                <input
+                                    type="text"
+                                    x-ref="input"
+                                    x-model="draft"
+                                    x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                    x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                    x-on:jalali-picker-open="handlePickerOpen()"
+                                    x-on:jalali-picker-close="handlePickerClose()"
+                                    x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                    readonly
+                                    inputmode="none"
+                                    autocomplete="off"
+                                    data-jdp-readonly
+                                    data-jdp
+                                    placeholder="1405/04/03"
+                                    class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pe-11 text-sm font-medium text-slate-700 outline-none transition ltr:text-left focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                                >
+                                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
+                                    <i class="bi bi-calendar2-event text-base"></i>
+                                </span>
+                            </div>
+                            <p class="mt-1 text-xs leading-5 text-slate-500">تاریخ با تقویم شمسی ثبت می‌شود (پیش فرض: تاریح امروز)</p>
+                            @error('date') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
                         </div>
                     </div>
 
@@ -810,5 +831,3 @@
     @endif
     @endif
 </div>
-
-
