@@ -573,31 +573,68 @@
                         <p class="mt-1 text-xs font-bold leading-5 text-slate-400">پس از انتخاب مددکار، دسته‌بندی‌ها و مقدار خدمت را وارد کنید.</p>
                     </div>
                 @else
-                <div class="space-y-3 px-4 pb-4 sm:px-5">
+                <div class="space-y-4 px-4 pb-4 sm:px-5">
+                    <div class="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                        <div class="min-w-0">
+                            <p class="text-sm font-black text-slate-800">دسته‌بندی‌های خدمت</p>
+                            <p class="mt-1 text-xs font-semibold leading-5 text-slate-500">هر ردیف شامل نام، مقدار و واحد خدمت است.</p>
+                        </div>
+                        <span class="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-black text-slate-500 shadow-sm">{{ count($miscCategories) }} ردیف</span>
+                    </div>
+
                     @foreach($miscCategories as $index => $category)
-                        <div class="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-[minmax(0,1fr)_160px_160px] xl:grid-cols-[minmax(0,1fr)_160px_160px_auto]">
-                            <div>
-                                <label class="mb-2 block text-xs font-bold text-slate-600">نام دسته‌بندی</label>
-                                <input type="text" wire:model.blur="miscCategories.{{ $index }}.name" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm" placeholder="مثال: بسته غذایی">
-                                @error("miscCategories.$index.name") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
-                            </div>
-                            <div>
-                                <label class="mb-2 block text-xs font-bold text-slate-600">مقدار</label>
-                                <input type="number" min="0.01" step="0.01" wire:model.blur="miscCategories.{{ $index }}.quantity" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm" placeholder="0">
-                                @error("miscCategories.$index.quantity") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
-                            </div>
-                            <div>
-                                <label class="mb-2 block text-xs font-bold text-slate-600">واحد</label>
-                                <select wire:model="miscCategories.{{ $index }}.unit" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm">
-                                    @foreach($unitOptions as $value => $label)
-                                        <option value="{{ $value }}">{{ $label }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="flex items-end md:col-span-2 xl:col-span-1">
-                                <button type="button" wire:click="removeCategory({{ $index }})" class="w-full rounded-xl border border-rose-200 bg-white px-4 py-2 text-sm font-bold text-rose-700 transition hover:bg-rose-50 xl:w-auto">
-                                    حذف
+                        <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/40">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <p class="text-xs font-black tracking-wide text-slate-400">دسته‌بندی {{ $index + 1 }}</p>
+                                    <p class="mt-1 text-sm font-bold text-slate-700">مشخصات خدمت</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    wire:click="removeCategory({{ $index }})"
+                                    class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 text-rose-700 transition hover:bg-rose-100"
+                                    aria-label="حذف دسته‌بندی {{ $index + 1 }}"
+                                >
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                        <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                    </svg>
                                 </button>
+                            </div>
+
+                            <div class="mt-4 space-y-4">
+                                <div>
+                                    <label class="mb-2 block text-xs font-bold text-slate-600">نام دسته‌بندی</label>
+                                    <input
+                                        type="text"
+                                        wire:model.blur="miscCategories.{{ $index }}.name"
+                                        class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                                        placeholder="مثال: بسته غذایی"
+                                    >
+                                    @error("miscCategories.$index.name") <p class="mt-1.5 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="mb-2 block text-xs font-bold text-slate-600">مقدار</label>
+                                        <input
+                                            type="number"
+                                            min="0.01"
+                                            step="0.01"
+                                            wire:model.blur="miscCategories.{{ $index }}.quantity"
+                                            class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                                            placeholder="0"
+                                        >
+                                        @error("miscCategories.$index.quantity") <p class="mt-1.5 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-xs font-bold text-slate-600">واحد</label>
+                                        <select wire:model="miscCategories.{{ $index }}.unit" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100">
+                                            @foreach($unitOptions as $value => $label)
+                                                <option value="{{ $value }}">{{ $label }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     @endforeach
@@ -607,9 +644,10 @@
                     <button
                         type="button"
                         wire:click="addCategory"
-                        class="inline-flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 sm:w-auto"
+                        class="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-black text-emerald-800 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-100 sm:w-auto"
                     >
-                        + افزودن دسته‌بندی
+                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-base leading-none text-emerald-700 shadow-sm">+</span>
+                        افزودن دسته‌بندی
                     </button>
                 </div>
 
@@ -772,4 +810,5 @@
     @endif
     @endif
 </div>
+
 
