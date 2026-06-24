@@ -74,19 +74,19 @@
             @click="toggleSelector()"
             :aria-expanded="open.toString()"
             aria-haspopup="dialog"
-            class="flex min-h-12 w-full items-center justify-between rounded-2xl border border-slate-300 bg-white px-4 py-3 text-right text-sm font-semibold text-slate-500 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50/50 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10"
+            class="flex min-h-12 w-full items-center justify-between rounded-2xl border border-slate-300 bg-white px-4 py-3 text-right shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50/50 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10"
         >
-            <span class="min-w-0">
-                <span class="block truncate">
+            <span class="min-w-0 flex-1">
+                <span class="block truncate text-[10px] font-medium text-slate-400">
                     @if($selectedService)
-                        {{ $selectedService->code }} - {{ $selectedService->name ?: ($selectedService->serviceName?->name ?? 'بدون عنوان') }}
+                        {{ $selectedService->code }}
                     @else
                         یک خدمت یا پویش را انتخاب کنید
                     @endif
                 </span>
                 @if($selectedService)
-                    <span class="mt-0.5 block truncate text-xs font-semibold text-slate-500">
-                        {{ $selectedServiceCategories->count() }} دسته‌بندی آماده تخصیص
+                    <span class="mt-1 block truncate text-sm font-bold text-slate-900">
+                        {{ $selectedService->name ?: ($selectedService->serviceName?->name ?? 'بدون عنوان') }}
                     </span>
                 @endif
             </span>
@@ -155,25 +155,28 @@
                     <button
                         type="button"
                         @click="choose({{ (int) $serviceOption['id'] }})"
-                        class="mb-2 flex w-full flex-col gap-2 rounded-2xl border px-3 py-3 text-right shadow-sm shadow-slate-200/70 transition hover:border-cyan-200 hover:bg-cyan-50/50 active:bg-cyan-50 {{ (int) $selectedServiceId === (int) $serviceOption['id'] ? 'border-cyan-300 bg-cyan-50/80' : 'border-slate-200 bg-white' }}"
+                        class="mb-2.5 flex w-full flex-col gap-2 rounded-2xl border px-4 py-3 text-right transition {{ (int) $selectedServiceId === (int) $serviceOption['id'] ? 'border-cyan-500 bg-cyan-50/30 ring-1 ring-cyan-100' : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/70' }}"
                         role="option"
                         aria-selected="{{ (int) $selectedServiceId === (int) $serviceOption['id'] ? 'true' : 'false' }}"
                     >
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0 flex-1">
-                                <div class="flex flex-wrap items-center gap-1.5">
-                                    <span class="text-[11px] font-bold text-slate-400">{{ $serviceOption['code'] }}</span>
-                                    <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">{{ $serviceOption['status'] }}</span>
-                                    <span class="rounded-full bg-cyan-50 px-2 py-0.5 text-[10px] font-bold text-cyan-700">{{ $serviceOption['categoriesCount'] }} دسته</span>
+                                <div class="flex flex-wrap items-center gap-2 text-[11px] font-medium text-slate-500">
+                                    <span class="tracking-wide text-slate-400">{{ $serviceOption['code'] }}</span>
+                                    <span class="h-1 w-1 rounded-full bg-slate-300"></span>
+                                    <span>{{ $serviceOption['status'] }}</span>
                                 </div>
-                                <p class="mt-1 line-clamp-2 text-sm font-black leading-5 text-slate-900">{{ $serviceOption['name'] }}</p>
+                                <p class="mt-1.5 line-clamp-2 text-sm font-bold leading-5 text-slate-900">{{ $serviceOption['name'] }}</p>
                             </div>
-                            <span class="inline-flex shrink-0 flex-col items-center rounded-xl border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-center text-emerald-700">
-                                <span class="text-[9px] font-bold leading-none">قابل تخصیص</span>
-                                <span class="mt-1 text-xs font-black leading-none">{{ $serviceOption['remainingLabel'] }}</span>
-                            </span>
+                            <div class="shrink-0 text-left">
+                                <p class="text-[10px] font-medium text-slate-400">قابل تحویل</p>
+                                <p class="mt-0.5 text-sm font-bold text-cyan-700">{{ $serviceOption['remainingLabel'] }}</p>
+                            </div>
                         </div>
-                        <p class="line-clamp-2 text-xs leading-5 text-slate-500">{{ $serviceOption['categorySummary'] ?: 'دسته‌بندی ثبت نشده است.' }}</p>
+                        <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-2">
+                            <p class="line-clamp-2 min-w-0 flex-1 text-xs leading-5 text-slate-500">{{ $serviceOption['categorySummary'] ?: 'دسته‌بندی ثبت نشده است.' }}</p>
+                            <span class="shrink-0 text-[11px] font-medium text-slate-500">{{ $serviceOption['categoriesCount'] }} دسته</span>
+                        </div>
                     </button>
                 @empty
                     <div class="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-6 text-center text-xs font-bold text-slate-500">
