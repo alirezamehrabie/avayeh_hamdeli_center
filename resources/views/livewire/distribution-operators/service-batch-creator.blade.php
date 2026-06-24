@@ -565,20 +565,6 @@
                         'accent' => 'emerald',
                         'selectorId' => 'misc-social-worker-selector',
                     ])
-
-                    <div class="sm:col-span-2">
-                        <label class="mb-2 block text-sm font-bold text-slate-700">تاریخ ثبت</label>
-                        <div class="grid grid-cols-3 gap-2">
-                            <input type="number" min="1" max="31" wire:model.blur="dateDay" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700" placeholder="روز">
-                            <input type="number" min="1" max="12" wire:model.blur="dateMonth" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700" placeholder="ماه">
-                            <input type="number" min="1300" max="1600" wire:model.blur="dateYear" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700" placeholder="سال">
-                        </div>
-                    </div>
-
-                    <div class="sm:col-span-2 xl:col-span-4">
-                        <label class="mb-2 block text-sm font-bold text-slate-700">توضیحات</label>
-                        <textarea rows="3" wire:model.blur="miscDescription" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"></textarea>
-                    </div>
                 </div>
 
                 @if(! $quantityStepUnlocked)
@@ -625,6 +611,22 @@
                     >
                         + افزودن دسته‌بندی
                     </button>
+                </div>
+
+                <div class="grid gap-4 px-4 pb-5 sm:grid-cols-2 sm:px-5 xl:grid-cols-4">
+                    <div class="sm:col-span-2">
+                        <label class="mb-2 block text-sm font-bold text-slate-700">تاریخ ثبت</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <input type="number" min="1" max="31" wire:model.blur="dateDay" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700" placeholder="روز">
+                            <input type="number" min="1" max="12" wire:model.blur="dateMonth" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700" placeholder="ماه">
+                            <input type="number" min="1300" max="1600" wire:model.blur="dateYear" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700" placeholder="سال">
+                        </div>
+                    </div>
+
+                    <div class="sm:col-span-2 xl:col-span-4">
+                        <label class="mb-2 block text-sm font-bold text-slate-700">توضیحات</label>
+                        <textarea rows="3" wire:model.blur="miscDescription" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"></textarea>
+                    </div>
                 </div>
                 @endif
             </section>
@@ -770,3 +772,4 @@
     @endif
     @endif
 </div>
+
