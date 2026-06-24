@@ -76,35 +76,6 @@
                 @endunless
             </div>
 
-            <div class="hidden">
-                <label class="group relative flex cursor-pointer gap-3 rounded-2xl border p-4 transition focus-within:ring-2 focus-within:ring-cyan-500 focus-within:ring-offset-2 {{ $mode === 'predefined' ? 'border-cyan-500 bg-cyan-50 shadow-sm ring-1 ring-cyan-200' : 'border-slate-200 bg-white hover:border-cyan-300 hover:bg-cyan-50/40' }}">
-                    <input type="radio" value="predefined" wire:model.live="mode" class="sr-only">
-                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl {{ $mode === 'predefined' ? 'bg-cyan-600 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-cyan-100 group-hover:text-cyan-700' }}">
-                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path d="M4 7.5h16M7 12h10M9 16.5h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                        </svg>
-                    </span>
-                    <span class="min-w-0">
-                        <span class="block text-sm font-black text-slate-900">انتخاب خدمت / پویش</span>
-                        <span class="mt-1 block text-xs leading-5 text-slate-500">انتخاب خدمت تأییدشده و تخصیص مقدار از موجودی دسته‌بندی‌های آن.</span>
-                    </span>
-                    <span class="absolute left-4 top-4 h-3 w-3 rounded-full {{ $mode === 'predefined' ? 'bg-cyan-600' : 'bg-slate-200' }}"></span>
-                </label>
-
-                <label class="group relative flex cursor-pointer gap-3 rounded-2xl border p-4 transition focus-within:ring-2 focus-within:ring-emerald-500 focus-within:ring-offset-2 {{ $mode === 'misc' ? 'border-emerald-500 bg-emerald-50 shadow-sm ring-1 ring-emerald-200' : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/40' }}">
-                    <input type="radio" value="misc" wire:model.live="mode" class="sr-only">
-                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl {{ $mode === 'misc' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-emerald-100 group-hover:text-emerald-700' }}">
-                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                        </svg>
-                    </span>
-                    <span class="min-w-0">
-                        <span class="block text-sm font-black text-slate-900">ایجاد خدمت متفرقه</span>
-                        <span class="mt-1 block text-xs leading-5 text-slate-500">ثبت {{ $nextMiscName }} برای موارد خارج از فهرست و تخصیص آن به مددکار.</span>
-                    </span>
-                    <span class="absolute left-4 top-4 h-3 w-3 rounded-full {{ $mode === 'misc' ? 'bg-emerald-600' : 'bg-slate-200' }}"></span>
-                </label>
-            </div>
         @endif
     </div>
 
@@ -564,15 +535,15 @@
                                             value: 'individual',
                                             title: 'شخصی',
                                             subtitle: 'ثبت برای مددجو',
-                                            activeClass: 'border-cyan-400 bg-cyan-50 shadow-sm',
-                                            inactiveClass: 'border-slate-200 bg-white hover:border-cyan-200 hover:bg-cyan-50/40',
-                                            iconActiveClass: 'bg-cyan-500 text-white',
-                                            iconInactiveClass: 'bg-cyan-100 text-cyan-700',
-                                            titleActiveClass: 'text-cyan-950',
+                                            activeClass: 'border-rose-300 bg-rose-50/80 shadow-sm',
+                                            inactiveClass: 'border-slate-200 bg-white hover:border-rose-200 hover:bg-rose-50/40',
+                                            iconActiveClass: 'bg-rose-600 text-white',
+                                            iconInactiveClass: 'bg-rose-100 text-rose-700',
+                                            titleActiveClass: 'text-rose-950',
                                             titleInactiveClass: 'text-slate-800',
-                                            subtitleActiveClass: 'text-cyan-700',
+                                            subtitleActiveClass: 'text-rose-700',
                                             subtitleInactiveClass: 'text-slate-500',
-                                            dotActiveClass: 'bg-cyan-500',
+                                            dotActiveClass: 'bg-rose-600',
                                         },
                                         {
                                             value: 'family',
@@ -933,3 +904,4 @@
     @endif
     @endif
 </div>
+
