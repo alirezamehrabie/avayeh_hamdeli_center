@@ -66,7 +66,7 @@
                                 </svg>
                         </span>
                         <span class="min-w-0 flex-1">
-                            <span class="block text-sm font-black text-slate-800">ایجاد خدمت جدید</span>
+                            <span class="block text-sm font-black text-slate-800">تعریف خدمت جدید</span>
                         </span>
                         <span class="h-2.5 w-2.5 rounded-full {{ $mode === 'misc' ? 'bg-emerald-500' : 'bg-slate-300' }}"></span>
                     </label>
@@ -192,14 +192,14 @@
                             </svg>
                         </span>
                         <div class="min-w-0">
-                            <h2 class="text-sm font-black text-slate-900">تخصیص خدمت موجود</h2>
+                            <h2 class="text-sm font-black text-slate-900">انتخاب خدمت / پویش</h2>
                         </div>
                     </div>
                 </div>
 
                 <div class="grid gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_320px]">
                     <div>
-                        <label class="mb-2 block text-sm font-bold text-slate-700">خدمت موجود برای تخصیص</label>
+                        <label class="mb-2 block text-sm font-bold text-slate-700">خدمت / پویش </label>
                         <div
                             class="relative"
                             x-data="{
@@ -274,14 +274,14 @@
                                 @click="toggleSelector()"
                                 :aria-expanded="open.toString()"
                                 aria-haspopup="dialog"
-                                class="flex min-h-12 w-full items-center justify-between rounded-2xl border border-slate-300 bg-white px-4 py-3 text-right text-sm font-bold text-slate-700 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50/50 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10"
+                                class="flex min-h-12 w-full items-center justify-between rounded-2xl border border-slate-300 bg-white px-4 py-3 text-right text-sm font-semibold text-slate-500 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50/50 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10"
                             >
                                 <span class="min-w-0">
                                     <span class="block truncate">
                                         @if($selectedService)
                                             {{ $selectedService->code }} - {{ $selectedService->name ?: ($selectedService->serviceName?->name ?? 'بدون عنوان') }}
                                         @else
-                                            یک خدمت تأییدشده را انتخاب کنید
+                                            یک خدمت یا پویش را انتخاب کنید
                                         @endif
                                     </span>
                                     @if($selectedService)
@@ -546,19 +546,103 @@
                             </svg>
                         </span>
                         <div class="min-w-0">
-                            <h2 class="text-sm font-black text-slate-900">{{ $isEditing ? 'ویرایش خدمت متفرقه' : 'ایجاد خدمت جدید' }}</h2>
+                            <h2 class="text-sm font-black text-slate-900">{{ $isEditing ? 'ویرایش خدمت متفرقه' : 'تعریف خدمت جدید' }}</h2>
                         </div>
                     </div>
                 </div>
 
                 <div class="grid gap-4 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-4">
-                    <div>
+                    <div class="sm:col-span-2 xl:col-span-1">
                         <label class="mb-2 block text-sm font-bold text-slate-700">نوع خدمت</label>
-                        <select wire:model="miscServiceType" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700">
-                            @foreach($typeOptions as $value => $label)
-                                <option value="{{ $value }}">{{ $label }}</option>
-                            @endforeach
-                        </select>
+                        <div
+                            x-data="{
+                                serviceType: @entangle('miscServiceType').live,
+                                get options() {
+                                    return [
+                                        {
+                                            value: 'individual',
+                                            title: 'شخصی',
+                                            subtitle: 'ثبت برای مددجو',
+                                            activeClass: 'border-cyan-400 bg-cyan-50 shadow-sm',
+                                            inactiveClass: 'border-slate-200 bg-white hover:border-cyan-200 hover:bg-cyan-50/40',
+                                            iconActiveClass: 'bg-cyan-500 text-white',
+                                            iconInactiveClass: 'bg-cyan-100 text-cyan-700',
+                                            titleActiveClass: 'text-cyan-950',
+                                            titleInactiveClass: 'text-slate-800',
+                                            subtitleActiveClass: 'text-cyan-700',
+                                            subtitleInactiveClass: 'text-slate-500',
+                                            dotActiveClass: 'bg-cyan-500',
+                                        },
+                                        {
+                                            value: 'family',
+                                            title: 'خانوادگی',
+                                            subtitle: 'ثبت برای سرپرست',
+                                            activeClass: 'border-amber-400 bg-amber-50 shadow-sm',
+                                            inactiveClass: 'border-slate-200 bg-white hover:border-amber-200 hover:bg-amber-50/40',
+                                            iconActiveClass: 'bg-amber-500 text-white',
+                                            iconInactiveClass: 'bg-amber-100 text-amber-700',
+                                            titleActiveClass: 'text-amber-950',
+                                            titleInactiveClass: 'text-slate-800',
+                                            subtitleActiveClass: 'text-amber-700',
+                                            subtitleInactiveClass: 'text-slate-500',
+                                            dotActiveClass: 'bg-amber-500',
+                                        },
+                                    ];
+                                },
+                                selectServiceType(value) {
+                                    this.serviceType = value;
+                                },
+                            }"
+                        >
+                            <div class="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+                                <template x-for="item in options" :key="item.value">
+                                    <button
+                                        type="button"
+                                        x-on:click="selectServiceType(item.value)"
+                                        class="group flex min-h-[56px] w-full items-center gap-2.5 rounded-2xl border px-3 py-2.5 text-right transition focus:outline-none focus:ring-4 focus:ring-emerald-100"
+                                        x-bind:class="serviceType === item.value
+                                            ? item.activeClass
+                                            : item.inactiveClass"
+                                        x-bind:aria-pressed="(serviceType === item.value).toString()"
+                                    >
+                                        <span
+                                            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition"
+                                            x-bind:class="serviceType === item.value
+                                                ? item.iconActiveClass
+                                                : item.iconInactiveClass"
+                                        >
+                                            <template x-if="item.value === 'individual'">
+                                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                    <path d="M12 12a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm-6 7a6 6 0 0 1 12 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                                </svg>
+                                            </template>
+                                            <template x-if="item.value === 'family'">
+                                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                    <path d="M9 11a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Zm6 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM4 19a5 5 0 0 1 10 0M13 19a5 5 0 0 1 7 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                                </svg>
+                                            </template>
+                                        </span>
+                                        <span class="min-w-0 flex-1">
+                                            <span
+                                                x-text="item.title"
+                                                class="block text-sm font-black leading-5"
+                                                x-bind:class="serviceType === item.value ? item.titleActiveClass : item.titleInactiveClass"
+                                            ></span>
+                                            <span
+                                                x-text="item.subtitle"
+                                                class="mt-0.5 block text-[11px] font-semibold leading-4"
+                                                x-bind:class="serviceType === item.value ? item.subtitleActiveClass : item.subtitleInactiveClass"
+                                            ></span>
+                                        </span>
+                                        <span
+                                            class="h-2.5 w-2.5 shrink-0 rounded-full transition"
+                                            x-bind:class="serviceType === item.value ? item.dotActiveClass : 'bg-slate-200'"
+                                            aria-hidden="true"
+                                        ></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
                     </div>
 
                     @include('livewire.distribution-operators.partials.social-worker-selector', [
@@ -698,13 +782,21 @@
         @endif
 
         @if(! $canRequestSaveConfirmation && !empty($savePreventionMessages))
-            <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                <p class="font-black">برای ادامه، این موارد را کامل کنید:</p>
-                <ul class="mt-2 list-disc space-y-1 pr-5 text-xs font-bold leading-6">
+            <div class="rounded-xl border border-amber-200/80 bg-amber-50/70 px-3 py-2.5 text-amber-900">
+                <div class="flex items-start gap-2">
+                    <span class="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-100 text-[10px] font-black text-amber-700">!</span>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-[11px] font-black leading-5 text-amber-800">برای ادامه، این موارد را کامل کنید</p>
+                        <ul class="mt-1.5 space-y-1 text-[11px] font-semibold leading-5 text-amber-700">
                     @foreach($savePreventionMessages as $message)
-                        <li>{{ $message }}</li>
+                            <li class="flex items-start gap-1.5">
+                                <span class="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-amber-500"></span>
+                                <span>{{ $message }}</span>
+                            </li>
                     @endforeach
-                </ul>
+                        </ul>
+                    </div>
+                </div>
             </div>
         @endif
         <div class="rounded-2xl border {{ $reviewStepUnlocked ? 'border-emerald-200 bg-emerald-50/70' : 'border-slate-200 bg-slate-50' }} px-4 py-4 sm:flex sm:items-center sm:justify-between sm:gap-4">
@@ -722,7 +814,7 @@
                 class="mt-3 inline-flex w-full items-center justify-center rounded-2xl bg-emerald-700 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-700/20 transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none sm:mt-0 sm:w-auto"
             >
                 <span wire:loading.remove wire:target="requestSaveConfirmation">
-                    {{ $mode === 'predefined' && !$isEditing ? 'مرور و تأیید تخصیص' : 'مرور و تأیید خدمت متفرقه' }}
+                    {{ $mode === 'predefined' && !$isEditing ? 'مرور و تأیید تحویل' : 'مرور و تأیید خدمت جدید' }}
                 </span>
                 <span wire:loading wire:target="requestSaveConfirmation">در حال بررسی...</span>
             </button>

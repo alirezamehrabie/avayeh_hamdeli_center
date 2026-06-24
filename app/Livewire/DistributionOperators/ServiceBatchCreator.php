@@ -769,7 +769,7 @@ class ServiceBatchCreator extends Component
         }
 
         if (! $this->hasValidMiscCategoryRows()) {
-            $messages[] = 'حداقل یک دسته‌بندی با نام، مقدار معتبر و واحد انتخاب‌شده وارد کنید.';
+            $messages[] = 'حداقل یک دسته‌بندی با نام و واحد معتبر وارد کنید.';
         }
 
         if (! $this->isValidJalaliDate($this->date)) {

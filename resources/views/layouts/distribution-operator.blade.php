@@ -107,7 +107,7 @@
         ></div>
 
         <div class="flex min-w-0 flex-1 flex-col overflow-y-auto">
-            <header class="flex items-center justify-between gap-4 border-b bg-white px-4 py-4 shadow-sm sm:px-6">
+            <header class="flex items-center justify-between gap-4 border-b bg-white px-4 py-3 shadow-sm sm:px-6">
                 <div class="flex items-center gap-4">
                     <button
                         type="button"
