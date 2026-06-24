@@ -97,15 +97,21 @@
             @click="toggleSelector()"
             :aria-expanded="open.toString()"
             aria-haspopup="dialog"
-            class="flex min-h-12 w-full items-center justify-between rounded-2xl border border-slate-300 bg-white px-4 py-3 text-right text-sm font-bold text-slate-700 shadow-sm transition focus:outline-none focus:ring-4 {{ $accentClasses['hoverBorder'] }}"
+            class="flex min-h-12 w-full items-center justify-between rounded-2xl border border-slate-300 bg-white px-4 py-3 text-right shadow-sm transition focus:outline-none focus:ring-4 {{ $accentClasses['hoverBorder'] }}"
         >
-            <span class="min-w-0">
-                <span class="block truncate">
-                    {{ $socialWorkerId ? $socialWorkerQuery : 'نام یا کد مددکار را جستجو کنید' }}
+            <span class="min-w-0 flex-1">
+                <span class="block truncate text-[10px] font-medium text-slate-400">
+                    {{ $socialWorkerId ? 'کد پرسنلی: ' . $selectedSocialWorkerCode : 'نام یا کد مددکار را جستجو کنید' }}
                 </span>
-                <span class="mt-0.5 block truncate text-xs font-semibold text-slate-500">
-                    {{ $socialWorkerId ? 'مددکار برای تخصیص انتخاب شده است' : 'جستجو بر اساس نام، کد، منطقه یا موبایل' }}
-                </span>
+                @if($socialWorkerId)
+                    <span class="mt-1 block truncate text-sm font-bold text-slate-900">
+                        {{ $selectedSocialWorkerDisplay }}
+                    </span>
+                @else
+                    <span class="mt-1 block truncate text-xs font-semibold text-slate-500">
+                        جستجو بر اساس نام، کد، منطقه یا موبایل
+                    </span>
+                @endif
             </span>
             <span class="ms-3 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500">
                 <i class="bi bi-search text-sm"></i>

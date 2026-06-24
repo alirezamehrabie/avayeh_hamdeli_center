@@ -33,6 +33,10 @@ class ServiceBatchCreator extends Component
 
     public string $socialWorkerQuery = '';
 
+    public string $selectedSocialWorkerCode = '';
+
+    public string $selectedSocialWorkerDisplay = '';
+
     public bool $showSocialWorkerSuggestions = false;
 
     public ?int $editingServiceId = null;
@@ -218,11 +222,14 @@ class ServiceBatchCreator extends Component
     public function selectSocialWorker(int $socialWorkerId): void
     {
         $worker = SocialWorker::query()
-            ->select(['id', 'first_name', 'last_name', 'worker_code'])
+            ->with('district:id,name')
+            ->select(['id', 'first_name', 'last_name', 'worker_code', 'district_id'])
             ->findOrFail($socialWorkerId);
 
         $this->socialWorkerId = $worker->id;
         $this->socialWorkerQuery = trim($worker->full_name . ' - کد ' . $worker->worker_code);
+        $this->selectedSocialWorkerCode = $worker->worker_code ? (string) $worker->worker_code : '-';
+        $this->selectedSocialWorkerDisplay = $this->formatSelectedSocialWorkerDisplay($worker);
         $this->showSocialWorkerSuggestions = false;
         $this->flushSocialWorkerSuggestions();
         $this->confirmingBatchSave = false;
@@ -232,6 +239,8 @@ class ServiceBatchCreator extends Component
     {
         $this->socialWorkerId = null;
         $this->socialWorkerQuery = '';
+        $this->selectedSocialWorkerCode = '';
+        $this->selectedSocialWorkerDisplay = '';
         $this->showSocialWorkerSuggestions = true;
         $this->flushSocialWorkerSuggestions();
         $this->confirmingBatchSave = false;
@@ -579,7 +588,10 @@ class ServiceBatchCreator extends Component
 
     protected function loadEditableMiscService(Service $service): void
     {
-        $worker = $service->socialWorkers()->select(['social_workers.id', 'first_name', 'last_name', 'worker_code'])->first();
+        $worker = $service->socialWorkers()
+            ->with('district:id,name')
+            ->select(['social_workers.id', 'first_name', 'last_name', 'worker_code', 'district_id'])
+            ->first();
         $jalaliDate = Jalalian::fromDateTime($service->distribution_start_date);
 
         $this->mode = self::MODE_MISC;
@@ -588,6 +600,8 @@ class ServiceBatchCreator extends Component
         $this->date = $jalaliDate->format('Y/m/d');
         $this->socialWorkerId = $worker?->id;
         $this->socialWorkerQuery = $worker ? trim($worker->full_name . ' - کد ' . $worker->worker_code) : '';
+        $this->selectedSocialWorkerCode = $worker?->worker_code ? (string) $worker->worker_code : '';
+        $this->selectedSocialWorkerDisplay = $worker ? $this->formatSelectedSocialWorkerDisplay($worker) : '';
         $this->miscCategories = $service->categories()
             ->ordered()
             ->get()
@@ -1180,6 +1194,14 @@ class ServiceBatchCreator extends Component
             'open_allocations' => (int) ($worker->open_allocations_count ?? 0),
             'allocated_quantity_label' => number_format($allocatedQuantity, 2),
         ];
+    }
+
+    protected function formatSelectedSocialWorkerDisplay(SocialWorker $worker): string
+    {
+        $name = trim($worker->full_name) ?: 'مددکار بدون نام';
+        $district = trim((string) ($worker->district?->name ?? ''));
+
+        return $district !== '' ? $name . ' - ' . $district : $name;
     }
 
     protected function nextMiscName(): string
