@@ -64,6 +64,34 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         ]);
     }
 
+    public function test_misc_service_type_must_be_selected_before_save_confirmation(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 901,
+            'first_name' => 'Distribution',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class)
+            ->set('mode', ServiceBatchCreator::MODE_MISC)
+            ->assertSet('miscServiceType', '')
+            ->set('miscCategories.0.name', 'Operator package')
+            ->set('miscCategories.0.quantity', '1')
+            ->set('miscCategories.0.unit', 'pack')
+            ->set('socialWorkerQuery', $worker->full_name)
+            ->set('socialWorkerId', $worker->id)
+            ->call('requestSaveConfirmation')
+            ->assertHasErrors(['miscServiceType' => 'required'])
+            ->assertSet('confirmingBatchSave', false);
+    }
+
     public function test_predefined_mode_allocates_existing_service_without_creating_service_or_category(): void
     {
         $operator = User::factory()->create([

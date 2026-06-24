@@ -49,7 +49,7 @@ class ServiceBatchCreator extends Component
      */
     public array $miscCategories = [];
 
-    public string $miscServiceType = 'individual';
+    public string $miscServiceType = '';
 
     public string $miscDescription = '';
 
@@ -198,6 +198,10 @@ class ServiceBatchCreator extends Component
 
     public function updatedMiscServiceType(): void
     {
+        if (! in_array($this->miscServiceType, array_keys(Service::TYPE_OPTIONS), true)) {
+            $this->miscServiceType = '';
+        }
+
         $this->confirmingBatchSave = false;
     }
 
@@ -726,6 +730,11 @@ class ServiceBatchCreator extends Component
                 && in_array((string) ($category['unit'] ?? ''), Service::unitKeys(), true));
     }
 
+    protected function hasSelectedMiscServiceType(): bool
+    {
+        return in_array($this->miscServiceType, array_keys(Service::TYPE_OPTIONS), true);
+    }
+
     protected function canRequestSaveConfirmation(?array $predefinedMetrics = null): bool
     {
         if ($this->mode === self::MODE_PREDEFINED && ! $this->editingServiceId) {
@@ -735,7 +744,8 @@ class ServiceBatchCreator extends Component
                 && ! $this->hasPredefinedOverAllocation($predefinedMetrics);
         }
 
-        return $this->socialWorkerId !== null
+        return $this->hasSelectedMiscServiceType()
+            && $this->socialWorkerId !== null
             && $this->hasValidMiscCategoryRows()
             && $this->isValidJalaliDate($this->date);
     }
@@ -762,6 +772,10 @@ class ServiceBatchCreator extends Component
             }
 
             return $messages;
+        }
+
+        if (! $this->hasSelectedMiscServiceType()) {
+            $messages[] = 'ابتدا نوع خدمت را انتخاب کنید.';
         }
 
         if (! $this->socialWorkerId) {
@@ -1231,5 +1245,3 @@ class ServiceBatchCreator extends Component
         return number_format($number, 2, '.', '');
     }
 }
-
-

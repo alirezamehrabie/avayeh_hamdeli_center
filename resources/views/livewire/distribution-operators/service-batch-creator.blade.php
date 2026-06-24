@@ -110,7 +110,8 @@
 
     @php
         $isPredefinedWorkflow = $mode === 'predefined' && ! $isEditing;
-        $serviceStepComplete = $isPredefinedWorkflow ? (bool) $selectedService : true;
+        $hasSelectedMiscServiceType = $isEditing || in_array($miscServiceType, array_keys($typeOptions), true);
+        $serviceStepComplete = $isPredefinedWorkflow ? (bool) $selectedService : $hasSelectedMiscServiceType;
         $workerStepUnlocked = $serviceStepComplete;
         $workerStepComplete = (bool) $socialWorkerId;
         $quantityStepUnlocked = $serviceStepComplete && $workerStepComplete;
@@ -645,18 +646,27 @@
                         </div>
                     </div>
 
-                    @include('livewire.distribution-operators.partials.social-worker-selector', [
-                        'accent' => 'emerald',
-                        'selectorId' => 'misc-social-worker-selector',
-                    ])
+                    @if($workerStepUnlocked)
+                        @include('livewire.distribution-operators.partials.social-worker-selector', [
+                            'accent' => 'emerald',
+                            'selectorId' => 'misc-social-worker-selector',
+                        ])
+                    @else
+                        <div class="sm:col-span-2 xl:col-span-3">
+                            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-5 text-center">
+                                <p class="text-sm font-black text-slate-600">۲. انتخاب مددکار</p>
+                                <p class="mt-1 text-xs font-bold leading-5 text-slate-400">پس از انتخاب نوع خدمت، امکان جستجو و انتخاب مددکار فعال می‌شود.</p>
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
-                @if(! $quantityStepUnlocked)
+                @if($workerStepUnlocked && ! $quantityStepUnlocked)
                     <div class="mx-4 mb-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-5 text-center sm:mx-5">
                         <p class="text-sm font-black text-slate-600">۳. ثبت دسته‌بندی‌ها</p>
                         <p class="mt-1 text-xs font-bold leading-5 text-slate-400">پس از انتخاب مددکار، دسته‌بندی‌ها و مقدار خدمت را وارد کنید.</p>
                     </div>
-                @else
+                @elseif($quantityStepUnlocked)
                 <div class="space-y-4 px-4 pb-4 sm:px-5">
                     <div class="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
                         <div class="min-w-0">
