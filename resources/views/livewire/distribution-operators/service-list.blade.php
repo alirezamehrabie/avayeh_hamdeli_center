@@ -74,6 +74,35 @@
                     $operatorAllocationCount = $operatorAllocations->count();
                     $serviceUnitLabel = $unitOptions[$service->service_unit] ?? ($service->service_unit ?? '-');
                     $distributionStartDate = \App\Helpers\Morilog\Jalalian::fromDateTime($service->distribution_start_date)->format('Y/m/d');
+                    $serviceStatus = (string) ($service->status ?? '');
+                    $statusLabels = [
+                        'draft' => 'پیش‌نویس',
+                        'approved' => 'آماده توزیع',
+                        'in_distribution' => 'در حال توزیع',
+                        'completed' => 'تکمیل شده',
+                    ];
+                    $statusClasses = [
+                        'draft' => 'border-slate-200 bg-slate-50 text-slate-600',
+                        'approved' => 'border-emerald-100 bg-emerald-50 text-emerald-700',
+                        'in_distribution' => 'border-blue-100 bg-blue-50 text-blue-700',
+                        'completed' => 'border-green-100 bg-green-50 text-green-700',
+                    ];
+                    $today = now()->startOfDay();
+                    $startDate = $service->distribution_start_date?->copy()->startOfDay();
+                    $endDate = $service->distribution_end_date?->copy()->startOfDay();
+                    $dateStateLabel = 'بدون بازه';
+                    $dateStateClass = 'border-slate-200 bg-slate-50 text-slate-600';
+
+                    if ($endDate && $endDate->lt($today)) {
+                        $dateStateLabel = 'پایان‌یافته';
+                        $dateStateClass = 'border-rose-100 bg-rose-50 text-rose-700';
+                    } elseif ($startDate && $startDate->gt($today)) {
+                        $dateStateLabel = 'در انتظار شروع';
+                        $dateStateClass = 'border-amber-100 bg-amber-50 text-amber-700';
+                    } elseif ($startDate) {
+                        $dateStateLabel = 'بازه فعال';
+                        $dateStateClass = 'border-emerald-100 bg-emerald-50 text-emerald-700';
+                    }
                 @endphp
 
                 <div class="flex flex-col rounded-3xl border p-4 {{ $isMisc ? 'border-slate-200 bg-slate-50/70' : 'border-blue-100 bg-white shadow-sm' }}">
@@ -91,6 +120,17 @@
                             </div>
                         @endif
                     </div>
+
+                    @unless($isMisc)
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <span class="inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-black {{ $statusClasses[$serviceStatus] ?? 'border-slate-200 bg-slate-50 text-slate-600' }}">
+                                {{ $statusLabels[$serviceStatus] ?? 'وضعیت نامشخص' }}
+                            </span>
+                            <span class="inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-black {{ $dateStateClass }}">
+                                {{ $dateStateLabel }}
+                            </span>
+                        </div>
+                    @endunless
 
                     <div class="mt-4 space-y-2 text-sm text-slate-600">
                         @if($isMisc)
