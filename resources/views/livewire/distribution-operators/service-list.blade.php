@@ -69,7 +69,15 @@
                 @php
                     $isMisc = (int) ($service->created_by ?? 0) === (int) auth()->id();
                     $operatorAllocations = $service->workerAllocations
-                        ->filter(fn ($a) => (int) $a->assigned_by_user_id === (int) auth()->id());
+                        ->filter(fn ($a) => (int) $a->assigned_by_user_id === (int) auth()->id())
+                        ->groupBy(fn ($a) => (int) $a->social_worker_id)
+                        ->map(function ($allocations) {
+                            $allocation = $allocations->first();
+                            $allocation->allocated_quantity = $allocations->sum(fn ($a) => (float) $a->allocated_quantity);
+
+                            return $allocation;
+                        })
+                        ->values();
                     $operatorAllocatedQuantity = $operatorAllocations->sum(fn ($a) => (float) $a->allocated_quantity);
                     $operatorAllocationCount = $operatorAllocations->count();
                     $serviceUnitLabel = $unitOptions[$service->service_unit] ?? ($service->service_unit ?? '-');
