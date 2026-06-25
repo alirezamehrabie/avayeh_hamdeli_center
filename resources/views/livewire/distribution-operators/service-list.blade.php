@@ -147,7 +147,9 @@
                         @endif
                     </div>
 
-                    <p class="mt-4 line-clamp-3 text-sm leading-6 text-slate-500">{{ $service->description }}</p>
+                    @if(filled($service->description))
+                        <p class="mt-4 line-clamp-2 text-sm leading-6 text-slate-500">{{ $service->description }}</p>
+                    @endif
 
                     <div class="mt-auto border-t border-slate-200 pt-4">
                         @if($isMisc)
