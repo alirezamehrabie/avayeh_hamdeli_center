@@ -113,14 +113,14 @@
 
                     <p class="mt-4 line-clamp-3 text-sm leading-6 text-slate-500">{{ $service->description }}</p>
 
-                    <div class="mt-auto pt-4">
+                    <div class="mt-auto border-t border-slate-200 pt-4">
                         @if($isMisc)
                             <a href="{{ route('distribution-operator.edit-service', $service->id) }}" class="inline-flex items-center justify-center rounded-2xl border border-violet-200 bg-white px-4 py-2 text-sm font-bold text-violet-700 transition hover:bg-violet-50">
                                 ویرایش خدمت
                             </a>
                         @elseif($operatorAllocations->isNotEmpty())
-                            <a href="{{ route('distribution-operator.edit-allocations', $service->id) }}" class="inline-flex items-center justify-center rounded-2xl border border-blue-200 bg-white px-4 py-2 text-sm font-bold text-blue-700 transition hover:bg-blue-50">
-                                ویرایش تخصیص‌ها
+                            <a href="{{ route('distribution-operator.edit-allocations', $service->id) }}" class="inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-blue-600 px-4 py-2.5 text-sm font-black text-white shadow-sm shadow-blue-600/20 transition hover:bg-blue-700 active:bg-blue-800 sm:w-auto">
+                                مدیریت تخصیص‌ها
                             </a>
                         @endif
                     </div>
