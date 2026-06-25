@@ -17,6 +17,8 @@ use App\Livewire\Admin\DashboardHome;
 use App\Livewire\Admin\UserAccount;
 use App\Livewire\Auth\Login;
 use App\Livewire\DistributionOperators\DefineService;
+use App\Livewire\DistributionOperators\EditMiscService;
+use App\Livewire\DistributionOperators\EditServiceAllocations;
 use App\Livewire\DistributionOperators\ServiceList;
 use App\Livewire\ChildSupporters\Dashboard as ChildSupporterDashboard;
 use App\Livewire\ChildSupporters\SponsorList;
@@ -164,6 +166,14 @@ Route::get('/distribution-operator/define-service', DefineService::class)
 Route::get('/distribution-operator/services', ServiceList::class)
     ->middleware(['auth', 'can:access-distribution-operator-panel'])
     ->name('distribution-operator.service-list');
+
+Route::get('/distribution-operator/services/{serviceId}/edit', EditMiscService::class)
+    ->middleware(['auth', 'can:access-distribution-operator-panel'])
+    ->name('distribution-operator.edit-service');
+
+Route::get('/distribution-operator/services/{serviceId}/allocations', EditServiceAllocations::class)
+    ->middleware(['auth', 'can:access-distribution-operator-panel'])
+    ->name('distribution-operator.edit-allocations');
 
 Route::get('/child-supporter/dashboard', ChildSupporterDashboard::class)
     ->middleware(['auth', 'can:access-child-supporter-panel'])

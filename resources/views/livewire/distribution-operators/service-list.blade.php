@@ -17,14 +17,6 @@
         </div>
     @endif
 
-    @if($editingServiceId)
-        @if($editingMode === 'misc')
-            <livewire:distribution-operators.service-batch-creator :editing-service-id="$editingServiceId" :key="'operator-service-edit-' . $editingServiceId" />
-        @elseif($editingMode === 'predefined')
-            <livewire:distribution-operators.service-allocation-editor :editing-service-id="$editingServiceId" :key="'operator-allocation-edit-' . $editingServiceId" />
-        @endif
-    @endif
-
     <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
             <h2 class="text-lg font-black text-slate-800">فهرست خدمات</h2>
@@ -39,16 +31,16 @@
                         ->filter(fn ($a) => (int) $a->assigned_by_user_id === (int) auth()->id());
                 @endphp
 
-                <div class="rounded-3xl border border-slate-200 bg-slate-50/70 p-4">
+                <div class="flex flex-col rounded-3xl border border-slate-200 bg-slate-50/70 p-4">
                     <div class="flex items-start justify-between gap-3">
                         <div>
                             <p class="text-xs font-semibold text-violet-700">{{ $service->code }}</p>
                             <h3 class="mt-1 text-base font-black text-slate-800">{{ $service->serviceName?->name ?? '—' }}</h3>
                         </div>
                         @if($isMisc)
-                            <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">تعریف جدید</span>
+                            <span class="shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">تعریف جدید</span>
                         @else
-                            <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">تخصیص از خدمت</span>
+                            <span class="shrink-0 rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">تخصیص از خدمت</span>
                         @endif
                     </div>
 
@@ -80,15 +72,15 @@
 
                     <p class="mt-4 line-clamp-3 text-sm leading-6 text-slate-500">{{ $service->description }}</p>
 
-                    <div class="mt-4">
+                    <div class="mt-auto pt-4">
                         @if($isMisc)
-                            <button type="button" wire:click="startEditing({{ $service->id }})" class="inline-flex items-center justify-center rounded-2xl border border-violet-200 bg-white px-4 py-2 text-sm font-bold text-violet-700 transition hover:bg-violet-50">
+                            <a href="{{ route('distribution-operator.edit-service', $service->id) }}" class="inline-flex items-center justify-center rounded-2xl border border-violet-200 bg-white px-4 py-2 text-sm font-bold text-violet-700 transition hover:bg-violet-50">
                                 ویرایش خدمت
-                            </button>
+                            </a>
                         @elseif($operatorAllocations->isNotEmpty())
-                            <button type="button" wire:click="startEditing({{ $service->id }})" class="inline-flex items-center justify-center rounded-2xl border border-blue-200 bg-white px-4 py-2 text-sm font-bold text-blue-700 transition hover:bg-blue-50">
+                            <a href="{{ route('distribution-operator.edit-allocations', $service->id) }}" class="inline-flex items-center justify-center rounded-2xl border border-blue-200 bg-white px-4 py-2 text-sm font-bold text-blue-700 transition hover:bg-blue-50">
                                 ویرایش تخصیص‌ها
-                            </button>
+                            </a>
                         @endif
                     </div>
                 </div>
