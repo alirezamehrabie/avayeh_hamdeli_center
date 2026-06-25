@@ -78,9 +78,9 @@
 
                 <div class="flex flex-col rounded-3xl border p-4 {{ $isMisc ? 'border-slate-200 bg-slate-50/70' : 'border-blue-100 bg-white shadow-sm' }}">
                     <div class="flex items-start justify-between gap-3">
-                        <div>
-                            <p class="text-xs font-semibold text-violet-700">{{ $service->code }}</p>
-                            <h3 class="mt-1 text-base font-black text-slate-800">{{ $service->serviceName?->name ?? '—' }}</h3>
+                        <div class="min-w-0">
+                            <p class="truncate text-xs font-semibold text-violet-700">{{ $service->code }}</p>
+                            <h3 class="mt-1 line-clamp-2 text-base font-black leading-6 text-slate-800">{{ $service->serviceName?->name ?? '—' }}</h3>
                         </div>
                         @if($isMisc)
                             <span class="shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">تعریف جدید</span>
