@@ -70,6 +70,7 @@
                     $isMisc = (int) ($service->created_by ?? 0) === (int) auth()->id();
                     $operatorAllocations = $service->workerAllocations
                         ->filter(fn ($a) => (int) $a->assigned_by_user_id === (int) auth()->id());
+                    $operatorAllocatedQuantity = $operatorAllocations->sum(fn ($a) => (float) $a->allocated_quantity);
                 @endphp
 
                 <div class="flex flex-col rounded-3xl border border-slate-200 bg-slate-50/70 p-4">
@@ -87,7 +88,12 @@
 
                     <div class="mt-4 space-y-2 text-sm text-slate-600">
                         <p><span class="font-bold text-slate-800">دسته‌بندی:</span> {{ $service->serviceCategory?->name ?? 'نامشخص' }}</p>
-                        <p><span class="font-bold text-slate-800">تعداد:</span> {{ number_format((float) $service->total_quantity, 2) }} {{ $unitOptions[$service->service_unit] ?? ($service->service_unit ?? '-') }}</p>
+                        @if($isMisc)
+                            <p><span class="font-bold text-slate-800">تعداد:</span> {{ number_format((float) $service->total_quantity, 2) }} {{ $unitOptions[$service->service_unit] ?? ($service->service_unit ?? '-') }}</p>
+                        @else
+                            <p><span class="font-bold text-slate-800">مجموع تخصیص شما:</span> {{ number_format($operatorAllocatedQuantity, 2) }} {{ $unitOptions[$service->service_unit] ?? ($service->service_unit ?? '-') }}</p>
+                            <p class="text-xs text-slate-500"><span class="font-bold text-slate-700">ظرفیت کل خدمت:</span> {{ number_format((float) $service->total_quantity, 2) }} {{ $unitOptions[$service->service_unit] ?? ($service->service_unit ?? '-') }}</p>
+                        @endif
 
                         @if($isMisc)
                             <p><span class="font-bold text-slate-800">مددکار:</span> {{ $service->socialWorkers->first()?->full_name ?? '—' }}</p>
