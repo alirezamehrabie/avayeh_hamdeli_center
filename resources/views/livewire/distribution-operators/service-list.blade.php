@@ -95,7 +95,7 @@
                             <div>
                                 <span class="font-bold text-slate-800">مددکاران تخصیص‌یافته:</span>
                                 <ul class="mt-1 space-y-1">
-                                    @forelse($operatorAllocations as $allocation)
+                                    @forelse($operatorAllocations->take(3) as $allocation)
                                         <li class="flex items-center gap-2">
                                             <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400"></span>
                                             <span>{{ $allocation->socialWorker?->full_name ?? '—' }}</span>
@@ -104,6 +104,12 @@
                                     @empty
                                         <li>—</li>
                                     @endforelse
+                                    @if($operatorAllocations->count() > 3)
+                                        <li class="flex items-center gap-2 text-xs font-bold text-blue-600">
+                                            <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-300"></span>
+                                            <span>+{{ $operatorAllocations->count() - 3 }} مددکار دیگر</span>
+                                        </li>
+                                    @endif
                                 </ul>
                             </div>
                         @endif
