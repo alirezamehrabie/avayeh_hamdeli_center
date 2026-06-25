@@ -20,6 +20,11 @@ class ServiceList extends Component
     public function startEditing(int $serviceId): void
     {
         $service = $this->operatorServicesQuery()->with('socialWorkers')->findOrFail($serviceId);
+
+        if ((int) $service->created_by !== (int) auth()->id()) {
+            abort(403);
+        }
+
         abort_unless(auth()->user()?->can('view-distribution-operator-service', $service), 403);
 
         $this->editingServiceId = $service->id;
@@ -29,7 +34,12 @@ class ServiceList extends Component
     {
         return view('livewire.distribution-operators.service-list', [
             'services' => $this->operatorServicesQuery()
-                ->with(['serviceName', 'categories', 'socialWorkers'])
+                ->with([
+                    'serviceName',
+                    'categories',
+                    'socialWorkers',
+                    'workerAllocations.socialWorker',
+                ])
                 ->latest()
                 ->get(),
             'unitOptions' => Service::unitOptions(),
@@ -41,9 +51,15 @@ class ServiceList extends Component
         abort_unless(auth()->check() && auth()->user()->can('access-distribution-operator-panel'), 403);
 
         return Service::query()
-            ->where('created_by', auth()->id())
-            ->whereHas('creator', function (Builder $query): void {
-                $query->where('access_level', \App\Models\User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR);
+            ->where(function (Builder $query): void {
+                $query->where(function (Builder $miscQuery): void {
+                    $miscQuery->where('created_by', auth()->id())
+                        ->whereHas('creator', function (Builder $creatorQuery): void {
+                            $creatorQuery->where('access_level', \App\Models\User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR);
+                        });
+                })->orWhereHas('workerAllocations', function (Builder $allocationQuery): void {
+                    $allocationQuery->where('assigned_by_user_id', auth()->id());
+                });
             });
     }
 
