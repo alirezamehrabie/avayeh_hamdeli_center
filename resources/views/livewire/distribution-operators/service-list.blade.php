@@ -71,9 +71,11 @@
                     $operatorAllocations = $service->workerAllocations
                         ->filter(fn ($a) => (int) $a->assigned_by_user_id === (int) auth()->id());
                     $operatorAllocatedQuantity = $operatorAllocations->sum(fn ($a) => (float) $a->allocated_quantity);
+                    $operatorAllocationCount = $operatorAllocations->count();
+                    $serviceUnitLabel = $unitOptions[$service->service_unit] ?? ($service->service_unit ?? '-');
                 @endphp
 
-                <div class="flex flex-col rounded-3xl border border-slate-200 bg-slate-50/70 p-4">
+                <div class="flex flex-col rounded-3xl border p-4 {{ $isMisc ? 'border-slate-200 bg-slate-50/70' : 'border-blue-100 bg-white shadow-sm' }}">
                     <div class="flex items-start justify-between gap-3">
                         <div>
                             <p class="text-xs font-semibold text-violet-700">{{ $service->code }}</p>
@@ -82,17 +84,20 @@
                         @if($isMisc)
                             <span class="shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">تعریف جدید</span>
                         @else
-                            <span class="shrink-0 rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">کمپین</span>
+                            <div class="flex shrink-0 flex-col items-end gap-1">
+                                <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-black text-blue-700">{{ $operatorAllocationCount }} مددکار</span>
+                                <span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-600">{{ number_format($operatorAllocatedQuantity, 2) }} {{ $serviceUnitLabel }}</span>
+                            </div>
                         @endif
                     </div>
 
                     <div class="mt-4 space-y-2 text-sm text-slate-600">
                         <p><span class="font-bold text-slate-800">دسته‌بندی:</span> {{ $service->serviceCategory?->name ?? 'نامشخص' }}</p>
                         @if($isMisc)
-                            <p><span class="font-bold text-slate-800">تعداد:</span> {{ number_format((float) $service->total_quantity, 2) }} {{ $unitOptions[$service->service_unit] ?? ($service->service_unit ?? '-') }}</p>
+                            <p><span class="font-bold text-slate-800">تعداد:</span> {{ number_format((float) $service->total_quantity, 2) }} {{ $serviceUnitLabel }}</p>
                         @else
-                            <p><span class="font-bold text-slate-800">مجموع تخصیص شما:</span> {{ number_format($operatorAllocatedQuantity, 2) }} {{ $unitOptions[$service->service_unit] ?? ($service->service_unit ?? '-') }}</p>
-                            <p class="text-xs text-slate-500"><span class="font-bold text-slate-700">ظرفیت کل خدمت:</span> {{ number_format((float) $service->total_quantity, 2) }} {{ $unitOptions[$service->service_unit] ?? ($service->service_unit ?? '-') }}</p>
+                            <p><span class="font-bold text-slate-800">مجموع تخصیص شما:</span> {{ number_format($operatorAllocatedQuantity, 2) }} {{ $serviceUnitLabel }}</p>
+                            <p class="text-xs text-slate-500"><span class="font-bold text-slate-700">ظرفیت کل خدمت:</span> {{ number_format((float) $service->total_quantity, 2) }} {{ $serviceUnitLabel }}</p>
                         @endif
 
                         @if($isMisc)
