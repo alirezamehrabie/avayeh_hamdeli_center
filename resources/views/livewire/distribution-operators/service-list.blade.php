@@ -1,15 +1,4 @@
 <div class="space-y-6">
-    <div class="rounded-3xl border border-violet-100 bg-white p-6 shadow-sm">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-                <h1 class="mt-2 text-2xl font-black text-slate-800">خدمات ثبت‌شده <span class="text-violet-400">اپراتور توزیع</span></h1>
-                <p class="mt-2 text-sm leading-6 text-slate-500">خدمات ایجادشده (متفرقه) و خدمات تخصیص‌یافته توسط حساب فعلی در این بخش نمایش داده می‌شوند.</p>
-            </div>
-            <a href="{{ route('distribution-operator.define-service') }}" class="inline-flex items-center justify-center rounded-2xl bg-violet-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-violet-700">
-                تخصیص یا ایجاد خدمت متفرقه
-            </a>
-        </div>
-    </div>
 
     @if (session()->has('success'))
         <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
@@ -122,6 +111,9 @@
                     }
                     $allocationEditUrl = ! $isMisc && $operatorAllocations->isNotEmpty()
                         ? route('distribution-operator.edit-allocations', $service->id)
+                        : null;
+                    $miscEditUrl = $isMisc
+                        ? route('distribution-operator.edit-service', $service->id)
                         : null;
                 @endphp
 
