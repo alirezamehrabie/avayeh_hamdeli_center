@@ -192,15 +192,15 @@
                     </div>
                 @elseif($selectedService)
                     <div class="mx-4 mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:mx-5 sm:mb-5">
-                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                                <h2 class="text-base font-black text-slate-900">{{ $selectedService->name ?: ($selectedService->serviceName?->name ?? 'خدمت انتخاب‌شده') }}</h2>
-                                <p class="mt-1 text-xs font-bold text-slate-500">{{ $selectedService->code }} - موجودی کل: {{ number_format((float) $selectedService->total_quantity, 2) }}</p>
+                        <div class="flex items-center gap-3 rounded-xl bg-slate-50/80 px-3 py-2.5">
+                            <div class="min-w-0 flex-1">
+                                <h2 class="truncate text-sm font-black text-slate-900">{{ $selectedService->name ?: ($selectedService->serviceName?->name ?? 'خدمت انتخاب‌شده') }}</h2>
+                                <p class="mt-0.5 text-[11px] font-bold text-slate-500">{{ $selectedService->code }} · موجودی کل: {{ number_format((float) $selectedService->total_quantity, 2) }}</p>
                             </div>
-                            <span class="rounded-full bg-cyan-100 px-3 py-1 text-xs font-bold text-cyan-800">فقط تخصیص موجودی</span>
+                            <span class="shrink-0 rounded-full bg-cyan-100 px-2.5 py-1 text-[10px] font-bold text-cyan-700">{{ count($selectedServiceCategories) }} دسته</span>
                         </div>
 
-                        <div class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                        <div class="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white shadow-sm sm:divide-y-0 sm:grid sm:grid-cols-2 sm:divide-x sm:rounded-2xl xl:grid-cols-3">
                             @foreach($selectedServiceCategories as $category)
                                 @php
                                     $categoryMetrics = $selectedServiceCategoryMetrics[(int) $category->id] ?? ['quantity' => (float) $category->quantity, 'allocated' => 0.0, 'assignable' => 0.0];
@@ -211,82 +211,59 @@
                                     $remainingPreview = max(0, $assignableQuantity - $allocatedPreview);
                                     $isOverAllocated = $allocatedPreview > $assignableQuantity;
                                 @endphp
-                                <div class="rounded-2xl border bg-white p-4 shadow-sm transition {{ $isOverAllocated ? 'border-rose-200 ring-2 ring-rose-100' : 'border-slate-200' }}">
-                                    <div class="mb-3 flex items-start justify-between gap-3">
-                                        <div class="min-w-0">
-                                            <p class="truncate text-sm font-black text-slate-900">{{ $category->name }}</p>
-                                            <p class="mt-1 text-xs font-bold text-slate-500">وضعیت موجودی این دسته‌بندی</p>
-                                        </div>
-                                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">
+                                <div class="p-3 sm:p-3.5 {{ $isOverAllocated ? 'bg-rose-50/40' : '' }}">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <p class="truncate text-sm font-black text-slate-900">{{ $category->name }}</p>
+                                        <span class="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
                                             {{ $unitOptions[$category->unit] ?? $category->unit }}
                                         </span>
                                     </div>
 
-                                    <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                                        <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                                            <p class="text-[10px] font-bold text-slate-500">موجودی کل</p>
-                                            <p class="mt-1 text-sm font-black text-slate-900">{{ number_format($totalStockQuantity, 2) }}</p>
-                                        </div>
-                                        <div class="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2">
-                                            <p class="text-[10px] font-bold text-amber-700">قبلاً تخصیص‌یافته</p>
-                                            <p class="mt-1 text-sm font-black text-amber-800">{{ number_format($alreadyAllocatedQuantity, 2) }}</p>
-                                        </div>
-                                        <div class="rounded-xl border border-cyan-100 bg-cyan-50 px-3 py-2">
-                                            <p class="text-[10px] font-bold text-cyan-700">قابل تخصیص اکنون</p>
-                                            <p class="mt-1 text-sm font-black text-cyan-800">{{ number_format($assignableQuantity, 2) }}</p>
-                                        </div>
-                                        <div class="rounded-xl border {{ $isOverAllocated ? 'border-rose-200 bg-rose-50' : 'border-emerald-100 bg-emerald-50' }} px-3 py-2">
-                                            <p class="text-[10px] font-bold {{ $isOverAllocated ? 'text-rose-700' : 'text-emerald-700' }}">مانده پس از این ثبت</p>
-                                            <p class="mt-1 text-sm font-black {{ $isOverAllocated ? 'text-rose-800' : 'text-emerald-800' }}">{{ number_format($remainingPreview, 2) }}</p>
-                                        </div>
+                                    <div class="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs font-bold">
+                                        <span class="text-cyan-700">قابل تخصیص: {{ number_format($assignableQuantity, 2) }}</span>
+                                        @if($alreadyAllocatedQuantity > 0)
+                                            <span class="text-slate-300">·</span>
+                                            <span class="text-slate-400">قبلاً {{ number_format($alreadyAllocatedQuantity, 2) }}</span>
+                                        @endif
                                     </div>
 
-                                    <label class="mt-3 block text-xs font-bold text-slate-600" for="predefined-allocation-{{ $category->id }}">
-                                        مقدار تخصیص در این ثبت
-                                    </label>
-                                    <div class="mt-1 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+                                    <div class="mt-2.5 grid grid-cols-[minmax(0,1fr)_auto_auto] gap-1.5">
                                         <input
-                                            id="predefined-allocation-{{ $category->id }}"
                                             type="number"
                                             min="0"
                                             step="0.01"
                                             max="{{ $assignableQuantity }}"
                                             wire:model.live.debounce.250ms="predefinedAllocations.{{ $category->id }}"
                                             inputmode="decimal"
-                                            class="min-w-0 rounded-xl border {{ $isOverAllocated ? 'border-rose-300 bg-rose-50 text-rose-900 focus:border-rose-400 focus:ring-rose-100' : 'border-slate-300 bg-white text-slate-900 focus:border-cyan-400 focus:ring-cyan-100' }} px-3 py-2 text-center text-sm font-black outline-none transition focus:ring-4"
-                                            placeholder="0"
-                                            aria-describedby="predefined-allocation-help-{{ $category->id }}"
+                                            class="min-w-0 rounded-lg border {{ $isOverAllocated ? 'border-rose-300 bg-rose-50 text-rose-900 focus:border-rose-400 focus:ring-rose-100' : 'border-slate-200 bg-slate-50 text-slate-900 focus:border-cyan-400 focus:ring-cyan-100' }} px-3 py-2 text-center text-sm font-black outline-none transition focus:ring-2"
+                                            placeholder="۰"
                                             aria-invalid="{{ $isOverAllocated ? 'true' : 'false' }}"
                                         >
-                                        <div class="flex gap-1.5">
-                                            <button
-                                                type="button"
-                                                wire:click="useMaxPredefinedAllocation({{ $category->id }})"
-                                                @disabled($assignableQuantity <= 0)
-                                                class="rounded-xl border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs font-black text-cyan-700 transition hover:border-cyan-200 hover:bg-cyan-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400"
-                                            >
-                                                حداکثر
-                                            </button>
-                                            <button
-                                                type="button"
-                                                wire:click="clearPredefinedAllocation({{ $category->id }})"
-                                                @disabled($allocatedPreview <= 0)
-                                                class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-300"
-                                            >
-                                                پاک
-                                            </button>
-                                        </div>
+                                        <button
+                                            type="button"
+                                            wire:click="useMaxPredefinedAllocation({{ $category->id }})"
+                                            @disabled($assignableQuantity <= 0)
+                                            class="rounded-lg border border-cyan-100 bg-cyan-50 px-2.5 py-2 text-[11px] font-bold text-cyan-700 transition hover:bg-cyan-100 disabled:opacity-40"
+                                        >
+                                            حداکثر
+                                        </button>
+                                        <button
+                                            type="button"
+                                            wire:click="clearPredefinedAllocation({{ $category->id }})"
+                                            @disabled($allocatedPreview <= 0)
+                                            class="rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[11px] font-bold text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-40"
+                                        >
+                                            پاک
+                                        </button>
                                     </div>
-                                    <p id="predefined-allocation-help-{{ $category->id }}" class="mt-2 text-[11px] font-semibold {{ $isOverAllocated ? 'text-rose-700' : 'text-slate-500' }}">
-                                        @if($isOverAllocated)
-                                            مقدار واردشده از موجودی قابل تخصیص این دسته‌بندی بیشتر است.
-                                        @elseif($assignableQuantity <= 0)
-                                            موجودی قابل تخصیصی برای این دسته‌بندی باقی نمانده است.
-                                        @else
-                                            از {{ number_format($assignableQuantity, 2) }} واحد قابل تخصیص، {{ number_format($allocatedPreview, 2) }} واحد در این ثبت وارد شده است.
-                                        @endif
-                                    </p>
-                                    @error('predefinedAllocations.' . $category->id) <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+
+                                    @if($isOverAllocated)
+                                        <p class="mt-1.5 text-[11px] font-bold text-rose-600">بیشتر از موجودی قابل تخصیص</p>
+                                    @elseif($allocatedPreview > 0)
+                                        <p class="mt-1.5 text-[11px] font-semibold text-slate-400">{{ number_format($allocatedPreview, 2) }} از {{ number_format($assignableQuantity, 2) }}</p>
+                                    @endif
+
+                                    @error('predefinedAllocations.' . $category->id) <p class="mt-1 text-[11px] text-rose-600">{{ $message }}</p> @enderror
                                 </div>
                             @endforeach
                         </div>
@@ -463,84 +440,89 @@
                         }
                     }"
                     x-on:service-category-added.window="scrollToNewCategory($event)"
-                    class="space-y-4 px-4 pb-4 sm:px-5"
+                    class="px-4 pb-4 sm:px-5"
                 >
-                    <div class="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
-                        <div class="min-w-0">
-                            <p class="text-sm font-black text-slate-800">دسته‌بندی‌های خدمت</p>
-                            <p class="mt-1 text-xs font-semibold leading-5 text-slate-500">هر ردیف شامل نام، مقدار و واحد خدمت است.</p>
-                        </div>
-                        <span class="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-black text-slate-500 shadow-sm">{{ count($miscCategories) }} ردیف</span>
-                    </div>
-
-                    @foreach($miscCategories as $index => $category)
-                        <div data-service-category-index="{{ $index }}" class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/40">
-                            <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <p class="text-xs font-black tracking-wide text-slate-400">دسته‌بندی {{ $index + 1 }}</p>
-                                    <p class="mt-1 text-sm font-bold text-slate-700">مشخصات خدمت</p>
-                                </div>
-                                <button
-                                    type="button"
-                                    wire:click="removeCategory({{ $index }})"
-                                    class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 text-rose-700 transition hover:bg-rose-100"
-                                    aria-label="حذف دسته‌بندی {{ $index + 1 }}"
-                                >
-                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                        <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                                    </svg>
-                                </button>
+                    <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
+                        <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-3 py-2.5 sm:px-3.5">
+                            <div class="flex items-center gap-2">
+                                <p class="text-sm font-black text-slate-800">دسته‌بندی‌های خدمت</p>
+                                <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ count($miscCategories) }}</span>
                             </div>
+                        </div>
 
-                            <div class="mt-4 space-y-4">
-                                <div>
-                                    <label class="mb-2 block text-xs font-bold text-slate-600">نام دسته‌بندی</label>
-                                    <input
-                                        type="text"
-                                        wire:model.blur="miscCategories.{{ $index }}.name"
-                                        data-category-name-input
-                                        class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-                                        placeholder="مثال: بسته غذایی"
-                                    >
-                                    @error("miscCategories.$index.name") <p class="mt-1.5 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
-                                </div>
-
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="mb-2 block text-xs font-bold text-slate-600">مقدار</label>
-                                        <input
-                                            type="number"
-                                            min="0.01"
-                                            step="0.01"
-                                            wire:model.blur="miscCategories.{{ $index }}.quantity"
-                                            class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-                                            placeholder="0"
+                        <div class="divide-y divide-slate-100">
+                            @foreach($miscCategories as $index => $category)
+                                <div data-service-category-index="{{ $index }}"
+                                     x-data="{ open: {{ $index === count($miscCategories) - 1 ? 'true' : 'false' }} }"
+                                     class="p-3 sm:p-3.5">
+                                    <div class="flex items-center gap-2.5">
+                                        <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-black text-emerald-700">
+                                            {{ $index + 1 }}
+                                        </span>
+                                        <span class="min-w-0 flex-1 truncate text-sm font-bold text-slate-800">
+                                            {{ $category['name'] ?: 'دسته‌بندی ' . ($index + 1) }}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            x-on:click="open = !open"
+                                            class="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
                                         >
-                                        @error("miscCategories.$index.quantity") <p class="mt-1.5 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                                            <svg class="h-4 w-4 transition-transform" :class="{ 'rotate-180': open }" viewBox="0 0 24 24" fill="none">
+                                                <path d="M19 9l-7 7-7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                            </svg>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            wire:click="removeCategory({{ $index }})"
+                                            class="shrink-0 rounded-lg p-1.5 text-rose-400 transition hover:bg-rose-50 hover:text-rose-600"
+                                            aria-label="حذف دسته‌بندی {{ $index + 1 }}"
+                                        >
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+                                                <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                            </svg>
+                                        </button>
                                     </div>
-                                    <div>
-                                        <label class="mb-2 block text-xs font-bold text-slate-600">واحد</label>
-                                        <select wire:model="miscCategories.{{ $index }}.unit" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100">
-                                            @foreach($unitOptions as $value => $label)
-                                                <option value="{{ $value }}">{{ $label }}</option>
-                                            @endforeach
-                                        </select>
+
+                                    <div x-show="open" x-collapse class="mt-3 space-y-2.5">
+                                        <input
+                                            type="text"
+                                            wire:model.blur="miscCategories.{{ $index }}.name"
+                                            data-category-name-input
+                                            class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100"
+                                            placeholder="نام دسته‌بندی (مثال: بسته غذایی)"
+                                        >
+                                        @error("miscCategories.$index.name") <p class="text-[11px] text-rose-600">{{ $message }}</p> @enderror
+
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <input
+                                                type="number"
+                                                min="0.01"
+                                                step="0.01"
+                                                wire:model.blur="miscCategories.{{ $index }}.quantity"
+                                                class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100"
+                                                placeholder="مقدار"
+                                            >
+                                            <select wire:model="miscCategories.{{ $index }}.unit" class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100">
+                                                @foreach($unitOptions as $value => $label)
+                                                    <option value="{{ $value }}">{{ $label }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        @error("miscCategories.$index.quantity") <p class="text-[11px] text-rose-600">{{ $message }}</p> @enderror
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
+                            @endforeach
 
-                <div class="px-4 pb-5 sm:px-5">
-                    <button
-                        type="button"
-                        wire:click="addCategory"
-                        class="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-black text-emerald-800 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-100 sm:w-auto"
-                    >
-                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-base leading-none text-emerald-700 shadow-sm">+</span>
-                        افزودن دسته‌بندی
-                    </button>
+                            <button
+                                type="button"
+                                wire:click="addCategory"
+                                class="flex w-full items-center justify-center gap-2 px-3 py-2.5 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50"
+                            >
+                                <span class="text-lg leading-none">+</span>
+                                افزودن دسته‌بندی
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="grid gap-4 px-4 pb-5 sm:grid-cols-2 sm:px-5 xl:grid-cols-4">
