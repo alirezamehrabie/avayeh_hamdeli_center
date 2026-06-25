@@ -103,9 +103,20 @@
                         $dateStateLabel = 'بازه فعال';
                         $dateStateClass = 'border-emerald-100 bg-emerald-50 text-emerald-700';
                     }
+                    $allocationEditUrl = ! $isMisc && $operatorAllocations->isNotEmpty()
+                        ? route('distribution-operator.edit-allocations', $service->id)
+                        : null;
                 @endphp
 
-                <div class="flex flex-col rounded-3xl border p-4 {{ $isMisc ? 'border-slate-200 bg-slate-50/70' : 'border-blue-100 bg-white shadow-sm' }}">
+                <div
+                    @if($allocationEditUrl)
+                        role="link"
+                        tabindex="0"
+                        onclick="if (! event.target.closest('a')) window.location.href = '{{ $allocationEditUrl }}';"
+                        onkeydown="if ((event.key === 'Enter' || event.key === ' ') && ! event.target.closest('a')) { event.preventDefault(); window.location.href = '{{ $allocationEditUrl }}'; }"
+                    @endif
+                    class="flex flex-col rounded-3xl border p-4 {{ $isMisc ? 'border-slate-200 bg-slate-50/70' : 'cursor-pointer border-blue-100 bg-white shadow-sm transition hover:border-blue-200 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-blue-500/10' }}"
+                >
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                             <p class="truncate text-xs font-semibold text-violet-700">{{ $service->code }}</p>
@@ -197,7 +208,7 @@
                                 ویرایش خدمت
                             </a>
                         @elseif($operatorAllocations->isNotEmpty())
-                            <a href="{{ route('distribution-operator.edit-allocations', $service->id) }}" class="inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-blue-600 px-4 py-2.5 text-sm font-black text-white shadow-sm shadow-blue-600/20 transition hover:bg-blue-700 active:bg-blue-800 sm:w-auto">
+                            <a href="{{ $allocationEditUrl }}" class="inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-blue-600 px-4 py-2.5 text-sm font-black text-white shadow-sm shadow-blue-600/20 transition hover:bg-blue-700 active:bg-blue-800 sm:w-auto">
                                 مدیریت تخصیص‌ها
                             </a>
                         @endif
