@@ -12,6 +12,8 @@ class ServiceList extends Component
 {
     public ?int $editingServiceId = null;
 
+    public string $editingMode = '';
+
     public function mount(): void
     {
         abort_unless(auth()->check() && auth()->user()->can('access-distribution-operator-panel'), 403);
@@ -19,15 +21,31 @@ class ServiceList extends Component
 
     public function startEditing(int $serviceId): void
     {
-        $service = $this->operatorServicesQuery()->with('socialWorkers')->findOrFail($serviceId);
+        $service = $this->operatorServicesQuery()
+            ->with(['socialWorkers', 'workerAllocations'])
+            ->findOrFail($serviceId);
 
-        if ((int) $service->created_by !== (int) auth()->id()) {
-            abort(403);
+        $isMisc = (int) $service->created_by === (int) auth()->id();
+
+        if ($isMisc) {
+            abort_unless(auth()->user()?->can('view-distribution-operator-service', $service), 403);
+        } else {
+            $hasOperatorAllocations = $service->workerAllocations
+                ->contains('assigned_by_user_id', auth()->id());
+
+            if (! $hasOperatorAllocations) {
+                abort(403);
+            }
         }
 
-        abort_unless(auth()->user()?->can('view-distribution-operator-service', $service), 403);
-
         $this->editingServiceId = $service->id;
+        $this->editingMode = $isMisc ? 'misc' : 'predefined';
+    }
+
+    public function stopEditing(): void
+    {
+        $this->editingServiceId = null;
+        $this->editingMode = '';
     }
 
     public function render()
@@ -62,5 +80,4 @@ class ServiceList extends Component
                 });
             });
     }
-
 }

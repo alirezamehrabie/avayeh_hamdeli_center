@@ -18,7 +18,11 @@
     @endif
 
     @if($editingServiceId)
-        <livewire:distribution-operators.service-batch-creator :editing-service-id="$editingServiceId" :key="'operator-service-edit-' . $editingServiceId" />
+        @if($editingMode === 'misc')
+            <livewire:distribution-operators.service-batch-creator :editing-service-id="$editingServiceId" :key="'operator-service-edit-' . $editingServiceId" />
+        @elseif($editingMode === 'predefined')
+            <livewire:distribution-operators.service-allocation-editor :editing-service-id="$editingServiceId" :key="'operator-allocation-edit-' . $editingServiceId" />
+        @endif
     @endif
 
     <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
@@ -80,6 +84,10 @@
                         @if($isMisc)
                             <button type="button" wire:click="startEditing({{ $service->id }})" class="inline-flex items-center justify-center rounded-2xl border border-violet-200 bg-white px-4 py-2 text-sm font-bold text-violet-700 transition hover:bg-violet-50">
                                 ویرایش خدمت
+                            </button>
+                        @elseif($operatorAllocations->isNotEmpty())
+                            <button type="button" wire:click="startEditing({{ $service->id }})" class="inline-flex items-center justify-center rounded-2xl border border-blue-200 bg-white px-4 py-2 text-sm font-bold text-blue-700 transition hover:bg-blue-50">
+                                ویرایش تخصیص‌ها
                             </button>
                         @endif
                     </div>
