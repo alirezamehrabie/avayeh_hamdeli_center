@@ -73,6 +73,15 @@
                     $operatorAllocatedQuantity = $operatorAllocations->sum(fn ($a) => (float) $a->allocated_quantity);
                     $operatorAllocationCount = $operatorAllocations->count();
                     $serviceUnitLabel = $unitOptions[$service->service_unit] ?? ($service->service_unit ?? '-');
+                    $serviceCategories = $service->categories;
+                    $visibleCategoryNames = $serviceCategories->pluck('name')->filter()->take(3)->values();
+                    $hiddenCategoryCount = max(0, $serviceCategories->count() - $visibleCategoryNames->count());
+                    $totalCapacity = (float) ($serviceCategories->sum(fn ($category) => (float) $category->quantity) ?: $service->total_quantity);
+                    $totalAllocatedQuantity = $service->workerAllocations->sum(fn ($allocation) => (float) $allocation->allocated_quantity);
+                    $remainingCapacity = max(0, $totalCapacity - $totalAllocatedQuantity);
+                    $allocatedPercentage = $totalCapacity > 0
+                        ? min(100, round(($totalAllocatedQuantity / $totalCapacity) * 100))
+                        : 0;
                     $distributionStartDate = \App\Helpers\Morilog\Jalalian::fromDateTime($service->distribution_start_date)->format('Y/m/d');
                     $serviceStatus = (string) ($service->status ?? '');
                     $statusLabels = [
@@ -108,112 +117,11 @@
                         : null;
                 @endphp
 
-                <div
-                    @if($allocationEditUrl)
-                        role="link"
-                        tabindex="0"
-                        onclick="if (! event.target.closest('a')) window.location.href = '{{ $allocationEditUrl }}';"
-                        onkeydown="if ((event.key === 'Enter' || event.key === ' ') && ! event.target.closest('a')) { event.preventDefault(); window.location.href = '{{ $allocationEditUrl }}'; }"
-                    @endif
-                    class="flex flex-col rounded-3xl border p-4 {{ $isMisc ? 'border-slate-200 bg-slate-50/70' : 'cursor-pointer border-blue-100 bg-white shadow-sm transition hover:border-blue-200 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-blue-500/10' }}"
-                >
-                    <div class="flex items-start justify-between gap-3">
-                        <div class="min-w-0">
-                            <p class="truncate text-xs font-semibold text-violet-700">{{ $service->code }}</p>
-                            <h3 class="mt-1 line-clamp-2 text-base font-black leading-6 text-slate-800">{{ $service->serviceName?->name ?? '—' }}</h3>
-                        </div>
-                        @if($isMisc)
-                            <span class="shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">تعریف جدید</span>
-                        @else
-                            <div class="flex shrink-0 flex-col items-end gap-1">
-                                <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-black text-blue-700">{{ $operatorAllocationCount }} مددکار</span>
-                                <span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-600">{{ number_format($operatorAllocatedQuantity, 2) }} {{ $serviceUnitLabel }}</span>
-                            </div>
-                        @endif
-                    </div>
-
-                    @unless($isMisc)
-                        <div class="mt-3 flex flex-wrap gap-2">
-                            <span class="inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-black {{ $statusClasses[$serviceStatus] ?? 'border-slate-200 bg-slate-50 text-slate-600' }}">
-                                {{ $statusLabels[$serviceStatus] ?? 'وضعیت نامشخص' }}
-                            </span>
-                            <span class="inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-black {{ $dateStateClass }}">
-                                {{ $dateStateLabel }}
-                            </span>
-                        </div>
-                    @endunless
-
-                    <div class="mt-4 space-y-2 text-sm text-slate-600">
-                        @if($isMisc)
-                            <p><span class="font-bold text-slate-800">دسته‌بندی:</span> {{ $service->serviceCategory?->name ?? 'نامشخص' }}</p>
-                            <p><span class="font-bold text-slate-800">تعداد:</span> {{ number_format((float) $service->total_quantity, 2) }} {{ $serviceUnitLabel }}</p>
-                        @else
-                            <div class="grid grid-cols-2 gap-2">
-                                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
-                                    <span class="block text-[11px] font-bold text-slate-500">دسته‌بندی</span>
-                                    <span class="mt-1 block truncate text-xs font-black text-slate-800">{{ $service->serviceCategory?->name ?? 'نامشخص' }}</span>
-                                </div>
-                                <div class="rounded-2xl border border-blue-100 bg-blue-50 px-3 py-2">
-                                    <span class="block text-[11px] font-bold text-blue-600">تخصیص شما</span>
-                                    <span class="mt-1 block truncate text-xs font-black text-blue-800">{{ number_format($operatorAllocatedQuantity, 2) }} {{ $serviceUnitLabel }}</span>
-                                </div>
-                                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
-                                    <span class="block text-[11px] font-bold text-slate-500">ظرفیت کل</span>
-                                    <span class="mt-1 block truncate text-xs font-black text-slate-800">{{ number_format((float) $service->total_quantity, 2) }} {{ $serviceUnitLabel }}</span>
-                                </div>
-                                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
-                                    <span class="block text-[11px] font-bold text-slate-500">تاریخ شروع</span>
-                                    <span class="mt-1 block truncate text-xs font-black text-slate-800">{{ $distributionStartDate }}</span>
-                                </div>
-                            </div>
-                        @endif
-
-                        @if($isMisc)
-                            <p><span class="font-bold text-slate-800">مددکار:</span> {{ $service->socialWorkers->first()?->full_name ?? '—' }}</p>
-                        @else
-                            <div>
-                                <span class="font-bold text-slate-800">مددکاران تخصیص‌یافته:</span>
-                                <ul class="mt-1 space-y-1">
-                                    @forelse($operatorAllocations->take(3) as $allocation)
-                                        <li class="flex items-center gap-2">
-                                            <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400"></span>
-                                            <span>{{ $allocation->socialWorker?->full_name ?? '—' }}</span>
-                                            <span class="text-xs text-slate-400">({{ number_format((float) $allocation->allocated_quantity, 2) }})</span>
-                                        </li>
-                                    @empty
-                                        <li>—</li>
-                                    @endforelse
-                                    @if($operatorAllocations->count() > 3)
-                                        <li class="flex items-center gap-2 text-xs font-bold text-blue-600">
-                                            <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-300"></span>
-                                            <span>+{{ $operatorAllocations->count() - 3 }} مددکار دیگر</span>
-                                        </li>
-                                    @endif
-                                </ul>
-                            </div>
-                        @endif
-
-                        @if($isMisc)
-                            <p><span class="font-bold text-slate-800">تاریخ:</span> {{ $distributionStartDate }}</p>
-                        @endif
-                    </div>
-
-                    @if(filled($service->description))
-                        <p class="mt-4 line-clamp-2 text-sm leading-6 text-slate-500">{{ $service->description }}</p>
-                    @endif
-
-                    <div class="mt-auto border-t border-slate-200 pt-4">
-                        @if($isMisc)
-                            <a href="{{ route('distribution-operator.edit-service', $service->id) }}" class="inline-flex items-center justify-center rounded-2xl border border-violet-200 bg-white px-4 py-2 text-sm font-bold text-violet-700 transition hover:bg-violet-50">
-                                ویرایش خدمت
-                            </a>
-                        @elseif($operatorAllocations->isNotEmpty())
-                            <a href="{{ $allocationEditUrl }}" class="inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-blue-600 px-4 py-2.5 text-sm font-black text-white shadow-sm shadow-blue-600/20 transition hover:bg-blue-700 active:bg-blue-800 sm:w-auto">
-                                مدیریت تخصیص‌ها
-                            </a>
-                        @endif
-                    </div>
-                </div>
+                @if($isMisc)
+                    @include('livewire.distribution-operators.partials.misc-service-card')
+                @else
+                    @include('livewire.distribution-operators.partials.campaign-service-card')
+                @endif
             @empty
                 <div class="md:col-span-2 xl:col-span-3 rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center text-sm text-slate-500">
                     @if($activeTab === 'misc')
