@@ -64,6 +64,51 @@ class DistributionOperatorServiceListTest extends TestCase
             ->assertDontSee('Campaign package');
     }
 
+    public function test_operator_can_search_service_catalog(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $manager = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_MANAGER,
+            'is_admin' => true,
+        ]);
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 941,
+            'first_name' => 'Catalog',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+
+        $riceService = $this->makeService($manager, 'Rice support');
+        $riceCategory = $this->makeCategory($riceService, 'Food basket', $manager);
+        $riceService->workerAllocations()->create([
+            'service_category_id' => $riceCategory->id,
+            'social_worker_id' => $worker->id,
+            'allocated_quantity' => 3,
+            'assigned_by_user_id' => $operator->id,
+        ]);
+
+        $blanketService = $this->makeService($manager, 'Winter blankets');
+        $blanketCategory = $this->makeCategory($blanketService, 'Warm clothes', $manager);
+        $blanketService->workerAllocations()->create([
+            'service_category_id' => $blanketCategory->id,
+            'social_worker_id' => $worker->id,
+            'allocated_quantity' => 4,
+            'assigned_by_user_id' => $operator->id,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceList::class)
+            ->assertSee('Rice support')
+            ->assertSee('Winter blankets')
+            ->set('search', 'Food basket')
+            ->assertSee('Rice support')
+            ->assertDontSee('Winter blankets');
+    }
+
     protected function makeService(User $creator, string $name): Service
     {
         $serviceName = ServiceName::query()->create([

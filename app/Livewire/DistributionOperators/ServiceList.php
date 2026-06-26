@@ -8,16 +8,27 @@ use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.distribution-operator')]
 class ServiceList extends Component
 {
+    use WithPagination;
+
     public const TAB_CAMPAIGNS = 'campaigns';
 
     public const TAB_MISC = 'misc';
 
     #[Url(as: 'tab')]
     public string $activeTab = self::TAB_CAMPAIGNS;
+
+    #[Url(as: 'q', except: '')]
+    public string $search = '';
+
+    #[Url(except: 'latest')]
+    public string $sort = 'latest';
+
+    public int $perPage = 12;
 
     public function mount(): void
     {
@@ -32,7 +43,25 @@ class ServiceList extends Component
     {
         if (in_array($tab, $this->availableTabs(), true)) {
             $this->activeTab = $tab;
+            $this->resetPage();
         }
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSort(): void
+    {
+        $this->resetPage();
+    }
+
+    public function clearCatalogFilters(): void
+    {
+        $this->search = '';
+        $this->sort = 'latest';
+        $this->resetPage();
     }
 
     public function render()
@@ -42,8 +71,10 @@ class ServiceList extends Component
             self::TAB_MISC => $this->miscServicesQuery()->count(),
         ];
 
+        $query = $this->filteredServicesQuery();
+
         return view('livewire.distribution-operators.service-list', [
-            'services' => $this->activeServicesQuery()
+            'services' => $query
                 ->with([
                     'serviceName',
                     'serviceCategory',
@@ -51,11 +82,56 @@ class ServiceList extends Component
                     'socialWorkers',
                     'workerAllocations.socialWorker',
                 ])
-                ->latest()
-                ->get(),
+                ->paginate($this->perPage),
             'counts' => $counts,
             'unitOptions' => Service::unitOptions(),
+            'sortOptions' => $this->sortOptions(),
+            'hasActiveFilters' => $this->hasActiveFilters(),
         ]);
+    }
+
+    protected function filteredServicesQuery(): Builder
+    {
+        return $this->activeServicesQuery()
+            ->when(trim($this->search) !== '', fn (Builder $query) => $this->applySearch($query, trim($this->search)))
+            ->tap(fn (Builder $query) => $this->applySort($query));
+    }
+
+    protected function applySearch(Builder $query, string $search): Builder
+    {
+        return $query->where(function (Builder $searchQuery) use ($search): void {
+            $searchQuery
+                ->where('code', 'like', "%{$search}%")
+                ->orWhere('name', 'like', "%{$search}%")
+                ->orWhere('description', 'like', "%{$search}%")
+                ->orWhereHas('serviceName', fn (Builder $serviceNameQuery) => $serviceNameQuery->where('name', 'like', "%{$search}%"))
+                ->orWhereHas('categories', fn (Builder $categoryQuery) => $categoryQuery->where('name', 'like', "%{$search}%"))
+                ->orWhereHas('socialWorkers', function (Builder $workerQuery) use ($search): void {
+                    $workerQuery
+                        ->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('full_name', 'like', "%{$search}%")
+                        ->orWhere('worker_code', 'like', "%{$search}%");
+                });
+        });
+    }
+
+    protected function applySort(Builder $query): Builder
+    {
+        return match ($this->sort) {
+            'oldest' => $query->oldest(),
+            'name' => $query
+                ->orderBy(
+                    \App\Models\ServiceName::query()
+                        ->select('name')
+                        ->whereColumn('service_names.id', 'services.service_name_id')
+                        ->limit(1)
+                )
+                ->orderByDesc('id'),
+            'start_date' => $query->orderByDesc('distribution_start_date')->orderByDesc('id'),
+            'capacity' => $query->orderByDesc('total_quantity')->orderByDesc('id'),
+            default => $query->latest(),
+        };
     }
 
     protected function activeServicesQuery(): Builder
@@ -96,5 +172,22 @@ class ServiceList extends Component
             self::TAB_CAMPAIGNS,
             self::TAB_MISC,
         ];
+    }
+
+    protected function sortOptions(): array
+    {
+        return [
+            'latest' => 'جدیدترین',
+            'start_date' => 'تاریخ شروع',
+            'capacity' => 'بیشترین ظرفیت',
+            'name' => 'نام خدمت',
+            'oldest' => 'قدیمی‌ترین',
+        ];
+    }
+
+    protected function hasActiveFilters(): bool
+    {
+        return trim($this->search) !== ''
+            || $this->sort !== 'latest';
     }
 }
