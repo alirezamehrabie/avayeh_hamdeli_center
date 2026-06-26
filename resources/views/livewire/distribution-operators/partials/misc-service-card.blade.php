@@ -9,7 +9,7 @@
 >
     <div class="flex items-start justify-between gap-3">
         <div class="min-w-0">
-            <p class="truncate text-xs font-semibold text-violet-700">{{ $service->code }}</p>
+            <p class="truncate text-[11px] font-medium tracking-wide text-slate-400">{{ $service->code }}</p>
             <h3 class="mt-1 truncate text-sm font-black leading-5 text-slate-800">{{ $service->serviceName?->name ?? '—' }}</h3>
         </div>
     </div>

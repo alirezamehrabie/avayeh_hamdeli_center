@@ -7,12 +7,11 @@
 >
     <div class="flex items-start justify-between gap-3">
         <div class="min-w-0">
-            <p class="truncate text-xs font-semibold text-violet-700">{{ $service->code }}</p>
+            <p class="truncate text-[11px] font-medium tracking-wide text-slate-400">{{ $service->code }}</p>
             <h3 class="mt-1 line-clamp-2 text-base font-black leading-6 text-slate-800">{{ $service->serviceName?->name ?? '—' }}</h3>
         </div>
-        <div class="flex shrink-0 flex-col items-end gap-1">
-            <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-black text-blue-700">{{ $operatorAllocationCount }} مددکار</span>
-            <span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-600">{{ number_format($operatorAllocatedQuantity, 2) }} {{ $serviceUnitLabel }}</span>
+        <div class="flex shrink-0 flex-col items-end">
+            <span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-600">{{ rtrim(rtrim(number_format($remainingCapacity, 2, '.', ','), '0'), '.') }} {{ $serviceUnitLabel }}</span>
         </div>
     </div>
 
@@ -53,7 +52,7 @@
                 </div>
                 <div class="text-left">
                     <p class="text-[11px] font-bold text-emerald-600">باقی‌مانده</p>
-                    <p class="mt-1 text-base font-bold text-emerald-700">{{ number_format($remainingCapacity, 2) }} <span class="text-[11px] text-emerald-600">{{ $serviceUnitLabel }}</span></p>
+                    <p class="mt-1 text-base font-bold text-emerald-700">{{ rtrim(rtrim(number_format($remainingCapacity, 2, '.', ','), '0'), '.') }} <span class="text-[11px] text-emerald-600">{{ $serviceUnitLabel }}</span></p>
                 </div>
             </div>
 
