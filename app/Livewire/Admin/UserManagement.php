@@ -35,6 +35,7 @@ class UserManagement extends Component
     public string $edit_password = '';
     public string $edit_password_confirmation = '';
     public string $edit_access_level = User::ACCESS_LEVEL_REGULAR;
+    public array $edit_permissions = [];
     public bool $showEditModal = false;
     public string $search = '';
     public string $roleFilter = 'all';
@@ -110,12 +111,12 @@ class UserManagement extends Component
         $username = mb_strtolower($validated['username']);
 
         if ($validated['access_level'] === User::ACCESS_LEVEL_ADMIN && ! $currentUser->isManager()) {
-            $this->addError('access_level', 'You are not allowed to create an Admin user.');
+            $this->addError('access_level', 'شما اجازه ایجاد کاربر با نقش ادمین را ندارید.');
             return;
         }
 
         if ($validated['access_level'] === User::ACCESS_LEVEL_MANAGER) {
-            session()->flash('success', 'ایجاد Manager جدید مجاز نیست. فقط حساب Manager اصلی سیستم وجود دارد.');
+            session()->flash('success', 'ایجاد مدیر جدید مجاز نیست. فقط حساب مدیر اصلی سیستم وجود دارد.');
             return;
         }
 
@@ -148,7 +149,7 @@ class UserManagement extends Component
         }
 
         if ($user->isProtectedManagerAccount()) {
-            session()->flash('success', 'حساب Manager اصلی سیستم قابل ویرایش نیست.');
+            session()->flash('success', 'حساب مدیر اصلی سیستم قابل ویرایش نیست.');
             return;
         }
 
@@ -159,6 +160,7 @@ class UserManagement extends Component
             'edit_password',
             'edit_password_confirmation',
             'edit_access_level',
+            'edit_permissions',
         ]);
 
         $this->editing_user_id = $user->id;
@@ -168,6 +170,11 @@ class UserManagement extends Component
         $this->edit_password = '';
         $this->edit_password_confirmation = '';
         $this->edit_access_level = (string) ($user->access_level ?? User::ACCESS_LEVEL_REGULAR);
+        $this->edit_permissions = User::normalizePermissionKeysForAccessLevel(
+            $user->getPermissionKeys(),
+            $this->edit_access_level
+        );
+        $this->syncEditPermissionsWithAccessLevel();
         $this->showEditModal = true;
     }
 
@@ -180,6 +187,7 @@ class UserManagement extends Component
         $this->edit_password = '';
         $this->edit_password_confirmation = '';
         $this->edit_access_level = User::ACCESS_LEVEL_REGULAR;
+        $this->edit_permissions = [];
         $this->showEditModal = false;
         $this->resetValidation([
             'edit_first_name',
@@ -188,7 +196,35 @@ class UserManagement extends Component
             'edit_password',
             'edit_password_confirmation',
             'edit_access_level',
+            'edit_permissions',
         ]);
+    }
+
+    public function updatedEditAccessLevel(string $value): void
+    {
+        $this->edit_access_level = $value;
+        $this->syncEditPermissionsWithAccessLevel();
+    }
+
+    public function updatedEditPermissions(): void
+    {
+        $this->edit_permissions = User::normalizePermissionKeysForAccessLevel(
+            $this->edit_permissions,
+            $this->edit_access_level
+        );
+    }
+
+    private function syncEditPermissionsWithAccessLevel(): void
+    {
+        $recommendedPermissions = User::roleDefinitions()[$this->edit_access_level]['recommended_permissions'] ?? [];
+        $currentPermissions = User::normalizePermissionKeysForAccessLevel(
+            $this->edit_permissions,
+            $this->edit_access_level
+        );
+
+        $this->edit_permissions = $currentPermissions !== []
+            ? $currentPermissions
+            : User::normalizePermissionKeysForAccessLevel($recommendedPermissions, $this->edit_access_level);
     }
 
     public function openEditModal(int $userId): void
@@ -237,7 +273,7 @@ class UserManagement extends Component
         }
 
         if ($user->isProtectedManagerAccount()) {
-            session()->flash('success', 'حساب Manager اصلی سیستم قابل ویرایش نیست.');
+            session()->flash('success', 'حساب مدیر اصلی سیستم قابل ویرایش نیست.');
             $this->cancelEditingUser();
             return;
         }
@@ -247,13 +283,9 @@ class UserManagement extends Component
             'edit_last_name' => ['required', 'string', 'max:100'],
             'edit_username' => ['required', 'string', 'max:100', 'unique:users,name,' . $user->id],
             'edit_password' => ['nullable', 'string', 'min:8', 'confirmed'],
-            'edit_access_level' => ['required', 'in:' . implode(',', [
-                User::ACCESS_LEVEL_MANAGER,
-                User::ACCESS_LEVEL_ADMIN,
-                User::ACCESS_LEVEL_REGULAR,
-                User::ACCESS_LEVEL_SOCIAL_WORKER,
-                User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
-            ])],
+            'edit_access_level' => ['required', 'in:' . implode(',', self::MANAGER_CREATABLE_ACCESS_LEVELS)],
+            'edit_permissions' => ['array'],
+            'edit_permissions.*' => ['string', 'in:' . implode(',', array_keys(User::permissionOptions()))],
         ], [
             'edit_first_name.required' => 'نام الزامی است.',
             'edit_last_name.required' => 'نام خانوادگی الزامی است.',
@@ -262,19 +294,25 @@ class UserManagement extends Component
             'edit_password.min' => 'رمز عبور باید حداقل 8 کاراکتر باشد.',
             'edit_password.confirmed' => 'تکرار رمز عبور مطابقت ندارد.',
             'edit_access_level.required' => 'انتخاب سطح دسترسی الزامی است.',
+            'edit_permissions.*.in' => 'سطح دسترسی انتخاب‌شده معتبر نیست.',
         ]);
 
         $username = mb_strtolower(trim($validated['edit_username']));
 
         if ($validated['edit_access_level'] === User::ACCESS_LEVEL_MANAGER) {
-            session()->flash('success', 'تنها حساب Manager اصلی سیستم معتبر است و قابل انتساب به کاربر دیگر نیست.');
+            session()->flash('success', 'تنها حساب مدیر اصلی سیستم معتبر است و قابل انتساب به کاربر دیگر نیست.');
             return;
         }
 
         if ($validated['edit_access_level'] === User::ACCESS_LEVEL_ADMIN && ! auth()->user()->isManager()) {
-            $this->addError('edit_access_level', 'You are not allowed to assign Admin access.');
+            $this->addError('edit_access_level', 'شما اجازه انتساب نقش ادمین را ندارید.');
             return;
         }
+
+        $validated['edit_permissions'] = User::normalizePermissionKeysForAccessLevel(
+            $validated['edit_permissions'] ?? [],
+            $validated['edit_access_level']
+        );
 
         $payload = [
             'first_name' => trim($validated['edit_first_name']),
@@ -283,6 +321,7 @@ class UserManagement extends Component
             'email' => $username . '@local.system',
             'access_level' => $validated['edit_access_level'],
             'is_admin' => $validated['edit_access_level'] === User::ACCESS_LEVEL_ADMIN,
+            'permissions' => $validated['edit_permissions'],
         ];
 
         if (filled($validated['edit_password'] ?? null)) {
@@ -312,7 +351,7 @@ class UserManagement extends Component
         }
 
         if ($user->isProtectedManagerAccount()) {
-            session()->flash('success', 'حساب Manager اصلی سیستم قابل تغییر نیست.');
+            session()->flash('success', 'حساب مدیر اصلی سیستم قابل تغییر نیست.');
             return;
         }
 
@@ -354,14 +393,14 @@ class UserManagement extends Component
         }
 
         if ($user->isProtectedManagerAccount()) {
-            session()->flash('success', 'حساب Manager اصلی سیستم کاملاً محافظت شده و قابل حذف نیست.');
+            session()->flash('success', 'حساب مدیر اصلی سیستم کاملاً محافظت‌شده است و قابل حذف نیست.');
             return;
         }
 
         $actor = auth()->user();
         if (! $actor->isManager() && $user->access_level === User::ACCESS_LEVEL_ADMIN) {
             $this->queueManagerApproval($user->id, UserActionRequest::ACTION_DELETE);
-            session()->flash('success', 'درخواست حذف ادمین ثبت شد و منتظر تایید مدیر است.');
+            session()->flash('success', 'درخواست حذف ادمین ثبت شد و منتظر تأیید مدیر است.');
             return;
         }
 
@@ -394,25 +433,25 @@ class UserManagement extends Component
         }
 
         if ($user->isProtectedManagerAccount()) {
-            session()->flash('success', 'هیچ کاربری اجازه ویرایش یا تغییر حساب Manager اصلی سیستم را ندارد.');
+            session()->flash('success', 'هیچ کاربری اجازه ویرایش یا تغییر حساب مدیر اصلی سیستم را ندارد.');
             return;
         }
 
         if ($accessLevel === User::ACCESS_LEVEL_MANAGER) {
-            session()->flash('success', 'تنها حساب Manager اصلی سیستم معتبر است و قابل انتساب به کاربر دیگر نیست.');
+            session()->flash('success', 'تنها حساب مدیر اصلی سیستم معتبر است و قابل انتساب به کاربر دیگر نیست.');
             return;
         }
 
         $actor = auth()->user();
         if (! $actor->isManager() && $user->access_level === User::ACCESS_LEVEL_REGULAR && $accessLevel === User::ACCESS_LEVEL_ADMIN) {
             $this->queueManagerApproval($user->id, UserActionRequest::ACTION_PROMOTE);
-            session()->flash('success', 'درخواست ارتقا به Admin ثبت شد و منتظر تایید Manager است.');
+            session()->flash('success', 'درخواست ارتقا به ادمین ثبت شد و منتظر تأیید مدیر است.');
             return;
         }
 
         if (! $actor->isManager() && $user->access_level === User::ACCESS_LEVEL_ADMIN && $accessLevel === User::ACCESS_LEVEL_REGULAR) {
             $this->queueManagerApproval($user->id, UserActionRequest::ACTION_DOWNGRADE);
-            session()->flash('success', 'درخواست تنزل سطح ادمین ثبت شد و منتظر تایید Manager است.');
+            session()->flash('success', 'درخواست تنزل سطح ادمین ثبت شد و منتظر تأیید مدیر است.');
             return;
         }
 
@@ -610,6 +649,7 @@ class UserManagement extends Component
             'actorCanCreateAdmin' => $actorCanCreateAdmin,
             'permissionOptions' => User::permissionOptions(),
             'availablePermissionOptions' => User::permissionOptionsForAccessLevel($this->access_level),
+            'availableEditPermissionOptions' => User::permissionOptionsForAccessLevel($this->edit_access_level),
             'roleDefinitions' => User::roleDefinitions(),
             'pendingRequests' => $pendingRequests,
             'hasPendingRequests' => $pendingRequests->isNotEmpty(),

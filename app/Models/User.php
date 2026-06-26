@@ -159,19 +159,19 @@ class User extends Authenticatable
             self::PERMISSION_PEOPLE_EDIT => 'ویرایش مددجو (سریع، کامل)',
             self::PERMISSION_PEOPLE_DELETE => 'حذف مددجو (انتقال به بلاک‌لیست)',
             self::PERMISSION_DISTRIBUTION_INBOUND_GATE => [
-                'label' => 'Inbound Gate Access',
+                'label' => 'دسترسی گیت ورودی',
                 'group' => 'distribution_operator_gate',
                 'gate' => 'access-distribution-inbound-gate',
                 'distribution_access' => self::DISTRIBUTION_ACCESS_INBOUND,
             ],
             self::PERMISSION_DISTRIBUTION_DELIVERY_GATE => [
-                'label' => 'Delivery Gate Access',
+                'label' => 'دسترسی گیت تحویل',
                 'group' => 'distribution_operator_gate',
                 'gate' => 'access-distribution-delivery-gate',
                 'distribution_access' => self::DISTRIBUTION_ACCESS_DELIVERY,
             ],
             self::PERMISSION_DISTRIBUTION_OUTBOUND_GATE => [
-                'label' => 'Outbound Gate Access',
+                'label' => 'دسترسی گیت خروجی',
                 'group' => 'distribution_operator_gate',
                 'gate' => 'access-distribution-outbound-gate',
                 'distribution_access' => self::DISTRIBUTION_ACCESS_OUTBOUND,

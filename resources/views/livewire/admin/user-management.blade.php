@@ -110,7 +110,7 @@
                                     <h3 class="text-base font-black text-slate-900">مرحله ۱ – انتخاب نقش پایه</h3>
                                     <p class="mt-1 text-sm text-slate-500">نقش پایه رفتار پیش‌فرض فرم و دسترسی‌های قابل انتخاب را تعیین می‌کند.</p>
                                 </div>
-                                <span class="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">Base Role</span>
+                                <span class="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">نقش پایه</span>
                             </div>
 
                             <div class="grid grid-cols-1 gap-3 lg:grid-cols-3">
@@ -155,7 +155,7 @@
                                     <h3 class="text-base font-black text-slate-900">مرحله ۲ – اطلاعات کاربر</h3>
                                     <p class="mt-1 text-sm text-slate-500">مشخصات هویتی و اطلاعات ورود را کامل کنید.</p>
                                 </div>
-                                <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">User Info</span>
+                                <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">اطلاعات کاربر</span>
                             </div>
 
                             <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -362,7 +362,7 @@
 
                                     @if($viewingDeletedUsers)
                                         <div class="mt-2 flex flex-wrap gap-1.5 text-[10px] text-slate-500">
-                                            <span class="rounded-full bg-rose-50 px-2 py-0.5 text-rose-700">Deleted: {{ $user->deleted_at ? \App\Helpers\Morilog\Jalalian::fromDateTime($user->deleted_at)->format('Y/m/d') : '-' }}</span>
+                                            <span class="rounded-full bg-rose-50 px-2 py-0.5 text-rose-700">حذف‌شده: {{ $user->deleted_at ? \App\Helpers\Morilog\Jalalian::fromDateTime($user->deleted_at)->format('Y/m/d') : '-' }}</span>
                                         </div>
                                     @endif
 
@@ -483,12 +483,12 @@
 
     @if($showEditModal && $editing_user_id)
         <div class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 px-2 py-2 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6" wire:keydown.escape.window="cancelEditingUser">
-            <div class="flex w-full max-w-none flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl max-h-[92vh] sm:max-w-2xl sm:rounded-3xl sm:max-h-[90vh]">
+            <div class="flex w-full max-w-none flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl max-h-[92vh] sm:max-w-4xl sm:rounded-3xl sm:max-h-[90vh]">
                 <div class="border-b border-slate-200 px-4 py-4 sm:px-6">
                     <div class="flex items-start justify-between gap-4">
                         <div>
                             <h2 class="text-lg font-black text-slate-900">ویرایش کاربر</h2>
-                            <p class="mt-1 text-sm text-slate-600">ویرایش سریع نام، نام کاربری، رمز عبور و سطح دسترسی.</p>
+                            <p class="mt-1 text-sm text-slate-600">به‌روزرسانی نقش، اطلاعات حساب و دسترسی‌های وابسته به نقش با همان الگوی استاندارد.</p>
                         </div>
                         <button type="button" wire:click="cancelEditingUser" aria-label="بستن" title="بستن" class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-slate-200 focus-visible:ring-offset-2 focus-visible:ring-offset-white">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -501,65 +501,179 @@
 
                 <form wire:submit.prevent="updateUser" class="flex min-h-0 flex-1 flex-col">
                     <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
-                        <div class="grid gap-3 sm:grid-cols-2">
-                        <div>
-                            <label class="mb-2 block text-sm font-semibold text-slate-700">نام</label>
-                            <input type="text" wire:model.blur="edit_first_name" class="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm leading-5 focus:border-amber-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-100">
-                            @error('edit_first_name') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
+                        <div class="grid gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-3">
+                            @foreach ([
+                                ['step' => '01', 'title' => 'نقش پایه', 'desc' => 'بازتعریف نقش اصلی کاربر'],
+                                ['step' => '02', 'title' => 'اطلاعات کاربر', 'desc' => 'اصلاح مشخصات و امنیت حساب'],
+                                ['step' => '03', 'title' => 'دسترسی‌ها', 'desc' => 'به‌روزرسانی دسترسی‌های وابسته'],
+                            ] as $step)
+                                <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                                    <div class="text-[11px] font-black tracking-[0.2em] text-amber-600">{{ $step['step'] }}</div>
+                                    <div class="mt-1 text-sm font-black text-slate-900">{{ $step['title'] }}</div>
+                                    <div class="mt-1 text-xs text-slate-500">{{ $step['desc'] }}</div>
+                                </div>
+                            @endforeach
                         </div>
-                        <div>
-                            <label class="mb-2 block text-sm font-semibold text-slate-700">نام خانوادگی</label>
-                            <input type="text" wire:model.blur="edit_last_name" class="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm leading-5 focus:border-amber-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-100">
-                            @error('edit_last_name') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
-                        </div>
-                        <div>
-                            <label class="mb-2 block text-sm font-semibold text-slate-700">نام کاربری</label>
-                            <input type="text" wire:model.blur="edit_username" class="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm leading-5 focus:border-amber-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-100">
-                            @error('edit_username') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
-                        </div>
-                        <div>
-                            <label class="mb-2 block text-sm font-semibold text-slate-700">سطح دسترسی</label>
-                            <select wire:model="edit_access_level" class="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm focus:border-amber-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-100">
-                                <option value="manager" disabled>مدیریت (محافظت‌شده)</option>
-                                <option value="admin" @disabled(!$actorCanCreateAdmin)>ادمین</option>
-                                <option value="regular_user">کاربر عادی</option>
-                                <option value="social_worker">مددکار</option>
-                                <option value="distribution_operator">اپراتور توزیع</option>
-                            </select>
-                            @error('edit_access_level') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
-                        </div>
-                        <div x-data="{ showPassword: false }" class="sm:col-span-2">
-                            <label class="mb-2 block text-sm font-semibold text-slate-700">رمز عبور جدید</label>
-                            <div class="relative">
-                                <input x-bind:type="showPassword ? 'text' : 'password'" wire:model.blur="edit_password" class="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 pl-10 text-sm leading-5 focus:border-amber-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-100" placeholder="در صورت نیاز تغییر دهید">
-                                <button type="button" x-on:click="showPassword = !showPassword" class="absolute inset-y-0 left-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-600">
-                                    <svg x-show="!showPassword" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                                    <svg x-show="showPassword" x-cloak xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.956 9.956 0 012.042-3.368M6.223 6.223A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.97 9.97 0 01-4.294 5.225M15 12a3 3 0 00-4.243-4.243M9.88 9.88A3 3 0 0014.12 14.12M3 3l18 18" /></svg>
-                                </button>
+
+                        <section class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                            <div class="mb-4 flex items-start justify-between gap-3">
+                                <div>
+                                    <h3 class="text-base font-black text-slate-900">مرحله ۱ – انتخاب نقش پایه</h3>
+                                    <p class="mt-1 text-sm text-slate-500">تغییر نقش پایه، دسترسی‌های مرحله سوم را بلافاصله به‌روزرسانی می‌کند.</p>
+                                </div>
+                                <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">نقش پایه</span>
                             </div>
-                            @error('edit_password') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
-                        </div>
-                        <div x-data="{ showPassword: false }" class="sm:col-span-2">
-                            <label class="mb-2 block text-sm font-semibold text-slate-700">تکرار رمز عبور جدید</label>
-                            <div class="relative">
-                                <input x-bind:type="showPassword ? 'text' : 'password'" wire:model.blur="edit_password_confirmation" class="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 pl-10 text-sm leading-5 focus:border-amber-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-100" placeholder="تکرار رمز عبور جدید">
-                                <button type="button" x-on:click="showPassword = !showPassword" class="absolute inset-y-0 left-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-600">
-                                    <svg x-show="!showPassword" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                                    <svg x-show="showPassword" x-cloak xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.956 9.956 0 012.042-3.368M6.223 6.223A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.97 9.97 0 01-4.294 5.225M15 12a3 3 0 00-4.243-4.243M9.88 9.88A3 3 0 0014.12 14.12M3 3l18 18" /></svg>
-                                </button>
+
+                            <div class="grid grid-cols-1 gap-3 lg:grid-cols-3">
+                                @foreach ($roleDefinitions as $roleValue => $roleMeta)
+                                    <label class="min-w-0 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            class="peer sr-only"
+                                            wire:model.live="edit_access_level"
+                                            value="{{ $roleValue }}"
+                                            @disabled(($roleMeta['disabled'] ?? false) || ($roleValue === 'admin' && ! $actorCanCreateAdmin))
+                                        >
+                                        <div class="relative flex h-full min-h-32 flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4 text-right transition duration-200 ease-out peer-checked:border-amber-400 peer-checked:bg-amber-50 peer-checked:shadow-sm peer-checked:ring-4 peer-checked:ring-amber-100 peer-disabled:cursor-not-allowed peer-disabled:opacity-50">
+                                            <div>
+                                                <div class="flex items-center justify-between gap-3">
+                                                    <span class="text-sm font-black text-slate-900">{{ $roleMeta['label'] }}</span>
+                                                    <span class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-400 peer-checked:border-amber-500 peer-checked:text-amber-600">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                            <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.25 7.25a1 1 0 01-1.415 0l-3-3a1 1 0 111.414-1.42l2.293 2.294 6.543-6.544a1 1 0 011.415 0z" clip-rule="evenodd" />
+                                                        </svg>
+                                                    </span>
+                                                </div>
+                                                <p class="mt-2 text-sm leading-6 text-slate-600">{{ $roleMeta['description'] }}</p>
+                                            </div>
+                                            <div class="mt-4 flex flex-wrap gap-2">
+                                                @foreach(($roleMeta['recommended_permissions'] ?? []) as $permissionKey)
+                                                    <span class="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200">
+                                                        {{ $permissionOptions[$permissionKey] ?? $permissionKey }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </label>
+                                @endforeach
                             </div>
-                        </div>
-                        </div>
+                            @error('edit_access_level') <span class="mt-2 block text-[11px] text-red-600">{{ $message }}</span> @enderror
+                        </section>
+
+                        <section class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                            <div class="mb-4 flex items-start justify-between gap-3">
+                                <div>
+                                    <h3 class="text-base font-black text-slate-900">مرحله ۲ – اطلاعات کاربر</h3>
+                                    <p class="mt-1 text-sm text-slate-500">نام، نام کاربری و در صورت نیاز رمز عبور را ویرایش کنید.</p>
+                                </div>
+                                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">اطلاعات کاربر</span>
+                            </div>
+
+                            <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                                <div>
+                                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">نام</label>
+                                    <input type="text" wire:model.blur="edit_first_name" class="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm leading-5 focus:border-amber-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-100">
+                                    @error('edit_first_name') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
+                                </div>
+                                <div>
+                                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">نام خانوادگی</label>
+                                    <input type="text" wire:model.blur="edit_last_name" class="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm leading-5 focus:border-amber-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-100">
+                                    @error('edit_last_name') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">نام کاربری</label>
+                                    <input type="text" wire:model.blur="edit_username" class="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm leading-5 focus:border-amber-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-100">
+                                    @error('edit_username') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
+                                </div>
+                                <div class="sm:col-span-1 xl:col-span-2">
+                                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">رمز عبور جدید</label>
+                                    <div x-data="{ showPassword: false }" class="relative">
+                                        <input x-bind:type="showPassword ? 'text' : 'password'" wire:model.blur="edit_password" class="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 pr-10 text-sm leading-5 focus:border-amber-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-100" placeholder="در صورت نیاز تغییر دهید">
+                                        <button type="button" x-on:click="showPassword = !showPassword" class="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-600">
+                                            <svg x-show="!showPassword" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                            <svg x-show="showPassword" x-cloak xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.956 9.956 0 012.042-3.368M6.223 6.223A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.97 9.97 0 01-4.294 5.225M15 12a3 3 0 00-4.243-4.243M9.88 9.88A3 3 0 0014.12 14.12M3 3l18 18" /></svg>
+                                        </button>
+                                    </div>
+                                    @error('edit_password') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
+                                </div>
+                                <div class="sm:col-span-1 xl:col-span-2">
+                                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">تکرار رمز عبور جدید</label>
+                                    <div x-data="{ showPassword: false }" class="relative">
+                                        <input x-bind:type="showPassword ? 'text' : 'password'" wire:model.blur="edit_password_confirmation" class="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 pr-10 text-sm leading-5 focus:border-amber-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-100" placeholder="تکرار رمز عبور جدید">
+                                        <button type="button" x-on:click="showPassword = !showPassword" class="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-600">
+                                            <svg x-show="!showPassword" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                            <svg x-show="showPassword" x-cloak xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.956 9.956 0 012.042-3.368M6.223 6.223A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.97 9.97 0 01-4.294 5.225M15 12a3 3 0 00-4.243-4.243M9.88 9.88A3 3 0 0014.12 14.12M3 3l18 18" /></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                            <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                                <div>
+                                    <h3 class="text-base font-black text-slate-900">مرحله ۳ – مدیریت پویا و نقش‌محور دسترسی‌ها</h3>
+                                    <p class="mt-1 text-sm text-slate-500">این بخش فقط دسترسی‌های معتبر برای نقش انتخاب‌شده را نمایش می‌دهد.</p>
+                                </div>
+                                <div class="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                                    <div class="font-black">{{ $roleDefinitions[$edit_access_level]['label'] ?? 'بدون نقش' }}</div>
+                                    <div class="mt-1 text-xs text-amber-700">با تغییر نقش پایه، دسترسی‌های ناسازگار حذف و گزینه‌های معتبر جایگزین می‌شوند.</div>
+                                </div>
+                            </div>
+
+                            @if(count($availableEditPermissionOptions) > 0)
+                                <div class="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+                                    @foreach($availableEditPermissionOptions as $permissionKey => $permissionLabel)
+                                        <label class="cursor-pointer">
+                                            <input type="checkbox" value="{{ $permissionKey }}" wire:model.live="edit_permissions" class="peer sr-only">
+                                            <div class="flex min-h-24 flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4 transition peer-checked:border-amber-300 peer-checked:bg-amber-50 peer-checked:ring-4 peer-checked:ring-amber-100">
+                                                <div class="flex items-start justify-between gap-3">
+                                                    <div class="text-sm font-bold text-slate-900">{{ $permissionLabel }}</div>
+                                                    <span class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-400 peer-checked:border-amber-500 peer-checked:text-amber-600">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                            <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.25 7.25a1 1 0 01-1.415 0l-3-3a1 1 0 111.414-1.42l2.293 2.294 6.543-6.544a1 1 0 011.415 0z" clip-rule="evenodd" />
+                                                        </svg>
+                                                    </span>
+                                                </div>
+                                                <div class="mt-3 text-xs text-slate-500">
+                                                    @if($edit_access_level === \App\Models\User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR)
+                                                        دسترسی عملیاتی برای یکی از گیت‌های فرآیند توزیع.
+                                                    @elseif($permissionKey === \App\Models\User::PERMISSION_FULL_ACCESS)
+                                                        دسترسی کامل برای مدیریت کل سیستم.
+                                                    @else
+                                                        دسترسی قابل توسعه و کنترل‌شده برای این نقش.
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center">
+                                    <div class="text-sm font-bold text-slate-800">برای این نقش، دسترسی قابل انتخابی تعریف نشده است.</div>
+                                    <div class="mt-1 text-xs text-slate-500">زیرساخت این بخش برای اضافه شدن دسترسی‌های آینده آماده است.</div>
+                                </div>
+                            @endif
+
+                            @error('edit_permissions') <span class="mt-2 block text-[11px] text-red-600">{{ $message }}</span> @enderror
+                            @error('edit_permissions.*') <span class="mt-2 block text-[11px] text-red-600">{{ $message }}</span> @enderror
+                        </section>
                     </div>
 
                     <div class="shrink-0 border-t border-slate-200 bg-white px-4 py-4 sm:px-6">
-                        <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-                        <button type="submit" class="inline-flex min-h-10 w-full items-center justify-center rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600 focus:outline-none focus:ring-4 focus:ring-amber-100 sm:w-auto">
-                            ذخیره تغییرات
-                        </button>
-                        <button type="button" wire:click="cancelEditingUser" class="inline-flex min-h-10 w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 sm:w-auto">
-                            انصراف
-                        </button>
+                        <div class="flex flex-col gap-3 rounded-3xl border border-amber-200 bg-amber-50/70 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <div class="text-sm font-black text-amber-900">آماده ذخیره تغییرات</div>
+                                <div class="mt-1 text-xs text-amber-700">نقش انتخاب‌شده: {{ $roleDefinitions[$edit_access_level]['label'] ?? '-' }} • دسترسی‌های انتخاب‌شده: {{ count($edit_permissions) }}</div>
+                            </div>
+                            <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                                <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600 focus:outline-none focus:ring-4 focus:ring-amber-100 sm:w-auto">
+                                    ذخیره تغییرات
+                                </button>
+                                <button type="button" wire:click="cancelEditingUser" class="inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 sm:w-auto">
+                                    انصراف
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </form>
