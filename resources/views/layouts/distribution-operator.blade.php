@@ -65,6 +65,29 @@
                 $isServiceListActive = request()->routeIs('distribution-operator.service-list')
                     || request()->routeIs('distribution-operator.edit-service')
                     || request()->routeIs('distribution-operator.edit-allocations');
+                $gateNavigationItems = [
+                    [
+                        'label' => 'گیت ورود',
+                        'hint' => 'ورود',
+                        'route' => 'distribution-operator.gates.entry',
+                        'ability' => 'access-distribution-inbound-gate',
+                        'active' => request()->routeIs('distribution-operator.gates.entry'),
+                    ],
+                    [
+                        'label' => 'گیت تحویل',
+                        'hint' => 'تحویل',
+                        'route' => 'distribution-operator.gates.delivery',
+                        'ability' => 'access-distribution-delivery-gate',
+                        'active' => request()->routeIs('distribution-operator.gates.delivery'),
+                    ],
+                    [
+                        'label' => 'گیت خروج',
+                        'hint' => 'خروج',
+                        'route' => 'distribution-operator.gates.exit',
+                        'ability' => 'access-distribution-outbound-gate',
+                        'active' => request()->routeIs('distribution-operator.gates.exit'),
+                    ],
+                ];
                 $isUserAccountActive = request()->routeIs('distribution-operator.user-account');
                 $isSystemSettingsActive = $isUserAccountActive;
             @endphp
@@ -85,6 +108,19 @@
                     <span>فهرست خدمات</span>
                     <span class="text-xs text-indigo-100/80">ویرایش</span>
                 </a>
+
+                @foreach($gateNavigationItems as $gateNavigationItem)
+                    @can($gateNavigationItem['ability'])
+                        <a
+                            href="{{ route($gateNavigationItem['route']) }}"
+                            class="flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors {{ $gateNavigationItem['active'] ? 'bg-indigo-700' : 'hover:bg-indigo-800' }}"
+                        >
+                            <span>{{ $gateNavigationItem['label'] }}</span>
+                            <span class="text-xs text-indigo-100/80">{{ $gateNavigationItem['hint'] }}</span>
+                        </a>
+                    @endcan
+                @endforeach
+
                 <button type="button" @click="openMenu = openMenu === 'system-settings' ? '' : 'system-settings'"
                         class="flex w-full items-center justify-between rounded-lg px-4 py-2.5 transition-all duration-200 {{ $isSystemSettingsActive ? 'bg-indigo-700 text-white shadow-sm' : 'text-indigo-100 hover:bg-indigo-800 hover:text-white' }}">
                     <div class="flex items-center">

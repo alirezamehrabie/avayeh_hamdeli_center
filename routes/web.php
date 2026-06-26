@@ -19,6 +19,9 @@ use App\Livewire\Auth\Login;
 use App\Livewire\DistributionOperators\DefineService;
 use App\Livewire\DistributionOperators\EditMiscService;
 use App\Livewire\DistributionOperators\EditServiceAllocations;
+use App\Livewire\DistributionOperators\Gates\DeliveryGate;
+use App\Livewire\DistributionOperators\Gates\EntryGate;
+use App\Livewire\DistributionOperators\Gates\ExitGate;
 use App\Livewire\DistributionOperators\ServiceList;
 use App\Livewire\DistributionOperators\UserAccount as DistributionOperatorUserAccount;
 use App\Livewire\ChildSupporters\Dashboard as ChildSupporterDashboard;
@@ -175,6 +178,18 @@ Route::get('/distribution-operator/services/{serviceId}/edit', EditMiscService::
 Route::get('/distribution-operator/services/{serviceId}/allocations', EditServiceAllocations::class)
     ->middleware(['auth', 'can:access-distribution-operator-panel'])
     ->name('distribution-operator.edit-allocations');
+
+Route::get('/distribution-operator/gates/entry', EntryGate::class)
+    ->middleware(['auth', 'can:access-distribution-inbound-gate'])
+    ->name('distribution-operator.gates.entry');
+
+Route::get('/distribution-operator/gates/delivery', DeliveryGate::class)
+    ->middleware(['auth', 'can:access-distribution-delivery-gate'])
+    ->name('distribution-operator.gates.delivery');
+
+Route::get('/distribution-operator/gates/exit', ExitGate::class)
+    ->middleware(['auth', 'can:access-distribution-outbound-gate'])
+    ->name('distribution-operator.gates.exit');
 
 Route::get('/distribution-operator/system-settings/user-account', DistributionOperatorUserAccount::class)
     ->middleware(['auth', 'can:access-distribution-operator-panel'])
