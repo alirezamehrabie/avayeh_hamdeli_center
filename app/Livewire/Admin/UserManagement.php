@@ -14,6 +14,13 @@ class UserManagement extends Component
 {
     use WithPagination;
 
+    private const MANAGER_CREATABLE_ACCESS_LEVELS = [
+        User::ACCESS_LEVEL_MANAGER,
+        User::ACCESS_LEVEL_ADMIN,
+        User::ACCESS_LEVEL_REGULAR,
+        User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+    ];
+
     public string $first_name = '';
     public string $last_name = '';
     public string $username = '';
@@ -42,11 +49,34 @@ class UserManagement extends Component
         $this->viewingDeletedUsersState = $showDeletedUsers
             || request()->routeIs('admin.user-management.deleted')
             || request()->routeIs('admin.user-list.deleted');
+
+        $this->syncPermissionsWithAccessLevel();
     }
 
     private function viewingDeletedUsers(): bool
     {
         return $this->viewingDeletedUsersState;
+    }
+
+    public function updatedAccessLevel(string $value): void
+    {
+        $this->access_level = $value;
+        $this->syncPermissionsWithAccessLevel();
+    }
+
+    public function updatedPermissions(): void
+    {
+        $this->permissions = User::normalizePermissionKeysForAccessLevel($this->permissions, $this->access_level);
+    }
+
+    private function syncPermissionsWithAccessLevel(): void
+    {
+        $recommendedPermissions = User::roleDefinitions()[$this->access_level]['recommended_permissions'] ?? [];
+        $currentPermissions = User::normalizePermissionKeysForAccessLevel($this->permissions, $this->access_level);
+
+        $this->permissions = $currentPermissions !== []
+            ? $currentPermissions
+            : User::normalizePermissionKeysForAccessLevel($recommendedPermissions, $this->access_level);
     }
 
     public function createUser(): void
@@ -62,12 +92,7 @@ class UserManagement extends Component
             'last_name' => ['required', 'string', 'max:100'],
             'username' => ['required', 'string', 'max:100', 'unique:users,name'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'access_level' => ['required', 'in:'.implode(',', [
-                User::ACCESS_LEVEL_MANAGER,
-                User::ACCESS_LEVEL_ADMIN,
-                User::ACCESS_LEVEL_REGULAR,
-                User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
-            ])],
+            'access_level' => ['required', 'in:'.implode(',', self::MANAGER_CREATABLE_ACCESS_LEVELS)],
             'permissions' => ['array'],
             'permissions.*' => ['string', 'in:' . implode(',', array_keys(User::permissionOptions()))],
         ], [
@@ -93,6 +118,11 @@ class UserManagement extends Component
             session()->flash('success', 'ایجاد Manager جدید مجاز نیست. فقط حساب Manager اصلی سیستم وجود دارد.');
             return;
         }
+
+        $validated['permissions'] = User::normalizePermissionKeysForAccessLevel(
+            $validated['permissions'] ?? [],
+            $validated['access_level']
+        );
 
         User::createRoleAccount([
             'name' => $username,
@@ -579,6 +609,8 @@ class UserManagement extends Component
             'viewingDeletedUsers' => $viewingDeletedUsers,
             'actorCanCreateAdmin' => $actorCanCreateAdmin,
             'permissionOptions' => User::permissionOptions(),
+            'availablePermissionOptions' => User::permissionOptionsForAccessLevel($this->access_level),
+            'roleDefinitions' => User::roleDefinitions(),
             'pendingRequests' => $pendingRequests,
             'hasPendingRequests' => $pendingRequests->isNotEmpty(),
             'pendingActionMap' => $pendingActionMap,

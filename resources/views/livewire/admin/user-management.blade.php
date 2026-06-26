@@ -85,106 +85,183 @@
                     <div class="mb-3 flex flex-col gap-2 border-b border-slate-200 pb-3 sm:flex-row sm:items-end sm:justify-between">
                         <div>
                             <h2 class="text-lg font-black text-slate-900">ایجاد کاربر جدید</h2>
-                            <p class="mt-1 text-sm text-slate-600">افزودن کاربر جدید و تنظیم نقش کاربری</p>
+                            <p class="mt-1 text-sm text-slate-600">فرآیند ساخت کاربر را در سه مرحله شفاف و قابل مدیریت انجام دهید.</p>
                         </div>
                     </div>
 
-                    <div class="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-6">
-                        <div class="min-w-0 sm:col-span-1">
-                            <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">نام</label>
-                            <input type="text" wire:model.blur="first_name" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm leading-5 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100">
-                            @error('first_name') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
+                    <div class="space-y-5">
+                        <div class="grid gap-2 rounded-2xl border border-slate-200 bg-white p-3 sm:grid-cols-3">
+                            @foreach ([
+                                ['step' => '01', 'title' => 'نقش پایه', 'desc' => 'انتخاب نقش اصلی کاربر'],
+                                ['step' => '02', 'title' => 'اطلاعات کاربر', 'desc' => 'تکمیل مشخصات و امنیت حساب'],
+                                ['step' => '03', 'title' => 'دسترسی‌ها', 'desc' => 'تنظیم دسترسی‌های وابسته به نقش'],
+                            ] as $step)
+                                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                                    <div class="text-[11px] font-black tracking-[0.2em] text-indigo-600">{{ $step['step'] }}</div>
+                                    <div class="mt-1 text-sm font-black text-slate-900">{{ $step['title'] }}</div>
+                                    <div class="mt-1 text-xs text-slate-500">{{ $step['desc'] }}</div>
+                                </div>
+                            @endforeach
                         </div>
-                        <div class="min-w-0 sm:col-span-1">
-                            <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">نام خانوادگی</label>
-                            <input type="text" wire:model.blur="last_name" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm leading-5 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100">
-                            @error('last_name') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="min-w-0 sm:col-span-2 xl:col-span-2">
-                            <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">نام کاربری</label>
-                            <input type="text" wire:model.blur="username" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm leading-5 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100">
-                            @error('username') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="min-w-0 sm:col-span-1 xl:col-span-1">
-                            <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">رمز عبور</label>
-                            <div x-data="{ showPassword: false }" class="relative">
-                                <input x-bind:type="showPassword ? 'text' : 'password'" wire:model.blur="password" class="h-10 w-full rounded-xl border border-slate-200 bg-white pr-9 text-sm leading-5 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100">
-                                <button type="button" x-on:click="showPassword = !showPassword" class="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-600" aria-label="نمایش یا مخفی کردن رمز عبور">
-                                    <svg x-show="!showPassword" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                                    <svg x-show="showPassword" x-cloak xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.956 9.956 0 012.042-3.368M6.223 6.223A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.97 9.97 0 01-4.294 5.225M15 12a3 3 0 00-4.243-4.243M9.88 9.88A3 3 0 0014.12 14.12M3 3l18 18" /></svg>
-                                </button>
+
+                        <section class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                            <div class="mb-4 flex items-start justify-between gap-3">
+                                <div>
+                                    <h3 class="text-base font-black text-slate-900">مرحله ۱ – انتخاب نقش پایه</h3>
+                                    <p class="mt-1 text-sm text-slate-500">نقش پایه رفتار پیش‌فرض فرم و دسترسی‌های قابل انتخاب را تعیین می‌کند.</p>
+                                </div>
+                                <span class="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">Base Role</span>
                             </div>
-                            @error('password') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="min-w-0 sm:col-span-1 xl:col-span-1">
-                            <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">تکرار رمز</label>
-                            <div x-data="{ showPassword: false }" class="relative">
-                                <input x-bind:type="showPassword ? 'text' : 'password'" wire:model.blur="password_confirmation" class="h-10 w-full rounded-xl border border-slate-200 bg-white pr-9 text-sm leading-5 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100">
-                                <button type="button" x-on:click="showPassword = !showPassword" class="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-600" aria-label="نمایش یا مخفی کردن تکرار رمز">
-                                    <svg x-show="!showPassword" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                                    <svg x-show="showPassword" x-cloak xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.956 9.956 0 012.042-3.368M6.223 6.223A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.97 9.97 0 01-4.294 5.225M15 12a3 3 0 00-4.243-4.243M9.88 9.88A3 3 0 0014.12 14.12M3 3l18 18" /></svg>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="min-w-0 sm:col-span-2 xl:col-span-6">
-                            <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">نقش پایه</label>
-                            <div class="grid grid-cols-1 gap-2 rounded-2xl border border-slate-200 bg-white p-2 sm:grid-cols-2 lg:grid-cols-5">
-                                @foreach ([
-                                    'admin' => ['label' => 'ادمین', 'desc' => 'اپراتور ثبت'],
-                                    'distribution_operator' => ['label' => 'اپراتور توزیع', 'desc' => 'تعریف خدمات'],
-                                    'regular_user' => ['label' => 'کاربر عادی', 'desc' => 'پیش‌فرض'],
-                                    'manager' => ['label' => 'مدیریت', 'desc' => 'محافظت‌شده', 'disabled' => true],
-                                ] as $roleValue => $roleMeta)
+
+                            <div class="grid grid-cols-1 gap-3 lg:grid-cols-3">
+                                @foreach ($roleDefinitions as $roleValue => $roleMeta)
                                     <label class="min-w-0 cursor-pointer">
                                         <input
                                             type="radio"
                                             class="peer sr-only"
-                                            wire:model="access_level"
+                                            wire:model.live="access_level"
                                             value="{{ $roleValue }}"
                                             @disabled(($roleMeta['disabled'] ?? false) || ($roleValue === 'admin' && ! $actorCanCreateAdmin))
                                         >
-                                        <div class="relative flex h-full min-h-14 flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-center text-slate-700 transition duration-200 ease-out peer-checked:border-green-600 peer-checked:bg-green-50 peer-checked:text-green-900 peer-checked:shadow-sm peer-checked:ring-2 peer-checked:ring-green-100 peer-disabled:cursor-not-allowed peer-disabled:opacity-50">
-                                            <span class="pointer-events-none absolute right-2 top-2 inline-flex h-5 w-5 items-center justify-center rounded-full border border-green-600 bg-white text-green-600 opacity-0 shadow-sm transition duration-200 ease-out peer-checked:scale-100 peer-checked:opacity-100 peer-checked:animate-[ping_0.35s_ease-out_1]">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                                    <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.25 7.25a1 1 0 01-1.415 0l-3-3a1 1 0 111.414-1.42l2.293 2.294 6.543-6.544a1 1 0 011.415 0z" clip-rule="evenodd" />
-                                                </svg>
-                                            </span>
-                                            <div class="truncate text-xs font-bold text-current">{{ $roleMeta['label'] }}</div>
-                                            <div class="mt-0.5 truncate text-[11px] text-current opacity-70">{{ $roleMeta['desc'] }}</div>
+                                        <div class="relative flex h-full min-h-32 flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4 text-right transition duration-200 ease-out peer-checked:border-indigo-400 peer-checked:bg-indigo-50 peer-checked:shadow-sm peer-checked:ring-4 peer-checked:ring-indigo-100 peer-disabled:cursor-not-allowed peer-disabled:opacity-50">
+                                            <div>
+                                                <div class="flex items-center justify-between gap-3">
+                                                    <span class="text-sm font-black text-slate-900">{{ $roleMeta['label'] }}</span>
+                                                    <span class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-400 peer-checked:border-indigo-500 peer-checked:text-indigo-600">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                            <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.25 7.25a1 1 0 01-1.415 0l-3-3a1 1 0 111.414-1.42l2.293 2.294 6.543-6.544a1 1 0 011.415 0z" clip-rule="evenodd" />
+                                                        </svg>
+                                                    </span>
+                                                </div>
+                                                <p class="mt-2 text-sm leading-6 text-slate-600">{{ $roleMeta['description'] }}</p>
+                                            </div>
+                                            <div class="mt-4 flex flex-wrap gap-2">
+                                                @foreach(($roleMeta['recommended_permissions'] ?? []) as $permissionKey)
+                                                    <span class="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200">
+                                                        {{ $permissionOptions[$permissionKey] ?? $permissionKey }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
                                         </div>
                                     </label>
                                 @endforeach
                             </div>
-                            @error('access_level') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="min-w-0 sm:col-span-2 xl:col-span-6">
-                            <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">دسترسی‌های اختیاری</label>
-                            <div class="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-3">
-                                @foreach($permissionOptions as $permissionKey => $permissionLabel)
-                                    <label class="w-full cursor-pointer sm:w-auto">
-                                        <input type="checkbox" value="{{ $permissionKey }}" wire:model="permissions" class="peer sr-only">
-                                        <span class="inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-center text-xs font-semibold text-slate-600 transition peer-checked:border-indigo-300 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 sm:w-auto sm:justify-start sm:rounded-full">
-                                            <span class="h-1.5 w-1.5 rounded-full bg-current opacity-40"></span>
-                                            {{ $permissionLabel }}
-                                        </span>
-                                    </label>
-                                @endforeach
+                            @error('access_level') <span class="mt-2 block text-[11px] text-red-600">{{ $message }}</span> @enderror
+                        </section>
+
+                        <section class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                            <div class="mb-4 flex items-start justify-between gap-3">
+                                <div>
+                                    <h3 class="text-base font-black text-slate-900">مرحله ۲ – اطلاعات کاربر</h3>
+                                    <p class="mt-1 text-sm text-slate-500">مشخصات هویتی و اطلاعات ورود را کامل کنید.</p>
+                                </div>
+                                <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">User Info</span>
                             </div>
-                            @error('permissions') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
-                            @error('permissions.*') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="min-w-0 sm:col-span-2 xl:col-span-6">
-                            <div class="flex justify-end">
-                                <button
-                                    type="submit"
-                                    class="inline-flex min-h-12 items-center gap-2 rounded-xl border border-emerald-800/40 bg-gradient-to-b from-emerald-700 to-emerald-800 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:from-emerald-600 hover:to-emerald-700 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-emerald-200"
-                                    aria-label="ثبت کاربر"
-                                    title="ثبت کاربر"
-                                >
-                                    <i class="bi bi-person-plus text-base leading-none" aria-hidden="true"></i>
-                                    <span>ثبت کاربر</span>
-                                </button>
+
+                            <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                                <div>
+                                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">نام</label>
+                                    <input type="text" wire:model.blur="first_name" class="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm leading-5 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-100">
+                                    @error('first_name') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
+                                </div>
+                                <div>
+                                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">نام خانوادگی</label>
+                                    <input type="text" wire:model.blur="last_name" class="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm leading-5 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-100">
+                                    @error('last_name') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">نام کاربری</label>
+                                    <input type="text" wire:model.blur="username" class="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm leading-5 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-100">
+                                    @error('username') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
+                                </div>
+                                <div class="sm:col-span-1 xl:col-span-2">
+                                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">رمز عبور</label>
+                                    <div x-data="{ showPassword: false }" class="relative">
+                                        <input x-bind:type="showPassword ? 'text' : 'password'" wire:model.blur="password" class="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 pr-10 text-sm leading-5 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-100">
+                                        <button type="button" x-on:click="showPassword = !showPassword" class="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-600" aria-label="نمایش یا مخفی کردن رمز عبور">
+                                            <svg x-show="!showPassword" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                            <svg x-show="showPassword" x-cloak xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.956 9.956 0 012.042-3.368M6.223 6.223A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.97 9.97 0 01-4.294 5.225M15 12a3 3 0 00-4.243-4.243M9.88 9.88A3 3 0 0014.12 14.12M3 3l18 18" /></svg>
+                                        </button>
+                                    </div>
+                                    @error('password') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
+                                </div>
+                                <div class="sm:col-span-1 xl:col-span-2">
+                                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">تکرار رمز عبور</label>
+                                    <div x-data="{ showPassword: false }" class="relative">
+                                        <input x-bind:type="showPassword ? 'text' : 'password'" wire:model.blur="password_confirmation" class="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 pr-10 text-sm leading-5 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-100">
+                                        <button type="button" x-on:click="showPassword = !showPassword" class="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-600" aria-label="نمایش یا مخفی کردن تکرار رمز">
+                                            <svg x-show="!showPassword" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                            <svg x-show="showPassword" x-cloak xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.956 9.956 0 012.042-3.368M6.223 6.223A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.97 9.97 0 01-4.294 5.225M15 12a3 3 0 00-4.243-4.243M9.88 9.88A3 3 0 0014.12 14.12M3 3l18 18" /></svg>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
+                        </section>
+
+                        <section class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                            <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                                <div>
+                                    <h3 class="text-base font-black text-slate-900">مرحله ۳ – مدیریت پویا و نقش‌محور دسترسی‌ها</h3>
+                                    <p class="mt-1 text-sm text-slate-500">دسترسی‌های این بخش در لحظه و متناسب با نقش پایه به‌روزرسانی می‌شوند.</p>
+                                </div>
+                                <div class="rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
+                                    <div class="font-black">{{ $roleDefinitions[$access_level]['label'] ?? 'بدون نقش' }}</div>
+                                    <div class="mt-1 text-xs text-indigo-700">هر تغییر در نقش پایه، فهرست دسترسی‌های این بخش را بازچینش می‌کند.</div>
+                                </div>
+                            </div>
+
+                            @if(count($availablePermissionOptions) > 0)
+                                <div class="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+                                    @foreach($availablePermissionOptions as $permissionKey => $permissionLabel)
+                                        <label class="cursor-pointer">
+                                            <input type="checkbox" value="{{ $permissionKey }}" wire:model.live="permissions" class="peer sr-only">
+                                            <div class="flex min-h-24 flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4 transition peer-checked:border-indigo-300 peer-checked:bg-indigo-50 peer-checked:ring-4 peer-checked:ring-indigo-100">
+                                                <div class="flex items-start justify-between gap-3">
+                                                    <div class="text-sm font-bold text-slate-900">{{ $permissionLabel }}</div>
+                                                    <span class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-400 peer-checked:border-indigo-500 peer-checked:text-indigo-600">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                            <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.25 7.25a1 1 0 01-1.415 0l-3-3a1 1 0 111.414-1.42l2.293 2.294 6.543-6.544a1 1 0 011.415 0z" clip-rule="evenodd" />
+                                                        </svg>
+                                                    </span>
+                                                </div>
+                                                <div class="mt-3 text-xs text-slate-500">
+                                                    @if($access_level === \App\Models\User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR)
+                                                        دسترسی عملیاتی برای یکی از گیت‌های فرآیند توزیع.
+                                                    @elseif($permissionKey === \App\Models\User::PERMISSION_FULL_ACCESS)
+                                                        دسترسی کامل برای مدیریت همه قابلیت‌های سیستم.
+                                                    @else
+                                                        دسترسی قابل توسعه برای این نقش پایه.
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center">
+                                    <div class="text-sm font-bold text-slate-800">برای این نقش هنوز دسترسی قابل انتخابی تعریف نشده است.</div>
+                                    <div class="mt-1 text-xs text-slate-500">ساختار نقش‌محور آماده توسعه برای دسترسی‌های آینده باقی می‌ماند.</div>
+                                </div>
+                            @endif
+
+                            @error('permissions') <span class="mt-2 block text-[11px] text-red-600">{{ $message }}</span> @enderror
+                            @error('permissions.*') <span class="mt-2 block text-[11px] text-red-600">{{ $message }}</span> @enderror
+                        </section>
+
+                        <div class="flex flex-col gap-3 rounded-3xl border border-emerald-200 bg-emerald-50/70 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <div class="text-sm font-black text-emerald-900">آماده ثبت کاربر جدید</div>
+                                <div class="mt-1 text-xs text-emerald-700">نقش انتخاب‌شده: {{ $roleDefinitions[$access_level]['label'] ?? '-' }} • دسترسی‌های انتخاب‌شده: {{ count($permissions) }}</div>
+                            </div>
+                            <button
+                                type="submit"
+                                class="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-emerald-800/40 bg-gradient-to-b from-emerald-700 to-emerald-800 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:from-emerald-600 hover:to-emerald-700 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-emerald-200"
+                                aria-label="ثبت کاربر"
+                                title="ثبت کاربر"
+                            >
+                                <i class="bi bi-person-plus text-base leading-none" aria-hidden="true"></i>
+                                <span>ثبت کاربر</span>
+                            </button>
                         </div>
                     </div>
                 </form>

@@ -116,6 +116,40 @@ class User extends Authenticatable
     }
 
     /**
+     * @return array<string, array{label: string, description: string, disabled?: bool, recommended_permissions?: list<string>}>
+     */
+    public static function roleDefinitions(): array
+    {
+        return [
+            self::ACCESS_LEVEL_ADMIN => [
+                'label' => 'ادمین',
+                'description' => 'مدیریت کامل عملیات و تنظیمات سیستم',
+                'recommended_permissions' => [self::PERMISSION_FULL_ACCESS],
+            ],
+            self::ACCESS_LEVEL_DISTRIBUTION_OPERATOR => [
+                'label' => 'اپراتور توزیع',
+                'description' => 'دسترسی مرحله‌ای به گیت‌های توزیع خدمات',
+                'recommended_permissions' => [
+                    self::PERMISSION_DISTRIBUTION_INBOUND_GATE,
+                    self::PERMISSION_DISTRIBUTION_DELIVERY_GATE,
+                    self::PERMISSION_DISTRIBUTION_OUTBOUND_GATE,
+                ],
+            ],
+            self::ACCESS_LEVEL_REGULAR => [
+                'label' => 'کاربر عادی',
+                'description' => 'حساب پایه برای استفاده عمومی و توسعه‌پذیر',
+                'recommended_permissions' => [],
+            ],
+            self::ACCESS_LEVEL_MANAGER => [
+                'label' => 'مدیریت',
+                'description' => 'حساب محافظت‌شده سطح بالا',
+                'disabled' => true,
+                'recommended_permissions' => [self::PERMISSION_FULL_ACCESS],
+            ],
+        ];
+    }
+
+    /**
      * @return array<string, string|array{label: string, group: string, gate?: string, distribution_access?: string}>
      */
     public static function permissionDefinitions(): array
@@ -161,6 +195,48 @@ class User extends Authenticatable
                     'label' => $definition,
                     'group' => 'people',
                 ])
+            ->all();
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    public static function permissionMatrix(): array
+    {
+        return [
+            self::ACCESS_LEVEL_ADMIN => [
+                self::PERMISSION_FULL_ACCESS,
+                self::PERMISSION_PEOPLE_REGISTER,
+                self::PERMISSION_PEOPLE_EDIT,
+                self::PERMISSION_PEOPLE_DELETE,
+                self::PERMISSION_DISTRIBUTION_INBOUND_GATE,
+                self::PERMISSION_DISTRIBUTION_DELIVERY_GATE,
+                self::PERMISSION_DISTRIBUTION_OUTBOUND_GATE,
+            ],
+            self::ACCESS_LEVEL_DISTRIBUTION_OPERATOR => [
+                self::PERMISSION_DISTRIBUTION_INBOUND_GATE,
+                self::PERMISSION_DISTRIBUTION_DELIVERY_GATE,
+                self::PERMISSION_DISTRIBUTION_OUTBOUND_GATE,
+            ],
+            self::ACCESS_LEVEL_REGULAR => [
+                self::PERMISSION_PEOPLE_REGISTER,
+                self::PERMISSION_PEOPLE_EDIT,
+            ],
+            self::ACCESS_LEVEL_MANAGER => [
+                self::PERMISSION_FULL_ACCESS,
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function permissionOptionsForAccessLevel(string $accessLevel): array
+    {
+        $allowedPermissions = self::permissionMatrix()[$accessLevel] ?? [];
+
+        return collect(self::permissionOptions())
+            ->only($allowedPermissions)
             ->all();
     }
 
@@ -307,6 +383,17 @@ class User extends Authenticatable
         }
 
         return $permissions;
+    }
+
+    /**
+     * @param  list<string>  $permissions
+     * @return list<string>
+     */
+    public static function normalizePermissionKeysForAccessLevel(array $permissions, string $accessLevel): array
+    {
+        $allowedPermissions = self::permissionMatrix()[$accessLevel] ?? [];
+
+        return self::normalizePermissionKeys(array_values(array_intersect($permissions, $allowedPermissions)));
     }
 
     public function isAdmin(): bool
