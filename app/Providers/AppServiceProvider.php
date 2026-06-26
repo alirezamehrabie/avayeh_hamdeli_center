@@ -16,6 +16,7 @@ use App\Models\JobType;
 use App\Models\NeedLevelType;
 use App\Models\Occupation;
 use App\Models\Person;
+use App\Models\ResidenceStatusType;
 use App\Models\SadaatRelation;
 use App\Models\Service;
 use App\Models\Skill;
@@ -23,13 +24,12 @@ use App\Models\SocialWorker;
 use App\Models\SupportOrganization;
 use App\Models\User;
 use App\Models\VehicleType;
-use App\Models\ResidenceStatusType;
 use App\Observers\GuardianObserver;
 use App\Observers\PersonObserver;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 
@@ -149,6 +149,12 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('access-distribution-operator-panel', function (User $user) {
             return $user->canAccessDistributionOperatorPanel();
         });
+
+        foreach (User::distributionAccessDefinitions() as $accessType => $definition) {
+            Gate::define($definition['gate'], function (User $user) use ($accessType) {
+                return $user->canAccessDistributionGate($accessType);
+            });
+        }
 
         Gate::define('access-child-supporter-panel', function (User $user) {
             return $user->canAccessChildSupporterPanel();

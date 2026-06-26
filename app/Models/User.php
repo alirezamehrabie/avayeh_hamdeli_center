@@ -19,19 +19,44 @@ class User extends Authenticatable
     use HasFactory, Notifiable, SoftDeletes;
 
     public const PRIMARY_ADMIN_USERNAME = 'admin';
+
     public const PRIMARY_ADMIN_FIRSTNAME = 'مهدی';
+
     public const PRIMARY_ADMIN_LASTNAME = 'نمازی';
+
     public const PRIMARY_ADMIN_EMAIL = 'admin@local.system';
+
     public const ACCESS_LEVEL_MANAGER = 'manager';
+
     public const ACCESS_LEVEL_ADMIN = 'admin';
+
     public const ACCESS_LEVEL_REGULAR = 'regular_user';
+
     public const ACCESS_LEVEL_SOCIAL_WORKER = 'social_worker';
+
     public const ACCESS_LEVEL_DISTRIBUTION_OPERATOR = 'distribution_operator';
+
     public const ACCESS_LEVEL_CHILD_SUPPORTER = 'child_supporter';
+
     public const PERMISSION_PEOPLE_REGISTER = 'people_register';
+
     public const PERMISSION_PEOPLE_EDIT = 'people_edit';
+
     public const PERMISSION_PEOPLE_DELETE = 'people_delete';
+
+    public const PERMISSION_DISTRIBUTION_INBOUND_GATE = 'distribution_inbound_gate';
+
+    public const PERMISSION_DISTRIBUTION_DELIVERY_GATE = 'distribution_delivery_gate';
+
+    public const PERMISSION_DISTRIBUTION_OUTBOUND_GATE = 'distribution_outbound_gate';
+
     public const PERMISSION_FULL_ACCESS = 'full_access';
+
+    public const DISTRIBUTION_ACCESS_INBOUND = 'inbound';
+
+    public const DISTRIBUTION_ACCESS_DELIVERY = 'delivery';
+
+    public const DISTRIBUTION_ACCESS_OUTBOUND = 'outbound';
 
     /**
      * The attributes that are mass assignable.
@@ -83,12 +108,77 @@ class User extends Authenticatable
      */
     public static function permissionOptions(): array
     {
+        return collect(self::permissionDefinitions())
+            ->mapWithKeys(fn (array|string $definition, string $key): array => [
+                $key => is_array($definition) ? $definition['label'] : $definition,
+            ])
+            ->all();
+    }
+
+    /**
+     * @return array<string, string|array{label: string, group: string, gate?: string, distribution_access?: string}>
+     */
+    public static function permissionDefinitions(): array
+    {
         return [
             self::PERMISSION_PEOPLE_REGISTER => 'ثبت مددجو (سریع، کامل)',
             self::PERMISSION_PEOPLE_EDIT => 'ویرایش مددجو (سریع، کامل)',
             self::PERMISSION_PEOPLE_DELETE => 'حذف مددجو (انتقال به بلاک‌لیست)',
-            self::PERMISSION_FULL_ACCESS => 'دسترسی کامل',
+            self::PERMISSION_DISTRIBUTION_INBOUND_GATE => [
+                'label' => 'Inbound Gate Access',
+                'group' => 'distribution_operator_gate',
+                'gate' => 'access-distribution-inbound-gate',
+                'distribution_access' => self::DISTRIBUTION_ACCESS_INBOUND,
+            ],
+            self::PERMISSION_DISTRIBUTION_DELIVERY_GATE => [
+                'label' => 'Delivery Gate Access',
+                'group' => 'distribution_operator_gate',
+                'gate' => 'access-distribution-delivery-gate',
+                'distribution_access' => self::DISTRIBUTION_ACCESS_DELIVERY,
+            ],
+            self::PERMISSION_DISTRIBUTION_OUTBOUND_GATE => [
+                'label' => 'Outbound Gate Access',
+                'group' => 'distribution_operator_gate',
+                'gate' => 'access-distribution-outbound-gate',
+                'distribution_access' => self::DISTRIBUTION_ACCESS_OUTBOUND,
+            ],
+            self::PERMISSION_FULL_ACCESS => [
+                'label' => 'دسترسی کامل',
+                'group' => 'system',
+            ],
         ];
+    }
+
+    /**
+     * @return array<string, array{label: string, group: string, gate?: string, distribution_access?: string}>
+     */
+    public static function normalizedPermissionDefinitions(): array
+    {
+        return collect(self::permissionDefinitions())
+            ->map(fn (array|string $definition): array => is_array($definition)
+                ? $definition
+                : [
+                    'label' => $definition,
+                    'group' => 'people',
+                ])
+            ->all();
+    }
+
+    /**
+     * @return array<string, array{label: string, permission: string, gate: string}>
+     */
+    public static function distributionAccessDefinitions(): array
+    {
+        return collect(self::normalizedPermissionDefinitions())
+            ->filter(fn (array $definition): bool => ($definition['group'] ?? null) === 'distribution_operator_gate')
+            ->mapWithKeys(fn (array $definition, string $permission): array => [
+                $definition['distribution_access'] => [
+                    'label' => $definition['label'],
+                    'permission' => $permission,
+                    'gate' => $definition['gate'],
+                ],
+            ])
+            ->all();
     }
 
     /**
@@ -105,7 +195,7 @@ class User extends Authenticatable
                 'name' => $username,
                 'first_name' => trim((string) ($attributes['first_name'] ?? '')),
                 'last_name' => trim((string) ($attributes['last_name'] ?? '')),
-                'email' => $attributes['email'] ?? $username . '@local.system',
+                'email' => $attributes['email'] ?? $username.'@local.system',
                 'password' => $attributes['password'],
                 'access_level' => $accessLevel,
                 'is_admin' => in_array($accessLevel, [self::ACCESS_LEVEL_MANAGER, self::ACCESS_LEVEL_ADMIN], true),
@@ -162,7 +252,7 @@ class User extends Authenticatable
                     'name' => $mobile,
                     'first_name' => $firstName,
                     'last_name' => $lastName,
-                    'email' => $mobile . '@local.system',
+                    'email' => $mobile.'@local.system',
                     'access_level' => self::ACCESS_LEVEL_CHILD_SUPPORTER,
                     'is_admin' => false,
                     'permissions' => [],
@@ -173,7 +263,7 @@ class User extends Authenticatable
                     'name' => $mobile,
                     'first_name' => $firstName,
                     'last_name' => $lastName,
-                    'email' => $mobile . '@local.system',
+                    'email' => $mobile.'@local.system',
                     'password' => Str::random(32),
                     'access_level' => self::ACCESS_LEVEL_CHILD_SUPPORTER,
                     'mobile' => $mobile,
@@ -330,6 +420,21 @@ class User extends Authenticatable
     {
         return ! $this->isAdmin()
             && $this->access_level === self::ACCESS_LEVEL_DISTRIBUTION_OPERATOR;
+    }
+
+    public function canAccessDistributionGate(string $accessType): bool
+    {
+        if (! $this->canAccessDistributionOperatorPanel()) {
+            return false;
+        }
+
+        $definition = self::distributionAccessDefinitions()[$accessType] ?? null;
+
+        if (! $definition) {
+            return false;
+        }
+
+        return $this->hasPermission($definition['permission']);
     }
 
     public function canAccessChildSupporterPanel(): bool
