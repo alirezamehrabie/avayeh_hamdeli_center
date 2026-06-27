@@ -7,12 +7,6 @@
     ];
 @endphp
 
-<style>
-    [x-cloak] {
-        display: none !important;
-    }
-</style>
-
 <div class="space-y-6" dir="rtl">
     <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         @if($selectedService)
