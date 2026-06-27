@@ -216,9 +216,9 @@
                 x-on:entry-gate-subject-loaded.window="categoriesSheetOpen = true"
                 class="grid gap-5 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
             >
-                {{-- Left: scanner + identity --}}
-                <div class="flex min-h-0 flex-col gap-4">
-                    <div class="relative h-[clamp(220px,42svh,420px)] overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 landscape:max-h-[55svh]">
+                {{-- Left: identity (pinned to top) + scanner --}}
+                <div class="flex min-h-0 flex-col gap-3">
+                    <div class="relative order-2 h-[clamp(200px,30svh,320px)] overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 landscape:max-h-[55svh]">
                         <div
                             wire:ignore
                             x-ref="scanner"
@@ -235,7 +235,7 @@
                         </div>
                     </div>
 
-                    <div class="grid gap-3 sm:grid-cols-2">
+                    <div class="order-3 grid gap-3 sm:grid-cols-2">
                         <button
                             type="button"
                             @click="startCamera()"
@@ -253,7 +253,7 @@
                         </button>
                     </div>
 
-                    <div class="rounded-2xl border px-4 py-3 text-sm font-semibold
+                    <div class="order-4 rounded-2xl border px-4 py-3 text-sm font-semibold
                         @class([
                             'border-amber-200 bg-amber-50 text-amber-700' => $scanStatus === 'paused' && ($lastScanResult['code_key'] ?? null) === 'duplicate',
                             'border-emerald-200 bg-emerald-50 text-emerald-700' => $scanStatus === 'paused' && ($lastScanResult['code_key'] ?? null) !== 'duplicate',
@@ -264,7 +264,7 @@
                     </div>
 
                     {{-- Manual fallback: when the camera fails or a QR is damaged --}}
-                    <div class="rounded-2xl border border-slate-200 bg-white">
+                    <div class="order-5 rounded-2xl border border-slate-200 bg-white">
                         <button
                             type="button"
                             wire:click="toggleManualSearch"
@@ -314,8 +314,8 @@
                         @endif
                     </div>
 
-                    {{-- Identity card (fixed-height slot so the layout doesn't jump between scans) --}}
-                    <div class="min-h-[8rem]">
+                    {{-- Identity card: pinned to the top of the column (order-1) so it and its extra-field inputs are visible the instant a scan resolves — no scrolling to view or fill them. --}}
+                    <div class="order-1 min-h-[8rem]">
                         {{-- Skeleton while the scan resolves on the server --}}
                         <div
                             wire:loading.flex
@@ -403,30 +403,32 @@
                                 @endif
 
                                 @if($selectedService->entryFields->isNotEmpty())
-                                    <div class="mt-3 space-y-2 border-t border-slate-100 pt-3">
-                                        <p class="text-[11px] font-bold text-slate-500">اطلاعات تکمیلی</p>
-                                        @foreach($selectedService->entryFields as $field)
-                                            <div wire:key="entry-field-value-{{ $field->id }}" class="flex flex-col gap-1">
-                                                <label class="text-[11px] font-semibold text-slate-500">{{ $field->title ?: 'بدون عنوان' }}</label>
-                                                @if($field->type === \App\Models\ServiceEntryField::TYPE_EDUCATION_LEVEL)
-                                                    <select
-                                                        wire:model.blur="entryFieldValues.{{ $field->id }}"
-                                                        class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-                                                    >
-                                                        <option value="">— انتخاب کنید —</option>
-                                                        @foreach($this->educationLevels as $level)
-                                                            <option value="{{ $level->id }}">{{ $level->name }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                @else
-                                                    <input
-                                                        type="{{ $field->type === \App\Models\ServiceEntryField::TYPE_NUMBER ? 'number' : 'text' }}"
-                                                        wire:model.blur="entryFieldValues.{{ $field->id }}"
-                                                        class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-                                                    >
-                                                @endif
-                                            </div>
-                                        @endforeach
+                                    <div class="mt-3 border-t border-slate-100 pt-3">
+                                        <p class="mb-2 text-[11px] font-bold text-slate-500">اطلاعات تکمیلی</p>
+                                        <div class="grid gap-2 sm:grid-cols-2">
+                                            @foreach($selectedService->entryFields as $field)
+                                                <div wire:key="entry-field-value-{{ $field->id }}" class="flex flex-col gap-1">
+                                                    <label class="text-[11px] font-semibold text-slate-500">{{ $field->title ?: 'بدون عنوان' }}</label>
+                                                    @if($field->type === \App\Models\ServiceEntryField::TYPE_EDUCATION_LEVEL)
+                                                        <select
+                                                            wire:model.blur="entryFieldValues.{{ $field->id }}"
+                                                            class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                                                        >
+                                                            <option value="">— انتخاب کنید —</option>
+                                                            @foreach($this->educationLevels as $level)
+                                                                <option value="{{ $level->id }}">{{ $level->name }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    @else
+                                                        <input
+                                                            type="{{ $field->type === \App\Models\ServiceEntryField::TYPE_NUMBER ? 'number' : 'text' }}"
+                                                            wire:model.blur="entryFieldValues.{{ $field->id }}"
+                                                            class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                                                        >
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
                                     </div>
                                 @endif
                             </div>
@@ -446,7 +448,7 @@
                         <button
                             type="button"
                             @click="categoriesSheetOpen = true"
-                            class="flex w-full items-center justify-between gap-2 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-bold text-indigo-700 transition hover:bg-indigo-100 lg:hidden"
+                            class="order-6 flex w-full items-center justify-between gap-2 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-bold text-indigo-700 transition hover:bg-indigo-100 lg:hidden"
                         >
                             <span class="flex items-center gap-2">
                                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
