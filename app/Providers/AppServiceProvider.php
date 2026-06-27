@@ -27,10 +27,7 @@ use App\Models\VehicleType;
 use App\Observers\GuardianObserver;
 use App\Observers\PersonObserver;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -48,45 +45,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (Schema::hasTable('users')) {
-            $createPayload = [
-                'name' => User::PRIMARY_ADMIN_USERNAME,
-                'password' => Hash::make('admin123'),
-                'is_admin' => true,
-            ];
-
-            $updatePayload = [
-                'is_admin' => true,
-                'name' => User::PRIMARY_ADMIN_USERNAME,
-            ];
-
-            if (Schema::hasColumn('users', 'access_level')) {
-                $createPayload['access_level'] = User::ACCESS_LEVEL_MANAGER;
-                $updatePayload['access_level'] = User::ACCESS_LEVEL_MANAGER;
-            }
-
-            if (Schema::hasColumn('users', 'permissions')) {
-                $createPayload['permissions'] = [User::PERMISSION_FULL_ACCESS];
-                $updatePayload['permissions'] = [User::PERMISSION_FULL_ACCESS];
-            }
-
-            // اطمینان از وجود و سطح دسترسی حساب مدیریت اصلی
-            $adminQuery = Schema::hasColumn('users', 'deleted_at')
-                ? User::withTrashed()
-                : User::withoutGlobalScope(SoftDeletingScope::class);
-
-            $admin = $adminQuery->firstOrCreate(
-                ['email' => User::PRIMARY_ADMIN_EMAIL],
-                $createPayload
-            );
-
-            if (Schema::hasColumn('users', 'deleted_at') && $admin->trashed()) {
-                $admin->restore();
-            }
-
-            $admin->update($updatePayload);
-        }
-
         Guardian::observe(GuardianObserver::class);
         Person::observe(PersonObserver::class);
 
