@@ -8,6 +8,8 @@
     @livewireStyles
 </head>
 <body class="child-supporter-shell h-screen overflow-hidden bg-slate-100 text-slate-900">
+    <x-flash-alerts />
+
     <div
         x-data="{
             sidebarOpen: window.innerWidth >= 1024,

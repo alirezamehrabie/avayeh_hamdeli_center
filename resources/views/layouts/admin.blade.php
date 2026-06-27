@@ -13,6 +13,8 @@
 </head>
 <body class="h-full overflow-hidden bg-gray-100 text-gray-800">
 
+<x-flash-alerts />
+
 {{ $slot }}
 
 <x-notification-modal />
