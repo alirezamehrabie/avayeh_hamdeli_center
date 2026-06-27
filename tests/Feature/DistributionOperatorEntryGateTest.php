@@ -147,6 +147,96 @@ class DistributionOperatorEntryGateTest extends TestCase
             ->assertSet('scannedPersonId', null);
     }
 
+    public function test_rescanning_same_person_is_flagged_as_duplicate(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+
+        $person = Person::query()->create([
+            'first_name' => 'Sara',
+            'last_name' => 'Rahimi',
+            'national_id' => '2234567890',
+            'person_code' => '14010',
+        ]);
+
+        $issued = app(QrIdentityService::class)->issueFor($person, $operator->id);
+        $token = $issued['token'] ?? $issued['identity']->token_encrypted;
+
+        $this->actingAs($operator);
+
+        $component = Livewire::test(EntryGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token);
+
+        $this->assertSame('success', $component->get('lastScanResult')['code_key']);
+
+        $component->call('resolveScannedQr', $token);
+
+        $this->assertSame('duplicate', $component->get('lastScanResult')['code_key']);
+        $component->assertSet('scannedPersonId', $person->id);
+    }
+
+    public function test_revoked_qr_reports_a_distinct_message(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+
+        $person = Person::query()->create([
+            'first_name' => 'Reza',
+            'last_name' => 'Karimi',
+            'national_id' => '3234567890',
+            'person_code' => '14011',
+        ]);
+
+        $issued = app(QrIdentityService::class)->issueFor($person, $operator->id);
+        $identity = $issued['identity'];
+        $token = $issued['token'] ?? $identity->token_encrypted;
+
+        app(QrIdentityService::class)->revoke($identity, $operator->id, 'lost card');
+
+        $this->actingAs($operator);
+
+        Livewire::test(EntryGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            ->assertSet('scanStatus', 'scan_error')
+            ->assertSee('ابطال')
+            ->assertSet('scannedPersonId', null);
+    }
+
+    public function test_manual_search_can_select_a_person_without_scanning(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Food basket', $operator);
+
+        $person = Person::query()->create([
+            'first_name' => 'Mina',
+            'last_name' => 'Norouzi',
+            'national_id' => '4234567890',
+            'person_code' => '14012',
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(EntryGate::class)
+            ->call('selectService', $service->id)
+            ->call('toggleManualSearch')
+            ->set('manualSearch', 'Norouzi')
+            ->assertSee('Mina Norouzi')
+            ->call('selectManualSubject', QrIdentity::SUBJECT_PERSON, $person->id)
+            ->assertSet('scannedPersonId', $person->id)
+            ->assertSet('scanStatus', 'paused')
+            ->call('toggleCategory', $category->id)
+            ->assertSet('assignedCategoryIds', [$category->id]);
+
+        $this->assertDatabaseHas('gate_entry_assignments', [
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'person_id' => $person->id,
+        ]);
+    }
+
     /**
      * @return array{0: User}
      */

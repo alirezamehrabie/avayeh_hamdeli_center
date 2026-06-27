@@ -144,6 +144,7 @@
                     successSoundUrl: '/sounds/scan-card.wav',
                     enableResultBanner: false,
                     autoStart: false,
+                    autoResumeAfterSuccess: false,
                 })"
                 x-init="init()"
                 x-on:id-card-scanner-resume.window="resumeFromWire()"
@@ -179,29 +180,89 @@
                         <button
                             type="button"
                             wire:click="resumeScanning"
-                            class="inline-flex items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                            class="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100"
                         >
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M5 9a7 7 0 0111-3.7L20 9M19 15a7 7 0 01-11 3.7L4 15"/></svg>
                             اسکن نفر بعدی
                         </button>
                     </div>
 
                     <div class="rounded-2xl border px-4 py-3 text-sm font-semibold
                         @class([
-                            'border-emerald-200 bg-emerald-50 text-emerald-700' => $scanStatus === 'paused',
+                            'border-amber-200 bg-amber-50 text-amber-700' => $scanStatus === 'paused' && ($lastScanResult['code_key'] ?? null) === 'duplicate',
+                            'border-emerald-200 bg-emerald-50 text-emerald-700' => $scanStatus === 'paused' && ($lastScanResult['code_key'] ?? null) !== 'duplicate',
                             'border-rose-200 bg-rose-50 text-rose-700' => $scanStatus === 'scan_error',
                             'border-slate-200 bg-slate-50 text-slate-600' => ! in_array($scanStatus, ['paused', 'scan_error'], true),
                         ])">
                         {{ $scanMessage }}
                     </div>
 
+                    {{-- Manual fallback: when the camera fails or a QR is damaged --}}
+                    <div class="rounded-2xl border border-slate-200 bg-white">
+                        <button
+                            type="button"
+                            wire:click="toggleManualSearch"
+                            class="flex w-full items-center justify-between gap-2 px-4 py-3 text-sm font-bold text-slate-700"
+                        >
+                            <span class="flex items-center gap-2">
+                                <svg class="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="M21 21l-3.5-3.5"/></svg>
+                                جستجوی دستی (در صورت خرابی QR یا دوربین)
+                            </span>
+                            <svg class="h-4 w-4 text-slate-400 transition-transform {{ $showManualSearch ? 'rotate-180' : '' }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+
+                        @if($showManualSearch)
+                            <div class="border-t border-slate-100 px-4 py-3">
+                                <input
+                                    type="search"
+                                    wire:model.live.debounce.300ms="manualSearch"
+                                    placeholder="نام، کد مددجو/خانوار یا کد ملی"
+                                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                                >
+
+                                @if(strlen(trim($manualSearch)) >= 2)
+                                    <div class="mt-3 space-y-2">
+                                        @forelse($this->manualCandidates as $candidate)
+                                            <button
+                                                type="button"
+                                                wire:key="manual-candidate-{{ $candidate['type'] }}-{{ $candidate['id'] }}"
+                                                wire:click="selectManualSubject('{{ $candidate['type'] }}', {{ $candidate['id'] }})"
+                                                class="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-right transition hover:border-indigo-200 hover:bg-indigo-50"
+                                            >
+                                                <span class="flex min-w-0 flex-col">
+                                                    <span class="truncate text-sm font-bold text-slate-800">{{ $candidate['name'] }}</span>
+                                                    <span class="text-[11px] font-semibold text-slate-400" dir="ltr">{{ $candidate['code'] }} · {{ $candidate['national_id'] }}</span>
+                                                </span>
+                                                <span class="shrink-0 rounded-md px-2 py-0.5 text-[10px] font-bold {{ $candidate['type'] === \App\Models\QrIdentity::SUBJECT_PERSON ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
+                                                    {{ $candidate['type'] === \App\Models\QrIdentity::SUBJECT_PERSON ? 'مددجو' : 'خانوار' }}
+                                                </span>
+                                            </button>
+                                        @empty
+                                            <p class="rounded-xl bg-slate-50 px-3 py-3 text-center text-xs font-semibold text-slate-500">موردی یافت نشد.</p>
+                                        @endforelse
+                                    </div>
+                                @else
+                                    <p class="mt-2 text-[11px] font-semibold text-slate-400">برای جستجو حداقل ۲ نویسه وارد کنید.</p>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+
                     {{-- Identity card --}}
                     @if($lastScanResult)
-                        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                            <div class="flex items-center justify-between">
+                        @php($isDuplicateScan = ($lastScanResult['code_key'] ?? null) === 'duplicate')
+                        <div class="rounded-2xl border p-4 shadow-sm {{ $isDuplicateScan ? 'border-amber-300 bg-amber-50/40' : 'border-slate-200 bg-white' }}">
+                            <div class="flex items-center justify-between gap-2">
                                 <span class="rounded-full px-2.5 py-0.5 text-[11px] font-bold
-                                    {{ ($lastScanResult['type'] ?? null) === \App\Models\QrIdentity::SUBJECT_PERSON ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
+                                    {{ $isDuplicateScan ? 'bg-amber-100 text-amber-700' : (($lastScanResult['type'] ?? null) === \App\Models\QrIdentity::SUBJECT_PERSON ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700') }}">
                                     {{ $lastScanResult['title'] ?? '-' }}
                                 </span>
+                                @if($isDuplicateScan)
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600">
+                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.3 3.86l-8 13.9A2 2 0 004 21h16a2 2 0 001.7-3.24l-8-13.9a2 2 0 00-3.4 0z"/></svg>
+                                        تکراری
+                                    </span>
+                                @endif
                             </div>
                             <p class="mt-3 text-lg font-black text-slate-900">{{ $lastScanResult['name'] ?? '-' }}</p>
                             <dl class="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">

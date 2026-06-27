@@ -40,6 +40,10 @@ class EntryGate extends Component
 
     public array $assignedCategoryIds = [];
 
+    public string $manualSearch = '';
+
+    public bool $showManualSearch = false;
+
     public function mount(): void
     {
         $this->authorizeGate();
@@ -117,17 +121,19 @@ class EntryGate extends Component
         }
 
         if (! $identity) {
-            return $this->scanError('QR نامعتبر، ابطال‌شده یا غیرقابل دسترس است.');
+            // Distinguish a revoked/replaced card from an unknown one so the operator knows what to do next.
+            return $this->scanError($this->describeUnresolvedQr($token), 'invalid');
         }
 
         if ($identity->subject_type === QrIdentity::SUBJECT_GUARDIAN) {
             $guardian = Guardian::query()->find((int) $identity->subject_id);
 
             if (! $guardian) {
-                return $this->scanError('اطلاعات خانوار برای این QR پیدا نشد.');
+                return $this->scanError('اطلاعات خانوار برای این QR پیدا نشد.', 'not_found');
             }
 
-            $this->applyGuardianScan($guardian);
+            $isDuplicate = $this->isCurrentSubject(QrIdentity::SUBJECT_GUARDIAN, (int) $guardian->id);
+            $this->applyGuardianScan($guardian, $isDuplicate);
 
             return $this->scanResponse(true);
         }
@@ -135,12 +141,47 @@ class EntryGate extends Component
         $person = Person::query()->find((int) $identity->subject_id);
 
         if (! $person) {
-            return $this->scanError('اطلاعات مددجو برای این QR پیدا نشد.');
+            return $this->scanError('اطلاعات مددجو برای این QR پیدا نشد.', 'not_found');
         }
 
-        $this->applyPersonScan($person);
+        $isDuplicate = $this->isCurrentSubject(QrIdentity::SUBJECT_PERSON, (int) $person->id);
+        $this->applyPersonScan($person, $isDuplicate);
 
         return $this->scanResponse(true);
+    }
+
+    public function toggleManualSearch(): void
+    {
+        $this->authorizeGate();
+
+        $this->showManualSearch = ! $this->showManualSearch;
+        $this->manualSearch = '';
+    }
+
+    public function selectManualSubject(string $subjectType, int $subjectId): void
+    {
+        $this->authorizeGate();
+
+        if (! $this->selectedService) {
+            return;
+        }
+
+        if ($subjectType === QrIdentity::SUBJECT_GUARDIAN) {
+            $guardian = Guardian::query()->find($subjectId);
+
+            if ($guardian) {
+                $this->applyGuardianScan($guardian, $this->isCurrentSubject($subjectType, $subjectId), 'manual');
+            }
+        } else {
+            $person = Person::query()->find($subjectId);
+
+            if ($person) {
+                $this->applyPersonScan($person, $this->isCurrentSubject($subjectType, $subjectId), 'manual');
+            }
+        }
+
+        $this->manualSearch = '';
+        $this->showManualSearch = false;
     }
 
     public function toggleCategory(int $categoryId): void
@@ -182,6 +223,8 @@ class EntryGate extends Component
         $this->authorizeGate();
 
         $this->resetScanState();
+        $this->manualSearch = '';
+        $this->showManualSearch = false;
         $this->scanStatus = 'scanning';
         $this->scanMessage = 'اسکن دوباره فعال شد. QR بعدی را مقابل دوربین نگه دارید.';
 
@@ -225,6 +268,67 @@ class EntryGate extends Component
         return trim($this->serviceSearch) !== '';
     }
 
+    public function getManualCandidatesProperty(): Collection
+    {
+        $search = trim($this->manualSearch);
+
+        if (! $this->selectedService || mb_strlen($search) < 2) {
+            return collect();
+        }
+
+        $escaped = addcslashes($search, '\\%_');
+        $digits = preg_replace('/\D+/', '', $search) ?: '';
+
+        $people = Person::query()
+            ->select(['id', 'first_name', 'last_name', 'full_name', 'person_code', 'national_id'])
+            ->where(function (Builder $query) use ($escaped, $digits): void {
+                if ($digits !== '') {
+                    $query->where('person_code', 'like', "{$digits}%")
+                        ->orWhere('national_id', 'like', "{$digits}%");
+                } else {
+                    $query->where('full_name', 'like', "%{$escaped}%")
+                        ->orWhere('first_name', 'like', "%{$escaped}%")
+                        ->orWhere('last_name', 'like', "%{$escaped}%");
+                }
+            })
+            ->orderBy('last_name')
+            ->limit(6)
+            ->get()
+            ->map(fn (Person $person): array => [
+                'type' => QrIdentity::SUBJECT_PERSON,
+                'id' => (int) $person->id,
+                'name' => $person->full_name ?: trim($person->first_name.' '.$person->last_name) ?: '-',
+                'code_label' => 'کد مددجو',
+                'code' => (string) ($person->person_code ?: '-'),
+                'national_id' => (string) ($person->national_id ?: '-'),
+            ]);
+
+        $guardians = Guardian::query()
+            ->select(['id', 'first_name', 'last_name', 'guardian_code', 'national_code'])
+            ->where(function (Builder $query) use ($escaped, $digits): void {
+                if ($digits !== '') {
+                    $query->where('guardian_code', 'like', "{$digits}%")
+                        ->orWhere('national_code', 'like', "{$digits}%");
+                } else {
+                    $query->where('first_name', 'like', "%{$escaped}%")
+                        ->orWhere('last_name', 'like', "%{$escaped}%");
+                }
+            })
+            ->orderBy('last_name')
+            ->limit(6)
+            ->get()
+            ->map(fn (Guardian $guardian): array => [
+                'type' => QrIdentity::SUBJECT_GUARDIAN,
+                'id' => (int) $guardian->id,
+                'name' => $guardian->full_name ?: trim($guardian->first_name.' '.$guardian->last_name) ?: '-',
+                'code_label' => 'کد خانوار',
+                'code' => (string) ($guardian->guardian_code ?: '-'),
+                'national_id' => (string) ($guardian->national_code ?: '-'),
+            ]);
+
+        return $people->concat($guardians)->take(8)->values();
+    }
+
     public function render()
     {
         $this->authorizeGate();
@@ -235,14 +339,15 @@ class EntryGate extends Component
         ]);
     }
 
-    protected function applyPersonScan(Person $person): void
+    protected function applyPersonScan(Person $person, bool $isDuplicate = false, string $source = 'qr'): void
     {
         $this->scannedSubjectType = QrIdentity::SUBJECT_PERSON;
         $this->scannedPersonId = (int) $person->id;
         $this->scannedGuardianId = null;
         $this->lastScanResult = [
             'type' => QrIdentity::SUBJECT_PERSON,
-            'title' => 'مددجو شناسایی شد',
+            'code_key' => $isDuplicate ? 'duplicate' : 'success',
+            'title' => $isDuplicate ? 'این مددجو هم‌اکنون روی صفحه است' : 'مددجو شناسایی شد',
             'name' => $person->full_name ?: trim($person->first_name.' '.$person->last_name) ?: '-',
             'code_label' => 'کد مددجو',
             'code' => (string) ($person->formatted_person_code ?: $person->person_code ?: '-'),
@@ -251,17 +356,18 @@ class EntryGate extends Component
         ];
         $this->loadSubjectAssignments();
         $this->scanStatus = 'paused';
-        $this->scanMessage = 'اطلاعات مددجو نمایش داده شد. دسته‌بندی‌های مجاز را انتخاب کنید.';
+        $this->scanMessage = $this->subjectLoadedMessage('مددجو', $isDuplicate, $source);
     }
 
-    protected function applyGuardianScan(Guardian $guardian): void
+    protected function applyGuardianScan(Guardian $guardian, bool $isDuplicate = false, string $source = 'qr'): void
     {
         $this->scannedSubjectType = QrIdentity::SUBJECT_GUARDIAN;
         $this->scannedGuardianId = (int) $guardian->id;
         $this->scannedPersonId = null;
         $this->lastScanResult = [
             'type' => QrIdentity::SUBJECT_GUARDIAN,
-            'title' => 'سرپرست خانوار شناسایی شد',
+            'code_key' => $isDuplicate ? 'duplicate' : 'success',
+            'title' => $isDuplicate ? 'این خانوار هم‌اکنون روی صفحه است' : 'سرپرست خانوار شناسایی شد',
             'name' => $guardian->full_name ?: trim($guardian->first_name.' '.$guardian->last_name) ?: '-',
             'code_label' => 'کد خانوار',
             'code' => (string) ($guardian->guardian_code ?: '-'),
@@ -270,7 +376,29 @@ class EntryGate extends Component
         ];
         $this->loadSubjectAssignments();
         $this->scanStatus = 'paused';
-        $this->scanMessage = 'اطلاعات خانوار نمایش داده شد. دسته‌بندی‌های مجاز را انتخاب کنید.';
+        $this->scanMessage = $this->subjectLoadedMessage('خانوار', $isDuplicate, $source);
+    }
+
+    protected function subjectLoadedMessage(string $subjectLabel, bool $isDuplicate, string $source): string
+    {
+        if ($isDuplicate) {
+            $assigned = count($this->assignedCategoryIds);
+
+            return $assigned > 0
+                ? "این {$subjectLabel} قبلاً اسکن شده و {$assigned} دسته‌بندی برای آن ثبت شده است."
+                : "این {$subjectLabel} هم‌اکنون انتخاب شده است. دسته‌بندی‌های مجاز را انتخاب کنید.";
+        }
+
+        $prefix = $source === 'manual' ? 'به‌صورت دستی انتخاب شد. ' : '';
+
+        return "{$prefix}اطلاعات {$subjectLabel} نمایش داده شد. دسته‌بندی‌های مجاز را انتخاب کنید.";
+    }
+
+    protected function isCurrentSubject(string $subjectType, int $subjectId): bool
+    {
+        return $subjectType === QrIdentity::SUBJECT_GUARDIAN
+            ? $this->scannedGuardianId === $subjectId
+            : $this->scannedPersonId === $subjectId;
     }
 
     protected function loadSubjectAssignments(): void
@@ -324,23 +452,55 @@ class EntryGate extends Component
         $this->assignedCategoryIds = [];
     }
 
-    protected function scanError(string $message): array
+    protected function scanError(string $message, string $code = 'error'): array
     {
         $this->resetScanState();
         $this->scanStatus = 'scan_error';
         $this->scanMessage = $message;
 
-        return $this->scanResponse(false);
+        return [
+            'ok' => false,
+            'status' => 'scan_error',
+            'message' => $message,
+            'result' => ['code' => $code, 'ok' => false, 'message' => $message],
+        ];
     }
 
     protected function scanResponse(bool $ok): array
     {
+        // The browser scanner reads result.code to pick its feedback (success chirp vs duplicate chime);
+        // the Blade view reads the component's own lastScanResult, so the subject code stays intact there.
+        $feedback = $this->lastScanResult['code_key'] ?? ($ok ? 'success' : 'error');
+
         return [
             'ok' => $ok,
             'status' => $this->scanStatus,
             'message' => $this->scanMessage,
-            'result' => $this->lastScanResult,
+            'result' => $this->lastScanResult
+                ? array_merge($this->lastScanResult, ['code' => $feedback])
+                : null,
         ];
+    }
+
+    protected function describeUnresolvedQr(string $token): string
+    {
+        $hashed = app(QrIdentityService::class)->hashToken($token);
+
+        $identity = QrIdentity::query()
+            ->where('token_hash', $hashed)
+            ->orWhere('public_code', strtoupper(trim($token)))
+            ->latest('id')
+            ->first();
+
+        if ($identity && ! $identity->isActive()) {
+            return match ($identity->status) {
+                QrIdentity::STATUS_REVOKED => 'این QR ابطال شده است و دیگر معتبر نیست.',
+                QrIdentity::STATUS_REPLACED => 'این QR جایگزین شده است؛ از کارت جدید فرد استفاده کنید.',
+                default => 'این QR غیرفعال است.',
+            };
+        }
+
+        return 'QR نامعتبر است یا در این سامانه ثبت نشده است.';
     }
 
     protected function resolvePublicCode(string $token): ?QrIdentity
