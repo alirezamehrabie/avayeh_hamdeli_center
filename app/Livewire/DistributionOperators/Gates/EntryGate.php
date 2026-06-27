@@ -8,9 +8,11 @@ use App\Models\Person;
 use App\Models\QrIdentity;
 use App\Models\Service;
 use App\Services\QrIdentityService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 #[Layout('layouts.distribution-operator')]
@@ -18,7 +20,11 @@ class EntryGate extends Component
 {
     public const ABILITY = 'access-distribution-inbound-gate';
 
+    #[Url(as: 'service', except: null)]
     public ?int $selectedServiceId = null;
+
+    #[Url(as: 'q', except: '')]
+    public string $serviceSearch = '';
 
     public string $scanStatus = 'ready';
 
@@ -38,7 +44,17 @@ class EntryGate extends Component
     {
         $this->authorizeGate();
 
-        $this->scanMessage = 'ابتدا خدمت گیت ورود را انتخاب کنید.';
+        // A service id can arrive from the URL on reload — drop it if it is no longer gate-eligible.
+        if ($this->selectedServiceId !== null && ! $this->selectedService) {
+            $this->selectedServiceId = null;
+        }
+
+        if ($this->selectedServiceId !== null) {
+            $this->serviceSearch = '';
+            $this->scanMessage = 'دوربین را فعال کنید و QR مددجو یا سرپرست خانوار را اسکن کنید.';
+        } else {
+            $this->scanMessage = 'ابتدا خدمت گیت ورود را انتخاب کنید.';
+        }
     }
 
     public function selectService(int $serviceId): void
@@ -59,6 +75,7 @@ class EntryGate extends Component
         }
 
         $this->selectedServiceId = (int) $service->id;
+        $this->serviceSearch = '';
         $this->resetScanState();
         $this->scanStatus = 'ready';
         $this->scanMessage = 'دوربین را فعال کنید و QR مددجو یا سرپرست خانوار را اسکن کنید.';
@@ -72,6 +89,11 @@ class EntryGate extends Component
         $this->resetScanState();
         $this->scanStatus = 'ready';
         $this->scanMessage = 'ابتدا خدمت گیت ورود را انتخاب کنید.';
+    }
+
+    public function clearServiceSearch(): void
+    {
+        $this->serviceSearch = '';
     }
 
     public function resolveScannedQr(string $payload): array
@@ -183,8 +205,24 @@ class EntryGate extends Component
         return Service::query()
             ->supportsGateDelivery()
             ->withCount('categories')
+            ->when(trim($this->serviceSearch) !== '', function (Builder $query): void {
+                $search = trim($this->serviceSearch);
+
+                $query->where(function (Builder $searchQuery) use ($search): void {
+                    $searchQuery
+                        ->where('name', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%")
+                        ->orWhereHas('serviceName', fn (Builder $serviceNameQuery) => $serviceNameQuery->where('name', 'like', "%{$search}%"))
+                        ->orWhereHas('categories', fn (Builder $categoryQuery) => $categoryQuery->where('name', 'like', "%{$search}%"));
+                });
+            })
             ->orderByDesc('id')
             ->get();
+    }
+
+    public function getServiceSearchActiveProperty(): bool
+    {
+        return trim($this->serviceSearch) !== '';
     }
 
     public function render()

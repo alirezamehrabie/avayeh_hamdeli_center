@@ -91,6 +91,48 @@ class DistributionOperatorEntryGateTest extends TestCase
         ]);
     }
 
+    public function test_selected_service_is_restored_from_the_url_on_reload(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+
+        $this->actingAs($operator);
+
+        Livewire::withQueryParams(['service' => $service->id])
+            ->test(EntryGate::class)
+            ->assertSet('selectedServiceId', $service->id);
+    }
+
+    public function test_stale_service_id_in_url_is_discarded(): void
+    {
+        [$operator] = $this->operator();
+
+        $this->actingAs($operator);
+
+        Livewire::withQueryParams(['service' => 99999])
+            ->test(EntryGate::class)
+            ->assertSet('selectedServiceId', null);
+    }
+
+    public function test_service_search_filters_the_selection_grid(): void
+    {
+        [$operator] = $this->operator();
+        $rice = $this->makeGateService($operator, 'Rice basket');
+        $blanket = $this->makeGateService($operator, 'Winter blanket');
+
+        $this->actingAs($operator);
+
+        Livewire::test(EntryGate::class)
+            ->assertSee($rice->name)
+            ->assertSee($blanket->name)
+            ->set('serviceSearch', 'Rice')
+            ->assertSee($rice->name)
+            ->assertDontSee($blanket->name)
+            ->call('clearServiceSearch')
+            ->assertSet('serviceSearch', '')
+            ->assertSee($blanket->name);
+    }
+
     public function test_invalid_qr_sets_scan_error(): void
     {
         [$operator] = $this->operator();
@@ -117,17 +159,17 @@ class DistributionOperatorEntryGateTest extends TestCase
         ])];
     }
 
-    protected function makeGateService(User $creator): Service
+    protected function makeGateService(User $creator, string $name = 'Gate package'): Service
     {
         $serviceName = ServiceName::query()->create([
-            'name' => 'Gate package',
+            'name' => $name,
             'sort_id' => 1,
             'created_by' => $creator->id,
         ]);
 
         return Service::query()->create([
             'service_name_id' => $serviceName->id,
-            'name' => 'Gate package',
+            'name' => $name,
             'service_type' => 'individual',
             'supports_gate_delivery' => true,
             'supports_home_delivery' => true,
