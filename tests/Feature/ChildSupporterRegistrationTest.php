@@ -35,20 +35,28 @@ class ChildSupporterRegistrationTest extends TestCase
         $sponsor = $this->sponsorUser();
 
         $this->actingAs($sponsor)
-            ->get(route('child-supporter.sponsor-registration'))
-            ->assertForbidden();
+            ->get(route('admin.child-supporters.sponsor-registration'))
+            ->assertRedirect(route('child-supporter.dashboard'));
 
         $this->actingAs($sponsor)
-            ->get(route('child-supporter.sponsor-list'))
-            ->assertForbidden();
+            ->get(route('admin.child-supporters.sponsor-list'))
+            ->assertRedirect(route('child-supporter.dashboard'));
 
         $this->actingAs($this->manager())
-            ->get(route('child-supporter.sponsor-registration'))
+            ->get(route('admin.child-supporters.sponsor-registration'))
             ->assertOk();
 
         $this->actingAs($this->manager())
-            ->get(route('child-supporter.sponsor-list'))
+            ->get(route('admin.child-supporters.sponsor-list'))
             ->assertOk();
+    }
+
+    public function test_sponsor_management_routes_are_not_named_as_child_supporter_self_service(): void
+    {
+        $this->assertFalse(\Illuminate\Support\Facades\Route::has('child-supporter.sponsor-registration'));
+        $this->assertFalse(\Illuminate\Support\Facades\Route::has('child-supporter.sponsor-list'));
+        $this->assertTrue(\Illuminate\Support\Facades\Route::has('admin.child-supporters.sponsor-registration'));
+        $this->assertTrue(\Illuminate\Support\Facades\Route::has('admin.child-supporters.sponsor-list'));
     }
 
     public function test_sponsor_sidebar_does_not_show_registration_or_edit_options(): void

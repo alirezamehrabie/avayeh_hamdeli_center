@@ -23,7 +23,7 @@
                                 بازگشت به لیست
                             </button>
                         @else
-                            <a href="{{ route('child-supporter.sponsor-list') }}" class="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100 sm:h-10 sm:px-4 sm:text-sm">
+                            <a href="{{ route('admin.child-supporters.sponsor-list') }}" class="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100 sm:h-10 sm:px-4 sm:text-sm">
                                 بازگشت به لیست
                             </a>
                         @endif

@@ -199,13 +199,13 @@ Route::get('/child-supporter/dashboard', ChildSupporterDashboard::class)
     ->middleware(['auth', 'can:access-child-supporter-panel'])
     ->name('child-supporter.dashboard');
 
-Route::get('/child-supporter/sponsor-registration', SponsorRegistration::class)
+Route::get('/admin/child-supporters/sponsor-registration', SponsorRegistration::class)
     ->middleware(['auth', 'can:access-admin-panel'])
-    ->name('child-supporter.sponsor-registration');
+    ->name('admin.child-supporters.sponsor-registration');
 
-Route::get('/child-supporter/sponsors', SponsorList::class)
+Route::get('/admin/child-supporters/sponsors', SponsorList::class)
     ->middleware(['auth', 'can:access-admin-panel'])
-    ->name('child-supporter.sponsor-list');
+    ->name('admin.child-supporters.sponsor-list');
 
 Route::get('/child-supporter/system-settings/user-account', ChildSupporterUserAccount::class)
     ->middleware(['auth', 'can:access-child-supporter-panel'])
