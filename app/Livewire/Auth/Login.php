@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Auth;
 
+use App\Services\LoginRedirector;
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
@@ -46,7 +47,7 @@ class Login extends Component
             RateLimiter::clear($this->throttleKey());
             session()->forget('url.intended');
 
-            return redirect()->to(auth()->user()->getPanelRedirectPath());
+            return redirect()->to(app(LoginRedirector::class)->pathFor(auth()->user()));
         }
 
         RateLimiter::hit($this->throttleKey(), 120);

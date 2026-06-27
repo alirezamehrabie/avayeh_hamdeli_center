@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Services\LoginRedirector;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -541,23 +542,7 @@ class User extends Authenticatable
 
     public function getPanelRedirectPath(): string
     {
-        if ($this->canAccessChildSupporterPanel()) {
-            return route('child-supporter.dashboard');
-        }
-
-        if ($this->canAccessAdminPanel()) {
-            return route('admin.dashboard');
-        }
-
-        if ($this->canAccessSocialWorkerPanel()) {
-            return route('social-worker.dashboard');
-        }
-
-        if ($this->canAccessDistributionOperatorPanel()) {
-            return route('distribution-operator.define-service');
-        }
-
-        return '/';
+        return app(LoginRedirector::class)->pathFor($this);
     }
 
     public function socialWorker()
