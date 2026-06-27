@@ -165,7 +165,7 @@ class Service extends Model
                 ->value('sequence');
         }
 
-        return 'SN-' . str_pad((string) ($lastSequence + 1), 5, '0', STR_PAD_LEFT);
+        return 'SN-'.str_pad((string) ($lastSequence + 1), 5, '0', STR_PAD_LEFT);
     }
 
     public static function unitOptions(): array
@@ -255,6 +255,13 @@ class Service extends Model
     public function categories(): HasMany
     {
         return $this->hasMany(ServiceCategory::class);
+    }
+
+    public function entryFields(): HasMany
+    {
+        return $this->hasMany(ServiceEntryField::class)
+            ->orderBy('sort_order')
+            ->orderBy('id');
     }
 
     public function deliveries(): HasMany
@@ -462,5 +469,4 @@ class Service extends Model
                 - $this->deliveredQuantityForWorkerCategory($socialWorkerId, $serviceCategoryId)
         );
     }
-
 }

@@ -2,11 +2,14 @@
 
 namespace App\Livewire\DistributionOperators\Gates;
 
+use App\Models\EducationLevel;
 use App\Models\GateEntryAssignment;
+use App\Models\GateEntryFieldValue;
 use App\Models\Guardian;
 use App\Models\Person;
 use App\Models\QrIdentity;
 use App\Models\Service;
+use App\Models\ServiceEntryField;
 use App\Models\SocialWorker;
 use App\Services\QrIdentityService;
 use Illuminate\Database\Eloquent\Builder;
@@ -49,6 +52,14 @@ class EntryGate extends Component
 
     public bool $showManualSearch = false;
 
+    /** @var array<int, array{title: string, type: string}> Editable definitions of the selected service's extra fields, keyed by field id. */
+    public array $entryFieldDrafts = [];
+
+    public bool $showFieldConfig = false;
+
+    /** @var array<int, mixed> Values entered for the scanned subject, keyed by service_entry_field id. */
+    public array $entryFieldValues = [];
+
     public function mount(): void
     {
         $this->authorizeGate();
@@ -60,6 +71,7 @@ class EntryGate extends Component
 
         if ($this->selectedServiceId !== null) {
             $this->serviceSearch = '';
+            $this->loadEntryFieldDrafts();
             $this->scanMessage = 'دوربین را فعال کنید و QR مددجو یا سرپرست خانوار را اسکن کنید.';
         } else {
             $this->scanMessage = 'ابتدا خدمت گیت ورود را انتخاب کنید.';
@@ -86,6 +98,7 @@ class EntryGate extends Component
         $this->selectedServiceId = (int) $service->id;
         $this->serviceSearch = '';
         $this->resetScanState();
+        $this->loadEntryFieldDrafts();
         $this->scanStatus = 'ready';
         $this->scanMessage = 'دوربین را فعال کنید و QR مددجو یا سرپرست خانوار را اسکن کنید.';
     }
@@ -96,6 +109,8 @@ class EntryGate extends Component
 
         $this->selectedServiceId = null;
         $this->resetScanState();
+        $this->entryFieldDrafts = [];
+        $this->showFieldConfig = false;
         $this->scanStatus = 'ready';
         $this->scanMessage = 'ابتدا خدمت گیت ورود را انتخاب کنید.';
     }
@@ -103,6 +118,166 @@ class EntryGate extends Component
     public function clearServiceSearch(): void
     {
         $this->serviceSearch = '';
+    }
+
+    public function toggleFieldConfig(): void
+    {
+        $this->authorizeGate();
+
+        $this->showFieldConfig = ! $this->showFieldConfig;
+    }
+
+    /**
+     * Define a new extra field for the selected service. Persisted right away so it is reused
+     * automatically the next time this service is opened at any gate.
+     */
+    public function addEntryField(): void
+    {
+        $this->authorizeGate();
+
+        if (! $this->selectedService) {
+            return;
+        }
+
+        ServiceEntryField::query()->create([
+            'service_id' => $this->selectedServiceId,
+            'title' => '',
+            'type' => ServiceEntryField::TYPE_TEXT,
+            'sort_order' => (int) ($this->selectedService->entryFields->max('sort_order') ?? 0) + 1,
+        ]);
+
+        $this->showFieldConfig = true;
+        $this->loadEntryFieldDrafts();
+    }
+
+    public function removeEntryField(int $fieldId): void
+    {
+        $this->authorizeGate();
+
+        if (! $this->selectedService) {
+            return;
+        }
+
+        ServiceEntryField::query()
+            ->where('service_id', $this->selectedServiceId)
+            ->whereKey($fieldId)
+            ->delete();
+
+        $this->loadEntryFieldDrafts();
+        unset($this->entryFieldValues[$fieldId]);
+    }
+
+    /**
+     * Persist an edited field definition (title or type) when its input blurs.
+     */
+    public function updatedEntryFieldDrafts(mixed $value, string $key): void
+    {
+        $this->authorizeGate();
+
+        if (! $this->selectedService) {
+            return;
+        }
+
+        // $key is "<fieldId>.title" or "<fieldId>.type".
+        [$fieldId, $attribute] = array_pad(explode('.', $key, 2), 2, null);
+
+        if (! in_array($attribute, ['title', 'type'], true)) {
+            return;
+        }
+
+        $field = ServiceEntryField::query()
+            ->where('service_id', $this->selectedServiceId)
+            ->whereKey((int) $fieldId)
+            ->first();
+
+        if (! $field) {
+            return;
+        }
+
+        if ($attribute === 'type' && ! array_key_exists((string) $value, ServiceEntryField::TYPE_OPTIONS)) {
+            return;
+        }
+
+        $field->forceFill([$attribute => is_string($value) ? trim($value) : $value])->save();
+    }
+
+    /**
+     * Save the entered value for the scanned subject when an input blurs.
+     */
+    public function updatedEntryFieldValues(mixed $value, string $key): void
+    {
+        $this->authorizeGate();
+
+        if (! $this->selectedService || ! $this->hasScannedSubject()) {
+            return;
+        }
+
+        $fieldId = (int) $key;
+
+        // Ignore stray keys that no longer map to a defined field for this service.
+        if (! $this->selectedService->entryFields->contains('id', $fieldId)) {
+            return;
+        }
+
+        $isGuardian = $this->scannedSubjectType === QrIdentity::SUBJECT_GUARDIAN;
+
+        $record = GateEntryFieldValue::query()->firstOrNew([
+            'service_id' => $this->selectedServiceId,
+            'person_id' => $isGuardian ? null : $this->scannedPersonId,
+            'guardian_id' => $isGuardian ? $this->scannedGuardianId : null,
+        ]);
+
+        $values = $record->values ?? [];
+        $normalized = is_string($value) ? trim($value) : $value;
+
+        if ($normalized === '' || $normalized === null) {
+            unset($values[$fieldId]);
+        } else {
+            $values[$fieldId] = $normalized;
+        }
+
+        $record->values = $values;
+        $record->created_by ??= auth()->id();
+        $record->save();
+    }
+
+    protected function loadEntryFieldDrafts(): void
+    {
+        if (! $this->selectedService) {
+            $this->entryFieldDrafts = [];
+
+            return;
+        }
+
+        $this->entryFieldDrafts = $this->selectedService->entryFields
+            ->mapWithKeys(fn (ServiceEntryField $field): array => [
+                $field->id => ['title' => (string) $field->title, 'type' => (string) $field->type],
+            ])
+            ->all();
+    }
+
+    protected function loadSubjectFieldValues(): void
+    {
+        if (! $this->hasScannedSubject()) {
+            $this->entryFieldValues = [];
+
+            return;
+        }
+
+        $isGuardian = $this->scannedSubjectType === QrIdentity::SUBJECT_GUARDIAN;
+
+        $record = GateEntryFieldValue::query()
+            ->where('service_id', $this->selectedServiceId)
+            ->when($isGuardian,
+                fn ($query) => $query->where('guardian_id', $this->scannedGuardianId),
+                fn ($query) => $query->where('person_id', $this->scannedPersonId),
+            )
+            ->first();
+
+        // Cast keys back to int so they line up with the field ids used in the view.
+        $this->entryFieldValues = collect($record?->values ?? [])
+            ->mapWithKeys(fn ($value, $fieldId): array => [(int) $fieldId => $value])
+            ->all();
     }
 
     public function resolveScannedQr(string $payload): array
@@ -291,8 +466,16 @@ class EntryGate extends Component
 
         return Service::query()
             ->supportsGateDelivery()
-            ->with(['categories' => fn ($query) => $query->ordered()])
+            ->with([
+                'categories' => fn ($query) => $query->ordered(),
+                'entryFields',
+            ])
             ->find($this->selectedServiceId);
+    }
+
+    public function getEducationLevelsProperty(): Collection
+    {
+        return EducationLevel::query()->orderBy('sort_order')->get();
     }
 
     public function getGateServicesProperty(): Collection
@@ -410,6 +593,7 @@ class EntryGate extends Component
             'details' => $this->personDetails($person),
         ];
         $this->loadSubjectAssignments();
+        $this->loadSubjectFieldValues();
         $this->scanStatus = 'paused';
         $this->scanMessage = $this->subjectLoadedMessage('مددجو', $isDuplicate, $source);
 
@@ -436,6 +620,7 @@ class EntryGate extends Component
             'details' => $this->guardianDetails($guardian),
         ];
         $this->loadSubjectAssignments();
+        $this->loadSubjectFieldValues();
         $this->scanStatus = 'paused';
         $this->scanMessage = $this->subjectLoadedMessage('خانوار', $isDuplicate, $source);
 
@@ -604,6 +789,7 @@ class EntryGate extends Component
         $this->scannedGuardianId = null;
         $this->assignedCategoryIds = [];
         $this->lockedCategoryIds = [];
+        $this->entryFieldValues = [];
     }
 
     protected function scanError(string $message, string $code = 'error'): array

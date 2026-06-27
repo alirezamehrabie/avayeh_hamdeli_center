@@ -2,11 +2,14 @@
 
 namespace App\Livewire\DistributionOperators\Gates;
 
+use App\Models\EducationLevel;
 use App\Models\GateEntryAssignment;
+use App\Models\GateEntryFieldValue;
 use App\Models\Guardian;
 use App\Models\Person;
 use App\Models\QrIdentity;
 use App\Models\Service;
+use App\Models\ServiceEntryField;
 use App\Models\SocialWorker;
 use App\Services\QrIdentityService;
 use Illuminate\Database\Eloquent\Builder;
@@ -248,7 +251,10 @@ class DeliveryGate extends Component
 
         return Service::query()
             ->supportsGateDelivery()
-            ->with(['categories' => fn ($query) => $query->ordered()])
+            ->with([
+                'categories' => fn ($query) => $query->ordered(),
+                'entryFields',
+            ])
             ->find($this->selectedServiceId);
     }
 
@@ -381,6 +387,7 @@ class DeliveryGate extends Component
             'national_id' => (string) ($person->national_id ?: '-'),
             'mobile' => (string) ($person->phone_number ?: ($person->guardian?->guardian_phone_number ?: '-')),
             'details' => $this->personDetails($person),
+            'extra_fields' => $this->subjectEntryFields(),
         ];
         $this->loadSubjectDeliveryState();
         $this->scanStatus = 'paused';
@@ -404,6 +411,7 @@ class DeliveryGate extends Component
             'national_id' => (string) ($guardian->national_code ?: '-'),
             'mobile' => (string) ($guardian->guardian_phone_number ?: '-'),
             'details' => $this->guardianDetails($guardian),
+            'extra_fields' => $this->subjectEntryFields(),
         ];
         $this->loadSubjectDeliveryState();
         $this->scanStatus = 'paused';
@@ -533,6 +541,62 @@ class DeliveryGate extends Component
             ->keys()
             ->map(fn ($id) => (int) $id)
             ->all();
+    }
+
+    /**
+     * The selected service's extra fields filled in for the scanned subject at the Entry Gate,
+     * formatted as label/value rows for the identity card. Education-level ids resolve to their name.
+     *
+     * @return array<int, array{label: string, value: string}>
+     */
+    protected function subjectEntryFields(): array
+    {
+        $service = $this->selectedService;
+
+        if (! $service || ! $this->hasScannedSubject() || $service->entryFields->isEmpty()) {
+            return [];
+        }
+
+        $isGuardian = $this->scannedSubjectType === QrIdentity::SUBJECT_GUARDIAN;
+
+        $record = GateEntryFieldValue::query()
+            ->where('service_id', $this->selectedServiceId)
+            ->when($isGuardian,
+                fn ($query) => $query->where('guardian_id', $this->scannedGuardianId),
+                fn ($query) => $query->where('person_id', $this->scannedPersonId),
+            )
+            ->first();
+
+        $values = collect($record?->values ?? [])
+            ->mapWithKeys(fn ($value, $fieldId): array => [(int) $fieldId => $value]);
+
+        if ($values->isEmpty()) {
+            return [];
+        }
+
+        $educationNames = null;
+        $rows = [];
+
+        foreach ($service->entryFields as $field) {
+            $value = $values[$field->id] ?? null;
+
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            if ($field->type === ServiceEntryField::TYPE_EDUCATION_LEVEL) {
+                $educationNames ??= EducationLevel::query()->pluck('name', 'id');
+                $value = $educationNames[(int) $value] ?? null;
+
+                if (! $value) {
+                    continue;
+                }
+            }
+
+            $rows[] = ['label' => $field->title ?: 'بدون عنوان', 'value' => (string) $value];
+        }
+
+        return $rows;
     }
 
     protected function subjectAssignmentQuery()

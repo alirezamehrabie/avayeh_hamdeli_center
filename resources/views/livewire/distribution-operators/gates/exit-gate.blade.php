@@ -239,6 +239,20 @@
                                         @endforeach
                                     </div>
                                 @endif
+
+                                @if(! empty($lastScanResult['extra_fields']))
+                                    <div class="mt-3 space-y-1.5 border-t border-slate-100 pt-3">
+                                        <p class="text-[11px] font-bold text-slate-500">اطلاعات تکمیلی</p>
+                                        <div class="flex flex-wrap gap-1.5">
+                                            @foreach($lastScanResult['extra_fields'] as $extra)
+                                                <span class="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2 py-1 text-[11px] font-semibold">
+                                                    <span class="text-indigo-400">{{ $extra['label'] }}:</span>
+                                                    <span class="text-indigo-700">{{ $extra['value'] }}</span>
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                         @else
                             <div

@@ -137,6 +137,68 @@
                 @endif
             </div>
         @else
+            {{-- Extra display fields: defined once per service, reused at every gate --}}
+            <div class="border-b border-slate-100 px-4 py-3 sm:px-5">
+                <button
+                    type="button"
+                    wire:click="toggleFieldConfig"
+                    class="flex w-full items-center justify-between gap-2 text-sm font-bold text-slate-700"
+                >
+                    <span class="flex items-center gap-2">
+                        <svg class="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h10"/></svg>
+                        فیلدهای نمایش اضافه این خدمت
+                        @if($selectedService->entryFields->isNotEmpty())
+                            <span class="rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-bold text-indigo-600">{{ $selectedService->entryFields->count() }}</span>
+                        @endif
+                    </span>
+                    <svg class="h-4 w-4 text-slate-400 transition-transform {{ $showFieldConfig ? 'rotate-180' : '' }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+
+                @if($showFieldConfig)
+                    <div class="mt-3 space-y-2">
+                        <p class="text-[11px] font-semibold text-slate-400">
+                            فیلدهای تعریف‌شده هنگام اسکن هر فرد پر می‌شوند و در گیت تحویل و خروج نمایش داده می‌شوند.
+                        </p>
+
+                        @foreach($selectedService->entryFields as $field)
+                            <div wire:key="entry-field-config-{{ $field->id }}" class="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:flex-row sm:items-center">
+                                <input
+                                    type="text"
+                                    wire:model.blur="entryFieldDrafts.{{ $field->id }}.title"
+                                    placeholder="عنوان فیلد (مثلاً: سایز کفش)"
+                                    class="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                                >
+                                <select
+                                    wire:model.blur="entryFieldDrafts.{{ $field->id }}.type"
+                                    class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100 sm:w-40"
+                                >
+                                    @foreach(\App\Models\ServiceEntryField::TYPE_OPTIONS as $value => $label)
+                                        <option value="{{ $value }}">{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                                <button
+                                    type="button"
+                                    wire:click="removeEntryField({{ $field->id }})"
+                                    class="inline-flex shrink-0 items-center justify-center gap-1 rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs font-bold text-rose-600 transition hover:bg-rose-50"
+                                >
+                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m1 0v12a1 1 0 01-1 1H8a1 1 0 01-1-1V7"/></svg>
+                                    حذف
+                                </button>
+                            </div>
+                        @endforeach
+
+                        <button
+                            type="button"
+                            wire:click="addEntryField"
+                            class="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-indigo-300 bg-indigo-50/50 px-4 py-2 text-xs font-bold text-indigo-700 transition hover:bg-indigo-50"
+                        >
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
+                            افزودن فیلد
+                        </button>
+                    </div>
+                @endif
+            </div>
+
             {{-- Step 2: Scan + assign --}}
             <div
                 x-data="{
@@ -336,6 +398,34 @@
                                                 <span class="text-slate-400">{{ $detail['label'] }}:</span>
                                                 <span class="text-slate-700">{{ $detail['value'] }}</span>
                                             </span>
+                                        @endforeach
+                                    </div>
+                                @endif
+
+                                @if($selectedService->entryFields->isNotEmpty())
+                                    <div class="mt-3 space-y-2 border-t border-slate-100 pt-3">
+                                        <p class="text-[11px] font-bold text-slate-500">اطلاعات تکمیلی</p>
+                                        @foreach($selectedService->entryFields as $field)
+                                            <div wire:key="entry-field-value-{{ $field->id }}" class="flex flex-col gap-1">
+                                                <label class="text-[11px] font-semibold text-slate-500">{{ $field->title ?: 'بدون عنوان' }}</label>
+                                                @if($field->type === \App\Models\ServiceEntryField::TYPE_EDUCATION_LEVEL)
+                                                    <select
+                                                        wire:model.blur="entryFieldValues.{{ $field->id }}"
+                                                        class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                                                    >
+                                                        <option value="">— انتخاب کنید —</option>
+                                                        @foreach($this->educationLevels as $level)
+                                                            <option value="{{ $level->id }}">{{ $level->name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                @else
+                                                    <input
+                                                        type="{{ $field->type === \App\Models\ServiceEntryField::TYPE_NUMBER ? 'number' : 'text' }}"
+                                                        wire:model.blur="entryFieldValues.{{ $field->id }}"
+                                                        class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                                                    >
+                                                @endif
+                                            </div>
                                         @endforeach
                                     </div>
                                 @endif
