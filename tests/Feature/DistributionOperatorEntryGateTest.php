@@ -136,6 +136,56 @@ class DistributionOperatorEntryGateTest extends TestCase
         $component->assertSet('scanStatus', 'paused');
     }
 
+    public function test_finalized_assignment_is_locked_and_cannot_be_removed_at_entry_gate(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Food basket', $operator);
+
+        $person = Person::query()->create([
+            'first_name' => 'Kaveh',
+            'last_name' => 'Tabrizi',
+            'national_id' => '7234567890',
+            'person_code' => '14040',
+        ]);
+
+        // The item already moved through delivery and exit — its ledger record exists downstream.
+        $assignment = GateEntryAssignment::query()->create([
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'person_id' => $person->id,
+            'guardian_id' => null,
+            'national_id' => $person->national_id,
+            'full_name' => trim($person->first_name.' '.$person->last_name),
+            'status' => GateEntryAssignment::STATUS_FINALIZED,
+            'assigned_at' => now(),
+            'created_by' => $operator->id,
+        ]);
+
+        $issued = app(QrIdentityService::class)->issueFor($person, $operator->id);
+        $token = $issued['token'] ?? $issued['identity']->token_encrypted;
+
+        $this->actingAs($operator);
+
+        $component = Livewire::test(EntryGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            // Finalized items render as locked, separate from editable (pending) assignments.
+            ->assertSet('lockedCategoryIds', [$category->id])
+            ->assertSet('assignedCategoryIds', [$category->id])
+            ->assertSee('ثبت‌شده در گیت بعدی');
+
+        // Tapping a locked item must not soft-delete or re-author it.
+        $component->call('toggleCategory', $category->id)
+            ->assertSet('lockedCategoryIds', [$category->id]);
+
+        $this->assertDatabaseHas('gate_entry_assignments', [
+            'id' => $assignment->id,
+            'status' => GateEntryAssignment::STATUS_FINALIZED,
+            'deleted_at' => null,
+        ]);
+    }
+
     public function test_selected_service_is_restored_from_the_url_on_reload(): void
     {
         [$operator] = $this->operator();

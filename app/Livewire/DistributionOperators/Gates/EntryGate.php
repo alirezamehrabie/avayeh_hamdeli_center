@@ -41,6 +41,9 @@ class EntryGate extends Component
 
     public array $assignedCategoryIds = [];
 
+    /** @var array<int, int> Category ids locked because their assignment is already delivered/finalized downstream. */
+    public array $lockedCategoryIds = [];
+
     public string $manualSearch = '';
 
     public bool $showManualSearch = false;
@@ -208,6 +211,16 @@ class EntryGate extends Component
             ->withTrashed()
             ->where('service_category_id', $categoryId)
             ->first();
+
+        // Once an item has been delivered or finalized at a later gate it is locked here: soft-deleting it
+        // would orphan the ServiceDelivery ledger, and re-authoring it would reset a finalized record to
+        // pending. The Entry Gate may only edit items still pending.
+        if ($existing && ! $existing->trashed() && in_array($existing->status, [
+            GateEntryAssignment::STATUS_DELIVERED,
+            GateEntryAssignment::STATUS_FINALIZED,
+        ], true)) {
+            return;
+        }
 
         if ($existing && ! $existing->trashed()) {
             $existing->delete();
@@ -500,9 +513,26 @@ class EntryGate extends Component
 
     protected function loadSubjectAssignments(): void
     {
-        $this->assignedCategoryIds = $this->hasScannedSubject()
-            ? $this->subjectAssignmentQuery()->pluck('service_category_id')->map(fn ($id) => (int) $id)->all()
-            : [];
+        if (! $this->hasScannedSubject()) {
+            $this->assignedCategoryIds = [];
+            $this->lockedCategoryIds = [];
+
+            return;
+        }
+
+        // Pull status alongside the category id so we can mark already delivered/finalized items as locked.
+        $statuses = $this->subjectAssignmentQuery()->pluck('status', 'service_category_id');
+
+        $this->assignedCategoryIds = $statuses->keys()->map(fn ($id) => (int) $id)->all();
+
+        $this->lockedCategoryIds = $statuses
+            ->filter(fn (string $status): bool => in_array($status, [
+                GateEntryAssignment::STATUS_DELIVERED,
+                GateEntryAssignment::STATUS_FINALIZED,
+            ], true))
+            ->keys()
+            ->map(fn ($id) => (int) $id)
+            ->all();
     }
 
     protected function subjectAssignmentQuery()
@@ -547,6 +577,7 @@ class EntryGate extends Component
         $this->scannedPersonId = null;
         $this->scannedGuardianId = null;
         $this->assignedCategoryIds = [];
+        $this->lockedCategoryIds = [];
     }
 
     protected function scanError(string $message, string $code = 'error'): array

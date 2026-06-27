@@ -431,24 +431,30 @@
                     @else
                         <div class="space-y-2">
                             @foreach($selectedService->categories as $category)
+                                @php($isLocked = in_array($category->id, $lockedCategoryIds, true))
                                 @php($isChecked = in_array($category->id, $assignedCategoryIds, true))
                                 <button
                                     type="button"
-                                    wire:click="toggleCategory({{ $category->id }})"
+                                    @if(! $isLocked) wire:click="toggleCategory({{ $category->id }})" @endif
+                                    @disabled($isLocked)
                                     wire:key="entry-gate-category-{{ $category->id }}"
                                     @class([
                                         'flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-right transition',
-                                        'border-indigo-300 bg-indigo-50' => $isChecked,
-                                        'border-slate-200 bg-white hover:border-indigo-200 hover:bg-slate-50' => ! $isChecked,
+                                        'cursor-not-allowed border-emerald-200 bg-emerald-50' => $isLocked,
+                                        'border-indigo-300 bg-indigo-50' => $isChecked && ! $isLocked,
+                                        'border-slate-200 bg-white hover:border-indigo-200 hover:bg-slate-50' => ! $isChecked && ! $isLocked,
                                     ])
                                 >
                                     <span class="flex items-center gap-3">
                                         <span @class([
                                             'flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition',
-                                            'border-indigo-600 bg-indigo-600 text-white' => $isChecked,
-                                            'border-slate-300 bg-white' => ! $isChecked,
+                                            'border-emerald-600 bg-emerald-600 text-white' => $isLocked,
+                                            'border-indigo-600 bg-indigo-600 text-white' => $isChecked && ! $isLocked,
+                                            'border-slate-300 bg-white' => ! $isChecked && ! $isLocked,
                                         ])>
-                                            @if($isChecked)
+                                            @if($isLocked)
+                                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                            @elseif($isChecked)
                                                 <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                                                     <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 111.42-1.42l2.79 2.79 6.79-6.79a1 1 0 011.42 0z" clip-rule="evenodd" />
                                                 </svg>
@@ -459,9 +465,14 @@
                                             <span class="text-[11px] font-semibold text-slate-400" dir="ltr">{{ $category->code }}</span>
                                         </span>
                                     </span>
-                                    @if($category->unit)
-                                        <span class="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ $category->unit }}</span>
-                                    @endif
+                                    <span class="flex shrink-0 items-center gap-2">
+                                        @if($isLocked)
+                                            <span class="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">ثبت‌شده در گیت بعدی</span>
+                                        @endif
+                                        @if($category->unit)
+                                            <span class="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ $category->unit }}</span>
+                                        @endif
+                                    </span>
                                 </button>
                             @endforeach
                         </div>
