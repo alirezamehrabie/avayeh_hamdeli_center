@@ -91,6 +91,51 @@ class DistributionOperatorEntryGateTest extends TestCase
         ]);
     }
 
+    public function test_readding_a_removed_category_restores_the_assignment_without_colliding(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Food basket', $operator);
+
+        $person = Person::query()->create([
+            'first_name' => 'Hadi',
+            'last_name' => 'Moradi',
+            'national_id' => '6234567890',
+            'person_code' => '14030',
+        ]);
+
+        $issued = app(QrIdentityService::class)->issueFor($person, $operator->id);
+        $token = $issued['token'] ?? $issued['identity']->token_encrypted;
+
+        $this->actingAs($operator);
+
+        $component = Livewire::test(EntryGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            ->call('toggleCategory', $category->id)
+            ->assertSet('assignedCategoryIds', [$category->id])
+            ->call('toggleCategory', $category->id)
+            ->assertSet('assignedCategoryIds', [])
+            // Re-adding the soft-deleted item must restore it, not insert a duplicate that hits the unique index.
+            ->call('toggleCategory', $category->id)
+            ->assertSet('assignedCategoryIds', [$category->id]);
+
+        // The original row is restored (not soft-deleted) and there is exactly one — no duplicate insert.
+        $this->assertDatabaseHas('gate_entry_assignments', [
+            'service_category_id' => $category->id,
+            'person_id' => $person->id,
+            'status' => GateEntryAssignment::STATUS_PENDING,
+            'deleted_at' => null,
+        ]);
+
+        $this->assertSame(1, GateEntryAssignment::withTrashed()
+            ->where('service_category_id', $category->id)
+            ->where('person_id', $person->id)
+            ->count());
+
+        $component->assertSet('scanStatus', 'paused');
+    }
+
     public function test_selected_service_is_restored_from_the_url_on_reload(): void
     {
         [$operator] = $this->operator();

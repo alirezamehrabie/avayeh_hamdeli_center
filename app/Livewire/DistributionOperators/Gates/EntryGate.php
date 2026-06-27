@@ -201,18 +201,30 @@ class EntryGate extends Component
             return;
         }
 
+        // Include trashed rows: toggling a category off only soft-deletes the assignment, but the
+        // (service_category_id, person_id/guardian_id) unique index still holds that key. Re-adding via a
+        // fresh create() would collide with the soft-deleted row and throw, so we restore-and-reset instead.
         $existing = $this->subjectAssignmentQuery()
+            ->withTrashed()
             ->where('service_category_id', $categoryId)
             ->first();
 
-        if ($existing) {
+        if ($existing && ! $existing->trashed()) {
             $existing->delete();
             $this->assignedCategoryIds = array_values(array_diff($this->assignedCategoryIds, [$categoryId]));
 
             return;
         }
 
-        GateEntryAssignment::query()->create($this->assignmentAttributes($category->id));
+        if ($existing) {
+            // Re-authorize a previously removed item: clear the soft delete and refresh its details.
+            $existing->forceFill(array_merge(
+                $this->assignmentAttributes($category->id),
+                ['deleted_at' => null],
+            ))->save();
+        } else {
+            GateEntryAssignment::query()->create($this->assignmentAttributes($category->id));
+        }
 
         if (! in_array($categoryId, $this->assignedCategoryIds, true)) {
             $this->assignedCategoryIds[] = $categoryId;
