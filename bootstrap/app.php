@@ -6,6 +6,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -37,8 +38,19 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null;
             }
 
+            $redirectPath = $redirector->pathFor($user);
+
+            Log::warning('auth.authorization.safe_panel_redirect', [
+                'user_id' => $user->id,
+                'access_level' => $user->access_level,
+                'route' => $request->route()?->getName(),
+                'path' => $request->path(),
+                'redirect_url' => $redirectPath,
+                'exception' => $exception::class,
+            ]);
+
             return redirect()
-                ->to($redirector->pathFor($user))
+                ->to($redirectPath)
                 ->with('error', 'شما به این بخش دسترسی ندارید و به پنل مجاز خود هدایت شدید.');
         });
     })->create();

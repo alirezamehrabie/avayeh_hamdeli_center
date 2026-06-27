@@ -6,6 +6,7 @@ use App\Livewire\Auth\Login;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -15,6 +16,8 @@ class LoginAuthenticationFeedbackTest extends TestCase
 
     public function test_failed_login_shows_form_level_auth_error(): void
     {
+        Log::spy();
+
         User::factory()->create([
             'email' => 'operator@example.test',
             'password' => 'correct-password',
@@ -28,11 +31,21 @@ class LoginAuthenticationFeedbackTest extends TestCase
             ->assertHasNoErrors(['email', 'password'])
             ->assertSee('اطلاعات ورود صحیح نیست.');
 
+        Log::shouldHaveReceived('warning')
+            ->with('auth.login.failed_credentials', \Mockery::on(function (array $context): bool {
+                return isset($context['login_identifier_hash'])
+                    && $context['login_identifier_hash'] === hash('sha256', 'operator@example.test')
+                    && ! in_array('operator@example.test', $context, true);
+            }))
+            ->once();
+
         $this->assertGuest();
     }
 
     public function test_successful_login_ignores_stale_intended_url_and_uses_role_panel(): void
     {
+        Log::spy();
+
         User::factory()->create([
             'email' => 'operator@example.test',
             'password' => 'correct-password',
@@ -51,10 +64,20 @@ class LoginAuthenticationFeedbackTest extends TestCase
 
         $this->assertAuthenticated();
         $this->assertNull(session('url.intended'));
+
+        Log::shouldHaveReceived('info')
+            ->with('auth.login.redirect_resolved', \Mockery::on(function (array $context): bool {
+                return ($context['access_level'] ?? null) === User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR
+                    && ($context['redirect_url'] ?? null) === route('distribution-operator.define-service')
+                    && ($context['had_intended_url'] ?? null) === true;
+            }))
+            ->once();
     }
 
     public function test_login_rejects_account_without_authorized_panel_with_support_message(): void
     {
+        Log::spy();
+
         User::factory()->create([
             'email' => 'regular@example.test',
             'password' => 'correct-password',
@@ -71,10 +94,19 @@ class LoginAuthenticationFeedbackTest extends TestCase
             ->assertSee('حساب کاربری شما هنوز به پنل فعال متصل نشده است.');
 
         $this->assertGuest();
+
+        Log::shouldHaveReceived('warning')
+            ->with('auth.login.no_authorized_panel', \Mockery::on(function (array $context): bool {
+                return ($context['access_level'] ?? null) === User::ACCESS_LEVEL_REGULAR
+                    && isset($context['user_id']);
+            }))
+            ->once();
     }
 
     public function test_duplicate_in_flight_login_submit_is_rejected_without_authenticating(): void
     {
+        Log::spy();
+
         User::factory()->create([
             'email' => 'operator@example.test',
             'password' => 'correct-password',
@@ -93,6 +125,12 @@ class LoginAuthenticationFeedbackTest extends TestCase
             ->assertSee('در حال بررسی اطلاعات ورود هستیم.');
 
         $this->assertGuest();
+
+        Log::shouldHaveReceived('warning')
+            ->with('auth.login.duplicate_in_flight', \Mockery::on(function (array $context): bool {
+                return ($context['login_identifier_hash'] ?? null) === hash('sha256', 'operator@example.test');
+            }))
+            ->once();
     }
 
     public function test_credential_changes_clear_form_level_auth_error(): void

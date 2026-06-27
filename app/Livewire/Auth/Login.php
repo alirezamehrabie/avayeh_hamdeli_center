@@ -6,6 +6,7 @@ use App\Services\LoginRedirector;
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
@@ -43,6 +44,10 @@ class Login extends Component
             : ['name' => $loginInput, 'password' => $this->password];
 
         if (! Cache::add($this->loginAttemptKey(), true, 15)) {
+            Log::warning('auth.login.duplicate_in_flight', $this->loginLogContext([
+                'login_identifier_hash' => $this->loginIdentifierHash(),
+            ]));
+
             $this->addError('auth', 'در حال بررسی اطلاعات ورود هستیم. لطفا چند لحظه دیگر دوباره تلاش کنید.');
 
             return;
@@ -53,6 +58,11 @@ class Login extends Component
                 $redirector = app(LoginRedirector::class);
 
                 if (! $redirector->hasAuthorizedPanel(auth()->user())) {
+                    Log::warning('auth.login.no_authorized_panel', $this->loginLogContext([
+                        'user_id' => auth()->id(),
+                        'access_level' => auth()->user()?->access_level,
+                    ]));
+
                     Auth::logout();
                     session()->invalidate();
                     session()->regenerateToken();
@@ -65,12 +75,24 @@ class Login extends Component
                 session()->regenerate();
 
                 RateLimiter::clear($this->throttleKey());
+                $redirectPath = $redirector->pathFor(auth()->user());
+                $intendedUrl = session('url.intended');
                 session()->forget('url.intended');
 
-                return redirect()->to($redirector->pathFor(auth()->user()));
+                Log::info('auth.login.redirect_resolved', $this->loginLogContext([
+                    'user_id' => auth()->id(),
+                    'access_level' => auth()->user()?->access_level,
+                    'redirect_url' => $redirectPath,
+                    'had_intended_url' => filled($intendedUrl),
+                ]));
+
+                return redirect()->to($redirectPath);
             }
 
             RateLimiter::hit($this->throttleKey(), 120);
+            Log::warning('auth.login.failed_credentials', $this->loginLogContext([
+                'login_identifier_hash' => $this->loginIdentifierHash(),
+            ]));
             $this->addError('auth', 'اطلاعات ورود صحیح نیست.');
         } finally {
             Cache::forget($this->loginAttemptKey());
@@ -109,6 +131,19 @@ class Login extends Component
     protected function loginAttemptKey(): string
     {
         return 'login:attempting:'.$this->throttleKey();
+    }
+
+    protected function loginIdentifierHash(): string
+    {
+        return hash('sha256', $this->email);
+    }
+
+    protected function loginLogContext(array $context = []): array
+    {
+        return array_merge([
+            'ip' => request()->ip(),
+            'remember' => $this->remember,
+        ], $context);
     }
 
     /**
