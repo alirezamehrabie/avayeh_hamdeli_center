@@ -7,6 +7,7 @@ use App\Models\Guardian;
 use App\Models\Person;
 use App\Models\QrIdentity;
 use App\Models\Service;
+use App\Models\SocialWorker;
 use App\Services\QrIdentityService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -126,7 +127,7 @@ class EntryGate extends Component
         }
 
         if ($identity->subject_type === QrIdentity::SUBJECT_GUARDIAN) {
-            $guardian = Guardian::query()->find((int) $identity->subject_id);
+            $guardian = $this->findGuardian((int) $identity->subject_id);
 
             if (! $guardian) {
                 return $this->scanError('اطلاعات خانوار برای این QR پیدا نشد.', 'not_found');
@@ -138,7 +139,7 @@ class EntryGate extends Component
             return $this->scanResponse(true);
         }
 
-        $person = Person::query()->find((int) $identity->subject_id);
+        $person = $this->findPerson((int) $identity->subject_id);
 
         if (! $person) {
             return $this->scanError('اطلاعات مددجو برای این QR پیدا نشد.', 'not_found');
@@ -167,13 +168,13 @@ class EntryGate extends Component
         }
 
         if ($subjectType === QrIdentity::SUBJECT_GUARDIAN) {
-            $guardian = Guardian::query()->find($subjectId);
+            $guardian = $this->findGuardian($subjectId);
 
             if ($guardian) {
                 $this->applyGuardianScan($guardian, $this->isCurrentSubject($subjectType, $subjectId), 'manual');
             }
         } else {
-            $person = Person::query()->find($subjectId);
+            $person = $this->findPerson($subjectId);
 
             if ($person) {
                 $this->applyPersonScan($person, $this->isCurrentSubject($subjectType, $subjectId), 'manual');
@@ -346,13 +347,16 @@ class EntryGate extends Component
         $this->scannedGuardianId = null;
         $this->lastScanResult = [
             'type' => QrIdentity::SUBJECT_PERSON,
+            'subject_label' => 'مددجو',
             'code_key' => $isDuplicate ? 'duplicate' : 'success',
             'title' => $isDuplicate ? 'این مددجو هم‌اکنون روی صفحه است' : 'مددجو شناسایی شد',
             'name' => $person->full_name ?: trim($person->first_name.' '.$person->last_name) ?: '-',
+            'avatar_url' => $person->profile_photo ? asset($person->profile_photo) : null,
             'code_label' => 'کد مددجو',
             'code' => (string) ($person->formatted_person_code ?: $person->person_code ?: '-'),
             'national_id' => (string) ($person->national_id ?: '-'),
             'mobile' => (string) ($person->phone_number ?: ($person->guardian?->guardian_phone_number ?: '-')),
+            'details' => $this->personDetails($person),
         ];
         $this->loadSubjectAssignments();
         $this->scanStatus = 'paused';
@@ -366,13 +370,16 @@ class EntryGate extends Component
         $this->scannedPersonId = null;
         $this->lastScanResult = [
             'type' => QrIdentity::SUBJECT_GUARDIAN,
+            'subject_label' => 'سرپرست خانوار',
             'code_key' => $isDuplicate ? 'duplicate' : 'success',
             'title' => $isDuplicate ? 'این خانوار هم‌اکنون روی صفحه است' : 'سرپرست خانوار شناسایی شد',
             'name' => $guardian->full_name ?: trim($guardian->first_name.' '.$guardian->last_name) ?: '-',
+            'avatar_url' => null,
             'code_label' => 'کد خانوار',
             'code' => (string) ($guardian->guardian_code ?: '-'),
             'national_id' => (string) ($guardian->national_code ?: '-'),
             'mobile' => (string) ($guardian->guardian_phone_number ?: '-'),
+            'details' => $this->guardianDetails($guardian),
         ];
         $this->loadSubjectAssignments();
         $this->scanStatus = 'paused';
@@ -399,6 +406,78 @@ class EntryGate extends Component
         return $subjectType === QrIdentity::SUBJECT_GUARDIAN
             ? $this->scannedGuardianId === $subjectId
             : $this->scannedPersonId === $subjectId;
+    }
+
+    protected function findPerson(int $subjectId): ?Person
+    {
+        return Person::query()
+            ->with(['socialWorker', 'guardian:id,guardian_phone_number'])
+            ->find($subjectId);
+    }
+
+    protected function findGuardian(int $subjectId): ?Guardian
+    {
+        return Guardian::query()
+            ->with(['socialWorker', 'residence.district'])
+            ->withCount('people')
+            ->find($subjectId);
+    }
+
+    /**
+     * Secondary identity fields used by the operator to confirm the right person — kept short on purpose.
+     */
+    protected function personDetails(Person $person): array
+    {
+        $details = [];
+
+        if ($person->gender_label) {
+            $details[] = ['label' => 'جنسیت', 'value' => (string) $person->gender_label];
+        }
+
+        if ($person->age) {
+            $details[] = ['label' => 'سن', 'value' => $person->age.' سال'];
+        }
+
+        if (trim((string) $person->father_name) !== '') {
+            $details[] = ['label' => 'نام پدر', 'value' => (string) $person->father_name];
+        }
+
+        if ($person->socialWorker) {
+            $details[] = ['label' => 'مددکار', 'value' => $this->workerLabel($person->socialWorker)];
+        }
+
+        return $details;
+    }
+
+    protected function guardianDetails(Guardian $guardian): array
+    {
+        $details = [
+            ['label' => 'اعضای خانوار', 'value' => (string) ($guardian->people_count ?? 0)],
+        ];
+
+        if ($guardian->socialWorker) {
+            $details[] = ['label' => 'مددکار', 'value' => $this->workerLabel($guardian->socialWorker)];
+        }
+
+        $district = $guardian->residence?->district?->name;
+
+        if ($district) {
+            $details[] = ['label' => 'منطقه', 'value' => (string) $district];
+        }
+
+        return $details;
+    }
+
+    protected function workerLabel(SocialWorker $worker): string
+    {
+        $name = trim($worker->first_name.' '.$worker->last_name);
+        $code = $worker->worker_code ? str_pad((string) $worker->worker_code, 2, '0', STR_PAD_LEFT) : null;
+
+        if ($name === '') {
+            return $code ? "کد {$code}" : '-';
+        }
+
+        return $code ? "{$name} (کد {$code})" : $name;
     }
 
     protected function loadSubjectAssignments(): void

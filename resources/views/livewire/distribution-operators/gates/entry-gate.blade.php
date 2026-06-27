@@ -248,39 +248,104 @@
                         @endif
                     </div>
 
-                    {{-- Identity card --}}
-                    @if($lastScanResult)
-                        @php($isDuplicateScan = ($lastScanResult['code_key'] ?? null) === 'duplicate')
-                        <div class="rounded-2xl border p-4 shadow-sm {{ $isDuplicateScan ? 'border-amber-300 bg-amber-50/40' : 'border-slate-200 bg-white' }}">
-                            <div class="flex items-center justify-between gap-2">
-                                <span class="rounded-full px-2.5 py-0.5 text-[11px] font-bold
-                                    {{ $isDuplicateScan ? 'bg-amber-100 text-amber-700' : (($lastScanResult['type'] ?? null) === \App\Models\QrIdentity::SUBJECT_PERSON ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700') }}">
-                                    {{ $lastScanResult['title'] ?? '-' }}
-                                </span>
-                                @if($isDuplicateScan)
-                                    <span class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600">
-                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.3 3.86l-8 13.9A2 2 0 004 21h16a2 2 0 001.7-3.24l-8-13.9a2 2 0 00-3.4 0z"/></svg>
-                                        تکراری
-                                    </span>
+                    {{-- Identity card (fixed-height slot so the layout doesn't jump between scans) --}}
+                    <div class="min-h-[8rem]">
+                        {{-- Skeleton while the scan resolves on the server --}}
+                        <div
+                            wire:loading.flex
+                            wire:target="resolveScannedQr, selectManualSubject"
+                            class="hidden animate-pulse items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                        >
+                            <div class="h-14 w-14 shrink-0 rounded-2xl bg-slate-200"></div>
+                            <div class="flex-1 space-y-2">
+                                <div class="h-3.5 w-2/3 rounded bg-slate-200"></div>
+                                <div class="h-3 w-1/2 rounded bg-slate-100"></div>
+                            </div>
+                        </div>
+
+                        @if($lastScanResult)
+                            @php($isDuplicateScan = ($lastScanResult['code_key'] ?? null) === 'duplicate')
+                            @php($isPerson = ($lastScanResult['type'] ?? null) === \App\Models\QrIdentity::SUBJECT_PERSON)
+                            <div
+                                wire:loading.remove
+                                wire:target="resolveScannedQr, selectManualSubject"
+                                class="rounded-2xl border p-4 shadow-sm {{ $isDuplicateScan ? 'border-amber-300 bg-amber-50/40' : 'border-slate-200 bg-white' }}"
+                            >
+                                <div class="flex items-start gap-3">
+                                    {{-- Avatar + subject-type anchor (emerald = مددجو, amber = خانوار) --}}
+                                    <div class="relative shrink-0">
+                                        @if($lastScanResult['avatar_url'] ?? null)
+                                            <img
+                                                src="{{ $lastScanResult['avatar_url'] }}"
+                                                alt="{{ $lastScanResult['name'] ?? '' }}"
+                                                class="h-14 w-14 rounded-2xl object-cover ring-2 {{ $isPerson ? 'ring-emerald-200' : 'ring-amber-200' }}"
+                                            >
+                                        @else
+                                            <div class="flex h-14 w-14 items-center justify-center rounded-2xl text-xl font-black {{ $isPerson ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
+                                                {{ mb_substr(trim($lastScanResult['name'] ?? '-'), 0, 1) }}
+                                            </div>
+                                        @endif
+                                        <span class="absolute -bottom-1 -left-1 flex h-6 w-6 items-center justify-center rounded-full ring-2 ring-white {{ $isPerson ? 'bg-emerald-500' : 'bg-amber-500' }}">
+                                            @if($isPerson)
+                                                <svg class="h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21a8 8 0 0116 0"/></svg>
+                                            @else
+                                                <svg class="h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4z"/></svg>
+                                            @endif
+                                        </span>
+                                    </div>
+
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <span class="rounded-full px-2.5 py-0.5 text-[11px] font-bold {{ $isPerson ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
+                                                {{ $lastScanResult['subject_label'] ?? '-' }}
+                                            </span>
+                                            @if($isDuplicateScan)
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700">
+                                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.3 3.86l-8 13.9A2 2 0 004 21h16a2 2 0 001.7-3.24l-8-13.9a2 2 0 00-3.4 0z"/></svg>
+                                                    تکراری
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <p class="mt-1.5 truncate text-lg font-black text-slate-900">{{ $lastScanResult['name'] ?? '-' }}</p>
+                                    </div>
+                                </div>
+
+                                <dl class="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
+                                    <div class="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+                                        <dt class="font-semibold text-slate-500">{{ $lastScanResult['code_label'] ?? 'کد' }}</dt>
+                                        <dd class="font-bold text-slate-800" dir="ltr">{{ $lastScanResult['code'] ?? '-' }}</dd>
+                                    </div>
+                                    <div class="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+                                        <dt class="font-semibold text-slate-500">کد ملی</dt>
+                                        <dd class="font-bold text-slate-800" dir="ltr">{{ $lastScanResult['national_id'] ?? '-' }}</dd>
+                                    </div>
+                                    <div class="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 sm:col-span-2">
+                                        <dt class="font-semibold text-slate-500">شماره تماس</dt>
+                                        <dd class="font-bold text-slate-800" dir="ltr">{{ $lastScanResult['mobile'] ?? '-' }}</dd>
+                                    </div>
+                                </dl>
+
+                                @if(! empty($lastScanResult['details']))
+                                    <div class="mt-2 flex flex-wrap gap-1.5">
+                                        @foreach($lastScanResult['details'] as $detail)
+                                            <span class="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold">
+                                                <span class="text-slate-400">{{ $detail['label'] }}:</span>
+                                                <span class="text-slate-700">{{ $detail['value'] }}</span>
+                                            </span>
+                                        @endforeach
+                                    </div>
                                 @endif
                             </div>
-                            <p class="mt-3 text-lg font-black text-slate-900">{{ $lastScanResult['name'] ?? '-' }}</p>
-                            <dl class="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
-                                <div class="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
-                                    <dt class="font-semibold text-slate-500">{{ $lastScanResult['code_label'] ?? 'کد' }}</dt>
-                                    <dd class="font-bold text-slate-800" dir="ltr">{{ $lastScanResult['code'] ?? '-' }}</dd>
-                                </div>
-                                <div class="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
-                                    <dt class="font-semibold text-slate-500">کد ملی</dt>
-                                    <dd class="font-bold text-slate-800" dir="ltr">{{ $lastScanResult['national_id'] ?? '-' }}</dd>
-                                </div>
-                                <div class="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 sm:col-span-2">
-                                    <dt class="font-semibold text-slate-500">شماره تماس</dt>
-                                    <dd class="font-bold text-slate-800" dir="ltr">{{ $lastScanResult['mobile'] ?? '-' }}</dd>
-                                </div>
-                            </dl>
-                        </div>
-                    @endif
+                        @else
+                            <div
+                                wire:loading.remove
+                                wire:target="resolveScannedQr, selectManualSubject"
+                                class="flex h-[8rem] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 px-4 text-center"
+                            >
+                                <p class="text-xs font-semibold text-slate-400">پس از اسکن، اطلاعات هویتی فرد اینجا نمایش داده می‌شود.</p>
+                            </div>
+                        @endif
+                    </div>
                 </div>
 
                 {{-- Right: categories --}}

@@ -147,6 +147,38 @@ class DistributionOperatorEntryGateTest extends TestCase
             ->assertSet('scannedPersonId', null);
     }
 
+    public function test_scan_result_includes_disambiguating_identity_details(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+
+        $person = Person::query()->create([
+            'first_name' => 'Omid',
+            'last_name' => 'Salehi',
+            'national_id' => '5234567899',
+            'person_code' => '14020',
+            'father_name' => 'Bahram',
+            'gender' => 'male',
+        ]);
+
+        $issued = app(QrIdentityService::class)->issueFor($person, $operator->id);
+        $token = $issued['token'] ?? $issued['identity']->token_encrypted;
+
+        $this->actingAs($operator);
+
+        $result = Livewire::test(EntryGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            ->get('lastScanResult');
+
+        $this->assertSame('مددجو', $result['subject_label']);
+        $this->assertArrayHasKey('avatar_url', $result);
+
+        $details = collect($result['details']);
+        $this->assertSame('Bahram', $details->firstWhere('label', 'نام پدر')['value']);
+        $this->assertNotNull($details->firstWhere('label', 'جنسیت'));
+    }
+
     public function test_rescanning_same_person_is_flagged_as_duplicate(): void
     {
         [$operator] = $this->operator();
