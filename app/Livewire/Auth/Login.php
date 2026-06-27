@@ -44,8 +44,9 @@ class Login extends Component
             session()->regenerate();
 
             RateLimiter::clear($this->throttleKey());
+            session()->forget('url.intended');
 
-            return redirect()->intended(auth()->user()->getPanelRedirectPath());
+            return redirect()->to(auth()->user()->getPanelRedirectPath());
         }
 
         RateLimiter::hit($this->throttleKey(), 120);

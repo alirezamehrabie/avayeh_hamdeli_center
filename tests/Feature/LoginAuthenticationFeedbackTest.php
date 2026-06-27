@@ -30,6 +30,28 @@ class LoginAuthenticationFeedbackTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_successful_login_ignores_stale_intended_url_and_uses_role_panel(): void
+    {
+        User::factory()->create([
+            'email' => 'operator@example.test',
+            'password' => 'correct-password',
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+            'permissions' => [User::PERMISSION_DISTRIBUTION_INBOUND_GATE],
+        ]);
+
+        session()->put('url.intended', route('admin.user-definition'));
+
+        Livewire::test(Login::class)
+            ->set('email', 'operator@example.test')
+            ->set('password', 'correct-password')
+            ->call('login')
+            ->assertRedirect(route('distribution-operator.define-service'));
+
+        $this->assertAuthenticated();
+        $this->assertNull(session('url.intended'));
+    }
+
     public function test_credential_changes_clear_form_level_auth_error(): void
     {
         User::factory()->create([
