@@ -12,7 +12,7 @@ use Illuminate\Support\Str;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Layout;
 
-#[Layout('layouts.app')] // یا هر لایوتی که برای صفحات عمومی دارید
+#[Layout('layouts.auth')]
 #[Title('ورود به سامانه آوای همدلی')]
 class Login extends Component
 {

@@ -55,4 +55,27 @@ class LoginPageEncodingTest extends TestCase
         $this->assertStringNotContainsString('wire:model.live', $contents);
         $this->assertStringNotContainsString('wire:model.live.debounce', $contents);
     }
+
+    public function test_login_uses_dedicated_auth_layout(): void
+    {
+        $component = file_get_contents(app_path('Livewire/Auth/Login.php'));
+        $layout = file_get_contents(resource_path('views/layouts/auth.blade.php'));
+
+        $this->assertIsString($component);
+        $this->assertIsString($layout);
+        $this->assertStringContainsString("#[Layout('layouts.auth')]", $component);
+        $this->assertStringContainsString("@vite(['resources/css/app.css', 'resources/js/app.js'])", $layout);
+        $this->assertStringContainsString('@livewireScriptConfig', $layout);
+        $this->assertStringNotContainsString("@include('layouts.header')", $layout);
+        $this->assertStringNotContainsString('class="container py-4"', $layout);
+        $this->assertStringNotContainsString("asset('css/app.css')", $layout);
+    }
+
+    public function test_login_page_does_not_render_shared_public_header(): void
+    {
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertDontSee('layouts.header')
+            ->assertDontSeeHtml('class="container py-4"');
+    }
 }
