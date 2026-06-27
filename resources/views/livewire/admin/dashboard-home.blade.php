@@ -354,7 +354,7 @@
                         <div>
                             <h1 class="text-2xl font-bold text-gray-800 mb-6">خلاصه وضعیت مرکز نیکوکاری</h1>
 
-                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                            <div class="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
                                 <livewire:admin.dashboard.stat-card
                                     title="کل اعضای مرکز"
                                     :value="$totalCenterMembers . ' نفر '"
