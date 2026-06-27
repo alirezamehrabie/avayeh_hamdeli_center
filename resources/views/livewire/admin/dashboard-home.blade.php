@@ -473,7 +473,7 @@
                                                 <div class="min-w-[44px] xl:min-w-0 xl:flex-1 flex flex-col items-center justify-end h-full">
                                                     <p class="mb-2 text-xs font-bold text-indigo-700">{{ number_format($monthData['count']) }}</p>
                                                     <div
-                                                        class="w-8 md:w-9 xl:w-full rounded-t-md bg-indigo-500 transition-all duration-300"
+                                                        class="w-8 md:w-9 xl:w-full rounded-t-md bg-gradient-to-t from-indigo-600 via-indigo-500 to-indigo-400 shadow-[0_10px_24px_-18px_rgba(99,102,241,0.45)] transition-all duration-300"
                                                         style="height: {{ max($heightPercentage, $monthData['count'] > 0 ? 4 : 0) }}%;"
                                                         title="{{ $monthData['count'] }} نفر"
                                                     ></div>
