@@ -361,6 +361,9 @@ class EntryGate extends Component
         $this->loadSubjectAssignments();
         $this->scanStatus = 'paused';
         $this->scanMessage = $this->subjectLoadedMessage('مددجو', $isDuplicate, $source);
+
+        // Open the mobile categories bottom-sheet now that a subject is on screen.
+        $this->dispatch('entry-gate-subject-loaded');
     }
 
     protected function applyGuardianScan(Guardian $guardian, bool $isDuplicate = false, string $source = 'qr'): void
@@ -384,6 +387,9 @@ class EntryGate extends Component
         $this->loadSubjectAssignments();
         $this->scanStatus = 'paused';
         $this->scanMessage = $this->subjectLoadedMessage('خانوار', $isDuplicate, $source);
+
+        // Open the mobile categories bottom-sheet now that a subject is on screen.
+        $this->dispatch('entry-gate-subject-loaded');
     }
 
     protected function subjectLoadedMessage(string $subjectLabel, bool $isDuplicate, string $source): string

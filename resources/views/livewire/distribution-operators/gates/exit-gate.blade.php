@@ -7,12 +7,6 @@
     ];
 @endphp
 
-<style>
-    [x-cloak] {
-        display: none !important;
-    }
-</style>
-
 <div class="space-y-6" dir="rtl">
     <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         @if($selectedService)
@@ -22,7 +16,7 @@
                     <div class="flex min-w-0 items-center gap-3">
                         <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-indigo-600 px-3 py-1 text-[11px] font-black text-white">
                             <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-300"></span>
-                            گیت ورود فعال
+                            گیت خروج فعال
                         </span>
                         <div class="min-w-0">
                             <p class="truncate text-sm font-black text-slate-900">{{ $selectedService->name }}</p>
@@ -54,9 +48,9 @@
         @else
             <div class="border-b border-slate-100 bg-slate-50/60 px-5 py-4">
                 <div>
-                    <h1 class="text-xl font-black text-slate-900">گیت ورود</h1>
+                    <h1 class="text-xl font-black text-slate-900">گیت خروج</h1>
                     <p class="mt-1 text-xs font-semibold text-slate-500">
-                        انتخاب خدمت، اسکن QR و تخصیص دسته‌بندی‌های مجاز برای مرحله تحویل.
+                        انتخاب خدمت، اسکن QR و تأیید نهایی خروج اقلام تحویل‌شده در گیت تحویل.
                     </p>
                 </div>
             </div>
@@ -66,7 +60,7 @@
             {{-- Step 1: Service selection --}}
             <div class="px-5 py-6">
                 <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <h2 class="text-sm font-extrabold text-slate-800">۱. انتخاب خدمت گیت ورود</h2>
+                    <h2 class="text-sm font-extrabold text-slate-800">۱. انتخاب خدمت گیت خروج</h2>
 
                     <div class="relative w-full sm:max-w-xs">
                         <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-400">
@@ -143,121 +137,21 @@
                 @endif
             </div>
         @else
-            {{-- Step 2: Scan + assign --}}
+            {{-- Step 2: Scan + finalize exit --}}
             <div
-                x-data="{
-                    ...idCardScanner({
-                        resolveScan: (payload) => $wire.resolveScannedQr(payload),
-                        successSoundUrl: '/sounds/scan-card.wav',
-                        enableResultBanner: false,
-                        autoStart: false,
-                        autoResumeAfterSuccess: false,
-                    }),
-                    categoriesSheetOpen: false,
-                }"
+                x-data="idCardScanner({
+                    resolveScan: (payload) => $wire.resolveScannedQr(payload),
+                    successSoundUrl: '/sounds/scan-card.wav',
+                    enableResultBanner: false,
+                    autoStart: false,
+                    autoResumeAfterSuccess: false,
+                })"
                 x-init="init()"
-                x-on:id-card-scanner-resume.window="resumeFromWire(); categoriesSheetOpen = false"
-                x-on:entry-gate-subject-loaded.window="categoriesSheetOpen = true"
+                x-on:id-card-scanner-resume.window="resumeFromWire()"
                 class="grid gap-5 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
             >
-                {{-- Left: scanner + identity --}}
+                {{-- Left: identity (kept at the top so it stays visible at a glance) + scanner --}}
                 <div class="flex min-h-0 flex-col gap-4">
-                    <div class="relative h-[clamp(220px,42svh,420px)] overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 landscape:max-h-[55svh]">
-                        <div
-                            wire:ignore
-                            x-ref="scanner"
-                            id="entry-gate-scanner-reader"
-                            class="qr-scanner-reader h-full w-full"
-                        ></div>
-
-                        <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
-                            <div class="aspect-square w-[min(70%,320px)] max-h-[calc(100%-4rem)] rounded-2xl border-2 border-emerald-300/90 shadow-[0_0_0_9999px_rgba(15,23,42,0.28)]"></div>
-                        </div>
-
-                        <div class="absolute bottom-3 right-3 rounded-full bg-slate-950/70 px-3 py-1.5 text-[11px] font-semibold text-white backdrop-blur">
-                            کد QR را داخل قاب قرار دهید
-                        </div>
-                    </div>
-
-                    <div class="grid gap-3 sm:grid-cols-2">
-                        <button
-                            type="button"
-                            @click="startCamera()"
-                            class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
-                        >
-                            فعال‌سازی دوربین
-                        </button>
-                        <button
-                            type="button"
-                            wire:click="resumeScanning"
-                            class="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100"
-                        >
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M5 9a7 7 0 0111-3.7L20 9M19 15a7 7 0 01-11 3.7L4 15"/></svg>
-                            اسکن نفر بعدی
-                        </button>
-                    </div>
-
-                    <div class="rounded-2xl border px-4 py-3 text-sm font-semibold
-                        @class([
-                            'border-amber-200 bg-amber-50 text-amber-700' => $scanStatus === 'paused' && ($lastScanResult['code_key'] ?? null) === 'duplicate',
-                            'border-emerald-200 bg-emerald-50 text-emerald-700' => $scanStatus === 'paused' && ($lastScanResult['code_key'] ?? null) !== 'duplicate',
-                            'border-rose-200 bg-rose-50 text-rose-700' => $scanStatus === 'scan_error',
-                            'border-slate-200 bg-slate-50 text-slate-600' => ! in_array($scanStatus, ['paused', 'scan_error'], true),
-                        ])">
-                        {{ $scanMessage }}
-                    </div>
-
-                    {{-- Manual fallback: when the camera fails or a QR is damaged --}}
-                    <div class="rounded-2xl border border-slate-200 bg-white">
-                        <button
-                            type="button"
-                            wire:click="toggleManualSearch"
-                            class="flex w-full items-center justify-between gap-2 px-4 py-3 text-sm font-bold text-slate-700"
-                        >
-                            <span class="flex items-center gap-2">
-                                <svg class="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="M21 21l-3.5-3.5"/></svg>
-                                جستجوی دستی (در صورت خرابی QR یا دوربین)
-                            </span>
-                            <svg class="h-4 w-4 text-slate-400 transition-transform {{ $showManualSearch ? 'rotate-180' : '' }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                        </button>
-
-                        @if($showManualSearch)
-                            <div class="border-t border-slate-100 px-4 py-3">
-                                <input
-                                    type="search"
-                                    wire:model.live.debounce.300ms="manualSearch"
-                                    placeholder="نام، کد مددجو/خانوار یا کد ملی"
-                                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100"
-                                >
-
-                                @if(strlen(trim($manualSearch)) >= 2)
-                                    <div class="mt-3 space-y-2">
-                                        @forelse($this->manualCandidates as $candidate)
-                                            <button
-                                                type="button"
-                                                wire:key="manual-candidate-{{ $candidate['type'] }}-{{ $candidate['id'] }}"
-                                                wire:click="selectManualSubject('{{ $candidate['type'] }}', {{ $candidate['id'] }})"
-                                                class="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-right transition hover:border-indigo-200 hover:bg-indigo-50"
-                                            >
-                                                <span class="flex min-w-0 flex-col">
-                                                    <span class="truncate text-sm font-bold text-slate-800">{{ $candidate['name'] }}</span>
-                                                    <span class="text-[11px] font-semibold text-slate-400" dir="ltr">{{ $candidate['code'] }} · {{ $candidate['national_id'] }}</span>
-                                                </span>
-                                                <span class="shrink-0 rounded-md px-2 py-0.5 text-[10px] font-bold {{ $candidate['type'] === \App\Models\QrIdentity::SUBJECT_PERSON ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
-                                                    {{ $candidate['type'] === \App\Models\QrIdentity::SUBJECT_PERSON ? 'مددجو' : 'خانوار' }}
-                                                </span>
-                                            </button>
-                                        @empty
-                                            <p class="rounded-xl bg-slate-50 px-3 py-3 text-center text-xs font-semibold text-slate-500">موردی یافت نشد.</p>
-                                        @endforelse
-                                    </div>
-                                @else
-                                    <p class="mt-2 text-[11px] font-semibold text-slate-400">برای جستجو حداقل ۲ نویسه وارد کنید.</p>
-                                @endif
-                            </div>
-                        @endif
-                    </div>
-
                     {{-- Identity card (fixed-height slot so the layout doesn't jump between scans) --}}
                     <div class="min-h-[8rem]">
                         {{-- Skeleton while the scan resolves on the server --}}
@@ -357,119 +251,210 @@
                         @endif
                     </div>
 
-                    {{-- Mobile-only: re-open the categories sheet after it's been dismissed --}}
-                    @if($lastScanResult)
-                        <button
-                            type="button"
-                            @click="categoriesSheetOpen = true"
-                            class="flex w-full items-center justify-between gap-2 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-bold text-indigo-700 transition hover:bg-indigo-100 lg:hidden"
-                        >
-                            <span class="flex items-center gap-2">
-                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                                انتخاب دسته‌بندی‌ها
-                            </span>
-                            <span class="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-black text-indigo-600">
-                                {{ count($assignedCategoryIds) }} انتخاب‌شده
-                            </span>
-                        </button>
-                    @endif
-                </div>
+                    <div class="relative h-[clamp(240px,38svh,380px)] overflow-hidden rounded-2xl border border-slate-200 bg-slate-950">
+                        <div
+                            wire:ignore
+                            x-ref="scanner"
+                            id="exit-gate-scanner-reader"
+                            class="qr-scanner-reader h-full w-full"
+                        ></div>
 
-                {{-- Mobile-only backdrop behind the categories bottom-sheet --}}
-                <div
-                    x-cloak
-                    x-show="categoriesSheetOpen"
-                    @click="categoriesSheetOpen = false"
-                    x-transition:enter="transition-opacity ease-out duration-200"
-                    x-transition:enter-start="opacity-0"
-                    x-transition:enter-end="opacity-100"
-                    x-transition:leave="transition-opacity ease-in duration-150"
-                    x-transition:leave-start="opacity-100"
-                    x-transition:leave-end="opacity-0"
-                    class="fixed inset-0 z-30 bg-slate-950/40 lg:hidden"
-                ></div>
+                        <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
+                            <div class="aspect-square w-[min(70%,320px)] max-h-[calc(100%-4rem)] rounded-2xl border-2 border-emerald-300/90 shadow-[0_0_0_9999px_rgba(15,23,42,0.28)]"></div>
+                        </div>
 
-                {{-- Right: categories (static column on desktop, bottom-sheet on mobile) --}}
-                <div
-                    :class="categoriesSheetOpen ? 'translate-y-0' : 'translate-y-full lg:translate-y-0'"
-                    class="fixed inset-x-0 bottom-0 z-40 flex max-h-[85svh] min-h-0 flex-col gap-3 overflow-y-auto rounded-t-3xl border-t border-slate-200 bg-white p-4 shadow-2xl transition-transform duration-300 lg:static lg:z-auto lg:max-h-none lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none"
-                >
-                    {{-- Mobile-only sheet handle + close --}}
-                    <div class="lg:hidden">
-                        <div class="mx-auto h-1.5 w-12 rounded-full bg-slate-200"></div>
-                        <div class="mt-3 flex items-center justify-between">
-                            <span class="flex items-center gap-2">
-                                <span class="text-sm font-extrabold text-slate-800">دسته‌بندی‌های خدمت</span>
-                                @if($lastScanResult)
-                                    <span class="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-600">
-                                        {{ count($assignedCategoryIds) }} انتخاب‌شده
-                                    </span>
-                                @endif
-                            </span>
-                            <button
-                                type="button"
-                                @click="categoriesSheetOpen = false"
-                                class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
-                            >
-                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
-                                بستن
-                            </button>
+                        <div class="absolute bottom-3 right-3 rounded-full bg-slate-950/70 px-3 py-1.5 text-[11px] font-semibold text-white backdrop-blur">
+                            کد QR را داخل قاب قرار دهید
                         </div>
                     </div>
 
-                    <div class="flex items-center justify-between max-lg:hidden">
-                        <h2 class="text-sm font-extrabold text-slate-800">دسته‌بندی‌های خدمت</h2>
-                        @if($lastScanResult)
-                            <span class="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-600">
-                                {{ count($assignedCategoryIds) }} انتخاب‌شده
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <button
+                            type="button"
+                            @click="startCamera()"
+                            class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                        >
+                            فعال‌سازی دوربین
+                        </button>
+                        <button
+                            type="button"
+                            wire:click="resumeScanning"
+                            class="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100"
+                        >
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M5 9a7 7 0 0111-3.7L20 9M19 15a7 7 0 01-11 3.7L4 15"/></svg>
+                            اسکن نفر بعدی
+                        </button>
+                    </div>
+
+                    <div class="rounded-2xl border px-4 py-3 text-sm font-semibold
+                        @class([
+                            'border-amber-200 bg-amber-50 text-amber-700' => $scanStatus === 'paused' && ($lastScanResult['code_key'] ?? null) === 'duplicate',
+                            'border-emerald-200 bg-emerald-50 text-emerald-700' => $scanStatus === 'paused' && ($lastScanResult['code_key'] ?? null) !== 'duplicate',
+                            'border-rose-200 bg-rose-50 text-rose-700' => $scanStatus === 'scan_error',
+                            'border-slate-200 bg-slate-50 text-slate-600' => ! in_array($scanStatus, ['paused', 'scan_error'], true),
+                        ])">
+                        {{ $scanMessage }}
+                    </div>
+
+                    {{-- Manual fallback: when the camera fails or a QR is damaged --}}
+                    <div class="rounded-2xl border border-slate-200 bg-white">
+                        <button
+                            type="button"
+                            wire:click="toggleManualSearch"
+                            class="flex w-full items-center justify-between gap-2 px-4 py-3 text-sm font-bold text-slate-700"
+                        >
+                            <span class="flex items-center gap-2">
+                                <svg class="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="M21 21l-3.5-3.5"/></svg>
+                                جستجوی دستی (در صورت خرابی QR یا دوربین)
+                            </span>
+                            <svg class="h-4 w-4 text-slate-400 transition-transform {{ $showManualSearch ? 'rotate-180' : '' }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+
+                        @if($showManualSearch)
+                            <div class="border-t border-slate-100 px-4 py-3">
+                                <input
+                                    type="search"
+                                    wire:model.live.debounce.300ms="manualSearch"
+                                    placeholder="نام، کد مددجو/خانوار یا کد ملی"
+                                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                                >
+
+                                @if(strlen(trim($manualSearch)) >= 2)
+                                    <div class="mt-3 space-y-2">
+                                        @forelse($this->manualCandidates as $candidate)
+                                            <button
+                                                type="button"
+                                                wire:key="manual-candidate-{{ $candidate['type'] }}-{{ $candidate['id'] }}"
+                                                wire:click="selectManualSubject('{{ $candidate['type'] }}', {{ $candidate['id'] }})"
+                                                class="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-right transition hover:border-indigo-200 hover:bg-indigo-50"
+                                            >
+                                                <span class="flex min-w-0 flex-col">
+                                                    <span class="truncate text-sm font-bold text-slate-800">{{ $candidate['name'] }}</span>
+                                                    <span class="text-[11px] font-semibold text-slate-400" dir="ltr">{{ $candidate['code'] }} · {{ $candidate['national_id'] }}</span>
+                                                </span>
+                                                <span class="shrink-0 rounded-md px-2 py-0.5 text-[10px] font-bold {{ $candidate['type'] === \App\Models\QrIdentity::SUBJECT_PERSON ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
+                                                    {{ $candidate['type'] === \App\Models\QrIdentity::SUBJECT_PERSON ? 'مددجو' : 'خانوار' }}
+                                                </span>
+                                            </button>
+                                        @empty
+                                            <p class="rounded-xl bg-slate-50 px-3 py-3 text-center text-xs font-semibold text-slate-500">موردی یافت نشد.</p>
+                                        @endforelse
+                                    </div>
+                                @else
+                                    <p class="mt-2 text-[11px] font-semibold text-slate-400">برای جستجو حداقل ۲ نویسه وارد کنید.</p>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- Right: delivered items to verify + finalize exit --}}
+                @php($deliveredItems = $this->deliveredItems)
+                @php($finalizedItems = $this->finalizedItems)
+                <div class="flex min-h-0 flex-col gap-3">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-sm font-extrabold text-slate-800">اقلام تحویل‌شده برای تأیید خروج</h2>
+                        @if($lastScanResult && $deliveredItems->isNotEmpty())
+                            <span class="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
+                                {{ $deliveredItems->count() }} قلم آماده تأیید
+                            </span>
+                        @elseif($lastScanResult && $finalizedItems->isNotEmpty())
+                            <span class="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700">
+                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                خروج نهایی‌شده
                             </span>
                         @endif
                     </div>
 
                     @if(! $lastScanResult)
                         <div class="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center">
-                            <p class="text-sm font-bold text-slate-600">برای تخصیص دسته‌بندی، ابتدا QR فرد را اسکن کنید.</p>
+                            <p class="text-sm font-bold text-slate-600">برای مشاهده اقلام تحویل‌شده، ابتدا QR فرد را اسکن کنید.</p>
                         </div>
-                    @elseif($selectedService->categories->isEmpty())
-                        <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center">
-                            <p class="text-sm font-bold text-slate-600">برای این خدمت دسته‌بندی‌ای تعریف نشده است.</p>
+                    @elseif($deliveredItems->isEmpty() && $finalizedItems->isNotEmpty())
+                        {{-- Already finalized for this service: locked, no action --}}
+                        <div class="rounded-2xl border border-indigo-200 bg-indigo-50/60 px-5 py-4 text-center">
+                            <p class="inline-flex items-center justify-center gap-1.5 text-sm font-bold text-indigo-700">
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zM16 11V7a4 4 0 00-8 0v4"/></svg>
+                                این فرد قبلاً از گیت خروج تأیید شده است.
+                            </p>
+                            <p class="mt-1 text-xs font-semibold text-indigo-500">اقلام زیر به‌صورت نهایی ثبت و قفل شده‌اند.</p>
                         </div>
-                    @else
                         <div class="space-y-2">
-                            @foreach($selectedService->categories as $category)
-                                @php($isChecked = in_array($category->id, $assignedCategoryIds, true))
-                                <button
-                                    type="button"
-                                    wire:click="toggleCategory({{ $category->id }})"
-                                    wire:key="entry-gate-category-{{ $category->id }}"
-                                    @class([
-                                        'flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-right transition',
-                                        'border-indigo-300 bg-indigo-50' => $isChecked,
-                                        'border-slate-200 bg-white hover:border-indigo-200 hover:bg-slate-50' => ! $isChecked,
-                                    ])
+                            @foreach($finalizedItems as $item)
+                                @php($category = $item->serviceCategory)
+                                <div
+                                    wire:key="exit-gate-finalized-{{ $item->id }}"
+                                    class="flex w-full items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/40 px-4 py-3 text-right"
                                 >
                                     <span class="flex items-center gap-3">
-                                        <span @class([
-                                            'flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition',
-                                            'border-indigo-600 bg-indigo-600 text-white' => $isChecked,
-                                            'border-slate-300 bg-white' => ! $isChecked,
-                                        ])>
-                                            @if($isChecked)
-                                                <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 111.42-1.42l2.79 2.79 6.79-6.79a1 1 0 011.42 0z" clip-rule="evenodd" />
-                                                </svg>
-                                            @endif
+                                        <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-indigo-600 bg-indigo-600 text-white">
+                                            <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 111.42-1.42l2.79 2.79 6.79-6.79a1 1 0 011.42 0z" clip-rule="evenodd" />
+                                            </svg>
                                         </span>
                                         <span class="flex flex-col">
-                                            <span class="text-sm font-bold text-slate-800">{{ $category->name }}</span>
-                                            <span class="text-[11px] font-semibold text-slate-400" dir="ltr">{{ $category->code }}</span>
+                                            <span class="text-sm font-bold text-slate-800">{{ $category?->name ?? '-' }}</span>
+                                            <span class="text-[11px] font-semibold text-slate-400" dir="ltr">{{ $category?->code ?? '-' }}</span>
                                         </span>
                                     </span>
-                                    @if($category->unit)
-                                        <span class="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ $category->unit }}</span>
-                                    @endif
-                                </button>
+                                    <span class="flex shrink-0 items-center gap-2">
+                                        @if($category?->unit)
+                                            <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ $category->unit }}</span>
+                                        @endif
+                                        <span class="rounded-full bg-indigo-100 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700">ثبت نهایی شد</span>
+                                    </span>
+                                </div>
                             @endforeach
+                        </div>
+                    @elseif($deliveredItems->isEmpty())
+                        <div class="rounded-2xl border border-dashed border-amber-300 bg-amber-50 px-5 py-8 text-center">
+                            <p class="text-sm font-bold text-amber-700">برای این فرد قلمی برای این خدمت در گیت تحویل ثبت نشده است.</p>
+                            <p class="mt-1 text-xs font-semibold text-amber-600">فقط اقلام تحویل‌شده در گیت تحویل قابل تأیید خروج هستند.</p>
+                        </div>
+                    @else
+                        {{-- Read-only verification list of items delivered at the Delivery Gate --}}
+                        <div class="space-y-2">
+                            @foreach($deliveredItems as $item)
+                                @php($category = $item->serviceCategory)
+                                <div
+                                    wire:key="exit-gate-item-{{ $item->id }}"
+                                    class="flex w-full items-center justify-between gap-3 rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-right"
+                                >
+                                    <span class="flex items-center gap-3">
+                                        <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-emerald-600 bg-emerald-600 text-white">
+                                            <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 111.42-1.42l2.79 2.79 6.79-6.79a1 1 0 011.42 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        </span>
+                                        <span class="flex flex-col">
+                                            <span class="text-sm font-bold text-slate-800">{{ $category?->name ?? '-' }}</span>
+                                            <span class="text-[11px] font-semibold text-slate-400" dir="ltr">{{ $category?->code ?? '-' }}</span>
+                                        </span>
+                                    </span>
+                                    <span class="flex shrink-0 items-center gap-2">
+                                        @if($category?->unit)
+                                            <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ $category->unit }}</span>
+                                        @endif
+                                        <span class="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">تحویل شد</span>
+                                    </span>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        {{-- High-visibility finalize action --}}
+                        <div class="mt-2">
+                            <button
+                                type="button"
+                                wire:click="finalizeExit"
+                                wire:confirm="با تأیید خروج، اقلام به‌صورت نهایی ثبت و قفل می‌شوند و قابل تغییر نخواهند بود. ادامه می‌دهید؟"
+                                wire:loading.attr="disabled"
+                                wire:target="finalizeExit"
+                                class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3.5 text-base font-black text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <span wire:loading.remove wire:target="finalizeExit">تأیید خروج و ثبت نهایی تحویل</span>
+                                <span wire:loading wire:target="finalizeExit">در حال ثبت نهایی…</span>
+                            </button>
                         </div>
                     @endif
                 </div>

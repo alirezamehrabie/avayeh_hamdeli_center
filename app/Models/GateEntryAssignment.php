@@ -14,6 +14,8 @@ class GateEntryAssignment extends Model
 
     public const STATUS_DELIVERED = 'delivered';
 
+    public const STATUS_FINALIZED = 'finalized';
+
     protected $fillable = [
         'service_id',
         'service_category_id',
