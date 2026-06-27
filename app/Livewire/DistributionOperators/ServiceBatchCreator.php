@@ -53,6 +53,18 @@ class ServiceBatchCreator extends Component
      */
     public array $miscCategories = [];
 
+    /**
+     * Edit-only: misc service grouped by social worker.
+     *
+     * @var array<int, array<string, mixed>>
+     */
+    public array $miscWorkerGroups = [];
+
+    /**
+     * Edit-only: index of the worker group whose search dropdown is open.
+     */
+    public ?int $activeWorkerGroupIndex = null;
+
     public string $miscServiceType = '';
 
     public string $miscDescription = '';
@@ -219,6 +231,11 @@ class ServiceBatchCreator extends Component
         $this->confirmingBatchSave = false;
     }
 
+    public function updatedMiscWorkerGroups(): void
+    {
+        $this->confirmingBatchSave = false;
+    }
+
     public function selectSocialWorker(int $socialWorkerId): void
     {
         $worker = SocialWorker::query()
@@ -281,11 +298,124 @@ class ServiceBatchCreator extends Component
         $this->confirmingBatchSave = false;
     }
 
+    public function addWorkerGroup(): void
+    {
+        $this->miscWorkerGroups[] = $this->makeWorkerGroup();
+        $this->confirmingBatchSave = false;
+
+        $newIndex = array_key_last($this->miscWorkerGroups);
+        $this->activeWorkerGroupIndex = $newIndex;
+
+        $this->dispatch('worker-group-added', index: $newIndex);
+    }
+
+    public function removeWorkerGroup(int $index): void
+    {
+        if (count($this->miscWorkerGroups) <= 1) {
+            return;
+        }
+
+        unset($this->miscWorkerGroups[$index]);
+        $this->miscWorkerGroups = array_values($this->miscWorkerGroups);
+        $this->activeWorkerGroupIndex = null;
+        $this->confirmingBatchSave = false;
+    }
+
+    public function toggleGroupLock(int $index): void
+    {
+        if (! isset($this->miscWorkerGroups[$index])) {
+            return;
+        }
+
+        $this->miscWorkerGroups[$index]['locked'] = ! (bool) ($this->miscWorkerGroups[$index]['locked'] ?? false);
+        $this->confirmingBatchSave = false;
+    }
+
+    public function openGroupWorkerSearch(int $index): void
+    {
+        if (! isset($this->miscWorkerGroups[$index])) {
+            return;
+        }
+
+        $this->activeWorkerGroupIndex = $index;
+        $this->socialWorkerQuery = '';
+        $this->showSocialWorkerSuggestions = true;
+        $this->flushSocialWorkerSuggestions();
+        $this->confirmingBatchSave = false;
+    }
+
+    public function selectGroupWorker(int $index, int $socialWorkerId): void
+    {
+        if (! isset($this->miscWorkerGroups[$index])) {
+            return;
+        }
+
+        $worker = SocialWorker::query()
+            ->with('district:id,name')
+            ->select(['id', 'first_name', 'last_name', 'worker_code', 'district_id'])
+            ->findOrFail($socialWorkerId);
+
+        $this->miscWorkerGroups[$index]['social_worker_id'] = (int) $worker->id;
+        $this->miscWorkerGroups[$index]['worker_query'] = trim($worker->full_name . ' - کد ' . $worker->worker_code);
+        $this->miscWorkerGroups[$index]['worker_code'] = $worker->worker_code ? (string) $worker->worker_code : '-';
+        $this->miscWorkerGroups[$index]['worker_display'] = $this->formatSelectedSocialWorkerDisplay($worker);
+
+        $this->showSocialWorkerSuggestions = false;
+        $this->activeWorkerGroupIndex = null;
+        $this->flushSocialWorkerSuggestions();
+        $this->confirmingBatchSave = false;
+    }
+
+    public function clearGroupWorker(int $index): void
+    {
+        if (! isset($this->miscWorkerGroups[$index])) {
+            return;
+        }
+
+        $this->miscWorkerGroups[$index]['social_worker_id'] = null;
+        $this->miscWorkerGroups[$index]['worker_query'] = '';
+        $this->miscWorkerGroups[$index]['worker_code'] = '';
+        $this->miscWorkerGroups[$index]['worker_display'] = '';
+        $this->showSocialWorkerSuggestions = true;
+        $this->activeWorkerGroupIndex = $index;
+        $this->flushSocialWorkerSuggestions();
+        $this->confirmingBatchSave = false;
+    }
+
+    public function addGroupCategory(int $index): void
+    {
+        if (! isset($this->miscWorkerGroups[$index])) {
+            return;
+        }
+
+        $this->miscWorkerGroups[$index]['categories'][] = $this->makeMiscCategory();
+        $this->miscWorkerGroups[$index]['categories'] = array_values($this->miscWorkerGroups[$index]['categories']);
+        $this->confirmingBatchSave = false;
+    }
+
+    public function removeGroupCategory(int $groupIndex, int $categoryIndex): void
+    {
+        if (! isset($this->miscWorkerGroups[$groupIndex]['categories'])) {
+            return;
+        }
+
+        if (count($this->miscWorkerGroups[$groupIndex]['categories']) <= 1) {
+            return;
+        }
+
+        unset($this->miscWorkerGroups[$groupIndex]['categories'][$categoryIndex]);
+        $this->miscWorkerGroups[$groupIndex]['categories'] = array_values($this->miscWorkerGroups[$groupIndex]['categories']);
+        $this->confirmingBatchSave = false;
+    }
+
     public function requestSaveConfirmation(): void
     {
         $this->date = $this->normalizeJalaliDate($this->date);
 
-        if ($this->mode === self::MODE_MISC || $this->editingServiceId) {
+        if ($this->editingServiceId) {
+            $this->validate($this->miscEditRules(), [], $this->validationAttributes());
+            $this->validateDistinctWorkerGroups();
+        } elseif ($this->mode === self::MODE_MISC) {
             $this->validate($this->miscRules(), [], $this->validationAttributes());
         } else {
             $this->validate($this->predefinedRules(), [], $this->validationAttributes());
@@ -356,6 +486,7 @@ class ServiceBatchCreator extends Component
             'typeOptions' => Service::TYPE_OPTIONS,
             'unitOptions' => Service::unitOptions(),
             'nextMiscName' => $this->nextMiscName(),
+            'categoryNameSuggestions' => $this->editingServiceId ? $this->categoryNameSuggestions() : [],
         ]);
     }
 
@@ -456,6 +587,10 @@ class ServiceBatchCreator extends Component
 
     protected function saveMiscService()
     {
+        if ($this->editingServiceId) {
+            return $this->saveMiscServiceEdit();
+        }
+
         $validated = $this->validate($this->miscRules(), [], $this->validationAttributes());
         $miscName = $this->nextMiscName();
 
@@ -471,17 +606,11 @@ class ServiceBatchCreator extends Component
             $totalQuantity = collect($validated['miscCategories'])
                 ->sum(fn (array $category): float => (float) $category['quantity']);
 
-            if ($this->editingServiceId) {
-                $service = $this->resolveEditableService($this->editingServiceId);
-                $service->categories()->delete();
-                $service->workerAllocations()->delete();
-            } else {
-                $service = new Service([
-                    'code' => Service::generateNextCode(),
-                    'created_by' => auth()->id(),
-                    'quantity_delivered' => 0,
-                ]);
-            }
+            $service = new Service([
+                'code' => Service::generateNextCode(),
+                'created_by' => auth()->id(),
+                'quantity_delivered' => 0,
+            ]);
 
             $service->fill([
                 'name' => $miscName,
@@ -527,6 +656,64 @@ class ServiceBatchCreator extends Component
         return redirect()->route('distribution-operator.service-list');
     }
 
+    protected function saveMiscServiceEdit()
+    {
+        $validated = $this->validate($this->miscEditRules(), [], $this->validationAttributes());
+        $this->validateDistinctWorkerGroups();
+
+        DB::transaction(function () use ($validated): void {
+            $service = $this->resolveEditableService($this->editingServiceId);
+            $serviceNameId = $service->service_name_id;
+
+            $service->categories()->delete();
+            $service->workerAllocations()->delete();
+
+            $sortId = 1;
+            $totalQuantity = 0.0;
+
+            foreach (array_values($validated['miscWorkerGroups']) as $group) {
+                $workerId = (int) $group['social_worker_id'];
+
+                foreach (array_values($group['categories']) as $categoryRow) {
+                    $quantity = (float) $categoryRow['quantity'];
+
+                    $category = $service->categories()->create([
+                        'service_name_id' => $serviceNameId,
+                        'name' => trim((string) $categoryRow['name']),
+                        'quantity' => $quantity,
+                        'unit' => $categoryRow['unit'],
+                        'value' => 0,
+                        'sort_id' => $sortId++,
+                        'created_by' => auth()->id(),
+                    ]);
+
+                    $service->workerAllocations()->create([
+                        'social_worker_id' => $workerId,
+                        'service_category_id' => $category->id,
+                        'allocated_quantity' => $quantity,
+                        'assigned_by_user_id' => auth()->id(),
+                    ]);
+
+                    $totalQuantity += $quantity;
+                }
+            }
+
+            $service->fill([
+                'service_type' => $validated['miscServiceType'],
+                'description' => $validated['miscDescription'] ?? null,
+                'total_quantity' => $totalQuantity,
+                'distribution_start_date' => $this->jalaliToGregorian($validated['date']),
+                'distribution_end_date' => $this->jalaliToGregorian($validated['date']),
+            ])->save();
+
+            $service->refreshFinancialTotals();
+        });
+
+        session()->flash('success', 'خدمت متفرقه با موفقیت ویرایش شد.');
+
+        return redirect()->route('distribution-operator.service-list');
+    }
+
     protected function predefinedRules(): array
     {
         return [
@@ -559,6 +746,44 @@ class ServiceBatchCreator extends Component
         ];
     }
 
+    protected function miscEditRules(): array
+    {
+        return [
+            'miscServiceType' => ['required', Rule::in(array_keys(Service::TYPE_OPTIONS))],
+            'miscDescription' => ['nullable', 'string', 'max:5000'],
+            'date' => ['required', 'string', function (string $attribute, mixed $value, \Closure $fail): void {
+                if (! $this->isValidJalaliDate((string) $value)) {
+                    $fail('تاریخ واردشده معتبر نیست.');
+                }
+            }],
+            'miscWorkerGroups' => ['required', 'array', 'min:1'],
+            'miscWorkerGroups.*.social_worker_id' => ['required', 'integer', 'exists:social_workers,id'],
+            'miscWorkerGroups.*.categories' => ['required', 'array', 'min:1'],
+            'miscWorkerGroups.*.categories.*.name' => ['required', 'string', 'max:255'],
+            'miscWorkerGroups.*.categories.*.quantity' => ['required', 'numeric', 'min:0.01'],
+            'miscWorkerGroups.*.categories.*.unit' => ['required', Rule::in(Service::unitKeys())],
+        ];
+    }
+
+    /**
+     * Ensure no social worker appears in more than one group, otherwise the
+     * recreated allocations would collide on the (service, worker, category)
+     * unique key and duplicate the same worker pointlessly.
+     */
+    protected function validateDistinctWorkerGroups(): void
+    {
+        $workerIds = collect($this->miscWorkerGroups)
+            ->pluck('social_worker_id')
+            ->filter(fn ($id): bool => (int) $id > 0)
+            ->map(fn ($id): int => (int) $id);
+
+        if ($workerIds->count() !== $workerIds->unique()->count()) {
+            throw ValidationException::withMessages([
+                'miscWorkerGroups' => 'هر مددکار فقط می‌تواند یک‌بار در این خدمت ثبت شود؛ مددکار تکراری را حذف کنید.',
+            ]);
+        }
+    }
+
     protected function validationAttributes(): array
     {
         return [
@@ -571,6 +796,10 @@ class ServiceBatchCreator extends Component
             'miscCategories.*.name' => 'نام دسته‌بندی',
             'miscCategories.*.quantity' => 'مقدار دسته‌بندی',
             'miscCategories.*.unit' => 'واحد',
+            'miscWorkerGroups.*.social_worker_id' => 'مددکار',
+            'miscWorkerGroups.*.categories.*.name' => 'نام دسته‌بندی',
+            'miscWorkerGroups.*.categories.*.quantity' => 'مقدار دسته‌بندی',
+            'miscWorkerGroups.*.categories.*.unit' => 'واحد',
         ];
     }
 
@@ -588,30 +817,127 @@ class ServiceBatchCreator extends Component
 
     protected function loadEditableMiscService(Service $service): void
     {
-        $worker = $service->socialWorkers()
-            ->with('district:id,name')
-            ->select(['social_workers.id', 'first_name', 'last_name', 'worker_code', 'district_id'])
-            ->first();
         $jalaliDate = Jalalian::fromDateTime($service->distribution_start_date);
 
         $this->mode = self::MODE_MISC;
         $this->miscServiceType = (string) $service->service_type;
         $this->miscDescription = (string) $service->description;
         $this->date = $jalaliDate->format('Y/m/d');
-        $this->socialWorkerId = $worker?->id;
-        $this->socialWorkerQuery = $worker ? trim($worker->full_name . ' - کد ' . $worker->worker_code) : '';
-        $this->selectedSocialWorkerCode = $worker?->worker_code ? (string) $worker->worker_code : '';
-        $this->selectedSocialWorkerDisplay = $worker ? $this->formatSelectedSocialWorkerDisplay($worker) : '';
-        $this->miscCategories = $service->categories()
-            ->ordered()
+
+        $this->miscWorkerGroups = $this->buildWorkerGroupsFromService($service);
+    }
+
+    /**
+     * Build the edit-mode worker groups from an existing misc service.
+     *
+     * Each group is one social worker plus the category rows allocated to that
+     * worker (resolved through the service worker allocations).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    protected function buildWorkerGroupsFromService(Service $service): array
+    {
+        $categories = $service->categories()->ordered()->get();
+
+        $allocationsByCategory = $service->workerAllocations()
+            ->with('socialWorker.district:id,name')
             ->get()
-            ->map(fn (ServiceCategory $category): array => [
+            ->keyBy('service_category_id');
+
+        $groups = [];
+        $groupIndexByWorker = [];
+
+        foreach ($categories as $category) {
+            $allocation = $allocationsByCategory->get($category->id);
+            $worker = $allocation?->socialWorker;
+
+            if (! $worker) {
+                continue;
+            }
+
+            $workerId = (int) $worker->id;
+
+            if (! array_key_exists($workerId, $groupIndexByWorker)) {
+                $groupIndexByWorker[$workerId] = count($groups);
+                $groups[] = [
+                    'uid' => 'group-' . $workerId,
+                    'social_worker_id' => $workerId,
+                    'worker_query' => trim($worker->full_name . ' - کد ' . $worker->worker_code),
+                    'worker_code' => $worker->worker_code ? (string) $worker->worker_code : '-',
+                    'worker_display' => $this->formatSelectedSocialWorkerDisplay($worker),
+                    'locked' => true,
+                    'is_existing' => true,
+                    'categories' => [],
+                ];
+            }
+
+            $groups[$groupIndexByWorker[$workerId]]['categories'][] = [
                 'name' => $category->name,
                 'quantity' => $this->formatDecimal($category->quantity),
                 'unit' => $category->unit,
-            ])
-            ->values()
-            ->all() ?: [$this->makeMiscCategory()];
+            ];
+        }
+
+        if ($groups === []) {
+            return [$this->makeWorkerGroup()];
+        }
+
+        return $groups;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    /**
+     * Distinct category names already used across the current worker groups,
+     * offered as autocomplete suggestions to discourage near-duplicate labels.
+     *
+     * @return array<int, string>
+     */
+    protected function categoryNameSuggestions(): array
+    {
+        $seen = [];
+        $names = [];
+
+        foreach ($this->miscWorkerGroups as $group) {
+            foreach (($group['categories'] ?? []) as $category) {
+                $name = trim((string) ($category['name'] ?? ''));
+
+                if ($name === '') {
+                    continue;
+                }
+
+                $key = mb_strtolower($name);
+
+                if (isset($seen[$key])) {
+                    continue;
+                }
+
+                $seen[$key] = true;
+                $names[] = $name;
+            }
+        }
+
+        sort($names, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return $names;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function makeWorkerGroup(): array
+    {
+        return [
+            'uid' => 'group-new-' . \Illuminate\Support\Str::random(8),
+            'social_worker_id' => null,
+            'worker_query' => '',
+            'worker_code' => '',
+            'worker_display' => '',
+            'locked' => false,
+            'is_existing' => false,
+            'categories' => [$this->makeMiscCategory()],
+        ];
     }
 
     protected function resolvePredefinedService(int $serviceId): Service
@@ -753,9 +1079,60 @@ class ServiceBatchCreator extends Component
         return in_array($this->miscServiceType, array_keys(Service::TYPE_OPTIONS), true);
     }
 
+    protected function isValidMiscCategoryRow(mixed $category): bool
+    {
+        return is_array($category)
+            && trim((string) ($category['name'] ?? '')) !== ''
+            && (float) ($category['quantity'] ?? 0) > 0
+            && in_array((string) ($category['unit'] ?? ''), Service::unitKeys(), true);
+    }
+
+    protected function hasValidWorkerGroups(): bool
+    {
+        if (empty($this->miscWorkerGroups)) {
+            return false;
+        }
+
+        foreach ($this->miscWorkerGroups as $group) {
+            if ((int) ($group['social_worker_id'] ?? 0) <= 0) {
+                return false;
+            }
+
+            $categories = $group['categories'] ?? [];
+
+            if (empty($categories)) {
+                return false;
+            }
+
+            foreach ($categories as $category) {
+                if (! $this->isValidMiscCategoryRow($category)) {
+                    return false;
+                }
+            }
+        }
+
+        return ! $this->hasDuplicateWorkerGroups();
+    }
+
+    protected function hasDuplicateWorkerGroups(): bool
+    {
+        $workerIds = collect($this->miscWorkerGroups)
+            ->pluck('social_worker_id')
+            ->filter(fn ($id): bool => (int) $id > 0)
+            ->map(fn ($id): int => (int) $id);
+
+        return $workerIds->count() !== $workerIds->unique()->count();
+    }
+
     protected function canRequestSaveConfirmation(?array $predefinedMetrics = null): bool
     {
-        if ($this->mode === self::MODE_PREDEFINED && ! $this->editingServiceId) {
+        if ($this->editingServiceId) {
+            return $this->hasSelectedMiscServiceType()
+                && $this->hasValidWorkerGroups()
+                && $this->isValidJalaliDate($this->date);
+        }
+
+        if ($this->mode === self::MODE_PREDEFINED) {
             return $this->selectedServiceId !== null
                 && $this->socialWorkerId !== null
                 && $this->hasPositivePredefinedAllocation()
@@ -771,6 +1148,54 @@ class ServiceBatchCreator extends Component
     protected function savePreventionMessages(?array $predefinedMetrics = null): array
     {
         $messages = [];
+
+        if ($this->editingServiceId) {
+            if (! $this->hasSelectedMiscServiceType()) {
+                $messages[] = 'نوع خدمت را انتخاب کنید.';
+            }
+
+            if (empty($this->miscWorkerGroups)) {
+                $messages[] = 'حداقل یک مددکار به خدمت اضافه کنید.';
+            } else {
+                $hasWorkerlessGroup = collect($this->miscWorkerGroups)
+                    ->contains(fn ($group): bool => (int) ($group['social_worker_id'] ?? 0) <= 0);
+
+                if ($hasWorkerlessGroup) {
+                    $messages[] = 'برای هر گروه، مددکار را انتخاب کنید.';
+                }
+
+                $hasInvalidCategoryRows = collect($this->miscWorkerGroups)
+                    ->contains(function ($group): bool {
+                        $categories = $group['categories'] ?? [];
+
+                        if (empty($categories)) {
+                            return true;
+                        }
+
+                        foreach ($categories as $category) {
+                            if (! $this->isValidMiscCategoryRow($category)) {
+                                return true;
+                            }
+                        }
+
+                        return false;
+                    });
+
+                if ($hasInvalidCategoryRows) {
+                    $messages[] = 'هر مددکار باید حداقل یک دسته‌بندی با نام، مقدار و واحد معتبر داشته باشد.';
+                }
+
+                if ($this->hasDuplicateWorkerGroups()) {
+                    $messages[] = 'یک مددکار بیش از یک‌بار انتخاب شده است؛ مددکار تکراری را حذف کنید.';
+                }
+            }
+
+            if (! $this->isValidJalaliDate($this->date)) {
+                $messages[] = 'تاریخ ثبت را به‌صورت معتبر وارد کنید.';
+            }
+
+            return $messages;
+        }
 
         if ($this->mode === self::MODE_PREDEFINED && ! $this->editingServiceId) {
             if (! $this->selectedServiceId) {
@@ -857,9 +1282,97 @@ class ServiceBatchCreator extends Component
 
     protected function confirmationSummary(): array
     {
-        return ($this->mode === self::MODE_MISC || $this->editingServiceId)
+        if ($this->editingServiceId) {
+            return $this->miscEditConfirmationSummary();
+        }
+
+        return $this->mode === self::MODE_MISC
             ? $this->miscConfirmationSummary()
             : $this->predefinedConfirmationSummary();
+    }
+
+    protected function miscEditConfirmationSummary(): array
+    {
+        $workersById = $this->workerGroupWorkersById();
+
+        $groups = collect($this->miscWorkerGroups)
+            ->map(function (array $group) use ($workersById): ?array {
+                $workerId = (int) ($group['social_worker_id'] ?? 0);
+                $worker = $workersById->get($workerId);
+
+                $rows = collect($group['categories'] ?? [])
+                    ->map(function (array $category): array {
+                        $quantity = (float) ($category['quantity'] ?? 0);
+                        $unit = (string) ($category['unit'] ?? '');
+
+                        return [
+                            'name' => trim((string) ($category['name'] ?? '')),
+                            'unit' => $unit,
+                            'unit_label' => Service::unitOptions()[$unit] ?? $unit,
+                            'quantity' => $quantity,
+                            'quantity_label' => number_format($quantity, 2),
+                            'remaining_label' => '0.00',
+                        ];
+                    })
+                    ->filter(fn (array $row): bool => $row['name'] !== '' && $row['quantity'] > 0)
+                    ->values()
+                    ->all();
+
+                if ($rows === []) {
+                    return null;
+                }
+
+                return [
+                    'worker_name' => $worker?->full_name ?: ($group['worker_display'] ?: 'مددکار'),
+                    'worker_code' => $worker?->worker_code ? (string) $worker->worker_code : (string) ($group['worker_code'] ?? ''),
+                    'rows' => $rows,
+                    'total_quantity_label' => number_format(collect($rows)->sum('quantity'), 2),
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+
+        $allRows = collect($groups)->flatMap(fn (array $group): array => $group['rows'])->values()->all();
+
+        return [
+            'mode' => self::MODE_MISC,
+            'is_edit' => true,
+            'title' => 'تأیید ویرایش خدمت متفرقه',
+            'service_name' => $this->nextMiscName(),
+            'service_code' => '',
+            'service_type' => Service::TYPE_OPTIONS[$this->miscServiceType] ?? $this->miscServiceType,
+            'worker_name' => count($groups) === 1 ? ($groups[0]['worker_name'] ?? '-') : (count($groups) . ' مددکار'),
+            'worker_code' => count($groups) === 1 ? ($groups[0]['worker_code'] ?? '') : '',
+            'date_label' => $this->date,
+            'description' => trim($this->miscDescription),
+            'total_quantity_label' => number_format(collect($allRows)->sum('quantity'), 2),
+            'rows' => $allRows,
+            'groups' => $groups,
+        ];
+    }
+
+    /**
+     * Resolve the social workers referenced by the current worker groups.
+     */
+    protected function workerGroupWorkersById(): Collection
+    {
+        $workerIds = collect($this->miscWorkerGroups)
+            ->pluck('social_worker_id')
+            ->filter(fn ($id): bool => (int) $id > 0)
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($workerIds->isEmpty()) {
+            return collect();
+        }
+
+        return SocialWorker::query()
+            ->select(['id', 'first_name', 'last_name', 'worker_code'])
+            ->whereIn('id', $workerIds->all())
+            ->get()
+            ->keyBy('id');
     }
 
     protected function predefinedConfirmationSummary(): array
