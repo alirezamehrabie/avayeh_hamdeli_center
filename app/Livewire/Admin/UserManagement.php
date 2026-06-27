@@ -18,7 +18,9 @@ class UserManagement extends Component
         User::ACCESS_LEVEL_MANAGER,
         User::ACCESS_LEVEL_ADMIN,
         User::ACCESS_LEVEL_REGULAR,
+        User::ACCESS_LEVEL_SOCIAL_WORKER,
         User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+        User::ACCESS_LEVEL_CHILD_SUPPORTER,
     ];
 
     public string $first_name = '';
@@ -461,6 +463,7 @@ class UserManagement extends Component
             User::ACCESS_LEVEL_REGULAR,
             User::ACCESS_LEVEL_SOCIAL_WORKER,
             User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            User::ACCESS_LEVEL_CHILD_SUPPORTER,
         ], true), 422);
 
         if (auth()->id() === $userId) {

@@ -144,6 +144,16 @@ class User extends Authenticatable
                 'description' => 'حساب پایه برای استفاده عمومی و توسعه‌پذیر',
                 'recommended_permissions' => [],
             ],
+            self::ACCESS_LEVEL_SOCIAL_WORKER => [
+                'label' => 'مددکار',
+                'description' => 'دسترسی به پنل اختصاصی مددکار برای پیگیری مددجویان و خدمات',
+                'recommended_permissions' => [],
+            ],
+            self::ACCESS_LEVEL_CHILD_SUPPORTER => [
+                'label' => 'حامی کودک',
+                'description' => 'دسترسی به پنل حامیان کودک برای پیگیری حمایت‌ها',
+                'recommended_permissions' => [],
+            ],
             self::ACCESS_LEVEL_MANAGER => [
                 'label' => 'مدیریت',
                 'description' => 'حساب محافظت‌شده سطح بالا',
@@ -226,6 +236,8 @@ class User extends Authenticatable
                 self::PERMISSION_PEOPLE_REGISTER,
                 self::PERMISSION_PEOPLE_EDIT,
             ],
+            self::ACCESS_LEVEL_SOCIAL_WORKER => [],
+            self::ACCESS_LEVEL_CHILD_SUPPORTER => [],
             self::ACCESS_LEVEL_MANAGER => [
                 self::PERMISSION_FULL_ACCESS,
             ],

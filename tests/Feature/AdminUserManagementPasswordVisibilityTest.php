@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Livewire\Admin\UserManagement;
+use App\Models\SocialWorker;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -69,6 +70,44 @@ class AdminUserManagementPasswordVisibilityTest extends TestCase
 
         $this->assertTrue(Hash::check('new-password', $user->password));
         $this->assertSame('new-password', $user->manager_visible_password);
+    }
+
+    public function test_social_worker_user_can_be_saved_from_admin_edit_modal(): void
+    {
+        $this->actingAs($this->manager());
+
+        $socialWorker = SocialWorker::query()->create([
+            'worker_code' => 10,
+            'first_name' => 'Social',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+
+        $user = User::factory()->create([
+            'first_name' => 'Social',
+            'last_name' => 'Worker',
+            'name' => 'social-worker-user',
+            'email' => 'social-worker-user@local.system',
+            'access_level' => User::ACCESS_LEVEL_SOCIAL_WORKER,
+            'permissions' => [],
+            'social_worker_id' => $socialWorker->id,
+        ]);
+
+        Livewire::test(UserManagement::class, ['listOnly' => true])
+            ->call('startEditingUser', $user->id)
+            ->assertSet('edit_access_level', User::ACCESS_LEVEL_SOCIAL_WORKER)
+            ->set('edit_first_name', 'Edited')
+            ->set('edit_last_name', 'Worker')
+            ->set('edit_username', 'social-worker-user')
+            ->set('edit_permissions', [])
+            ->call('updateUser')
+            ->assertHasNoErrors();
+
+        $user->refresh();
+
+        $this->assertSame('Edited', $user->first_name);
+        $this->assertSame(User::ACCESS_LEVEL_SOCIAL_WORKER, $user->access_level);
+        $this->assertSame([], $user->permissions);
     }
 
     private function manager(): User
