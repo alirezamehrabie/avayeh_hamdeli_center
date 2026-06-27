@@ -526,6 +526,7 @@
 
                             <div class="grid grid-cols-1 gap-3 lg:grid-cols-3">
                                 @foreach ($roleDefinitions as $roleValue => $roleMeta)
+                                    @continue($roleValue === 'manager')
                                     <label class="min-w-0 cursor-pointer">
                                         <input
                                             type="radio"
@@ -534,21 +535,21 @@
                                             value="{{ $roleValue }}"
                                             @disabled(($roleMeta['disabled'] ?? false) || ($roleValue === 'admin' && ! $actorCanCreateAdmin))
                                         >
-                                        <div class="relative flex h-full min-h-32 flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4 text-right transition duration-200 ease-out peer-checked:border-amber-400 peer-checked:bg-amber-50 peer-checked:shadow-sm peer-checked:ring-4 peer-checked:ring-amber-100 peer-disabled:cursor-not-allowed peer-disabled:opacity-50">
+                                        <div class="relative flex h-full min-h-[8.25rem] flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50 p-3 text-right transition duration-200 ease-out peer-checked:border-amber-400 peer-checked:bg-amber-50 peer-checked:shadow-sm peer-checked:ring-4 peer-checked:ring-amber-100 peer-disabled:cursor-not-allowed peer-disabled:opacity-50">
                                             <div>
-                                                <div class="flex items-center justify-between gap-3">
+                                                <div class="flex items-center justify-between gap-2">
                                                     <span class="text-sm font-black text-slate-900">{{ $roleMeta['label'] }}</span>
-                                                    <span class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-400 peer-checked:border-amber-500 peer-checked:text-amber-600">
+                                                    <span class="inline-flex h-5.5 w-5.5 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-400 peer-checked:border-amber-500 peer-checked:text-amber-600">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                                             <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.25 7.25a1 1 0 01-1.415 0l-3-3a1 1 0 111.414-1.42l2.293 2.294 6.543-6.544a1 1 0 011.415 0z" clip-rule="evenodd" />
                                                         </svg>
                                                     </span>
                                                 </div>
-                                                <p class="mt-2 text-sm leading-6 text-slate-600">{{ $roleMeta['description'] }}</p>
+                                                <p class="mt-1.5 text-xs leading-5 text-slate-600 sm:text-sm sm:leading-6">{{ $roleMeta['description'] }}</p>
                                             </div>
-                                            <div class="mt-4 flex flex-wrap gap-2">
+                                            <div class="mt-3 flex flex-wrap gap-1.5">
                                                 @foreach(($roleMeta['recommended_permissions'] ?? []) as $permissionKey)
-                                                    <span class="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200">
+                                                    <span class="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-600 ring-1 ring-slate-200">
                                                         {{ $permissionOptions[$permissionKey] ?? $permissionKey }}
                                                     </span>
                                                 @endforeach
