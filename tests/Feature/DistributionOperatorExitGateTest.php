@@ -12,6 +12,7 @@ use App\Models\ServiceDelivery;
 use App\Models\ServiceName;
 use App\Models\User;
 use App\Services\QrIdentityService;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -89,6 +90,7 @@ class DistributionOperatorExitGateTest extends TestCase
         $this->assertDatabaseHas('service_deliveries', [
             'service_id' => $service->id,
             'service_category_id' => $category->id,
+            'gate_entry_assignment_id' => $assignment->id,
             'person_id' => $person->id,
             'delivery_channel' => Service::DELIVERY_CHANNEL_GATE,
             'social_worker_id' => null,
@@ -99,6 +101,64 @@ class DistributionOperatorExitGateTest extends TestCase
         ]);
 
         $this->assertSame(1, ServiceDelivery::query()->count());
+    }
+
+    public function test_ledger_links_to_source_assignment_and_cannot_be_duplicated(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Food basket', $operator);
+        $person = $this->makePerson();
+
+        $assignment = $this->assign($service, $category, $person, $operator, GateEntryAssignment::STATUS_DELIVERED);
+
+        $token = $this->issueToken($person, $operator);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ExitGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            ->call('finalizeExit');
+
+        $this->assertSame(1, ServiceDelivery::query()->count());
+        $this->assertSame(
+            $assignment->id,
+            (int) ServiceDelivery::query()->value('gate_entry_assignment_id'),
+        );
+
+        // Defense in depth: even if an assignment is forced back to delivered (the path Step 2 blocks),
+        // re-finalizing must not write a second ledger row for the same assignment.
+        $assignment->forceFill(['status' => GateEntryAssignment::STATUS_DELIVERED])->save();
+
+        Livewire::test(ExitGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            ->call('finalizeExit');
+
+        $this->assertSame(1, ServiceDelivery::query()->count());
+
+        // The database itself is the final backstop: a duplicate ledger row for the same assignment is rejected.
+        $this->expectException(UniqueConstraintViolationException::class);
+
+        ServiceDelivery::query()->create([
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'gate_entry_assignment_id' => $assignment->id,
+            'delivery_channel' => Service::DELIVERY_CHANNEL_GATE,
+            'social_worker_id' => null,
+            'person_id' => $person->id,
+            'guardian_id' => null,
+            'national_id' => $person->national_id,
+            'full_name' => 'duplicate',
+            'mobile' => null,
+            'delivered_quantity' => 1,
+            'value_per_unit_snapshot' => 10,
+            'delivered_total_value' => 10,
+            'delivered_at' => now()->toDateString(),
+            'notes' => 'duplicate',
+            'created_by' => $operator->id,
+        ]);
     }
 
     public function test_finalize_is_idempotent_and_shows_locked_state_on_rescan(): void

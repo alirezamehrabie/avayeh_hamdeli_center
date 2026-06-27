@@ -209,28 +209,38 @@ class ExitGate extends Component
                 ->get();
 
             foreach ($assignments as $assignment) {
-                $category = $assignment->serviceCategory;
-                $unitValue = (int) ($category?->value ?? $service->deliveryUnitValue());
-                // The gate model is binary (one row per recipient per category) — one unit each.
-                $quantity = 1;
+                // Keyed on the assignment id so the ledger stays idempotent: if a row already exists for
+                // this assignment (active or soft-deleted) we never write a second one. The unique index on
+                // gate_entry_assignment_id is the database-level backstop behind this check.
+                $alreadyLedgered = ServiceDelivery::withTrashed()
+                    ->where('gate_entry_assignment_id', $assignment->id)
+                    ->exists();
 
-                ServiceDelivery::query()->create([
-                    'service_id' => $service->id,
-                    'service_category_id' => $assignment->service_category_id,
-                    'delivery_channel' => Service::DELIVERY_CHANNEL_GATE,
-                    'social_worker_id' => null,
-                    'person_id' => $assignment->person_id,
-                    'guardian_id' => $assignment->guardian_id,
-                    'national_id' => $assignment->national_id ?: '0000000000',
-                    'full_name' => $assignment->recipient_name,
-                    'mobile' => $assignment->mobile,
-                    'delivered_quantity' => $quantity,
-                    'value_per_unit_snapshot' => $unitValue,
-                    'delivered_total_value' => (int) round($quantity * $unitValue),
-                    'delivered_at' => now()->toDateString(),
-                    'notes' => 'تحویل نهایی از گیت خروج',
-                    'created_by' => $operatorId,
-                ]);
+                if (! $alreadyLedgered) {
+                    $category = $assignment->serviceCategory;
+                    $unitValue = (int) ($category?->value ?? $service->deliveryUnitValue());
+                    // The gate model is binary (one row per recipient per category) — one unit each.
+                    $quantity = 1;
+
+                    ServiceDelivery::query()->create([
+                        'service_id' => $service->id,
+                        'service_category_id' => $assignment->service_category_id,
+                        'gate_entry_assignment_id' => $assignment->id,
+                        'delivery_channel' => Service::DELIVERY_CHANNEL_GATE,
+                        'social_worker_id' => null,
+                        'person_id' => $assignment->person_id,
+                        'guardian_id' => $assignment->guardian_id,
+                        'national_id' => $assignment->national_id ?: '0000000000',
+                        'full_name' => $assignment->recipient_name,
+                        'mobile' => $assignment->mobile,
+                        'delivered_quantity' => $quantity,
+                        'value_per_unit_snapshot' => $unitValue,
+                        'delivered_total_value' => (int) round($quantity * $unitValue),
+                        'delivered_at' => now()->toDateString(),
+                        'notes' => 'تحویل نهایی از گیت خروج',
+                        'created_by' => $operatorId,
+                    ]);
+                }
 
                 $assignment->forceFill(['status' => GateEntryAssignment::STATUS_FINALIZED])->save();
             }

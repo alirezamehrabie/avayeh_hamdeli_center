@@ -14,6 +14,7 @@ class ServiceDelivery extends Model
     protected $fillable = [
         'service_id',
         'service_category_id',
+        'gate_entry_assignment_id',
         'activity_attendance_id',
         'delivery_channel',
         'social_worker_id',
@@ -39,6 +40,7 @@ class ServiceDelivery extends Model
             'delivered_at' => 'date',
             'created_by' => 'integer',
             'service_category_id' => 'integer',
+            'gate_entry_assignment_id' => 'integer',
             'activity_attendance_id' => 'integer',
         ];
     }
@@ -75,6 +77,11 @@ class ServiceDelivery extends Model
     public function activityAttendance(): BelongsTo
     {
         return $this->belongsTo(ActivityAttendance::class);
+    }
+
+    public function gateEntryAssignment(): BelongsTo
+    {
+        return $this->belongsTo(GateEntryAssignment::class);
     }
 
     public function socialWorker(): BelongsTo
