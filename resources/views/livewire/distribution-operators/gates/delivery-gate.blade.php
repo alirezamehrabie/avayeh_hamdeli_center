@@ -373,24 +373,30 @@
                         <div class="space-y-2">
                             @foreach($authorizedItems as $item)
                                 @php($category = $item->serviceCategory)
+                                @php($isFinalized = in_array($item->service_category_id, $finalizedCategoryIds, true))
                                 @php($isDelivered = in_array($item->service_category_id, $deliveredCategoryIds, true))
                                 <button
                                     type="button"
-                                    wire:click="toggleDelivered({{ $item->service_category_id }})"
+                                    @if(! $isFinalized) wire:click="toggleDelivered({{ $item->service_category_id }})" @endif
+                                    @disabled($isFinalized)
                                     wire:key="delivery-gate-item-{{ $item->id }}"
                                     @class([
                                         'flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-right transition',
-                                        'border-emerald-300 bg-emerald-50' => $isDelivered,
-                                        'border-slate-200 bg-white hover:border-emerald-200 hover:bg-slate-50' => ! $isDelivered,
+                                        'cursor-not-allowed border-indigo-200 bg-indigo-50' => $isFinalized,
+                                        'border-emerald-300 bg-emerald-50' => $isDelivered && ! $isFinalized,
+                                        'border-slate-200 bg-white hover:border-emerald-200 hover:bg-slate-50' => ! $isDelivered && ! $isFinalized,
                                     ])
                                 >
                                     <span class="flex items-center gap-3">
                                         <span @class([
                                             'flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition',
-                                            'border-emerald-600 bg-emerald-600 text-white' => $isDelivered,
-                                            'border-slate-300 bg-white' => ! $isDelivered,
+                                            'border-indigo-600 bg-indigo-600 text-white' => $isFinalized,
+                                            'border-emerald-600 bg-emerald-600 text-white' => $isDelivered && ! $isFinalized,
+                                            'border-slate-300 bg-white' => ! $isDelivered && ! $isFinalized,
                                         ])>
-                                            @if($isDelivered)
+                                            @if($isFinalized)
+                                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                            @elseif($isDelivered)
                                                 <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                                                     <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 111.42-1.42l2.79 2.79 6.79-6.79a1 1 0 011.42 0z" clip-rule="evenodd" />
                                                 </svg>
@@ -407,10 +413,11 @@
                                         @endif
                                         <span @class([
                                             'rounded-full px-2.5 py-0.5 text-[11px] font-bold',
-                                            'bg-emerald-100 text-emerald-700' => $isDelivered,
-                                            'bg-slate-100 text-slate-500' => ! $isDelivered,
+                                            'bg-indigo-100 text-indigo-700' => $isFinalized,
+                                            'bg-emerald-100 text-emerald-700' => $isDelivered && ! $isFinalized,
+                                            'bg-slate-100 text-slate-500' => ! $isDelivered && ! $isFinalized,
                                         ])>
-                                            {{ $isDelivered ? 'تحویل شد' : 'ثبت تحویل' }}
+                                            {{ $isFinalized ? 'خروج نهایی شده' : ($isDelivered ? 'تحویل شد' : 'ثبت تحویل') }}
                                         </span>
                                     </span>
                                 </button>

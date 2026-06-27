@@ -125,6 +125,45 @@ class DistributionOperatorDeliveryGateTest extends TestCase
             ->assertSet('deliveredCategoryIds', [$category->id]);
     }
 
+    public function test_finalized_item_is_locked_and_cannot_be_reverted_to_delivered(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Food basket', $operator);
+
+        $person = Person::query()->create([
+            'first_name' => 'Hadi',
+            'last_name' => 'Moradi',
+            'national_id' => '6234567890',
+            'person_code' => '14030',
+        ]);
+
+        // Already exited and finalized at the Exit Gate.
+        $assignment = $this->assign($service, $category, $person, $operator, GateEntryAssignment::STATUS_FINALIZED);
+
+        $token = $this->issueToken($person, $operator);
+
+        $this->actingAs($operator);
+
+        $component = Livewire::test(DeliveryGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            // Finalized items surface as locked, never as toggleable delivered items.
+            ->assertSet('finalizedCategoryIds', [$category->id])
+            ->assertSet('deliveredCategoryIds', [])
+            ->assertSee('خروج نهایی شده');
+
+        // Toggling a finalized item is a no-op: it must not drop back to delivered.
+        $component->call('toggleDelivered', $category->id)
+            ->assertSet('deliveredCategoryIds', [])
+            ->assertSet('finalizedCategoryIds', [$category->id]);
+
+        $this->assertDatabaseHas('gate_entry_assignments', [
+            'id' => $assignment->id,
+            'status' => GateEntryAssignment::STATUS_FINALIZED,
+        ]);
+    }
+
     public function test_scanning_subject_without_assignments_shows_empty_state(): void
     {
         [$operator] = $this->operator();

@@ -42,6 +42,9 @@ class DeliveryGate extends Component
     /** @var array<int, int> Category ids whose assignment is already marked delivered. */
     public array $deliveredCategoryIds = [];
 
+    /** @var array<int, int> Category ids locked because they were already finalized at the Exit Gate. */
+    public array $finalizedCategoryIds = [];
+
     public string $manualSearch = '';
 
     public bool $showManualSearch = false;
@@ -200,6 +203,13 @@ class DeliveryGate extends Component
             ->first();
 
         if (! $assignment) {
+            return;
+        }
+
+        // An item already finalized at the Exit Gate is locked. Reverting it here would push it back to
+        // "delivered" and let the Exit Gate finalize it a second time, creating a duplicate ServiceDelivery
+        // ledger entry (a double distribution). Only pending ⇄ delivered transitions are allowed at this gate.
+        if ($assignment->status === GateEntryAssignment::STATUS_FINALIZED) {
             return;
         }
 
@@ -499,13 +509,30 @@ class DeliveryGate extends Component
 
     protected function loadSubjectDeliveryState(): void
     {
-        $this->deliveredCategoryIds = $this->hasScannedSubject()
-            ? $this->subjectAssignmentQuery()
-                ->where('status', GateEntryAssignment::STATUS_DELIVERED)
-                ->pluck('service_category_id')
-                ->map(fn ($id) => (int) $id)
-                ->all()
-            : [];
+        if (! $this->hasScannedSubject()) {
+            $this->deliveredCategoryIds = [];
+            $this->finalizedCategoryIds = [];
+
+            return;
+        }
+
+        // One pass over the subject's rows, then split by status: delivered ones are toggleable,
+        // finalized ones are locked (already exited) so the view can render them as read-only.
+        $statuses = $this->subjectAssignmentQuery()
+            ->whereIn('status', [GateEntryAssignment::STATUS_DELIVERED, GateEntryAssignment::STATUS_FINALIZED])
+            ->pluck('status', 'service_category_id');
+
+        $this->deliveredCategoryIds = $statuses
+            ->filter(fn (string $status): bool => $status === GateEntryAssignment::STATUS_DELIVERED)
+            ->keys()
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $this->finalizedCategoryIds = $statuses
+            ->filter(fn (string $status): bool => $status === GateEntryAssignment::STATUS_FINALIZED)
+            ->keys()
+            ->map(fn ($id) => (int) $id)
+            ->all();
     }
 
     protected function subjectAssignmentQuery()
@@ -532,6 +559,7 @@ class DeliveryGate extends Component
         $this->scannedPersonId = null;
         $this->scannedGuardianId = null;
         $this->deliveredCategoryIds = [];
+        $this->finalizedCategoryIds = [];
     }
 
     protected function scanError(string $message, string $code = 'error'): array
