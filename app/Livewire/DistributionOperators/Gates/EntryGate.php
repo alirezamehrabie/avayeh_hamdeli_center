@@ -10,6 +10,7 @@ use App\Models\Service;
 use App\Models\SocialWorker;
 use App\Services\QrIdentityService;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
@@ -236,11 +237,36 @@ class EntryGate extends Component
                 ['deleted_at' => null],
             ))->save();
         } else {
-            GateEntryAssignment::query()->create($this->assignmentAttributes($category->id));
+            try {
+                GateEntryAssignment::query()->create($this->assignmentAttributes($category->id));
+            } catch (UniqueConstraintViolationException) {
+                // Another station authorized the same item between our read and write. The row now exists
+                // with the same (category, recipient) key, so converge to it instead of surfacing a 500.
+                $this->reconcileConcurrentAssignment($categoryId);
+            }
         }
 
         if (! in_array($categoryId, $this->assignedCategoryIds, true)) {
             $this->assignedCategoryIds[] = $categoryId;
+        }
+    }
+
+    /**
+     * Restore the shared assignment a concurrent scan created if it was left soft-deleted, so both
+     * stations end with the item authorized and exactly one active row for the (category, recipient) key.
+     */
+    protected function reconcileConcurrentAssignment(int $categoryId): void
+    {
+        $row = $this->subjectAssignmentQuery()
+            ->withTrashed()
+            ->where('service_category_id', $categoryId)
+            ->first();
+
+        if ($row && $row->trashed()) {
+            $row->forceFill(array_merge(
+                $this->assignmentAttributes($categoryId),
+                ['deleted_at' => null],
+            ))->save();
         }
     }
 

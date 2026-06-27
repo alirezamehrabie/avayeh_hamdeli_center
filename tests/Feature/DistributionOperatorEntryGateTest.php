@@ -12,6 +12,7 @@ use App\Models\ServiceName;
 use App\Models\User;
 use App\Services\QrIdentityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -134,6 +135,66 @@ class DistributionOperatorEntryGateTest extends TestCase
             ->count());
 
         $component->assertSet('scanStatus', 'paused');
+    }
+
+    public function test_concurrent_authorization_of_same_item_converges_without_crashing(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Food basket', $operator);
+
+        $person = Person::query()->create([
+            'first_name' => 'Nima',
+            'last_name' => 'Yousefi',
+            'national_id' => '8234567890',
+            'person_code' => '14050',
+        ]);
+
+        $issued = app(QrIdentityService::class)->issueFor($person, $operator->id);
+        $token = $issued['token'] ?? $issued['identity']->token_encrypted;
+
+        // Simulate a second gate station inserting the same (category, person) row inside the TOCTOU window:
+        // fire exactly once, mid-create, via a raw insert (no model events → no recursion) so this
+        // component's create() then collides with the unique index.
+        $injected = false;
+        GateEntryAssignment::creating(function () use (&$injected, $service, $category, $person, $operator): void {
+            if ($injected) {
+                return;
+            }
+
+            $injected = true;
+
+            DB::table('gate_entry_assignments')->insert([
+                'service_id' => $service->id,
+                'service_category_id' => $category->id,
+                'person_id' => $person->id,
+                'guardian_id' => null,
+                'status' => GateEntryAssignment::STATUS_PENDING,
+                'assigned_at' => now(),
+                'created_by' => $operator->id,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        });
+
+        try {
+            $this->actingAs($operator);
+
+            // Must converge silently — no UniqueConstraintViolationException bubbling up as a 500.
+            Livewire::test(EntryGate::class)
+                ->call('selectService', $service->id)
+                ->call('resolveScannedQr', $token)
+                ->call('toggleCategory', $category->id)
+                ->assertSet('assignedCategoryIds', [$category->id]);
+        } finally {
+            app('events')->forget('eloquent.creating: '.GateEntryAssignment::class);
+        }
+
+        // Exactly one active row for the key: we converged to the concurrent insert, not duplicated it.
+        $this->assertSame(1, GateEntryAssignment::withTrashed()
+            ->where('service_category_id', $category->id)
+            ->where('person_id', $person->id)
+            ->count());
     }
 
     public function test_finalized_assignment_is_locked_and_cannot_be_removed_at_entry_gate(): void
