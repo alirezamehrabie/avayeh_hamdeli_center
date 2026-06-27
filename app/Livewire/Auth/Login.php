@@ -5,6 +5,7 @@ namespace App\Livewire\Auth;
 use App\Services\LoginRedirector;
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
@@ -41,29 +42,39 @@ class Login extends Component
             ? ['email' => $loginInput, 'password' => $this->password]
             : ['name' => $loginInput, 'password' => $this->password];
 
-        if (Auth::attempt($credentials, $this->remember)) {
-            $redirector = app(LoginRedirector::class);
+        if (! Cache::add($this->loginAttemptKey(), true, 15)) {
+            $this->addError('auth', 'در حال بررسی اطلاعات ورود هستیم. لطفا چند لحظه دیگر دوباره تلاش کنید.');
 
-            if (! $redirector->hasAuthorizedPanel(auth()->user())) {
-                Auth::logout();
-                session()->invalidate();
-                session()->regenerateToken();
-
-                $this->addError('auth', 'حساب کاربری شما هنوز به پنل فعال متصل نشده است. لطفا با پشتیبانی تماس بگیرید.');
-
-                return;
-            }
-
-            session()->regenerate();
-
-            RateLimiter::clear($this->throttleKey());
-            session()->forget('url.intended');
-
-            return redirect()->to($redirector->pathFor(auth()->user()));
+            return;
         }
 
-        RateLimiter::hit($this->throttleKey(), 120);
-        $this->addError('auth', 'اطلاعات ورود صحیح نیست.');
+        try {
+            if (Auth::attempt($credentials, $this->remember)) {
+                $redirector = app(LoginRedirector::class);
+
+                if (! $redirector->hasAuthorizedPanel(auth()->user())) {
+                    Auth::logout();
+                    session()->invalidate();
+                    session()->regenerateToken();
+
+                    $this->addError('auth', 'حساب کاربری شما هنوز به پنل فعال متصل نشده است. لطفا با پشتیبانی تماس بگیرید.');
+
+                    return;
+                }
+
+                session()->regenerate();
+
+                RateLimiter::clear($this->throttleKey());
+                session()->forget('url.intended');
+
+                return redirect()->to($redirector->pathFor(auth()->user()));
+            }
+
+            RateLimiter::hit($this->throttleKey(), 120);
+            $this->addError('auth', 'اطلاعات ورود صحیح نیست.');
+        } finally {
+            Cache::forget($this->loginAttemptKey());
+        }
     }
 
     public function updatedEmail(): void
@@ -93,6 +104,11 @@ class Login extends Component
     protected function throttleKey(): string
     {
         return Str::lower($this->email).'|'.request()->ip();
+    }
+
+    protected function loginAttemptKey(): string
+    {
+        return 'login:attempting:'.$this->throttleKey();
     }
 
     /**

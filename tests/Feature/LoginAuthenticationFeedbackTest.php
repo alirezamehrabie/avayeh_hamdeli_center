@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Livewire\Auth\Login;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -68,6 +69,28 @@ class LoginAuthenticationFeedbackTest extends TestCase
             ->call('login')
             ->assertHasErrors(['auth'])
             ->assertSee('حساب کاربری شما هنوز به پنل فعال متصل نشده است.');
+
+        $this->assertGuest();
+    }
+
+    public function test_duplicate_in_flight_login_submit_is_rejected_without_authenticating(): void
+    {
+        User::factory()->create([
+            'email' => 'operator@example.test',
+            'password' => 'correct-password',
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+            'permissions' => [User::PERMISSION_DISTRIBUTION_INBOUND_GATE],
+        ]);
+
+        Cache::add('login:attempting:operator@example.test|127.0.0.1', true, 15);
+
+        Livewire::test(Login::class)
+            ->set('email', 'operator@example.test')
+            ->set('password', 'correct-password')
+            ->call('login')
+            ->assertHasErrors(['auth'])
+            ->assertSee('در حال بررسی اطلاعات ورود هستیم.');
 
         $this->assertGuest();
     }
