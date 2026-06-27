@@ -52,6 +52,26 @@ class LoginAuthenticationFeedbackTest extends TestCase
         $this->assertNull(session('url.intended'));
     }
 
+    public function test_login_rejects_account_without_authorized_panel_with_support_message(): void
+    {
+        User::factory()->create([
+            'email' => 'regular@example.test',
+            'password' => 'correct-password',
+            'access_level' => User::ACCESS_LEVEL_REGULAR,
+            'is_admin' => false,
+            'permissions' => [],
+        ]);
+
+        Livewire::test(Login::class)
+            ->set('email', 'regular@example.test')
+            ->set('password', 'correct-password')
+            ->call('login')
+            ->assertHasErrors(['auth'])
+            ->assertSee('Ø­Ø³Ø§Ø¨ Ú©Ø§Ø±Ø¨Ø±ÛŒ Ø´Ù…Ø§ Ù‡Ù†ÙˆØ² Ø¨Ù‡ Ù¾Ù†Ù„ ÙØ¹Ø§Ù„ Ù…ØªØµÙ„ Ù†Ø´Ø¯Ù‡ Ø§Ø³Øª.');
+
+        $this->assertGuest();
+    }
+
     public function test_credential_changes_clear_form_level_auth_error(): void
     {
         User::factory()->create([

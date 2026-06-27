@@ -42,12 +42,24 @@ class Login extends Component
             : ['name' => $loginInput, 'password' => $this->password];
 
         if (Auth::attempt($credentials, $this->remember)) {
+            $redirector = app(LoginRedirector::class);
+
+            if (! $redirector->hasAuthorizedPanel(auth()->user())) {
+                Auth::logout();
+                session()->invalidate();
+                session()->regenerateToken();
+
+                $this->addError('auth', 'Ø­Ø³Ø§Ø¨ Ú©Ø§Ø±Ø¨Ø±ÛŒ Ø´Ù…Ø§ Ù‡Ù†ÙˆØ² Ø¨Ù‡ Ù¾Ù†Ù„ ÙØ¹Ø§Ù„ Ù…ØªØµÙ„ Ù†Ø´Ø¯Ù‡ Ø§Ø³Øª. Ù„Ø·ÙØ§ Ø¨Ø§ Ù¾Ø´ØªÛŒØ¨Ø§Ù†ÛŒ ØªÙ…Ø§Ø³ Ø¨Ú¯ÛŒØ±ÛŒØ¯.');
+
+                return;
+            }
+
             session()->regenerate();
 
             RateLimiter::clear($this->throttleKey());
             session()->forget('url.intended');
 
-            return redirect()->to(app(LoginRedirector::class)->pathFor(auth()->user()));
+            return redirect()->to($redirector->pathFor(auth()->user()));
         }
 
         RateLimiter::hit($this->throttleKey(), 120);

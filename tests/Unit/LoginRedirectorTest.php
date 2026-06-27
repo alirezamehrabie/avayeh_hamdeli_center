@@ -21,6 +21,7 @@ class LoginRedirectorTest extends TestCase
         ]);
 
         $this->assertSame(route('admin.dashboard'), $this->redirector()->pathFor($user));
+        $this->assertTrue($this->redirector()->hasAuthorizedPanel($user));
     }
 
     public function test_social_worker_redirects_to_social_worker_dashboard(): void
@@ -74,6 +75,7 @@ class LoginRedirectorTest extends TestCase
         ]);
 
         $this->assertSame('/', $this->redirector()->pathFor($user));
+        $this->assertFalse($this->redirector()->hasAuthorizedPanel($user));
     }
 
     public function test_user_model_delegates_panel_redirect_to_resolver(): void
