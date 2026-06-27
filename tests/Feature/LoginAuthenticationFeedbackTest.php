@@ -67,7 +67,7 @@ class LoginAuthenticationFeedbackTest extends TestCase
             ->set('password', 'correct-password')
             ->call('login')
             ->assertHasErrors(['auth'])
-            ->assertSee('Ø­Ø³Ø§Ø¨ Ú©Ø§Ø±Ø¨Ø±ÛŒ Ø´Ù…Ø§ Ù‡Ù†ÙˆØ² Ø¨Ù‡ Ù¾Ù†Ù„ ÙØ¹Ø§Ù„ Ù…ØªØµÙ„ Ù†Ø´Ø¯Ù‡ Ø§Ø³Øª.');
+            ->assertSee('حساب کاربری شما هنوز به پنل فعال متصل نشده است.');
 
         $this->assertGuest();
     }

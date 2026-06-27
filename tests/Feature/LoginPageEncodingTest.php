@@ -44,4 +44,15 @@ class LoginPageEncodingTest extends TestCase
         $this->assertGreaterThanOrEqual(2, substr_count($contents, 'autocorrect="off"'));
         $this->assertGreaterThanOrEqual(2, substr_count($contents, 'spellcheck="false"'));
     }
+
+    public function test_login_credentials_are_not_live_bound(): void
+    {
+        $contents = file_get_contents(resource_path('views/livewire/auth/login.blade.php'));
+
+        $this->assertIsString($contents);
+        $this->assertStringContainsString('wire:model="email"', $contents);
+        $this->assertStringContainsString('wire:model="password"', $contents);
+        $this->assertStringNotContainsString('wire:model.live', $contents);
+        $this->assertStringNotContainsString('wire:model.live.debounce', $contents);
+    }
 }

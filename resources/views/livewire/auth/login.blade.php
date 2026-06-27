@@ -89,7 +89,7 @@
                                     <i class="bi bi-person text-lg" aria-hidden="true"></i>
                                 </span>
                                 <input
-                                    wire:model.live.debounce.500ms="email"
+                                    wire:model="email"
                                     id="email"
                                     type="text"
                                     required
@@ -125,7 +125,7 @@
                                     <i class="bi bi-lock text-lg" aria-hidden="true"></i>
                                 </span>
                                 <input
-                                    wire:model.live.debounce.500ms="password"
+                                    wire:model="password"
                                     id="password"
                                     x-bind:type="showPassword ? 'text' : 'password'"
                                     x-on:keydown="capsLockOn = $event.getModifierState && $event.getModifierState('CapsLock')"
