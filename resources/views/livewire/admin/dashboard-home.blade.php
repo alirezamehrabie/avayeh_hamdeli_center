@@ -385,69 +385,78 @@
                             </div>
 
                             @php
-                                $campaignCreateRoute = \Illuminate\Support\Facades\Route::has('campaigns.create') ? route('campaigns.create') : null;
-                                $campaignIndexRoute = \Illuminate\Support\Facades\Route::has('campaigns.index') ? route('campaigns.index') : null;
+                                $maxBirthMonthCount = max(1, $birthMonthChart->max('count') ?? 1);
                             @endphp
 
-                            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div class="group relative overflow-hidden rounded-xl border border-emerald-100 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
-                                    <div class="absolute inset-y-0 right-0 w-1 bg-emerald-500"></div>
-                                    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                        <div class="flex items-center">
-                                            <div class="ml-4 rounded-lg bg-emerald-100 p-3 text-emerald-600">
-                                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <p class="text-sm font-medium text-gray-500">راه‌اندازی کمپین جدید</p>
-                                                <h2 class="mt-1 text-lg font-bold text-gray-800">ایجاد پویش</h2>
-                                            </div>
-                                        </div>
-
-                                        @if($campaignCreateRoute)
-                                            <a href="{{ $campaignCreateRoute }}" class="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-100">
-                                                ایجاد پویش
-                                            </a>
-                                        @else
-                                            <button type="button" disabled class="inline-flex cursor-not-allowed items-center justify-center rounded-lg bg-emerald-100 px-4 py-2.5 text-sm font-semibold text-emerald-700 opacity-70">
-                                                ایجاد پویش
-                                            </button>
-                                        @endif
+                            <div class="mt-4 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm">
+                                <div class="flex flex-col gap-2 border-b border-slate-100 pb-3 sm:flex-row sm:items-end sm:justify-between">
+                                    <div>
+                                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Quick Access</p>
+                                        <h2 class="mt-1 text-lg font-semibold text-slate-800">ابزارهای مدیریتی</h2>
                                     </div>
+                                    <p class="text-sm text-slate-500">دسترسی سریع به بخش‌های پرکاربرد پنل مدیریت</p>
                                 </div>
 
-                                <div class="group relative overflow-hidden rounded-xl border border-indigo-100 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
-                                    <div class="absolute inset-y-0 right-0 w-1 bg-indigo-500"></div>
-                                    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                        <div class="flex items-center">
-                                            <div class="ml-4 rounded-lg bg-indigo-100 p-3 text-indigo-600">
-                                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5h6M9 12h6m-6 7h6M5 5h.01M5 12h.01M5 19h.01"></path>
+                                <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+                                    <button
+                                        type="button"
+                                        wire:click="selectSection('service-list')"
+                                        class="group rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-right transition duration-200 hover:-translate-y-0.5 hover:border-cyan-200 hover:bg-cyan-50 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                                    >
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div>
+                                                <p class="text-xs font-semibold text-cyan-600">Service</p>
+                                                <h3 class="mt-1 text-base font-semibold text-slate-800">مدیریت خدمات</h3>
+                                                <p class="mt-2 text-sm leading-6 text-slate-500">تعریف، مشاهده و سامان‌دهی خدمات ثبت‌شده مرکز</p>
+                                            </div>
+                                            <div class="rounded-xl bg-cyan-100 p-3 text-cyan-700 transition group-hover:bg-cyan-150">
+                                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7h16M7 12h10M9 17h6"></path>
                                                 </svg>
                                             </div>
+                                        </div>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        wire:click="selectSection('activity-list')"
+                                        class="group rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-right transition duration-200 hover:-translate-y-0.5 hover:border-amber-200 hover:bg-amber-50 focus:outline-none focus:ring-4 focus:ring-amber-100"
+                                    >
+                                        <div class="flex items-start justify-between gap-3">
                                             <div>
-                                                <p class="text-sm font-medium text-gray-500">مشاهده و مدیریت کمپین‌ها</p>
-                                                <h2 class="mt-1 text-lg font-bold text-gray-800">لیست پویش‌ها</h2>
+                                                <p class="text-xs font-semibold text-amber-600">Activity</p>
+                                                <h3 class="mt-1 text-base font-semibold text-slate-800">مدیریت فعالیت‌ها</h3>
+                                                <p class="mt-2 text-sm leading-6 text-slate-500">بررسی لیست فعالیت‌ها و ورود به گردش کار اجرایی</p>
+                                            </div>
+                                            <div class="rounded-xl bg-amber-100 p-3 text-amber-700 transition group-hover:bg-amber-200">
+                                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                </svg>
                                             </div>
                                         </div>
+                                    </button>
 
-                                        @if($campaignIndexRoute)
-                                            <a href="{{ $campaignIndexRoute }}" class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100">
-                                                لیست پویش‌ها
-                                            </a>
-                                        @else
-                                            <button type="button" disabled class="inline-flex cursor-not-allowed items-center justify-center rounded-lg bg-indigo-100 px-4 py-2.5 text-sm font-semibold text-indigo-700 opacity-70">
-                                                لیست پویش‌ها
-                                            </button>
-                                        @endif
-                                    </div>
+                                    <button
+                                        type="button"
+                                        wire:click="selectSection('special-features-id-card-scanner')"
+                                        class="group rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-right transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50 focus:outline-none focus:ring-4 focus:ring-emerald-100"
+                                    >
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div>
+                                                <p class="text-xs font-semibold text-emerald-600">Scanner</p>
+                                                <h3 class="mt-1 text-base font-semibold text-slate-800">اسکن کارت شناسایی</h3>
+                                                <p class="mt-2 text-sm leading-6 text-slate-500">دسترسی مستقیم به ابزار اسکن کارت در بخش ویژگی‌های ویژه</p>
+                                            </div>
+                                            <div class="rounded-xl bg-emerald-100 p-3 text-emerald-700 transition group-hover:bg-emerald-200">
+                                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7V6a2 2 0 012-2h1M20 7V6a2 2 0 00-2-2h-1M4 17v1a2 2 0 002 2h1M20 17v1a2 2 0 01-2 2h-1M7 12h10"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </button>
                                 </div>
                             </div>
 
-                            @php
-                                $maxBirthMonthCount = max(1, $birthMonthChart->max('count') ?? 1);
-                            @endphp
                             <div class="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-4">
                                 <div class="xl:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                                     <div class="flex items-center justify-between mb-5">
