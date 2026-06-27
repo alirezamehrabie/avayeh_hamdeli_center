@@ -389,70 +389,93 @@
                             @endphp
 
                             <div class="mt-4 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm">
-                                <div class="flex flex-col gap-2 border-b border-slate-100 pb-3 sm:flex-row sm:items-end sm:justify-between">
+                                <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                                     <div>
-                                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Quick Access</p>
-                                        <h2 class="mt-1 text-lg font-semibold text-slate-800">ابزارهای مدیریتی</h2>
+                                        <p class="text-xs font-semibold tracking-[0.16em] text-slate-400">دسترسی سریع</p>
+                                        <h2 class="mt-1 text-lg font-semibold text-slate-800">اقدام‌های اصلی</h2>
                                     </div>
-                                    <p class="text-sm text-slate-500">دسترسی سریع به بخش‌های پرکاربرد پنل مدیریت</p>
+                                    <p class="text-sm text-slate-500">میانبر بخش‌های پرتکرار برای اجرای سریع کارهای روزانه</p>
                                 </div>
 
-                                <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+                                <div class="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5">
                                     <button
                                         type="button"
-                                        wire:click="selectSection('service-list')"
-                                        class="group rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-right transition duration-200 hover:-translate-y-0.5 hover:border-cyan-200 hover:bg-cyan-50 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                                        wire:click="selectSection('people-fast-create')"
+                                        class="group inline-flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-right transition duration-200 hover:border-sky-200 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-100"
                                     >
-                                        <div class="flex items-start justify-between gap-3">
-                                            <div>
-                                                <p class="text-xs font-semibold text-cyan-600">Service</p>
-                                                <h3 class="mt-1 text-base font-semibold text-slate-800">مدیریت خدمات</h3>
-                                                <p class="mt-2 text-sm leading-6 text-slate-500">تعریف، مشاهده و سامان‌دهی خدمات ثبت‌شده مرکز</p>
-                                            </div>
-                                            <div class="rounded-xl bg-cyan-100 p-3 text-cyan-700 transition group-hover:bg-cyan-150">
-                                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7h16M7 12h10M9 17h6"></path>
-                                                </svg>
-                                            </div>
-                                        </div>
+                                        <span>
+                                            <span class="block text-sm font-semibold text-slate-800">ثبت مددجو</span>
+                                            <span class="mt-1 block text-[11px] text-slate-500">ثبت سریع</span>
+                                        </span>
+                                        <span class="mr-3 rounded-lg bg-sky-100 p-2 text-sky-700 transition group-hover:bg-sky-200">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v16m8-8H4"></path>
+                                            </svg>
+                                        </span>
                                     </button>
 
                                     <button
                                         type="button"
-                                        wire:click="selectSection('activity-list')"
-                                        class="group rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-right transition duration-200 hover:-translate-y-0.5 hover:border-amber-200 hover:bg-amber-50 focus:outline-none focus:ring-4 focus:ring-amber-100"
+                                        wire:click="selectSection('service-delivery')"
+                                        class="group inline-flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-right transition duration-200 hover:border-cyan-200 hover:bg-cyan-50 focus:outline-none focus:ring-4 focus:ring-cyan-100"
                                     >
-                                        <div class="flex items-start justify-between gap-3">
-                                            <div>
-                                                <p class="text-xs font-semibold text-amber-600">Activity</p>
-                                                <h3 class="mt-1 text-base font-semibold text-slate-800">مدیریت فعالیت‌ها</h3>
-                                                <p class="mt-2 text-sm leading-6 text-slate-500">بررسی لیست فعالیت‌ها و ورود به گردش کار اجرایی</p>
-                                            </div>
-                                            <div class="rounded-xl bg-amber-100 p-3 text-amber-700 transition group-hover:bg-amber-200">
-                                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                                </svg>
-                                            </div>
-                                        </div>
+                                        <span>
+                                            <span class="block text-sm font-semibold text-slate-800">تحویل خدمت</span>
+                                            <span class="mt-1 block text-[11px] text-slate-500">عملیات روزانه</span>
+                                        </span>
+                                        <span class="mr-3 rounded-lg bg-cyan-100 p-2 text-cyan-700 transition group-hover:bg-cyan-200">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7h16M7 12h10M9 17h6"></path>
+                                            </svg>
+                                        </span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        wire:click="selectSection('activity-definition')"
+                                        class="group inline-flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-right transition duration-200 hover:border-amber-200 hover:bg-amber-50 focus:outline-none focus:ring-4 focus:ring-amber-100"
+                                    >
+                                        <span>
+                                            <span class="block text-sm font-semibold text-slate-800">ثبت فعالیت</span>
+                                            <span class="mt-1 block text-[11px] text-slate-500">تعریف برنامه</span>
+                                        </span>
+                                        <span class="mr-3 rounded-lg bg-amber-100 p-2 text-amber-700 transition group-hover:bg-amber-200">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                            </svg>
+                                        </span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        wire:click="selectSection('child-supporter-sponsor-registration')"
+                                        class="group inline-flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-right transition duration-200 hover:border-rose-200 hover:bg-rose-50 focus:outline-none focus:ring-4 focus:ring-rose-100"
+                                    >
+                                        <span>
+                                            <span class="block text-sm font-semibold text-slate-800">ثبت حامی</span>
+                                            <span class="mt-1 block text-[11px] text-slate-500">حامی کودک</span>
+                                        </span>
+                                        <span class="mr-3 rounded-lg bg-rose-100 p-2 text-rose-700 transition group-hover:bg-rose-200">
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                            </svg>
+                                        </span>
                                     </button>
 
                                     <button
                                         type="button"
                                         wire:click="selectSection('special-features-id-card-scanner')"
-                                        class="group rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-right transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50 focus:outline-none focus:ring-4 focus:ring-emerald-100"
+                                        class="group inline-flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-right transition duration-200 hover:border-emerald-200 hover:bg-emerald-50 focus:outline-none focus:ring-4 focus:ring-emerald-100"
                                     >
-                                        <div class="flex items-start justify-between gap-3">
-                                            <div>
-                                                <p class="text-xs font-semibold text-emerald-600">Scanner</p>
-                                                <h3 class="mt-1 text-base font-semibold text-slate-800">اسکن کارت شناسایی</h3>
-                                                <p class="mt-2 text-sm leading-6 text-slate-500">دسترسی مستقیم به ابزار اسکن کارت در بخش ویژگی‌های ویژه</p>
-                                            </div>
-                                            <div class="rounded-xl bg-emerald-100 p-3 text-emerald-700 transition group-hover:bg-emerald-200">
-                                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7V6a2 2 0 012-2h1M20 7V6a2 2 0 00-2-2h-1M4 17v1a2 2 0 002 2h1M20 17v1a2 2 0 01-2 2h-1M7 12h10"></path>
-                                                </svg>
-                                            </div>
-                                        </div>
+                                        <span>
+                                            <span class="block text-sm font-semibold text-slate-800">اسکن کارت</span>
+                                            <span class="mt-1 block text-[11px] text-slate-500">شناسایی سریع</span>
+                                        </span>
+                                        <span class="mr-3 rounded-lg bg-emerald-100 p-2 text-emerald-700 transition group-hover:bg-emerald-200">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7V6a2 2 0 012-2h1M20 7V6a2 2 0 00-2-2h-1M4 17v1a2 2 0 002 2h1M20 17v1a2 2 0 01-2 2h-1M7 12h10"></path>
+                                            </svg>
+                                        </span>
                                     </button>
                                 </div>
                             </div>
@@ -546,55 +569,91 @@
                                 </div>
                             </div>
 
-                            <div class="mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                                <div class="flex justify-between items-center mb-4">
-                                    <h2 class="text-lg font-semibold text-gray-800">آخرین مددجویان ثبت شده</h2>
-                                    <button type="button" wire:click="selectSection('people-list')" class="text-sm text-indigo-600 hover:underline">مشاهده همه</button>
+                            <div class="mt-8 overflow-hidden rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+                                <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                    <div>
+                                        <h2 class="text-lg font-semibold text-gray-800">آخرین مددجویان ثبت شده</h2>
+                                        <p class="mt-1 text-sm text-gray-500">نمایی سریع از ثبت‌های جدید برای بررسی، تکمیل پرونده و ارجاع به بخش جزئیات.</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        wire:click="selectSection('people-list')"
+                                        class="inline-flex items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                                    >
+                                        مشاهده همه مددجویان
+                                    </button>
                                 </div>
 
-                                <div class="overflow-x-auto">
-                                    <table class="w-full text-right border-collapse">
-                                        <thead>
-                                        <tr class="bg-gray-50 border-b border-gray-100">
-                                            <th class="p-4 text-sm font-semibold text-gray-600">کد مددجویی</th>
-                                            <th class="p-4 text-sm font-semibold text-gray-600">کد خانوار</th>
-                                            <th class="p-4 text-sm font-semibold text-gray-600">نام</th>
-                                            <th class="p-4 text-sm font-semibold text-gray-600">نام خانوادگی</th>
-                                            <th class="p-4 text-sm font-semibold text-gray-600">نام پدر</th>
-                                            <th class="p-4 text-sm font-semibold text-gray-600">کد ملی</th>
-                                            <th class="p-4 text-sm font-semibold text-gray-600">نام مددکار</th>
-                                            <th class="p-4 text-sm font-semibold text-gray-600">عملیات</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        @forelse($latestPeople as $person)
-                                            <tr class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                                                <td class="p-4 text-sm text-gray-700 font-mono">{{ $person->person_code }}</td>
-                                                <td class="p-4 text-sm text-gray-700 font-mono">{{ $person->guardian?->guardian_code ?? '-' }}</td>
-                                                <td class="p-4 text-sm text-gray-700">{{ $person->first_name }}</td>
-                                                <td class="p-4 text-sm text-gray-700">{{ $person->last_name }}</td>
-                                                <td class="p-4 text-sm text-gray-700">{{ $person->father_name }}</td>
-                                                <td class="p-4 text-sm text-gray-700 font-">{{ $person->national_id }}</td>
-                                                <td class="p-4 text-sm">
-                                                    <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-xs">
-                                                        @if($person->guardian && $person->guardian->socialWorker)
-                                                            {{ $person->guardian->socialWorker->first_name }} {{ $person->guardian->socialWorker->last_name }}
-                                                        @else
-                                                            <span class="text-gray-400 italic">تعیین نشده</span>
-                                                        @endif
+                                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                                    @forelse($latestPeople as $person)
+                                        @php
+                                            $socialWorker = $person->guardian?->socialWorker;
+                                            $socialWorkerName = $socialWorker
+                                                ? trim(implode(' ', array_filter([$socialWorker->first_name, $socialWorker->last_name])))
+                                                : null;
+                                            $personFullName = trim(implode(' ', array_filter([$person->first_name, $person->last_name])));
+                                        @endphp
+
+                                        <article class="group flex h-full flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50/70 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:bg-white hover:shadow-md">
+                                            <div>
+                                                <div class="flex items-start justify-between gap-3">
+                                                    <div class="min-w-0">
+                                                        <h3 class="truncate text-sm font-semibold text-slate-800 sm:text-base">
+                                                            {{ $personFullName !== '' ? $personFullName : 'مددجوی بدون نام' }}
+                                                        </h3>
+                                                        <p class="mt-1 text-[11px] text-slate-400">
+                                                            ثبت جدید مددجو
+                                                        </p>
+                                                    </div>
+                                                    <span class="inline-flex shrink-0 items-center rounded-full bg-indigo-50 px-2 py-1 text-[10px] font-semibold text-indigo-700">
+                                                        {{ $person->person_code ?? '-' }}
                                                     </span>
-                                                </td>
-                                                <td class="p-4 text-sm">
-                                                    <button type="button" wire:click="selectSection('person-edit', {{ $person->id }})" class="text-indigo-600 hover:text-indigo-900 ml-3">ویرایش</button>
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="8" class="p-8 text-center text-gray-400">هیچ مددجویی هنوز ثبت نشده است.</td>
-                                            </tr>
-                                        @endforelse
-                                        </tbody>
-                                    </table>
+                                                </div>
+
+                                                <div class="mt-3 flex flex-wrap gap-2">
+                                                    <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
+                                                        خانوار {{ $person->guardian?->guardian_code ?? '-' }}
+                                                    </span>
+                                                    <span class="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold {{ $socialWorkerName ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700' }}">
+                                                        {{ $socialWorkerName ?: 'بدون مددکار' }}
+                                                    </span>
+                                                </div>
+
+                                                <dl class="mt-4 space-y-2">
+                                                    <div class="flex items-center justify-between gap-3 text-xs">
+                                                        <dt class="text-slate-400">کد ملی</dt>
+                                                        <dd class="truncate font-mono text-slate-700">{{ $person->national_id ?: '-' }}</dd>
+                                                    </div>
+                                                    <div class="flex items-center justify-between gap-3 text-xs">
+                                                        <dt class="text-slate-400">نام پدر</dt>
+                                                        <dd class="truncate text-slate-700">{{ $person->father_name ?: '-' }}</dd>
+                                                    </div>
+                                                    <div class="flex items-center justify-between gap-3 text-xs">
+                                                        <dt class="text-slate-400">جنسیت</dt>
+                                                        <dd class="text-slate-700">{{ $person->gender_label ?: '-' }}</dd>
+                                                    </div>
+                                                </dl>
+                                            </div>
+
+                                            <div class="mt-4 flex items-center justify-between border-t border-slate-200/80 pt-3">
+                                                <span class="text-[11px] font-medium {{ $socialWorkerName ? 'text-emerald-600' : 'text-amber-600' }}">
+                                                    {{ $socialWorkerName ? 'ارجاع شده' : 'نیازمند پیگیری' }}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    wire:click="selectSection('person-edit', {{ $person->id }})"
+                                                    class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                                                >
+                                                    مشاهده پرونده
+                                                </button>
+                                            </div>
+                                        </article>
+                                    @empty
+                                        <div class="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-8 text-center sm:col-span-2 xl:col-span-4">
+                                            <p class="text-sm font-medium text-gray-500">هنوز مددجویی ثبت نشده است.</p>
+                                            <p class="mt-1 text-xs text-gray-400">پس از ثبت اولین پرونده، آخرین ثبت‌ها در این بخش نمایش داده می‌شوند.</p>
+                                        </div>
+                                    @endforelse
                                 </div>
                             </div>
                         </div>
