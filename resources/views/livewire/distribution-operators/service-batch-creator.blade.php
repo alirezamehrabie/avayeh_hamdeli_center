@@ -1,4 +1,41 @@
-<div class="space-y-3">
+<div
+    x-data="{
+        shouldFocusValidationError: false,
+        markValidationFocusPending() {
+            this.shouldFocusValidationError = true;
+        },
+        focusFirstValidationError() {
+            if (! this.shouldFocusValidationError) {
+                return;
+            }
+
+            this.$nextTick(() => {
+                const error = this.$el.querySelector('[data-validation-error]');
+
+                if (! error) {
+                    this.shouldFocusValidationError = false;
+                    return;
+                }
+
+                const scope = error.closest('[data-validation-scope]') || error;
+                scope.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                window.setTimeout(() => {
+                    const field = scope.querySelector('input:not([type=hidden]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])');
+                    field?.focus({ preventScroll: true });
+                }, 250);
+
+                this.shouldFocusValidationError = false;
+            });
+        },
+    }"
+    x-init="
+        if (window.Livewire) {
+            Livewire.hook('morph.updated', () => focusFirstValidationError());
+        }
+    "
+    class="space-y-3"
+>
     @php
         $hasSelectedMode = $isEditing || in_array($mode, ['predefined', 'misc'], true);
     @endphp
@@ -9,7 +46,7 @@
     @endif
 
     @if ($errors->any())
-        <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        <div data-validation-error class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
             <p class="font-bold">لطفا خطاهای فرم را بررسی کنید.</p>
             <ul class="mt-2 list-disc space-y-1 pr-5">
                 @foreach ($errors->all() as $error)
@@ -154,7 +191,7 @@
     @endphp
 
     @if($hasSelectedMode)
-    <form wire:submit.prevent="requestSaveConfirmation" class="space-y-2.5">
+    <form wire:submit.prevent="requestSaveConfirmation" x-on:submit="markValidationFocusPending()" class="space-y-2.5">
         @if($mode === 'predefined' && !$isEditing)
             <section wire:key="predefined-service-batch-section" class="overflow-visible rounded-xl border border-cyan-100/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
                 <div class="border-b border-cyan-100/80 bg-cyan-50/20 px-4 py-2.5 sm:px-5 sm:py-3">
@@ -663,7 +700,7 @@
                 </div>
                 <button
                     type="submit"
-                    @disabled(! $canRequestSaveConfirmation)
+                    @disabled(! $isEditing && ! $canRequestSaveConfirmation)
                     wire:loading.attr="disabled"
                     wire:target="requestSaveConfirmation"
                     class="inline-flex w-full items-center justify-center rounded-xl bg-emerald-700 px-4 py-3 text-xs font-black text-white shadow-sm shadow-emerald-700/20 transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none sm:w-auto"

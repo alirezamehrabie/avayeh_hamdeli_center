@@ -244,5 +244,5 @@
             </div>
         </div>
     </div>
-    @error("miscWorkerGroups.$groupIndex.social_worker_id") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
+    @error("miscWorkerGroups.$groupIndex.social_worker_id") <p data-validation-error class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
 </div>

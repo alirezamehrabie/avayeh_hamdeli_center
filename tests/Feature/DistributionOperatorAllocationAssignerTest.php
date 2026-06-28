@@ -739,6 +739,21 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->assertHasNoErrors(['miscWorkerGroups.0.categories.0.quantity']);
     }
 
+    public function test_editing_misc_service_review_button_stays_clickable_and_surfaces_validation_errors(): void
+    {
+        [$operator, $worker, $service] = $this->editableMiscService();
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id])
+            ->set('miscWorkerGroups.0.categories.0.quantity', '')
+            ->assertSee('تأیید خدمت')
+            ->call('requestSaveConfirmation')
+            ->assertHasErrors(['miscWorkerGroups.0.categories.0.quantity'])
+            ->assertSet('confirmingBatchSave', false)
+            ->assertSee($worker->full_name);
+    }
+
     private function editableMiscService(): array
     {
         $operator = User::factory()->create([

@@ -159,6 +159,7 @@
 
             <div
                 data-worker-group-index="{{ $gi }}"
+                data-validation-scope
                 wire:key="worker-group-{{ $group['uid'] ?? $gi }}"
                 class="overflow-hidden rounded-2xl border {{ $groupLocked ? 'border-slate-200 bg-slate-50/70' : 'border-emerald-200 bg-white shadow-sm' }}"
             >
@@ -277,7 +278,7 @@
                                             ->values()
                                             ->all();
                                     @endphp
-                                    <div class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-200/50 sm:p-3.5">
+                                    <div data-validation-scope class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-200/50 sm:p-3.5">
                                         <div class="mb-3 flex items-center justify-between gap-3 border-b border-slate-100 pb-2.5">
                                             <div class="flex min-w-0 items-center gap-2">
                                                 <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-black text-emerald-700">{{ $ci + 1 }}</span>
@@ -459,7 +460,7 @@
                                                             ثبت دسته‌بندی جدید فعال شد، نام را تایپ کنید
                                                         </p>
                                                     @endif
-                                                    @error("miscWorkerGroups.$gi.categories.$ci.name") <p class="mt-1 text-[11px] text-rose-600">{{ $message }}</p> @enderror
+                                                    @error("miscWorkerGroups.$gi.categories.$ci.name") <p data-validation-error class="mt-1 text-[11px] text-rose-600">{{ $message }}</p> @enderror
 
                                                     @if(!empty($categoryNameSuggestions))
                                                         <template x-teleport="body">
@@ -566,7 +567,7 @@
                                                         @endforeach
                                                     </select>
                                                 </div>
-                                                @error("miscWorkerGroups.$gi.categories.$ci.quantity") <p class="text-[11px] text-rose-600">{{ $message }}</p> @enderror
+                                                @error("miscWorkerGroups.$gi.categories.$ci.quantity") <p data-validation-error class="text-[11px] text-rose-600">{{ $message }}</p> @enderror
                                             </div>
                                         </div>
                                     </div>
@@ -626,7 +627,7 @@
                     </span>
                 </div>
                 <p class="mt-1 text-xs leading-5 text-slate-500">تاریخ با تقویم شمسی ثبت می‌شود</p>
-                @error('date') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                @error('date') <p data-validation-error class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
             </div>
         </div>
 
