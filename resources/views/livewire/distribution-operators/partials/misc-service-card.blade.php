@@ -74,9 +74,23 @@
     </div>
 
     <div class="mt-2 border-t border-slate-100 pt-2">
-        <p class="truncate text-sm text-slate-600">
-            {{ $service->socialWorkers->first()?->full_name ?? '—' }}
-        </p>
+        @php
+            $miscCardSocialWorkers = $service->socialWorkers
+                ->unique(fn ($worker) => (int) $worker->id)
+                ->values();
+        @endphp
+
+        @if($miscCardSocialWorkers->isNotEmpty())
+            <div class="flex flex-wrap gap-1.5">
+                @foreach($miscCardSocialWorkers as $worker)
+                    <span class="inline-flex max-w-full items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-600">
+                        <span class="truncate">{{ $worker->full_name ?: '—' }}</span>
+                    </span>
+                @endforeach
+            </div>
+        @else
+            <span class="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-400">بدون مددکار</span>
+        @endif
     </div>
 
     @if(filled($miscEditUrl))
