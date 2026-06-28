@@ -265,7 +265,7 @@
                                                             type="text"
                                                             wire:model.blur="miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.name"
                                                             class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 {{ !empty($categoryNameSuggestions) ? 'pl-10' : '' }} text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100"
-                                                            placeholder="نام دسته‌بندی (مثال: بسته غذایی)"
+                                                            placeholder="نام دسته‌بندی"
                                                             autocomplete="off"
                                                         >
                                                         @if(!empty($categoryNameSuggestions))
