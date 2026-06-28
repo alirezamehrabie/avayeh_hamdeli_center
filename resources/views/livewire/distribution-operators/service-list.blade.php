@@ -25,20 +25,17 @@
                 </div>
             </div>
 
-            <div class="grid gap-2 rounded-2xl bg-slate-100 p-1 sm:grid-cols-2" role="tablist" aria-label="فیلتر نوع خدمات">
+            <div class="grid grid-cols-2 gap-1 rounded-2xl border border-slate-200 bg-slate-100 p-1" role="tablist" aria-label="فیلتر نوع خدمات">
                 <button
                     type="button"
                     wire:click="switchTab('campaigns')"
                     wire:loading.attr="disabled"
                     role="tab"
                     aria-selected="{{ $activeTab === 'campaigns' ? 'true' : 'false' }}"
-                    class="flex min-h-16 items-center justify-between gap-3 rounded-xl px-4 py-3 text-right transition {{ $activeTab === 'campaigns' ? 'bg-white text-blue-700 shadow-sm ring-1 ring-blue-100' : 'text-slate-600 hover:bg-white/70 hover:text-slate-800' }}"
+                    class="flex h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-bold transition {{ $activeTab === 'campaigns' ? 'bg-white text-blue-700 shadow-sm ring-1 ring-blue-100' : 'text-slate-600 hover:bg-white/70 hover:text-slate-800' }}"
                 >
-                    <span>
-                        <span class="block text-sm font-black">لیست کمپین‌ها</span>
-                        <span class="mt-1 block text-xs font-semibold opacity-75">انتخاب از خدمات/کمپین</span>
-                    </span>
-                    <span class="shrink-0 rounded-full {{ $activeTab === 'campaigns' ? 'bg-blue-100 text-blue-700' : 'bg-white text-slate-500' }} px-3 py-1 text-xs font-black">
+                    <span class="truncate">پویش‌ها</span>
+                    <span class="shrink-0 rounded-full {{ $activeTab === 'campaigns' ? 'bg-blue-100 text-blue-700' : 'bg-white text-slate-500' }} px-2 py-0.5 text-[11px] font-black leading-5">
                         {{ $counts['campaigns'] ?? 0 }}
                     </span>
                 </button>
@@ -49,13 +46,10 @@
                     wire:loading.attr="disabled"
                     role="tab"
                     aria-selected="{{ $activeTab === 'misc' ? 'true' : 'false' }}"
-                    class="flex min-h-16 items-center justify-between gap-3 rounded-xl px-4 py-3 text-right transition {{ $activeTab === 'misc' ? 'bg-white text-emerald-700 shadow-sm ring-1 ring-emerald-100' : 'text-slate-600 hover:bg-white/70 hover:text-slate-800' }}"
+                    class="flex h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-bold transition {{ $activeTab === 'misc' ? 'bg-white text-emerald-700 shadow-sm ring-1 ring-emerald-100' : 'text-slate-600 hover:bg-white/70 hover:text-slate-800' }}"
                 >
-                    <span>
-                        <span class="block text-sm font-black">لیست متفرقه</span>
-                        <span class="mt-1 block text-xs font-semibold opacity-75">تعریف انتخاب جدید</span>
-                    </span>
-                    <span class="shrink-0 rounded-full {{ $activeTab === 'misc' ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-slate-500' }} px-3 py-1 text-xs font-black">
+                    <span class="truncate">متفرقه</span>
+                    <span class="shrink-0 rounded-full {{ $activeTab === 'misc' ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-slate-500' }} px-2 py-0.5 text-[11px] font-black leading-5">
                         {{ $counts['misc'] ?? 0 }}
                     </span>
                 </button>
