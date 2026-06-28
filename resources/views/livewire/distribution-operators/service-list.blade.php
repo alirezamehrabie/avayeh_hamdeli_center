@@ -1,4 +1,4 @@
-<div class="space-y-6">
+<div class="space-y-4">
 
     @if (session()->has('success'))
         <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
@@ -8,12 +8,12 @@
 
     @include('livewire.distribution-operators.partials.latest-misc-service-card')
 
-    <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+    <div class="-mt-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div class="space-y-4 border-b border-slate-200 px-5 py-4">
             <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h2 class="text-lg font-black text-slate-800">فهرست خدمات</h2>
-                    <p class="mt-1 text-xs font-semibold text-slate-500">خدمات بر اساس حالت ثبت، در دو دسته جدا نمایش داده می‌شوند.</p>
+                    <p class="mt-1 text-xs font-medium text-slate-500">نمایش خدمات اپراتور توزیع</p>
                 </div>
                 <span wire:loading.class="opacity-60" class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
                     {{ number_format($services->total()) }} خدمت

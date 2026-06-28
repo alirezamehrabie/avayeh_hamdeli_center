@@ -61,6 +61,34 @@ Alpine.data('rialAmountInput', (model) => ({
     },
 }));
 
+Alpine.data('pressHoldPreview', ({ delay = 260 } = {}) => ({
+    previewOpen: false,
+    holdTimer: null,
+    previewWasShown: false,
+    beginPreview() {
+        this.previewWasShown = false;
+        window.clearTimeout(this.holdTimer);
+        this.holdTimer = window.setTimeout(() => {
+            this.previewOpen = true;
+            this.previewWasShown = true;
+        }, delay);
+    },
+    endPreview() {
+        window.clearTimeout(this.holdTimer);
+        this.holdTimer = null;
+        this.previewOpen = false;
+    },
+    handleCardClick(event) {
+        if (!this.previewWasShown) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        this.previewWasShown = false;
+    },
+}));
+
 const normalizeLocaleDigits = (value) => {
     const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
     const arabicDigits = '٠١٢٣٤٥٦٧٨٩';
