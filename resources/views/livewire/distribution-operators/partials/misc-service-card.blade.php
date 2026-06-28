@@ -15,9 +15,60 @@
     </div>
 
     <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-slate-500">
-        <span>{{ $service->serviceCategory?->name ?? 'نامشخص' }}</span>
-        <span>•</span>
-        <span>{{ number_format((float) $service->total_quantity, 2) }} {{ $serviceUnitLabel }}</span>
+        <div
+            class="relative"
+            x-data="{ open: false }"
+            x-on:keydown.escape.window="open = false"
+        >
+            <button
+                type="button"
+                @click.stop="open = ! open"
+                @keydown.enter.stop.prevent="open = ! open"
+                @keydown.space.stop.prevent="open = ! open"
+                :aria-expanded="open.toString()"
+                aria-haspopup="dialog"
+                class="inline-flex h-7 items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-2.5 text-[11px] font-black text-emerald-700 transition hover:border-emerald-200 hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+                aria-label="نمایش دسته‌بندی‌های خدمت"
+            >
+                <span>{{ $serviceCategories->count() ?: 0 }} دسته</span>
+                <svg class="h-3.5 w-3.5 transition" :class="{ 'rotate-180': open }" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+
+            <div
+                x-cloak
+                x-show="open"
+                x-transition.origin.top.right
+                @click.stop
+                @click.outside="open = false"
+                class="absolute right-0 z-30 mt-2 w-64 rounded-2xl border border-slate-200 bg-white p-2 text-right shadow-xl shadow-slate-900/10 ring-1 ring-black/5"
+                role="dialog"
+                aria-label="دسته‌بندی‌های خدمت"
+            >
+                <div class="mb-2 flex items-center justify-between gap-3 border-b border-slate-100 px-2 pb-2">
+                    <span class="text-xs font-black text-slate-700">دسته‌بندی‌ها</span>
+                    <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ $serviceCategories->count() }} مورد</span>
+                </div>
+
+                @if($serviceCategories->isNotEmpty())
+                    <div class="max-h-56 space-y-1 overflow-y-auto overscroll-contain pr-0.5">
+                        @foreach($serviceCategories as $category)
+                            <div class="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-200/60">
+                                <span class="min-w-0 truncate text-xs font-bold text-slate-700">{{ $category->name ?: 'نامشخص' }}</span>
+                                <span class="shrink-0 text-[11px] font-semibold text-slate-500">
+                                    {{ number_format((float) $category->quantity, 2) }} {{ $unitOptions[$category->unit] ?? ($category->unit ?? $serviceUnitLabel) }}
+                                </span>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-center text-xs font-bold text-slate-400">
+                        دسته‌بندی ثبت نشده است.
+                    </p>
+                @endif
+            </div>
+        </div>
         <span>•</span>
         <span>{{ $distributionStartDate }}</span>
     </div>
