@@ -669,6 +669,18 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         ]);
     }
 
+    public function test_editing_misc_service_stepper_uses_worker_groups_for_progress(): void
+    {
+        [$operator, $worker, $service] = $this->editableMiscService();
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id])
+            ->assertSee('3 از 4 مرحله')
+            ->assertSee('مرحله فعلی: مرور و ثبت')
+            ->assertSee($worker->full_name);
+    }
+
     private function editableMiscService(): array
     {
         $operator = User::factory()->create([

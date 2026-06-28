@@ -75,12 +75,35 @@
 
     @php
         $isPredefinedWorkflow = $mode === 'predefined' && ! $isEditing;
+        $editWorkerGroups = collect($miscWorkerGroups ?? []);
+        $editWorkerStepComplete = $isEditing
+            && $editWorkerGroups->isNotEmpty()
+            && $editWorkerGroups->every(fn ($group) => (int) ($group['social_worker_id'] ?? 0) > 0);
+        $editQuantityStepComplete = $isEditing
+            && $editWorkerStepComplete
+            && $editWorkerGroups->every(function ($group) use ($unitOptions) {
+                $categories = $group['categories'] ?? [];
+
+                if (empty($categories)) {
+                    return false;
+                }
+
+                foreach ($categories as $category) {
+                    if (trim((string) ($category['name'] ?? '')) === ''
+                        || (float) ($category['quantity'] ?? 0) <= 0
+                        || ! array_key_exists((string) ($category['unit'] ?? ''), $unitOptions)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
         $hasSelectedMiscServiceType = $isEditing || in_array($miscServiceType, array_keys($typeOptions), true);
         $serviceStepComplete = $isPredefinedWorkflow ? (bool) $selectedService : $hasSelectedMiscServiceType;
         $workerStepUnlocked = $serviceStepComplete;
-        $workerStepComplete = (bool) $socialWorkerId;
+        $workerStepComplete = $isEditing ? $editWorkerStepComplete : (bool) $socialWorkerId;
         $quantityStepUnlocked = $serviceStepComplete && $workerStepComplete;
-        $quantityStepComplete = $canRequestSaveConfirmation;
+        $quantityStepComplete = $isEditing ? $editQuantityStepComplete : $canRequestSaveConfirmation;
         $reviewStepUnlocked = $canRequestSaveConfirmation;
         $workflowAccent = $isPredefinedWorkflow ? 'cyan' : 'emerald';
         $workflowSteps = [
@@ -91,7 +114,7 @@
             ],
             [
                 'number' => 2,
-                'title' => 'انتخاب مددکار',
+                'title' => $isEditing ? 'مددکاران' : 'انتخاب مددکار',
                 'status' => ! $workerStepUnlocked ? 'locked' : ($workerStepComplete ? 'done' : 'active'),
             ],
             [
@@ -266,7 +289,6 @@
             </section>
         @else
             <section wire:key="misc-service-batch-section" class="overflow-visible rounded-xl border border-emerald-100/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-                @if(!$isEditing)
                 <div class="border-b border-emerald-100/80 bg-emerald-50/20 px-4 py-2.5 sm:px-5 sm:py-3">
                     <div class="h-2 overflow-hidden rounded-full {{ $workflowTrackClass }}">
                         <div
@@ -283,7 +305,6 @@
                         </p>
                     </div>
                 </div>
-                @endif
                 <div class="border-b border-emerald-100/80 bg-emerald-50/30 px-4 py-2 sm:px-5 sm:py-2.5">
                     <div class="flex items-center gap-2.5">
                         <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-white">
