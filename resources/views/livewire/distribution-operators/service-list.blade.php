@@ -10,14 +10,19 @@
 
     <div class="-mt-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div class="space-y-4 border-b border-slate-200 px-5 py-4">
-            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex flex-col gap-2">
                 <div>
-                    <h2 class="text-lg font-black text-slate-800">فهرست خدمات</h2>
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-lg font-black text-slate-800">فهرست خدمات</h2>
+                        <span
+                            wire:loading.class="opacity-60"
+                            class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500"
+                        >
+                            {{ number_format($services->total()) }}
+                        </span>
+                    </div>
                     <p class="mt-1 text-xs font-medium text-slate-500">نمایش خدمات اپراتور توزیع</p>
                 </div>
-                <span wire:loading.class="opacity-60" class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
-                    {{ number_format($services->total()) }} خدمت
-                </span>
             </div>
 
             <div class="grid gap-2 rounded-2xl bg-slate-100 p-1 sm:grid-cols-2" role="tablist" aria-label="فیلتر نوع خدمات">
