@@ -19,29 +19,19 @@
         </div>
     @endif
 
+    @if(!$isEditing)
     <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="border-b border-slate-100 bg-slate-50/60 px-4 py-3 sm:px-5 sm:py-3.5">
             <div class="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                    <h1 class="text-xl font-black leading-tight text-slate-900 sm:text-[1.35rem]">{{ $isEditing ? 'ویرایش خدمت متفرقه' : 'تخصیص خدمت' }}</h1>
+                    <h1 class="text-xl font-black leading-tight text-slate-900 sm:text-[1.35rem]">تخصیص خدمت</h1>
                     <p class="mt-1 text-[11px] leading-5 text-slate-500 sm:text-xs">
                         تعریف و تحویل خدمات به مددکاران اجتماعی
                     </p>
                 </div>
-
-                @if($isEditing)
-                    <button
-                        type="button"
-                        wire:click="cancelEditing"
-                        class="inline-flex items-center justify-center self-start rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 lg:self-auto"
-                    >
-                        انصراف
-                    </button>
-                @endif
             </div>
         </div>
 
-        @if(!$isEditing)
             <div class="space-y-4 p-4 sm:p-5">
 
                 <div class="grid gap-2 sm:grid-cols-2 sm:gap-3">
@@ -80,8 +70,8 @@
                 @endunless
             </div>
 
-        @endif
     </div>
+    @endif
 
     @php
         $isPredefinedWorkflow = $mode === 'predefined' && ! $isEditing;
@@ -302,7 +292,7 @@
                             </svg>
                         </span>
                         <div class="min-w-0">
-                            <h2 class="text-sm font-black text-slate-900">{{ $isEditing ? 'ویرایش خدمت متفرقه' : 'تعریف خدمت جدید' }}</h2>
+                            <h2 class="text-sm font-black text-slate-900">{{ $isEditing ? 'جزئیات خدمت' : 'تعریف خدمت جدید' }}</h2>
                         </div>
                     </div>
                 </div>
