@@ -71,15 +71,62 @@
             $miscCardSocialWorkers = $service->socialWorkers
                 ->unique(fn ($worker) => (int) $worker->id)
                 ->values();
+            $visibleMiscCardSocialWorkers = $miscCardSocialWorkers->take(3);
+            $hiddenMiscCardSocialWorkers = $miscCardSocialWorkers->slice(3)->values();
         @endphp
 
         @if($miscCardSocialWorkers->isNotEmpty())
             <div class="flex flex-wrap gap-1.5">
-                @foreach($miscCardSocialWorkers as $worker)
+                @foreach($visibleMiscCardSocialWorkers as $worker)
                     <span class="inline-flex max-w-full items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-600">
                         <span class="truncate">{{ $worker->full_name ?: '—' }}</span>
                     </span>
                 @endforeach
+
+                @if($hiddenMiscCardSocialWorkers->isNotEmpty())
+                    <div
+                        class="relative"
+                        x-data="{ open: false }"
+                        x-on:keydown.escape.window="open = false"
+                    >
+                        <button
+                            type="button"
+                            @click.stop="open = ! open"
+                            @keydown.enter.stop.prevent="open = ! open"
+                            @keydown.space.stop.prevent="open = ! open"
+                            :aria-expanded="open.toString()"
+                            aria-haspopup="dialog"
+                            class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-black text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-100"
+                            aria-label="نمایش مددکاران بیشتر"
+                        >
+                            +{{ $hiddenMiscCardSocialWorkers->count() }}
+                        </button>
+
+                        <div
+                            x-cloak
+                            x-show="open"
+                            x-transition.origin.top.right
+                            @click.stop
+                            @click.outside="open = false"
+                            class="absolute right-0 z-30 mt-2 w-56 rounded-2xl border border-slate-200 bg-white p-2 text-right shadow-xl shadow-slate-900/10 ring-1 ring-black/5"
+                            role="dialog"
+                            aria-label="مددکاران بیشتر"
+                        >
+                            <div class="mb-2 flex items-center justify-between gap-3 border-b border-slate-100 px-2 pb-2">
+                                <span class="text-xs font-black text-slate-700">مددکاران دیگر</span>
+                                <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ $hiddenMiscCardSocialWorkers->count() }} مورد</span>
+                            </div>
+
+                            <div class="max-h-48 space-y-1 overflow-y-auto overscroll-contain pr-0.5">
+                                @foreach($hiddenMiscCardSocialWorkers as $worker)
+                                    <div class="rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 ring-1 ring-slate-200/60">
+                                        <span class="block truncate">{{ $worker->full_name ?: '—' }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                @endif
             </div>
         @else
             <span class="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-400">بدون مددکار</span>
