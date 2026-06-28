@@ -1,6 +1,7 @@
 <div
     x-data="{
         sidebarOpen: window.innerWidth >= 1024,
+        reminderDrawerOpen: false,
         resizeHandler: null,
         initSidebar() {
             this.syncSidebar();
@@ -16,6 +17,18 @@
                 this.sidebarOpen = false;
                 this.restoreSidebarToggleFocus();
             }
+        },
+        openReminderDrawer() {
+            this.reminderDrawerOpen = true;
+            this.$nextTick(() => this.$refs.reminderPanel?.focus({ preventScroll: true }));
+        },
+        closeReminderDrawer() {
+            if (!this.reminderDrawerOpen) {
+                return;
+            }
+
+            this.reminderDrawerOpen = false;
+            this.$nextTick(() => this.$refs.reminderToggle?.focus({ preventScroll: true }));
         },
         syncSidebar() {
             if (window.innerWidth >= 1024) {
@@ -79,8 +92,8 @@
         }
     }"
     x-init="initSidebar()"
-    @open-dashboard-section.window="closeSidebarOnMobile()"
-    @keydown.escape.window="closeSidebarOnMobile()"
+    @open-dashboard-section.window="closeSidebarOnMobile(); closeReminderDrawer()"
+    @keydown.escape.window="closeSidebarOnMobile(); closeReminderDrawer()"
     @keydown.tab.window="trapSidebarFocus($event)"
     class="flex h-full overflow-hidden"
     dir="rtl"
@@ -95,6 +108,122 @@
         style="display: none;"
     ></div>
 
+    <div
+        x-show="reminderDrawerOpen"
+        x-transition.opacity.duration.200ms
+        @click="closeReminderDrawer()"
+        class="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-sm"
+        style="display: none;"
+    ></div>
+
+    <aside
+        x-show="reminderDrawerOpen"
+        x-transition:enter="transition ease-out duration-250"
+        x-transition:enter-start="opacity-0 -translate-x-6"
+        x-transition:enter-end="opacity-100 translate-x-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 translate-x-0"
+        x-transition:leave-end="opacity-0 -translate-x-6"
+        x-ref="reminderPanel"
+        tabindex="-1"
+        class="fixed inset-y-0 left-0 z-50 flex w-full max-w-md flex-col border-r border-slate-200 bg-white shadow-2xl"
+        style="display: none;"
+    >
+        <div class="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
+            <div>
+                <p class="text-xs font-semibold tracking-[0.16em] text-slate-400">فضای شخصی</p>
+                <h2 class="mt-1 text-lg font-semibold text-slate-800">یادآوری‌های من</h2>
+                <p class="mt-1 text-sm text-slate-500">مدیریت کارهای شخصی بدون شلوغ‌کردن داشبورد اصلی</p>
+            </div>
+            <button
+                type="button"
+                @click="closeReminderDrawer()"
+                class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-100"
+                aria-label="بستن یادآوری‌ها"
+            >
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6 6l12 12M18 6L6 18"></path>
+                </svg>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-5 py-4">
+            <form wire:submit.prevent="addReminder" class="space-y-3">
+                <div>
+                    <label for="dashboard-reminder-title" class="mb-1 block text-xs font-semibold text-slate-500">متن یادآوری</label>
+                    <input
+                        id="dashboard-reminder-title"
+                        type="text"
+                        wire:model.defer="newReminderTitle"
+                        class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:ring focus:ring-indigo-100"
+                        placeholder="یادآوری جدید ثبت کنید..."
+                    >
+                    @error('newReminderTitle')
+                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="dashboard-reminder-category" class="mb-1 block text-xs font-semibold text-slate-500">دسته‌بندی</label>
+                    <select
+                        id="dashboard-reminder-category"
+                        wire:model.defer="newReminderCategory"
+                        class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:ring focus:ring-indigo-100"
+                    >
+                        <option value="today_tasks">کارهای امروز</option>
+                        <option value="pending_approvals">موارد در انتظار تایید</option>
+                        <option value="contract_deadlines">سررسید قراردادها</option>
+                        <option value="required_reports">گزارش‌های مورد نیاز</option>
+                    </select>
+                </div>
+
+                <button
+                    type="submit"
+                    class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                >
+                    افزودن یادآوری
+                </button>
+            </form>
+
+            <div class="mt-6 space-y-2">
+                @forelse($reminders as $reminder)
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
+                        <div class="flex items-start justify-between gap-3">
+                            <button type="button" wire:click="toggleReminder({{ $reminder->id }})" class="flex-1 text-right">
+                                <p class="text-sm font-medium {{ $reminder->is_done ? 'text-slate-400 line-through' : 'text-slate-700' }}">
+                                    {{ $reminder->title }}
+                                </p>
+                                <p class="mt-1 text-[11px] {{ $reminder->is_done ? 'text-slate-400' : 'text-indigo-600' }}">
+                                    {{
+                                        match($reminder->category) {
+                                            'today_tasks' => 'کارهای امروز',
+                                            'pending_approvals' => 'در انتظار تایید',
+                                            'contract_deadlines' => 'سررسید قرارداد',
+                                            'required_reports' => 'گزارش مورد نیاز',
+                                        }
+                                    }}
+                                </p>
+                            </button>
+
+                            <div class="flex items-center gap-2">
+                                <span class="rounded-full px-2 py-1 text-[10px] font-semibold {{ $reminder->is_done ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
+                                    {{ $reminder->is_done ? 'انجام شد' : 'باز' }}
+                                </span>
+                                <button type="button" wire:click="deleteReminder({{ $reminder->id }})" class="text-xs font-medium text-red-500 transition hover:text-red-700">
+                                    حذف
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-center text-sm text-slate-500">
+                        هنوز یادآوری شخصی ثبت نشده است.
+                    </div>
+                @endforelse
+            </div>
+        </div>
+    </aside>
+
     <div class="flex min-w-0 min-h-0 flex-1 w-full flex-col overflow-y-auto">
         @include('layouts.partials.header')
 
@@ -107,6 +236,10 @@
 
                     @case('people-list')
                         <livewire:people.index-people :embedded="true" :key="'people-list'" />
+                        @break
+
+                    @case('people-incomplete-cases')
+                        <livewire:people.incomplete-cases-queue :embedded="true" :key="'people-incomplete-cases'" />
                         @break
 
                     @case('people-block-list')
@@ -480,7 +613,12 @@
                                 </div>
                             </div>
 
-                            <div class="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-4">
+                            @php
+                                $pendingReminderCount = $reminders->where('is_done', false)->count();
+                                $completedReminderCount = $reminders->where('is_done', true)->count();
+                            @endphp
+
+                            <div class="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
                                 <div class="xl:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                                     <div class="flex items-center justify-between mb-5">
                                         <h2 class="text-lg font-semibold text-gray-800">تعداد مددجویان بر اساس ماه تولد</h2>
@@ -507,65 +645,37 @@
                                     </div>
                                 </div>
 
-                                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                                    <div class="mb-4">
-                                        <h2 class="text-lg font-semibold text-gray-800">وظایف و یادآوری‌ها</h2>
-                                        <p class="text-xs text-gray-500 mt-1">مدیریت کارهای روزانه، تاییدها، قراردادها و گزارش‌ها</p>
-                                    </div>
+                                <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div>
+                                            <p class="text-[11px] font-semibold tracking-[0.14em] text-slate-400">فضای شخصی</p>
+                                            <h2 class="mt-1 text-sm font-semibold text-slate-800">یادآوری‌ها</h2>
+                                        </div>
 
-                                    <form wire:submit.prevent="addReminder" class="space-y-3 mb-4">
-                                        <div>
-                                            <input
-                                                type="text"
-                                                wire:model.defer="newReminderTitle"
-                                                class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-300 focus:ring focus:ring-indigo-100"
-                                                placeholder="ثبت مورد جدید..."
-                                            >
-                                            @error('newReminderTitle')
-                                                <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
-                                            @enderror
-                                        </div>
-                                        <div>
-                                            <select wire:model.defer="newReminderCategory" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-indigo-300 focus:ring focus:ring-indigo-100">
-                                                <option value="today_tasks">کارهای امروز</option>
-                                                <option value="pending_approvals">موارد در انتظار تایید</option>
-                                                <option value="contract_deadlines">سررسید قراردادها</option>
-                                                <option value="required_reports">گزارش‌های مورد نیاز</option>
-                                            </select>
-                                        </div>
-                                        <button type="submit" class="w-full rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition">
-                                            افزودن مورد
+                                        <button
+                                            type="button"
+                                            x-ref="reminderToggle"
+                                            @click="openReminderDrawer()"
+                                            class="inline-flex h-9 items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-3 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                                        >
+                                            مدیریت
                                         </button>
-                                    </form>
-
-                                    <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
-                                        @forelse($reminders as $reminder)
-                                            <div class="rounded-lg border border-gray-100 bg-gray-50/70 p-3">
-                                                <div class="flex items-start justify-between gap-2">
-                                                    <button type="button" wire:click="toggleReminder({{ $reminder->id }})" class="text-right flex-1">
-                                                        <p class="text-sm font-medium {{ $reminder->is_done ? 'line-through text-gray-400' : 'text-gray-700' }}">
-                                                            {{ $reminder->title }}
-                                                        </p>
-                                                        <p class="text-[11px] mt-1 {{ $reminder->is_done ? 'text-gray-400' : 'text-indigo-600' }}">
-                                                            {{
-                                                                match($reminder->category) {
-                                                                    'today_tasks' => 'کارهای امروز',
-                                                                    'pending_approvals' => 'در انتظار تایید',
-                                                                    'contract_deadlines' => 'سررسید قرارداد',
-                                                                    'required_reports' => 'گزارش مورد نیاز',
-                                                                }
-                                                            }}
-                                                        </p>
-                                                    </button>
-                                                    <button type="button" wire:click="deleteReminder({{ $reminder->id }})" class="text-xs text-red-500 hover:text-red-700">حذف</button>
-                                                </div>
-                                            </div>
-                                        @empty
-                                            <div class="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-4 text-center text-xs text-gray-500">
-                                                هنوز موردی ثبت نشده است.
-                                            </div>
-                                        @endforelse
                                     </div>
+
+                                    <div class="mt-4 grid grid-cols-2 gap-2">
+                                        <div class="rounded-xl bg-amber-50 px-3 py-2">
+                                            <p class="text-[11px] text-amber-700">باز</p>
+                                            <p class="mt-1 text-base font-semibold text-slate-800">{{ number_format($pendingReminderCount) }}</p>
+                                        </div>
+                                        <div class="rounded-xl bg-emerald-50 px-3 py-2">
+                                            <p class="text-[11px] text-emerald-700">انجام‌شده</p>
+                                            <p class="mt-1 text-base font-semibold text-slate-800">{{ number_format($completedReminderCount) }}</p>
+                                        </div>
+                                    </div>
+
+                                    <p class="mt-4 text-xs leading-6 text-slate-500">
+                                        یادآوری‌های شخصی از بدنه اصلی داشبورد جدا شده‌اند تا صفحه خلوت بماند.
+                                    </p>
                                 </div>
                             </div>
 
