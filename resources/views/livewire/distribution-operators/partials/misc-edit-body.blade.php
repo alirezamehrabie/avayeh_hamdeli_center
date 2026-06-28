@@ -205,14 +205,47 @@
                                                 <div
                                                     x-data="{
                                                         sheetOpen: false,
+                                                        historyActive: false,
                                                         modelPath: 'miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.name',
                                                         openSheet() {
                                                             this.sheetOpen = true;
                                                             document.documentElement.classList.add('overflow-hidden');
+                                                            this.pushSheetHistory();
                                                         },
-                                                        closeSheet() {
+                                                        closeSheet({ syncHistory = true } = {}) {
+                                                            const shouldRestoreHistory = syncHistory && this.historyActive;
                                                             this.sheetOpen = false;
                                                             document.documentElement.classList.remove('overflow-hidden');
+
+                                                            if (shouldRestoreHistory) {
+                                                                this.historyActive = false;
+                                                                window.history.back();
+                                                            } else if (! syncHistory) {
+                                                                this.historyActive = false;
+                                                            }
+                                                        },
+                                                        pushSheetHistory() {
+                                                            if (this.historyActive || ! window.matchMedia('(max-width: 639px)').matches) {
+                                                                return;
+                                                            }
+
+                                                            try {
+                                                                window.history.pushState({
+                                                                    ...(window.history.state || {}),
+                                                                    miscCategorySheet: '{{ $gi }}-{{ $ci }}',
+                                                                }, '', window.location.href);
+                                                                this.historyActive = true;
+                                                            } catch (error) {
+                                                                this.historyActive = false;
+                                                            }
+                                                        },
+                                                        handleSheetPopState() {
+                                                            if (! this.sheetOpen) {
+                                                                this.historyActive = false;
+                                                                return;
+                                                            }
+
+                                                            this.closeSheet({ syncHistory: false });
                                                         },
                                                         pick(name) {
                                                             $wire.set(this.modelPath, name);
@@ -223,6 +256,7 @@
                                                             this.closeSheet();
                                                         },
                                                     }"
+                                                    x-init="window.addEventListener('popstate', () => handleSheetPopState())"
                                                     x-on:keydown.escape.window="closeSheet()"
                                                 >
                                                     <div class="relative">
