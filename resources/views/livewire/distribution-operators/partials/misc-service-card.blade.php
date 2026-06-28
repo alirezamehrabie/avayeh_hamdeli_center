@@ -1,12 +1,4 @@
-<div
-    @if(filled($miscEditUrl))
-        role="link"
-        tabindex="0"
-        onclick="if (! event.target.closest('a')) window.location.href = '{{ $miscEditUrl }}';"
-        onkeydown="if ((event.key === 'Enter' || event.key === ' ') && ! event.target.closest('a')) { event.preventDefault(); window.location.href = '{{ $miscEditUrl }}'; }"
-    @endif
-    class="flex flex-col rounded-2xl border border-emerald-200 bg-white p-3 shadow-sm transition hover:border-emerald-300 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-emerald-500/10 active:scale-[0.99]"
->
+<div class="flex flex-col rounded-2xl border border-emerald-200 bg-white p-3 shadow-sm transition hover:border-emerald-300 hover:shadow-md">
     <div class="flex items-start justify-between gap-3">
         <div class="min-w-0">
             <p class="truncate text-[11px] font-medium tracking-wide text-slate-400">{{ $service->code }}</p>
