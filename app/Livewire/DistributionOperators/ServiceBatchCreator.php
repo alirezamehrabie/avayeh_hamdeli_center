@@ -14,6 +14,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class ServiceBatchCreator extends Component
@@ -298,6 +299,12 @@ class ServiceBatchCreator extends Component
         $this->confirmingBatchSave = false;
     }
 
+    #[On('confirm-misc-category-delete')]
+    public function confirmMiscCategoryDelete(int $index): void
+    {
+        $this->removeCategory($index);
+    }
+
     public function addWorkerGroup(): void
     {
         $this->miscWorkerGroups[] = $this->makeWorkerGroup();
@@ -412,6 +419,12 @@ class ServiceBatchCreator extends Component
         unset($this->miscWorkerGroups[$groupIndex]['categories'][$categoryIndex]);
         $this->miscWorkerGroups[$groupIndex]['categories'] = array_values($this->miscWorkerGroups[$groupIndex]['categories']);
         $this->confirmingBatchSave = false;
+    }
+
+    #[On('confirm-misc-worker-category-delete')]
+    public function confirmMiscWorkerCategoryDelete(int $groupIndex, int $categoryIndex): void
+    {
+        $this->removeGroupCategory($groupIndex, $categoryIndex);
     }
 
     public function requestSaveConfirmation(): void

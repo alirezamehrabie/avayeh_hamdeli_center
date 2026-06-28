@@ -231,7 +231,31 @@
                                             @if($groupCategoryCount > 1)
                                                 <button
                                                     type="button"
-                                                    wire:click="removeGroupCategory({{ $gi }}, {{ $ci }})"
+                                                    x-on:click="
+                                                        window.dispatchEvent(new CustomEvent('open-notification-modal', {
+                                                            detail: {
+                                                                config: {
+                                                                    type: 'warning',
+                                                                    title: 'حذف دسته‌بندی',
+                                                                    message: 'آیا از حذف این دسته‌بندی برای مددکار انتخاب‌شده مطمئن هستید؟',
+                                                                    buttons: [
+                                                                        {
+                                                                            label: 'حذف',
+                                                                            action: 'event',
+                                                                            event: 'confirm-misc-worker-category-delete',
+                                                                            payload: { groupIndex: {{ $gi }}, categoryIndex: {{ $ci }} },
+                                                                            variant: 'danger',
+                                                                        },
+                                                                        {
+                                                                            label: 'انصراف',
+                                                                            action: 'close',
+                                                                            variant: 'secondary',
+                                                                        },
+                                                                    ],
+                                                                },
+                                                            },
+                                                        }))
+                                                    "
                                                     class="shrink-0 rounded-xl border border-rose-100 bg-rose-50 px-2.5 py-1.5 text-[11px] font-black text-rose-500 transition hover:border-rose-200 hover:bg-rose-100 hover:text-rose-700"
                                                     aria-label="حذف دسته‌بندی {{ $ci + 1 }}"
                                                 >

@@ -482,7 +482,31 @@
                                         </button>
                                         <button
                                             type="button"
-                                            wire:click="removeCategory({{ $index }})"
+                                            x-on:click="
+                                                window.dispatchEvent(new CustomEvent('open-notification-modal', {
+                                                    detail: {
+                                                        config: {
+                                                            type: 'warning',
+                                                            title: 'حذف دسته‌بندی',
+                                                            message: 'آیا از حذف این دسته‌بندی مطمئن هستید؟',
+                                                            buttons: [
+                                                                {
+                                                                    label: 'حذف',
+                                                                    action: 'event',
+                                                                    event: 'confirm-misc-category-delete',
+                                                                    payload: { index: {{ $index }} },
+                                                                    variant: 'danger',
+                                                                },
+                                                                {
+                                                                    label: 'انصراف',
+                                                                    action: 'close',
+                                                                    variant: 'secondary',
+                                                                },
+                                                            ],
+                                                        },
+                                                    },
+                                                }))
+                                            "
                                             class="shrink-0 rounded-lg p-1.5 text-rose-400 transition hover:bg-rose-50 hover:text-rose-600"
                                             aria-label="حذف دسته‌بندی {{ $index + 1 }}"
                                         >
