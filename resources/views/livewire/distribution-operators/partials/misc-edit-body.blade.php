@@ -202,15 +202,117 @@
                                         <div class="flex items-start gap-2.5">
                                             <span class="mt-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-black text-emerald-700">{{ $ci + 1 }}</span>
                                             <div class="min-w-0 flex-1 space-y-2.5">
-                                                <input
-                                                    type="text"
-                                                    list="misc-category-names"
-                                                    wire:model.blur="miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.name"
-                                                    class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100"
-                                                    placeholder="نام دسته‌بندی (مثال: بسته غذایی)"
-                                                    autocomplete="off"
+                                                <div
+                                                    x-data="{
+                                                        sheetOpen: false,
+                                                        modelPath: 'miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.name',
+                                                        openSheet() {
+                                                            this.sheetOpen = true;
+                                                            document.documentElement.classList.add('overflow-hidden');
+                                                        },
+                                                        closeSheet() {
+                                                            this.sheetOpen = false;
+                                                            document.documentElement.classList.remove('overflow-hidden');
+                                                        },
+                                                        pick(name) {
+                                                            $wire.set(this.modelPath, name);
+                                                            this.closeSheet();
+                                                        },
+                                                        createNew() {
+                                                            this.$refs.nameInput?.focus();
+                                                            this.closeSheet();
+                                                        },
+                                                    }"
+                                                    x-on:keydown.escape.window="closeSheet()"
                                                 >
-                                                @error("miscWorkerGroups.$gi.categories.$ci.name") <p class="text-[11px] text-rose-600">{{ $message }}</p> @enderror
+                                                    <div class="relative">
+                                                        <input
+                                                            x-ref="nameInput"
+                                                            type="text"
+                                                            wire:model.blur="miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.name"
+                                                            class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 {{ !empty($categoryNameSuggestions) ? 'pl-10' : '' }} text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100"
+                                                            placeholder="نام دسته‌بندی (مثال: بسته غذایی)"
+                                                            autocomplete="off"
+                                                        >
+                                                        @if(!empty($categoryNameSuggestions))
+                                                            <button
+                                                                type="button"
+                                                                @click="openSheet()"
+                                                                class="absolute inset-y-0 left-0 my-1 ml-1 inline-flex items-center justify-center rounded-md px-2 text-emerald-700 transition hover:bg-emerald-50"
+                                                                aria-label="انتخاب از دسته‌بندی‌های قبلی"
+                                                            >
+                                                                <i class="bi bi-list-ul text-base"></i>
+                                                            </button>
+                                                        @endif
+                                                    </div>
+                                                    @error("miscWorkerGroups.$gi.categories.$ci.name") <p class="mt-1 text-[11px] text-rose-600">{{ $message }}</p> @enderror
+
+                                                    @if(!empty($categoryNameSuggestions))
+                                                        <template x-teleport="body">
+                                                            <div
+                                                                x-show="sheetOpen"
+                                                                x-transition.opacity.duration.150ms
+                                                                @click="closeSheet()"
+                                                                class="fixed inset-0 z-[60] flex items-end justify-center bg-slate-950/50 backdrop-blur-sm sm:items-center sm:p-4"
+                                                                style="display: none;"
+                                                                dir="rtl"
+                                                            >
+                                                                <div
+                                                                    @click.stop
+                                                                    x-show="sheetOpen"
+                                                                    x-transition:enter="transition ease-out duration-200"
+                                                                    x-transition:enter-start="translate-y-full opacity-80 sm:translate-y-0 sm:scale-95 sm:opacity-0"
+                                                                    x-transition:enter-end="translate-y-0 opacity-100 sm:scale-100"
+                                                                    x-transition:leave="transition ease-in duration-150"
+                                                                    x-transition:leave-start="translate-y-0 opacity-100"
+                                                                    x-transition:leave-end="translate-y-full opacity-80"
+                                                                    class="flex max-h-[82svh] w-full max-w-md flex-col rounded-t-3xl border border-slate-200 bg-white shadow-2xl sm:max-h-[80vh] sm:rounded-3xl"
+                                                                    role="dialog"
+                                                                    aria-modal="true"
+                                                                    aria-label="انتخاب دسته‌بندی"
+                                                                >
+                                                                    <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3.5">
+                                                                        <div class="min-w-0">
+                                                                            <h3 class="text-sm font-black text-slate-900">دسته‌بندی‌های قبلی</h3>
+                                                                            <p class="mt-0.5 text-[11px] font-semibold text-slate-500">یک مورد را انتخاب کنید یا دسته‌بندی جدید بسازید</p>
+                                                                        </div>
+                                                                        <button type="button" @click="closeSheet()" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50" aria-label="بستن">
+                                                                            <i class="bi bi-x-lg text-sm"></i>
+                                                                        </button>
+                                                                    </div>
+
+                                                                    <div class="border-b border-slate-100 p-3">
+                                                                        <button
+                                                                            type="button"
+                                                                            @click="createNew()"
+                                                                            class="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-300 bg-emerald-50/60 px-3 py-3 text-sm font-black text-emerald-700 transition hover:border-emerald-400 hover:bg-emerald-50"
+                                                                        >
+                                                                            <i class="bi bi-plus-lg text-base"></i>
+                                                                            دسته‌بندی جدید
+                                                                        </button>
+                                                                    </div>
+
+                                                                    <div class="min-h-0 flex-1 space-y-1.5 overflow-y-auto p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+                                                                        @foreach($categoryNameSuggestions as $name)
+                                                                            <button
+                                                                                type="button"
+                                                                                data-name="{{ $name }}"
+                                                                                @click="pick($el.dataset.name)"
+                                                                                class="flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-right transition hover:border-emerald-200 hover:bg-emerald-50/60 active:bg-emerald-50"
+                                                                            >
+                                                                                <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-emerald-600">
+                                                                                    <i class="bi bi-tag text-sm"></i>
+                                                                                </span>
+                                                                                <span class="min-w-0 flex-1 truncate text-sm font-bold text-slate-800">{{ $name }}</span>
+                                                                                <i class="bi bi-chevron-left text-[11px] text-slate-300"></i>
+                                                                            </button>
+                                                                        @endforeach
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </template>
+                                                    @endif
+                                                </div>
 
                                                 <div class="grid grid-cols-2 gap-2">
                                                     <input
@@ -311,10 +413,4 @@
             <textarea rows="3" wire:model.blur="miscDescription" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"></textarea>
         </div>
     </div>
-
-    <datalist id="misc-category-names">
-        @foreach($categoryNameSuggestions as $name)
-            <option value="{{ $name }}"></option>
-        @endforeach
-    </datalist>
 </div>
