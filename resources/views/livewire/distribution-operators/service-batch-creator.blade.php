@@ -722,7 +722,56 @@
     </form>
 
     @if($confirmingBatchSave)
-        <div class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 p-0 backdrop-blur-sm sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="operator-confirmation-title">
+        <div
+            x-data="{
+                scrollLocked: false,
+                init() {
+                    this.lockPageScroll();
+                    this.$nextTick(() => this.$refs.cancelButton?.focus({ preventScroll: true }));
+                },
+                destroy() {
+                    this.releasePageScrollLock();
+                },
+                lockPageScroll() {
+                    if (this.scrollLocked) {
+                        return;
+                    }
+
+                    const currentLocks = Number(document.documentElement.dataset.distributionOperatorSheetLocks || 0);
+
+                    document.documentElement.dataset.distributionOperatorSheetLocks = String(currentLocks + 1);
+                    document.documentElement.classList.add('overflow-hidden');
+                    this.scrollLocked = true;
+                },
+                releasePageScrollLock() {
+                    if (! this.scrollLocked) {
+                        return;
+                    }
+
+                    const currentLocks = Number(document.documentElement.dataset.distributionOperatorSheetLocks || 0);
+                    const remainingLocks = Math.max(0, currentLocks - 1);
+
+                    if (remainingLocks > 0) {
+                        document.documentElement.dataset.distributionOperatorSheetLocks = String(remainingLocks);
+                    } else {
+                        delete document.documentElement.dataset.distributionOperatorSheetLocks;
+                        document.documentElement.classList.remove('overflow-hidden');
+                    }
+
+                    this.scrollLocked = false;
+                },
+                close() {
+                    this.releasePageScrollLock();
+                    $wire.cancelSaveConfirmation();
+                },
+            }"
+            x-on:keydown.escape.window.prevent="close()"
+            @click.self="close()"
+            class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="operator-confirmation-title"
+        >
             <div class="flex max-h-[92svh] w-full max-w-3xl flex-col rounded-t-3xl border border-slate-200 bg-white shadow-2xl sm:max-h-[88vh] sm:rounded-3xl">
                 <div class="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-4 sm:px-5">
                     <div class="min-w-0">
@@ -731,7 +780,8 @@
                     </div>
                     <button
                         type="button"
-                        wire:click="cancelSaveConfirmation"
+                        x-ref="cancelButton"
+                        @click="close()"
                         class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50"
                         aria-label="بستن"
                     >
@@ -920,7 +970,7 @@
                 <div class="flex flex-col-reverse gap-2 border-t border-slate-200 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 sm:flex-row sm:justify-end sm:px-5 sm:pb-4">
                     <button
                         type="button"
-                        wire:click="cancelSaveConfirmation"
+                        @click="close()"
                         class="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-50"
                     >
                         بازگشت به ویرایش

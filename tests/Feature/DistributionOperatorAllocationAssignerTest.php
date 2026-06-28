@@ -754,6 +754,22 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->assertSee($worker->full_name);
     }
 
+    public function test_editing_misc_service_confirmation_modal_has_keyboard_backdrop_and_scroll_lock_hooks(): void
+    {
+        [$operator, $worker, $service] = $this->editableMiscService();
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id])
+            ->call('requestSaveConfirmation')
+            ->assertSet('confirmingBatchSave', true)
+            ->assertSeeHtml('x-on:keydown.escape.window.prevent="close()"')
+            ->assertSeeHtml('@click.self="close()"')
+            ->assertSeeHtml('dataset.distributionOperatorSheetLocks')
+            ->assertSeeHtml('x-ref="cancelButton"')
+            ->assertSee($worker->full_name);
+    }
+
     public function test_editing_misc_service_keeps_group_worker_search_state_isolated(): void
     {
         [$operator, $worker, $service] = $this->editableMiscService();
