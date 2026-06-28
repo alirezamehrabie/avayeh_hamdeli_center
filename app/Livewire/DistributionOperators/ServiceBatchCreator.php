@@ -854,7 +854,7 @@ class ServiceBatchCreator extends Component
         $this->hasUnsavedChanges = false;
         session()->flash('success', 'خدمت متفرقه با موفقیت ویرایش شد.');
 
-        return redirect()->route('distribution-operator.service-list');
+        return redirect()->route('distribution-operator.define-service');
     }
 
     protected function predefinedRules(): array

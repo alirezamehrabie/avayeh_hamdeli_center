@@ -670,6 +670,26 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         ]);
     }
 
+    public function test_editing_misc_service_redirects_to_define_service_after_successful_save(): void
+    {
+        [$operator, $worker, $service] = $this->editableMiscService();
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id])
+            ->set('miscDescription', 'Updated redirect note')
+            ->call('requestSaveConfirmation')
+            ->call('confirmSaveBatch')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('distribution-operator.define-service'));
+
+        $this->assertDatabaseHas('services', [
+            'id' => $service->id,
+            'description' => 'Updated redirect note',
+        ]);
+        $this->assertSame($worker->id, $service->workerAllocations()->firstOrFail()->social_worker_id);
+    }
+
     public function test_editing_misc_service_stepper_uses_worker_groups_for_progress(): void
     {
         [$operator, $worker, $service] = $this->editableMiscService();
