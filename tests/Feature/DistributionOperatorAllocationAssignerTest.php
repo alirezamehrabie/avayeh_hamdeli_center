@@ -681,6 +681,64 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->assertSee($worker->full_name);
     }
 
+    public function test_editing_misc_service_validates_category_rows_as_they_change(): void
+    {
+        [$operator, $worker, $service] = $this->editableMiscService();
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id])
+            ->call('addGroupCategory', 0)
+            ->set('miscWorkerGroups.0.categories.1.name', 'Editable Pack')
+            ->assertHasErrors(['miscWorkerGroups.0.categories.1.name'])
+            ->set('miscWorkerGroups.0.categories.1.name', 'Second Pack')
+            ->assertHasNoErrors(['miscWorkerGroups.0.categories.1.name'])
+            ->set('miscWorkerGroups.0.categories.1.quantity', '0')
+            ->assertHasErrors(['miscWorkerGroups.0.categories.1.quantity'])
+            ->set('miscWorkerGroups.0.categories.1.quantity', '1')
+            ->assertHasNoErrors(['miscWorkerGroups.0.categories.1.quantity'])
+            ->assertSee($worker->full_name);
+    }
+
+    public function test_editing_misc_service_validates_duplicate_workers_as_they_change(): void
+    {
+        [$operator, $worker, $service] = $this->editableMiscService();
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id])
+            ->call('addWorkerGroup')
+            ->set('miscWorkerGroups.1.social_worker_id', $worker->id)
+            ->assertHasErrors(['miscWorkerGroups.1.social_worker_id']);
+    }
+
+    public function test_editing_misc_service_validates_used_quantity_as_it_changes(): void
+    {
+        [$operator, $worker, $service, $category] = $this->editableMiscService();
+
+        ServiceDelivery::query()->create([
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'delivery_channel' => Service::DELIVERY_CHANNEL_HOME,
+            'social_worker_id' => $worker->id,
+            'national_id' => '0000000003',
+            'full_name' => 'Delivered Recipient',
+            'delivered_quantity' => 3,
+            'value_per_unit_snapshot' => 0,
+            'delivered_total_value' => 0,
+            'delivered_at' => '2026-06-20',
+            'created_by' => $operator->id,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id])
+            ->set('miscWorkerGroups.0.categories.0.quantity', '2')
+            ->assertHasErrors(['miscWorkerGroups.0.categories.0.quantity'])
+            ->set('miscWorkerGroups.0.categories.0.quantity', '3')
+            ->assertHasNoErrors(['miscWorkerGroups.0.categories.0.quantity']);
+    }
+
     private function editableMiscService(): array
     {
         $operator = User::factory()->create([

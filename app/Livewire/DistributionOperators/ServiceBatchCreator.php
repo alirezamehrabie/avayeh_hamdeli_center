@@ -247,9 +247,27 @@ class ServiceBatchCreator extends Component
         $this->confirmingBatchSave = false;
     }
 
-    public function updatedMiscWorkerGroups(): void
+    public function updatedMiscWorkerGroups(mixed $value = null, ?string $key = null): void
     {
         $this->confirmingBatchSave = false;
+
+        if (! $this->editingServiceId) {
+            return;
+        }
+
+        if ($key !== null) {
+            $field = 'miscWorkerGroups.'.$key;
+
+            $this->resetValidation($field);
+            $this->validateOnly($field, $this->miscEditRules(), [], $this->validationAttributes());
+        }
+
+        $this->validateDistinctWorkerGroups();
+        $this->validateDistinctWorkerGroupCategories();
+        $this->validateEditableServiceUsageConstraints(
+            $this->resolveEditableService($this->editingServiceId),
+            $this->miscWorkerGroups
+        );
     }
 
     public function selectSocialWorker(int $socialWorkerId): void
@@ -324,6 +342,7 @@ class ServiceBatchCreator extends Component
     {
         $this->miscWorkerGroups[] = $this->makeWorkerGroup();
         $this->confirmingBatchSave = false;
+        $this->resetValidation('miscWorkerGroups');
 
         $newIndex = array_key_last($this->miscWorkerGroups);
         $this->activeWorkerGroupIndex = $newIndex;
@@ -341,6 +360,7 @@ class ServiceBatchCreator extends Component
         $this->miscWorkerGroups = array_values($this->miscWorkerGroups);
         $this->activeWorkerGroupIndex = null;
         $this->confirmingBatchSave = false;
+        $this->resetValidation('miscWorkerGroups');
     }
 
     #[On('confirm-misc-worker-group-delete')]
@@ -398,6 +418,8 @@ class ServiceBatchCreator extends Component
         $this->activeWorkerGroupIndex = null;
         $this->flushSocialWorkerSuggestions();
         $this->confirmingBatchSave = false;
+        $this->resetValidation("miscWorkerGroups.{$index}.social_worker_id");
+        $this->validateDistinctWorkerGroups();
     }
 
     public function clearGroupWorker(int $index): void
@@ -414,6 +436,7 @@ class ServiceBatchCreator extends Component
         $this->activeWorkerGroupIndex = $index;
         $this->flushSocialWorkerSuggestions();
         $this->confirmingBatchSave = false;
+        $this->resetValidation("miscWorkerGroups.{$index}.social_worker_id");
     }
 
     public function addGroupCategory(int $index): void
@@ -425,6 +448,7 @@ class ServiceBatchCreator extends Component
         $this->miscWorkerGroups[$index]['categories'][] = $this->makeMiscCategory();
         $this->miscWorkerGroups[$index]['categories'] = array_values($this->miscWorkerGroups[$index]['categories']);
         $this->confirmingBatchSave = false;
+        $this->resetValidation("miscWorkerGroups.{$index}.categories");
     }
 
     public function removeGroupCategory(int $groupIndex, int $categoryIndex): void
@@ -440,6 +464,7 @@ class ServiceBatchCreator extends Component
         unset($this->miscWorkerGroups[$groupIndex]['categories'][$categoryIndex]);
         $this->miscWorkerGroups[$groupIndex]['categories'] = array_values($this->miscWorkerGroups[$groupIndex]['categories']);
         $this->confirmingBatchSave = false;
+        $this->resetValidation("miscWorkerGroups.{$groupIndex}.categories");
     }
 
     #[On('confirm-misc-worker-category-delete')]
@@ -864,30 +889,44 @@ class ServiceBatchCreator extends Component
      */
     protected function validateDistinctWorkerGroups(): void
     {
-        $workerIds = collect($this->miscWorkerGroups)
-            ->pluck('social_worker_id')
-            ->filter(fn ($id): bool => (int) $id > 0)
-            ->map(fn ($id): int => (int) $id);
+        $seenWorkerIndexes = [];
 
-        if ($workerIds->count() !== $workerIds->unique()->count()) {
-            throw ValidationException::withMessages([
-                'miscWorkerGroups' => 'هر مددکار فقط می‌تواند یک‌بار در این خدمت ثبت شود؛ مددکار تکراری را حذف کنید.',
-            ]);
+        foreach ($this->miscWorkerGroups as $groupIndex => $group) {
+            $workerId = (int) ($group['social_worker_id'] ?? 0);
+
+            if ($workerId <= 0) {
+                continue;
+            }
+
+            if (array_key_exists($workerId, $seenWorkerIndexes)) {
+                throw ValidationException::withMessages([
+                    "miscWorkerGroups.{$groupIndex}.social_worker_id" => 'هر مددکار فقط می‌تواند یک‌بار در این خدمت ثبت شود؛ مددکار تکراری را حذف کنید.',
+                ]);
+            }
+
+            $seenWorkerIndexes[$workerId] = $groupIndex;
         }
     }
 
     protected function validateDistinctWorkerGroupCategories(): void
     {
         foreach ($this->miscWorkerGroups as $groupIndex => $group) {
-            $categoryNames = collect($group['categories'] ?? [])
-                ->pluck('name')
-                ->map(fn ($name): string => mb_strtolower(trim((string) $name)))
-                ->filter();
+            $seenCategoryIndexes = [];
 
-            if ($categoryNames->count() !== $categoryNames->unique()->count()) {
-                throw ValidationException::withMessages([
-                    "miscWorkerGroups.{$groupIndex}.categories" => 'هر دسته‌بندی فقط می‌تواند یک‌بار برای این مددکار ثبت شود.',
-                ]);
+            foreach (($group['categories'] ?? []) as $categoryIndex => $category) {
+                $categoryName = mb_strtolower(trim((string) ($category['name'] ?? '')));
+
+                if ($categoryName === '') {
+                    continue;
+                }
+
+                if (array_key_exists($categoryName, $seenCategoryIndexes)) {
+                    throw ValidationException::withMessages([
+                        "miscWorkerGroups.{$groupIndex}.categories.{$categoryIndex}.name" => 'هر دسته‌بندی فقط می‌تواند یک‌بار برای این مددکار ثبت شود.',
+                    ]);
+                }
+
+                $seenCategoryIndexes[$categoryName] = $categoryIndex;
             }
         }
     }
