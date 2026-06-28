@@ -1,5 +1,11 @@
 <div class="space-y-6">
     @if($latestMiscService && $latestMiscServiceSummary)
+        @php
+            $latestMiscServiceIsMisc = (int) ($latestMiscService->created_by ?? 0) === (int) auth()->id();
+            $latestMiscServiceEditButtonClasses = $latestMiscServiceIsMisc
+                ? 'border border-emerald-200 bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 text-white shadow-emerald-700/25 group-hover:border-emerald-300 group-hover:from-emerald-600 group-hover:via-emerald-700 group-hover:to-teal-700'
+                : 'bg-blue-600 text-white shadow-blue-600/20 group-hover:bg-blue-700';
+        @endphp
         <a
             href="{{ route('distribution-operator.edit-service', $latestMiscService->id) }}"
             class="group flex items-center gap-3 rounded-2xl border border-slate-200/70 bg-white px-3 py-2.5 shadow-sm transition hover:border-slate-300 hover:bg-slate-50/60 focus:outline-none focus:ring-4 focus:ring-slate-100 sm:px-4"
@@ -37,7 +43,7 @@
             </div>
 
             <!-- Edit affordance -->
-            <span class="flex shrink-0 items-center gap-1 rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-bold text-white transition group-hover:bg-slate-800">
+            <span class="flex shrink-0 items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold transition {{ $latestMiscServiceEditButtonClasses }}">
                 <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="M16.5 4.5l3 3L8 19H5v-3L16.5 4.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>

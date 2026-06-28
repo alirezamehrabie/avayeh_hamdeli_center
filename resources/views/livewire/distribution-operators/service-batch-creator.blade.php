@@ -97,44 +97,50 @@
 
     @if(!$isEditing)
     <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div class="border-b border-slate-100 bg-slate-50/60 px-4 py-3 sm:px-5 sm:py-3.5">
-            <div class="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                    <h1 class="text-xl font-black leading-tight text-slate-900 sm:text-[1.35rem]">تخصیص خدمت</h1>
-                    <p class="mt-1 text-[11px] leading-5 text-slate-500 sm:text-xs">
-                        تعریف و تحویل خدمات به مددکاران اجتماعی
-                    </p>
+        <div class="border-b border-slate-100 bg-slate-50/40 px-4 py-2.5 sm:px-5 sm:py-3">
+            <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                        <span class="inline-flex h-6 items-center rounded-lg bg-slate-900 px-2 text-[10px] font-black text-white">خدمت</span>
+                        <h1 class="truncate text-sm font-black text-slate-900 sm:text-[15px]">تخصیص خدمت</h1>
+                    </div>
+                    <p class="mt-0.5 text-[11px] font-medium text-slate-500">انتخاب نوع ثبت خدمت برای ادامه</p>
                 </div>
+                <span class="shrink-0 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-500">
+                    مرحله ۱
+                </span>
             </div>
         </div>
 
-            <div class="space-y-4 p-4 sm:p-5">
+            <div class="space-y-3 p-4 sm:p-5">
 
                 <div class="grid gap-2 sm:grid-cols-2 sm:gap-3">
-                    <label class="group relative flex cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-3 transition focus-within:ring-2 focus-within:ring-cyan-500 focus-within:ring-offset-2 sm:px-4 {{ $mode === 'predefined' ? 'border-cyan-300 bg-cyan-50/70 shadow-[0_0_0_1px_rgba(34,211,238,0.08)]' : 'border-slate-200 bg-white hover:border-cyan-200 hover:bg-cyan-50/30' }}">
+                    <label class="group relative flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition focus-within:ring-2 focus-within:ring-cyan-500 focus-within:ring-offset-2 sm:px-3.5 {{ $mode === 'predefined' ? 'border-cyan-300 bg-cyan-50/70 shadow-[0_0_0_1px_rgba(34,211,238,0.08)]' : 'border-slate-200 bg-white hover:border-cyan-200 hover:bg-cyan-50/30' }}">
                         <input type="radio" value="predefined" wire:model.change="mode" class="sr-only">
                         <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg {{ $mode === 'predefined' ? 'bg-cyan-500 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-cyan-100 group-hover:text-cyan-700' }}">
-                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                     <path d="M4 7.5h16M7 12h10M9 16.5h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                                 </svg>
                         </span>
                         <span class="min-w-0 flex-1">
-                            <span class="block text-sm font-semibold leading-5 text-slate-800">انتخاب خدمت / پویش</span>
+                            <span class="block text-sm font-bold leading-5 text-slate-800">انتخاب خدمت / پویش</span>
+                            <span class="mt-0.5 block text-[11px] font-medium leading-4 text-slate-500">استفاده از خدمات از پیش تعریف‌شده</span>
                         </span>
                         <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition {{ $mode === 'predefined' ? 'border-cyan-500 bg-cyan-500/10' : 'border-slate-300 bg-white' }}">
                             <span class="h-2 w-2 rounded-full {{ $mode === 'predefined' ? 'bg-cyan-500' : 'bg-transparent' }}"></span>
                         </span>
                     </label>
 
-                    <label class="group relative flex cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-3 transition focus-within:ring-2 focus-within:ring-emerald-500 focus-within:ring-offset-2 sm:px-4 {{ $mode === 'misc' ? 'border-emerald-300 bg-emerald-50/70 shadow-[0_0_0_1px_rgba(16,185,129,0.08)]' : 'border-slate-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/30' }}">
+                    <label class="group relative flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition focus-within:ring-2 focus-within:ring-emerald-500 focus-within:ring-offset-2 sm:px-3.5 {{ $mode === 'misc' ? 'border-emerald-300 bg-emerald-50/70 shadow-[0_0_0_1px_rgba(16,185,129,0.08)]' : 'border-slate-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/30' }}">
                         <input type="radio" value="misc" wire:model.change="mode" class="sr-only">
                         <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg {{ $mode === 'misc' ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-emerald-100 group-hover:text-emerald-700' }}">
-                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                     <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                                 </svg>
                         </span>
                         <span class="min-w-0 flex-1">
-                            <span class="block text-sm font-semibold leading-5 text-slate-800">تعریف خدمت جدید</span>
+                            <span class="block text-sm font-bold leading-5 text-slate-800">تعریف خدمت جدید</span>
+                            <span class="mt-0.5 block text-[11px] font-medium leading-4 text-slate-500">ثبت خدمت متفرقه برای مددکار</span>
                         </span>
                         <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition {{ $mode === 'misc' ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-300 bg-white' }}">
                             <span class="h-2 w-2 rounded-full {{ $mode === 'misc' ? 'bg-emerald-500' : 'bg-transparent' }}"></span>
@@ -142,7 +148,7 @@
                     </label>
                 </div>
                 @unless($hasSelectedMode)
-                    <p class="px-1 text-[11px] leading-5 text-slate-400 sm:text-xs">برای ادامه، یکی از دو حالت بالا را انتخاب کنید.</p>
+                    <p class="px-1 text-[11px] font-medium leading-5 text-slate-400">یکی از دو حالت را انتخاب کنید.</p>
                 @endunless
             </div>
 
