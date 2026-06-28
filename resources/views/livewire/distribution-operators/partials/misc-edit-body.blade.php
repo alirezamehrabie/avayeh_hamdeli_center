@@ -26,6 +26,7 @@
         <div
             x-data="{
                 serviceType: @entangle('miscServiceType').live,
+                isEditing: @js($isEditing ?? false),
                 get options() {
                     return [
                         {
@@ -59,7 +60,40 @@
                     ];
                 },
                 selectServiceType(value) {
-                    this.serviceType = value;
+                    if (value === this.serviceType) {
+                        return;
+                    }
+
+                    if (! this.isEditing || ! this.serviceType) {
+                        this.serviceType = value;
+                        return;
+                    }
+
+                    const selected = this.options.find((item) => item.value === value);
+
+                    window.dispatchEvent(new CustomEvent('open-notification-modal', {
+                        detail: {
+                            config: {
+                                type: 'warning',
+                                title: 'تغییر نوع خدمت',
+                                message: `آیا از تغییر نوع خدمت به «${selected?.title || value}» مطمئن هستید؟`,
+                                buttons: [
+                                    {
+                                        label: 'تأیید تغییر',
+                                        action: 'event',
+                                        event: 'confirm-misc-service-type-change',
+                                        payload: { serviceType: value },
+                                        variant: 'warning',
+                                    },
+                                    {
+                                        label: 'انصراف',
+                                        action: 'close',
+                                        variant: 'secondary',
+                                    },
+                                ],
+                            },
+                        },
+                    }));
                 },
             }"
         >

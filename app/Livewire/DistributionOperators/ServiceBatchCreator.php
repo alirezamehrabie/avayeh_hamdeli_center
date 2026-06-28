@@ -222,6 +222,17 @@ class ServiceBatchCreator extends Component
         $this->confirmingBatchSave = false;
     }
 
+    #[On('confirm-misc-service-type-change')]
+    public function confirmMiscServiceTypeChange(string $serviceType): void
+    {
+        if (! in_array($serviceType, array_keys(Service::TYPE_OPTIONS), true)) {
+            return;
+        }
+
+        $this->miscServiceType = $serviceType;
+        $this->confirmingBatchSave = false;
+    }
+
     public function updatedMiscDescription(): void
     {
         $this->confirmingBatchSave = false;
