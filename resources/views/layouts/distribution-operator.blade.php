@@ -8,8 +8,6 @@
     @livewireStyles
 </head>
 <body class="bg-gray-100 text-gray-800">
-    <x-flash-alerts />
-
     <div
         x-data="{
             sidebarOpen: window.innerWidth >= 1024,

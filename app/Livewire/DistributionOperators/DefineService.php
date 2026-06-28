@@ -48,25 +48,27 @@ class DefineService extends Component
 
     protected function latestMiscServiceSummary(Service $service): array
     {
-        $unitOptions = Service::unitOptions();
         $categories = $service->categories;
         $workerAllocations = $service->workerAllocations;
-        $primaryUnit = $categories->first()?->unit ?? 'count';
         $distributionDate = $service->distribution_start_date
             ? Jalalian::fromDateTime($service->distribution_start_date)->format('Y/m/d')
             : null;
+        $categoryNames = $categories->pluck('name')->filter()->values();
+        $categoryCount = $categoryNames->count();
+        $allocationCount = $workerAllocations->groupBy('social_worker_id')->count();
+        $quantity = (float) ($service->total_quantity ?: $categories->sum('quantity'));
 
         return [
             'name' => $service->name ?: ($service->serviceName?->name ?? 'خدمت متفرقه'),
-            'code' => $service->code ?: '—',
-            'category_names' => $categories->pluck('name')->filter()->take(4)->values(),
-            'category_count' => $categories->count(),
-            'worker_count' => $workerAllocations->pluck('social_worker_id')->filter()->unique()->count(),
-            'total_quantity' => (float) $service->total_quantity,
-            'unit_label' => $unitOptions[$primaryUnit] ?? $primaryUnit,
+            'category_names' => $categoryNames->take(3)->values(),
+            'category_count' => $categoryCount,
             'date' => $distributionDate,
-            'latest_worker' => $workerAllocations->first()?->socialWorker?->full_name,
-            'updated_at' => $service->updated_at?->diffForHumans(),
+            'allocation_count' => $allocationCount,
+            'quantity' => $quantity,
+            'unit_label' => Service::unitOptions()[$service->service_unit] ?? ($service->service_unit ?? 'واحد'),
+            'description_preview' => filled($service->description)
+                ? str($service->description)->squish()->limit(110)->toString()
+                : null,
         ];
     }
 }

@@ -1,4 +1,4 @@
-<div class="space-y-4">
+<div class="space-y-3">
     @php
         $hasSelectedMode = $isEditing || in_array($mode, ['predefined', 'misc'], true);
     @endphp
@@ -141,11 +141,11 @@
     @endphp
 
     @if($hasSelectedMode)
-    <form wire:submit.prevent="requestSaveConfirmation" class="space-y-3">
+    <form wire:submit.prevent="requestSaveConfirmation" class="space-y-2.5">
         @if($mode === 'predefined' && !$isEditing)
-            <section wire:key="predefined-service-batch-section" class="overflow-visible rounded-2xl border border-cyan-100 bg-white shadow-sm">
-                <div class="border-b border-cyan-100 bg-cyan-50/30 px-4 py-3 sm:px-5">
-                    <div class="h-2.5 overflow-hidden rounded-full {{ $workflowTrackClass }}">
+            <section wire:key="predefined-service-batch-section" class="overflow-visible rounded-xl border border-cyan-100/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                <div class="border-b border-cyan-100/80 bg-cyan-50/20 px-4 py-2.5 sm:px-5 sm:py-3">
+                    <div class="h-2 overflow-hidden rounded-full {{ $workflowTrackClass }}">
                         <div
                             class="h-full rounded-full bg-gradient-to-l {{ $workflowProgressClass }} transition-all duration-300"
                             style="width: {{ $workflowProgressPercent }}%;"
@@ -160,7 +160,7 @@
                         </p>
                     </div>
                 </div>
-                <div class="border-b border-cyan-100 bg-cyan-50/40 px-4 py-2.5 sm:px-5">
+                <div class="border-b border-cyan-100/80 bg-cyan-50/30 px-4 py-2 sm:px-5 sm:py-2.5">
                     <div class="flex items-center gap-2.5">
                         <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-500 text-white">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -275,10 +275,10 @@
                 @endif
             </section>
         @else
-            <section wire:key="misc-service-batch-section" class="overflow-visible rounded-2xl border border-emerald-100 bg-white shadow-sm">
+            <section wire:key="misc-service-batch-section" class="overflow-visible rounded-xl border border-emerald-100/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
                 @if(!$isEditing)
-                <div class="border-b border-emerald-100 bg-emerald-50/30 px-4 py-3 sm:px-5">
-                    <div class="h-2.5 overflow-hidden rounded-full {{ $workflowTrackClass }}">
+                <div class="border-b border-emerald-100/80 bg-emerald-50/20 px-4 py-2.5 sm:px-5 sm:py-3">
+                    <div class="h-2 overflow-hidden rounded-full {{ $workflowTrackClass }}">
                         <div
                             class="h-full rounded-full bg-gradient-to-l {{ $workflowProgressClass }} transition-all duration-300"
                             style="width: {{ $workflowProgressPercent }}%;"
@@ -294,7 +294,7 @@
                     </div>
                 </div>
                 @endif
-                <div class="border-b border-emerald-100 bg-emerald-50/40 px-4 py-2.5 sm:px-5">
+                <div class="border-b border-emerald-100/80 bg-emerald-50/30 px-4 py-2 sm:px-5 sm:py-2.5">
                     <div class="flex items-center gap-2.5">
                         <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-white">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -671,8 +671,22 @@
                     @php
                         $confirmationRows = $confirmationSummary['rows'] ?? [];
                         $confirmationItemCount = count($confirmationRows);
+                        $depletingRowsCount = (int) ($confirmationSummary['depleting_rows_count'] ?? 0);
+                        $largeQuantityRowsCount = (int) ($confirmationSummary['large_quantity_rows_count'] ?? 0);
+                        $hasEmptyDescriptionWarning = (bool) ($confirmationSummary['has_empty_description_warning'] ?? false);
                     @endphp
                     <div class="rounded-3xl border border-emerald-200 bg-emerald-50 p-4">
+                        <div class="mb-3 flex items-start gap-2 rounded-2xl bg-white/70 px-3 py-2 ring-1 ring-emerald-100">
+                            <span class="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[10px] font-black text-emerald-700">!</span>
+                            <div class="min-w-0">
+                                <p class="text-xs font-black text-emerald-900">قبل از ثبت نهایی، خدمت، مددکار و مقدار کل را دوباره بررسی کنید.</p>
+                                <p class="mt-1 truncate text-[11px] font-bold text-emerald-700">
+                                    {{ $confirmationSummary['service_name'] ?? '-' }}
+                                    <span class="mx-1 text-emerald-300">/</span>
+                                    {{ $confirmationSummary['worker_name'] ?? '-' }}
+                                </p>
+                            </div>
+                        </div>
                         <div class="grid gap-3 sm:grid-cols-3">
                             <div>
                                 <p class="text-[11px] font-bold text-emerald-700">اقلام</p>
@@ -688,6 +702,31 @@
                             </div>
                         </div>
                     </div>
+
+                    @if($depletingRowsCount > 0 || $largeQuantityRowsCount > 0 || $hasEmptyDescriptionWarning)
+                        <div class="mt-3 grid gap-2 sm:grid-cols-3">
+                            @if($depletingRowsCount > 0)
+                                <div class="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2.5">
+                                    <p class="text-[11px] font-black text-amber-800">اتمام موجودی</p>
+                                    <p class="mt-1 text-xs font-semibold leading-5 text-amber-700">{{ $depletingRowsCount }} قلم بعد از ثبت مانده صفر خواهد داشت.</p>
+                                </div>
+                            @endif
+
+                            @if($largeQuantityRowsCount > 0)
+                                <div class="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2.5">
+                                    <p class="text-[11px] font-black text-amber-800">مقدار بزرگ</p>
+                                    <p class="mt-1 text-xs font-semibold leading-5 text-amber-700">{{ $largeQuantityRowsCount }} قلم مقدار غیرمعمول بزرگ دارد.</p>
+                                </div>
+                            @endif
+
+                            @if($hasEmptyDescriptionWarning)
+                                <div class="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2.5">
+                                    <p class="text-[11px] font-black text-amber-800">بدون توضیحات</p>
+                                    <p class="mt-1 text-xs font-semibold leading-5 text-amber-700">برای خدمت متفرقه توضیحی ثبت نشده است.</p>
+                                </div>
+                            @endif
+                        </div>
+                    @endif
 
                     @if(!empty($reviewWarnings))
                         <div class="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2.5">
@@ -755,10 +794,13 @@
                                                 <div class="min-w-0">
                                                     <p class="truncate text-sm font-black text-slate-800">{{ $row['name'] }}</p>
                                                     <p class="mt-0.5 text-xs font-bold text-slate-500">{{ $row['unit_label'] }}</p>
+                                                    @if(!empty($row['is_large_quantity']))
+                                                        <p class="mt-1 inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-black text-amber-700 ring-1 ring-amber-100">مقدار بزرگ؛ بررسی شود</p>
+                                                    @endif
                                                 </div>
-                                                <div class="rounded-xl bg-slate-50 px-3 py-2 text-right">
-                                                    <p class="text-[10px] font-bold text-slate-500">مقدار</p>
-                                                    <p class="text-sm font-black text-slate-900">{{ $row['quantity_label'] }}</p>
+                                                <div class="rounded-xl {{ !empty($row['is_large_quantity']) ? 'bg-amber-50 ring-1 ring-amber-100' : 'bg-slate-50' }} px-3 py-2 text-right">
+                                                    <p class="text-[10px] font-bold {{ !empty($row['is_large_quantity']) ? 'text-amber-700' : 'text-slate-500' }}">مقدار</p>
+                                                    <p class="text-sm font-black {{ !empty($row['is_large_quantity']) ? 'text-amber-900' : 'text-slate-900' }}">{{ $row['quantity_label'] }}</p>
                                                 </div>
                                             </div>
                                         @endforeach
@@ -774,19 +816,24 @@
                         </div>
                         <div class="max-h-56 divide-y divide-slate-100 overflow-y-auto">
                             @forelse($confirmationRows as $row)
-                                <div class="grid gap-2 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
+                                <div class="grid gap-2 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center {{ !empty($row['consumes_all_remaining']) ? 'bg-amber-50/40' : '' }}">
                                     <div class="min-w-0">
                                         <p class="truncate text-sm font-black text-slate-800">{{ $row['name'] }}</p>
                                         <p class="mt-1 text-xs font-bold text-slate-500">{{ $row['unit_label'] }}</p>
+                                        @if(!empty($row['consumes_all_remaining']))
+                                            <p class="mt-1 inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-black text-amber-700 ring-1 ring-amber-100">بعد از ثبت مانده صفر می‌شود</p>
+                                        @elseif(!empty($row['is_large_quantity']))
+                                            <p class="mt-1 inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-black text-amber-700 ring-1 ring-amber-100">مقدار بزرگ؛ بررسی شود</p>
+                                        @endif
                                     </div>
-                                    <div class="rounded-xl bg-slate-50 px-3 py-2 text-right">
-                                        <p class="text-[10px] font-bold text-slate-500">مقدار</p>
-                                        <p class="text-sm font-black text-slate-900">{{ $row['quantity_label'] }}</p>
+                                    <div class="rounded-xl {{ !empty($row['is_large_quantity']) ? 'bg-amber-50 ring-1 ring-amber-100' : 'bg-slate-50' }} px-3 py-2 text-right">
+                                        <p class="text-[10px] font-bold {{ !empty($row['is_large_quantity']) ? 'text-amber-700' : 'text-slate-500' }}">مقدار</p>
+                                        <p class="text-sm font-black {{ !empty($row['is_large_quantity']) ? 'text-amber-900' : 'text-slate-900' }}">{{ $row['quantity_label'] }}</p>
                                     </div>
                                     @if(($confirmationSummary['mode'] ?? '') === 'predefined')
-                                        <div class="rounded-xl bg-emerald-50 px-3 py-2 text-right">
-                                            <p class="text-[10px] font-bold text-emerald-700">مانده بعد از ثبت</p>
-                                            <p class="text-sm font-black text-emerald-800">{{ $row['remaining_label'] }}</p>
+                                        <div class="rounded-xl {{ !empty($row['consumes_all_remaining']) ? 'bg-amber-100 ring-1 ring-amber-200' : 'bg-emerald-50' }} px-3 py-2 text-right">
+                                            <p class="text-[10px] font-bold {{ !empty($row['consumes_all_remaining']) ? 'text-amber-800' : 'text-emerald-700' }}">مانده بعد از ثبت</p>
+                                            <p class="text-sm font-black {{ !empty($row['consumes_all_remaining']) ? 'text-amber-950' : 'text-emerald-800' }}">{{ $row['remaining_label'] }}</p>
                                         </div>
                                     @endif
                                 </div>

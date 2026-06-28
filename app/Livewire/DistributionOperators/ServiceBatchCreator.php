@@ -1333,6 +1333,7 @@ class ServiceBatchCreator extends Component
                             'quantity' => $quantity,
                             'quantity_label' => number_format($quantity, 2),
                             'remaining_label' => '0.00',
+                            'is_large_quantity' => $this->isLargeMiscQuantity($quantity),
                         ];
                     })
                     ->filter(fn (array $row): bool => $row['name'] !== '' && $row['quantity'] > 0)
@@ -1355,6 +1356,9 @@ class ServiceBatchCreator extends Component
             ->all();
 
         $allRows = collect($groups)->flatMap(fn (array $group): array => $group['rows'])->values()->all();
+        $largeQuantityRowsCount = collect($allRows)
+            ->filter(fn (array $row): bool => (bool) ($row['is_large_quantity'] ?? false))
+            ->count();
 
         return [
             'mode' => self::MODE_MISC,
@@ -1370,6 +1374,8 @@ class ServiceBatchCreator extends Component
             'total_quantity_label' => number_format(collect($allRows)->sum('quantity'), 2),
             'rows' => $allRows,
             'groups' => $groups,
+            'large_quantity_rows_count' => $largeQuantityRowsCount,
+            'has_empty_description_warning' => trim($this->miscDescription) === '',
         ];
     }
 
@@ -1418,11 +1424,16 @@ class ServiceBatchCreator extends Component
                     'quantity' => $quantity,
                     'quantity_label' => number_format($quantity, 2),
                     'remaining_label' => number_format(max(0, $assignable - $quantity), 2),
+                    'consumes_all_remaining' => $assignable > 0 && max(0, $assignable - $quantity) <= 0.00001,
                 ];
             })
             ->filter()
             ->values()
             ->all();
+
+        $depletingRowsCount = collect($rows)
+            ->filter(fn (array $row): bool => (bool) ($row['consumes_all_remaining'] ?? false))
+            ->count();
 
         return [
             'mode' => self::MODE_PREDEFINED,
@@ -1434,6 +1445,7 @@ class ServiceBatchCreator extends Component
             'date_label' => 'ثبت تخصیص پس از تأیید نهایی انجام می‌شود',
             'total_quantity_label' => number_format(collect($rows)->sum('quantity'), 2),
             'rows' => $rows,
+            'depleting_rows_count' => $depletingRowsCount,
         ];
     }
 
@@ -1452,11 +1464,16 @@ class ServiceBatchCreator extends Component
                     'quantity' => $quantity,
                     'quantity_label' => number_format($quantity, 2),
                     'remaining_label' => '0.00',
+                    'is_large_quantity' => $this->isLargeMiscQuantity($quantity),
                 ];
             })
             ->filter(fn (array $row): bool => $row['name'] !== '' && $row['quantity'] > 0)
             ->values()
             ->all();
+
+        $largeQuantityRowsCount = collect($rows)
+            ->filter(fn (array $row): bool => (bool) ($row['is_large_quantity'] ?? false))
+            ->count();
 
         return [
             'mode' => self::MODE_MISC,
@@ -1470,6 +1487,8 @@ class ServiceBatchCreator extends Component
             'description' => trim($this->miscDescription),
             'total_quantity_label' => number_format(collect($rows)->sum('quantity'), 2),
             'rows' => $rows,
+            'large_quantity_rows_count' => $largeQuantityRowsCount,
+            'has_empty_description_warning' => trim($this->miscDescription) === '',
         ];
     }
 
@@ -1482,6 +1501,11 @@ class ServiceBatchCreator extends Component
         return SocialWorker::query()
             ->select(['id', 'first_name', 'last_name', 'worker_code'])
             ->find($this->socialWorkerId);
+    }
+
+    protected function isLargeMiscQuantity(float $quantity): bool
+    {
+        return $quantity >= 1000;
     }
 
     /**
