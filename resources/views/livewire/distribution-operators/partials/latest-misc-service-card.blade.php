@@ -8,7 +8,7 @@
             ->values();
         $latestMiscServiceIsMisc = (int) ($latestMiscService->created_by ?? 0) === (int) auth()->id();
         $latestMiscServiceEditButtonClasses = $latestMiscServiceIsMisc
-            ? 'bg-emerald-600 text-white shadow-emerald-600/20 hover:bg-emerald-700 focus:ring-emerald-500/20 active:bg-emerald-800'
+            ? 'border border-emerald-200 bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 text-white shadow-emerald-700/25 hover:border-emerald-300 hover:from-emerald-600 hover:via-emerald-700 hover:to-teal-700 focus:ring-emerald-500/20 active:from-emerald-700 active:via-emerald-800 active:to-teal-800'
             : 'bg-blue-600 text-white shadow-blue-600/20 hover:bg-blue-700 focus:ring-blue-500/20 active:bg-blue-800';
     @endphp
 

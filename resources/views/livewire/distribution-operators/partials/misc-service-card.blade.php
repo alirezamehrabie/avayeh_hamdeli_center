@@ -135,8 +135,11 @@
 
     @if(filled($miscEditUrl))
         <div class="mt-auto border-t border-slate-200 pt-3 sm:pt-4">
-        <a href="{{ $miscEditUrl }}" class="inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-black text-white shadow-sm shadow-emerald-600/20 transition hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 active:scale-[0.99] active:bg-emerald-800 sm:w-auto">
-            ویرایش خدمت
+        <a href="{{ $miscEditUrl }}" class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 px-4 py-2.5 text-sm font-black text-white shadow-sm shadow-emerald-700/25 transition hover:border-emerald-300 hover:from-emerald-600 hover:via-emerald-700 hover:to-teal-700 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 active:scale-[0.99] active:from-emerald-700 active:via-emerald-800 active:to-teal-800 sm:w-auto">
+            <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M16.5 4.5l3 3L8 19H5v-3L16.5 4.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span>ویرایش خدمت</span>
         </a>
         </div>
     @endif

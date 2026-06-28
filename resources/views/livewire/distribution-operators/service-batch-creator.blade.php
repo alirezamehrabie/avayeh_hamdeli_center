@@ -742,7 +742,7 @@
                     @disabled(! $isEditing && ! $canRequestSaveConfirmation)
                     wire:loading.attr="disabled"
                     wire:target="requestSaveConfirmation"
-                    class="inline-flex w-full items-center justify-center rounded-xl bg-emerald-700 px-4 py-3 text-xs font-black text-white shadow-sm shadow-emerald-700/20 transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none sm:w-auto"
+                    class="inline-flex w-full items-center justify-center rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 px-4 py-3 text-xs font-black text-white shadow-sm shadow-emerald-700/25 transition hover:border-emerald-300 hover:from-emerald-600 hover:via-emerald-700 hover:to-teal-700 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none focus:outline-none focus:ring-4 focus:ring-emerald-500/20 active:scale-[0.99] active:from-emerald-700 active:via-emerald-800 active:to-teal-800 sm:w-auto"
                 >
                     <span wire:loading.remove wire:target="requestSaveConfirmation">
                         {{ $mode === 'predefined' && !$isEditing ? 'تأیید تحویل' : 'تأیید خدمت' }}
