@@ -218,8 +218,14 @@
                                                     x-data="{
                                                         sheetOpen: false,
                                                         historyActive: false,
+                                                        directEntry: false,
                                                         modelPath: 'miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.name',
                                                         openSheet() {
+                                                            if (this.sheetOpen) {
+                                                                return;
+                                                            }
+
+                                                            this.directEntry = false;
                                                             this.sheetOpen = true;
                                                             document.documentElement.classList.add('overflow-hidden');
                                                             this.pushSheetHistory();
@@ -260,12 +266,23 @@
                                                             this.closeSheet({ syncHistory: false });
                                                         },
                                                         pick(name) {
+                                                            this.directEntry = false;
                                                             $wire.set(this.modelPath, name);
                                                             this.closeSheet();
                                                         },
                                                         createNew() {
-                                                            this.$refs.nameInput?.focus();
+                                                            this.directEntry = true;
                                                             this.closeSheet();
+                                                            this.$nextTick(() => this.$refs.nameInput?.focus({ preventScroll: true }));
+                                                        },
+                                                        handleNameFieldInteraction(event) {
+                                                            if (this.directEntry) {
+                                                                return;
+                                                            }
+
+                                                            event.preventDefault();
+                                                            this.$refs.nameInput?.blur();
+                                                            this.openSheet();
                                                         },
                                                     }"
                                                     x-init="window.addEventListener('popstate', () => handleSheetPopState())"
@@ -276,6 +293,13 @@
                                                             x-ref="nameInput"
                                                             type="text"
                                                             wire:model.blur="miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.name"
+                                                            @if(!empty($categoryNameSuggestions))
+                                                                x-bind:readonly="! directEntry"
+                                                                @click="handleNameFieldInteraction($event)"
+                                                                @focus="handleNameFieldInteraction($event)"
+                                                                x-bind:class="{ 'cursor-pointer caret-transparent': ! directEntry }"
+                                                                aria-haspopup="dialog"
+                                                            @endif
                                                             class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 {{ !empty($categoryNameSuggestions) ? 'pl-10' : '' }} text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100"
                                                             placeholder="نام دسته‌بندی"
                                                             autocomplete="off"
