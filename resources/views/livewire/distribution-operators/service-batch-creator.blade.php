@@ -1,6 +1,49 @@
 <div
     x-data="{
         shouldFocusValidationError: false,
+        isEditingService: @js($isEditing),
+        hasUnsavedChanges: @entangle('hasUnsavedChanges').live,
+        beforeUnloadHandler: null,
+        navigationGuardHandler: null,
+        init() {
+            if (window.Livewire) {
+                Livewire.hook('morph.updated', () => this.focusFirstValidationError());
+            }
+
+            this.navigationGuardHandler = () => this.canNavigateAway();
+            window.distributionOperatorConfirmServiceEditNavigation = this.navigationGuardHandler;
+            this.beforeUnloadHandler = (event) => {
+                if (! this.hasDirtyEdit()) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.returnValue = '';
+            };
+
+            window.addEventListener('beforeunload', this.beforeUnloadHandler);
+        },
+        destroy() {
+            if (this.beforeUnloadHandler) {
+                window.removeEventListener('beforeunload', this.beforeUnloadHandler);
+            }
+
+            if (window.distributionOperatorConfirmServiceEditNavigation === this.navigationGuardHandler) {
+                delete window.distributionOperatorConfirmServiceEditNavigation;
+            }
+        },
+        hasDirtyEdit() {
+            return this.isEditingService && this.hasUnsavedChanges;
+        },
+        canNavigateAway() {
+            return ! this.hasDirtyEdit()
+                || window.confirm('تغییرات ذخیره‌نشده دارید. بدون ذخیره خارج می‌شوید؟');
+        },
+        confirmNavigation(event) {
+            if (! this.canNavigateAway()) {
+                event.preventDefault();
+            }
+        },
         markValidationFocusPending() {
             this.shouldFocusValidationError = true;
         },
@@ -29,11 +72,7 @@
             });
         },
     }"
-    x-init="
-        if (window.Livewire) {
-            Livewire.hook('morph.updated', () => focusFirstValidationError());
-        }
-    "
+    data-service-batch-creator-root
     class="space-y-3"
 >
     @php

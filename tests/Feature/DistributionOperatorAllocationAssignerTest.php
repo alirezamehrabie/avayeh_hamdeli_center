@@ -770,6 +770,38 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->assertSee($worker->full_name);
     }
 
+    public function test_editing_misc_service_tracks_unsaved_changes_for_navigation_guard(): void
+    {
+        [$operator, $worker, $service] = $this->editableMiscService();
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id])
+            ->assertSet('hasUnsavedChanges', false)
+            ->set('miscWorkerGroups.0.worker_search', 'Transient search')
+            ->assertSet('hasUnsavedChanges', false)
+            ->set('miscDescription', 'Updated unsaved description')
+            ->assertSet('hasUnsavedChanges', true)
+            ->assertSee($worker->full_name);
+    }
+
+    public function test_editing_misc_service_renders_unsaved_change_navigation_hooks(): void
+    {
+        [$operator, $worker, $service] = $this->editableMiscService();
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id])
+            ->assertSeeHtml("window.addEventListener('beforeunload'")
+            ->assertSeeHtml('distributionOperatorConfirmServiceEditNavigation')
+            ->assertSeeHtml('hasUnsavedChanges')
+            ->assertSee($worker->full_name);
+
+        $this->get(route('distribution-operator.edit-service', $service->id))
+            ->assertOk()
+            ->assertSee('distributionOperatorConfirmServiceEditNavigation', false);
+    }
+
     public function test_editing_misc_service_keeps_group_worker_search_state_isolated(): void
     {
         [$operator, $worker, $service] = $this->editableMiscService();

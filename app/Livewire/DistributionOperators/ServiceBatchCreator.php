@@ -48,6 +48,8 @@ class ServiceBatchCreator extends Component
 
     public bool $confirmingBatchSave = false;
 
+    public bool $hasUnsavedChanges = false;
+
     /**
      * @var array<int, string|int|float|null>
      */
@@ -215,6 +217,7 @@ class ServiceBatchCreator extends Component
     {
         $this->date = $this->normalizeJalaliDate($this->date);
         $this->confirmingBatchSave = false;
+        $this->markEditingDirty();
     }
 
     public function updatedMiscServiceType(): void
@@ -224,6 +227,7 @@ class ServiceBatchCreator extends Component
         }
 
         $this->confirmingBatchSave = false;
+        $this->markEditingDirty();
     }
 
     #[On('confirm-misc-service-type-change')]
@@ -235,11 +239,13 @@ class ServiceBatchCreator extends Component
 
         $this->miscServiceType = $serviceType;
         $this->confirmingBatchSave = false;
+        $this->markEditingDirty();
     }
 
     public function updatedMiscDescription(): void
     {
         $this->confirmingBatchSave = false;
+        $this->markEditingDirty();
     }
 
     public function updatedMiscCategories(): void
@@ -266,8 +272,11 @@ class ServiceBatchCreator extends Component
                 return;
             }
 
+            $this->markEditingDirty();
             $this->resetValidation($field);
             $this->validateOnly($field, $this->miscEditRules(), [], $this->validationAttributes());
+        } else {
+            $this->markEditingDirty();
         }
 
         $this->validateDistinctWorkerGroups();
@@ -350,6 +359,7 @@ class ServiceBatchCreator extends Component
     {
         $this->miscWorkerGroups[] = $this->makeWorkerGroup();
         $this->confirmingBatchSave = false;
+        $this->markEditingDirty();
         $this->resetValidation('miscWorkerGroups');
 
         $newIndex = array_key_last($this->miscWorkerGroups);
@@ -368,6 +378,7 @@ class ServiceBatchCreator extends Component
         $this->miscWorkerGroups = array_values($this->miscWorkerGroups);
         $this->activeWorkerGroupIndex = null;
         $this->confirmingBatchSave = false;
+        $this->markEditingDirty();
         $this->resetValidation('miscWorkerGroups');
     }
 
@@ -426,6 +437,7 @@ class ServiceBatchCreator extends Component
         $this->activeWorkerGroupIndex = null;
         $this->flushSocialWorkerSuggestions();
         $this->confirmingBatchSave = false;
+        $this->markEditingDirty();
         $this->resetValidation("miscWorkerGroups.{$index}.social_worker_id");
         $this->validateDistinctWorkerGroups();
     }
@@ -445,6 +457,7 @@ class ServiceBatchCreator extends Component
         $this->activeWorkerGroupIndex = $index;
         $this->flushSocialWorkerSuggestions();
         $this->confirmingBatchSave = false;
+        $this->markEditingDirty();
         $this->resetValidation("miscWorkerGroups.{$index}.social_worker_id");
     }
 
@@ -457,6 +470,7 @@ class ServiceBatchCreator extends Component
         $this->miscWorkerGroups[$index]['categories'][] = $this->makeMiscCategory();
         $this->miscWorkerGroups[$index]['categories'] = array_values($this->miscWorkerGroups[$index]['categories']);
         $this->confirmingBatchSave = false;
+        $this->markEditingDirty();
         $this->resetValidation("miscWorkerGroups.{$index}.categories");
     }
 
@@ -473,6 +487,7 @@ class ServiceBatchCreator extends Component
         unset($this->miscWorkerGroups[$groupIndex]['categories'][$categoryIndex]);
         $this->miscWorkerGroups[$groupIndex]['categories'] = array_values($this->miscWorkerGroups[$groupIndex]['categories']);
         $this->confirmingBatchSave = false;
+        $this->markEditingDirty();
         $this->resetValidation("miscWorkerGroups.{$groupIndex}.categories");
     }
 
@@ -834,6 +849,7 @@ class ServiceBatchCreator extends Component
             $service->refreshFinancialTotals();
         });
 
+        $this->hasUnsavedChanges = false;
         session()->flash('success', 'خدمت متفرقه با موفقیت ویرایش شد.');
 
         return redirect()->route('distribution-operator.service-list');
@@ -889,6 +905,13 @@ class ServiceBatchCreator extends Component
             'miscWorkerGroups.*.categories.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'miscWorkerGroups.*.categories.*.unit' => ['required', Rule::in(Service::unitKeys())],
         ];
+    }
+
+    protected function markEditingDirty(): void
+    {
+        if ($this->editingServiceId) {
+            $this->hasUnsavedChanges = true;
+        }
     }
 
     /**
