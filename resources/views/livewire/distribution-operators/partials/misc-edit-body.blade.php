@@ -208,7 +208,7 @@
                                 </div>
                             </div>
 
-                            <div class="divide-y divide-slate-100">
+                            <div class="space-y-2.5 bg-slate-50/50 p-2.5">
                                 @foreach($groupCategories as $ci => $category)
                                     @php
                                         $assignedCategoryKeysForCurrentWorker = collect($groupCategories)
@@ -219,10 +219,35 @@
                                             ->values()
                                             ->all();
                                     @endphp
-                                    <div class="p-3 sm:p-3.5">
-                                        <div class="flex items-start gap-2.5">
-                                            <span class="mt-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-black text-emerald-700">{{ $ci + 1 }}</span>
-                                            <div class="min-w-0 flex-1 space-y-2.5">
+                                    <div class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-200/50 sm:p-3.5">
+                                        <div class="mb-3 flex items-center justify-between gap-3 border-b border-slate-100 pb-2.5">
+                                            <div class="flex min-w-0 items-center gap-2">
+                                                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-black text-emerald-700">{{ $ci + 1 }}</span>
+                                                <div class="min-w-0">
+                                                    <p class="text-xs font-black text-slate-700">دسته‌بندی {{ $ci + 1 }}</p>
+                                                    <p class="mt-0.5 text-[10px] font-bold text-slate-400">نام، مقدار و واحد این ردیف</p>
+                                                </div>
+                                            </div>
+                                            @if($groupCategoryCount > 1)
+                                                <button
+                                                    type="button"
+                                                    wire:click="removeGroupCategory({{ $gi }}, {{ $ci }})"
+                                                    class="shrink-0 rounded-xl border border-rose-100 bg-rose-50 px-2.5 py-1.5 text-[11px] font-black text-rose-500 transition hover:border-rose-200 hover:bg-rose-100 hover:text-rose-700"
+                                                    aria-label="حذف دسته‌بندی {{ $ci + 1 }}"
+                                                >
+                                                    حذف
+                                                </button>
+                                            @endif
+                                        </div>
+
+                                        <div class="space-y-3">
+                                            <div class="space-y-1.5">
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <label class="block text-[11px] font-black text-slate-500">نام دسته‌بندی</label>
+                                                    @if(!empty($categoryNameSuggestions))
+                                                        <span class="text-[10px] font-bold text-emerald-600">برای انتخاب لمس کنید</span>
+                                                    @endif
+                                                </div>
                                                 <div
                                                     x-data="{
                                                         sheetOpen: false,
@@ -309,6 +334,15 @@
                                                     x-on:keydown.escape.window="closeSheet()"
                                                 >
                                                     <div class="relative">
+                                                        @if(!empty($categoryNameSuggestions))
+                                                            <span
+                                                                x-show="! directEntry"
+                                                                class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-emerald-600"
+                                                                aria-hidden="true"
+                                                            >
+
+                                                            </span>
+                                                        @endif
                                                         <input
                                                             x-ref="nameInput"
                                                             type="text"
@@ -320,7 +354,7 @@
                                                                 x-bind:class="{ 'cursor-pointer caret-transparent': ! directEntry }"
                                                                 aria-haspopup="dialog"
                                                             @endif
-                                                            class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 {{ !empty($categoryNameSuggestions) ? 'pl-10' : '' }} text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100"
+                                                            class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 {{ !empty($categoryNameSuggestions) ? 'pl-10 pr-11' : '' }} text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100"
                                                             placeholder="نام دسته‌بندی"
                                                             autocomplete="off"
                                                         >
@@ -331,10 +365,18 @@
                                                                 class="absolute inset-y-0 left-0 my-1 ml-1 inline-flex items-center justify-center rounded-md px-2 text-emerald-700 transition hover:bg-emerald-50"
                                                                 aria-label="انتخاب از دسته‌بندی‌های قبلی"
                                                             >
-                                                                <i class="bi bi-list-ul text-base"></i>
+                                                                <i class="bi bi-chevron-down text-sm"></i>
                                                             </button>
                                                         @endif
                                                     </div>
+                                                    @if(!empty($categoryNameSuggestions))
+                                                        <p x-show="! directEntry" class="mt-1 text-[10px] font-bold text-slate-400">
+                                                            دسته‌بندی مورد نظر را از لیست انتخاب کنید
+                                                        </p>
+                                                        <p x-show="directEntry" class="mt-1 text-[10px] font-bold text-emerald-600">
+                                                            ثبت دسته‌بندی جدید فعال شد، نام را تایپ کنید
+                                                        </p>
+                                                    @endif
                                                     @error("miscWorkerGroups.$gi.categories.$ci.name") <p class="mt-1 text-[11px] text-rose-600">{{ $message }}</p> @enderror
 
                                                     @if(!empty($categoryNameSuggestions))
@@ -419,20 +461,23 @@
                                                         </template>
                                                     @endif
                                                 </div>
+                                            </div>
 
-                                                <div class="grid grid-cols-2 gap-2">
+                                            <div class="space-y-1.5">
+                                                <label class="block text-[11px] font-black text-slate-500">مقدار خدمت</label>
+                                                <div class="grid grid-cols-[minmax(0,1fr)_8.5rem] overflow-hidden rounded-lg border border-slate-200 bg-slate-50 transition focus-within:border-emerald-300 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-100">
                                                     <input
                                                         type="number"
                                                         min="0.01"
                                                         step="0.01"
                                                         inputmode="decimal"
                                                         wire:model.blur="miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.quantity"
-                                                        class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100"
+                                                        class="min-w-0 border-0 bg-transparent px-3 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:ring-0"
                                                         placeholder="مقدار"
                                                     >
                                                     <select
                                                         wire:model="miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.unit"
-                                                        class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100"
+                                                        class="border-0 border-r border-slate-200 bg-white/70 px-2.5 py-2 text-xs font-bold text-slate-600 outline-none focus:ring-0"
                                                     >
                                                         @foreach($unitOptions as $value => $label)
                                                             <option value="{{ $value }}">{{ $label }}</option>
@@ -441,18 +486,6 @@
                                                 </div>
                                                 @error("miscWorkerGroups.$gi.categories.$ci.quantity") <p class="text-[11px] text-rose-600">{{ $message }}</p> @enderror
                                             </div>
-                                            @if($groupCategoryCount > 1)
-                                                <button
-                                                    type="button"
-                                                    wire:click="removeGroupCategory({{ $gi }}, {{ $ci }})"
-                                                    class="mt-1 shrink-0 rounded-lg p-1.5 text-rose-400 transition hover:bg-rose-50 hover:text-rose-600"
-                                                    aria-label="حذف دسته‌بندی {{ $ci + 1 }}"
-                                                >
-                                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
-                                                        <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                                    </svg>
-                                                </button>
-                                            @endif
                                         </div>
                                     </div>
                                 @endforeach
@@ -460,7 +493,7 @@
                                 <button
                                     type="button"
                                     wire:click="addGroupCategory({{ $gi }})"
-                                    class="flex w-full items-center justify-center gap-2 px-3 py-2.5 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50"
+                                    class="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-200 bg-white px-3 py-2.5 text-sm font-bold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-50"
                                 >
                                     <span class="text-lg leading-none">+</span>
                                     افزودن دسته‌بندی
