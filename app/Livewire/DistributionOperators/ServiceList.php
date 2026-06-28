@@ -66,6 +66,20 @@ class ServiceList extends Component
         $this->resetPage();
     }
 
+    public function selectCatalogService(int $serviceId): void
+    {
+        $service = $this->activeServicesQuery()
+            ->with('serviceName:id,name')
+            ->find($serviceId);
+
+        if (! $service) {
+            return;
+        }
+
+        $this->search = $this->serviceSearchLabel($service);
+        $this->resetPage();
+    }
+
     public function render()
     {
         $counts = [
@@ -95,7 +109,35 @@ class ServiceList extends Component
                 ? $this->latestMiscServiceSummary($latestMiscService)
                 : null,
             'todayMiscCount' => $this->miscServicesQuery()->whereDate('created_at', today())->count(),
+            'catalogSearchOptions' => $this->catalogSearchOptions(),
         ]);
+    }
+
+    protected function catalogSearchOptions(): array
+    {
+        return $this->filteredServicesQuery()
+            ->with(['serviceName:id,name', 'categories:id,service_id,name'])
+            ->latest()
+            ->limit(12)
+            ->get()
+            ->map(fn (Service $service) => [
+                'id' => $service->id,
+                'code' => $service->code ?: '',
+                'name' => $this->serviceSearchLabel($service),
+                'categories' => $service->categories
+                    ->pluck('name')
+                    ->filter()
+                    ->take(3)
+                    ->implode('، '),
+                'createdAt' => optional($service->created_at)->format('Y/m/d') ?: '',
+            ])
+            ->values()
+            ->all();
+    }
+
+    protected function serviceSearchLabel(Service $service): string
+    {
+        return (string) ($service->serviceName?->name ?: $service->name ?: $service->code ?: '');
     }
 
     protected function filteredServicesQuery(): Builder

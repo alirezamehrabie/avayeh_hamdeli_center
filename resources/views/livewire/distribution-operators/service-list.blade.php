@@ -9,7 +9,7 @@
     @include('livewire.distribution-operators.partials.latest-misc-service-card')
 
     <div class="-mt-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="space-y-4 border-b border-slate-200 px-5 py-4">
+        <div class="space-y-4 border-b border-slate-200 px-4 py-4">
             <div class="flex flex-col gap-2">
                 <div>
                     <div class="flex items-center gap-2">
@@ -21,7 +21,9 @@
                             {{ number_format($services->total()) }}
                         </span>
                     </div>
-                    <p class="mt-1 text-xs font-medium text-slate-500">نمایش خدمات اپراتور توزیع</p>
+                    <p class="mt-1 text-xs font-medium text-slate-500">
+                        {{ $activeTab === 'campaigns' ? 'لیست کمپین‌ها' : 'لیست متفرقه' }} - نمایش خدمات اپراتور توزیع
+                    </p>
                 </div>
             </div>
 
@@ -55,32 +57,188 @@
                 </button>
             </div>
 
-            <div id="operator-service-catalog" class="space-y-2">
-                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <label class="relative block sm:w-80 lg:w-96">
-                        <span class="sr-only">جستجوی خدمت</span>
-                        <input
-                            type="search"
-                            wire:model.live.debounce.350ms="search"
-                            placeholder="جستجوی خدمت..."
-                            class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 pl-9 text-sm font-semibold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-slate-300 focus:ring-2 focus:ring-slate-100"
-                        >
-                        <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.197 5.197a7.5 7.5 0 0 0 10.606 10.606Z" />
-                        </svg>
-                    </label>
+            <div
+                id="operator-service-catalog"
+                class="space-y-2"
+                x-data="{
+                    open: false,
+                    historyStatePushed: false,
+                    query: @entangle('search').live,
+                    options: @js($catalogSearchOptions),
+                    isMobileSheet: window.matchMedia('(max-width: 639px)').matches,
+                    init() {
+                        this.mediaQuery = window.matchMedia('(max-width: 639px)');
+                        this.mediaQuery.addEventListener('change', event => this.isMobileSheet = event.matches);
+                        this.handlePopState = () => {
+                            if (this.open) {
+                                this.historyStatePushed = false;
+                                this.close(false);
+                            }
+                        };
+                        window.addEventListener('popstate', this.handlePopState);
+                        this.$watch('open', value => {
+                            document.documentElement.classList.toggle('overflow-hidden', value && this.isMobileSheet);
+                            if (value) {
+                                this.pushSheetHistoryState();
+                                if (! this.isMobileSheet) {
+                                    this.$nextTick(() => this.$refs.searchInput?.focus({ preventScroll: true }));
+                                }
+                            }
+                        });
+                    },
+                    pushSheetHistoryState() {
+                        if (! this.isMobileSheet || this.historyStatePushed) {
+                            return;
+                        }
 
-                    <label class="block sm:w-40">
+                        window.history.pushState({ operatorServiceSearchSheet: true }, '', window.location.href);
+                        this.historyStatePushed = true;
+                    },
+                    close(syncHistory = true) {
+                        if (syncHistory && this.historyStatePushed) {
+                            this.historyStatePushed = false;
+                            window.history.back();
+                            return;
+                        }
+
+                        this.historyStatePushed = false;
+                        this.open = false;
+                    },
+                    normalized(value) {
+                        return String(value || '').toLowerCase().trim();
+                    },
+                    get filteredOptions() {
+                        const term = this.normalized(this.query);
+
+                        if (! term) {
+                            return this.options;
+                        }
+
+                        return this.options.filter(service => [
+                            service.name,
+                            service.code,
+                            service.categories,
+                        ].some(value => this.normalized(value).includes(term)));
+                    },
+                    select(serviceId) {
+                        this.$wire.selectCatalogService(Number(serviceId)).then(() => this.close());
+                    },
+                }"
+                x-on:keydown.escape.window="close()"
+                wire:key="operator-service-catalog-{{ $activeTab }}"
+            >
+                <div class="flex items-center gap-2">
+                    <button
+                        type="button"
+                        @click="open = true"
+                        :aria-expanded="open.toString()"
+                        aria-haspopup="dialog"
+                        class="inline-flex h-11 w-14 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50/70 text-slate-500 transition hover:border-slate-300 hover:bg-white hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-100 sm:w-11"
+                        aria-label="جستجوی خدمت"
+                    >
+                        <svg class="h-[18px] w-[18px]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" d="m20 20-4.15-4.15" />
+                            <circle cx="10.75" cy="10.75" r="6.25" />
+                        </svg>
+                    </button>
+
+                    <label class="min-w-0 flex-1 sm:max-w-48">
                         <span class="sr-only">مرتب‌سازی</span>
                         <select
                             wire:model.live="sort"
-                            class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none transition focus:border-slate-300 focus:ring-2 focus:ring-slate-100"
+                            class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none transition focus:border-slate-300 focus:ring-2 focus:ring-slate-100"
                         >
                             @foreach($sortOptions as $value => $label)
                                 <option value="{{ $value }}">{{ $label }}</option>
                             @endforeach
                         </select>
                     </label>
+                </div>
+
+                <div
+                    x-cloak
+                    x-show="open"
+                    x-transition.opacity.duration.150ms
+                    @click="close()"
+                    class="fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-sm sm:hidden"
+                    aria-hidden="true"
+                ></div>
+
+                <div
+                    x-cloak
+                    x-show="open"
+                    x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="translate-y-full opacity-80 sm:-translate-y-2 sm:opacity-0"
+                    x-transition:enter-end="translate-y-0 opacity-100"
+                    x-transition:leave="transition ease-in duration-150"
+                    x-transition:leave-start="translate-y-0 opacity-100"
+                    x-transition:leave-end="translate-y-full opacity-80 sm:-translate-y-2 sm:opacity-0"
+                    @click.outside="close()"
+                    class="fixed inset-x-0 bottom-0 z-50 flex max-h-[85svh] min-h-[48svh] flex-col rounded-t-3xl border border-slate-200 bg-slate-50 p-3 shadow-[0_-18px_45px_rgba(15,23,42,0.22)] sm:absolute sm:inset-auto sm:mt-2 sm:min-h-0 sm:w-96 sm:rounded-2xl sm:bg-white sm:p-2 sm:shadow-xl"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="operator-service-search-title"
+                    dir="rtl"
+                >
+                    <div class="mb-3 flex items-center justify-between gap-3 border-b border-slate-200/70 pb-3 sm:hidden">
+                        <div class="min-w-0">
+                            <h3 id="operator-service-search-title" class="text-sm font-black text-slate-800">جستجوی خدمت</h3>
+                            <p class="mt-0.5 text-xs font-medium text-slate-500">آخرین خدمات همین بخش نمایش داده می‌شود.</p>
+                        </div>
+                        <button
+                            type="button"
+                            @click="close()"
+                            class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                            aria-label="بستن"
+                        >
+                            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                <path d="M5.5 5.5L14.5 14.5M14.5 5.5L5.5 14.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="sticky top-0 z-10 bg-slate-50 pb-2 sm:bg-white">
+                        <label class="relative block">
+                            <span class="sr-only">عبارت جستجوی خدمت</span>
+                            <input
+                                x-ref="searchInput"
+                                type="search"
+                                x-model.debounce.120ms="query"
+                                placeholder="نام، کد، مددکار یا دسته‌بندی..."
+                                autocomplete="off"
+                                class="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 pl-9 text-sm font-semibold text-slate-700 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-300 focus:ring-2 focus:ring-slate-100"
+                            >
+                            <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.197 5.197a7.5 7.5 0 0 0 10.606 10.606Z" />
+                            </svg>
+                        </label>
+                    </div>
+
+                    <div class="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pb-[calc(env(safe-area-inset-bottom)+0.5rem)] sm:max-h-72 sm:pb-0">
+                        <template x-for="service in filteredOptions" :key="service.id">
+                            <button
+                                type="button"
+                                @click="select(service.id)"
+                                class="flex w-full items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-right shadow-sm transition hover:border-blue-200 hover:bg-blue-50/50 focus:outline-none focus:ring-2 focus:ring-blue-100 active:bg-blue-50"
+                            >
+                                <span class="min-w-0">
+                                    <span class="flex flex-wrap items-center gap-1.5">
+                                        <span class="truncate text-sm font-black text-slate-800" x-text="service.name"></span>
+                                        <span x-show="service.code" class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500" x-text="service.code"></span>
+                                    </span>
+                                    <span class="mt-1 block truncate text-[11px] font-semibold text-slate-500" x-text="service.categories || 'بدون دسته‌بندی ثبت‌شده'"></span>
+                                </span>
+                                <span class="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500" x-text="service.createdAt"></span>
+                            </button>
+                        </template>
+
+                        <div
+                            x-show="filteredOptions.length === 0"
+                            class="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-6 text-center text-xs font-bold text-slate-400"
+                        >
+                            خدمتی با این جستجو پیدا نشد.
+                        </div>
+                    </div>
                 </div>
 
                 <div class="flex flex-col gap-2 text-xs font-bold text-slate-500 sm:flex-row sm:items-center sm:justify-between">
