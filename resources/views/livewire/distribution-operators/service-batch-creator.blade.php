@@ -44,35 +44,39 @@
         @if(!$isEditing)
             <div class="space-y-4 p-4 sm:p-5">
 
-                <div class="grid gap-3 sm:grid-cols-2">
-                    <label class="group relative flex min-h-20 cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition focus-within:ring-2 focus-within:ring-cyan-500 focus-within:ring-offset-2 {{ $mode === 'predefined' ? 'border-cyan-400 bg-cyan-50/60 ring-1 ring-cyan-100' : 'border-slate-200 bg-white hover:border-cyan-200 hover:bg-cyan-50/30' }}">
+                <div class="grid gap-2 sm:grid-cols-2 sm:gap-3">
+                    <label class="group relative flex cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-3 transition focus-within:ring-2 focus-within:ring-cyan-500 focus-within:ring-offset-2 sm:px-4 {{ $mode === 'predefined' ? 'border-cyan-300 bg-cyan-50/70 shadow-[0_0_0_1px_rgba(34,211,238,0.08)]' : 'border-slate-200 bg-white hover:border-cyan-200 hover:bg-cyan-50/30' }}">
                         <input type="radio" value="predefined" wire:model.change="mode" class="sr-only">
-                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg {{ $mode === 'predefined' ? 'bg-cyan-500 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-cyan-100 group-hover:text-cyan-700' }}">
+                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg {{ $mode === 'predefined' ? 'bg-cyan-500 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-cyan-100 group-hover:text-cyan-700' }}">
                                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                     <path d="M4 7.5h16M7 12h10M9 16.5h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                                 </svg>
                         </span>
                         <span class="min-w-0 flex-1">
-                            <span class="block text-sm font-black text-slate-800">انتخاب خدمت / پویش</span>
+                            <span class="block text-sm font-semibold leading-5 text-slate-800">انتخاب خدمت / پویش</span>
                         </span>
-                        <span class="h-2.5 w-2.5 rounded-full {{ $mode === 'predefined' ? 'bg-cyan-500' : 'bg-slate-300' }}"></span>
+                        <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition {{ $mode === 'predefined' ? 'border-cyan-500 bg-cyan-500/10' : 'border-slate-300 bg-white' }}">
+                            <span class="h-2 w-2 rounded-full {{ $mode === 'predefined' ? 'bg-cyan-500' : 'bg-transparent' }}"></span>
+                        </span>
                     </label>
 
-                    <label class="group relative flex min-h-20 cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition focus-within:ring-2 focus-within:ring-emerald-500 focus-within:ring-offset-2 {{ $mode === 'misc' ? 'border-emerald-400 bg-emerald-50/60 ring-1 ring-emerald-100' : 'border-slate-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/30' }}">
+                    <label class="group relative flex cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-3 transition focus-within:ring-2 focus-within:ring-emerald-500 focus-within:ring-offset-2 sm:px-4 {{ $mode === 'misc' ? 'border-emerald-300 bg-emerald-50/70 shadow-[0_0_0_1px_rgba(16,185,129,0.08)]' : 'border-slate-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/30' }}">
                         <input type="radio" value="misc" wire:model.change="mode" class="sr-only">
-                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg {{ $mode === 'misc' ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-emerald-100 group-hover:text-emerald-700' }}">
+                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg {{ $mode === 'misc' ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-emerald-100 group-hover:text-emerald-700' }}">
                                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                     <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                                 </svg>
                         </span>
                         <span class="min-w-0 flex-1">
-                            <span class="block text-sm font-black text-slate-800">تعریف خدمت جدید</span>
+                            <span class="block text-sm font-semibold leading-5 text-slate-800">تعریف خدمت جدید</span>
                         </span>
-                        <span class="h-2.5 w-2.5 rounded-full {{ $mode === 'misc' ? 'bg-emerald-500' : 'bg-slate-300' }}"></span>
+                        <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition {{ $mode === 'misc' ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-300 bg-white' }}">
+                            <span class="h-2 w-2 rounded-full {{ $mode === 'misc' ? 'bg-emerald-500' : 'bg-transparent' }}"></span>
+                        </span>
                     </label>
                 </div>
                 @unless($hasSelectedMode)
-                    <p class="text-xs font-bold text-slate-400">برای ادامه، یکی از دو حالت بالا را انتخاب کنید.</p>
+                    <p class="px-1 text-[11px] leading-5 text-slate-400 sm:text-xs">برای ادامه، یکی از دو حالت بالا را انتخاب کنید.</p>
                 @endunless
             </div>
 

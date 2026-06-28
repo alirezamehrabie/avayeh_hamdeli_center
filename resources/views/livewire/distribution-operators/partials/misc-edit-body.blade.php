@@ -188,6 +188,18 @@
                             'group' => $group,
                         ])
 
+                        @if(! $groupWorkerId)
+                        {{-- Categories stay locked until a helper is selected (helper-first flow). --}}
+                        <div class="flex items-center gap-2.5 rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-3.5 py-4">
+                            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-slate-400 ring-1 ring-slate-200">
+                                <i class="bi bi-lock text-sm"></i>
+                            </span>
+                            <div class="min-w-0">
+                                <p class="text-sm font-black text-slate-500">دسته‌بندی‌ها</p>
+                                <p class="mt-0.5 text-[11px] font-bold leading-5 text-slate-400">ابتدا مددکار را انتخاب کنید تا افزودن دسته‌بندی فعال شود.</p>
+                            </div>
+                        </div>
+                        @else
                         <div class="rounded-xl border border-slate-200 bg-white">
                             <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-3 py-2.5">
                                 <div class="flex items-center gap-2">
@@ -395,6 +407,7 @@
                                 </button>
                             </div>
                         </div>
+                        @endif
                     </div>
                 @endif
             </div>
