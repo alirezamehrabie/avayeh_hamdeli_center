@@ -87,6 +87,8 @@ class ServiceList extends Component
             'unitOptions' => Service::unitOptions(),
             'sortOptions' => $this->sortOptions(),
             'hasActiveFilters' => $this->hasActiveFilters(),
+            'latestMiscService' => $this->latestMiscService(),
+            'todayMiscCount' => $this->miscServicesQuery()->whereDate('created_at', today())->count(),
         ]);
     }
 
@@ -164,6 +166,14 @@ class ServiceList extends Component
             ->whereHas('creator', function (Builder $creatorQuery): void {
                 $creatorQuery->where('access_level', User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR);
             });
+    }
+
+    protected function latestMiscService(): ?Service
+    {
+        return $this->miscServicesQuery()
+            ->with(['serviceName', 'categories', 'workerAllocations'])
+            ->latest()
+            ->first();
     }
 
     protected function availableTabs(): array

@@ -6,6 +6,8 @@
         </div>
     @endif
 
+    @include('livewire.distribution-operators.partials.quick-action-panel')
+
     <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div class="space-y-4 border-b border-slate-200 px-5 py-4">
             <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
