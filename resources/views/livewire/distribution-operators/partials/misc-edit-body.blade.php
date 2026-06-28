@@ -173,7 +173,31 @@
                         @if(count($miscWorkerGroups) > 1)
                             <button
                                 type="button"
-                                wire:click="removeWorkerGroup({{ $gi }})"
+                                x-on:click="
+                                    window.dispatchEvent(new CustomEvent('open-notification-modal', {
+                                        detail: {
+                                            config: {
+                                                type: 'warning',
+                                                title: 'حذف مددکار',
+                                                message: 'آیا از حذف این مددکار و دسته‌بندی‌های ثبت‌شده برای او مطمئن هستید؟',
+                                                buttons: [
+                                                    {
+                                                        label: 'حذف',
+                                                        action: 'event',
+                                                        event: 'confirm-misc-worker-group-delete',
+                                                        payload: { index: {{ $gi }} },
+                                                        variant: 'danger',
+                                                    },
+                                                    {
+                                                        label: 'انصراف',
+                                                        action: 'close',
+                                                        variant: 'secondary',
+                                                    },
+                                                ],
+                                            },
+                                        },
+                                    }))
+                                "
                                 class="inline-flex shrink-0 items-center justify-center rounded-lg p-1.5 text-rose-400 transition hover:bg-rose-50 hover:text-rose-600"
                                 aria-label="حذف این مددکار"
                             >

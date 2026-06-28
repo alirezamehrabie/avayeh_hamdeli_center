@@ -328,6 +328,12 @@ class ServiceBatchCreator extends Component
         $this->confirmingBatchSave = false;
     }
 
+    #[On('confirm-misc-worker-group-delete')]
+    public function confirmMiscWorkerGroupDelete(int $index): void
+    {
+        $this->removeWorkerGroup($index);
+    }
+
     public function toggleGroupLock(int $index): void
     {
         if (! isset($this->miscWorkerGroups[$index])) {
