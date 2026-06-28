@@ -11,6 +11,7 @@ use App\Models\ServiceName;
 use App\Models\SocialWorker;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -830,6 +831,32 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->assertSet('socialWorkerQuery', '')
             ->assertSet('miscWorkerGroups.1.social_worker_id', $otherWorker->id)
             ->assertSee($worker->full_name);
+    }
+
+    public function test_editing_misc_service_review_summary_uses_loaded_group_state_without_extra_queries(): void
+    {
+        [$operator, $worker, $service] = $this->editableMiscService();
+
+        $this->actingAs($operator);
+
+        $component = Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id]);
+
+        $queries = [];
+        DB::listen(function ($query) use (&$queries): void {
+            $queries[] = $query->sql;
+        });
+
+        $component
+            ->set('miscDescription', 'Updated review note')
+            ->assertSee($service->name)
+            ->assertSee($worker->full_name)
+            ->assertSet('editingServiceName', $service->name);
+
+        $this->assertSame([], array_values(array_filter(
+            $queries,
+            fn (string $sql): bool => str_contains($sql, 'from `social_workers`')
+                || str_contains($sql, 'from `services`')
+        )));
     }
 
     private function editableMiscService(): array

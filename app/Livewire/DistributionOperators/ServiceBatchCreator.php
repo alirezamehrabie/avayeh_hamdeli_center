@@ -78,6 +78,8 @@ class ServiceBatchCreator extends Component
 
     public string $date = '';
 
+    public string $editingServiceName = '';
+
     protected ?Collection $predefinedServicesCache = null;
 
     protected ?array $predefinedServiceOptionsCache = null;
@@ -579,7 +581,7 @@ class ServiceBatchCreator extends Component
             'isEditing' => $this->editingServiceId !== null,
             'typeOptions' => Service::TYPE_OPTIONS,
             'unitOptions' => Service::unitOptions(),
-            'nextMiscName' => $this->nextMiscName(),
+            'nextMiscName' => $this->editingServiceId ? $this->editingServiceName : $this->nextMiscName(),
             'categoryNameSuggestions' => $this->editingServiceId ? $this->categoryNameSuggestions() : [],
         ]);
     }
@@ -1130,6 +1132,7 @@ class ServiceBatchCreator extends Component
         $jalaliDate = Jalalian::fromDateTime($service->distribution_start_date);
 
         $this->mode = self::MODE_MISC;
+        $this->editingServiceName = (string) $service->name;
         $this->miscServiceType = (string) $service->service_type;
         $this->miscDescription = (string) $service->description;
         $this->date = $jalaliDate->format('Y/m/d');
@@ -1606,12 +1609,9 @@ class ServiceBatchCreator extends Component
 
     protected function miscEditConfirmationSummary(): array
     {
-        $workersById = $this->workerGroupWorkersById();
-
         $groups = collect($this->miscWorkerGroups)
-            ->map(function (array $group) use ($workersById): ?array {
+            ->map(function (array $group): ?array {
                 $workerId = (int) ($group['social_worker_id'] ?? 0);
-                $worker = $workersById->get($workerId);
 
                 $rows = collect($group['categories'] ?? [])
                     ->map(function (array $category): array {
@@ -1637,8 +1637,8 @@ class ServiceBatchCreator extends Component
                 }
 
                 return [
-                    'worker_name' => $worker?->full_name ?: ($group['worker_display'] ?: 'مددکار'),
-                    'worker_code' => $worker?->worker_code ? (string) $worker->worker_code : (string) ($group['worker_code'] ?? ''),
+                    'worker_name' => trim((string) ($group['worker_display'] ?? '')) ?: (trim((string) ($group['worker_query'] ?? '')) ?: 'مددکار'),
+                    'worker_code' => (string) ($group['worker_code'] ?? ''),
                     'rows' => $rows,
                     'total_quantity_label' => number_format(collect($rows)->sum('quantity'), 2),
                 ];
@@ -1656,7 +1656,7 @@ class ServiceBatchCreator extends Component
             'mode' => self::MODE_MISC,
             'is_edit' => true,
             'title' => 'تأیید ویرایش خدمت متفرقه',
-            'service_name' => $this->nextMiscName(),
+            'service_name' => $this->editingServiceName,
             'service_code' => '',
             'service_type' => Service::TYPE_OPTIONS[$this->miscServiceType] ?? $this->miscServiceType,
             'worker_name' => count($groups) === 1 ? ($groups[0]['worker_name'] ?? '-') : (count($groups).' مددکار'),
@@ -1669,29 +1669,6 @@ class ServiceBatchCreator extends Component
             'large_quantity_rows_count' => $largeQuantityRowsCount,
             'has_empty_description_warning' => trim($this->miscDescription) === '',
         ];
-    }
-
-    /**
-     * Resolve the social workers referenced by the current worker groups.
-     */
-    protected function workerGroupWorkersById(): Collection
-    {
-        $workerIds = collect($this->miscWorkerGroups)
-            ->pluck('social_worker_id')
-            ->filter(fn ($id): bool => (int) $id > 0)
-            ->map(fn ($id): int => (int) $id)
-            ->unique()
-            ->values();
-
-        if ($workerIds->isEmpty()) {
-            return collect();
-        }
-
-        return SocialWorker::query()
-            ->select(['id', 'first_name', 'last_name', 'worker_code'])
-            ->whereIn('id', $workerIds->all())
-            ->get()
-            ->keyBy('id');
     }
 
     protected function predefinedConfirmationSummary(): array
