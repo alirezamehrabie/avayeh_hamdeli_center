@@ -258,6 +258,14 @@ class ServiceBatchCreator extends Component
         if ($key !== null) {
             $field = 'miscWorkerGroups.'.$key;
 
+            if (str($key)->endsWith('.worker_search')) {
+                $this->activeWorkerGroupIndex = (int) str($key)->before('.')->toString();
+                $this->showSocialWorkerSuggestions = true;
+                $this->flushSocialWorkerSuggestions();
+
+                return;
+            }
+
             $this->resetValidation($field);
             $this->validateOnly($field, $this->miscEditRules(), [], $this->validationAttributes());
         }
@@ -386,7 +394,6 @@ class ServiceBatchCreator extends Component
         }
 
         $this->activeWorkerGroupIndex = $index;
-        $this->socialWorkerQuery = '';
         $this->showSocialWorkerSuggestions = true;
         $this->flushSocialWorkerSuggestions();
         $this->confirmingBatchSave = false;
@@ -411,6 +418,7 @@ class ServiceBatchCreator extends Component
 
         $this->miscWorkerGroups[$index]['social_worker_id'] = (int) $worker->id;
         $this->miscWorkerGroups[$index]['worker_query'] = trim($worker->full_name.' - کد '.$worker->worker_code);
+        $this->miscWorkerGroups[$index]['worker_search'] = '';
         $this->miscWorkerGroups[$index]['worker_code'] = $worker->worker_code ? (string) $worker->worker_code : '-';
         $this->miscWorkerGroups[$index]['worker_display'] = $this->formatSelectedSocialWorkerDisplay($worker);
 
@@ -430,6 +438,7 @@ class ServiceBatchCreator extends Component
 
         $this->miscWorkerGroups[$index]['social_worker_id'] = null;
         $this->miscWorkerGroups[$index]['worker_query'] = '';
+        $this->miscWorkerGroups[$index]['worker_search'] = '';
         $this->miscWorkerGroups[$index]['worker_code'] = '';
         $this->miscWorkerGroups[$index]['worker_display'] = '';
         $this->showSocialWorkerSuggestions = true;
@@ -1141,6 +1150,7 @@ class ServiceBatchCreator extends Component
                     'uid' => 'group-'.$workerId,
                     'social_worker_id' => $workerId,
                     'worker_query' => trim($worker->full_name.' - کد '.$worker->worker_code),
+                    'worker_search' => '',
                     'worker_code' => $worker->worker_code ? (string) $worker->worker_code : '-',
                     'worker_display' => $this->formatSelectedSocialWorkerDisplay($worker),
                     'locked' => true,
@@ -1211,6 +1221,7 @@ class ServiceBatchCreator extends Component
             'uid' => 'group-new-'.\Illuminate\Support\Str::random(8),
             'social_worker_id' => null,
             'worker_query' => '',
+            'worker_search' => '',
             'worker_code' => '',
             'worker_display' => '',
             'locked' => false,
@@ -1894,14 +1905,20 @@ class ServiceBatchCreator extends Component
 
     public function getSocialWorkerSuggestionsProperty(): Collection
     {
-        $query = trim($this->socialWorkerQuery);
+        $activeGroupIndex = $this->editingServiceId ? $this->activeWorkerGroupIndex : null;
+        $query = trim($this->editingServiceId && $activeGroupIndex !== null
+            ? (string) ($this->miscWorkerGroups[$activeGroupIndex]['worker_search'] ?? '')
+            : $this->socialWorkerQuery);
 
         if (! $this->showSocialWorkerSuggestions || mb_strlen($query) < 2) {
             return collect();
         }
 
-        $excludedWorkerIds = $this->assignedWorkerIdsExceptGroup($this->activeWorkerGroupIndex);
-        $cacheKey = mb_strtolower($query).'|'.(int) $this->socialWorkerId.'|'.$excludedWorkerIds->implode(',');
+        $excludedWorkerIds = $this->assignedWorkerIdsExceptGroup($activeGroupIndex);
+        $selectedWorkerId = $this->editingServiceId && $activeGroupIndex !== null
+            ? (int) ($this->miscWorkerGroups[$activeGroupIndex]['social_worker_id'] ?? 0)
+            : (int) $this->socialWorkerId;
+        $cacheKey = mb_strtolower($query).'|'.$selectedWorkerId.'|'.($activeGroupIndex ?? 'main').'|'.$excludedWorkerIds->implode(',');
 
         if ($this->socialWorkerSuggestionsCacheKey === $cacheKey && $this->socialWorkerSuggestionsCache instanceof Collection) {
             return $this->socialWorkerSuggestionsCache;
@@ -1949,7 +1966,7 @@ class ServiceBatchCreator extends Component
                 ->groupBy('social_worker_id')
                 ->pluck('allocated_quantity', 'social_worker_id');
 
-        if ($this->socialWorkerId && ! $workers->contains('id', (int) $this->socialWorkerId)) {
+        if ($selectedWorkerId > 0 && ! $workers->contains('id', $selectedWorkerId)) {
             $selectedWorker = SocialWorker::query()
                 ->with('district:id,name')
                 ->withCount([
@@ -1968,7 +1985,7 @@ class ServiceBatchCreator extends Component
                     'covered_households_count',
                     'covered_children_count',
                 ])
-                ->find($this->socialWorkerId);
+                ->find($selectedWorkerId);
 
             if ($selectedWorker) {
                 $workers->prepend($selectedWorker);

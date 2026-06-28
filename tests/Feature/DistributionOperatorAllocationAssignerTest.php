@@ -754,6 +754,36 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->assertSee($worker->full_name);
     }
 
+    public function test_editing_misc_service_keeps_group_worker_search_state_isolated(): void
+    {
+        [$operator, $worker, $service] = $this->editableMiscService();
+        $otherWorker = SocialWorker::query()->create([
+            'worker_code' => 992,
+            'first_name' => 'Search',
+            'last_name' => 'Target',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id])
+            ->call('addWorkerGroup')
+            ->set('miscWorkerGroups.0.worker_search', 'First query')
+            ->assertSet('miscWorkerGroups.0.worker_search', 'First query')
+            ->assertSet('socialWorkerQuery', '')
+            ->set('miscWorkerGroups.1.worker_search', 'Search')
+            ->assertSet('miscWorkerGroups.0.worker_search', 'First query')
+            ->assertSet('miscWorkerGroups.1.worker_search', 'Search')
+            ->assertSet('activeWorkerGroupIndex', 1)
+            ->assertSee($otherWorker->full_name)
+            ->call('selectGroupWorker', 1, $otherWorker->id)
+            ->assertSet('miscWorkerGroups.0.worker_search', 'First query')
+            ->assertSet('miscWorkerGroups.1.worker_search', '')
+            ->assertSet('socialWorkerQuery', '')
+            ->assertSet('miscWorkerGroups.1.social_worker_id', $otherWorker->id)
+            ->assertSee($worker->full_name);
+    }
+
     private function editableMiscService(): array
     {
         $operator = User::factory()->create([

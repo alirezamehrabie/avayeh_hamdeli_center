@@ -5,6 +5,7 @@
     $groupWorkerId = (int) ($group['social_worker_id'] ?? 0);
     $groupWorkerCode = (string) ($group['worker_code'] ?? '');
     $groupWorkerDisplay = (string) ($group['worker_display'] ?? '');
+    $groupWorkerSearch = (string) ($group['worker_search'] ?? '');
     $accentClasses = [
         'hoverBorder' => 'hover:border-emerald-300 hover:bg-emerald-50/50 focus:border-emerald-500 focus:ring-emerald-500/10',
         'focus' => 'focus:border-emerald-500 focus:ring-emerald-500/10',
@@ -22,7 +23,7 @@
         x-data="{
             open: false,
             historyActive: false,
-            search: @entangle('socialWorkerQuery').live,
+            search: @entangle('miscWorkerGroups.' . $groupIndex . '.worker_search').live,
             get isMobileSheet() {
                 return window.matchMedia('(max-width: 639px)').matches;
             },
@@ -170,7 +171,7 @@
                     <input
                         type="search"
                         x-model.debounce.250ms="search"
-                        @focus="$wire.set('showSocialWorkerSuggestions', true)"
+                        @focus="$wire.openGroupWorkerSearch({{ $groupIndex }})"
                         class="min-h-12 w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm text-slate-700 shadow-sm transition placeholder:text-xs placeholder:text-slate-400 focus:outline-none focus:ring-4 {{ $accentClasses['focus'] }}"
                         placeholder="نام، کد مددکار یا موبایل"
                         autocomplete="off"
@@ -217,7 +218,7 @@
                             </span>
                         </button>
                     @endforeach
-                @elseif(mb_strlen(trim($socialWorkerQuery)) >= 2)
+                @elseif(mb_strlen(trim($groupWorkerSearch)) >= 2)
                     <div class="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-7 text-center">
                         <i class="bi bi-search text-xl text-slate-300"></i>
                         <p class="mt-2 text-xs font-black text-slate-500">مددکاری با این جستجو پیدا نشد.</p>
