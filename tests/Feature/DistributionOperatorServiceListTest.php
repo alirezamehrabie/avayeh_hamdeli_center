@@ -106,7 +106,7 @@ class DistributionOperatorServiceListTest extends TestCase
             ->assertSet('activeTab', ServiceList::TAB_CAMPAIGNS)
             ->assertSee('لیست کمپین‌ها')
             ->assertSee('Campaign package')
-            ->assertDontSee('Misc package')
+            ->assertSee(route('distribution-operator.edit-service', $miscService->id), false)
             ->call('switchTab', ServiceList::TAB_MISC)
             ->assertSet('activeTab', ServiceList::TAB_MISC)
             ->assertSee('لیست متفرقه')

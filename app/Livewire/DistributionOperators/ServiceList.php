@@ -2,6 +2,7 @@
 
 namespace App\Livewire\DistributionOperators;
 
+use App\Livewire\DistributionOperators\Concerns\SummarizesMiscServices;
 use App\Models\Service;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -13,6 +14,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.distribution-operator')]
 class ServiceList extends Component
 {
+    use SummarizesMiscServices;
     use WithPagination;
 
     public const TAB_CAMPAIGNS = 'campaigns';
@@ -72,6 +74,7 @@ class ServiceList extends Component
         ];
 
         $query = $this->filteredServicesQuery();
+        $latestMiscService = $this->latestMiscService();
 
         return view('livewire.distribution-operators.service-list', [
             'services' => $query
@@ -87,7 +90,10 @@ class ServiceList extends Component
             'unitOptions' => Service::unitOptions(),
             'sortOptions' => $this->sortOptions(),
             'hasActiveFilters' => $this->hasActiveFilters(),
-            'latestMiscService' => $this->latestMiscService(),
+            'latestMiscService' => $latestMiscService,
+            'latestMiscServiceSummary' => $latestMiscService
+                ? $this->latestMiscServiceSummary($latestMiscService)
+                : null,
             'todayMiscCount' => $this->miscServicesQuery()->whereDate('created_at', today())->count(),
         ]);
     }
