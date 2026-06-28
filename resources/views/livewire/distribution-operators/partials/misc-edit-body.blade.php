@@ -336,8 +336,50 @@
                                                         sheetOpen: false,
                                                         historyActive: false,
                                                         directEntry: false,
+                                                        popStateHandler: null,
+                                                        scrollLocked: false,
                                                         modelPath: 'miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.name',
                                                         assignedCategoryKeys: @js($assignedCategoryKeysForCurrentWorker),
+                                                        init() {
+                                                            this.popStateHandler = () => this.handleSheetPopState();
+                                                            window.addEventListener('popstate', this.popStateHandler);
+                                                        },
+                                                        destroy() {
+                                                            if (this.popStateHandler) {
+                                                                window.removeEventListener('popstate', this.popStateHandler);
+                                                            }
+
+                                                            this.releasePageScrollLock();
+                                                            this.historyActive = false;
+                                                        },
+                                                        lockPageScroll() {
+                                                            if (this.scrollLocked) {
+                                                                return;
+                                                            }
+
+                                                            const currentLocks = Number(document.documentElement.dataset.distributionOperatorSheetLocks || 0);
+
+                                                            document.documentElement.dataset.distributionOperatorSheetLocks = String(currentLocks + 1);
+                                                            document.documentElement.classList.add('overflow-hidden');
+                                                            this.scrollLocked = true;
+                                                        },
+                                                        releasePageScrollLock() {
+                                                            if (! this.scrollLocked) {
+                                                                return;
+                                                            }
+
+                                                            const currentLocks = Number(document.documentElement.dataset.distributionOperatorSheetLocks || 0);
+                                                            const remainingLocks = Math.max(0, currentLocks - 1);
+
+                                                            if (remainingLocks > 0) {
+                                                                document.documentElement.dataset.distributionOperatorSheetLocks = String(remainingLocks);
+                                                            } else {
+                                                                delete document.documentElement.dataset.distributionOperatorSheetLocks;
+                                                                document.documentElement.classList.remove('overflow-hidden');
+                                                            }
+
+                                                            this.scrollLocked = false;
+                                                        },
                                                         normalizeCategoryName(name) {
                                                             return String(name || '').trim().toLowerCase();
                                                         },
@@ -351,13 +393,13 @@
 
                                                             this.directEntry = false;
                                                             this.sheetOpen = true;
-                                                            document.documentElement.classList.add('overflow-hidden');
+                                                            this.lockPageScroll();
                                                             this.pushSheetHistory();
                                                         },
                                                         closeSheet({ syncHistory = true } = {}) {
                                                             const shouldRestoreHistory = syncHistory && this.historyActive;
                                                             this.sheetOpen = false;
-                                                            document.documentElement.classList.remove('overflow-hidden');
+                                                            this.releasePageScrollLock();
 
                                                             if (shouldRestoreHistory) {
                                                                 this.historyActive = false;
@@ -413,7 +455,6 @@
                                                             this.openSheet();
                                                         },
                                                     }"
-                                                    x-init="window.addEventListener('popstate', () => handleSheetPopState())"
                                                     x-on:keydown.escape.window="closeSheet()"
                                                 >
                                                     <div class="relative">
