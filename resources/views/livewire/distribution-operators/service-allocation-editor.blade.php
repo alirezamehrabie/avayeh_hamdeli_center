@@ -115,6 +115,7 @@
                                         $category = $service->categories->firstWhere('id', $allocation->service_category_id);
                                         $metrics = $categoryMetrics[(int) $allocation->service_category_id] ?? ['quantity' => 0, 'allocated' => 0, 'assignable' => 0];
                                         $currentValue = $this->allocationQuantities[$workerId][$allocation->service_category_id] ?? (float) $allocation->allocated_quantity;
+                                        $inputValue = (float) $currentValue > 0 ? $currentValue : '';
                                         $totalOthersAllocated = $metrics['allocated'] - (float) $allocation->allocated_quantity;
                                         $maxAllowed = max(0, $metrics['quantity'] - $totalOthersAllocated);
                                     @endphp
@@ -134,9 +135,10 @@
                                                     min="0"
                                                     max="{{ $maxAllowed }}"
                                                     step="0.01"
-                                                    value="{{ $currentValue }}"
+                                                    value="{{ $inputValue }}"
                                                     wire:change="updateAllocationQuantity({{ $allocation->id }}, $event.target.value)"
                                                     inputmode="decimal"
+                                                    placeholder="0"
                                                     class="w-24 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-center text-sm font-black text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
                                                 >
                                                 <span class="text-xs font-bold text-slate-400">{{ $unitOptions[$category?->unit] ?? ($category?->unit ?? '-') }}</span>
@@ -154,32 +156,12 @@
         {{-- Add new social worker --}}
         <div class="border-t border-slate-100 px-4 py-4 sm:px-5">
             <p class="text-sm font-black text-slate-800">افزودن مددکار جدید</p>
-            <div class="mt-2 relative" x-data="{ open: false }" x-on:click.away="open = false" x-on:focus="open = true">
-                <input
-                    type="text"
-                    wire:model.live.debounce.300ms="socialWorkerQuery"
-                    wire:focus="$set('showSocialWorkerSuggestions', true)"
-                    placeholder="جستجوی مددکار بر اساس نام، کد یا شماره موبایل..."
-                    class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-2 focus:ring-blue-100"
-                    autocomplete="off"
-                >
-
-                @if($socialWorkerSuggestions->isNotEmpty())
-                    <div class="absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
-                        @foreach($socialWorkerSuggestions as $suggestion)
-                            <button
-                                type="button"
-                                wire:click="selectSocialWorker({{ $suggestion['id'] }})"
-                                class="flex w-full items-center gap-3 px-4 py-3 text-right transition hover:bg-slate-50"
-                            >
-                                <div class="min-w-0 flex-1">
-                                    <p class="truncate text-sm font-bold text-slate-800">{{ $suggestion['name'] }}</p>
-                                    <p class="text-[11px] font-bold text-slate-500">کد: {{ $suggestion['code'] }} · {{ $suggestion['district'] }}</p>
-                                </div>
-                            </button>
-                        @endforeach
-                    </div>
-                @endif
+            <div class="mt-2">
+                @include('livewire.distribution-operators.partials.social-worker-selector', [
+                    'accent' => 'cyan',
+                    'selectorId' => 'allocation-social-worker-selector-' . $service->id,
+                    'socialWorkerId' => $addingSocialWorkerId,
+                ])
             </div>
 
             @if($addingSocialWorkerId)

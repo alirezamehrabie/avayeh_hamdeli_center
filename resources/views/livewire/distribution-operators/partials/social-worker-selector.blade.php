@@ -28,9 +28,79 @@
         x-data="{
             open: false,
             historyActive: false,
+            popStateHandler: null,
+            mediaQuery: null,
+            mediaQueryHandler: null,
+            scrollLocked: false,
             search: @entangle('socialWorkerQuery').live,
             get isMobileSheet() {
-                return window.matchMedia('(max-width: 639px)').matches;
+                return this.mediaQuery?.matches ?? window.matchMedia('(max-width: 639px)').matches;
+            },
+            init() {
+                this.mediaQuery = window.matchMedia('(max-width: 639px)');
+                this.popStateHandler = () => this.handleSelectorPopState();
+                this.mediaQueryHandler = () => this.syncPageScrollLock(this.open);
+
+                window.addEventListener('popstate', this.popStateHandler);
+                if (this.mediaQuery.addEventListener) {
+                    this.mediaQuery.addEventListener('change', this.mediaQueryHandler);
+                } else {
+                    this.mediaQuery.addListener?.(this.mediaQueryHandler);
+                }
+
+                this.$watch('open', (value) => this.syncPageScrollLock(value));
+            },
+            destroy() {
+                if (this.popStateHandler) {
+                    window.removeEventListener('popstate', this.popStateHandler);
+                }
+
+                if (this.mediaQueryHandler) {
+                    if (this.mediaQuery?.removeEventListener) {
+                        this.mediaQuery.removeEventListener('change', this.mediaQueryHandler);
+                    } else {
+                        this.mediaQuery?.removeListener?.(this.mediaQueryHandler);
+                    }
+                }
+
+                this.releasePageScrollLock();
+                this.historyActive = false;
+            },
+            syncPageScrollLock(shouldLock) {
+                if (shouldLock && this.isMobileSheet) {
+                    this.lockPageScroll();
+                    return;
+                }
+
+                this.releasePageScrollLock();
+            },
+            lockPageScroll() {
+                if (this.scrollLocked) {
+                    return;
+                }
+
+                const currentLocks = Number(document.documentElement.dataset.distributionOperatorSheetLocks || 0);
+
+                document.documentElement.dataset.distributionOperatorSheetLocks = String(currentLocks + 1);
+                document.documentElement.classList.add('overflow-hidden');
+                this.scrollLocked = true;
+            },
+            releasePageScrollLock() {
+                if (! this.scrollLocked) {
+                    return;
+                }
+
+                const currentLocks = Number(document.documentElement.dataset.distributionOperatorSheetLocks || 0);
+                const remainingLocks = Math.max(0, currentLocks - 1);
+
+                if (remainingLocks > 0) {
+                    document.documentElement.dataset.distributionOperatorSheetLocks = String(remainingLocks);
+                } else {
+                    delete document.documentElement.dataset.distributionOperatorSheetLocks;
+                    document.documentElement.classList.remove('overflow-hidden');
+                }
+
+                this.scrollLocked = false;
             },
             openSelector() {
                 this.open = true;
@@ -84,12 +154,6 @@
                 $wire.clearSocialWorkerSelection();
             },
         }"
-        x-init="
-            window.addEventListener('popstate', () => handleSelectorPopState());
-            $watch('open', (value) => {
-                document.documentElement.classList.toggle('overflow-hidden', value && isMobileSheet);
-            });
-        "
         x-on:keydown.escape.window="closeSelector()"
     >
         <button

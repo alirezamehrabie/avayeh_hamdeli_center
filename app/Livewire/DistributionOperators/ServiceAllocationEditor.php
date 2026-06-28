@@ -25,6 +25,10 @@ class ServiceAllocationEditor extends Component
 
     public string $socialWorkerQuery = '';
 
+    public string $selectedSocialWorkerCode = '';
+
+    public string $selectedSocialWorkerDisplay = '';
+
     public bool $showSocialWorkerSuggestions = false;
 
     public ?Service $service = null;
@@ -42,6 +46,8 @@ class ServiceAllocationEditor extends Component
     {
         $this->socialWorkerQuery = trim((string) $value);
         $this->addingSocialWorkerId = null;
+        $this->selectedSocialWorkerCode = '';
+        $this->selectedSocialWorkerDisplay = '';
         $this->showSocialWorkerSuggestions = true;
 
         if ($this->socialWorkerQuery === '') {
@@ -61,7 +67,9 @@ class ServiceAllocationEditor extends Component
         }
 
         $this->addingSocialWorkerId = $worker->id;
-        $this->socialWorkerQuery = trim($worker->full_name . ' - کد ' . $worker->worker_code);
+        $this->selectedSocialWorkerCode = $worker->worker_code ? (string) $worker->worker_code : '-';
+        $this->selectedSocialWorkerDisplay = $this->formatSelectedSocialWorkerDisplay($worker);
+        $this->socialWorkerQuery = $this->selectedSocialWorkerDisplay;
         $this->showSocialWorkerSuggestions = false;
     }
 
@@ -69,6 +77,8 @@ class ServiceAllocationEditor extends Component
     {
         $this->addingSocialWorkerId = null;
         $this->socialWorkerQuery = '';
+        $this->selectedSocialWorkerCode = '';
+        $this->selectedSocialWorkerDisplay = '';
         $this->showSocialWorkerSuggestions = true;
     }
 
@@ -142,6 +152,8 @@ class ServiceAllocationEditor extends Component
 
         $this->addingSocialWorkerId = null;
         $this->socialWorkerQuery = '';
+        $this->selectedSocialWorkerCode = '';
+        $this->selectedSocialWorkerDisplay = '';
         $this->showSocialWorkerSuggestions = false;
 
         $this->loadService();
@@ -237,6 +249,7 @@ class ServiceAllocationEditor extends Component
             'categoryMetrics' => $categoryMetrics,
             'unitOptions' => \App\Models\Service::unitOptions(),
             'socialWorkerSuggestions' => $this->showSocialWorkerSuggestions ? $this->socialWorkerSuggestions : collect(),
+            'socialWorkerId' => $this->addingSocialWorkerId,
         ]);
     }
 
@@ -313,5 +326,13 @@ class ServiceAllocationEditor extends Component
                 ];
             })
             ->all();
+    }
+
+    protected function formatSelectedSocialWorkerDisplay(SocialWorker $worker): string
+    {
+        $name = trim($worker->full_name) ?: 'مددکار بدون نام';
+        $district = trim((string) ($worker->district?->name ?? ''));
+
+        return $district !== '' ? $name.' - '.$district : $name;
     }
 }
