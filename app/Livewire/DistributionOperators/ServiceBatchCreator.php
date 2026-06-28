@@ -629,7 +629,7 @@ class ServiceBatchCreator extends Component
                 'name' => $miscName,
                 'service_name_id' => $serviceName->id,
                 'service_type' => $validated['miscServiceType'],
-                'supports_gate_delivery' => true,
+                'supports_gate_delivery' => false,
                 'supports_home_delivery' => true,
                 'description' => $validated['miscDescription'] ?? null,
                 'total_quantity' => $totalQuantity,

@@ -49,9 +49,7 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->set('miscCategories.0.name', 'بسته اپراتور')
             ->set('miscCategories.0.quantity', '6')
             ->set('miscCategories.0.unit', 'pack')
-            ->set('dateYear', '1405')
-            ->set('dateMonth', '3')
-            ->set('dateDay', '30')
+            ->set('date', '1405/03/30')
             ->set('socialWorkerQuery', $worker->full_name)
             ->set('socialWorkerId', $worker->id)
             ->call('saveBatch')
@@ -62,6 +60,14 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             'allocated_quantity' => 6,
             'assigned_by_user_id' => $operator->id,
         ]);
+
+        $service = Service::query()
+            ->where('created_by', $operator->id)
+            ->latest('id')
+            ->firstOrFail();
+
+        $this->assertFalse((bool) $service->supports_gate_delivery);
+        $this->assertTrue((bool) $service->supports_home_delivery);
     }
 
     public function test_misc_service_type_must_be_selected_before_save_confirmation(): void
@@ -257,6 +263,12 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
             'is_admin' => false,
         ]);
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 914,
+            'first_name' => 'Inventory',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
         $manager = User::factory()->create([
             'access_level' => User::ACCESS_LEVEL_MANAGER,
             'is_admin' => true,
@@ -305,14 +317,15 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         Livewire::test(ServiceBatchCreator::class)
             ->set('mode', ServiceBatchCreator::MODE_PREDEFINED)
             ->set('selectedServiceId', $service->id)
+            ->call('selectSocialWorker', $worker->id)
             ->set('predefinedAllocations.' . $rice->id, '3')
             ->set('predefinedAllocations.' . $oil->id, '2')
             ->assertSee('موجودی کل')
-            ->assertSee('قبلاً تخصیص‌یافته')
-            ->assertSee('قابل تخصیص اکنون')
-            ->assertSee('مانده پس از این ثبت')
-            ->assertSee('7.00')
+            ->assertSee('15.00')
+            ->assertSee('10.00')
+            ->assertSee('5.00')
             ->assertSee('3.00')
+            ->assertSee('2.00')
             ->assertDontSee('واردشده');
     }
 
@@ -490,9 +503,7 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->set('miscCategories.0.name', 'پتو')
             ->set('miscCategories.0.quantity', '3')
             ->set('miscCategories.0.unit', 'pack')
-            ->set('dateYear', '1405')
-            ->set('dateMonth', '3')
-            ->set('dateDay', '30')
+            ->set('date', '1405/03/30')
             ->set('socialWorkerQuery', $worker->full_name)
             ->set('socialWorkerId', $worker->id)
             ->call('saveBatch')
@@ -534,9 +545,7 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->set('miscCategories.0.name', 'کفش')
             ->set('miscCategories.0.quantity', '2')
             ->set('miscCategories.0.unit', 'pack')
-            ->set('dateYear', '1405')
-            ->set('dateMonth', '3')
-            ->set('dateDay', '30')
+            ->set('date', '1405/03/30')
             ->set('socialWorkerQuery', $worker->full_name)
             ->set('socialWorkerId', $worker->id)
             ->call('saveBatch')
