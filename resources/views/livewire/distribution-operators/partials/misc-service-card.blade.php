@@ -1,4 +1,4 @@
-<div class="flex flex-col rounded-2xl border border-emerald-200 bg-white p-3 shadow-sm transition hover:border-emerald-300 hover:shadow-md">
+<div class="flex flex-col rounded-2xl border border-emerald-200 bg-white p-3 shadow-sm">
     <div class="flex items-start justify-between gap-3">
         <div class="min-w-0">
             <p class="truncate text-[11px] font-medium tracking-wide text-slate-400">{{ $service->code }}</p>
@@ -6,7 +6,7 @@
         </div>
     </div>
 
-    <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-slate-500">
+    <div class="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
         <div
             class="relative"
             x-data="{ open: false }"
@@ -61,8 +61,9 @@
                 @endif
             </div>
         </div>
-        <span>•</span>
-        <span>{{ $distributionStartDate }}</span>
+        <span class="inline-flex h-7 items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 text-[11px] font-bold text-slate-500">
+            {{ $distributionStartDate }}
+        </span>
     </div>
 
     <div class="mt-2 border-t border-slate-100 pt-2">
