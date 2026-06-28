@@ -6,6 +6,7 @@ use App\Livewire\DistributionOperators\ServiceBatchCreator;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\ServiceCategoryTemplate;
+use App\Models\ServiceDelivery;
 use App\Models\ServiceName;
 use App\Models\SocialWorker;
 use App\Models\User;
@@ -154,7 +155,7 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->set('selectedServiceId', $service->id)
             ->set('socialWorkerQuery', $worker->full_name)
             ->set('socialWorkerId', $worker->id)
-            ->set('predefinedAllocations.' . $category->id, '4')
+            ->set('predefinedAllocations.'.$category->id, '4')
             ->call('saveBatch')
             ->assertHasNoErrors();
 
@@ -230,7 +231,7 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->set('selectedServiceId', $service->id)
             ->set('socialWorkerQuery', $firstWorker->full_name)
             ->set('socialWorkerId', $firstWorker->id)
-            ->set('predefinedAllocations.' . $category->id, '4')
+            ->set('predefinedAllocations.'.$category->id, '4')
             ->call('saveBatch')
             ->assertHasNoErrors();
 
@@ -239,16 +240,16 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->set('selectedServiceId', $service->id)
             ->set('socialWorkerQuery', $secondWorker->full_name)
             ->set('socialWorkerId', $secondWorker->id)
-            ->set('predefinedAllocations.' . $category->id, '7')
+            ->set('predefinedAllocations.'.$category->id, '7')
             ->call('saveBatch')
-            ->assertHasErrors(['predefinedAllocations.' . $category->id]);
+            ->assertHasErrors(['predefinedAllocations.'.$category->id]);
 
         Livewire::test(ServiceBatchCreator::class)
             ->set('mode', ServiceBatchCreator::MODE_PREDEFINED)
             ->set('selectedServiceId', $service->id)
             ->set('socialWorkerQuery', $secondWorker->full_name)
             ->set('socialWorkerId', $secondWorker->id)
-            ->set('predefinedAllocations.' . $category->id, '6')
+            ->set('predefinedAllocations.'.$category->id, '6')
             ->call('saveBatch')
             ->assertHasNoErrors();
 
@@ -318,8 +319,8 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->set('mode', ServiceBatchCreator::MODE_PREDEFINED)
             ->set('selectedServiceId', $service->id)
             ->call('selectSocialWorker', $worker->id)
-            ->set('predefinedAllocations.' . $rice->id, '3')
-            ->set('predefinedAllocations.' . $oil->id, '2')
+            ->set('predefinedAllocations.'.$rice->id, '3')
+            ->set('predefinedAllocations.'.$oil->id, '2')
             ->assertSee('موجودی کل')
             ->assertSee('15.00')
             ->assertSee('10.00')
@@ -374,13 +375,13 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         Livewire::test(ServiceBatchCreator::class)
             ->set('mode', ServiceBatchCreator::MODE_PREDEFINED)
             ->set('selectedServiceId', $service->id)
-            ->set('predefinedAllocations.' . $category->id, '7')
-            ->assertHasErrors(['predefinedAllocations.' . $category->id])
+            ->set('predefinedAllocations.'.$category->id, '7')
+            ->assertHasErrors(['predefinedAllocations.'.$category->id])
             ->assertSee('برای ثبت، مقدار را اصلاح کنید یا از گزینه حداکثر استفاده کنید')
             ->assertSeeHtml('disabled')
             ->call('useMaxPredefinedAllocation', $category->id)
-            ->assertSet('predefinedAllocations.' . $category->id, '5')
-            ->assertHasNoErrors(['predefinedAllocations.' . $category->id])
+            ->assertSet('predefinedAllocations.'.$category->id, '5')
+            ->assertHasNoErrors(['predefinedAllocations.'.$category->id])
             ->assertDontSee('برای ثبت، مقدار را اصلاح کنید یا از گزینه حداکثر استفاده کنید');
     }
 
@@ -436,7 +437,7 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->set('mode', ServiceBatchCreator::MODE_PREDEFINED)
             ->set('selectedServiceId', $service->id)
             ->call('selectSocialWorker', $worker->id)
-            ->set('predefinedAllocations.' . $category->id, '4')
+            ->set('predefinedAllocations.'.$category->id, '4')
             ->call('requestSaveConfirmation')
             ->assertSet('confirmingBatchSave', true)
             ->assertSee('تأیید تخصیص خدمت موجود')
@@ -456,7 +457,7 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->set('mode', ServiceBatchCreator::MODE_PREDEFINED)
             ->set('selectedServiceId', $service->id)
             ->call('selectSocialWorker', $worker->id)
-            ->set('predefinedAllocations.' . $category->id, '4')
+            ->set('predefinedAllocations.'.$category->id, '4')
             ->call('requestSaveConfirmation')
             ->call('cancelSaveConfirmation')
             ->assertSet('confirmingBatchSave', false);
@@ -465,7 +466,7 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->set('mode', ServiceBatchCreator::MODE_PREDEFINED)
             ->set('selectedServiceId', $service->id)
             ->call('selectSocialWorker', $worker->id)
-            ->set('predefinedAllocations.' . $category->id, '4')
+            ->set('predefinedAllocations.'.$category->id, '4')
             ->call('requestSaveConfirmation')
             ->call('confirmSaveBatch');
 
@@ -559,5 +560,164 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         $this->assertDatabaseMissing('services', [
             'name' => 'Misc - 22',
         ]);
+    }
+
+    public function test_editing_misc_service_cannot_reduce_used_category_below_delivered_quantity(): void
+    {
+        [$operator, $worker, $service, $category] = $this->editableMiscService();
+
+        ServiceDelivery::query()->create([
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'delivery_channel' => Service::DELIVERY_CHANNEL_HOME,
+            'social_worker_id' => $worker->id,
+            'national_id' => '0000000000',
+            'full_name' => 'Delivered Recipient',
+            'delivered_quantity' => 3,
+            'value_per_unit_snapshot' => 0,
+            'delivered_total_value' => 0,
+            'delivered_at' => '2026-06-20',
+            'created_by' => $operator->id,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id])
+            ->set('miscWorkerGroups.0.categories.0.quantity', '2')
+            ->call('requestSaveConfirmation')
+            ->assertHasErrors(['miscWorkerGroups.0.categories.0.quantity'])
+            ->assertSet('confirmingBatchSave', false);
+
+        $this->assertSame(5.0, (float) $category->fresh()->quantity);
+    }
+
+    public function test_editing_misc_service_cannot_move_used_category_to_another_worker(): void
+    {
+        [$operator, $worker, $service, $category] = $this->editableMiscService();
+        $otherWorker = SocialWorker::query()->create([
+            'worker_code' => 991,
+            'first_name' => 'Other',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+
+        ServiceDelivery::query()->create([
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'delivery_channel' => Service::DELIVERY_CHANNEL_HOME,
+            'social_worker_id' => $worker->id,
+            'national_id' => '0000000001',
+            'full_name' => 'Delivered Recipient',
+            'delivered_quantity' => 1,
+            'value_per_unit_snapshot' => 0,
+            'delivered_total_value' => 0,
+            'delivered_at' => '2026-06-20',
+            'created_by' => $operator->id,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id])
+            ->set('miscWorkerGroups.0.social_worker_id', $otherWorker->id)
+            ->call('requestSaveConfirmation')
+            ->assertHasErrors(['miscWorkerGroups.0.social_worker_id'])
+            ->assertSet('confirmingBatchSave', false);
+
+        $this->assertDatabaseHas('service_social_worker', [
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'allocated_quantity' => 5,
+        ]);
+    }
+
+    public function test_editing_misc_service_preserves_used_category_when_safe_fields_change(): void
+    {
+        [$operator, $worker, $service, $category] = $this->editableMiscService();
+
+        ServiceDelivery::query()->create([
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'delivery_channel' => Service::DELIVERY_CHANNEL_HOME,
+            'social_worker_id' => $worker->id,
+            'national_id' => '0000000002',
+            'full_name' => 'Delivered Recipient',
+            'delivered_quantity' => 2,
+            'value_per_unit_snapshot' => 0,
+            'delivered_total_value' => 0,
+            'delivered_at' => '2026-06-20',
+            'created_by' => $operator->id,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id])
+            ->set('miscDescription', 'Updated safe note')
+            ->set('miscWorkerGroups.0.categories.0.quantity', '6')
+            ->call('saveBatch')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('service_categories', [
+            'id' => $category->id,
+            'service_id' => $service->id,
+            'quantity' => 6,
+        ]);
+        $this->assertSame(1, $service->categories()->count());
+        $this->assertDatabaseHas('service_deliveries', [
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+        ]);
+    }
+
+    private function editableMiscService(): array
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 990,
+            'first_name' => 'Editable',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+        $serviceName = ServiceName::query()->create([
+            'name' => 'Editable Misc',
+            'sort_id' => 1,
+            'created_by' => $operator->id,
+        ]);
+        $service = Service::query()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'Editable Misc',
+            'service_type' => 'individual',
+            'supports_gate_delivery' => false,
+            'supports_home_delivery' => true,
+            'description' => null,
+            'total_quantity' => 5,
+            'total_service_value' => 0,
+            'distribution_start_date' => '2026-06-20',
+            'distribution_end_date' => '2026-06-20',
+            'status' => 'approved',
+            'quantity_delivered' => 0,
+            'created_by' => $operator->id,
+        ]);
+        $category = $service->categories()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'Editable Pack',
+            'quantity' => 5,
+            'unit' => 'pack',
+            'value' => 0,
+            'sort_id' => 1,
+            'created_by' => $operator->id,
+        ]);
+
+        $service->workerAllocations()->create([
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'allocated_quantity' => 5,
+            'assigned_by_user_id' => $operator->id,
+        ]);
+
+        return [$operator, $worker, $service, $category];
     }
 }
