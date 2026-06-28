@@ -34,7 +34,7 @@
                 x-transition.origin.top.right
                 @click.stop
                 @click.outside="open = false"
-                class="absolute right-0 z-30 mt-2 w-64 rounded-2xl border border-slate-200 bg-white p-2 text-right shadow-xl shadow-slate-900/10 ring-1 ring-black/5"
+                class="absolute right-0 z-30 mt-2 w-[min(16rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white p-2 text-right shadow-xl shadow-slate-900/10 ring-1 ring-black/5"
                 role="dialog"
                 aria-label="دسته‌بندی‌های خدمت"
             >
@@ -108,7 +108,7 @@
                             x-transition.origin.top.right
                             @click.stop
                             @click.outside="open = false"
-                            class="absolute right-0 z-30 mt-2 w-56 rounded-2xl border border-slate-200 bg-white p-2 text-right shadow-xl shadow-slate-900/10 ring-1 ring-black/5"
+                            class="absolute right-0 z-30 mt-2 w-[min(14rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white p-2 text-right shadow-xl shadow-slate-900/10 ring-1 ring-black/5"
                             role="dialog"
                             aria-label="مددکاران بیشتر"
                         >
