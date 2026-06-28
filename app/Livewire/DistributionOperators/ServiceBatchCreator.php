@@ -455,7 +455,7 @@ class ServiceBatchCreator extends Component
     public function cancelEditing()
     {
         if (! $this->editingServiceId) {
-            return;
+            return null;
         }
 
         return redirect()->route('distribution-operator.service-list');
@@ -539,11 +539,20 @@ class ServiceBatchCreator extends Component
                     ]);
                 }
 
-                $allocation = ServiceWorkerAllocation::query()->firstOrNew([
-                    'service_id' => $service->id,
-                    'service_category_id' => $category->id,
-                    'social_worker_id' => (int) $validated['socialWorkerId'],
-                ]);
+                $allocation = ServiceWorkerAllocation::query()
+                    ->where('service_id', $service->id)
+                    ->where('service_category_id', $category->id)
+                    ->where('social_worker_id', (int) $validated['socialWorkerId'])
+                    ->first();
+
+                if (! $allocation) {
+                    $allocation = new ServiceWorkerAllocation();
+                    $allocation->fill([
+                        'service_id' => $service->id,
+                        'service_category_id' => $category->id,
+                        'social_worker_id' => (int) $validated['socialWorkerId'],
+                    ]);
+                }
 
                 $allocation->fill([
                     'allocated_quantity' => (float) $allocation->allocated_quantity + $row['quantity'],
@@ -595,24 +604,28 @@ class ServiceBatchCreator extends Component
         $miscName = $this->nextMiscName();
 
         DB::transaction(function () use ($validated, $miscName): void {
-            $serviceName = ServiceName::query()->firstOrCreate(
-                ['name' => $miscName],
-                [
+            $serviceName = ServiceName::query()
+                ->where('name', $miscName)
+                ->first();
+
+            if (! $serviceName) {
+                $serviceName = new ServiceName();
+                $serviceName->fill([
+                    'name' => $miscName,
                     'sort_id' => ((int) ServiceName::query()->max('sort_id')) + 1,
                     'created_by' => auth()->id(),
-                ]
-            );
+                ])->save();
+            }
 
             $totalQuantity = collect($validated['miscCategories'])
                 ->sum(fn (array $category): float => (float) $category['quantity']);
 
-            $service = new Service([
+            $service = new Service();
+
+            $service->fill([
                 'code' => Service::generateNextCode(),
                 'created_by' => auth()->id(),
                 'quantity_delivered' => 0,
-            ]);
-
-            $service->fill([
                 'name' => $miscName,
                 'service_name_id' => $serviceName->id,
                 'service_type' => $validated['miscServiceType'],
@@ -630,7 +643,8 @@ class ServiceBatchCreator extends Component
             ])->save();
 
             foreach (array_values($validated['miscCategories']) as $index => $categoryRow) {
-                $category = $service->categories()->create([
+                $category = new ServiceCategory();
+                $category->fill([
                     'service_name_id' => $serviceName->id,
                     'name' => trim((string) $categoryRow['name']),
                     'quantity' => (float) $categoryRow['quantity'],
@@ -639,13 +653,16 @@ class ServiceBatchCreator extends Component
                     'sort_id' => $index + 1,
                     'created_by' => auth()->id(),
                 ]);
+                $service->categories()->save($category);
 
-                $service->workerAllocations()->create([
+                $allocation = new ServiceWorkerAllocation();
+                $allocation->fill([
                     'social_worker_id' => (int) $validated['socialWorkerId'],
                     'service_category_id' => $category->id,
                     'allocated_quantity' => (float) $categoryRow['quantity'],
                     'assigned_by_user_id' => auth()->id(),
                 ]);
+                $service->workerAllocations()->save($allocation);
             }
 
             $service->refreshFinancialTotals();
@@ -677,7 +694,8 @@ class ServiceBatchCreator extends Component
                 foreach (array_values($group['categories']) as $categoryRow) {
                     $quantity = (float) $categoryRow['quantity'];
 
-                    $category = $service->categories()->create([
+                    $category = new ServiceCategory();
+                    $category->fill([
                         'service_name_id' => $serviceNameId,
                         'name' => trim((string) $categoryRow['name']),
                         'quantity' => $quantity,
@@ -686,13 +704,16 @@ class ServiceBatchCreator extends Component
                         'sort_id' => $sortId++,
                         'created_by' => auth()->id(),
                     ]);
+                    $service->categories()->save($category);
 
-                    $service->workerAllocations()->create([
+                    $allocation = new ServiceWorkerAllocation();
+                    $allocation->fill([
                         'social_worker_id' => $workerId,
                         'service_category_id' => $category->id,
                         'allocated_quantity' => $quantity,
                         'assigned_by_user_id' => auth()->id(),
                     ]);
+                    $service->workerAllocations()->save($allocation);
 
                     $totalQuantity += $quantity;
                 }
