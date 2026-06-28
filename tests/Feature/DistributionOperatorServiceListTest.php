@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\DistributionOperators\DefineService;
 use App\Livewire\DistributionOperators\ServiceList;
 use App\Models\Service;
 use App\Models\ServiceCategory;
@@ -15,6 +16,55 @@ use Tests\TestCase;
 class DistributionOperatorServiceListTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_define_service_shows_latest_misc_service_quick_access(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $otherOperator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 939,
+            'first_name' => 'Quick',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+
+        $oldService = $this->makeService($operator, 'Older misc package');
+        $oldCategory = $this->makeCategory($oldService, 'Older category', $operator);
+        $oldService->socialWorkers()->attach($worker->id, [
+            'service_category_id' => $oldCategory->id,
+            'allocated_quantity' => 1,
+            'assigned_by_user_id' => $operator->id,
+        ]);
+        $oldService->forceFill([
+            'created_at' => now()->subDay(),
+            'updated_at' => now()->subDay(),
+        ])->save();
+
+        $latestService = $this->makeService($operator, 'Latest misc package');
+        $latestCategory = $this->makeCategory($latestService, 'Latest category', $operator);
+        $latestService->socialWorkers()->attach($worker->id, [
+            'service_category_id' => $latestCategory->id,
+            'allocated_quantity' => 3,
+            'assigned_by_user_id' => $operator->id,
+        ]);
+
+        $otherService = $this->makeService($otherOperator, 'Other operator package');
+        $this->makeCategory($otherService, 'Other category', $otherOperator);
+
+        $this->actingAs($operator);
+
+        Livewire::test(DefineService::class)
+            ->assertSee('Latest misc package')
+            ->assertSee(route('distribution-operator.edit-service', $latestService->id), false)
+            ->assertDontSee('Older misc package')
+            ->assertDontSee('Other operator package');
+    }
 
     public function test_operator_service_list_separates_campaign_and_misc_services(): void
     {
