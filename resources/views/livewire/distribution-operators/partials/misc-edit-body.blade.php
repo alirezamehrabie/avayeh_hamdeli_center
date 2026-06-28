@@ -210,6 +210,15 @@
 
                             <div class="divide-y divide-slate-100">
                                 @foreach($groupCategories as $ci => $category)
+                                    @php
+                                        $assignedCategoryKeysForCurrentWorker = collect($groupCategories)
+                                            ->except($ci)
+                                            ->map(fn ($categoryRow) => mb_strtolower(trim((string) ($categoryRow['name'] ?? ''))))
+                                            ->filter()
+                                            ->unique()
+                                            ->values()
+                                            ->all();
+                                    @endphp
                                     <div class="p-3 sm:p-3.5">
                                         <div class="flex items-start gap-2.5">
                                             <span class="mt-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-black text-emerald-700">{{ $ci + 1 }}</span>
@@ -220,6 +229,13 @@
                                                         historyActive: false,
                                                         directEntry: false,
                                                         modelPath: 'miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.name',
+                                                        assignedCategoryKeys: @js($assignedCategoryKeysForCurrentWorker),
+                                                        normalizeCategoryName(name) {
+                                                            return String(name || '').trim().toLowerCase();
+                                                        },
+                                                        isAlreadyAssigned(name) {
+                                                            return this.assignedCategoryKeys.includes(this.normalizeCategoryName(name));
+                                                        },
                                                         openSheet() {
                                                             if (this.sheetOpen) {
                                                                 return;
@@ -266,6 +282,10 @@
                                                             this.closeSheet({ syncHistory: false });
                                                         },
                                                         pick(name) {
+                                                            if (this.isAlreadyAssigned(name)) {
+                                                                return;
+                                                            }
+
                                                             this.directEntry = false;
                                                             $wire.set(this.modelPath, name);
                                                             this.closeSheet();
@@ -368,13 +388,29 @@
                                                                                 type="button"
                                                                                 data-name="{{ $name }}"
                                                                                 @click="pick($el.dataset.name)"
-                                                                                class="flex w-full items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-right transition hover:border-emerald-200 hover:bg-emerald-50/60 active:bg-emerald-50"
+                                                                                x-bind:disabled="isAlreadyAssigned($el.dataset.name)"
+                                                                                x-bind:aria-disabled="isAlreadyAssigned($el.dataset.name).toString()"
+                                                                                x-bind:class="isAlreadyAssigned($el.dataset.name)
+                                                                                    ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 opacity-75'
+                                                                                    : 'border-slate-200 bg-white text-slate-800 hover:border-emerald-200 hover:bg-emerald-50/60 active:bg-emerald-50'"
+                                                                                class="flex w-full items-center gap-2.5 rounded-xl border px-3 py-2.5 text-right transition disabled:pointer-events-none"
                                                                             >
-                                                                                <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-emerald-600">
-                                                                                    <i class="bi bi-tag text-sm"></i>
+                                                                                <span
+                                                                                    class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+                                                                                    x-bind:class="isAlreadyAssigned($el.closest('button').dataset.name) ? 'bg-white text-slate-400' : 'bg-slate-50 text-emerald-600'"
+                                                                                >
+                                                                                    <i class="bi text-sm" x-bind:class="isAlreadyAssigned($el.closest('button').dataset.name) ? 'bi-lock' : 'bi-tag'"></i>
                                                                                 </span>
-                                                                                <span class="min-w-0 flex-1 truncate text-sm font-bold text-slate-800">{{ $name }}</span>
-                                                                                <i class="bi bi-chevron-left text-[11px] text-slate-300"></i>
+                                                                                <span class="min-w-0 flex-1">
+                                                                                    <span class="block truncate text-sm font-bold">{{ $name }}</span>
+                                                                                    <span x-show="isAlreadyAssigned($el.closest('button').dataset.name)" class="mt-0.5 block text-[10px] font-bold text-slate-400">
+                                                                                        قبلاً برای این مددکار ثبت شده است
+                                                                                    </span>
+                                                                                </span>
+                                                                                <i
+                                                                                    class="bi text-[11px]"
+                                                                                    x-bind:class="isAlreadyAssigned($el.closest('button').dataset.name) ? 'bi-check2 text-slate-400' : 'bi-chevron-left text-slate-300'"
+                                                                                ></i>
                                                                             </button>
                                                                         @endforeach
                                                                     </div>

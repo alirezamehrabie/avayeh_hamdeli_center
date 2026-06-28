@@ -350,6 +350,12 @@ class ServiceBatchCreator extends Component
             return;
         }
 
+        if ($this->assignedWorkerIdsExceptGroup($index)->contains((int) $socialWorkerId)) {
+            throw ValidationException::withMessages([
+                "miscWorkerGroups.{$index}.social_worker_id" => 'این مددکار قبلاً در همین خدمت انتخاب شده است.',
+            ]);
+        }
+
         $worker = SocialWorker::query()
             ->with('district:id,name')
             ->select(['id', 'first_name', 'last_name', 'worker_code', 'district_id'])
@@ -415,6 +421,7 @@ class ServiceBatchCreator extends Component
         if ($this->editingServiceId) {
             $this->validate($this->miscEditRules(), [], $this->validationAttributes());
             $this->validateDistinctWorkerGroups();
+            $this->validateDistinctWorkerGroupCategories();
         } elseif ($this->mode === self::MODE_MISC) {
             $this->validate($this->miscRules(), [], $this->validationAttributes());
         } else {
@@ -677,6 +684,7 @@ class ServiceBatchCreator extends Component
     {
         $validated = $this->validate($this->miscEditRules(), [], $this->validationAttributes());
         $this->validateDistinctWorkerGroups();
+        $this->validateDistinctWorkerGroupCategories();
 
         DB::transaction(function () use ($validated): void {
             $service = $this->resolveEditableService($this->editingServiceId);
@@ -802,6 +810,22 @@ class ServiceBatchCreator extends Component
             throw ValidationException::withMessages([
                 'miscWorkerGroups' => 'هر مددکار فقط می‌تواند یک‌بار در این خدمت ثبت شود؛ مددکار تکراری را حذف کنید.',
             ]);
+        }
+    }
+
+    protected function validateDistinctWorkerGroupCategories(): void
+    {
+        foreach ($this->miscWorkerGroups as $groupIndex => $group) {
+            $categoryNames = collect($group['categories'] ?? [])
+                ->pluck('name')
+                ->map(fn ($name): string => mb_strtolower(trim((string) $name)))
+                ->filter();
+
+            if ($categoryNames->count() !== $categoryNames->unique()->count()) {
+                throw ValidationException::withMessages([
+                    "miscWorkerGroups.{$groupIndex}.categories" => 'هر دسته‌بندی فقط می‌تواند یک‌بار برای این مددکار ثبت شود.',
+                ]);
+            }
         }
     }
 
@@ -1642,7 +1666,8 @@ class ServiceBatchCreator extends Component
             return collect();
         }
 
-        $cacheKey = mb_strtolower($query) . '|' . (int) $this->socialWorkerId;
+        $excludedWorkerIds = $this->assignedWorkerIdsExceptGroup($this->activeWorkerGroupIndex);
+        $cacheKey = mb_strtolower($query) . '|' . (int) $this->socialWorkerId . '|' . $excludedWorkerIds->implode(',');
 
         if ($this->socialWorkerSuggestionsCacheKey === $cacheKey && $this->socialWorkerSuggestionsCache instanceof Collection) {
             return $this->socialWorkerSuggestionsCache;
@@ -1728,7 +1753,11 @@ class ServiceBatchCreator extends Component
 
         return $this->socialWorkerSuggestionsCache = $workers
             ->unique('id')
-            ->map(fn (SocialWorker $worker): array => $this->socialWorkerSuggestionPayload($worker, (float) ($allocatedQuantities[$worker->id] ?? 0)))
+            ->map(fn (SocialWorker $worker): array => $this->socialWorkerSuggestionPayload(
+                $worker,
+                (float) ($allocatedQuantities[$worker->id] ?? 0),
+                $excludedWorkerIds->contains((int) $worker->id)
+            ))
             ->values();
     }
 
@@ -1738,10 +1767,22 @@ class ServiceBatchCreator extends Component
         $this->socialWorkerSuggestionsCacheKey = null;
     }
 
-    protected function socialWorkerSuggestionPayload(SocialWorker $worker, float $allocatedQuantity): array
+    protected function assignedWorkerIdsExceptGroup(?int $groupIndex): Collection
+    {
+        return collect($this->miscWorkerGroups)
+            ->reject(fn (array $group, int $index): bool => $groupIndex !== null && $index === $groupIndex)
+            ->pluck('social_worker_id')
+            ->filter(fn ($id): bool => (int) $id > 0)
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->values();
+    }
+
+    protected function socialWorkerSuggestionPayload(SocialWorker $worker, float $allocatedQuantity, bool $isDuplicate = false): array
     {
         return [
             'id' => (int) $worker->id,
+            'duplicate' => $isDuplicate,
             'name' => trim($worker->full_name) ?: 'مددکار بدون نام',
             'code' => $worker->worker_code ? (string) $worker->worker_code : '-',
             'mobile' => $worker->mobile ?: '-',
