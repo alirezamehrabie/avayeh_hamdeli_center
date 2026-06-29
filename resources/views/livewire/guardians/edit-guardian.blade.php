@@ -356,7 +356,11 @@
                         </div>
                         <div>
                             <label class="mb-1 block text-xs font-semibold text-slate-600">شماره شبا</label>
-                            <input type="text" wire:model.blur="sheba_number" maxlength="26" @class([$fieldClass('sheba_number')])>
+                            <input type="text" wire:model.blur="sheba_number" maxlength="26" dir="ltr" placeholder="IR000000000000000000000000" @class([$fieldClass('sheba_number', 'font-mono text-right uppercase tracking-wide')])>
+                            <p class="mt-1 text-[11px] font-medium text-slate-500">فرمت معتبر: IR به همراه ۲۴ رقم. فاصله و خط تیره به‌صورت خودکار حذف می‌شود.</p>
+                            @if($subsidy_sheba_number === 'IR' || $subsidy_sheba_number === '')
+                                <p class="mt-1 text-[11px] font-medium text-emerald-600">بعد از تکمیل شبا، شبای یارانه نیز به‌صورت خودکار با همین مقدار پر می‌شود.</p>
+                            @endif
                             @error('sheba_number')
                                 <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p>
                             @enderror
@@ -372,7 +376,8 @@
                     <div class="mt-3 grid gap-3 md:grid-cols-2">
                         <div>
                             <label class="mb-1 block text-xs font-semibold text-slate-600">شماره شبای یارانه</label>
-                            <input type="text" wire:model.blur="subsidy_sheba_number" maxlength="26" @class([$fieldClass('subsidy_sheba_number')])>
+                            <input type="text" wire:model.blur="subsidy_sheba_number" maxlength="26" dir="ltr" placeholder="IR000000000000000000000000" @class([$fieldClass('subsidy_sheba_number', 'font-mono text-right uppercase tracking-wide')])>
+                            <p class="mt-1 text-[11px] font-medium text-slate-500">در صورت تفاوت با شبای اصلی، مقدار مستقل را با فرمت IR و ۲۴ رقم وارد کنید.</p>
                             @error('subsidy_sheba_number')
                                 <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p>
                             @enderror
