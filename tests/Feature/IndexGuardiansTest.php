@@ -128,15 +128,72 @@ class IndexGuardiansTest extends TestCase
         $this->assertSame(2, $guardian->refresh()->children_in_house);
     }
 
+    public function test_guardians_list_searches_across_default_fields(): void
+    {
+        $this->actingAs($this->manager());
+
+        $matchingGuardian = Guardian::query()->create([
+            'guardian_code' => 710005,
+            'national_code' => '1111111111',
+            'first_name' => 'Matching',
+            'last_name' => 'Guardian',
+            'guardian_phone_number' => '09121111111',
+        ]);
+        Guardian::query()->create([
+            'guardian_code' => 710006,
+            'national_code' => '2222222222',
+            'first_name' => 'Other',
+            'last_name' => 'Guardian',
+            'guardian_phone_number' => '09122222222',
+        ]);
+
+        Livewire::test(IndexGuardians::class)
+            ->set('search', 'Matching')
+            ->tap(function ($component) use ($matchingGuardian) {
+                $guardians = $component->instance()->guardians;
+
+                $this->assertSame([$matchingGuardian->id], $guardians->pluck('id')->all());
+            });
+    }
+
+    public function test_guardians_list_searches_by_selected_field(): void
+    {
+        $this->actingAs($this->manager());
+
+        $matchingGuardian = Guardian::query()->create([
+            'guardian_code' => 710007,
+            'national_code' => '3333333333',
+            'first_name' => 'Phone',
+            'last_name' => 'Match',
+            'guardian_phone_number' => '09123333333',
+        ]);
+        Guardian::query()->create([
+            'guardian_code' => 710008,
+            'national_code' => '4444444444',
+            'first_name' => 'Phone',
+            'last_name' => 'NameOnly',
+            'guardian_phone_number' => '09124444444',
+        ]);
+
+        Livewire::test(IndexGuardians::class)
+            ->set('searchField', 'mobile')
+            ->set('search', '333333')
+            ->tap(function ($component) use ($matchingGuardian) {
+                $guardians = $component->instance()->guardians;
+
+                $this->assertSame([$matchingGuardian->id], $guardians->pluck('id')->all());
+            });
+    }
+
     public function test_soft_delete_guardian_family_service_deletes_guardian_and_related_people(): void
     {
         $guardian = Guardian::query()->create([
-            'guardian_code' => 710005,
+            'guardian_code' => 710009,
             'first_name' => 'Service',
             'last_name' => 'Delete',
         ]);
-        $firstPerson = $this->person($guardian, 'P710005', '5234567890');
-        $secondPerson = $this->person($guardian, 'P710006', '5234567891');
+        $firstPerson = $this->person($guardian, 'P710009', '5234567890');
+        $secondPerson = $this->person($guardian, 'P710010', '5234567891');
 
         app(SoftDeleteGuardianFamily::class)->handle($guardian, 'Family moved out');
 
@@ -169,11 +226,11 @@ class IndexGuardiansTest extends TestCase
         $this->actingAs($this->manager());
 
         $guardian = Guardian::query()->create([
-            'guardian_code' => 710007,
+            'guardian_code' => 710011,
             'first_name' => 'Livewire',
             'last_name' => 'Delete',
         ]);
-        $person = $this->person($guardian, 'P710007', '6234567890');
+        $person = $this->person($guardian, 'P710011', '6234567890');
 
         Livewire::test(IndexGuardians::class)
             ->call('toggleGuardian', $guardian->id)

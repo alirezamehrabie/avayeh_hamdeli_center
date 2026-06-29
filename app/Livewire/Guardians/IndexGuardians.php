@@ -3,9 +3,9 @@
 namespace App\Livewire\Guardians;
 
 use App\Models\Guardian;
+use App\Queries\Guardians\GuardianIndexSearchQuery;
 use App\Services\Guardians\SoftDeleteGuardianFamily;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -61,29 +61,10 @@ class IndexGuardians extends Component
 
     public function getGuardiansProperty()
     {
-        $query = Guardian::withCount('people');
-
-        if (trim($this->search) !== '') {
-            $search = trim($this->search);
-            $fullNameExpression = DB::connection()->getDriverName() === 'sqlite'
-                ? "COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')"
-                : "CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, ''))";
-
-            match ($this->searchField) {
-                'national_code' => $query->where('national_code', 'LIKE', "%{$search}%"),
-                'full_name' => $query->whereRaw("{$fullNameExpression} LIKE ?", ["%{$search}%"]),
-                'mobile' => $query->where('guardian_phone_number', 'LIKE', "%{$search}%"),
-                default => $query->where(function ($q) use ($search, $fullNameExpression) {
-                    $q->where('national_code', 'LIKE', "%{$search}%")
-                        ->orWhere('guardian_phone_number', 'LIKE', "%{$search}%")
-                        ->orWhere('first_name', 'LIKE', "%{$search}%")
-                        ->orWhere('last_name', 'LIKE', "%{$search}%")
-                        ->orWhereRaw("{$fullNameExpression} LIKE ?", ["%{$search}%"]);
-                }),
-            };
-        }
-
-        return $query->orderBy('created_at', 'desc')->paginate(20);
+        return app(GuardianIndexSearchQuery::class)->paginate(
+            search: $this->search,
+            searchField: $this->searchField,
+        );
     }
 
     public function getExpandedGuardianPeopleProperty(): Collection
