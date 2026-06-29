@@ -264,7 +264,7 @@
                                                     </tr>
                                                     </thead>
                                                     <tbody class="divide-y divide-slate-100">
-                                                    @forelse($guardian->people as $person)
+                                                    @forelse($this->expandedGuardianPeople as $person)
                                                         <tr class="transition hover:bg-slate-50">
                                                             <td class="px-4 py-3 text-center font-medium text-slate-700">{{ $person->person_code }}</td>
                                                             <td class="px-4 py-3 text-center text-slate-600">{{ $person->national_id }}</td>

@@ -3,6 +3,7 @@
 namespace App\Livewire\Guardians;
 
 use App\Models\Guardian;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
@@ -61,8 +62,7 @@ class IndexGuardians extends Component
 
     public function getGuardiansProperty()
     {
-        $query = Guardian::withCount('people')
-            ->with(['people' => fn ($query) => $query->orderBy('created_at', 'desc')]);
+        $query = Guardian::withCount('people');
 
         if (trim($this->search) !== '') {
             $search = trim($this->search);
@@ -85,6 +85,23 @@ class IndexGuardians extends Component
         }
 
         return $query->orderBy('created_at', 'desc')->paginate(20);
+    }
+
+    public function getExpandedGuardianPeopleProperty(): Collection
+    {
+        if (! $this->expandedGuardianId) {
+            return collect();
+        }
+
+        $guardian = Guardian::query()->find($this->expandedGuardianId);
+
+        if (! $guardian) {
+            return collect();
+        }
+
+        return $guardian->people()
+            ->orderBy('created_at', 'desc')
+            ->get();
     }
 
     public function toggleGuardian(int $guardianId): void
