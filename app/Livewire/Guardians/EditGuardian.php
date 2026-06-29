@@ -211,16 +211,32 @@ class EditGuardian extends Component
 
     public function updatedInsuranceStatus($value): void
     {
-        if (!(bool) $value) {
+        $this->insurance_status = $this->toBoolean($value);
+
+        if (! $this->insurance_status) {
             $this->insurance_type_id = null;
+            $this->resetValidation('insurance_type_id');
+        }
+    }
+
+    public function updatedAnyFamilyEmployed($value): void
+    {
+        $this->any_family_employed = $this->toBoolean($value);
+
+        if (! $this->any_family_employed) {
+            $this->any_family_employed_description = null;
+            $this->resetValidation('any_family_employed_description');
         }
     }
 
     public function updatedHasVehicle($value): void
     {
-        if (!(bool) $value) {
+        $this->has_vehicle = $this->toBoolean($value);
+
+        if (! $this->has_vehicle) {
             $this->vehicle_type_id = null;
             $this->vehicle_ownership_type = null;
+            $this->resetValidation(['vehicle_type_id', 'vehicle_ownership_type']);
         }
     }
 
@@ -299,6 +315,11 @@ class EditGuardian extends Component
     private function toNullableInt(mixed $value): ?int
     {
         return $value === null || $value === '' ? null : (int) $value;
+    }
+
+    private function toBoolean(mixed $value): bool
+    {
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false;
     }
 
     private function normalizeIban(string $value): string
@@ -380,6 +401,23 @@ class EditGuardian extends Component
         $this->normalizeExtraHouseholdMembers();
         $this->sheba_number = $this->normalizeIbanForStorage($this->sheba_number);
         $this->subsidy_sheba_number = $this->normalizeIbanForStorage($this->subsidy_sheba_number);
+        $this->insurance_status = $this->toBoolean($this->insurance_status);
+        $this->any_family_employed = $this->toBoolean($this->any_family_employed);
+        $this->has_vehicle = $this->toBoolean($this->has_vehicle);
+
+        if (! $this->insurance_status) {
+            $this->insurance_type_id = null;
+        }
+
+        if (! $this->any_family_employed) {
+            $this->any_family_employed_description = null;
+        }
+
+        if (! $this->has_vehicle) {
+            $this->vehicle_type_id = null;
+            $this->vehicle_ownership_type = null;
+        }
+
         $this->validate();
 
         DB::transaction(function () {

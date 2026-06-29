@@ -140,7 +140,7 @@
                         </div>
                         <div>
                             <label class="mb-1 block text-xs font-semibold text-slate-600">نوع بیمه</label>
-                            <select wire:model="insurance_type_id" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                            <select wire:model="insurance_type_id" @disabled(! (bool) $insurance_status) class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400">
                                 <option value="">انتخاب نشده</option>
                                 @foreach($insuranceTypes as $insuranceType)
                                     <option value="{{ $insuranceType->id }}">{{ $insuranceType->name }}</option>
@@ -158,7 +158,7 @@
                         </div>
                         <div class="md:col-span-2">
                             <label class="mb-1 block text-xs font-semibold text-slate-600">شرح اشتغال اعضا</label>
-                            <input type="text" wire:model.blur="any_family_employed_description" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                            <input type="text" wire:model.blur="any_family_employed_description" @disabled(! (bool) $any_family_employed) class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400">
                         </div>
                     </div>
 
@@ -206,7 +206,7 @@
                         </div>
                         <div>
                             <label class="mb-1 block text-xs font-semibold text-slate-600">نوع وسیله</label>
-                            <select wire:model="vehicle_type_id" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                            <select wire:model="vehicle_type_id" @disabled(! (bool) $has_vehicle) class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400">
                                 <option value="">انتخاب نشده</option>
                                 @foreach($vehicleTypes as $vehicleType)
                                     <option value="{{ $vehicleType->id }}">{{ $vehicleType->name }}</option>
@@ -215,7 +215,7 @@
                         </div>
                         <div>
                             <label class="mb-1 block text-xs font-semibold text-slate-600">مالکیت وسیله</label>
-                            <select wire:model="vehicle_ownership_type" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                            <select wire:model="vehicle_ownership_type" @disabled(! (bool) $has_vehicle) class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400">
                                 <option value="">انتخاب نشده</option>
                                 <option value="personal">شخصی</option>
                                 <option value="company">شراکتی</option>

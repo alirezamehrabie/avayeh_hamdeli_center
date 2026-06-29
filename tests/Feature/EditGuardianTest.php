@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Livewire\Guardians\EditGuardian;
 use App\Models\Guardian;
 use App\Models\BankInfo;
+use App\Models\InsuranceType;
+use App\Models\VehicleType;
 use App\Models\Person;
 use App\Models\Residence;
 use App\Models\User;
@@ -248,6 +250,69 @@ class EditGuardianTest extends TestCase
             ->set('subsidy_sheba_number', 'IR123')
             ->call('save')
             ->assertHasErrors(['subsidy_sheba_number']);
+    }
+
+    public function test_turning_off_parent_toggles_clears_dependent_state(): void
+    {
+        $this->actingAs($this->manager());
+
+        $insuranceType = InsuranceType::query()->create(['name' => 'Basic Insurance']);
+        $vehicleType = VehicleType::query()->create(['name' => 'Car']);
+        $guardian = Guardian::query()->create([
+            'guardian_code' => 700010,
+            'first_name' => 'Guardian',
+            'last_name' => 'Dependent State',
+            'insurance_status' => true,
+            'insurance_type_id' => $insuranceType->id,
+            'any_family_employed' => true,
+            'any_family_employed_description' => 'Part-time work',
+            'has_vehicle' => true,
+            'vehicle_type_id' => $vehicleType->id,
+            'vehicle_ownership_type' => 'personal',
+        ]);
+
+        Livewire::test(EditGuardian::class, ['guardian' => $guardian])
+            ->set('insurance_status', '0')
+            ->assertSet('insurance_type_id', null)
+            ->set('any_family_employed', '0')
+            ->assertSet('any_family_employed_description', null)
+            ->set('has_vehicle', '0')
+            ->assertSet('vehicle_type_id', null)
+            ->assertSet('vehicle_ownership_type', null);
+    }
+
+    public function test_save_does_not_persist_stale_dependent_values_when_toggles_are_off(): void
+    {
+        $this->actingAs($this->manager());
+
+        $insuranceType = InsuranceType::query()->create(['name' => 'Supplemental Insurance']);
+        $vehicleType = VehicleType::query()->create(['name' => 'Motorcycle']);
+        $guardian = Guardian::query()->create([
+            'guardian_code' => 700011,
+            'first_name' => 'Guardian',
+            'last_name' => 'Stale Dependents',
+        ]);
+
+        Livewire::test(EditGuardian::class, ['guardian' => $guardian])
+            ->set('insurance_status', '0')
+            ->set('insurance_type_id', $insuranceType->id)
+            ->set('any_family_employed', '0')
+            ->set('any_family_employed_description', 'Should be removed')
+            ->set('has_vehicle', '0')
+            ->set('vehicle_type_id', $vehicleType->id)
+            ->set('vehicle_ownership_type', 'personal')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $guardian->refresh();
+
+        $this->assertFalse($guardian->insurance_status);
+        $this->assertNull($guardian->insurance_type_id);
+        $this->assertFalse($guardian->any_family_employed);
+        $this->assertNull($guardian->any_family_employed_description);
+        $this->assertFalse($guardian->has_vehicle);
+        $this->assertNull($guardian->vehicle_type_id);
+        $this->assertNull($guardian->vehicle_ownership_type);
     }
 
     private function manager(): User
