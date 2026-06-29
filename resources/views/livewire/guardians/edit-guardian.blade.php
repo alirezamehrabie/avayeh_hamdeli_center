@@ -242,6 +242,20 @@
                             @enderror
                         </div>
                     </div>
+                    <div class="mt-3 grid gap-3 md:grid-cols-3">
+                        <div>
+                            <label class="mb-1 block text-xs font-semibold text-slate-600">فرزند طلاق ساکن در منزل</label>
+                            <select wire:model="divorced_child_at_home" @class([$fieldClass('divorced_child_at_home')])>
+                                <option value="none">ندارد</option>
+                                <option value="boy">پسر</option>
+                                <option value="girl">دختر</option>
+                                <option value="both">پسر و دختر</option>
+                            </select>
+                            @error('divorced_child_at_home')
+                                <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
 
                     <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
                         <div class="flex flex-wrap items-end gap-2">
@@ -376,6 +390,14 @@
                             @enderror
                         </div>
                     </div>
+                    <div class="mt-3">
+                        <label class="mb-1 block text-xs font-semibold text-slate-600">توضیح نسبت مالک حساب</label>
+                        <input type="text" wire:model.blur="other_account_owner_relation" @class([$fieldClass('other_account_owner_relation')])>
+                        <p class="mt-1 text-[11px] font-medium text-slate-500">اگر نسبت مالک حساب در گزینه‌ها نیست، توضیح آن را اینجا وارد کنید.</p>
+                        @error('other_account_owner_relation')
+                            <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
 
                 <div class="rounded-2xl border border-slate-200 bg-white p-4">
@@ -402,6 +424,16 @@
                                 @endforeach
                             </select>
                             @error('district_id')
+                                <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs font-semibold text-slate-600">بومی شهر</label>
+                            <select wire:model="is_local_to_city" @class([$fieldClass('is_local_to_city')])>
+                                <option value="1">بله</option>
+                                <option value="0">خیر</option>
+                            </select>
+                            @error('is_local_to_city')
                                 <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p>
                             @enderror
                         </div>
@@ -441,6 +473,20 @@
                             <label class="mb-1 block text-xs font-semibold text-slate-600">تلفن مورد اعتماد</label>
                             <input type="text" wire:model.blur="trusted_person_phone" @class([$fieldClass('trusted_person_phone')])>
                             @error('trusted_person_phone')
+                                <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs font-semibold text-slate-600">نوع پیام‌رسان</label>
+                            <input type="text" wire:model.blur="messenger_type" list="guardian-messenger-types" @class([$fieldClass('messenger_type')])>
+                            <datalist id="guardian-messenger-types">
+                                <option value="واتساپ"></option>
+                                <option value="تلگرام"></option>
+                                <option value="ایتا"></option>
+                                <option value="روبیکا"></option>
+                                <option value="بله"></option>
+                            </datalist>
+                            @error('messenger_type')
                                 <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p>
                             @enderror
                         </div>
