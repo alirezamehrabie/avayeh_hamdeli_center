@@ -6,6 +6,7 @@ use App\Livewire\Guardians\IndexGuardians;
 use App\Models\Guardian;
 use App\Models\Person;
 use App\Models\User;
+use App\Queries\Guardians\ExpandedGuardianPeopleQuery;
 use App\Services\Guardians\SoftDeleteGuardianFamily;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -91,6 +92,14 @@ class IndexGuardiansTest extends TestCase
 
                 $this->assertEqualsCanonicalizing([$latest->id, $first->id], $people->pluck('id')->all());
             });
+    }
+
+    public function test_expanded_guardian_people_query_returns_empty_collection_without_valid_guardian(): void
+    {
+        $query = app(ExpandedGuardianPeopleQuery::class);
+
+        $this->assertTrue($query->get(null)->isEmpty());
+        $this->assertTrue($query->get(999999)->isEmpty());
     }
 
     public function test_guardians_list_does_not_auto_refresh_stats_on_load(): void

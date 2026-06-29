@@ -3,6 +3,7 @@
 namespace App\Livewire\Guardians;
 
 use App\Models\Guardian;
+use App\Queries\Guardians\ExpandedGuardianPeopleQuery;
 use App\Queries\Guardians\GuardianIndexSearchQuery;
 use App\Services\Guardians\SoftDeleteGuardianFamily;
 use Illuminate\Support\Collection;
@@ -69,19 +70,7 @@ class IndexGuardians extends Component
 
     public function getExpandedGuardianPeopleProperty(): Collection
     {
-        if (! $this->expandedGuardianId) {
-            return collect();
-        }
-
-        $guardian = Guardian::query()->find($this->expandedGuardianId);
-
-        if (! $guardian) {
-            return collect();
-        }
-
-        return $guardian->people()
-            ->orderBy('created_at', 'desc')
-            ->get();
+        return app(ExpandedGuardianPeopleQuery::class)->get($this->expandedGuardianId);
     }
 
     public function toggleGuardian(int $guardianId): void
