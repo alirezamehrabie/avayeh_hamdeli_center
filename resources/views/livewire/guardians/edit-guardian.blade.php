@@ -187,7 +187,7 @@
                         <div x-data="{ amount: @js($average_income ?? '') }">
                             <label class="mb-1 block text-xs font-semibold text-slate-600">متوسط درآمد ماهیانه (ریال)</label>
                             <input type="number" wire:model.blur="average_income" x-model="amount" @class([$fieldClass('average_income')])>
-                            <p x-show="amount !== '' && amount !== null" x-cloak class="mt-1 text-xs font-medium text-emerald-600" x-text="new Intl.NumberFormat('en-US').format(Number(amount || 0)) + ' Rial'"></p>
+                            <p x-show="amount !== '' && amount !== null" x-cloak class="mt-1 text-xs font-medium text-emerald-600" x-text="new Intl.NumberFormat('fa-IR').format(Number(amount || 0)) + ' ریال'"></p>
                             @error('average_income')
                                 <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p>
                             @enderror
@@ -408,7 +408,7 @@
                         <div x-data="{ amount: @js($deposit_amount ?? '') }">
                             <label class="mb-1 block text-xs font-semibold text-slate-600">ودیعه</label>
                             <input type="number" wire:model.blur="deposit_amount" x-model="amount" @class([$fieldClass('deposit_amount')])>
-                            <p x-show="amount !== '' && amount !== null" x-cloak class="mt-1 text-xs font-medium text-emerald-600" x-text="new Intl.NumberFormat('en-US').format(Number(amount || 0)) + ' Rial'"></p>
+                            <p x-show="amount !== '' && amount !== null" x-cloak class="mt-1 text-xs font-medium text-emerald-600" x-text="new Intl.NumberFormat('fa-IR').format(Number(amount || 0)) + ' ریال'"></p>
                             @error('deposit_amount')
                                 <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p>
                             @enderror
@@ -416,7 +416,7 @@
                         <div x-data="{ amount: @js($monthly_rent ?? '') }">
                             <label class="mb-1 block text-xs font-semibold text-slate-600">اجاره ماهانه</label>
                             <input type="number" wire:model.blur="monthly_rent" x-model="amount" @class([$fieldClass('monthly_rent')])>
-                            <p x-show="amount !== '' && amount !== null" x-cloak class="mt-1 text-xs font-medium text-emerald-600" x-text="new Intl.NumberFormat('en-US').format(Number(amount || 0)) + ' Rial'"></p>
+                            <p x-show="amount !== '' && amount !== null" x-cloak class="mt-1 text-xs font-medium text-emerald-600" x-text="new Intl.NumberFormat('fa-IR').format(Number(amount || 0)) + ' ریال'"></p>
                             @error('monthly_rent')
                                 <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p>
                             @enderror
