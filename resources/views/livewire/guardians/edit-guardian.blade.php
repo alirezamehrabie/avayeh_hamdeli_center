@@ -161,6 +161,37 @@
                             <input type="text" wire:model.blur="any_family_employed_description" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
                         </div>
                     </div>
+
+                    <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                        <div class="flex flex-wrap items-end gap-2">
+                            <div class="min-w-0 flex-1">
+                                <label class="mb-1 block text-xs font-semibold text-slate-600">اعضای غیرمددجوی ساکن در خانوار</label>
+                                <input type="text" wire:model.blur="new_extra_household_member_description" wire:keydown.enter.prevent="addExtraHouseholdMember" maxlength="255" placeholder="مثلا: مادربزرگ، فرزند غیرفعال پرونده" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-100">
+                                @error('new_extra_household_member_description')
+                                    <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <button type="button" wire:click="addExtraHouseholdMember" class="inline-flex h-10 items-center justify-center rounded-xl border border-amber-300 bg-amber-400 px-4 text-xs font-bold text-white transition hover:bg-amber-500">
+                                افزودن
+                            </button>
+                        </div>
+
+                        <div class="mt-3 space-y-2">
+                            @forelse($extra_household_members as $index => $member)
+                                <div wire:key="extra-household-member-{{ $index }}" class="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-2">
+                                    <input type="text" wire:model.blur="extra_household_members.{{ $index }}.description" maxlength="255" class="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-100">
+                                    <button type="button" wire:click="removeExtraHouseholdMember({{ $index }})" class="inline-flex h-9 shrink-0 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 px-3 text-xs font-bold text-rose-600 transition hover:bg-rose-100">
+                                        حذف
+                                    </button>
+                                </div>
+                                @error("extra_household_members.$index.description")
+                                    <p class="text-xs font-semibold text-rose-600">{{ $message }}</p>
+                                @enderror
+                            @empty
+                                <p class="text-xs font-medium text-slate-500">عضو غیرمددجوی اضافه‌ای برای این خانوار ثبت نشده است.</p>
+                            @endforelse
+                        </div>
+                    </div>
                 </div>
 
                 <div class="rounded-2xl border border-slate-200 bg-white p-4">

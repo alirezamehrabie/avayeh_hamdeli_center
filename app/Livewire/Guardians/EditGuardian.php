@@ -48,6 +48,7 @@ class EditGuardian extends Component
     public $vehicle_type_id;
     public $vehicle_ownership_type;
     public $extra_household_members = [];
+    public string $new_extra_household_member_description = '';
 
     public $residence_status_id;
     public $district_id;
@@ -169,6 +170,9 @@ class EditGuardian extends Component
                     $fail('برای اسفند، روز نمی‌تواند بیشتر از ۲۹ باشد.');
                 }
             }],
+            'extra_household_members' => 'array|max:50',
+            'extra_household_members.*.description' => 'required|string|max:255',
+            'new_extra_household_member_description' => 'nullable|string|max:255',
             'economic_decile' => 'nullable|integer|min:1|max:10',
             'occupation_id' => 'nullable|exists:occupations,id',
             'job_type_id' => 'nullable|exists:job_types,id',
@@ -217,6 +221,37 @@ class EditGuardian extends Component
         }
     }
 
+    public function addExtraHouseholdMember(): void
+    {
+        $description = trim((string) $this->new_extra_household_member_description);
+
+        if ($description === '') {
+            return;
+        }
+
+        if (mb_strlen($description) > 255) {
+            $this->addError('new_extra_household_member_description', 'توضیحات عضو خانوار نمی‌تواند بیشتر از ۲۵۵ کاراکتر باشد.');
+
+            return;
+        }
+
+        $this->resetErrorBag('new_extra_household_member_description');
+        $this->extra_household_members[] = ['description' => $description];
+        $this->new_extra_household_member_description = '';
+        $this->syncChildrenInHousePreview();
+    }
+
+    public function removeExtraHouseholdMember(int $index): void
+    {
+        if (! isset($this->extra_household_members[$index])) {
+            return;
+        }
+
+        unset($this->extra_household_members[$index]);
+        $this->extra_household_members = array_values($this->extra_household_members);
+        $this->syncChildrenInHousePreview();
+    }
+
     private function normalizeNullableFields(): void
     {
         foreach ([
@@ -245,9 +280,54 @@ class EditGuardian extends Component
         return $value === null || $value === '' ? null : (int) $value;
     }
 
+    private function normalizeExtraHouseholdMembers(): void
+    {
+        $this->extra_household_members = collect($this->extra_household_members)
+            ->filter(fn ($member) => is_array($member))
+            ->map(function (array $member): array {
+                return [
+                    'description' => trim((string) ($member['description'] ?? '')),
+                ];
+            })
+            ->filter(fn (array $member) => $member['description'] !== '')
+            ->values()
+            ->all();
+    }
+
+    private function absorbPendingExtraHouseholdMember(): void
+    {
+        $description = trim((string) $this->new_extra_household_member_description);
+
+        if ($description === '') {
+            return;
+        }
+
+        $this->extra_household_members[] = ['description' => $description];
+        $this->new_extra_household_member_description = '';
+    }
+
+    private function syncChildrenInHousePreview(): void
+    {
+        $storedGuardian = $this->guardian->fresh(['people.familyStatus.guardianRelationType', 'people.harmTypes:id,title']);
+
+        if (! $storedGuardian) {
+            return;
+        }
+
+        $formula = $storedGuardian->household_composition_formula;
+        $storedExtraCount = count($storedGuardian->extra_household_members ?? []);
+
+        $this->children_in_house = max(
+            0,
+            (int) ($formula['final_residents'] ?? 0) - $storedExtraCount + count($this->extra_household_members ?? [])
+        );
+    }
+
     public function save(): mixed
     {
         $this->normalizeNullableFields();
+        $this->absorbPendingExtraHouseholdMember();
+        $this->normalizeExtraHouseholdMembers();
         $this->validate();
 
         DB::transaction(function () {
@@ -272,6 +352,7 @@ class EditGuardian extends Component
                 'insurance_status' => (bool) $this->insurance_status,
                 'insurance_type_id' => (bool) $this->insurance_status ? $this->insurance_type_id : null,
                 'divorced_child_at_home' => $this->divorced_child_at_home ?: 'none',
+                'extra_household_members' => $this->extra_household_members,
                 'average_income' => $this->toNullableInt($this->average_income),
                 'any_family_employed' => (bool) $this->any_family_employed,
                 'any_family_employed_description' => (bool) $this->any_family_employed ? $this->any_family_employed_description : null,
