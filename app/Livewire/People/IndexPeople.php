@@ -4,6 +4,7 @@ namespace App\Livewire\People;
 
 use App\Models\Person;
 use App\Queries\People\PeopleIndexSearchQuery;
+use App\Services\People\SoftDeletePerson;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\Pagination\Paginator;
 use Livewire\Attributes\Layout;
@@ -163,10 +164,7 @@ class IndexPeople extends Component
     {
         abort_unless(auth()->check() && auth()->user()->can('people-delete'), 403);
 
-        $person->forceFill([
-            'deletion_reason' => $this->deletionReason,
-        ])->saveQuietly();
-        $person->delete();
+        app(SoftDeletePerson::class)->handle($person, $this->deletionReason);
         $this->resetPage();
 
         session()->flash('success', 'مددجو با موفقیت به بلاک لیست منتقل شد.');
