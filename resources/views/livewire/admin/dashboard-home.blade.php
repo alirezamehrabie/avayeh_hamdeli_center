@@ -344,7 +344,7 @@
                                     </div>
                                 </button>
 
-                                <button type="button" class="group relative text-right overflow-hidden rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-emerald-100">
+                                <button type="button" wire:click="selectSection('advanced-supervisor-report')" class="group relative text-right overflow-hidden rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-emerald-100">
                                     <span class="absolute inset-y-0 right-0 w-1 bg-emerald-500"></span>
                                     <div class="flex items-start justify-between">
                                         <div>
@@ -392,10 +392,7 @@
                         @break
 
                     @case('advanced-supervisor-report')
-                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <h1 class="text-xl font-bold text-gray-800 mb-2">گزارش پیشرفته سرپرستان</h1>
-                            <p class="text-sm text-gray-600">این بخش به زودی برای گزارش‌گیری پیشرفته سرپرستان تکمیل می‌شود.</p>
-                        </div>
+                        <livewire:guardians.advanced-guardian-report :key="'advanced-supervisor-report'" />
                         @break
 
                     @case('advanced-social-worker-report')
