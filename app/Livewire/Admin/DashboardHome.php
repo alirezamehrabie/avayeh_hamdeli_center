@@ -20,6 +20,8 @@ class DashboardHome extends Component
 {
     #[Url(as: 'section', history: true)]
     public string $activeSection = 'overview';
+    #[Url(as: 'id', history: true)]
+    public ?int $sectionContextId = null;
     public ?int $editingPersonId = null;
     public ?int $editingSocialWorkerId = null;
     public ?int $editingGuardianId = null;
@@ -62,6 +64,7 @@ class DashboardHome extends Component
             $this->activeSection = 'special-features-id-card-scanner';
         }
         $this->normalizeActiveSection();
+        $this->syncSectionContext();
         $this->syncActivityContext();
     }
 
@@ -70,11 +73,8 @@ class DashboardHome extends Component
     {
         $this->activeSection = $section;
         $this->normalizeActiveSection();
-        $this->editingPersonId = in_array($section, ['person-edit', 'people-fast-create'], true) ? $id : null;
-        $this->editingSocialWorkerId = $section === 'social-worker-edit' ? $id : null;
-        $this->editingGuardianId = $section === 'guardian-edit' ? $id : null;
-        $this->editingSponsorId = $section === 'child-supporter-sponsor-edit' ? $id : null;
-        $this->editingServiceId = $this->activeSection === 'service-definition' ? $id : null;
+        $this->sectionContextId = $this->sectionUsesContextId($this->activeSection) ? $id : null;
+        $this->syncSectionContext();
         $this->editingActivityId = $this->activeSection === 'activity-definition' ? $id : null;
         $this->scanningActivityId = $this->activeSection === 'activity-scanner' ? $id : null;
         $this->activityContextId = in_array($this->activeSection, ['activity-definition', 'activity-scanner'], true) ? $id : null;
@@ -86,8 +86,14 @@ class DashboardHome extends Component
     public function updatedActiveSection(): void
     {
         $this->normalizeActiveSection();
+        $this->syncSectionContext();
         $this->syncActivityContext();
         $this->dispatchDashboardSectionChanged();
+    }
+
+    public function updatedSectionContextId(): void
+    {
+        $this->syncSectionContext();
     }
 
     public function updatedActivityContextId(): void
@@ -114,6 +120,33 @@ class DashboardHome extends Component
         $this->activityContextId = null;
         $this->editingActivityId = null;
         $this->scanningActivityId = null;
+    }
+
+    private function syncSectionContext(): void
+    {
+        if (! $this->sectionUsesContextId($this->activeSection)) {
+            $this->sectionContextId = null;
+        }
+
+        $id = $this->sectionContextId;
+
+        $this->editingPersonId = in_array($this->activeSection, ['person-edit', 'people-fast-create'], true) ? $id : null;
+        $this->editingSocialWorkerId = $this->activeSection === 'social-worker-edit' ? $id : null;
+        $this->editingGuardianId = $this->activeSection === 'guardian-edit' ? $id : null;
+        $this->editingSponsorId = $this->activeSection === 'child-supporter-sponsor-edit' ? $id : null;
+        $this->editingServiceId = $this->activeSection === 'service-definition' ? $id : null;
+    }
+
+    private function sectionUsesContextId(string $section): bool
+    {
+        return in_array($section, [
+            'person-edit',
+            'people-fast-create',
+            'social-worker-edit',
+            'guardian-edit',
+            'child-supporter-sponsor-edit',
+            'service-definition',
+        ], true);
     }
 
     private function normalizeActiveSection(): void

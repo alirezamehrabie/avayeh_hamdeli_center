@@ -6,6 +6,7 @@ use App\Livewire\Admin\DashboardHome;
 use App\Livewire\Activities\ActivityList;
 use App\Livewire\Services\ServiceArchive;
 use App\Models\Activity;
+use App\Models\Guardian;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -72,6 +73,21 @@ class DashboardHomeNavigationTest extends TestCase
             ->assertSet('editingActivityId', null);
     }
 
+    public function test_guardian_edit_context_survives_mount_from_url(): void
+    {
+        $this->actingAs($this->manager());
+        $guardian = $this->guardian();
+
+        Livewire::withQueryParams([
+            'section' => 'guardian-edit',
+            'id' => $guardian->id,
+        ])
+            ->test(DashboardHome::class)
+            ->assertSet('activeSection', 'guardian-edit')
+            ->assertSet('sectionContextId', $guardian->id)
+            ->assertSet('editingGuardianId', $guardian->id);
+    }
+
     public function test_selecting_non_activity_section_clears_activity_context(): void
     {
         $this->actingAs($this->manager());
@@ -89,6 +105,22 @@ class DashboardHomeNavigationTest extends TestCase
             ->assertSet('editingActivityId', null);
     }
 
+    public function test_selecting_non_context_section_clears_guardian_context(): void
+    {
+        $this->actingAs($this->manager());
+        $guardian = $this->guardian();
+
+        Livewire::withQueryParams([
+            'section' => 'guardian-edit',
+            'id' => $guardian->id,
+        ])
+            ->test(DashboardHome::class)
+            ->call('selectSection', 'guardians-list')
+            ->assertSet('activeSection', 'guardians-list')
+            ->assertSet('sectionContextId', null)
+            ->assertSet('editingGuardianId', null);
+    }
+
     public function test_url_section_change_clears_stale_activity_context(): void
     {
         $this->actingAs($this->manager());
@@ -104,6 +136,22 @@ class DashboardHomeNavigationTest extends TestCase
             ->assertSet('activityContextId', null)
             ->assertSet('scanningActivityId', null)
             ->assertSet('editingActivityId', null);
+    }
+
+    public function test_url_section_change_clears_stale_guardian_context(): void
+    {
+        $this->actingAs($this->manager());
+        $guardian = $this->guardian();
+
+        Livewire::withQueryParams([
+            'section' => 'guardian-edit',
+            'id' => $guardian->id,
+        ])
+            ->test(DashboardHome::class)
+            ->set('activeSection', 'guardians-list')
+            ->assertSet('activeSection', 'guardians-list')
+            ->assertSet('sectionContextId', null)
+            ->assertSet('editingGuardianId', null);
     }
 
     private function manager(): User
@@ -130,6 +178,15 @@ class DashboardHomeNavigationTest extends TestCase
             'name' => 'Navigation Activity',
             'activity_type' => 'workshop',
             'status' => 'ongoing',
+        ]);
+    }
+
+    private function guardian(): Guardian
+    {
+        return Guardian::query()->create([
+            'guardian_code' => random_int(100000, 999999),
+            'first_name' => 'Guardian',
+            'last_name' => 'Navigation',
         ]);
     }
 }
