@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Livewire\Guardians\EditGuardian;
 use App\Models\Guardian;
+use App\Models\BankInfo;
 use App\Models\Person;
 use App\Models\Residence;
 use App\Models\User;
@@ -184,6 +185,69 @@ class EditGuardianTest extends TestCase
             ->assertHasNoErrors();
 
         $this->assertSame(Guardian::DIVORCED_CHILD_BOY, $guardian->refresh()->divorced_child_at_home);
+    }
+
+    public function test_save_stores_iban_placeholders_as_null(): void
+    {
+        $this->actingAs($this->manager());
+
+        $guardian = Guardian::query()->create([
+            'guardian_code' => 700007,
+            'first_name' => 'Guardian',
+            'last_name' => 'Iban Placeholder',
+        ]);
+
+        Livewire::test(EditGuardian::class, ['guardian' => $guardian])
+            ->assertSet('sheba_number', 'IR')
+            ->assertSet('subsidy_sheba_number', 'IR')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $bankInfo = BankInfo::query()->where('guardian_id', $guardian->id)->firstOrFail();
+
+        $this->assertNull($bankInfo->sheba_number);
+        $this->assertNull($bankInfo->subsidy_sheba_number);
+    }
+
+    public function test_sheba_number_is_normalized_and_copied_to_subsidy_when_empty(): void
+    {
+        $this->actingAs($this->manager());
+
+        $guardian = Guardian::query()->create([
+            'guardian_code' => 700008,
+            'first_name' => 'Guardian',
+            'last_name' => 'Iban Normalize',
+        ]);
+
+        $iban = 'IR'.str_repeat('1', 24);
+
+        Livewire::test(EditGuardian::class, ['guardian' => $guardian])
+            ->set('sheba_number', '  '.strtolower(substr($iban, 2)).'  ')
+            ->assertSet('sheba_number', $iban)
+            ->assertSet('subsidy_sheba_number', $iban)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $bankInfo = BankInfo::query()->where('guardian_id', $guardian->id)->firstOrFail();
+
+        $this->assertSame($iban, $bankInfo->sheba_number);
+        $this->assertSame($iban, $bankInfo->subsidy_sheba_number);
+    }
+
+    public function test_invalid_subsidy_sheba_number_is_rejected(): void
+    {
+        $this->actingAs($this->manager());
+
+        $guardian = Guardian::query()->create([
+            'guardian_code' => 700009,
+            'first_name' => 'Guardian',
+            'last_name' => 'Invalid Iban',
+        ]);
+
+        Livewire::test(EditGuardian::class, ['guardian' => $guardian])
+            ->set('subsidy_sheba_number', 'IR123')
+            ->call('save')
+            ->assertHasErrors(['subsidy_sheba_number']);
     }
 
     private function manager(): User

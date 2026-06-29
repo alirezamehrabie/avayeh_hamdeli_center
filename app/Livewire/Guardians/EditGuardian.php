@@ -141,11 +141,14 @@ class EditGuardian extends Component
         if ($bankInfo) {
             $this->bank_id = $bankInfo->bank_id;
             $this->card_number = $bankInfo->card_number;
-            $this->sheba_number = $bankInfo->sheba_number;
+            $this->sheba_number = $bankInfo->sheba_number ?? 'IR';
             $this->subsidy_card_number = $bankInfo->subsidy_card_number;
-            $this->subsidy_sheba_number = $bankInfo->subsidy_sheba_number;
+            $this->subsidy_sheba_number = $bankInfo->subsidy_sheba_number ?? 'IR';
             $this->account_owner_relation_id = $bankInfo->account_owner_relation_id;
             $this->other_account_owner_relation = $bankInfo->other_account_owner_relation;
+        } else {
+            $this->sheba_number = 'IR';
+            $this->subsidy_sheba_number = 'IR';
         }
     }
 
@@ -198,9 +201,9 @@ class EditGuardian extends Component
             'messenger_number' => ['nullable', 'required_with:messenger_type', 'regex:/^09[0-9]{9}$/'],
             'bank_id' => 'nullable|exists:banks,id',
             'card_number' => 'nullable|digits:16',
-            'sheba_number' => ['nullable', 'size:26', 'regex:/^IR[0-9]{24}$/i'],
+            'sheba_number' => ['nullable', 'string', 'regex:/^(IR|IR[0-9]{24})$/i'],
             'subsidy_card_number' => 'nullable|digits:16',
-            'subsidy_sheba_number' => 'nullable|string|max:26',
+            'subsidy_sheba_number' => ['nullable', 'string', 'regex:/^(IR|IR[0-9]{24})$/i'],
             'account_owner_relation_id' => 'nullable|exists:account_owner_relations,id',
             'other_account_owner_relation' => 'nullable|string|max:255',
         ];
@@ -219,6 +222,24 @@ class EditGuardian extends Component
             $this->vehicle_type_id = null;
             $this->vehicle_ownership_type = null;
         }
+    }
+
+    public function updatedShebaNumber($value): void
+    {
+        $normalized = $this->normalizeIban((string) $value);
+        $this->sheba_number = $normalized;
+
+        if (
+            $this->isCompleteIban($normalized)
+            && ($this->subsidy_sheba_number === 'IR' || $this->subsidy_sheba_number === '')
+        ) {
+            $this->subsidy_sheba_number = $normalized;
+        }
+    }
+
+    public function updatedSubsidyShebaNumber($value): void
+    {
+        $this->subsidy_sheba_number = $this->normalizeIban((string) $value);
     }
 
     public function addExtraHouseholdMember(): void
@@ -280,6 +301,35 @@ class EditGuardian extends Component
         return $value === null || $value === '' ? null : (int) $value;
     }
 
+    private function normalizeIban(string $value): string
+    {
+        $normalized = strtoupper(trim($value));
+        $normalized = preg_replace('/\s+/', '', $normalized);
+        $normalized = preg_replace('/[^A-Z0-9]/', '', $normalized);
+
+        if ($normalized === '') {
+            return 'IR';
+        }
+
+        if (! str_starts_with($normalized, 'IR')) {
+            $normalized = 'IR'.$normalized;
+        }
+
+        return substr($normalized, 0, 26);
+    }
+
+    private function normalizeIbanForStorage($value): ?string
+    {
+        $normalized = $this->normalizeIban((string) ($value ?? ''));
+
+        return $normalized === 'IR' ? null : $normalized;
+    }
+
+    private function isCompleteIban(string $value): bool
+    {
+        return (bool) preg_match('/^IR[0-9]{24}$/i', trim($value));
+    }
+
     private function normalizeExtraHouseholdMembers(): void
     {
         $this->extra_household_members = collect($this->extra_household_members)
@@ -328,6 +378,8 @@ class EditGuardian extends Component
         $this->normalizeNullableFields();
         $this->absorbPendingExtraHouseholdMember();
         $this->normalizeExtraHouseholdMembers();
+        $this->sheba_number = $this->normalizeIbanForStorage($this->sheba_number);
+        $this->subsidy_sheba_number = $this->normalizeIbanForStorage($this->subsidy_sheba_number);
         $this->validate();
 
         DB::transaction(function () {

@@ -242,6 +242,16 @@
                             <input type="text" wire:model.blur="sheba_number" maxlength="26" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
                         </div>
                         <div>
+                            <label class="mb-1 block text-xs font-semibold text-slate-600">شماره کارت یارانه</label>
+                            <input type="text" wire:model.blur="subsidy_card_number" maxlength="16" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                        </div>
+                    </div>
+                    <div class="mt-3 grid gap-3 md:grid-cols-2">
+                        <div>
+                            <label class="mb-1 block text-xs font-semibold text-slate-600">شماره شبای یارانه</label>
+                            <input type="text" wire:model.blur="subsidy_sheba_number" maxlength="26" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                        </div>
+                        <div>
                             <label class="mb-1 block text-xs font-semibold text-slate-600">نسبت مالک حساب</label>
                             <select wire:model="account_owner_relation_id" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
                                 <option value="">انتخاب نشده</option>
