@@ -8,6 +8,7 @@ use App\Models\Person;
 use App\Models\User;
 use App\Queries\Guardians\ExpandedGuardianPeopleQuery;
 use App\Queries\Guardians\GuardianHouseholdStatsQuery;
+use App\Queries\Guardians\SelectedGuardianDetailsQuery;
 use App\Services\Guardians\SoftDeleteGuardianFamily;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -232,19 +233,51 @@ class IndexGuardiansTest extends TestCase
             ->assertViewHas('coverageCountStats', fn ($stats) => $stats->pluck('coverage_count')->contains(2));
     }
 
+    public function test_selected_guardian_details_query_returns_null_without_valid_guardian(): void
+    {
+        $query = app(SelectedGuardianDetailsQuery::class);
+
+        $this->assertNull($query->find(null));
+        $this->assertNull($query->find(999999));
+    }
+
+    public function test_selected_guardian_details_query_loads_modal_relationships_and_people_count(): void
+    {
+        $guardian = Guardian::query()->create([
+            'guardian_code' => 710011,
+            'national_code' => '4000000001',
+            'first_name' => 'Details',
+            'last_name' => 'Guardian',
+        ]);
+        $this->person($guardian, 'P710011', '7234567890');
+
+        $selectedGuardian = app(SelectedGuardianDetailsQuery::class)->find($guardian->id);
+
+        $this->assertNotNull($selectedGuardian);
+        $this->assertSame(1, $selectedGuardian->people_count);
+        $this->assertTrue($selectedGuardian->relationLoaded('socialWorker'));
+        $this->assertTrue($selectedGuardian->relationLoaded('occupation'));
+        $this->assertTrue($selectedGuardian->relationLoaded('insuranceType'));
+        $this->assertTrue($selectedGuardian->relationLoaded('vehicleType'));
+        $this->assertTrue($selectedGuardian->relationLoaded('residence'));
+        $this->assertTrue($selectedGuardian->relationLoaded('people'));
+        $this->assertTrue($selectedGuardian->people->first()->relationLoaded('familyStatus'));
+        $this->assertTrue($selectedGuardian->people->first()->relationLoaded('harmTypes'));
+    }
+
     public function test_guardians_list_searches_across_default_fields(): void
     {
         $this->actingAs($this->manager());
 
         $matchingGuardian = Guardian::query()->create([
-            'guardian_code' => 710011,
+            'guardian_code' => 710012,
             'national_code' => '1111111111',
             'first_name' => 'Matching',
             'last_name' => 'Guardian',
             'guardian_phone_number' => '09121111111',
         ]);
         Guardian::query()->create([
-            'guardian_code' => 710012,
+            'guardian_code' => 710013,
             'national_code' => '2222222222',
             'first_name' => 'Other',
             'last_name' => 'Guardian',
@@ -265,14 +298,14 @@ class IndexGuardiansTest extends TestCase
         $this->actingAs($this->manager());
 
         $matchingGuardian = Guardian::query()->create([
-            'guardian_code' => 710013,
+            'guardian_code' => 710014,
             'national_code' => '3333333333',
             'first_name' => 'Phone',
             'last_name' => 'Match',
             'guardian_phone_number' => '09123333333',
         ]);
         Guardian::query()->create([
-            'guardian_code' => 710014,
+            'guardian_code' => 710015,
             'national_code' => '4444444444',
             'first_name' => 'Phone',
             'last_name' => 'NameOnly',
@@ -292,12 +325,12 @@ class IndexGuardiansTest extends TestCase
     public function test_soft_delete_guardian_family_service_deletes_guardian_and_related_people(): void
     {
         $guardian = Guardian::query()->create([
-            'guardian_code' => 710015,
+            'guardian_code' => 710016,
             'first_name' => 'Service',
             'last_name' => 'Delete',
         ]);
-        $firstPerson = $this->person($guardian, 'P710015', '5234567890');
-        $secondPerson = $this->person($guardian, 'P710016', '5234567891');
+        $firstPerson = $this->person($guardian, 'P710016', '5234567890');
+        $secondPerson = $this->person($guardian, 'P710017', '5234567891');
 
         app(SoftDeleteGuardianFamily::class)->handle($guardian, 'Family moved out');
 
@@ -330,11 +363,11 @@ class IndexGuardiansTest extends TestCase
         $this->actingAs($this->manager());
 
         $guardian = Guardian::query()->create([
-            'guardian_code' => 710017,
+            'guardian_code' => 710018,
             'first_name' => 'Livewire',
             'last_name' => 'Delete',
         ]);
-        $person = $this->person($guardian, 'P710017', '6234567890');
+        $person = $this->person($guardian, 'P710018', '6234567890');
 
         Livewire::test(IndexGuardians::class)
             ->call('toggleGuardian', $guardian->id)

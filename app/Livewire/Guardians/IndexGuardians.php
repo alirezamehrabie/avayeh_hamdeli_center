@@ -6,6 +6,7 @@ use App\Models\Guardian;
 use App\Queries\Guardians\ExpandedGuardianPeopleQuery;
 use App\Queries\Guardians\GuardianHouseholdStatsQuery;
 use App\Queries\Guardians\GuardianIndexSearchQuery;
+use App\Queries\Guardians\SelectedGuardianDetailsQuery;
 use App\Services\Guardians\SoftDeleteGuardianFamily;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Layout;
@@ -197,22 +198,7 @@ class IndexGuardians extends Component
 
     public function getSelectedGuardianProperty(): ?Guardian
     {
-        if (! $this->selectedGuardianId) {
-            return null;
-        }
-
-        return Guardian::with([
-            'socialWorker',
-            'occupation',
-            'insuranceType',
-            'vehicleType',
-            'residence.residenceStatus',
-            'residence.district',
-            'people.familyStatus.guardianRelationType',
-            'people.harmTypes:id,title',
-        ])
-            ->withCount('people')
-            ->find($this->selectedGuardianId);
+        return app(SelectedGuardianDetailsQuery::class)->find($this->selectedGuardianId);
     }
 
     public function render()
