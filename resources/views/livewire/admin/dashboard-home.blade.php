@@ -396,10 +396,7 @@
                         @break
 
                     @case('advanced-social-worker-report')
-                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <h1 class="text-xl font-bold text-gray-800 mb-2">گزارش پیشرفته مددکاران</h1>
-                            <p class="text-sm text-gray-600">این بخش به زودی برای گزارش‌گیری پیشرفته مددکاران تکمیل می‌شود.</p>
-                        </div>
+                        <livewire:social-workers.advanced-social-worker-report :key="'advanced-social-worker-report'" />
                         @break
 
                     @case('service-definition')

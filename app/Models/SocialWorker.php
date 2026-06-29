@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Helpers\Morilog\Jalalian;
 use App\Models\GuardianRelationType;
 
 class SocialWorker extends Model
@@ -125,6 +127,58 @@ class SocialWorker extends Model
     public function getFullNameAttribute()
     {
         return "{$this->first_name} {$this->last_name}";
+    }
+
+    /**
+     * تاریخ تولد قالب‌بندی شده (شمسی)
+     */
+    public function getFormattedBirthDateAttribute(): ?string
+    {
+        if (!$this->birth_year || !$this->birth_month || !$this->birth_day) {
+            return null;
+        }
+
+        return sprintf('%04d/%02d/%02d', $this->birth_year, $this->birth_month, $this->birth_day);
+    }
+
+    /**
+     * تاریخ شروع همکاری قالب‌بندی شده (شمسی)
+     */
+    public function getFormattedStartDateAttribute(): ?string
+    {
+        if (!$this->start_year || !$this->start_month || !$this->start_day) {
+            return null;
+        }
+
+        return sprintf('%04d/%02d/%02d', $this->start_year, $this->start_month, $this->start_day);
+    }
+
+    /**
+     * سن تقریبی مددکار بر اساس سال تولد شمسی
+     */
+    public function getAgeAttribute(): ?int
+    {
+        if (!$this->birth_year) {
+            return null;
+        }
+
+        return (int) Jalalian::now()->getYear() - (int) $this->birth_year;
+    }
+
+    /**
+     * خدمات تخصیص‌یافته به مددکار (از طریق جدول واسط service_social_worker)
+     */
+    public function services(): BelongsToMany
+    {
+        return $this->belongsToMany(Service::class, 'service_social_worker');
+    }
+
+    /**
+     * تحویل‌های خدمت انجام‌شده توسط مددکار
+     */
+    public function serviceDeliveries(): HasMany
+    {
+        return $this->hasMany(ServiceDelivery::class);
     }
 
     public function people()
