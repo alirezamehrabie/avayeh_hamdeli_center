@@ -225,6 +225,19 @@
     <x-notification-modal />
 
     @livewireScriptConfig
+    @if (session()->has('distribution-operator-notification'))
+        <script>
+            window.addEventListener('alpine:init', () => {
+                window.requestAnimationFrame(() => {
+                    window.dispatchEvent(new CustomEvent('open-notification-modal', {
+                        detail: {
+                            config: @js(session('distribution-operator-notification')),
+                        },
+                    }));
+                });
+            });
+        </script>
+    @endif
     @stack('scripts')
 </body>
 </html>

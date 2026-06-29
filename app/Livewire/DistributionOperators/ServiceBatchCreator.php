@@ -658,9 +658,13 @@ class ServiceBatchCreator extends Component
             }
         });
 
-        session()->flash('success', 'تخصیص خدمت انتخاب‌شده با موفقیت ثبت شد.');
-
-        return redirect()->route('distribution-operator.service-list');
+        return redirect()
+            ->route('distribution-operator.service-list')
+            ->with('distribution-operator-notification', $this->serviceSavedNotification(
+                'تخصیص خدمت ثبت شد',
+                'تخصیص خدمت انتخاب‌شده برای مددکار ذخیره شد. می‌توانید از همین صفحه وضعیت خدمت را دنبال کنید.',
+                'مشاهده فهرست'
+            ));
     }
 
     protected function validatePredefinedAllocationRowsForConfirmation(): void
@@ -764,9 +768,13 @@ class ServiceBatchCreator extends Component
             $service->refreshFinancialTotals();
         });
 
-        session()->flash('success', 'خدمت متفرقه با موفقیت ایجاد و تخصیص داده شد.');
-
-        return redirect()->route('distribution-operator.service-list');
+        return redirect()
+            ->route('distribution-operator.service-list')
+            ->with('distribution-operator-notification', $this->serviceSavedNotification(
+                'خدمت متفرقه ایجاد شد',
+                'خدمت متفرقه جدید ایجاد و سهمیه آن برای مددکار انتخاب‌شده ثبت شد.',
+                'مشاهده خدمت'
+            ));
     }
 
     protected function saveMiscServiceEdit()
@@ -852,9 +860,31 @@ class ServiceBatchCreator extends Component
         });
 
         $this->hasUnsavedChanges = false;
-        session()->flash('success', 'خدمت متفرقه با موفقیت ویرایش شد.');
 
-        return redirect()->route('distribution-operator.define-service');
+        return redirect()
+            ->route('distribution-operator.define-service')
+            ->with('distribution-operator-notification', $this->serviceSavedNotification(
+                'ویرایش خدمت ذخیره شد',
+                'تغییرات خدمت متفرقه ذخیره شد و فرم برای ادامه کار آماده است.',
+                'ادامه کار'
+            ));
+    }
+
+    protected function serviceSavedNotification(string $title, string $message, string $buttonLabel): array
+    {
+        return [
+            'type' => 'success',
+            'title' => $title,
+            'message' => $message,
+            'icon' => 'success',
+            'buttons' => [
+                [
+                    'label' => $buttonLabel,
+                    'action' => 'close',
+                    'variant' => 'success',
+                ],
+            ],
+        ];
     }
 
     protected function predefinedRules(): array

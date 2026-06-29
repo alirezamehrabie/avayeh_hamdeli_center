@@ -100,12 +100,12 @@ class ServiceAllocationEditor extends Component
             ->with('district:id,name')
             ->whereNotIn('id', $existingWorkerIds)
             ->where(function (Builder $workerQuery) use ($query): void {
-                $workerQuery->where('first_name', 'like', $query . '%')
-                    ->orWhere('last_name', 'like', $query . '%')
-                    ->orWhere('worker_code', 'like', $query . '%')
-                    ->orWhere('mobile', 'like', $query . '%')
-                    ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", [$query . '%'])
-                    ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", ['%' . $query . '%']);
+                $workerQuery->where('first_name', 'like', $query.'%')
+                    ->orWhere('last_name', 'like', $query.'%')
+                    ->orWhere('worker_code', 'like', $query.'%')
+                    ->orWhere('mobile', 'like', $query.'%')
+                    ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", [$query.'%'])
+                    ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", ['%'.$query.'%']);
             })
             ->orderBy('worker_code')
             ->limit(10)
@@ -159,7 +159,13 @@ class ServiceAllocationEditor extends Component
         $this->loadService();
         $this->loadExistingAllocations();
 
-        session()->flash('success', 'مددکار با موفقیت اضافه شد.');
+        $this->dispatch('open-notification-toast', config: [
+            'type' => 'success',
+            'title' => 'مددکار اضافه شد',
+            'message' => 'ردیف تخصیص مددکار اضافه شد. مقدار سهمیه‌ها را در همین صفحه تنظیم کنید.',
+            'icon' => 'success',
+            'duration' => 4200,
+        ]);
     }
 
     public function updateAllocationQuantity(int $allocationId, string $value): void
@@ -219,9 +225,21 @@ class ServiceAllocationEditor extends Component
     {
         $this->confirmingSave = false;
 
-        session()->flash('success', 'تخصیص‌ها با موفقیت به‌روزرسانی شد.');
-
-        return redirect()->route('distribution-operator.service-list');
+        return redirect()
+            ->route('distribution-operator.service-list')
+            ->with('distribution-operator-notification', [
+                'type' => 'success',
+                'title' => 'تخصیص‌ها به‌روزرسانی شد',
+                'message' => 'تغییرات سهمیه‌های خدمت ذخیره شد و می‌توانید ادامه کار را از فهرست خدمات انجام دهید.',
+                'icon' => 'success',
+                'buttons' => [
+                    [
+                        'label' => 'مشاهده فهرست',
+                        'action' => 'close',
+                        'variant' => 'success',
+                    ],
+                ],
+            ]);
     }
 
     public function cancelEditing()

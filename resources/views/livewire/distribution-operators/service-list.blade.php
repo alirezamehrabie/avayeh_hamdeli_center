@@ -1,11 +1,5 @@
 <div class="space-y-4">
 
-    @if (session()->has('success'))
-        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-            {{ session('success') }}
-        </div>
-    @endif
-
     @include('livewire.distribution-operators.partials.latest-misc-service-card')
 
     <div class="-mt-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">

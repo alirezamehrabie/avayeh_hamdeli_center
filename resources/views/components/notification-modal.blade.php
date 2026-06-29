@@ -1,6 +1,7 @@
 <div
     x-data="notificationModal()"
     x-on:open-notification-modal.window="open($event.detail.config || {})"
+    x-on:open-notification-toast.window="openToast($event.detail.config || {})"
     x-on:close-notification-modal.window="close()"
     x-on:keydown.escape.window="if (openState && modal.closable) close()"
     x-cloak
@@ -107,6 +108,55 @@
             </div>
         </div>
     </div>
+
+    <div
+        x-show="toast.open"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 translate-y-3"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100 translate-y-0"
+        x-transition:leave-end="opacity-0 translate-y-3"
+        class="fixed bottom-5 left-4 right-4 z-[110] sm:left-6 sm:right-auto sm:w-full sm:max-w-sm"
+        style="display: none;"
+    >
+        <div class="flex items-start gap-3 rounded-2xl border bg-white px-4 py-3 shadow-xl" :class="typeClasses(toast.type).toast">
+            <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" :class="typeClasses(toast.type).iconWrapper">
+                <template x-if="toast.icon === 'success'">
+                    <svg class="h-5 w-5" :class="typeClasses(toast.type).icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                </template>
+                <template x-if="toast.icon === 'warning'">
+                    <svg class="h-5 w-5" :class="typeClasses(toast.type).icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86l-7.5 13A1 1 0 003.66 18h16.68a1 1 0 00.87-1.5l-7.5-13a1 1 0 00-1.74 0z" />
+                    </svg>
+                </template>
+                <template x-if="toast.icon === 'error'">
+                    <svg class="h-5 w-5" :class="typeClasses(toast.type).icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </template>
+                <template x-if="toast.icon === 'info'">
+                    <svg class="h-5 w-5" :class="typeClasses(toast.type).icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </template>
+            </span>
+            <div class="min-w-0 flex-1">
+                <p class="text-sm font-black text-slate-900" x-text="toast.title"></p>
+                <p class="mt-1 text-xs font-semibold leading-5 text-slate-600" x-text="toast.message"></p>
+            </div>
+            <button
+                type="button"
+                @click="closeToast()"
+                class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                aria-label="بستن"
+            >
+                <span class="text-lg leading-none">&times;</span>
+            </button>
+        </div>
+    </div>
 </div>
 
 @once
@@ -125,6 +175,14 @@
                         buttons: [],
                         meta: {},
                     },
+                    toast: {
+                        open: false,
+                        type: 'success',
+                        title: '',
+                        message: '',
+                        icon: 'success',
+                        timeout: null,
+                    },
                     open(config) {
                         this.modal = {
                             ...this.modal,
@@ -135,9 +193,37 @@
                         this.openState = true;
                         document.body.classList.add('overflow-hidden');
                     },
+                    openToast(config) {
+                        window.clearTimeout(this.toast.timeout);
+
+                        const type = ['success', 'warning', 'error', 'info'].includes(config.type) ? config.type : 'success';
+
+                        this.toast = {
+                            open: true,
+                            type,
+                            title: config.title || this.defaultTitle(type),
+                            message: config.message || '',
+                            icon: config.icon || type,
+                            timeout: null,
+                        };
+
+                        this.toast.timeout = window.setTimeout(() => this.closeToast(), Number(config.duration || 4200));
+                    },
                     close() {
                         this.openState = false;
                         document.body.classList.remove('overflow-hidden');
+                    },
+                    closeToast() {
+                        window.clearTimeout(this.toast.timeout);
+                        this.toast.open = false;
+                    },
+                    defaultTitle(type) {
+                        return {
+                            success: 'عملیات با موفقیت انجام شد',
+                            warning: 'نیاز به توجه',
+                            error: 'خطا',
+                            info: 'اطلاع رسانی',
+                        }[type] || 'اطلاع رسانی';
                     },
                     resolvedIcon() {
                         return this.modal.icon === 'none' ? null : (this.modal.icon || this.modal.type);
@@ -162,24 +248,28 @@
                                 icon: 'text-emerald-600',
                                 panel: 'border-emerald-100 bg-emerald-50',
                                 accent: 'text-emerald-600',
+                                toast: 'border-emerald-100 ring-1 ring-emerald-100',
                             },
                             warning: {
                                 iconWrapper: 'bg-amber-100',
                                 icon: 'text-amber-600',
                                 panel: 'border-amber-100 bg-amber-50',
                                 accent: 'text-amber-600',
+                                toast: 'border-amber-100 ring-1 ring-amber-100',
                             },
                             error: {
                                 iconWrapper: 'bg-rose-100',
                                 icon: 'text-rose-600',
                                 panel: 'border-rose-100 bg-rose-50',
                                 accent: 'text-rose-600',
+                                toast: 'border-rose-100 ring-1 ring-rose-100',
                             },
                             info: {
                                 iconWrapper: 'bg-sky-100',
                                 icon: 'text-sky-600',
                                 panel: 'border-sky-100 bg-sky-50',
                                 accent: 'text-sky-600',
+                                toast: 'border-sky-100 ring-1 ring-sky-100',
                             },
                         }[type] || this.typeClasses('info');
                     },
