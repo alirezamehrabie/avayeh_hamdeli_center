@@ -530,7 +530,7 @@
                                     <p class="text-sm text-slate-500">میانبر بخش‌های پرتکرار برای اجرای سریع کارهای روزانه</p>
                                 </div>
 
-                                <div class="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5">
+                                <div class="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
                                     <button
                                         type="button"
                                         wire:click="selectSection('people-fast-create')"
@@ -607,6 +607,22 @@
                                         <span class="mr-3 rounded-lg bg-emerald-100 p-2 text-emerald-700 transition group-hover:bg-emerald-200">
                                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7V6a2 2 0 012-2h1M20 7V6a2 2 0 00-2-2h-1M4 17v1a2 2 0 002 2h1M20 17v1a2 2 0 01-2 2h-1M7 12h10"></path>
+                                            </svg>
+                                        </span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        wire:click="selectSection('advanced-beneficiary-report')"
+                                        class="group inline-flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-right transition duration-200 hover:border-indigo-200 hover:bg-indigo-50 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                                    >
+                                        <span>
+                                            <span class="block text-sm font-semibold text-slate-800">گزارش پیشرفته</span>
+                                            <span class="mt-1 block text-[11px] text-slate-500">تحلیل مددجویان</span>
+                                        </span>
+                                        <span class="mr-3 rounded-lg bg-indigo-100 p-2 text-indigo-700 transition group-hover:bg-indigo-200">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 17v-6m4 6V7m4 10v-3M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                                             </svg>
                                         </span>
                                     </button>
