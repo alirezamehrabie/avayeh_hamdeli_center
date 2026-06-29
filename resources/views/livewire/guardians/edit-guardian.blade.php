@@ -15,6 +15,20 @@
                 </button>
             </div>
 
+            @php
+                $missingSummaryItems = collect([
+                    'کد ملی' => $national_code,
+                    'موبایل' => $guardian_phone_number,
+                    'وضعیت سکونت' => $residence_status_id,
+                    'ناحیه' => $district_id,
+                    'بانک' => $bank_id,
+                    'شماره کارت' => $card_number,
+                    'شماره شبا' => $sheba_number,
+                ])->filter(fn ($value) => blank($value) || $value === 'IR');
+
+                $missingSummaryCount = $missingSummaryItems->count();
+            @endphp
+
             <div class="mb-5 grid gap-3 md:grid-cols-3">
                 <div class="rounded-xl border border-amber-100 bg-white px-4 py-3 shadow-sm">
                     <p class="text-xs text-slate-500">تعداد مددجویان مرتبط</p>
@@ -24,9 +38,18 @@
                     <p class="text-xs text-slate-500">آخرین به‌روزرسانی</p>
                     <p class="mt-1 text-sm font-bold text-sky-700">{{ optional($guardian->updated_at)->format('Y/m/d H:i') ?? '-' }}</p>
                 </div>
-                <div class="rounded-xl border border-emerald-100 bg-white px-4 py-3 shadow-sm">
-                    <p class="text-xs text-slate-500">کد سرپرست</p>
-                    <p class="mt-1 text-lg font-extrabold text-emerald-700">{{ $guardian->guardian_code }}</p>
+                <div class="rounded-xl border {{ $missingSummaryCount ? 'border-rose-100' : 'border-emerald-100' }} bg-white px-4 py-3 shadow-sm">
+                    <p class="text-xs text-slate-500">وضعیت تکمیل اطلاعات کلیدی</p>
+                    <p class="mt-1 text-lg font-extrabold {{ $missingSummaryCount ? 'text-rose-700' : 'text-emerald-700' }}">
+                        {{ $missingSummaryCount ? $missingSummaryCount . ' مورد ناقص' : 'کامل' }}
+                    </p>
+                    @if($missingSummaryCount)
+                        <p class="mt-1 truncate text-[11px] font-medium text-slate-500" title="{{ $missingSummaryItems->keys()->implode('، ') }}">
+                            {{ $missingSummaryItems->keys()->take(3)->implode('، ') }}{{ $missingSummaryCount > 3 ? ' و موارد دیگر' : '' }}
+                        </p>
+                    @else
+                        <p class="mt-1 text-[11px] font-medium text-slate-500">اطلاعات اصلی، سکونت و بانکی ثبت شده‌اند.</p>
+                    @endif
                 </div>
             </div>
 
