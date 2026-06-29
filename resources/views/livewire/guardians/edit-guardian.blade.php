@@ -58,6 +58,21 @@
             @endphp
 
             <form wire:submit.prevent="save" class="space-y-5">
+                <div class="sticky top-0 z-20 -mx-1 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/85">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <p class="text-xs font-semibold text-slate-500">فرم ویرایش سرپرست</p>
+                        <div class="flex items-center gap-2">
+                            <button type="button" wire:click="backToList" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
+                                انصراف
+                            </button>
+                            <button type="submit" wire:loading.attr="disabled" wire:target="save" class="inline-flex items-center justify-center rounded-xl border border-amber-300 bg-amber-400 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-amber-500 disabled:cursor-wait disabled:opacity-70">
+                                <span wire:loading.remove wire:target="save">ذخیره تغییرات</span>
+                                <span wire:loading wire:target="save">در حال ذخیره...</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="rounded-2xl border border-slate-200 bg-white p-4">
                     <h2 class="mb-4 text-base font-bold text-slate-800">مشخصات اصلی سرپرست</h2>
                     <div class="grid gap-3 md:grid-cols-4">
