@@ -11,7 +11,7 @@ class Residence extends Model
 {
     use HasFactory;
 
-    private const MONEY_SCALE = 100;
+    public const MONEY_SCALE = 100;
 
     protected $fillable = [
         'person_id',
@@ -58,6 +58,16 @@ class Residence extends Model
 
     private function toStoredMoney(mixed $value): ?int
     {
+        return self::toStoredMoneyAmount($value);
+    }
+
+    private function fromStoredMoney(mixed $value): ?int
+    {
+        return self::fromStoredMoneyAmount($value);
+    }
+
+    public static function toStoredMoneyAmount(mixed $value): ?int
+    {
         if ($value === null || $value === '') {
             return null;
         }
@@ -65,7 +75,7 @@ class Residence extends Model
         return intdiv((int) $value, self::MONEY_SCALE);
     }
 
-    private function fromStoredMoney(mixed $value): ?int
+    public static function fromStoredMoneyAmount(mixed $value): ?int
     {
         if ($value === null || $value === '') {
             return null;

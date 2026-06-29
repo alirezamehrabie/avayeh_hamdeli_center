@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Livewire\Guardians\EditGuardian;
 use App\Models\Guardian;
 use App\Models\Person;
+use App\Models\Residence;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -135,6 +136,36 @@ class EditGuardianTest extends TestCase
             ['description' => 'Pending member'],
         ], $guardian->extra_household_members);
         $this->assertSame(2, $guardian->children_in_house);
+    }
+
+    public function test_save_stores_residence_money_amounts_with_single_scaling(): void
+    {
+        $this->actingAs($this->manager());
+
+        $guardian = Guardian::query()->create([
+            'guardian_code' => 700005,
+            'first_name' => 'Guardian',
+            'last_name' => 'Money',
+        ]);
+
+        Livewire::test(EditGuardian::class, ['guardian' => $guardian])
+            ->set('deposit_amount', 12500000)
+            ->set('monthly_rent', 3500000)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $rawResidence = Residence::query()
+            ->where('guardian_id', $guardian->id)
+            ->toBase()
+            ->first();
+
+        $this->assertSame(125000, (int) $rawResidence->deposit_amount);
+        $this->assertSame(35000, (int) $rawResidence->monthly_rent);
+
+        $residence = Residence::query()->where('guardian_id', $guardian->id)->first();
+
+        $this->assertSame(12500000, $residence->deposit_amount);
+        $this->assertSame(3500000, $residence->monthly_rent);
     }
 
     private function manager(): User

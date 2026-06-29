@@ -1509,9 +1509,7 @@ class CreatePerson extends Component
 
     private function toStoredMoneyAmount(mixed $value): ?int
     {
-        $amount = $this->toNullableInt($value);
-
-        return $amount === null ? null : intdiv($amount, 100);
+        return Residence::toStoredMoneyAmount($value);
     }
 
     // --- متد Save (ذخیره نهایی) ---
