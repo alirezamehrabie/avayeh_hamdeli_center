@@ -5,6 +5,7 @@ namespace App\Livewire\Guardians;
 use App\Models\Guardian;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -208,6 +209,13 @@ class IndexGuardians extends Component
     public function refreshStats(): void
     {
         $this->refreshGuardianStats('آمار سرپرستان به‌روزرسانی شد.');
+    }
+
+    #[On('guardians-list-success')]
+    public function showSuccessMessage(string $message): void
+    {
+        session()->flash('success', $message);
+        $this->dispatch('guardians-list-toast', message: $message);
     }
 
     public function getSelectedGuardianProperty(): ?Guardian

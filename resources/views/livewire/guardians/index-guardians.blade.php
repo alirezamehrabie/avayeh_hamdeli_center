@@ -18,6 +18,7 @@
         }
     }"
     x-on:guardian-stats-refreshed.window="openToast($event.detail.message)"
+    x-on:guardians-list-toast.window="openToast($event.detail.message)"
 >
     @php
         $guardians = $this->guardians;

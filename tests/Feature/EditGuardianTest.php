@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Livewire\Guardians\EditGuardian;
+use App\Livewire\Guardians\IndexGuardians;
 use App\Models\Guardian;
 use App\Models\BankInfo;
 use App\Models\InsuranceType;
@@ -313,6 +314,32 @@ class EditGuardianTest extends TestCase
         $this->assertFalse($guardian->has_vehicle);
         $this->assertNull($guardian->vehicle_type_id);
         $this->assertNull($guardian->vehicle_ownership_type);
+    }
+
+    public function test_embedded_save_dispatches_guardians_list_success_event(): void
+    {
+        $this->actingAs($this->manager());
+
+        $guardian = Guardian::query()->create([
+            'guardian_code' => 700012,
+            'first_name' => 'Guardian',
+            'last_name' => 'Embedded Success',
+        ]);
+
+        Livewire::test(EditGuardian::class, ['guardian' => $guardian, 'embedded' => true])
+            ->set('first_name', 'Updated Embedded')
+            ->call('save')
+            ->assertDispatched('open-dashboard-section', section: 'guardians-list')
+            ->assertDispatched('guardians-list-success');
+    }
+
+    public function test_guardians_list_success_event_opens_toast(): void
+    {
+        $this->actingAs($this->manager());
+
+        Livewire::test(IndexGuardians::class)
+            ->call('showSuccessMessage', 'Saved guardian')
+            ->assertDispatched('guardians-list-toast', message: 'Saved guardian');
     }
 
     private function manager(): User

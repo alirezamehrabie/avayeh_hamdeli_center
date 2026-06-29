@@ -495,12 +495,16 @@ class EditGuardian extends Component
             $this->children_in_house = $this->guardian->children_in_house;
         });
 
-        session()->flash('success', 'اطلاعات سرپرست با موفقیت به‌روزرسانی شد.');
+        $successMessage = 'اطلاعات سرپرست با موفقیت به‌روزرسانی شد.';
 
         if ($this->embedded) {
             $this->dispatch('open-dashboard-section', section: 'guardians-list');
+            $this->dispatch('guardians-list-success', message: $successMessage);
+
             return null;
         }
+
+        session()->flash('success', $successMessage);
 
         return redirect()->route('guardians.index');
     }
