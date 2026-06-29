@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Livewire\DistributionOperators\ServiceBatchCreator;
+use App\Livewire\DistributionOperators\ServiceList;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\ServiceCategoryTemplate;
@@ -55,7 +56,8 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->set('socialWorkerQuery', $worker->full_name)
             ->set('socialWorkerId', $worker->id)
             ->call('saveBatch')
-            ->assertHasNoErrors();
+            ->assertHasNoErrors()
+            ->assertRedirect(route('distribution-operator.service-list', ['tab' => ServiceList::TAB_MISC]));
 
         $this->assertDatabaseHas('service_social_worker', [
             'social_worker_id' => $worker->id,
@@ -158,7 +160,8 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->set('socialWorkerId', $worker->id)
             ->set('predefinedAllocations.'.$category->id, '4')
             ->call('saveBatch')
-            ->assertHasNoErrors();
+            ->assertHasNoErrors()
+            ->assertRedirect(route('distribution-operator.service-list'));
 
         $this->assertSame($serviceCount, Service::query()->count());
         $this->assertSame($categoryCount, ServiceCategory::query()->count());
@@ -670,7 +673,7 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         ]);
     }
 
-    public function test_editing_misc_service_redirects_to_define_service_after_successful_save(): void
+    public function test_editing_misc_service_redirects_to_misc_services_tab_after_successful_save(): void
     {
         [$operator, $worker, $service] = $this->editableMiscService();
 
@@ -681,7 +684,7 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->call('requestSaveConfirmation')
             ->call('confirmSaveBatch')
             ->assertHasNoErrors()
-            ->assertRedirect(route('distribution-operator.define-service'));
+            ->assertRedirect(route('distribution-operator.service-list', ['tab' => ServiceList::TAB_MISC]));
 
         $this->assertDatabaseHas('services', [
             'id' => $service->id,

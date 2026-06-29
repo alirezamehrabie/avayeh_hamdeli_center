@@ -112,6 +112,12 @@ class DistributionOperatorServiceListTest extends TestCase
             ->assertSee('لیست متفرقه')
             ->assertSee('Misc package')
             ->assertDontSee('Campaign package');
+
+        Livewire::withQueryParams(['tab' => ServiceList::TAB_MISC])
+            ->test(ServiceList::class)
+            ->assertSet('activeTab', ServiceList::TAB_MISC)
+            ->assertSee('Misc package')
+            ->assertDontSee('Campaign package');
     }
 
     public function test_operator_can_search_service_catalog(): void

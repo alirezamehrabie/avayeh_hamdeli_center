@@ -769,7 +769,7 @@ class ServiceBatchCreator extends Component
         });
 
         return redirect()
-            ->route('distribution-operator.service-list')
+            ->route('distribution-operator.service-list', ['tab' => ServiceList::TAB_MISC])
             ->with('distribution-operator-notification', $this->serviceSavedNotification(
                 'خدمت متفرقه ایجاد شد',
                 'خدمت متفرقه جدید ایجاد و سهمیه آن برای مددکار انتخاب‌شده ثبت شد.',
@@ -862,11 +862,11 @@ class ServiceBatchCreator extends Component
         $this->hasUnsavedChanges = false;
 
         return redirect()
-            ->route('distribution-operator.define-service')
+            ->route('distribution-operator.service-list', ['tab' => ServiceList::TAB_MISC])
             ->with('distribution-operator-notification', $this->serviceSavedNotification(
                 'ویرایش خدمت ذخیره شد',
-                'تغییرات خدمت متفرقه ذخیره شد و فرم برای ادامه کار آماده است.',
-                'ادامه کار'
+                'تغییرات خدمت متفرقه ذخیره شد و در فهرست خدمات متفرقه قابل پیگیری است.',
+                'مشاهده خدمت'
             ));
     }
 
