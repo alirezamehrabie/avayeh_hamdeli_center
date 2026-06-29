@@ -316,12 +316,122 @@ class EditGuardianTest extends TestCase
         $this->assertNull($guardian->vehicle_ownership_type);
     }
 
-    public function test_embedded_save_dispatches_guardians_list_success_event(): void
+    public function test_save_allows_existing_guardian_to_keep_own_national_code(): void
     {
         $this->actingAs($this->manager());
 
         $guardian = Guardian::query()->create([
             'guardian_code' => 700012,
+            'national_code' => '1234567890',
+            'first_name' => 'Guardian',
+            'last_name' => 'Own National Code',
+        ]);
+
+        Livewire::test(EditGuardian::class, ['guardian' => $guardian])
+            ->set('first_name', 'Updated')
+            ->set('national_code', '1234567890')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $guardian->refresh();
+
+        $this->assertSame('Updated', $guardian->first_name);
+        $this->assertSame('1234567890', $guardian->national_code);
+    }
+
+    public function test_save_rejects_duplicate_guardian_national_code(): void
+    {
+        $this->actingAs($this->manager());
+
+        Guardian::query()->create([
+            'guardian_code' => 700013,
+            'national_code' => '1111111111',
+            'first_name' => 'Existing',
+            'last_name' => 'Guardian',
+        ]);
+
+        $guardian = Guardian::query()->create([
+            'guardian_code' => 700014,
+            'national_code' => '2222222222',
+            'first_name' => 'Guardian',
+            'last_name' => 'Duplicate National Code',
+        ]);
+
+        Livewire::test(EditGuardian::class, ['guardian' => $guardian])
+            ->set('national_code', '1111111111')
+            ->call('save')
+            ->assertHasErrors(['national_code' => 'unique']);
+
+        $this->assertSame('2222222222', $guardian->refresh()->national_code);
+    }
+
+    public function test_save_requires_dependent_fields_when_parent_toggles_are_on(): void
+    {
+        $this->actingAs($this->manager());
+
+        $guardian = Guardian::query()->create([
+            'guardian_code' => 700015,
+            'first_name' => 'Guardian',
+            'last_name' => 'Missing Dependents',
+        ]);
+
+        Livewire::test(EditGuardian::class, ['guardian' => $guardian])
+            ->set('insurance_status', '1')
+            ->set('insurance_type_id', null)
+            ->set('any_family_employed', '1')
+            ->set('any_family_employed_description', null)
+            ->set('has_vehicle', '1')
+            ->set('vehicle_type_id', null)
+            ->set('vehicle_ownership_type', null)
+            ->call('save')
+            ->assertHasErrors([
+                'insurance_type_id' => 'required',
+                'any_family_employed_description' => 'required',
+                'vehicle_type_id' => 'required',
+                'vehicle_ownership_type' => 'required',
+            ]);
+    }
+
+    public function test_save_persists_dependent_fields_when_parent_toggles_are_on(): void
+    {
+        $this->actingAs($this->manager());
+
+        $insuranceType = InsuranceType::query()->create(['name' => 'Complete Insurance']);
+        $vehicleType = VehicleType::query()->create(['name' => 'Van']);
+        $guardian = Guardian::query()->create([
+            'guardian_code' => 700016,
+            'first_name' => 'Guardian',
+            'last_name' => 'Complete Dependents',
+        ]);
+
+        Livewire::test(EditGuardian::class, ['guardian' => $guardian])
+            ->set('insurance_status', '1')
+            ->set('insurance_type_id', $insuranceType->id)
+            ->set('any_family_employed', '1')
+            ->set('any_family_employed_description', 'Family shop income')
+            ->set('has_vehicle', '1')
+            ->set('vehicle_type_id', $vehicleType->id)
+            ->set('vehicle_ownership_type', 'rented')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $guardian->refresh();
+
+        $this->assertTrue($guardian->insurance_status);
+        $this->assertSame($insuranceType->id, $guardian->insurance_type_id);
+        $this->assertTrue($guardian->any_family_employed);
+        $this->assertSame('Family shop income', $guardian->any_family_employed_description);
+        $this->assertTrue($guardian->has_vehicle);
+        $this->assertSame($vehicleType->id, $guardian->vehicle_type_id);
+        $this->assertSame('rented', $guardian->vehicle_ownership_type);
+    }
+
+    public function test_embedded_save_dispatches_guardians_list_success_event(): void
+    {
+        $this->actingAs($this->manager());
+
+        $guardian = Guardian::query()->create([
+            'guardian_code' => 700017,
             'first_name' => 'Guardian',
             'last_name' => 'Embedded Success',
         ]);
