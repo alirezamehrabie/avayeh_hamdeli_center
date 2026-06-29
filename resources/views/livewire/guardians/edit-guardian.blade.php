@@ -449,8 +449,9 @@
                     <button type="button" wire:click="backToList" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
                         انصراف
                     </button>
-                    <button type="submit" class="inline-flex items-center justify-center rounded-xl border border-amber-300 bg-amber-400 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-amber-500">
-                        ذخیره تغییرات
+                    <button type="submit" wire:loading.attr="disabled" wire:target="save" class="inline-flex items-center justify-center rounded-xl border border-amber-300 bg-amber-400 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-amber-500 disabled:cursor-wait disabled:opacity-70">
+                        <span wire:loading.remove wire:target="save">ذخیره تغییرات</span>
+                        <span wire:loading wire:target="save">در حال ذخیره...</span>
                     </button>
                 </div>
             </form>
