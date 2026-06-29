@@ -3,6 +3,7 @@
 namespace App\Livewire\Guardians;
 
 use App\Models\Guardian;
+use App\Services\Guardians\SoftDeleteGuardianFamily;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
@@ -155,7 +156,7 @@ class IndexGuardians extends Component
         $guardian = Guardian::query()->findOrFail($this->deletingGuardianId);
         $guardianName = trim($guardian->first_name.' '.$guardian->last_name);
 
-        $guardian->softDeleteFamily($validated['deletionReason']);
+        app(SoftDeleteGuardianFamily::class)->handle($guardian, $validated['deletionReason']);
 
         if ($this->expandedGuardianId === $guardian->id) {
             $this->expandedGuardianId = null;

@@ -2,21 +2,25 @@
 
 namespace App\Models;
 
+use App\Helpers\Morilog\Jalalian;
+use App\Services\Guardians\SoftDeleteGuardianFamily;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\DB;
-use App\Helpers\Morilog\Jalalian;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class Guardian extends Model
 {
     use HasFactory, SoftDeletes;
 
     public const DIVORCED_CHILD_NONE = 'none';
+
     public const DIVORCED_CHILD_BOY = 'boy';
+
     public const DIVORCED_CHILD_GIRL = 'girl';
+
     public const DIVORCED_CHILD_BOTH = 'both';
 
     public const DIVORCED_CHILD_VALUES = [
@@ -27,6 +31,7 @@ class Guardian extends Model
     ];
 
     private const MOTHER_DECEASED_HARM_TYPE_ID = 2;
+
     private const DIVORCE_SEPARATION_HARM_TYPE_ID = 7;
 
     protected $table = 'guardians';
@@ -147,7 +152,6 @@ class Guardian extends Model
             ->latestOfMany();
     }
 
-
     public static function generateNextGuardianCode(): int
     {
         return DB::transaction(function () {
@@ -182,34 +186,30 @@ class Guardian extends Model
         };
     }
 
-
     // ═══════════════════════════════════════════════════════════════════
     // 🔹 Accessors - محاسبه سن سرپرست
     // ═══════════════════════════════════════════════════════════════════
 
     /**
      * محاسبه سن سرپرست (فقط بر اساس سال)
-     *
-     * @return int|null
      */
     public function getGuardianAgeAttribute(): ?int
     {
-        if (!$this->guardian_birth_year) {
+        if (! $this->guardian_birth_year) {
             return null;
         }
 
         $currentJalaliYear = (int) Jalalian::now()->getYear();
+
         return $currentJalaliYear - $this->guardian_birth_year;
     }
 
     /**
      * محاسبه سن دقیق سرپرست (با در نظر گرفتن روز و ماه)
-     *
-     * @return int|null
      */
     public function getGuardianExactAgeAttribute(): ?int
     {
-        if (!$this->guardian_birth_year || !$this->guardian_birth_month || !$this->guardian_birth_day) {
+        if (! $this->guardian_birth_year || ! $this->guardian_birth_month || ! $this->guardian_birth_day) {
             return null;
         }
 
@@ -237,12 +237,10 @@ class Guardian extends Model
 
     /**
      * نمایش تاریخ تولد فرمت‌شده
-     *
-     * @return string|null
      */
     public function getGuardianFormattedBirthDateAttribute(): ?string
     {
-        if (!$this->guardian_birth_year || !$this->guardian_birth_month || !$this->guardian_birth_day) {
+        if (! $this->guardian_birth_year || ! $this->guardian_birth_month || ! $this->guardian_birth_day) {
             return null;
         }
 
@@ -265,7 +263,7 @@ class Guardian extends Model
     public function getBeneficiaryWithCodeAttribute(): string
     {
         $fullName = $this->full_name;
-        $guardianCode = $this->guardian_code ? 'کد خانوار: ' . $this->guardian_code : null;
+        $guardianCode = $this->guardian_code ? 'کد خانوار: '.$this->guardian_code : null;
 
         return implode(' - ', array_filter([$fullName, $guardianCode])) ?: '-';
     }
@@ -280,6 +278,7 @@ class Guardian extends Model
     public function scopeGuardianBirthdayToday($query)
     {
         $today = Jalalian::now();
+
         return $query->where('guardian_birth_month', $today->getMonth())
             ->where('guardian_birth_day', $today->getDay());
     }
@@ -290,6 +289,7 @@ class Guardian extends Model
     public function scopeGuardianBirthdayThisMonth($query)
     {
         $currentMonth = Jalalian::now()->getMonth();
+
         return $query->where('guardian_birth_month', $currentMonth);
     }
 
@@ -346,7 +346,7 @@ class Guardian extends Model
 
         foreach ($people as $person) {
             $familyStatus = $person->familyStatus;
-            if (!$familyStatus || !$familyStatus->guardianRelationType) {
+            if (! $familyStatus || ! $familyStatus->guardianRelationType) {
                 continue;
             }
 
@@ -358,7 +358,7 @@ class Guardian extends Model
             $isRelevantRemarriage = ($isFatherGuardian && in_array($remarriedParent, ['father', 'both'], true))
                 || ($isMotherGuardian && in_array($remarriedParent, ['mother', 'both'], true));
 
-            if (!$isRelevantRemarriage) {
+            if (! $isRelevantRemarriage) {
                 continue;
             }
 
@@ -395,7 +395,7 @@ class Guardian extends Model
 
         foreach ($people as $person) {
             $familyStatus = $person->familyStatus;
-            if (!$familyStatus || !$familyStatus->guardianRelationType) {
+            if (! $familyStatus || ! $familyStatus->guardianRelationType) {
                 continue;
             }
 
@@ -407,7 +407,7 @@ class Guardian extends Model
             $isRelevantRemarriage = ($isFatherGuardian && in_array($remarriedParent, ['father', 'both'], true))
                 || ($isMotherGuardian && in_array($remarriedParent, ['mother', 'both'], true));
 
-            if (!$isRelevantRemarriage) {
+            if (! $isRelevantRemarriage) {
                 continue;
             }
 
@@ -511,21 +511,7 @@ class Guardian extends Model
 
     public function softDeleteFamily(string $reason): bool
     {
-        return (bool) DB::transaction(function () use ($reason) {
-            foreach ($this->people()->get() as $person) {
-                $person->forceFill([
-                    'deletion_reason' => $reason,
-                ])->saveQuietly();
-
-                $person->delete();
-            }
-
-            $this->forceFill([
-                'deletion_reason' => $reason,
-            ])->saveQuietly();
-
-            return $this->delete();
-        });
+        return app(SoftDeleteGuardianFamily::class)->handle($this, $reason);
     }
 
     public function restoreFamily(): bool
