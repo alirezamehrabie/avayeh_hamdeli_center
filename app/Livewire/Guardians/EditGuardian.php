@@ -169,7 +169,6 @@ class EditGuardian extends Component
                     $fail('برای اسفند، روز نمی‌تواند بیشتر از ۲۹ باشد.');
                 }
             }],
-            'children_in_house' => 'nullable|integer|min:0',
             'economic_decile' => 'nullable|integer|min:1|max:10',
             'occupation_id' => 'nullable|exists:occupations,id',
             'job_type_id' => 'nullable|exists:job_types,id',
@@ -267,7 +266,6 @@ class EditGuardian extends Component
                 'guardian_birth_month' => $this->guardian_birth_month,
                 'guardian_birth_year' => $this->guardian_birth_year,
                 'guardian_birth_date_full' => $guardianBirthDateFull,
-                'children_in_house' => $this->children_in_house,
                 'economic_decile' => $this->economic_decile,
                 'occupation_id' => $this->occupation_id,
                 'job_type_id' => $this->job_type_id,
@@ -321,6 +319,9 @@ class EditGuardian extends Component
                     'other_account_owner_relation' => $this->other_account_owner_relation,
                 ]
             );
+
+            $this->guardian->refreshChildrenInHouse();
+            $this->children_in_house = $this->guardian->children_in_house;
         });
 
         session()->flash('success', 'اطلاعات سرپرست با موفقیت به‌روزرسانی شد.');
