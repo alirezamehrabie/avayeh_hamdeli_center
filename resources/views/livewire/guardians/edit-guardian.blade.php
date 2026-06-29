@@ -198,6 +198,7 @@
                                 <option value="0">ندارد</option>
                                 <option value="1">دارد</option>
                             </select>
+                            <p class="mt-1 text-[11px] font-medium text-slate-500">در صورت انتخاب «دارد»، نوع بیمه باید مشخص شود.</p>
                             @error('insurance_status')
                                 <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p>
                             @enderror
@@ -210,6 +211,9 @@
                                     <option value="{{ $insuranceType->id }}">{{ $insuranceType->name }}</option>
                                 @endforeach
                             </select>
+                            <p class="mt-1 text-[11px] font-medium {{ (bool) $insurance_status ? 'text-slate-500' : 'text-slate-400' }}">
+                                {{ (bool) $insurance_status ? 'انتخاب نوع بیمه الزامی است.' : 'با انتخاب وضعیت بیمه «دارد» فعال می‌شود.' }}
+                            </p>
                             @error('insurance_type_id')
                                 <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p>
                             @enderror
@@ -222,6 +226,7 @@
                                 <option value="0">ندارد</option>
                                 <option value="1">دارد</option>
                             </select>
+                            <p class="mt-1 text-[11px] font-medium text-slate-500">در صورت انتخاب «دارد»، شرح اشتغال اعضا باید ثبت شود.</p>
                             @error('any_family_employed')
                                 <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p>
                             @enderror
@@ -229,6 +234,9 @@
                         <div class="md:col-span-2">
                             <label class="mb-1 block text-xs font-semibold text-slate-600">شرح اشتغال اعضا</label>
                             <input type="text" wire:model.blur="any_family_employed_description" @disabled(! (bool) $any_family_employed) @class([$fieldClass('any_family_employed_description')])>
+                            <p class="mt-1 text-[11px] font-medium {{ (bool) $any_family_employed ? 'text-slate-500' : 'text-slate-400' }}">
+                                {{ (bool) $any_family_employed ? 'نام عضو، نوع کار یا منبع درآمد را وارد کنید.' : 'با انتخاب اشتغال اعضای خانواده «دارد» فعال می‌شود.' }}
+                            </p>
                             @error('any_family_employed_description')
                                 <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p>
                             @enderror
@@ -276,6 +284,7 @@
                                 <option value="0">ندارد</option>
                                 <option value="1">دارد</option>
                             </select>
+                            <p class="mt-1 text-[11px] font-medium text-slate-500">در صورت انتخاب «دارد»، نوع و مالکیت وسیله باید مشخص شود.</p>
                             @error('has_vehicle')
                                 <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p>
                             @enderror
@@ -288,6 +297,9 @@
                                     <option value="{{ $vehicleType->id }}">{{ $vehicleType->name }}</option>
                                 @endforeach
                             </select>
+                            <p class="mt-1 text-[11px] font-medium {{ (bool) $has_vehicle ? 'text-slate-500' : 'text-slate-400' }}">
+                                {{ (bool) $has_vehicle ? 'انتخاب نوع وسیله الزامی است.' : 'با انتخاب وضعیت خودرو «دارد» فعال می‌شود.' }}
+                            </p>
                             @error('vehicle_type_id')
                                 <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p>
                             @enderror
@@ -300,6 +312,9 @@
                                 <option value="company">شراکتی</option>
                                 <option value="rented">استیجاری</option>
                             </select>
+                            <p class="mt-1 text-[11px] font-medium {{ (bool) $has_vehicle ? 'text-slate-500' : 'text-slate-400' }}">
+                                {{ (bool) $has_vehicle ? 'انتخاب مالکیت وسیله الزامی است.' : 'با انتخاب وضعیت خودرو «دارد» فعال می‌شود.' }}
+                            </p>
                             @error('vehicle_ownership_type')
                                 <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p>
                             @enderror
