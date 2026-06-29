@@ -531,7 +531,7 @@ class AdvancedGuardianReport extends Component
                 }
 
                 if ($field === 'divorced_child_at_home') {
-                    $query->where('divorced_child_at_home', $value);
+                    $query->whereIn('divorced_child_at_home', Guardian::divorcedChildAtHomeAliases((string) $value));
                     continue;
                 }
 

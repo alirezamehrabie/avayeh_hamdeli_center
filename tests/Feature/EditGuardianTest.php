@@ -168,6 +168,24 @@ class EditGuardianTest extends TestCase
         $this->assertSame(3500000, $residence->monthly_rent);
     }
 
+    public function test_save_normalizes_divorced_child_at_home_alias_to_canonical_value(): void
+    {
+        $this->actingAs($this->manager());
+
+        $guardian = Guardian::query()->create([
+            'guardian_code' => 700006,
+            'first_name' => 'Guardian',
+            'last_name' => 'Divorce Alias',
+        ]);
+
+        Livewire::test(EditGuardian::class, ['guardian' => $guardian])
+            ->set('divorced_child_at_home', 'son')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame(Guardian::DIVORCED_CHILD_BOY, $guardian->refresh()->divorced_child_at_home);
+    }
+
     private function manager(): User
     {
         return User::factory()->create([

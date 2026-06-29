@@ -14,6 +14,18 @@ class Guardian extends Model
 {
     use HasFactory, SoftDeletes;
 
+    public const DIVORCED_CHILD_NONE = 'none';
+    public const DIVORCED_CHILD_BOY = 'boy';
+    public const DIVORCED_CHILD_GIRL = 'girl';
+    public const DIVORCED_CHILD_BOTH = 'both';
+
+    public const DIVORCED_CHILD_VALUES = [
+        self::DIVORCED_CHILD_NONE,
+        self::DIVORCED_CHILD_BOY,
+        self::DIVORCED_CHILD_GIRL,
+        self::DIVORCED_CHILD_BOTH,
+    ];
+
     private const MOTHER_DECEASED_HARM_TYPE_ID = 2;
     private const DIVORCE_SEPARATION_HARM_TYPE_ID = 7;
 
@@ -148,6 +160,26 @@ class Guardian extends Model
 
             return $next;
         });
+    }
+
+    public static function normalizeDivorcedChildAtHome(mixed $value): string
+    {
+        return match (strtolower(trim((string) $value))) {
+            self::DIVORCED_CHILD_BOY, 'son', '1' => self::DIVORCED_CHILD_BOY,
+            self::DIVORCED_CHILD_GIRL, 'daughter', '2' => self::DIVORCED_CHILD_GIRL,
+            self::DIVORCED_CHILD_BOTH, '3', 'more' => self::DIVORCED_CHILD_BOTH,
+            default => self::DIVORCED_CHILD_NONE,
+        };
+    }
+
+    public static function divorcedChildAtHomeAliases(string $value): array
+    {
+        return match (self::normalizeDivorcedChildAtHome($value)) {
+            self::DIVORCED_CHILD_BOY => [self::DIVORCED_CHILD_BOY, 'son', '1'],
+            self::DIVORCED_CHILD_GIRL => [self::DIVORCED_CHILD_GIRL, 'daughter', '2'],
+            self::DIVORCED_CHILD_BOTH => [self::DIVORCED_CHILD_BOTH, '3', 'more'],
+            default => [self::DIVORCED_CHILD_NONE, null, ''],
+        };
     }
 
 

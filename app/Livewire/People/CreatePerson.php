@@ -959,7 +959,7 @@ class CreatePerson extends Component
         $this->children_in_house = $guardian->children_in_house;
         $this->extra_household_members = is_array($guardian->extra_household_members) ? $guardian->extra_household_members : [];
         $this->insurance_type_id = $guardian->insurance_type_id;
-        $this->divorced_child_at_home = $guardian->divorced_child_at_home;
+        $this->divorced_child_at_home = Guardian::normalizeDivorcedChildAtHome($guardian->divorced_child_at_home);
         $this->any_family_employed_description = $guardian->any_family_employed_description;
         $this->average_income = $guardian->average_income;
         $this->vehicle_type_id = $guardian->vehicle_type_id;
@@ -1385,7 +1385,7 @@ class CreatePerson extends Component
             'economic_decile' => 'nullable|integer|min:1|max:10',
             'insurance_status' => 'required|boolean',
             'insurance_type_id' => 'nullable|required_if:insurance_status,1|exists:insurance_types,id',
-            'divorced_child_at_home' => 'nullable|in:none,1,2,3,more',
+            'divorced_child_at_home' => ['nullable', Rule::in(array_merge(Guardian::DIVORCED_CHILD_VALUES, ['son', 'daughter', '1', '2', '3', 'more']))],
             'average_income' => 'nullable|numeric|min:0',
 
 // اشتغال سایر اعضای خانواده
@@ -1590,7 +1590,7 @@ class CreatePerson extends Component
                         'extra_household_members' => $this->extra_household_members,
                         'insurance_status' => (bool)$this->insurance_status,
                         'insurance_type_id' => ((bool)$this->insurance_status) ? $this->insurance_type_id : null,
-                        'divorced_child_at_home' => $this->divorced_child_at_home ?: 'none',
+                        'divorced_child_at_home' => Guardian::normalizeDivorcedChildAtHome($this->divorced_child_at_home),
                         'average_income' => $this->toNullableInt($this->average_income),
                         'any_family_employed' => (bool)$this->any_family_employed,
                         'any_family_employed_description' => ((bool)$this->any_family_employed) ? $this->any_family_employed_description : null,
@@ -1836,7 +1836,7 @@ class CreatePerson extends Component
                         'extra_household_members' => $this->extra_household_members,
                         'insurance_status' => (bool)$this->insurance_status,
                         'insurance_type_id' => ((bool)$this->insurance_status) ? $this->insurance_type_id : null,
-                        'divorced_child_at_home' => $this->divorced_child_at_home ?: 'none',
+                        'divorced_child_at_home' => Guardian::normalizeDivorcedChildAtHome($this->divorced_child_at_home),
                         'average_income' => $this->toNullableInt($this->average_income),
                         'any_family_employed' => (bool)$this->any_family_employed,
                         'any_family_employed_description' => ((bool)$this->any_family_employed) ? $this->any_family_employed_description : null,

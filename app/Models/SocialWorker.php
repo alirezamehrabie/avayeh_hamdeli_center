@@ -251,10 +251,10 @@ class SocialWorker extends Model
         // ۵. محاسبه مقدار افزایشی بابت "فرزندان طلاق در منزل سرپرست"
         // این افراد کد ملی ندارند، پس مستقیماً به عدد نهایی اضافه می‌شوند
         $extraCount = $guardiansData->sum(function ($guardian) {
-            return match ($guardian->divorced_child_at_home) {
-                'boy'  => 1,
-                'girl' => 1,
-                'both' => 2,
+            return match (Guardian::normalizeDivorcedChildAtHome($guardian->divorced_child_at_home)) {
+                Guardian::DIVORCED_CHILD_BOY => 1,
+                Guardian::DIVORCED_CHILD_GIRL => 1,
+                Guardian::DIVORCED_CHILD_BOTH => 2,
                 default => 0, // شامل 'none' یا null
             };
         });

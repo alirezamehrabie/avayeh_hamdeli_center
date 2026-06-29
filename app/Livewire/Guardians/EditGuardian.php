@@ -109,7 +109,7 @@ class EditGuardian extends Component
         $this->job_type_id = $guardian->job_type_id;
         $this->insurance_status = (bool) $guardian->insurance_status;
         $this->insurance_type_id = $guardian->insurance_type_id;
-        $this->divorced_child_at_home = $guardian->divorced_child_at_home ?: 'none';
+        $this->divorced_child_at_home = Guardian::normalizeDivorcedChildAtHome($guardian->divorced_child_at_home);
         $this->average_income = $guardian->average_income;
         $this->any_family_employed = (bool) $guardian->any_family_employed;
         $this->any_family_employed_description = $guardian->any_family_employed_description;
@@ -178,7 +178,7 @@ class EditGuardian extends Component
             'job_type_id' => 'nullable|exists:job_types,id',
             'insurance_status' => 'nullable|boolean',
             'insurance_type_id' => 'nullable|required_if:insurance_status,1|exists:insurance_types,id',
-            'divorced_child_at_home' => 'nullable|in:none,son,daughter,both',
+            'divorced_child_at_home' => ['nullable', Rule::in(array_merge(Guardian::DIVORCED_CHILD_VALUES, ['son', 'daughter', '1', '2', '3', 'more']))],
             'average_income' => 'nullable|integer|min:0',
             'any_family_employed' => 'nullable|boolean',
             'any_family_employed_description' => 'nullable|required_if:any_family_employed,1|string|max:500',
@@ -351,7 +351,7 @@ class EditGuardian extends Component
                 'job_type_id' => $this->job_type_id,
                 'insurance_status' => (bool) $this->insurance_status,
                 'insurance_type_id' => (bool) $this->insurance_status ? $this->insurance_type_id : null,
-                'divorced_child_at_home' => $this->divorced_child_at_home ?: 'none',
+                'divorced_child_at_home' => Guardian::normalizeDivorcedChildAtHome($this->divorced_child_at_home),
                 'extra_household_members' => $this->extra_household_members,
                 'average_income' => $this->toNullableInt($this->average_income),
                 'any_family_employed' => (bool) $this->any_family_employed,
