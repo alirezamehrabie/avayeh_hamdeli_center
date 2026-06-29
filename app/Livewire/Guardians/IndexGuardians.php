@@ -17,8 +17,6 @@ class IndexGuardians extends Component
 
     public bool $embedded = false;
 
-    public bool $hasAutoRefreshedStats = false;
-
     public ?int $expandedGuardianId = null;
 
     public string $search = '';
@@ -211,16 +209,6 @@ class IndexGuardians extends Component
         $this->showHouseholdSizeModal = false;
         $this->expandedHouseholdSize = null;
         $this->expandedCoverageCount = null;
-    }
-
-    public function refreshStatsOnLoad(): void
-    {
-        if ($this->hasAutoRefreshedStats) {
-            return;
-        }
-
-        $this->hasAutoRefreshedStats = true;
-        $this->refreshGuardianStats('آمار سرپرستان به‌روزرسانی شد.');
     }
 
     public function refreshStats(): void

@@ -1,5 +1,4 @@
 <div
-    wire:init="refreshStatsOnLoad"
     x-data="{
         showToast: false,
         toastMessage: '',

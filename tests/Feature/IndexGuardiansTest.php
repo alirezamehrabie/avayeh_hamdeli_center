@@ -92,6 +92,41 @@ class IndexGuardiansTest extends TestCase
             });
     }
 
+    public function test_guardians_list_does_not_auto_refresh_stats_on_load(): void
+    {
+        $this->actingAs($this->manager());
+
+        Livewire::test(IndexGuardians::class)
+            ->assertDontSee('wire:init="refreshStatsOnLoad"', false);
+    }
+
+    public function test_manual_refresh_updates_stats_and_dispatches_toast(): void
+    {
+        $this->actingAs($this->manager());
+
+        $guardian = Guardian::query()->create([
+            'guardian_code' => 710004,
+            'first_name' => 'Manual',
+            'last_name' => 'Refresh',
+            'children_count' => 1,
+            'children_in_house' => 0,
+        ]);
+
+        Person::query()->create([
+            'guardian_id' => $guardian->id,
+            'person_code' => 'P710004',
+            'national_id' => '4234567890',
+            'first_name' => 'Child',
+            'last_name' => 'Refresh',
+        ]);
+
+        Livewire::test(IndexGuardians::class)
+            ->call('refreshStats')
+            ->assertDispatched('guardian-stats-refreshed');
+
+        $this->assertSame(2, $guardian->refresh()->children_in_house);
+    }
+
     private function manager(): User
     {
         return User::factory()->create([
