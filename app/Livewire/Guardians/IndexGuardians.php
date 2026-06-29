@@ -4,6 +4,7 @@ namespace App\Livewire\Guardians;
 
 use App\Models\Guardian;
 use App\Queries\Guardians\ExpandedGuardianPeopleQuery;
+use App\Queries\Guardians\GuardianHouseholdStatsQuery;
 use App\Queries\Guardians\GuardianIndexSearchQuery;
 use App\Services\Guardians\SoftDeleteGuardianFamily;
 use Illuminate\Support\Collection;
@@ -222,35 +223,9 @@ class IndexGuardians extends Component
         $coverageCountStats = collect();
 
         if ($this->showHouseholdSizeModal) {
-            $householdSizeStats = Guardian::query()
-                ->select(['id', 'national_code', 'first_name', 'last_name', 'children_in_house'])
-                ->orderBy('children_in_house')
-                ->orderBy('national_code')
-                ->get()
-                ->groupBy(fn (Guardian $guardian) => (int) ($guardian->children_in_house ?? 0))
-                ->map(function ($guardians, $householdSize) {
-                    return [
-                        'household_size' => (int) $householdSize,
-                        'households_count' => $guardians->count(),
-                        'national_codes' => $guardians->pluck('national_code')->filter()->values()->all(),
-                    ];
-                })
-                ->values();
-
-            $coverageCountStats = Guardian::query()
-                ->select(['id', 'national_code', 'first_name', 'last_name', 'children_count'])
-                ->orderBy('children_count')
-                ->orderBy('national_code')
-                ->get()
-                ->groupBy(fn (Guardian $guardian) => (int) ($guardian->children_count ?? 0))
-                ->map(function ($guardians, $coverageCount) {
-                    return [
-                        'coverage_count' => (int) $coverageCount,
-                        'households_count' => $guardians->count(),
-                        'national_codes' => $guardians->pluck('national_code')->filter()->values()->all(),
-                    ];
-                })
-                ->values();
+            $householdStats = app(GuardianHouseholdStatsQuery::class);
+            $householdSizeStats = $householdStats->byHouseholdSize();
+            $coverageCountStats = $householdStats->byCoverageCount();
         }
 
         return view('livewire.guardians.index-guardians', [
