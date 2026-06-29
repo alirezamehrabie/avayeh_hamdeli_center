@@ -75,7 +75,7 @@
 
                 <div class="rounded-2xl border border-slate-200 bg-white p-4">
                     <h2 class="mb-4 text-base font-bold text-slate-800">مشخصات اصلی سرپرست</h2>
-                    <div class="grid gap-3 md:grid-cols-4">
+                    <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
                         <div>
                             <label class="mb-1 block text-xs font-semibold text-slate-600">کد ملی</label>
                             <input type="text" wire:model.blur="national_code" maxlength="10" @class([$fieldClass('national_code')])>
@@ -106,7 +106,7 @@
                         </div>
                     </div>
 
-                    <div class="mt-3 grid gap-3 md:grid-cols-4">
+                    <div class="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
                         <div>
                             <label class="mb-1 block text-xs font-semibold text-slate-600">سال تولد</label>
                             <input type="number" wire:model.blur="guardian_birth_year" @class([$fieldClass('guardian_birth_year')])>
@@ -145,7 +145,7 @@
 
                 <div class="rounded-2xl border border-slate-200 bg-white p-4">
                     <h2 class="mb-4 text-base font-bold text-slate-800">وضعیت معیشتی</h2>
-                    <div class="grid gap-3 md:grid-cols-4">
+                    <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
                         <div>
                             <label class="mb-1 block text-xs font-semibold text-slate-600">تعداد فرزندان در منزل</label>
                             <input type="number" value="{{ (int) ($children_in_house ?? 0) }}" readonly class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">
@@ -305,7 +305,7 @@
                             @enderror
                         </div>
                     </div>
-                    <div class="mt-3 grid gap-3 md:grid-cols-4">
+                    <div class="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
                         <div>
                             <label class="mb-1 block text-xs font-semibold text-slate-600">بانک</label>
                             <select wire:model="bank_id" @class([$fieldClass('bank_id')])>
@@ -365,7 +365,7 @@
 
                 <div class="rounded-2xl border border-slate-200 bg-white p-4">
                     <h2 class="mb-4 text-base font-bold text-slate-800">اطلاعات سکونت و تماس</h2>
-                    <div class="grid gap-3 md:grid-cols-4">
+                    <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
                         <div>
                             <label class="mb-1 block text-xs font-semibold text-slate-600">وضعیت سکونت</label>
                             <select wire:model="residence_status_id" @class([$fieldClass('residence_status_id')])>
@@ -407,7 +407,7 @@
                             @enderror
                         </div>
                     </div>
-                    <div class="mt-3 grid gap-3 md:grid-cols-4">
+                    <div class="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
                         <div>
                             <label class="mb-1 block text-xs font-semibold text-slate-600">مدت سکونت (سال)</label>
                             <input type="number" wire:model.blur="residence_duration_years" @class([$fieldClass('residence_duration_years')])>
