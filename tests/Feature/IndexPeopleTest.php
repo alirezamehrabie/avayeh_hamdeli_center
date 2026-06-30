@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Livewire\People\IndexPeople;
 use App\Models\Person;
 use App\Models\User;
+use App\Queries\People\SelectedPersonDetailsQuery;
 use App\Services\People\SoftDeletePerson;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -13,6 +14,31 @@ use Tests\TestCase;
 class IndexPeopleTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_selected_person_details_query_returns_null_without_valid_person(): void
+    {
+        $query = app(SelectedPersonDetailsQuery::class);
+
+        $this->assertNull($query->find(null));
+        $this->assertNull($query->find(999999));
+    }
+
+    public function test_selected_person_details_query_loads_modal_relationships(): void
+    {
+        $person = $this->person('P810003', '8100010003');
+
+        $selectedPerson = app(SelectedPersonDetailsQuery::class)->find($person->id);
+
+        $this->assertNotNull($selectedPerson);
+        $this->assertTrue($selectedPerson->relationLoaded('guardian'));
+        $this->assertTrue($selectedPerson->relationLoaded('education'));
+        $this->assertTrue($selectedPerson->relationLoaded('supportCoverage'));
+        $this->assertTrue($selectedPerson->relationLoaded('disabilityType'));
+        $this->assertTrue($selectedPerson->relationLoaded('familyStatus'));
+        $this->assertTrue($selectedPerson->relationLoaded('skills'));
+        $this->assertTrue($selectedPerson->relationLoaded('harmTypes'));
+        $this->assertTrue($selectedPerson->relationLoaded('needsLevel'));
+    }
 
     public function test_soft_delete_person_service_stores_reason_and_soft_deletes_person(): void
     {

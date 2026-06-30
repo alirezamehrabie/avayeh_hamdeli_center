@@ -4,6 +4,7 @@ namespace App\Livewire\People;
 
 use App\Models\Person;
 use App\Queries\People\PeopleIndexSearchQuery;
+use App\Queries\People\SelectedPersonDetailsQuery;
 use App\Services\People\SoftDeletePerson;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\Pagination\Paginator;
@@ -133,24 +134,7 @@ class IndexPeople extends Component
 
     public function getSelectedPersonProperty(): ?Person
     {
-        if (! $this->selectedPersonId) {
-            return null;
-        }
-
-        return Person::with([
-            'guardian.occupation',
-            'guardian.jobType',
-            'guardian.residence',
-            'guardian.socialWorker',
-            'education.educationLevel',
-            'education.educationDegreeLevel',
-            'supportCoverage.organization',
-            'disabilityType',
-            'familyStatus.guardianRelationType',
-            'skills',
-            'harmTypes',
-            'needsLevel.levelType',
-        ])->find($this->selectedPersonId);
+        return app(SelectedPersonDetailsQuery::class)->find($this->selectedPersonId);
     }
 
     public function getTrackingPersonProperty(): ?Person
