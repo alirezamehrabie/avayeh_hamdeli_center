@@ -320,7 +320,7 @@ class ServiceBatchCreator extends Component
     {
         $assignableQuantity = $this->predefinedAssignableForCategory($categoryId);
 
-        $this->predefinedAllocations[$categoryId] = $this->formatDecimal(max(0, $assignableQuantity));
+        $this->predefinedAllocations[$categoryId] = $this->formatPredefinedCategoryQuantity($categoryId, max(0, $assignableQuantity));
         $this->confirmingBatchSave = false;
         $this->resetValidation('predefinedAllocations.'.$categoryId);
     }
@@ -1721,8 +1721,8 @@ class ServiceBatchCreator extends Component
                     'unit' => $category->unit,
                     'unit_label' => Service::unitOptions()[$category->unit] ?? $category->unit,
                     'quantity' => $quantity,
-                    'quantity_label' => number_format($quantity, 2),
-                    'remaining_label' => number_format(max(0, $assignable - $quantity), 2),
+                    'quantity_label' => $this->formatQuantityForUnit($quantity, (string) $category->unit),
+                    'remaining_label' => $this->formatQuantityForUnit(max(0, $assignable - $quantity), (string) $category->unit),
                     'consumes_all_remaining' => $assignable > 0 && max(0, $assignable - $quantity) <= 0.00001,
                 ];
             })
@@ -2160,5 +2160,25 @@ class ServiceBatchCreator extends Component
         }
 
         return number_format($number, 2, '.', '');
+    }
+
+    protected function formatPredefinedCategoryQuantity(int $categoryId, string|int|float|null $value): string
+    {
+        $category = $this->selectedPredefinedServiceCategories
+            ->first(fn (ServiceCategory $category): bool => (int) $category->id === $categoryId);
+
+        return $this->formatQuantityForUnit($value, (string) ($category?->unit ?? ''));
+    }
+
+    protected function formatQuantityForUnit(string|int|float|null $value, string $unit): string
+    {
+        $number = (float) ($value ?? 0);
+
+        return number_format($number, $this->isDecimalQuantityUnit($unit) ? 2 : 0, '.', '');
+    }
+
+    protected function isDecimalQuantityUnit(string $unit): bool
+    {
+        return in_array($unit, ['kilogram', 'gram', 'kg', 'g'], true);
     }
 }

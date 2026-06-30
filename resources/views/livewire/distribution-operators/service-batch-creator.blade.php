@@ -303,6 +303,12 @@
                                     $allocatedPreview = $this->predefinedAllocationForCategory((int) $category->id);
                                     $remainingPreview = max(0, $assignableQuantity - $allocatedPreview);
                                     $isOverAllocated = $allocatedPreview > $assignableQuantity;
+                                    $usesDecimalQuantity = in_array((string) $category->unit, ['kilogram', 'gram', 'kg', 'g'], true);
+                                    $formatCategoryQuantity = fn (float|int $quantity) => number_format((float) $quantity, $usesDecimalQuantity ? 2 : 0);
+                                    $assignableQuantityLabel = $formatCategoryQuantity($assignableQuantity);
+                                    $allocatedPreviewLabel = $formatCategoryQuantity($allocatedPreview);
+                                    $quantityInputStep = $usesDecimalQuantity ? '0.01' : '1';
+                                    $quantityInputMode = $usesDecimalQuantity ? 'decimal' : 'numeric';
                                 @endphp
                                 <div class="p-3 sm:p-3.5 {{ $isOverAllocated ? 'bg-rose-50/40' : '' }}">
                                     <div class="flex items-center justify-between gap-2">
@@ -315,17 +321,17 @@
                                     <div class="mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-lg border border-cyan-100/70 bg-cyan-50/35 px-2 py-1 text-[11px]">
                                         <span class="shrink-0 font-semibold text-cyan-700">قابل تخصیص</span>
                                         <span class="h-3 w-px bg-cyan-100"></span>
-                                        <span class="min-w-0 truncate font-bold tabular-nums text-slate-700" dir="ltr">{{ number_format($assignableQuantity, 2) }}</span>
+                                        <span class="min-w-0 truncate font-bold tabular-nums text-slate-700" dir="ltr">{{ $assignableQuantityLabel }}</span>
                                     </div>
 
                                     <div class="mt-2.5 grid grid-cols-[minmax(0,1fr)_auto_auto] gap-1.5">
                                         <input
                                             type="number"
                                             min="0"
-                                            step="0.01"
+                                            step="{{ $quantityInputStep }}"
                                             max="{{ $assignableQuantity }}"
                                             wire:model.live.debounce.250ms="predefinedAllocations.{{ $category->id }}"
-                                            inputmode="decimal"
+                                            inputmode="{{ $quantityInputMode }}"
                                             class="min-w-0 rounded-lg border {{ $isOverAllocated ? 'border-rose-300 bg-rose-50 text-rose-900 focus:border-rose-400 focus:ring-rose-100' : 'border-slate-200 bg-slate-50 text-slate-900 focus:border-cyan-400 focus:ring-cyan-100' }} px-3 py-2 text-center text-sm font-black outline-none transition focus:ring-2"
                                             placeholder="۰"
                                             aria-invalid="{{ $isOverAllocated ? 'true' : 'false' }}"
@@ -351,7 +357,7 @@
                                     @if($isOverAllocated)
                                         <p class="mt-1.5 text-[11px] font-bold text-rose-600">بیشتر از موجودی قابل تخصیص</p>
                                     @elseif($allocatedPreview > 0)
-                                        <p class="mt-1.5 text-[11px] font-semibold text-slate-400">{{ number_format($allocatedPreview, 2) }} از {{ number_format($assignableQuantity, 2) }}</p>
+                                        <p class="mt-1.5 text-[11px] font-semibold text-slate-400">{{ $allocatedPreviewLabel }} از {{ $assignableQuantityLabel }}</p>
                                     @endif
 
                                     @error('predefinedAllocations.' . $category->id) <p class="mt-1 text-[11px] text-rose-600">{{ $message }}</p> @enderror
