@@ -94,6 +94,22 @@ class IndexPeopleTest extends TestCase
         );
     }
 
+    public function test_soft_delete_person_service_can_delete_by_id(): void
+    {
+        $person = $this->person('P810006', '8100010006');
+
+        app(SoftDeletePerson::class)->handleById($person->id, 'Confirmed duplicate');
+
+        $this->assertSoftDeleted('people', [
+            'id' => $person->id,
+        ]);
+
+        $this->assertSame(
+            'Confirmed duplicate',
+            Person::withTrashed()->findOrFail($person->id)->deletion_reason
+        );
+    }
+
     public function test_confirm_delete_person_delegates_soft_delete_and_closes_modal(): void
     {
         $this->actingAs($this->manager());

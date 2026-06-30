@@ -182,10 +182,11 @@ class IndexPeople extends Component
             'deletionReason.required' => 'ثبت علت حذف الزامی است.',
         ]);
 
-        $person = Person::query()->findOrFail($this->deletingPersonId);
-
         $this->deletionReason = $validated['deletionReason'];
-        $this->deletePerson($person);
+        app(SoftDeletePerson::class)->handleById((int) $this->deletingPersonId, $this->deletionReason);
+        $this->resetPage();
+
+        session()->flash('success', 'مددجو با موفقیت به بلاک لیست منتقل شد.');
         $this->closeDeleteModal();
     }
 

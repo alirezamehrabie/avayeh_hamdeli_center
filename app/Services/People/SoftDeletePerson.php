@@ -6,6 +6,11 @@ use App\Models\Person;
 
 class SoftDeletePerson
 {
+    public function handleById(int $personId, string $reason): bool
+    {
+        return $this->handle(Person::query()->findOrFail($personId), $reason);
+    }
+
     public function handle(Person $person, string $reason): bool
     {
         $person->forceFill([
