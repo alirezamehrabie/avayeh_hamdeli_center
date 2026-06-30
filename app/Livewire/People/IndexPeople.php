@@ -3,6 +3,7 @@
 namespace App\Livewire\People;
 
 use App\Models\Person;
+use App\Queries\People\DeletingPersonDetailsQuery;
 use App\Queries\People\PeopleIndexSearchQuery;
 use App\Queries\People\SelectedPersonDetailsQuery;
 use App\Queries\People\TrackingPersonDetailsQuery;
@@ -193,9 +194,7 @@ class IndexPeople extends Component
         abort_unless(auth()->check() && auth()->user()->can('manage-people'), 403);
 
         return view('livewire.people.index-people', [
-            'deletingPerson' => $this->deletingPersonId
-                ? Person::query()->find($this->deletingPersonId)
-                : null,
+            'deletingPerson' => app(DeletingPersonDetailsQuery::class)->find($this->deletingPersonId),
         ]);
     }
 }

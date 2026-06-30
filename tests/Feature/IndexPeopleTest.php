@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Livewire\People\IndexPeople;
 use App\Models\Person;
 use App\Models\User;
+use App\Queries\People\DeletingPersonDetailsQuery;
 use App\Queries\People\SelectedPersonDetailsQuery;
 use App\Queries\People\TrackingPersonDetailsQuery;
 use App\Services\People\SoftDeletePerson;
@@ -65,6 +66,16 @@ class IndexPeopleTest extends TestCase
         $this->assertTrue($trackingPerson->relationLoaded('updater'));
         $this->assertSame('creator-user', $trackingPerson->creator->name);
         $this->assertSame('updater-user', $trackingPerson->updater->name);
+    }
+
+    public function test_deleting_person_details_query_returns_nullable_person_for_modal(): void
+    {
+        $query = app(DeletingPersonDetailsQuery::class);
+        $person = $this->person('P810005', '8100010005');
+
+        $this->assertNull($query->find(null));
+        $this->assertNull($query->find(999999));
+        $this->assertTrue($query->find($person->id)->is($person));
     }
 
     public function test_soft_delete_person_service_stores_reason_and_soft_deletes_person(): void
