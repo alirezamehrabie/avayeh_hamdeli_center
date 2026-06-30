@@ -6,8 +6,10 @@ use App\Livewire\Guardians\IndexGuardians;
 use App\Models\Guardian;
 use App\Models\Person;
 use App\Models\User;
+use App\Queries\Guardians\DeletingGuardianDetailsQuery;
 use App\Queries\Guardians\ExpandedGuardianPeopleQuery;
 use App\Queries\Guardians\GuardianHouseholdStatsQuery;
+use App\Queries\Guardians\GuardianListSummaryQuery;
 use App\Queries\Guardians\SelectedGuardianDetailsQuery;
 use App\Services\Guardians\SoftDeleteGuardianFamily;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -139,24 +141,68 @@ class IndexGuardiansTest extends TestCase
         $this->assertSame(2, $guardian->refresh()->children_in_house);
     }
 
-    public function test_guardian_household_stats_query_groups_by_household_size(): void
+    public function test_guardian_list_summary_query_returns_totals(): void
     {
         Guardian::query()->create([
             'guardian_code' => 710005,
+            'national_code' => '5000000001',
+            'first_name' => 'Summary',
+            'last_name' => 'One',
+            'children_in_house' => 2,
+        ]);
+        Guardian::query()->create([
+            'guardian_code' => 710006,
+            'national_code' => '5000000002',
+            'first_name' => 'Summary',
+            'last_name' => 'Two',
+            'children_in_house' => 3,
+        ]);
+
+        $summary = app(GuardianListSummaryQuery::class)->get();
+
+        $this->assertSame([
+            'totalGuardians' => 2,
+            'totalCenterMembers' => 5,
+        ], $summary);
+    }
+
+    public function test_deleting_guardian_details_query_returns_people_count_for_modal(): void
+    {
+        $guardian = Guardian::query()->create([
+            'guardian_code' => 710007,
+            'national_code' => '5000000003',
+            'first_name' => 'Deleting',
+            'last_name' => 'Guardian',
+        ]);
+        $this->person($guardian, 'P710007', '8234567890');
+        $this->person($guardian, 'P710008', '8234567891');
+
+        $deletingGuardian = app(DeletingGuardianDetailsQuery::class)->find($guardian->id);
+
+        $this->assertNotNull($deletingGuardian);
+        $this->assertSame(2, $deletingGuardian->people_count);
+        $this->assertNull(app(DeletingGuardianDetailsQuery::class)->find(null));
+        $this->assertNull(app(DeletingGuardianDetailsQuery::class)->find(999999));
+    }
+
+    public function test_guardian_household_stats_query_groups_by_household_size(): void
+    {
+        Guardian::query()->create([
+            'guardian_code' => 710009,
             'national_code' => '1000000001',
             'first_name' => 'Small',
             'last_name' => 'Family',
             'children_in_house' => 2,
         ]);
         Guardian::query()->create([
-            'guardian_code' => 710006,
+            'guardian_code' => 710010,
             'national_code' => '1000000002',
             'first_name' => 'Large',
             'last_name' => 'Family',
             'children_in_house' => 4,
         ]);
         Guardian::query()->create([
-            'guardian_code' => 710007,
+            'guardian_code' => 710011,
             'national_code' => null,
             'first_name' => 'NoCode',
             'last_name' => 'Family',
@@ -182,14 +228,14 @@ class IndexGuardiansTest extends TestCase
     public function test_guardian_household_stats_query_groups_by_coverage_count(): void
     {
         Guardian::query()->create([
-            'guardian_code' => 710008,
+            'guardian_code' => 710012,
             'national_code' => '2000000001',
             'first_name' => 'One',
             'last_name' => 'Coverage',
             'children_count' => 1,
         ]);
         Guardian::query()->create([
-            'guardian_code' => 710009,
+            'guardian_code' => 710013,
             'national_code' => '2000000002',
             'first_name' => 'Three',
             'last_name' => 'Coverage',
@@ -217,7 +263,7 @@ class IndexGuardiansTest extends TestCase
         $this->actingAs($this->manager());
 
         Guardian::query()->create([
-            'guardian_code' => 710010,
+            'guardian_code' => 710014,
             'national_code' => '3000000001',
             'first_name' => 'Modal',
             'last_name' => 'Stats',
@@ -244,12 +290,12 @@ class IndexGuardiansTest extends TestCase
     public function test_selected_guardian_details_query_loads_modal_relationships_and_people_count(): void
     {
         $guardian = Guardian::query()->create([
-            'guardian_code' => 710011,
+            'guardian_code' => 710015,
             'national_code' => '4000000001',
             'first_name' => 'Details',
             'last_name' => 'Guardian',
         ]);
-        $this->person($guardian, 'P710011', '7234567890');
+        $this->person($guardian, 'P710015', '7234567890');
 
         $selectedGuardian = app(SelectedGuardianDetailsQuery::class)->find($guardian->id);
 
@@ -270,14 +316,14 @@ class IndexGuardiansTest extends TestCase
         $this->actingAs($this->manager());
 
         $matchingGuardian = Guardian::query()->create([
-            'guardian_code' => 710012,
+            'guardian_code' => 710016,
             'national_code' => '1111111111',
             'first_name' => 'Matching',
             'last_name' => 'Guardian',
             'guardian_phone_number' => '09121111111',
         ]);
         Guardian::query()->create([
-            'guardian_code' => 710013,
+            'guardian_code' => 710017,
             'national_code' => '2222222222',
             'first_name' => 'Other',
             'last_name' => 'Guardian',
@@ -298,14 +344,14 @@ class IndexGuardiansTest extends TestCase
         $this->actingAs($this->manager());
 
         $matchingGuardian = Guardian::query()->create([
-            'guardian_code' => 710014,
+            'guardian_code' => 710018,
             'national_code' => '3333333333',
             'first_name' => 'Phone',
             'last_name' => 'Match',
             'guardian_phone_number' => '09123333333',
         ]);
         Guardian::query()->create([
-            'guardian_code' => 710015,
+            'guardian_code' => 710019,
             'national_code' => '4444444444',
             'first_name' => 'Phone',
             'last_name' => 'NameOnly',
@@ -325,12 +371,12 @@ class IndexGuardiansTest extends TestCase
     public function test_soft_delete_guardian_family_service_deletes_guardian_and_related_people(): void
     {
         $guardian = Guardian::query()->create([
-            'guardian_code' => 710016,
+            'guardian_code' => 710020,
             'first_name' => 'Service',
             'last_name' => 'Delete',
         ]);
-        $firstPerson = $this->person($guardian, 'P710016', '5234567890');
-        $secondPerson = $this->person($guardian, 'P710017', '5234567891');
+        $firstPerson = $this->person($guardian, 'P710020', '5234567890');
+        $secondPerson = $this->person($guardian, 'P710021', '5234567891');
 
         app(SoftDeleteGuardianFamily::class)->handle($guardian, 'Family moved out');
 
@@ -363,11 +409,11 @@ class IndexGuardiansTest extends TestCase
         $this->actingAs($this->manager());
 
         $guardian = Guardian::query()->create([
-            'guardian_code' => 710018,
+            'guardian_code' => 710022,
             'first_name' => 'Livewire',
             'last_name' => 'Delete',
         ]);
-        $person = $this->person($guardian, 'P710018', '6234567890');
+        $person = $this->person($guardian, 'P710022', '6234567890');
 
         Livewire::test(IndexGuardians::class)
             ->call('toggleGuardian', $guardian->id)

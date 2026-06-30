@@ -3,9 +3,11 @@
 namespace App\Livewire\Guardians;
 
 use App\Models\Guardian;
+use App\Queries\Guardians\DeletingGuardianDetailsQuery;
 use App\Queries\Guardians\ExpandedGuardianPeopleQuery;
 use App\Queries\Guardians\GuardianHouseholdStatsQuery;
 use App\Queries\Guardians\GuardianIndexSearchQuery;
+use App\Queries\Guardians\GuardianListSummaryQuery;
 use App\Queries\Guardians\SelectedGuardianDetailsQuery;
 use App\Services\Guardians\SoftDeleteGuardianFamily;
 use Illuminate\Support\Collection;
@@ -214,16 +216,14 @@ class IndexGuardians extends Component
             $coverageCountStats = $householdStats->byCoverageCount();
         }
 
+        $summary = app(GuardianListSummaryQuery::class)->get();
+
         return view('livewire.guardians.index-guardians', [
-            'totalGuardians' => Guardian::count(),
-            'totalCenterMembers' => (int) Guardian::query()->sum('children_in_house'),
+            'totalGuardians' => $summary['totalGuardians'],
+            'totalCenterMembers' => $summary['totalCenterMembers'],
             'householdSizeStats' => $householdSizeStats,
             'coverageCountStats' => $coverageCountStats,
-            'deletingGuardian' => $this->deletingGuardianId
-                ? Guardian::query()
-                    ->withCount('people')
-                    ->find($this->deletingGuardianId)
-                : null,
+            'deletingGuardian' => app(DeletingGuardianDetailsQuery::class)->find($this->deletingGuardianId),
         ]);
     }
 
