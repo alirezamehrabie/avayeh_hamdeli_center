@@ -309,19 +309,18 @@
                                     $allocatedPreviewLabel = $formatCategoryQuantity($allocatedPreview);
                                     $quantityInputStep = $usesDecimalQuantity ? '0.01' : '1';
                                     $quantityInputMode = $usesDecimalQuantity ? 'decimal' : 'numeric';
+                                    $categoryUnitLabel = $unitOptions[$category->unit] ?? $category->unit;
                                 @endphp
                                 <div class="p-3 sm:p-3.5 {{ $isOverAllocated ? 'bg-rose-50/40' : '' }}">
-                                    <div class="flex items-center justify-between gap-2">
+                                    <div>
                                         <p class="truncate text-sm font-black text-slate-900">{{ $category->name }}</p>
-                                        <span class="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
-                                            {{ $unitOptions[$category->unit] ?? $category->unit }}
-                                        </span>
                                     </div>
 
                                     <div class="mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-lg border border-cyan-100/70 bg-cyan-50/35 px-2 py-1 text-[11px]">
                                         <span class="shrink-0 font-semibold text-cyan-700">قابل تخصیص</span>
                                         <span class="h-3 w-px bg-cyan-100"></span>
                                         <span class="min-w-0 truncate font-bold tabular-nums text-slate-700" dir="ltr">{{ $assignableQuantityLabel }}</span>
+                                        <span class="shrink-0 text-[10px] font-medium text-slate-400">{{ $categoryUnitLabel }}</span>
                                     </div>
 
                                     <div class="mt-2.5 grid grid-cols-[minmax(0,1fr)_auto_auto] gap-1.5">
