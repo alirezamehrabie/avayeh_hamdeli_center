@@ -158,7 +158,7 @@ class IndexPeople extends Component
     {
         abort_unless(auth()->check() && auth()->user()->can('people-delete'), 403);
 
-        $this->deletingPersonId = Person::query()->findOrFail($personId)->id;
+        $this->deletingPersonId = app(DeletingPersonDetailsQuery::class)->findOrFail($personId)->id;
         $this->deletionReason = '';
         $this->resetValidation('deletionReason');
         $this->showDeleteModal = true;

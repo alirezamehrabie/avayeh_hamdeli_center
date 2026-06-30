@@ -6,6 +6,11 @@ use App\Models\Person;
 
 class DeletingPersonDetailsQuery
 {
+    public function findOrFail(int $personId): Person
+    {
+        return Person::query()->findOrFail($personId);
+    }
+
     public function find(?int $personId): ?Person
     {
         if (! $personId) {

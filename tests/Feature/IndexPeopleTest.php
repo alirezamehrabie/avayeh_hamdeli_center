@@ -9,6 +9,7 @@ use App\Queries\People\DeletingPersonDetailsQuery;
 use App\Queries\People\SelectedPersonDetailsQuery;
 use App\Queries\People\TrackingPersonDetailsQuery;
 use App\Services\People\SoftDeletePerson;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -76,6 +77,14 @@ class IndexPeopleTest extends TestCase
         $this->assertNull($query->find(null));
         $this->assertNull($query->find(999999));
         $this->assertTrue($query->find($person->id)->is($person));
+        $this->assertTrue($query->findOrFail($person->id)->is($person));
+    }
+
+    public function test_deleting_person_details_query_fails_for_missing_required_person(): void
+    {
+        $this->expectException(ModelNotFoundException::class);
+
+        app(DeletingPersonDetailsQuery::class)->findOrFail(999999);
     }
 
     public function test_soft_delete_person_service_stores_reason_and_soft_deletes_person(): void
