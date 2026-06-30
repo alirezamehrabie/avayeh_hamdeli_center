@@ -48,6 +48,7 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
 
         Livewire::test(ServiceBatchCreator::class)
             ->set('mode', ServiceBatchCreator::MODE_MISC)
+            ->set('miscServiceName', 'بسته اپراتور توزیع')
             ->set('miscServiceType', 'individual')
             ->set('miscCategories.0.name', 'بسته اپراتور')
             ->set('miscCategories.0.quantity', '6')
@@ -91,6 +92,7 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
 
         Livewire::test(ServiceBatchCreator::class)
             ->set('mode', ServiceBatchCreator::MODE_MISC)
+            ->set('miscServiceName', 'خدمت واحدهای ترکیبی')
             ->set('miscServiceType', 'individual')
             ->set('miscCategories', [
                 [
@@ -393,10 +395,10 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->set('predefinedAllocations.'.$oil->id, '2')
             ->assertSee('موجودی کل')
             ->assertSee('15.00')
-            ->assertSee('10.00')
-            ->assertSee('5.00')
-            ->assertSee('3.00')
-            ->assertSee('2.00')
+            ->assertSee('10')
+            ->assertSee('5')
+            ->assertSee('3')
+            ->assertSee('2')
             ->assertDontSee('واردشده');
     }
 
@@ -548,7 +550,7 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         ]);
     }
 
-    public function test_misc_mode_auto_names_created_service(): void
+    public function test_misc_mode_uses_operator_custom_service_name(): void
     {
         $operator = User::factory()->create([
             'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
@@ -560,16 +562,16 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             'last_name' => 'متفرقه',
             'is_active' => true,
         ]);
-        ServiceName::query()->create([
-            'name' => 'متفرقه - 19',
-            'sort_id' => 1,
-            'created_by' => $operator->id,
-        ]);
 
         $this->actingAs($operator);
 
         Livewire::test(ServiceBatchCreator::class)
-            ->set('mode', ServiceBatchCreator::MODE_MISC)
+            ->call('requestMiscServiceName')
+            ->set('miscServiceName', '  بسته زمستانی مددجو  ')
+            ->call('confirmMiscServiceName')
+            ->assertSet('mode', ServiceBatchCreator::MODE_MISC)
+            ->assertSet('miscServiceName', 'بسته زمستانی مددجو')
+            ->assertSee('data-service-header-title="بسته زمستانی مددجو"', false)
             ->set('miscServiceType', 'individual')
             ->set('miscCategories.0.name', 'پتو')
             ->set('miscCategories.0.quantity', '3')
@@ -581,16 +583,41 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->assertHasNoErrors();
 
         $this->assertDatabaseHas('services', [
-            'name' => 'متفرقه - 20',
+            'name' => 'بسته زمستانی مددجو',
             'created_by' => $operator->id,
             'total_quantity' => 3,
         ]);
         $this->assertDatabaseHas('service_names', [
-            'name' => 'متفرقه - 20',
+            'name' => 'بسته زمستانی مددجو',
+        ]);
+        $this->assertDatabaseMissing('services', [
+            'name' => 'متفرقه - 1',
         ]);
     }
 
-    public function test_misc_mode_continues_numbering_from_legacy_english_misc_names_but_stores_persian_name(): void
+    public function test_misc_mode_requires_confirmed_valid_custom_service_name(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class)
+            ->call('requestMiscServiceName')
+            ->assertSet('confirmingMiscServiceName', true)
+            ->call('cancelMiscServiceName')
+            ->assertSet('mode', '')
+            ->assertSet('confirmingMiscServiceName', false)
+            ->call('requestMiscServiceName')
+            ->set('miscServiceName', '<script>')
+            ->call('confirmMiscServiceName')
+            ->assertHasErrors(['miscServiceName'])
+            ->assertSet('mode', '');
+    }
+
+    public function test_misc_mode_save_rejects_missing_custom_service_name(): void
     {
         $operator = User::factory()->create([
             'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
@@ -599,13 +626,8 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         $worker = SocialWorker::query()->create([
             'worker_code' => 904,
             'first_name' => 'مددکار',
-            'last_name' => 'میراثی',
+            'last_name' => 'نام سفارشی',
             'is_active' => true,
-        ]);
-        ServiceName::query()->create([
-            'name' => 'Misc - 21',
-            'sort_id' => 1,
-            'created_by' => $operator->id,
         ]);
 
         $this->actingAs($operator);
@@ -620,16 +642,9 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->set('socialWorkerQuery', $worker->full_name)
             ->set('socialWorkerId', $worker->id)
             ->call('saveBatch')
-            ->assertHasNoErrors();
+            ->assertHasErrors(['miscServiceName']);
 
-        $this->assertDatabaseHas('services', [
-            'name' => 'متفرقه - 22',
-            'created_by' => $operator->id,
-            'status_notes' => 'خدمت متفرقه ایجادشده توسط اپراتور توزیع.',
-        ]);
-        $this->assertDatabaseMissing('services', [
-            'name' => 'Misc - 22',
-        ]);
+        $this->assertDatabaseCount('services', 0);
     }
 
     public function test_editing_misc_service_cannot_reduce_used_category_below_delivered_quantity(): void
@@ -759,15 +774,16 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         $this->assertSame($worker->id, $service->workerAllocations()->firstOrFail()->social_worker_id);
     }
 
-    public function test_editing_misc_service_stepper_uses_worker_groups_for_progress(): void
+    public function test_editing_misc_service_header_replaces_removed_step_progress(): void
     {
         [$operator, $worker, $service] = $this->editableMiscService();
 
         $this->actingAs($operator);
 
         Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id])
-            ->assertSee('3 از 4 مرحله')
-            ->assertSee('مرحله فعلی: مرور و ثبت')
+            ->assertSee('data-service-header-title="جزئیات خدمت"', false)
+            ->assertDontSee('مرحله فعلی:')
+            ->assertDontSee('3 از 4 مرحله')
             ->assertSee($worker->full_name);
     }
 

@@ -24,10 +24,6 @@ class ServiceBatchCreator extends Component
 
     public const MODE_MISC = 'misc';
 
-    protected const MISC_NAME_PREFIX = 'متفرقه - ';
-
-    protected const LEGACY_MISC_NAME_PREFIX = 'Misc - ';
-
     public string $mode = '';
 
     public ?int $selectedServiceId = null;
@@ -47,6 +43,8 @@ class ServiceBatchCreator extends Component
     public ?int $editingServiceId = null;
 
     public bool $confirmingBatchSave = false;
+
+    public bool $confirmingMiscServiceName = false;
 
     public bool $hasUnsavedChanges = false;
 
@@ -76,6 +74,8 @@ class ServiceBatchCreator extends Component
 
     public string $miscDescription = '';
 
+    public string $miscServiceName = '';
+
     public string $date = '';
 
     public string $editingServiceName = '';
@@ -102,8 +102,6 @@ class ServiceBatchCreator extends Component
     protected ?Collection $socialWorkerSuggestionsCache = null;
 
     protected ?string $socialWorkerSuggestionsCacheKey = null;
-
-    protected ?string $nextMiscNameCache = null;
 
     public function mount(?int $editingServiceId = null): void
     {
@@ -134,6 +132,46 @@ class ServiceBatchCreator extends Component
         }
 
         $this->resetValidation();
+        $this->confirmingBatchSave = false;
+    }
+
+    public function requestMiscServiceName(): void
+    {
+        if ($this->editingServiceId) {
+            return;
+        }
+
+        $this->miscServiceName = trim($this->miscServiceName);
+        $this->resetValidation('miscServiceName');
+        $this->confirmingBatchSave = false;
+        $this->confirmingMiscServiceName = true;
+    }
+
+    public function cancelMiscServiceName(): void
+    {
+        $this->confirmingMiscServiceName = false;
+
+        if (trim($this->miscServiceName) === '' && $this->mode === self::MODE_MISC) {
+            $this->mode = '';
+        }
+
+        $this->resetValidation('miscServiceName');
+    }
+
+    public function confirmMiscServiceName(): void
+    {
+        $validated = $this->validate($this->miscServiceNameRules(), [], $this->validationAttributes());
+
+        $this->miscServiceName = trim($validated['miscServiceName']);
+        $this->mode = self::MODE_MISC;
+        $this->confirmingMiscServiceName = false;
+        $this->confirmingBatchSave = false;
+        $this->resetValidation('miscServiceName');
+    }
+
+    public function updatedMiscServiceName(mixed $value): void
+    {
+        $this->miscServiceName = trim((string) $value);
         $this->confirmingBatchSave = false;
     }
 
@@ -581,7 +619,6 @@ class ServiceBatchCreator extends Component
             'isEditing' => $this->editingServiceId !== null,
             'typeOptions' => Service::TYPE_OPTIONS,
             'unitOptions' => Service::unitOptions(),
-            'nextMiscName' => $this->editingServiceId ? $this->editingServiceName : $this->nextMiscName(),
             'categoryNameSuggestions' => $this->editingServiceId ? $this->categoryNameSuggestions() : [],
         ]);
     }
@@ -701,7 +738,7 @@ class ServiceBatchCreator extends Component
         }
 
         $validated = $this->validate($this->miscRules(), [], $this->validationAttributes());
-        $miscName = $this->nextMiscName();
+        $miscName = trim($validated['miscServiceName']);
 
         DB::transaction(function () use ($validated, $miscName): void {
             $serviceName = ServiceName::query()
@@ -903,7 +940,7 @@ class ServiceBatchCreator extends Component
 
     protected function miscRules(): array
     {
-        return [
+        return array_merge($this->miscServiceNameRules(), [
             'miscServiceType' => ['required', Rule::in(array_keys(Service::TYPE_OPTIONS))],
             'miscDescription' => ['nullable', 'string', 'max:5000'],
             'date' => ['required', 'string', function (string $attribute, mixed $value, \Closure $fail): void {
@@ -916,6 +953,19 @@ class ServiceBatchCreator extends Component
             'miscCategories.*.name' => ['required', 'string', 'max:255'],
             'miscCategories.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'miscCategories.*.unit' => ['required', Rule::in(Service::unitKeys())],
+        ]);
+    }
+
+    protected function miscServiceNameRules(): array
+    {
+        return [
+            'miscServiceName' => [
+                'required',
+                'string',
+                'min:2',
+                'max:120',
+                'regex:/\A[\pL\pM\pN\s\-_()\/،.]+\z/u',
+            ],
         ];
     }
 
@@ -1131,6 +1181,7 @@ class ServiceBatchCreator extends Component
             'selectedServiceId' => 'خدمت / پویش',
             'socialWorkerId' => 'مددکار',
             'predefinedAllocations.*' => 'مقدار تخصیص',
+            'miscServiceName' => 'نام خدمت',
             'miscServiceType' => 'نوع خدمت',
             'miscDescription' => 'توضیحات',
             'date' => 'تاریخ',
@@ -1425,6 +1476,15 @@ class ServiceBatchCreator extends Component
         return in_array($this->miscServiceType, array_keys(Service::TYPE_OPTIONS), true);
     }
 
+    protected function hasValidMiscServiceName(): bool
+    {
+        $name = trim($this->miscServiceName);
+
+        return mb_strlen($name) >= 2
+            && mb_strlen($name) <= 120
+            && preg_match('/\A[\pL\pM\pN\s\-_()\/،.]+\z/u', $name) === 1;
+    }
+
     protected function isValidMiscCategoryRow(mixed $category): bool
     {
         return is_array($category)
@@ -1486,6 +1546,7 @@ class ServiceBatchCreator extends Component
         }
 
         return $this->hasSelectedMiscServiceType()
+            && $this->hasValidMiscServiceName()
             && $this->socialWorkerId !== null
             && $this->hasValidMiscCategoryRows()
             && $this->isValidJalaliDate($this->date);
@@ -1777,7 +1838,7 @@ class ServiceBatchCreator extends Component
         return [
             'mode' => self::MODE_MISC,
             'title' => $this->editingServiceId ? 'تأیید ویرایش خدمت متفرقه' : 'تأیید ایجاد خدمت متفرقه',
-            'service_name' => $this->nextMiscName(),
+            'service_name' => $this->editingServiceId ? $this->editingServiceName : trim($this->miscServiceName),
             'service_code' => '',
             'service_type' => Service::TYPE_OPTIONS[$this->miscServiceType] ?? $this->miscServiceType,
             'worker_name' => $worker?->full_name ?? $this->socialWorkerQuery,
@@ -2082,44 +2143,6 @@ class ServiceBatchCreator extends Component
         $district = trim((string) ($worker->district?->name ?? ''));
 
         return $district !== '' ? $name.' - '.$district : $name;
-    }
-
-    protected function nextMiscName(): string
-    {
-        if ($this->nextMiscNameCache !== null) {
-            return $this->nextMiscNameCache;
-        }
-
-        if ($this->editingServiceId) {
-            return $this->nextMiscNameCache = (string) $this->resolveEditableService($this->editingServiceId)->name;
-        }
-
-        $maxServiceNumber = Service::query()
-            ->where('name', 'like', self::MISC_NAME_PREFIX.'%')
-            ->selectRaw('MAX(CAST(SUBSTRING(name, ?) AS UNSIGNED)) as sequence', [mb_strlen(self::MISC_NAME_PREFIX) + 1])
-            ->value('sequence');
-
-        $maxLegacyServiceNumber = Service::query()
-            ->where('name', 'like', self::LEGACY_MISC_NAME_PREFIX.'%')
-            ->selectRaw('MAX(CAST(SUBSTRING(name, ?) AS UNSIGNED)) as sequence', [mb_strlen(self::LEGACY_MISC_NAME_PREFIX) + 1])
-            ->value('sequence');
-
-        $maxServiceNameNumber = ServiceName::query()
-            ->where('name', 'like', self::MISC_NAME_PREFIX.'%')
-            ->selectRaw('MAX(CAST(SUBSTRING(name, ?) AS UNSIGNED)) as sequence', [mb_strlen(self::MISC_NAME_PREFIX) + 1])
-            ->value('sequence');
-
-        $maxLegacyServiceNameNumber = ServiceName::query()
-            ->where('name', 'like', self::LEGACY_MISC_NAME_PREFIX.'%')
-            ->selectRaw('MAX(CAST(SUBSTRING(name, ?) AS UNSIGNED)) as sequence', [mb_strlen(self::LEGACY_MISC_NAME_PREFIX) + 1])
-            ->value('sequence');
-
-        return $this->nextMiscNameCache = self::MISC_NAME_PREFIX.(((int) max(
-            $maxServiceNumber,
-            $maxLegacyServiceNumber,
-            $maxServiceNameNumber,
-            $maxLegacyServiceNameNumber
-        )) + 1);
     }
 
     protected function isValidJalaliDate(string $date): bool

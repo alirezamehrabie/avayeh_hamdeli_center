@@ -126,8 +126,7 @@
                         </span>
                     </label>
 
-                    <label class="group relative flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition focus-within:ring-2 focus-within:ring-emerald-500 focus-within:ring-offset-2 sm:px-3.5 {{ $mode === 'misc' ? 'border-emerald-300 bg-emerald-50/70 shadow-[0_0_0_1px_rgba(16,185,129,0.08)]' : 'border-slate-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/30' }}">
-                        <input type="radio" value="misc" wire:model.change="mode" class="sr-only">
+                    <button type="button" wire:click="requestMiscServiceName" class="group relative flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 text-right transition focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 sm:px-3.5 {{ $mode === 'misc' ? 'border-emerald-300 bg-emerald-50/70 shadow-[0_0_0_1px_rgba(16,185,129,0.08)]' : 'border-slate-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/30' }}" aria-pressed="{{ $mode === 'misc' ? 'true' : 'false' }}">
                         <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg {{ $mode === 'misc' ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-emerald-100 group-hover:text-emerald-700' }}">
                                 <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                     <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
@@ -140,7 +139,7 @@
                         <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition {{ $mode === 'misc' ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-300 bg-white' }}">
                             <span class="h-2 w-2 rounded-full {{ $mode === 'misc' ? 'bg-emerald-500' : 'bg-transparent' }}"></span>
                         </span>
-                    </label>
+                    </button>
                 </div>
                 @unless($hasSelectedMode)
                     <p class="px-1 text-[11px] font-medium leading-5 text-slate-400">یکی از دو حالت را انتخاب کنید.</p>
@@ -148,6 +147,79 @@
             </div>
 
     </div>
+    @endif
+
+    @if($confirmingMiscServiceName)
+        <div
+            x-data="{
+                init() {
+                    document.body.classList.add('overflow-hidden');
+                    this.$nextTick(() => this.$refs.serviceNameInput?.focus({ preventScroll: true }));
+                },
+                destroy() {
+                    document.body.classList.remove('overflow-hidden');
+                },
+                close() {
+                    document.body.classList.remove('overflow-hidden');
+                    $wire.cancelMiscServiceName();
+                },
+            }"
+            x-on:keydown.escape.window.prevent="close()"
+            class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 px-4 py-6 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="misc-service-name-title"
+        >
+            <div class="absolute inset-0" @click="close()"></div>
+
+            <form wire:submit.prevent="confirmMiscServiceName" class="relative w-full max-w-md rounded-[28px] bg-white p-6 shadow-2xl" @click.stop>
+                <button
+                    type="button"
+                    @click="close()"
+                    class="absolute left-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200"
+                    aria-label="بستن"
+                >
+                    <span class="text-xl leading-none">&times;</span>
+                </button>
+
+                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                    <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                </div>
+
+                <div class="mt-4 text-center">
+                    <h2 id="misc-service-name-title" class="text-lg font-extrabold text-slate-800">نام خدمت جدید</h2>
+                    <p class="mt-2 text-sm font-medium leading-6 text-slate-600">نام اختصاصی این خدمت متفرقه را وارد کنید</p>
+                </div>
+
+                <div class="mt-5 text-right">
+                    <label for="misc-service-name-input" class="mb-2 block text-sm font-bold text-slate-700">نام خدمت</label>
+                    <input
+                        id="misc-service-name-input"
+                        x-ref="serviceNameInput"
+                        type="text"
+                        wire:model.blur="miscServiceName"
+                        maxlength="120"
+                        autocomplete="off"
+                        class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                        placeholder="مثلاً سفره ام‌البنین - 14"
+                    >
+                    @error('miscServiceName')
+                        <p data-validation-error class="mt-2 text-xs font-semibold text-rose-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="mt-6 flex flex-wrap gap-3">
+                    <button type="button" @click="close()" class="inline-flex min-w-32 flex-1 items-center justify-center rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-200 active:scale-[0.98]">
+                        انصراف
+                    </button>
+                    <button type="submit" class="inline-flex min-w-32 flex-1 items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-500 active:scale-[0.98]">
+                        تأیید و ادامه
+                    </button>
+                </div>
+            </form>
+        </div>
     @endif
 
     @php
@@ -182,75 +254,13 @@
         $quantityStepUnlocked = $serviceStepComplete && $workerStepComplete;
         $quantityStepComplete = $isEditing ? $editQuantityStepComplete : $canRequestSaveConfirmation;
         $reviewStepUnlocked = $canRequestSaveConfirmation;
-        $workflowAccent = $isPredefinedWorkflow ? 'cyan' : 'emerald';
-        $workflowSteps = [
-            [
-                'number' => 1,
-                'title' => $isPredefinedWorkflow ? 'انتخاب خدمت' : 'مشخصات خدمت',
-                'status' => $serviceStepComplete ? 'done' : 'active',
-            ],
-            [
-                'number' => 2,
-                'title' => $isEditing ? 'مددکاران' : 'انتخاب مددکار',
-                'status' => ! $workerStepUnlocked ? 'locked' : ($workerStepComplete ? 'done' : 'active'),
-            ],
-            [
-                'number' => 3,
-                'title' => $isPredefinedWorkflow ? 'ثبت مقدارها' : 'ثبت دسته‌بندی‌ها',
-                'status' => ! $quantityStepUnlocked ? 'locked' : ($quantityStepComplete ? 'done' : 'active'),
-            ],
-            [
-                'number' => 4,
-                'title' => 'مرور و ثبت',
-                'status' => ! $reviewStepUnlocked ? 'locked' : 'active',
-            ],
-        ];
-        $completedWorkflowSteps = count(array_filter($workflowSteps, fn ($step) => $step['status'] === 'done'));
-        $activeWorkflowStep = null;
-
-        foreach ($workflowSteps as $workflowStep) {
-            if ($workflowStep['status'] === 'active') {
-                $activeWorkflowStep = $workflowStep;
-                break;
-            }
-        }
-
-        $workflowProgressPercent = count($workflowSteps) > 0
-            ? (($completedWorkflowSteps + ($activeWorkflowStep ? 0.5 : 0)) / count($workflowSteps)) * 100
-            : 0;
-        $workflowProgressPercent = max(8, min(100, $workflowProgressPercent));
-        $workflowProgressClass = $workflowAccent === 'cyan'
-            ? 'from-cyan-500 via-sky-500 to-cyan-400'
-            : 'from-emerald-500 via-teal-500 to-emerald-400';
-        $workflowTrackClass = $workflowAccent === 'cyan'
-            ? 'bg-cyan-50'
-            : 'bg-emerald-50';
-        $workflowLabelClass = $workflowAccent === 'cyan'
-            ? 'text-cyan-700'
-            : 'text-emerald-700';
     @endphp
 
     @if($hasSelectedMode)
     <form wire:submit.prevent="requestSaveConfirmation" x-on:submit="markValidationFocusPending()" class="space-y-2.5">
         @if($mode === 'predefined' && !$isEditing)
             <section wire:key="predefined-service-batch-section" class="overflow-visible rounded-xl border border-cyan-100/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-                <div class="border-b border-cyan-100/80 bg-cyan-50/20 px-4 py-2.5 sm:px-5 sm:py-3">
-                    <div class="h-2 overflow-hidden rounded-full {{ $workflowTrackClass }}">
-                        <div
-                            class="h-full rounded-full bg-gradient-to-l {{ $workflowProgressClass }} transition-all duration-300"
-                            style="width: {{ $workflowProgressPercent }}%;"
-                        ></div>
-                    </div>
-                    <div class="mt-2 flex items-center justify-between gap-3 text-[11px] font-bold">
-                        <p class="truncate text-slate-500">
-                            {{ $activeWorkflowStep ? 'مرحله فعلی: ' . $activeWorkflowStep['title'] : 'همه مراحل تکمیل شده است' }}
-                        </p>
-                        <p class="shrink-0 {{ $workflowLabelClass }}">
-                            {{ $completedWorkflowSteps }} از {{ count($workflowSteps) }} مرحله
-                        </p>
-                    </div>
-                </div>
-                <div class="border-b border-cyan-100/80 bg-cyan-50/30 px-4 py-2 sm:px-5 sm:py-2.5">
+                <div class="border-b border-cyan-100/80 bg-cyan-50/30 px-4 py-3 sm:px-5 sm:py-4">
                     <div class="flex items-center gap-2.5">
                         <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-500 text-white">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -368,31 +378,62 @@
             </section>
         @else
             <section wire:key="misc-service-batch-section" class="overflow-visible rounded-xl border border-emerald-100/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-                <div class="border-b border-emerald-100/80 bg-emerald-50/20 px-4 py-2.5 sm:px-5 sm:py-3">
-                    <div class="h-2 overflow-hidden rounded-full {{ $workflowTrackClass }}">
-                        <div
-                            class="h-full rounded-full bg-gradient-to-l {{ $workflowProgressClass }} transition-all duration-300"
-                            style="width: {{ $workflowProgressPercent }}%;"
-                        ></div>
-                    </div>
-                    <div class="mt-2 flex items-center justify-between gap-3 text-[11px] font-bold">
-                        <p class="truncate text-slate-500">
-                            {{ $activeWorkflowStep ? 'مرحله فعلی: ' . $activeWorkflowStep['title'] : 'همه مراحل تکمیل شده است' }}
-                        </p>
-                        <p class="shrink-0 {{ $workflowLabelClass }}">
-                            {{ $completedWorkflowSteps }} از {{ count($workflowSteps) }} مرحله
-                        </p>
-                    </div>
-                </div>
-                <div class="border-b border-emerald-100/80 bg-emerald-50/30 px-4 py-2 sm:px-5 sm:py-2.5">
-                    <div class="flex items-center gap-2.5">
+                <div class="border-b border-emerald-100/80 bg-emerald-50/30 px-4 py-3 sm:px-5 sm:py-4">
+                    @php
+                        $miscHeaderTitle = $isEditing ? 'جزئیات خدمت' : trim($miscServiceName);
+                        $miscHeaderTitle = $miscHeaderTitle !== '' ? $miscHeaderTitle : 'تعریف خدمت جدید';
+                    @endphp
+                    <div
+                        class="flex items-center gap-2.5"
+                        x-data="{
+                            fullTitle: @js($miscHeaderTitle),
+                            shownTitle: @js($isEditing ? $miscHeaderTitle : ''),
+                            hasAnimated: @js($isEditing),
+                            cursorVisible: false,
+                            init() {
+                                if (this.hasAnimated) {
+                                    return;
+                                }
+
+                                this.typeTitle();
+                            },
+                            typeTitle() {
+                                this.hasAnimated = true;
+                                this.cursorVisible = true;
+                                const chars = Array.from(this.fullTitle || '');
+                                const step = 34;
+
+                                chars.forEach((char, index) => {
+                                    window.setTimeout(() => {
+                                        this.shownTitle += char;
+
+                                        if (index === chars.length - 1) {
+                                            window.setTimeout(() => {
+                                                this.cursorVisible = false;
+                                            }, 450);
+                                        }
+                                    }, index * step);
+                                });
+                            },
+                        }"
+                    >
                         <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-white">
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                            </svg>
+                            @if($isEditing)
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M11 5H6.5A2.5 2.5 0 0 0 4 7.5v10A2.5 2.5 0 0 0 6.5 20h10A2.5 2.5 0 0 0 19 17.5V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M13 4.8 18.2 10M11.5 11.5 17.8 5.2a1.84 1.84 0 1 1 2.6 2.6l-6.3 6.3-3.1.6.5-3.2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            @else
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M7 7.5h10M7 12h10M7 16.5h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                    <path d="M5.5 3.5h13A2.5 2.5 0 0 1 21 6v12a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 18V6a2.5 2.5 0 0 1 2.5-2.5Z" stroke="currentColor" stroke-width="2" />
+                                </svg>
+                            @endif
                         </span>
                         <div class="min-w-0">
-                            <h2 class="text-sm font-black text-slate-900">{{ $isEditing ? 'جزئیات خدمت' : 'تعریف خدمت جدید' }}</h2>
+                            <h2 class="truncate text-base font-extrabold text-emerald-950" :title="fullTitle" aria-label="{{ $miscHeaderTitle }}" data-service-header-title="{{ $miscHeaderTitle }}">
+                                <span x-text="shownTitle"></span><span x-show="cursorVisible" class="inline-block h-4 w-0.5 translate-y-0.5 rounded-full bg-emerald-500 align-middle" x-transition.opacity></span>
+                            </h2>
                         </div>
                     </div>
                 </div>
