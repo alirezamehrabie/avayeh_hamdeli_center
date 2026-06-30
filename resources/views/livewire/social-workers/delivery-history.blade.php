@@ -110,6 +110,48 @@
                 </div>
             </div>
 
+            <div class="border-b border-slate-100 bg-slate-50/60 px-4 py-3 sm:px-6">
+                <div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_9rem_auto] sm:items-center">
+                    <label class="relative block">
+                        <span class="sr-only">جستجو در سوابق تحویل</span>
+                        <input
+                            type="search"
+                            wire:model.live.debounce.400ms="deliverySearch"
+                            placeholder="جستجو نام یا کد ملی"
+                            class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                        >
+                    </label>
+
+                    <label class="block">
+                        <span class="sr-only">از تاریخ</span>
+                        <input
+                            type="date"
+                            wire:model.live="deliveryDateFrom"
+                            class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                        >
+                    </label>
+
+                    <label class="block">
+                        <span class="sr-only">تا تاریخ</span>
+                        <input
+                            type="date"
+                            wire:model.live="deliveryDateTo"
+                            class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                        >
+                    </label>
+
+                    @if($deliverySearch !== '' || $deliveryDateFrom !== '' || $deliveryDateTo !== '')
+                        <button
+                            type="button"
+                            wire:click="clearDeliveryFilters"
+                            class="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 transition hover:bg-slate-100"
+                        >
+                            حذف فیلتر
+                        </button>
+                    @endif
+                </div>
+            </div>
+
             <div class="divide-y divide-slate-100 sm:hidden">
                 @forelse($deliveries as $delivery)
                     <article class="px-4 py-3">

@@ -5,6 +5,7 @@ namespace App\Livewire\SocialWorkers;
 use App\Helpers\Morilog\Jalalian;
 use App\Models\Service;
 use App\Models\ServiceDelivery;
+use Illuminate\Support\Carbon;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -16,9 +17,15 @@ class DeliveryHistory extends Component
 
     public string $activeSection = 'delivery-history';
     public mixed $selectedServiceId = null;
+    public string $deliverySearch = '';
+    public string $deliveryDateFrom = '';
+    public string $deliveryDateTo = '';
 
     protected $queryString = [
         'selectedServiceId' => ['except' => null],
+        'deliverySearch' => ['except' => ''],
+        'deliveryDateFrom' => ['except' => ''],
+        'deliveryDateTo' => ['except' => ''],
     ];
 
     public function mount(): void
@@ -35,6 +42,21 @@ class DeliveryHistory extends Component
     public function backToServices(): void
     {
         $this->selectedServiceId = null;
+        $this->resetPage();
+    }
+
+    public function updated($property): void
+    {
+        if (in_array($property, ['deliverySearch', 'deliveryDateFrom', 'deliveryDateTo'], true)) {
+            $this->resetPage();
+        }
+    }
+
+    public function clearDeliveryFilters(): void
+    {
+        $this->deliverySearch = '';
+        $this->deliveryDateFrom = '';
+        $this->deliveryDateTo = '';
         $this->resetPage();
     }
 
@@ -109,13 +131,53 @@ class DeliveryHistory extends Component
 
     protected function deliveries(int $socialWorkerId, int $serviceId)
     {
+        $search = trim($this->deliverySearch);
+        $dateFrom = $this->normalizedDateInput($this->deliveryDateFrom);
+        $dateTo = $this->normalizedDateInput($this->deliveryDateTo);
+
         return ServiceDelivery::query()
             ->with(['service.serviceName', 'person', 'guardian'])
             ->where('social_worker_id', $socialWorkerId)
             ->where('service_id', $serviceId)
+            ->when($search !== '', function ($query) use ($search): void {
+                $query->where(function ($query) use ($search): void {
+                    $query
+                        ->where('full_name', 'like', "%{$search}%")
+                        ->orWhere('national_id', 'like', "%{$search}%")
+                        ->orWhereHas('person', function ($query) use ($search): void {
+                            $query
+                                ->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%")
+                                ->orWhere('national_id', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('guardian', function ($query) use ($search): void {
+                            $query
+                                ->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%")
+                                ->orWhere('national_code', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->when($dateFrom, fn ($query) => $query->whereDate('delivered_at', '>=', $dateFrom))
+            ->when($dateTo, fn ($query) => $query->whereDate('delivered_at', '<=', $dateTo))
             ->latest('delivered_at')
             ->latest('id')
             ->paginate(25);
+    }
+
+    protected function normalizedDateInput(string $date): ?string
+    {
+        $date = trim($date);
+
+        if ($date === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($date)->toDateString();
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     public function formatLastDeliveryDate(mixed $date): string
