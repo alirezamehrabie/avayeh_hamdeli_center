@@ -20,6 +20,7 @@ class DeliveryHistory extends Component
     public string $deliverySearch = '';
     public string $deliveryDateFrom = '';
     public string $deliveryDateTo = '';
+    protected ?array $unitOptionsCache = null;
 
     protected $queryString = [
         'selectedServiceId' => ['except' => null],
@@ -136,7 +137,7 @@ class DeliveryHistory extends Component
         $dateTo = $this->normalizedDateInput($this->deliveryDateTo);
 
         return ServiceDelivery::query()
-            ->with(['service.serviceName', 'person', 'guardian'])
+            ->with(['service.serviceName', 'serviceCategory', 'person', 'guardian'])
             ->where('social_worker_id', $socialWorkerId)
             ->where('service_id', $serviceId)
             ->when($search !== '', function ($query) use ($search): void {
@@ -235,6 +236,19 @@ class DeliveryHistory extends Component
     public function formatCurrency(mixed $value): string
     {
         return $this->persianNumber(number_format((int) $value)).' ریال';
+    }
+
+    public function formatUnitLabel(mixed $unit): string
+    {
+        $unit = trim((string) $unit);
+
+        if ($unit === '') {
+            return '';
+        }
+
+        $unitOptions = $this->unitOptionsCache ??= Service::unitOptions();
+
+        return (string) ($unitOptions[$unit] ?? $unit);
     }
 
     public function persianNumber(mixed $value): string
