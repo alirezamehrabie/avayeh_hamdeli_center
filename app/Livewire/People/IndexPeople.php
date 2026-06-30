@@ -5,6 +5,7 @@ namespace App\Livewire\People;
 use App\Models\Person;
 use App\Queries\People\PeopleIndexSearchQuery;
 use App\Queries\People\SelectedPersonDetailsQuery;
+use App\Queries\People\TrackingPersonDetailsQuery;
 use App\Services\People\SoftDeletePerson;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\Pagination\Paginator;
@@ -139,9 +140,7 @@ class IndexPeople extends Component
 
     public function getTrackingPersonProperty(): ?Person
     {
-        return $this->trackingPersonId
-            ? Person::with(['creator:id,name', 'updater:id,name'])->find($this->trackingPersonId)
-            : null;
+        return app(TrackingPersonDetailsQuery::class)->find($this->trackingPersonId);
     }
 
     public function deletePerson(Person $person): void

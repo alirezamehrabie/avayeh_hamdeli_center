@@ -6,6 +6,7 @@ use App\Livewire\People\IndexPeople;
 use App\Models\Person;
 use App\Models\User;
 use App\Queries\People\SelectedPersonDetailsQuery;
+use App\Queries\People\TrackingPersonDetailsQuery;
 use App\Services\People\SoftDeletePerson;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -38,6 +39,32 @@ class IndexPeopleTest extends TestCase
         $this->assertTrue($selectedPerson->relationLoaded('skills'));
         $this->assertTrue($selectedPerson->relationLoaded('harmTypes'));
         $this->assertTrue($selectedPerson->relationLoaded('needsLevel'));
+    }
+
+    public function test_tracking_person_details_query_returns_null_without_valid_person(): void
+    {
+        $query = app(TrackingPersonDetailsQuery::class);
+
+        $this->assertNull($query->find(null));
+        $this->assertNull($query->find(999999));
+    }
+
+    public function test_tracking_person_details_query_loads_creator_and_updater(): void
+    {
+        $creator = User::factory()->create(['name' => 'creator-user']);
+        $updater = User::factory()->create(['name' => 'updater-user']);
+        $person = $this->person('P810004', '8100010004', [
+            'created_by' => $creator->id,
+            'updated_by' => $updater->id,
+        ]);
+
+        $trackingPerson = app(TrackingPersonDetailsQuery::class)->find($person->id);
+
+        $this->assertNotNull($trackingPerson);
+        $this->assertTrue($trackingPerson->relationLoaded('creator'));
+        $this->assertTrue($trackingPerson->relationLoaded('updater'));
+        $this->assertSame('creator-user', $trackingPerson->creator->name);
+        $this->assertSame('updater-user', $trackingPerson->updater->name);
     }
 
     public function test_soft_delete_person_service_stores_reason_and_soft_deletes_person(): void
@@ -90,13 +117,16 @@ class IndexPeopleTest extends TestCase
         ]);
     }
 
-    private function person(string $personCode, string $nationalId): Person
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    private function person(string $personCode, string $nationalId, array $attributes = []): Person
     {
-        return Person::query()->create([
+        return Person::query()->create(array_merge([
             'person_code' => $personCode,
             'national_id' => $nationalId,
             'first_name' => 'Test',
             'last_name' => 'Person',
-        ]);
+        ], $attributes));
     }
 }
