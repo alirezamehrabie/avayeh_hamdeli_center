@@ -11,7 +11,12 @@
             <div class="p-6">
                 <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     @forelse($services as $service)
-                        <div class="group relative overflow-hidden rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+                        <button
+                            type="button"
+                            wire:click="selectService({{ $service->id }})"
+                            class="group relative w-full overflow-hidden rounded-2xl border border-slate-100 bg-white text-right shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-100 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                            aria-label="مشاهده تحویل‌های خدمت {{ $service->code }}"
+                        >
 
                             {{-- رنگ‌بار بالای کارت --}}
                             <div class="h-1 bg-gradient-to-r from-cyan-400 to-blue-500"></div>
@@ -24,16 +29,11 @@
                                         <h2 class="mt-0.5 truncate text-base font-black text-slate-800">{{ $service->code }}</h2>
                                         <p class="truncate text-xs text-slate-400">{{ $service->serviceName?->name ?: '—' }}</p>
                                     </div>
-                                    <button
-                                        type="button"
-                                        wire:click="selectService({{ $service->id }})"
-                                        class="shrink-0 flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-50 text-cyan-600 hover:bg-cyan-100 transition"
-                                        aria-label="مشاهده تحویل‌های خدمت {{ $service->code }}"
-                                    >
+                                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-50 text-cyan-600 transition group-hover:bg-cyan-100">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
                                         </svg>
-                                    </button>
+                                    </span>
                                 </div>
 
                                 {{-- جداکننده --}}
@@ -63,7 +63,7 @@
                                     <span class="text-[11px] font-bold text-slate-700">{{ $this->formatLastDeliveryDate($service->last_delivery_at) }}</span>
                                 </div>
                             </div>
-                        </div>
+                        </button>
                     @empty
                         <div class="col-span-full rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-16 text-center text-sm text-slate-400">
                             هیچ سابقه تحویلی ثبت نشده است.

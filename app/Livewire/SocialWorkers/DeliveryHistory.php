@@ -15,7 +15,7 @@ class DeliveryHistory extends Component
     use WithPagination;
 
     public string $activeSection = 'delivery-history';
-    public ?int $selectedServiceId = null;
+    public mixed $selectedServiceId = null;
 
     protected $queryString = [
         'selectedServiceId' => ['except' => null],
@@ -41,9 +41,10 @@ class DeliveryHistory extends Component
     public function render()
     {
         $socialWorkerId = (int) auth()->user()->social_worker_id;
-        $selectedService = $this->selectedServiceId ? $this->selectedService($socialWorkerId) : null;
+        $selectedServiceId = $this->normalizedSelectedServiceId();
+        $selectedService = $selectedServiceId ? $this->selectedService($socialWorkerId, $selectedServiceId) : null;
 
-        if ($this->selectedServiceId && ! $selectedService) {
+        if ($selectedServiceId && ! $selectedService) {
             $this->selectedServiceId = null;
         }
 
@@ -72,7 +73,7 @@ class DeliveryHistory extends Component
             ->get();
     }
 
-    protected function selectedService(int $socialWorkerId): ?Service
+    protected function selectedService(int $socialWorkerId, int $selectedServiceId): ?Service
     {
         return Service::query()
             ->with(['serviceName', 'categories'])
@@ -88,9 +89,22 @@ class DeliveryHistory extends Component
             ->withMax([
                 'deliveries as worker_last_delivery_at' => fn ($query) => $query->where('social_worker_id', $socialWorkerId),
             ], 'delivered_at')
-            ->whereKey($this->selectedServiceId)
+            ->whereKey($selectedServiceId)
             ->whereHas('deliveries', fn ($query) => $query->where('social_worker_id', $socialWorkerId))
             ->first();
+    }
+
+    protected function normalizedSelectedServiceId(): ?int
+    {
+        if ($this->selectedServiceId === null || $this->selectedServiceId === '') {
+            return null;
+        }
+
+        $selectedServiceId = filter_var($this->selectedServiceId, FILTER_VALIDATE_INT);
+
+        return $selectedServiceId !== false && $selectedServiceId > 0
+            ? $selectedServiceId
+            : null;
     }
 
     protected function deliveries(int $socialWorkerId, int $serviceId)
