@@ -173,11 +173,49 @@ class DeliveryHistory extends Component
             return null;
         }
 
+        if (preg_match('/^\d{4}\/\d{1,2}\/\d{1,2}$/', $date) === 1) {
+            try {
+                return Jalalian::fromFormat('Y/m/d', $this->normalizeJalaliDate($date))->toCarbon()->toDateString();
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+
         try {
             return Carbon::parse($date)->toDateString();
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    protected function normalizeJalaliDate(string $date): string
+    {
+        $date = strtr($date, [
+            '۰' => '0',
+            '۱' => '1',
+            '۲' => '2',
+            '۳' => '3',
+            '۴' => '4',
+            '۵' => '5',
+            '۶' => '6',
+            '۷' => '7',
+            '۸' => '8',
+            '۹' => '9',
+            '٠' => '0',
+            '١' => '1',
+            '٢' => '2',
+            '٣' => '3',
+            '٤' => '4',
+            '٥' => '5',
+            '٦' => '6',
+            '٧' => '7',
+            '٨' => '8',
+            '٩' => '9',
+        ]);
+
+        [$year, $month, $day] = array_map('intval', explode('/', $date));
+
+        return sprintf('%04d/%02d/%02d', $year, $month, $day);
     }
 
     public function formatLastDeliveryDate(mixed $date): string
@@ -186,6 +224,33 @@ class DeliveryHistory extends Component
             return '-';
         }
 
-        return Jalalian::fromDateTime($date)->format('Y/m/d');
+        return $this->persianNumber(Jalalian::fromDateTime($date)->format('Y/m/d'));
+    }
+
+    public function formatQuantity(mixed $value): string
+    {
+        return $this->persianNumber(number_format((float) $value, 2));
+    }
+
+    public function formatCurrency(mixed $value): string
+    {
+        return $this->persianNumber(number_format((int) $value)).' ریال';
+    }
+
+    public function persianNumber(mixed $value): string
+    {
+        return strtr((string) $value, [
+            '0' => '۰',
+            '1' => '۱',
+            '2' => '۲',
+            '3' => '۳',
+            '4' => '۴',
+            '5' => '۵',
+            '6' => '۶',
+            '7' => '۷',
+            '8' => '۸',
+            '9' => '۹',
+            ',' => '٬',
+        ]);
     }
 }

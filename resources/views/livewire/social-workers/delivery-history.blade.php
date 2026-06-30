@@ -15,7 +15,7 @@
                             type="button"
                             wire:click="selectService({{ $service->id }})"
                             class="group relative w-full overflow-hidden rounded-2xl border border-slate-100 bg-white text-right shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-100 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-cyan-100"
-                            aria-label="مشاهده تحویل‌های خدمت {{ $service->code }}"
+                            aria-label="مشاهده تحویل‌های خدمت {{ $this->persianNumber($service->code) }}"
                         >
 
                             {{-- رنگ‌بار بالای کارت --}}
@@ -26,7 +26,7 @@
                                 <div class="flex items-start justify-between gap-2">
                                     <div class="min-w-0">
                                         <span class="inline-block text-[10px] font-bold tracking-widest text-cyan-500 uppercase">خدمت</span>
-                                        <h2 class="mt-0.5 truncate text-base font-black text-slate-800">{{ $service->code }}</h2>
+                                        <h2 class="mt-0.5 truncate text-base font-black text-slate-800">{{ $this->persianNumber($service->code) }}</h2>
                                         <p class="truncate text-xs text-slate-400">{{ $service->serviceName?->name ?: '—' }}</p>
                                     </div>
                                     <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-50 text-cyan-600 transition group-hover:bg-cyan-100">
@@ -83,7 +83,7 @@
                         >
                             بازگشت به خدمات
                         </button>
-                        <h2 class="truncate text-lg font-black text-slate-800 sm:text-xl">{{ $selectedService->code }} - {{ $selectedService->serviceName?->name }}</h2>
+                        <h2 class="truncate text-lg font-black text-slate-800 sm:text-xl">{{ $this->persianNumber($selectedService->code) }} - {{ $selectedService->serviceName?->name }}</h2>
                         <p class="mt-1 truncate text-xs font-medium text-slate-500 sm:text-sm">
                             {{ $selectedService->serviceCategory?->name ?: '-' }} | {{ \App\Models\Service::TYPE_OPTIONS[$selectedService->service_type] ?? '-' }}
                         </p>
@@ -92,11 +92,11 @@
                     <dl class="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:min-w-[32rem]">
                         <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
                             <dt class="text-[10px] font-bold text-slate-400">تعداد</dt>
-                            <dd class="mt-0.5 text-sm font-black text-slate-800">{{ number_format((int) ($selectedService->worker_deliveries_count ?? 0)) }}</dd>
+                            <dd class="mt-0.5 text-sm font-black text-slate-800">{{ $this->persianNumber(number_format((int) ($selectedService->worker_deliveries_count ?? 0))) }}</dd>
                         </div>
                         <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
                             <dt class="text-[10px] font-bold text-slate-400">مقدار</dt>
-                            <dd class="mt-0.5 text-sm font-black text-slate-800">{{ number_format((float) ($selectedService->worker_delivered_quantity ?? 0), 2) }}</dd>
+                            <dd class="mt-0.5 text-sm font-black text-slate-800">{{ $this->formatQuantity($selectedService->worker_delivered_quantity ?? 0) }}</dd>
                         </div>
                         <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
                             <dt class="text-[10px] font-bold text-slate-400">آخرین تحویل</dt>
@@ -104,7 +104,7 @@
                         </div>
                         <div class="rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 py-2">
                             <dt class="text-[10px] font-bold text-emerald-600/70">ارزش</dt>
-                            <dd class="mt-0.5 truncate text-sm font-black text-emerald-700">{{ number_format((int) ($selectedService->worker_delivered_value ?? 0)) }} IRR</dd>
+                            <dd class="mt-0.5 truncate text-sm font-black text-emerald-700">{{ $this->formatCurrency($selectedService->worker_delivered_value ?? 0) }}</dd>
                         </div>
                     </dl>
                 </div>
@@ -118,33 +118,63 @@
                             type="search"
                             wire:model.live.debounce.400ms="deliverySearch"
                             placeholder="جستجو نام یا کد ملی"
-                            class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                            class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100 focus:ring-offset-2"
                         >
                     </label>
 
-                    <label class="block">
-                        <span class="sr-only">از تاریخ</span>
-                        <input
-                            type="date"
-                            wire:model.live="deliveryDateFrom"
-                            class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
-                        >
-                    </label>
+                    <div x-data="jalaliDateTimeField($wire.entangle('deliveryDateFrom').live)">
+                        <label class="relative block">
+                            <span class="sr-only">از تاریخ</span>
+                            <input
+                                type="text"
+                                x-ref="input"
+                                x-model="draft"
+                                x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                x-on:jalali-picker-open="handlePickerOpen()"
+                                x-on:jalali-picker-close="handlePickerClose()"
+                                x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                readonly
+                                inputmode="none"
+                                autocomplete="off"
+                                data-jdp-readonly
+                                data-jdp
+                                data-jdp-only-date
+                                placeholder="از تاریخ"
+                                class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none transition placeholder:text-slate-400 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100 focus:ring-offset-2"
+                            >
+                        </label>
+                    </div>
 
-                    <label class="block">
-                        <span class="sr-only">تا تاریخ</span>
-                        <input
-                            type="date"
-                            wire:model.live="deliveryDateTo"
-                            class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
-                        >
-                    </label>
+                    <div x-data="jalaliDateTimeField($wire.entangle('deliveryDateTo').live)">
+                        <label class="relative block">
+                            <span class="sr-only">تا تاریخ</span>
+                            <input
+                                type="text"
+                                x-ref="input"
+                                x-model="draft"
+                                x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                x-on:jalali-picker-open="handlePickerOpen()"
+                                x-on:jalali-picker-close="handlePickerClose()"
+                                x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                readonly
+                                inputmode="none"
+                                autocomplete="off"
+                                data-jdp-readonly
+                                data-jdp
+                                data-jdp-only-date
+                                placeholder="تا تاریخ"
+                                class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none transition placeholder:text-slate-400 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100 focus:ring-offset-2"
+                            >
+                        </label>
+                    </div>
 
                     @if($deliverySearch !== '' || $deliveryDateFrom !== '' || $deliveryDateTo !== '')
                         <button
                             type="button"
                             wire:click="clearDeliveryFilters"
-                            class="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 transition hover:bg-slate-100"
+                            class="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 transition hover:bg-slate-100 focus:outline-none focus:ring-4 focus:ring-cyan-100 focus:ring-offset-2"
                         >
                             حذف فیلتر
                         </button>
@@ -158,21 +188,21 @@
                         <div class="flex items-center justify-between gap-3">
                             <div class="min-w-0">
                                 <h3 class="truncate text-sm font-extrabold text-slate-800">{{ $delivery->recipient_name ?: '-' }}</h3>
-                                <p class="mt-0.5 text-[11px] font-medium text-slate-400">{{ $delivery->recipient_national_id ?: '-' }}</p>
+                                <p class="mt-0.5 text-[11px] font-medium text-slate-400">{{ $this->persianNumber($delivery->recipient_national_id ?: '-') }}</p>
                             </div>
                             <time class="shrink-0 rounded-lg bg-slate-50 px-2 py-1 text-[10px] font-bold text-slate-500">
-                                {{ optional($delivery->delivered_at)->format('Y-m-d') ?: '-' }}
+                                {{ $this->formatLastDeliveryDate($delivery->delivered_at) }}
                             </time>
                         </div>
 
                         <dl class="mt-2 grid grid-cols-2 gap-2 text-[11px]">
                             <div class="flex items-center justify-between gap-2 rounded-xl bg-slate-50 px-2.5 py-2">
                                 <dt class="text-slate-400">مقدار</dt>
-                                <dd class="font-extrabold text-slate-800">{{ number_format((float) $delivery->delivered_quantity, 2) }}</dd>
+                                <dd class="font-extrabold text-slate-800">{{ $this->formatQuantity($delivery->delivered_quantity) }}</dd>
                             </div>
                             <div class="flex items-center justify-between gap-2 rounded-xl bg-emerald-50/70 px-2.5 py-2">
                                 <dt class="text-emerald-600/70">ارزش</dt>
-                                <dd class="font-extrabold text-emerald-700">{{ number_format($delivery->delivered_total_value) }} IRR</dd>
+                                <dd class="font-extrabold text-emerald-700">{{ $this->formatCurrency($delivery->delivered_total_value) }}</dd>
                             </div>
                         </dl>
                     </article>
@@ -196,10 +226,10 @@
                     @forelse($deliveries as $delivery)
                         <tr class="transition hover:bg-slate-50">
                             <td class="px-4 py-4 text-slate-700">{{ $delivery->recipient_name }}</td>
-                            <td class="px-4 py-4 text-center text-slate-700">{{ $delivery->recipient_national_id }}</td>
-                            <td class="px-4 py-4 text-center font-bold text-slate-800">{{ number_format((float) $delivery->delivered_quantity, 2) }}</td>
-                            <td class="px-4 py-4 text-center font-bold text-emerald-700">{{ number_format($delivery->delivered_total_value) }} IRR</td>
-                            <td class="px-4 py-4 text-center text-slate-700">{{ optional($delivery->delivered_at)->format('Y-m-d') }}</td>
+                            <td class="px-4 py-4 text-center text-slate-700">{{ $this->persianNumber($delivery->recipient_national_id) }}</td>
+                            <td class="px-4 py-4 text-center font-bold text-slate-800">{{ $this->formatQuantity($delivery->delivered_quantity) }}</td>
+                            <td class="px-4 py-4 text-center font-bold text-emerald-700">{{ $this->formatCurrency($delivery->delivered_total_value) }}</td>
+                            <td class="px-4 py-4 text-center text-slate-700">{{ $this->formatLastDeliveryDate($delivery->delivered_at) }}</td>
                         </tr>
                     @empty
                         <tr>
