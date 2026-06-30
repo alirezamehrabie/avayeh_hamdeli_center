@@ -34,6 +34,7 @@ use App\Models\AccountOwnerRelation;
 use App\Models\SupportOrganization;
 use App\Models\Bank;
 use App\Models\EducationLevel;
+use App\Services\People\SyncPersonFamilyContext;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Validator;
@@ -1663,10 +1664,7 @@ class CreatePerson extends Component
                     'father_left_home' => (bool) $this->father_left_home,
                     'mother_left_home' => (bool) $this->mother_left_home,
                 ]);
-                if ($guardianInstance) {
-                    $this->syncChildrenInHouseForParentGuardian($guardianInstance);
-                }
-                $this->syncFamilyStatusAcrossSiblings($this->person);
+                $this->syncSiblingFamilyStatuses($this->person, $guardianInstance);
 
                 // --- 6. به‌روزرسانی اطلاعات سکونت (Residence) ---
                 if ($guardianInstance) {
@@ -1769,7 +1767,7 @@ class CreatePerson extends Component
 
                 // --- 12. همگام‌سازی مهارت‌ها و آسیب‌ها ---
                 $this->person->skills()->sync($this->skills ?? []);
-                $this->syncPersonHarmTypesWithFamilyPropagation($this->person, $this->harm_types ?? []);
+                $this->syncHarmTypesWithFamilyPropagation($this->person);
 
                 DB::commit();
 
@@ -1891,10 +1889,7 @@ class CreatePerson extends Component
                     'father_left_home' => (bool) $this->father_left_home,
                     'mother_left_home' => (bool) $this->mother_left_home,
                 ]);
-                if ($guardianInstance) {
-                    $this->syncChildrenInHouseForParentGuardian($guardianInstance);
-                }
-                $this->syncFamilyStatusAcrossSiblings($person);
+                $this->syncSiblingFamilyStatuses($person, $guardianInstance);
 
                 // جدول 3: Residence
                 if ($guardianInstance) {
@@ -1987,12 +1982,7 @@ class CreatePerson extends Component
                 if (!empty($this->skills)) {
                     $person->skills()->sync($this->skills);
                 }
-
-                if (!empty($this->harm_types)) {
-                    $this->syncPersonHarmTypesWithFamilyPropagation($person, $this->harm_types);
-                } else {
-                    $this->syncPersonHarmTypesWithFamilyPropagation($person, []);
-                }
+                $this->syncHarmTypesWithFamilyPropagation($person);
 
                 DB::commit();
 
@@ -2228,106 +2218,32 @@ class CreatePerson extends Component
         return $sqlState === '23000' || $sqlState === '23505' || $driverCode === 1062 || $driverCode === 19;
     }
 
-    private function syncPersonHarmTypesWithFamilyPropagation(Person $person, array $selectedHarmTypes): void
+    private function syncSiblingFamilyStatuses(Person $person, ?Guardian $guardian): void
     {
-        $selectedHarmTypeIds = collect($selectedHarmTypes)
-            ->filter(fn($value) => $value !== null && $value !== '')
-            ->map(fn($value) => (int)$value)
-            ->unique()
-            ->values()
-            ->all();
+        app(SyncPersonFamilyContext::class)->syncSiblingFamilyStatuses(
+            $person,
+            $this->familyStatusPropagationPayload(),
+            $guardian
+        );
+    }
 
-        // 1. ابتدا آسیب‌های خودِ فرد را سینک می‌کنیم
-        $person->harmTypes()->sync($selectedHarmTypeIds);
+    private function syncHarmTypesWithFamilyPropagation(Person $person): void
+    {
+        app(SyncPersonFamilyContext::class)->syncHarmTypesWithFamilyPropagation($person, $this->harm_types ?? []);
+    }
 
-        $fatherId = trim((string)$person->father_national_id);
-        $motherId = trim((string)$person->mother_national_id);
-
-        // اگر هیچ کد ملی پدری یا مادری ثبت نشده، عملاً خواهری/برادری قابل شناسایی نیست
-        if ($fatherId === '' && $motherId === '') {
-            return;
-        }
-
-        // تعریف دسته‌بندی آسیب‌ها برای انتشار هوشمند
-        $harmRules = [
-            1 => ['father_national_id' => $fatherId], // فوت پدر -> فقط بر اساس کد ملی پدر
-            2 => ['mother_national_id' => $motherId], // فوت مادر -> فقط بر اساس کد ملی مادر
-            5 => ['father_national_id' => $fatherId, 'mother_national_id' => $motherId], // زندانی والدین -> ترکیب هر دو
-            7 => ['father_national_id' => $fatherId, 'mother_national_id' => $motherId], // فرزند طلاق -> ترکیب هر دو (حل مشکل شما)
+    private function familyStatusPropagationPayload(): array
+    {
+        return [
+            'remarried_parent' => $this->remarried_parent ?: null,
+            'children_from_previous_marriage' => (int) ($this->children_from_previous_marriage ?? 0),
+            'has_parent_disability' => (bool) $this->has_parent_disability,
+            'parent_disability_description' => (bool) $this->has_parent_disability
+                ? $this->parent_disability_description
+                : null,
+            'father_left_home' => (bool) $this->father_left_home,
+            'mother_left_home' => (bool) $this->mother_left_home,
         ];
-
-        foreach ($harmRules as $harmId => $conditions) {
-            // بررسی اینکه آیا شرایط لازم (کد ملی‌ها) برای این قانون مهیا هست یا خیر
-            $canProcess = true;
-            foreach ($conditions as $val) {
-                if (empty($val)) $canProcess = false;
-            }
-
-            if (!$canProcess) continue;
-
-            // یافتن خواهر و برادرهایی که مشمول این قانون خاص می‌شوند
-            $targetSiblings = Person::query()
-                ->where('id', '!=', $person->id)
-                ->where($conditions)
-                ->get(['id']);
-
-            if ($targetSiblings->isEmpty()) continue;
-
-            $siblingIds = $targetSiblings->pluck('id')->toArray();
-
-            // اگر تیک این آسیب زده شده بود -> برای بقیه اضافه کن
-            if (in_array($harmId, $selectedHarmTypeIds)) {
-                foreach ($targetSiblings as $sibling) {
-                    $sibling->harmTypes()->syncWithoutDetaching([$harmId]);
-                }
-            }
-            // اگر تیک این آسیب برداشته شده بود -> از بقیه هم پاک کن
-            else {
-                foreach ($targetSiblings as $sibling) {
-                    $sibling->harmTypes()->detach([$harmId]);
-                }
-            }
-        }
-    }
-
-    private function syncFamilyStatusAcrossSiblings(Person $person): void
-    {
-        $fatherNationalId = trim((string)$person->father_national_id);
-        $motherNationalId = trim((string)$person->mother_national_id);
-
-        // وضعیت خانوادگی (مثل ازدواج مجدد یا ترک منزل) مستقیماً به رابطه این پدر و این مادر برمی‌گردد
-        // پس حتماً باید هر دو کد ملی وجود داشته باشند تا به فرزندان "مشترک" سرایت کند
-        if ($fatherNationalId === '' || $motherNationalId === '') {
-            return;
-        }
-
-        $siblings = Person::query()
-            ->where('id', '!=', $person->id)
-            ->where('father_national_id', $fatherNationalId)
-            ->where('mother_national_id', $motherNationalId)
-            ->get(['id']);
-
-        foreach ($siblings as $sibling) {
-            FamilyStatus::updateOrCreate(
-                ['person_id' => $sibling->id],
-                [
-                    'remarried_parent' => $this->remarried_parent ?: null,
-                    'children_from_previous_marriage' => (int)($this->children_from_previous_marriage ?? 0),
-                    'has_parent_disability' => (bool)$this->has_parent_disability,
-                    'parent_disability_description' => (bool)$this->has_parent_disability
-                        ? $this->parent_disability_description
-                        : null,
-                    'father_left_home' => (bool) $this->father_left_home,
-                    'mother_left_home' => (bool) $this->mother_left_home,
-                ]
-            );
-        }
-    }
-
-
-    private function syncChildrenInHouseForParentGuardian(Guardian $guardian): void
-    {
-        $guardian->refreshChildrenInHouse();
     }
 
     private function recalculateChildrenInHouseRealtime(): void
