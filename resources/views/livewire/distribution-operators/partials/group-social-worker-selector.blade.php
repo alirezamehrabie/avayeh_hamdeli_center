@@ -100,7 +100,13 @@
             openSelector() {
                 this.open = true;
                 $wire.openGroupWorkerSearch({{ $groupIndex }});
+                this.focusWorkerSearch();
                 this.pushSelectorHistory();
+            },
+            focusWorkerSearch() {
+                this.$nextTick(() => {
+                    this.$refs.workerSearch?.focus({ preventScroll: true });
+                });
             },
             closeSelector({ syncHistory = true } = {}) {
                 const shouldRestoreHistory = syncHistory && this.historyActive;
@@ -234,6 +240,7 @@
                 <div class="relative">
                     <input
                         type="search"
+                        x-ref="workerSearch"
                         x-model.debounce.250ms="search"
                         @focus="$wire.openGroupWorkerSearch({{ $groupIndex }})"
                         class="min-h-12 w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm text-slate-700 shadow-sm transition placeholder:text-xs placeholder:text-slate-400 focus:outline-none focus:ring-4 {{ $accentClasses['focus'] }}"
