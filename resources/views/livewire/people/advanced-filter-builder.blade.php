@@ -332,9 +332,14 @@
         </div>
 
         <div class="overflow-hidden rounded-xl border border-slate-200 bg-white">
-            <div class="overflow-x-auto">
+            <div
+                class="max-h-[70vh] overflow-auto overscroll-contain"
+                tabindex="0"
+                role="region"
+                aria-label="Advanced beneficiary report results"
+            >
                 <table class="min-w-full text-sm">
-                    <thead class="bg-slate-100 text-slate-700">
+                    <thead class="sticky top-0 z-10 bg-slate-100 text-slate-700 shadow-sm">
                     <tr>
                         @foreach($visibleColumns as $columnKey)
                             <th class="whitespace-nowrap px-4 py-3 text-right text-xs font-bold">
