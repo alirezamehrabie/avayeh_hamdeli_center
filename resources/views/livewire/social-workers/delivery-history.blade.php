@@ -73,21 +73,40 @@
 
             </div>
         @else
-            <div class="border-b border-slate-200 px-6 py-5">
+            <div class="border-b border-slate-200 px-4 py-4 sm:px-6 sm:py-5">
                 <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
+                    <div class="min-w-0">
                         <button
                             type="button"
                             wire:click="backToServices"
-                            class="mb-3 inline-flex items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                            class="mb-3 inline-flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-100 sm:rounded-2xl sm:px-4 sm:py-2 sm:text-sm"
                         >
                             بازگشت به خدمات
                         </button>
-                        <h2 class="text-xl font-black text-slate-800">{{ $selectedService->code }} - {{ $selectedService->serviceName?->name }}</h2>
-                        <p class="mt-1 text-sm text-slate-500">
+                        <h2 class="truncate text-lg font-black text-slate-800 sm:text-xl">{{ $selectedService->code }} - {{ $selectedService->serviceName?->name }}</h2>
+                        <p class="mt-1 truncate text-xs font-medium text-slate-500 sm:text-sm">
                             {{ $selectedService->serviceCategory?->name ?: '-' }} | {{ \App\Models\Service::TYPE_OPTIONS[$selectedService->service_type] ?? '-' }}
                         </p>
                     </div>
+
+                    <dl class="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:min-w-[32rem]">
+                        <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                            <dt class="text-[10px] font-bold text-slate-400">تعداد</dt>
+                            <dd class="mt-0.5 text-sm font-black text-slate-800">{{ number_format((int) ($selectedService->worker_deliveries_count ?? 0)) }}</dd>
+                        </div>
+                        <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                            <dt class="text-[10px] font-bold text-slate-400">مقدار</dt>
+                            <dd class="mt-0.5 text-sm font-black text-slate-800">{{ number_format((float) ($selectedService->worker_delivered_quantity ?? 0), 2) }}</dd>
+                        </div>
+                        <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                            <dt class="text-[10px] font-bold text-slate-400">آخرین تحویل</dt>
+                            <dd class="mt-0.5 text-sm font-black text-slate-800">{{ $this->formatLastDeliveryDate($selectedService->worker_last_delivery_at ?? null) }}</dd>
+                        </div>
+                        <div class="rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 py-2">
+                            <dt class="text-[10px] font-bold text-emerald-600/70">ارزش</dt>
+                            <dd class="mt-0.5 truncate text-sm font-black text-emerald-700">{{ number_format((int) ($selectedService->worker_delivered_value ?? 0)) }} IRR</dd>
+                        </div>
+                    </dl>
                 </div>
             </div>
 

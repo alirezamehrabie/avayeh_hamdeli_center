@@ -76,6 +76,18 @@ class DeliveryHistory extends Component
     {
         return Service::query()
             ->with(['serviceName', 'categories'])
+            ->withCount([
+                'deliveries as worker_deliveries_count' => fn ($query) => $query->where('social_worker_id', $socialWorkerId),
+            ])
+            ->withSum([
+                'deliveries as worker_delivered_quantity' => fn ($query) => $query->where('social_worker_id', $socialWorkerId),
+            ], 'delivered_quantity')
+            ->withSum([
+                'deliveries as worker_delivered_value' => fn ($query) => $query->where('social_worker_id', $socialWorkerId),
+            ], 'delivered_total_value')
+            ->withMax([
+                'deliveries as worker_last_delivery_at' => fn ($query) => $query->where('social_worker_id', $socialWorkerId),
+            ], 'delivered_at')
             ->whereKey($this->selectedServiceId)
             ->whereHas('deliveries', fn ($query) => $query->where('social_worker_id', $socialWorkerId))
             ->first();
