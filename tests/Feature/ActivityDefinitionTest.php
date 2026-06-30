@@ -44,6 +44,73 @@ class ActivityDefinitionTest extends TestCase
         ]);
     }
 
+    public function test_new_activity_type_options_render_in_definition_form(): void
+    {
+        $user = $this->manager();
+
+        $this->actingAs($user);
+
+        Livewire::test(ActivityDefinition::class)
+            ->assertSee('کلاس آموزشی')
+            ->assertSee('طرح نخبگان (پسران)')
+            ->assertSee('طرح نخبگان (دختران)');
+    }
+
+    public function test_new_activity_types_are_valid_and_saved(): void
+    {
+        $user = $this->manager();
+
+        $this->actingAs($user);
+
+        $types = [
+            'educational_class',
+            'elite_program_boys',
+            'elite_program_girls',
+        ];
+
+        foreach ($types as $type) {
+            $name = 'Activity Type '.$type;
+
+            Livewire::test(ActivityDefinition::class)
+                ->set('name', $name)
+                ->set('activityType', $type)
+                ->call('save')
+                ->assertHasNoErrors(['activityType'])
+                ->assertRedirect('/admin/dashboard?section=activity-list');
+
+            $this->assertDatabaseHas('activities', [
+                'name' => $name,
+                'activity_type' => $type,
+            ]);
+        }
+    }
+
+    public function test_new_activity_type_is_preserved_when_editing_activity(): void
+    {
+        $user = $this->manager();
+        $activity = Activity::query()->create([
+            'name' => 'Elite Girls Program',
+            'activity_type' => 'elite_program_girls',
+            'status' => 'draft',
+            'created_by' => $user->id,
+        ]);
+
+        $this->actingAs($user);
+
+        Livewire::test(ActivityDefinition::class, ['activityId' => $activity->id])
+            ->assertSet('activityType', 'elite_program_girls')
+            ->set('name', 'Updated Elite Girls Program')
+            ->call('save')
+            ->assertHasNoErrors(['activityType'])
+            ->assertRedirect('/admin/dashboard?section=activity-list');
+
+        $this->assertDatabaseHas('activities', [
+            'id' => $activity->id,
+            'name' => 'Updated Elite Girls Program',
+            'activity_type' => 'elite_program_girls',
+        ]);
+    }
+
     public function test_activity_datetimes_are_saved_correctly_from_jalali_input(): void
     {
         $user = $this->manager();

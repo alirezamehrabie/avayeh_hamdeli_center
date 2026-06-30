@@ -25,6 +25,9 @@ class Activity extends Model
         'workshop' => 'کارگاه',
         'ceremony' => 'مراسم',
         'group_activity' => 'فعالیت گروهی',
+        'educational_class' => 'کلاس آموزشی',
+        'elite_program_boys' => 'طرح نخبگان (پسران)',
+        'elite_program_girls' => 'طرح نخبگان (دختران)',
     ];
 
     protected $fillable = [
