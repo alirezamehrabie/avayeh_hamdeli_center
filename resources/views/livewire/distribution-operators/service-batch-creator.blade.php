@@ -299,7 +299,6 @@
                                 @php
                                     $categoryMetrics = $selectedServiceCategoryMetrics[(int) $category->id] ?? ['quantity' => (float) $category->quantity, 'allocated' => 0.0, 'assignable' => 0.0];
                                     $totalStockQuantity = (float) $categoryMetrics['quantity'];
-                                    $alreadyAllocatedQuantity = (float) $categoryMetrics['allocated'];
                                     $assignableQuantity = (float) $categoryMetrics['assignable'];
                                     $allocatedPreview = $this->predefinedAllocationForCategory((int) $category->id);
                                     $remainingPreview = max(0, $assignableQuantity - $allocatedPreview);
@@ -313,12 +312,10 @@
                                         </span>
                                     </div>
 
-                                    <div class="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs font-bold">
-                                        <span class="text-cyan-700">قابل تخصیص: {{ number_format($assignableQuantity, 2) }}</span>
-                                        @if($alreadyAllocatedQuantity > 0)
-                                            <span class="text-slate-300">·</span>
-                                            <span class="text-slate-400">قبلاً {{ number_format($alreadyAllocatedQuantity, 2) }}</span>
-                                        @endif
+                                    <div class="mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-lg border border-cyan-100/70 bg-cyan-50/35 px-2 py-1 text-[11px]">
+                                        <span class="shrink-0 font-semibold text-cyan-700">قابل تخصیص</span>
+                                        <span class="h-3 w-px bg-cyan-100"></span>
+                                        <span class="min-w-0 truncate font-bold tabular-nums text-slate-700" dir="ltr">{{ number_format($assignableQuantity, 2) }}</span>
                                     </div>
 
                                     <div class="mt-2.5 grid grid-cols-[minmax(0,1fr)_auto_auto] gap-1.5">
