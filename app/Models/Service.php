@@ -38,6 +38,8 @@ class Service extends Model
         'dast' => 'دست',
         'kilogram' => 'کیلوگرم',
         'gram' => 'گرم',
+        'rial' => 'ریال',
+        'pair' => 'جفت',
     ];
 
     public const DELIVERY_CHANNEL_GATE = 'gate';
@@ -59,6 +61,8 @@ class Service extends Model
         'dast',
         'kilogram',
         'gram',
+        'rial',
+        'pair',
     ];
 
     protected $fillable = [

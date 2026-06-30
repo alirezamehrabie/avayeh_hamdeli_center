@@ -23,6 +23,69 @@ class ServiceDefinitionTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_rial_and_pair_are_available_service_units(): void
+    {
+        $this->assertDatabaseHas('service_units', [
+            'key' => 'rial',
+            'label' => 'ریال',
+        ]);
+        $this->assertDatabaseHas('service_units', [
+            'key' => 'pair',
+            'label' => 'جفت',
+        ]);
+
+        $this->assertSame('ریال', Service::unitOptions()['rial'] ?? null);
+        $this->assertSame('جفت', Service::unitOptions()['pair'] ?? null);
+        $this->assertContains('rial', Service::unitKeys());
+        $this->assertContains('pair', Service::unitKeys());
+    }
+
+    public function test_service_definition_accepts_rial_and_pair_units(): void
+    {
+        $user = $this->manager();
+
+        $this->actingAs($user);
+
+        Livewire::test(ServiceDefinition::class)
+            ->set('serviceName', 'Cash And Shoes Support')
+            ->set('serviceType', 'individual')
+            ->set('distributionStartDate', '1405/03/30')
+            ->set('status', 'draft')
+            ->set('categories', [
+                [
+                    'id' => null,
+                    'code' => '',
+                    'name' => 'Cash Credit',
+                    'quantity' => '1000000',
+                    'unit' => 'rial',
+                    'value' => '1',
+                ],
+                [
+                    'id' => null,
+                    'code' => '',
+                    'name' => 'Shoes',
+                    'quantity' => '2',
+                    'unit' => 'pair',
+                    'value' => '500,000',
+                ],
+            ])
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $service = Service::query()->where('name', 'Cash And Shoes Support')->firstOrFail();
+
+        $this->assertDatabaseHas('service_categories', [
+            'service_id' => $service->id,
+            'name' => 'Cash Credit',
+            'unit' => 'rial',
+        ]);
+        $this->assertDatabaseHas('service_categories', [
+            'service_id' => $service->id,
+            'name' => 'Shoes',
+            'unit' => 'pair',
+        ]);
+    }
+
     public function test_new_category_is_auto_created_as_template_when_saving_service_definition(): void
     {
         $user = $this->manager();

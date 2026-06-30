@@ -74,6 +74,72 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         $this->assertTrue((bool) $service->supports_home_delivery);
     }
 
+    public function test_misc_service_creation_accepts_rial_and_pair_units(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 905,
+            'first_name' => 'Distribution',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class)
+            ->set('mode', ServiceBatchCreator::MODE_MISC)
+            ->set('miscServiceType', 'individual')
+            ->set('miscCategories', [
+                [
+                    'name' => 'اعتبار نقدی',
+                    'quantity' => '1000000',
+                    'unit' => 'rial',
+                    'value' => '1',
+                ],
+                [
+                    'name' => 'کفش',
+                    'quantity' => '2',
+                    'unit' => 'pair',
+                    'value' => '500,000',
+                ],
+            ])
+            ->set('date', '1405/03/30')
+            ->set('socialWorkerQuery', $worker->full_name)
+            ->set('socialWorkerId', $worker->id)
+            ->call('saveBatch')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('distribution-operator.service-list', ['tab' => ServiceList::TAB_MISC]));
+
+        $service = Service::query()
+            ->where('created_by', $operator->id)
+            ->latest('id')
+            ->firstOrFail();
+
+        $this->assertDatabaseHas('service_categories', [
+            'service_id' => $service->id,
+            'name' => 'اعتبار نقدی',
+            'unit' => 'rial',
+        ]);
+        $this->assertDatabaseHas('service_categories', [
+            'service_id' => $service->id,
+            'name' => 'کفش',
+            'unit' => 'pair',
+        ]);
+        $this->assertDatabaseHas('service_social_worker', [
+            'social_worker_id' => $worker->id,
+            'service_category_id' => $service->categories()->where('unit', 'rial')->value('id'),
+            'allocated_quantity' => 1000000,
+        ]);
+        $this->assertDatabaseHas('service_social_worker', [
+            'social_worker_id' => $worker->id,
+            'service_category_id' => $service->categories()->where('unit', 'pair')->value('id'),
+            'allocated_quantity' => 2,
+        ]);
+    }
+
     public function test_misc_service_type_must_be_selected_before_save_confirmation(): void
     {
         $operator = User::factory()->create([

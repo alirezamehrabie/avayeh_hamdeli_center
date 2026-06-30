@@ -21,6 +21,8 @@ class ServiceUnitSeeder extends Seeder
             ['key' => 'dast',      'label' => 'دست',      'sort_id' => 4],
             ['key' => 'kilogram',  'label' => 'کیلوگرم',  'sort_id' => 5],
             ['key' => 'gram',      'label' => 'گرم',      'sort_id' => 6],
+            ['key' => 'rial',      'label' => 'ریال',     'sort_id' => 7],
+            ['key' => 'pair',      'label' => 'جفت',      'sort_id' => 8],
         ];
 
         ServiceUnit::query()->insert($items);
