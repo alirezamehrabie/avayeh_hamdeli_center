@@ -91,7 +91,7 @@ class ServiceDeliveryManager extends Component
         }
 
         foreach ($this->selectedServiceCategories as $category) {
-            $this->allocations[$workerId][(int) $category->id] = $this->allocations[$workerId][(int) $category->id] ?? '0';
+            $this->allocations[$workerId][(int) $category->id] = $this->allocations[$workerId][(int) $category->id] ?? null;
         }
 
         $this->socialWorkerSearch = '';
