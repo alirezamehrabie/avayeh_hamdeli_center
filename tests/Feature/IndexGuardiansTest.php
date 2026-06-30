@@ -11,7 +11,9 @@ use App\Queries\Guardians\ExpandedGuardianPeopleQuery;
 use App\Queries\Guardians\GuardianHouseholdStatsQuery;
 use App\Queries\Guardians\GuardianListSummaryQuery;
 use App\Queries\Guardians\SelectedGuardianDetailsQuery;
+use App\Services\Guardians\RefreshGuardianStats;
 use App\Services\Guardians\SoftDeleteGuardianFamily;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -141,6 +143,23 @@ class IndexGuardiansTest extends TestCase
         $this->assertSame(2, $guardian->refresh()->children_in_house);
     }
 
+    public function test_refresh_guardian_stats_service_updates_children_in_house(): void
+    {
+        $guardian = Guardian::query()->create([
+            'guardian_code' => 710023,
+            'first_name' => 'Service',
+            'last_name' => 'Refresh',
+            'children_count' => 1,
+            'children_in_house' => 0,
+        ]);
+
+        $this->person($guardian, 'P710023', '9234567890');
+
+        app(RefreshGuardianStats::class)->handle();
+
+        $this->assertSame(2, $guardian->refresh()->children_in_house);
+    }
+
     public function test_guardian_list_summary_query_returns_totals(): void
     {
         Guardian::query()->create([
@@ -181,8 +200,16 @@ class IndexGuardiansTest extends TestCase
 
         $this->assertNotNull($deletingGuardian);
         $this->assertSame(2, $deletingGuardian->people_count);
+        $this->assertSame(2, app(DeletingGuardianDetailsQuery::class)->findOrFail($guardian->id)->people_count);
         $this->assertNull(app(DeletingGuardianDetailsQuery::class)->find(null));
         $this->assertNull(app(DeletingGuardianDetailsQuery::class)->find(999999));
+    }
+
+    public function test_deleting_guardian_details_query_fails_for_missing_required_guardian(): void
+    {
+        $this->expectException(ModelNotFoundException::class);
+
+        app(DeletingGuardianDetailsQuery::class)->findOrFail(999999);
     }
 
     public function test_guardian_household_stats_query_groups_by_household_size(): void
@@ -401,6 +428,34 @@ class IndexGuardiansTest extends TestCase
         $this->assertSame(
             'Family moved out',
             Person::withTrashed()->findOrFail($secondPerson->id)->deletion_reason
+        );
+    }
+
+    public function test_soft_delete_guardian_family_service_can_delete_by_id(): void
+    {
+        $guardian = Guardian::query()->create([
+            'guardian_code' => 710024,
+            'first_name' => 'Service',
+            'last_name' => 'DeleteById',
+        ]);
+        $person = $this->person($guardian, 'P710024', '6234567892');
+
+        $deletedGuardian = app(SoftDeleteGuardianFamily::class)->handleById($guardian->id, 'Delete by id');
+
+        $this->assertTrue($deletedGuardian->is($guardian));
+        $this->assertSoftDeleted('guardians', [
+            'id' => $guardian->id,
+        ]);
+        $this->assertSoftDeleted('people', [
+            'id' => $person->id,
+        ]);
+        $this->assertSame(
+            'Delete by id',
+            Guardian::withTrashed()->findOrFail($guardian->id)->deletion_reason
+        );
+        $this->assertSame(
+            'Delete by id',
+            Person::withTrashed()->findOrFail($person->id)->deletion_reason
         );
     }
 

@@ -9,6 +9,7 @@ use App\Queries\Guardians\GuardianHouseholdStatsQuery;
 use App\Queries\Guardians\GuardianIndexSearchQuery;
 use App\Queries\Guardians\GuardianListSummaryQuery;
 use App\Queries\Guardians\SelectedGuardianDetailsQuery;
+use App\Services\Guardians\RefreshGuardianStats;
 use App\Services\Guardians\SoftDeleteGuardianFamily;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Layout;
@@ -103,7 +104,7 @@ class IndexGuardians extends Component
     {
         abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
-        $this->deletingGuardianId = Guardian::query()->findOrFail($guardianId)->id;
+        $this->deletingGuardianId = app(DeletingGuardianDetailsQuery::class)->findOrFail($guardianId)->id;
         $this->deletionReason = '';
         $this->resetValidation('deletionReason');
         $this->showDeleteModal = true;
@@ -127,10 +128,11 @@ class IndexGuardians extends Component
             'deletionReason.required' => 'ثبت علت حذف الزامی است.',
         ]);
 
-        $guardian = Guardian::query()->findOrFail($this->deletingGuardianId);
+        $guardian = app(SoftDeleteGuardianFamily::class)->handleById(
+            (int) $this->deletingGuardianId,
+            $validated['deletionReason']
+        );
         $guardianName = trim($guardian->first_name.' '.$guardian->last_name);
-
-        app(SoftDeleteGuardianFamily::class)->handle($guardian, $validated['deletionReason']);
 
         if ($this->expandedGuardianId === $guardian->id) {
             $this->expandedGuardianId = null;
@@ -229,7 +231,7 @@ class IndexGuardians extends Component
 
     private function refreshGuardianStats(string $message): void
     {
-        Guardian::refreshAllChildrenInHouse();
+        app(RefreshGuardianStats::class)->handle();
         $this->dispatch('guardian-stats-refreshed', message: $message);
     }
 }
