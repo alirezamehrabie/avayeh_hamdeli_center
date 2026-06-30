@@ -235,9 +235,37 @@
                                     @canany(['people-edit', 'people-delete'])
                                         <div
                                             class="relative"
-                                            x-data="{ open: false }"
+                                            x-data="{
+                                                open: false,
+                                                historyPushed: false,
+                                                openSheet() {
+                                                    if (this.open) {
+                                                        return;
+                                                    }
+
+                                                    this.open = true;
+                                                    window.history.pushState({ personActionSheet: {{ $person->id }} }, '', window.location.href);
+                                                    this.historyPushed = true;
+                                                },
+                                                closeSheet(fromPopState = false) {
+                                                    if (! this.open) {
+                                                        return;
+                                                    }
+
+                                                    this.open = false;
+
+                                                    if (this.historyPushed) {
+                                                        this.historyPushed = false;
+
+                                                        if (! fromPopState) {
+                                                            window.history.back();
+                                                        }
+                                                    }
+                                                },
+                                            }"
                                             @click.stop
-                                            @keydown.escape.window="open = false"
+                                            @keydown.escape.window="closeSheet()"
+                                            @popstate.window="closeSheet(true)"
                                         >
                                             <button
                                                 type="button"
@@ -245,7 +273,7 @@
                                                 aria-label="اقدامات بیشتر"
                                                 aria-haspopup="dialog"
                                                 :aria-expanded="open.toString()"
-                                                @click="open = ! open"
+                                                @click="open ? closeSheet() : openSheet()"
                                             >
                                                 <i class="bi bi-three-dots text-sm"></i>
                                             </button>
@@ -255,7 +283,7 @@
                                                 x-transition.opacity
                                                 class="fixed inset-0 z-40 bg-slate-950/35 backdrop-blur-[1px]"
                                                 style="display: none;"
-                                                @click="open = false"
+                                                @click="closeSheet()"
                                                 aria-hidden="true"
                                             ></div>
 
@@ -288,7 +316,7 @@
                                                             wire:loading.attr="disabled"
                                                             wire:target="quickEditPerson({{ $person->id }})"
                                                             class="flex min-h-12 w-full items-center gap-3 rounded-2xl border border-amber-100 bg-amber-50/70 px-4 py-3 text-right text-sm font-bold text-amber-800 transition hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-100 disabled:opacity-60"
-                                                            @click="open = false"
+                                                            @click="closeSheet()"
                                                         >
                                                             <i class="bi bi-lightning-charge text-base"></i>
                                                             ویرایش سریع
@@ -300,7 +328,7 @@
                                                             wire:loading.attr="disabled"
 
                                                             class="flex min-h-12 w-full items-center gap-3 rounded-2xl border border-cyan-100 bg-cyan-50/70 px-4 py-3 text-right text-sm font-bold text-cyan-800 transition hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-100 disabled:opacity-60"
-                                                            @click="open = false"
+                                                            @click="closeSheet()"
                                                         >
                                                             <i class="bi bi-qr-code text-base"></i>
                                                             کارت QR
@@ -314,7 +342,7 @@
                                                             wire:loading.attr="disabled"
                                                             wire:target="openDeleteModal({{ $person->id }})"
                                                             class="flex min-h-12 w-full items-center gap-3 rounded-2xl border border-rose-100 bg-rose-50/70 px-4 py-3 text-right text-sm font-bold text-rose-700 transition hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-rose-100 disabled:opacity-60"
-                                                            @click="open = false"
+                                                            @click="closeSheet()"
                                                         >
                                                             <i class="bi bi-trash3 text-base"></i>
                                                             انتقال به بلاک لیست
@@ -325,7 +353,7 @@
                                                 <button
                                                     type="button"
                                                     class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200"
-                                                    @click="open = false"
+                                                    @click="closeSheet()"
                                                 >
                                                     بستن
                                                 </button>

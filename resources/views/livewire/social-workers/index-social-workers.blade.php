@@ -114,7 +114,7 @@
 
             <div class="space-y-3 md:hidden">
                 @forelse ($socialWorkers as $worker)
-                    <article wire:key="social-worker-card-{{ $worker->id }}" class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+                    <article wire:key="social-worker-card-{{ $worker->id }}" class="relative overflow-visible rounded-lg border border-slate-200 bg-white">
                         <button
                             type="button"
                             wire:click="toggleSocialWorker({{ $worker->id }})"
@@ -155,26 +155,114 @@
                                     <span wire:loading wire:target="toggleSocialWorker({{ $worker->id }})">...</span>
                                 </button>
 
-                                <div class="relative" x-data="{ open: false }" @click.outside="open = false">
-                                    <button type="button" @click.stop="open = !open" class="inline-flex min-h-9 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-100" aria-label="عملیات مددکار">
+                                <div
+                                    class="relative"
+                                    x-data="{
+                                        open: false,
+                                        historyPushed: false,
+                                        openSheet() {
+                                            if (this.open) {
+                                                return;
+                                            }
+
+                                            this.open = true;
+                                            window.history.pushState({ socialWorkerActionSheet: {{ $worker->id }} }, '', window.location.href);
+                                            this.historyPushed = true;
+                                        },
+                                        closeSheet(fromPopState = false) {
+                                            if (! this.open) {
+                                                return;
+                                            }
+
+                                            this.open = false;
+
+                                            if (this.historyPushed) {
+                                                this.historyPushed = false;
+
+                                                if (! fromPopState) {
+                                                    window.history.back();
+                                                }
+                                            }
+                                        },
+                                    }"
+                                    @click.stop
+                                    @keydown.escape.window="closeSheet()"
+                                    @popstate.window="closeSheet(true)"
+                                >
+                                    <button
+                                        type="button"
+                                        @click="open ? closeSheet() : openSheet()"
+                                        class="inline-flex min-h-9 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-100"
+                                        aria-label="عملیات مددکار"
+                                        aria-haspopup="dialog"
+                                        :aria-expanded="open.toString()"
+                                    >
                                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.75h.01M12 12h.01M12 17.25h.01"/>
                                         </svg>
                                     </button>
-                                    <div x-show="open" x-transition.origin.top.left style="display: none;" class="absolute left-0 z-20 mt-2 w-40 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
+                                    <div
+                                        x-show="open"
+                                        x-transition.opacity
+                                        class="fixed inset-0 z-40 bg-slate-950/35 backdrop-blur-[1px]"
+                                        style="display: none;"
+                                        @click="closeSheet()"
+                                        aria-hidden="true"
+                                    ></div>
+
+                                    <div
+                                        x-show="open"
+                                        x-transition:enter="transition ease-out duration-200"
+                                        x-transition:enter-start="translate-y-6 opacity-0"
+                                        x-transition:enter-end="translate-y-0 opacity-100"
+                                        x-transition:leave="transition ease-in duration-150"
+                                        x-transition:leave-start="translate-y-0 opacity-100"
+                                        x-transition:leave-end="translate-y-6 opacity-0"
+                                        class="fixed inset-x-0 bottom-0 z-50 rounded-t-3xl border border-slate-200 bg-white px-4 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-3 shadow-2xl"
+                                        style="display: none;"
+                                        role="dialog"
+                                        aria-modal="true"
+                                        aria-label="اقدامات کارت مددکار"
+                                        @click.stop
+                                    >
+                                        <div class="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-200"></div>
+                                        <div class="mb-3 border-b border-slate-100 pb-3 text-right">
+                                            <p class="truncate text-sm font-extrabold text-slate-900">{{ $worker->full_name ?: 'بدون نام' }}</p>
+                                            <p class="mt-1 text-[11px] font-semibold text-slate-500" dir="ltr">{{ $worker->worker_code ?: '-' }}</p>
+                                        </div>
+
+                                        <div class="space-y-2">
                                         @if($embedded)
-                                            <button type="button" @click="open = false" wire:click.stop="editSocialWorker({{ $worker->id }})" wire:loading.attr="disabled" wire:target="editSocialWorker({{ $worker->id }})" class="block w-full px-3 py-2.5 text-right text-xs font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60">
+                                            <button type="button" @click="closeSheet()" wire:click.stop="editSocialWorker({{ $worker->id }})" wire:loading.attr="disabled" wire:target="editSocialWorker({{ $worker->id }})" class="flex min-h-12 w-full items-center gap-3 rounded-2xl border border-cyan-100 bg-cyan-50/70 px-4 py-3 text-right text-sm font-bold text-cyan-800 transition hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-100 disabled:cursor-wait disabled:opacity-60">
+                                                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931ZM19.5 7.125 16.875 4.5" />
+                                                </svg>
                                                 <span wire:loading.remove wire:target="editSocialWorker({{ $worker->id }})">ویرایش</span>
-                                                <span wire:loading wire:target="editSocialWorker({{ $worker->id }})">...</span>
+                                                <span wire:loading wire:target="editSocialWorker({{ $worker->id }})">در حال باز کردن...</span>
                                             </button>
                                         @else
-                                            <a href="{{ route('social-workers.edit', $worker) }}" @click.stop="open = false" class="block px-3 py-2.5 text-right text-xs font-bold text-slate-700 transition hover:bg-slate-50">
+                                            <a href="{{ route('social-workers.edit', $worker) }}" @click.stop="closeSheet()" class="flex min-h-12 w-full items-center gap-3 rounded-2xl border border-cyan-100 bg-cyan-50/70 px-4 py-3 text-right text-sm font-bold text-cyan-800 transition hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-100">
+                                                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931ZM19.5 7.125 16.875 4.5" />
+                                                </svg>
                                                 ویرایش
                                             </a>
                                         @endif
-                                        <button type="button" @click="open = false" wire:click.stop="deleteSocialWorker({{ $worker->id }})" wire:confirm="آیا از غیرفعال‌سازی این مددکار مطمئن هستید؟" wire:loading.attr="disabled" wire:target="deleteSocialWorker({{ $worker->id }})" class="block w-full border-t border-slate-100 px-3 py-2.5 text-right text-xs font-bold text-slate-500 transition hover:bg-rose-50 hover:text-rose-600 disabled:cursor-wait disabled:opacity-60">
+                                        <button type="button" @click="closeSheet()" wire:click.stop="deleteSocialWorker({{ $worker->id }})" wire:confirm="آیا از غیرفعال‌سازی این مددکار مطمئن هستید؟" wire:loading.attr="disabled" wire:target="deleteSocialWorker({{ $worker->id }})" class="flex min-h-12 w-full items-center gap-3 rounded-2xl border border-rose-100 bg-rose-50/70 px-4 py-3 text-right text-sm font-bold text-rose-700 transition hover:bg-rose-100 focus:outline-none focus:ring-2 focus:ring-rose-100 disabled:cursor-wait disabled:opacity-60">
+                                            <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166M18.16 19.673A2.25 2.25 0 0 1 15.916 21H8.084a2.25 2.25 0 0 1-2.244-1.956L4.772 5.79m14.456 0A48.108 48.108 0 0 0 12 5.25c-2.43 0-4.817.18-7.228.54m14.456 0L18.16 19.673M4.772 5.79c.34-.059.68-.114 1.022-.166m0 0A48.11 48.11 0 0 1 12 5.25m-6.206.374L5.25 4.5A2.25 2.25 0 0 1 7.5 2.25h9A2.25 2.25 0 0 1 18.75 4.5l-.544 1.124" />
+                                            </svg>
                                             <span wire:loading.remove wire:target="deleteSocialWorker({{ $worker->id }})">غیرفعال</span>
-                                            <span wire:loading wire:target="deleteSocialWorker({{ $worker->id }})">...</span>
+                                            <span wire:loading wire:target="deleteSocialWorker({{ $worker->id }})">در حال ثبت...</span>
+                                        </button>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                                            @click="closeSheet()"
+                                        >
+                                            بستن
                                         </button>
                                     </div>
                                 </div>
