@@ -91,7 +91,36 @@
                 </div>
             </div>
 
-            <div class="overflow-x-auto">
+            <div class="divide-y divide-slate-100 sm:hidden">
+                @forelse($deliveries as $delivery)
+                    <article class="px-4 py-3">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="min-w-0">
+                                <h3 class="truncate text-sm font-extrabold text-slate-800">{{ $delivery->recipient_name ?: '-' }}</h3>
+                                <p class="mt-0.5 text-[11px] font-medium text-slate-400">{{ $delivery->recipient_national_id ?: '-' }}</p>
+                            </div>
+                            <time class="shrink-0 rounded-lg bg-slate-50 px-2 py-1 text-[10px] font-bold text-slate-500">
+                                {{ optional($delivery->delivered_at)->format('Y-m-d') ?: '-' }}
+                            </time>
+                        </div>
+
+                        <dl class="mt-2 grid grid-cols-2 gap-2 text-[11px]">
+                            <div class="flex items-center justify-between gap-2 rounded-xl bg-slate-50 px-2.5 py-2">
+                                <dt class="text-slate-400">مقدار</dt>
+                                <dd class="font-extrabold text-slate-800">{{ number_format((float) $delivery->delivered_quantity, 2) }}</dd>
+                            </div>
+                            <div class="flex items-center justify-between gap-2 rounded-xl bg-emerald-50/70 px-2.5 py-2">
+                                <dt class="text-emerald-600/70">ارزش</dt>
+                                <dd class="font-extrabold text-emerald-700">{{ number_format($delivery->delivered_total_value) }} IRR</dd>
+                            </div>
+                        </dl>
+                    </article>
+                @empty
+                    <div class="px-4 py-10 text-center text-sm text-slate-500">هیچ سابقه تحویلی برای این خدمت یافت نشد.</div>
+                @endforelse
+            </div>
+
+            <div class="hidden overflow-x-auto sm:block">
                 <table class="min-w-full text-sm">
                     <thead class="bg-slate-950 text-white">
                     <tr>
