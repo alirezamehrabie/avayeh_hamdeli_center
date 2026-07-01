@@ -1655,6 +1655,67 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         ]);
     }
 
+    public function test_editing_misc_service_preserves_used_shared_category_worker_relationships(): void
+    {
+        [$operator, $worker, $service, $category] = $this->editableMiscService();
+        $otherWorker = SocialWorker::query()->create([
+            'worker_code' => 995,
+            'first_name' => 'Shared',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+
+        $service->workerAllocations()->create([
+            'service_category_id' => $category->id,
+            'social_worker_id' => $otherWorker->id,
+            'allocated_quantity' => 2,
+            'assigned_by_user_id' => $operator->id,
+        ]);
+
+        $category->update(['quantity' => 7]);
+
+        ServiceDelivery::query()->create([
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'delivery_channel' => Service::DELIVERY_CHANNEL_HOME,
+            'social_worker_id' => $worker->id,
+            'national_id' => '0000000004',
+            'full_name' => 'Delivered Recipient',
+            'delivered_quantity' => 1,
+            'value_per_unit_snapshot' => 0,
+            'delivered_total_value' => 0,
+            'delivered_at' => '2026-06-20',
+            'created_by' => $operator->id,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id])
+            ->set('miscDescription', 'Shared category update')
+            ->set('miscWorkerGroups.0.categories.0.quantity', '6')
+            ->set('miscWorkerGroups.1.categories.0.quantity', '2')
+            ->call('saveBatch')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('service_social_worker', [
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'allocated_quantity' => 6,
+        ]);
+        $this->assertDatabaseHas('service_social_worker', [
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'social_worker_id' => $otherWorker->id,
+            'allocated_quantity' => 2,
+        ]);
+        $this->assertDatabaseHas('service_deliveries', [
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+        ]);
+    }
+
     public function test_editing_misc_service_preserves_used_category_when_safe_fields_change(): void
     {
         [$operator, $worker, $service, $category] = $this->editableMiscService();

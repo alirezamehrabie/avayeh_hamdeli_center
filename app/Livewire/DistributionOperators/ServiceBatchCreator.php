@@ -1149,7 +1149,10 @@ class ServiceBatchCreator extends Component
                 ]);
             }
 
-            if (! in_array((int) $usage['social_worker_id'], $submitted['social_worker_ids'] ?? [], true)) {
+            $usedWorkerIds = array_values(array_unique(array_map('intval', $usage['social_worker_ids'] ?? [])));
+            $submittedWorkerIds = array_values(array_unique(array_map('intval', $submitted['social_worker_ids'] ?? [])));
+
+            if ($usedWorkerIds !== [] && array_diff($usedWorkerIds, $submittedWorkerIds) !== []) {
                 throw ValidationException::withMessages([
                     $submitted['field_prefix'].'.social_worker_id' => 'مددکار دسته‌بندی‌هایی که تحویل یا ورود برای آن‌ها ثبت شده است قابل تغییر نیست.',
                 ]);
@@ -1174,7 +1177,6 @@ class ServiceBatchCreator extends Component
     protected function submittedEditableRowsByCategoryId(array $workerGroups): array
     {
         $rows = [];
-        $seen = [];
 
         foreach (array_values($workerGroups) as $groupIndex => $group) {
             $workerId = (int) ($group['social_worker_id'] ?? 0);
@@ -1214,8 +1216,14 @@ class ServiceBatchCreator extends Component
     {
         $allocatedWorkerIds = ServiceWorkerAllocation::query()
             ->where('service_id', $service->id)
-            ->pluck('social_worker_id', 'service_category_id')
-            ->map(fn ($workerId): int => (int) $workerId)
+            ->get(['service_category_id', 'social_worker_id'])
+            ->groupBy('service_category_id')
+            ->map(fn (Collection $allocations): array => $allocations
+                ->pluck('social_worker_id')
+                ->map(fn ($workerId): int => (int) $workerId)
+                ->unique()
+                ->values()
+                ->all())
             ->all();
 
         $deliveredByCategory = $service->deliveries()
@@ -1240,7 +1248,7 @@ class ServiceBatchCreator extends Component
             ->unique()
             ->mapWithKeys(fn (int $categoryId): array => [
                 $categoryId => [
-                    'social_worker_id' => (int) ($allocatedWorkerIds[$categoryId] ?? 0),
+                    'social_worker_ids' => $allocatedWorkerIds[$categoryId] ?? [],
                     'delivered_quantity' => (float) ($deliveredByCategory[$categoryId] ?? 0),
                     'assigned_quantity' => (float) ($assignedByCategory[$categoryId] ?? 0),
                 ],
