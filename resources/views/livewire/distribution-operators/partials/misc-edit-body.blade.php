@@ -791,12 +791,13 @@
                                     </div>
                                 @endforeach
 
+                                {{-- Lighter, inline secondary action: adds one row to the current worker. --}}
                                 <button
                                     type="button"
                                     wire:click="addGroupCategory({{ $gi }})"
-                                    class="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-200 bg-white px-3 py-2.5 text-sm font-bold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-50"
+                                    class="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-600 transition hover:border-emerald-300 hover:bg-emerald-50/60"
                                 >
-                                    <span class="text-lg leading-none">+</span>
+                                    <i class="bi bi-plus-lg text-sm"></i>
                                     افزودن دسته‌بندی
                                 </button>
                             </div>
@@ -807,12 +808,13 @@
             </div>
         @endforeach
 
+        {{-- Stronger, solid-filled primary: creates a whole new worker section. --}}
         <button
             type="button"
             wire:click="addWorkerGroup"
-            class="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/50 px-3 py-3 text-sm font-black text-emerald-700 transition hover:border-emerald-400 hover:bg-emerald-50"
+            class="flex w-full items-center justify-center gap-2 rounded-2xl border border-emerald-300 bg-emerald-50 px-3 py-3.5 text-sm font-black text-emerald-700 shadow-sm transition hover:border-emerald-400 hover:bg-emerald-100 active:scale-[0.99]"
         >
-            <i class="bi bi-person-plus text-base"></i>
+            <i class="bi bi-person-plus-fill text-base"></i>
             افزودن مددکار
         </button>
     </div>
