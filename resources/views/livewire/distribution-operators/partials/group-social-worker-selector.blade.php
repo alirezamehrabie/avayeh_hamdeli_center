@@ -179,7 +179,7 @@
             @click="toggleSelector()"
             :aria-expanded="open.toString()"
             aria-haspopup="dialog"
-            class="flex min-h-12 w-full items-center justify-between rounded-2xl border border-slate-300 bg-white px-4 py-3 text-right shadow-sm transition focus:outline-none focus:ring-4 {{ $accentClasses['hoverBorder'] }}"
+            class="flex min-h-12 w-full items-center justify-between rounded-2xl border border-slate-300 bg-white py-3 ps-4 {{ $groupWorkerId ? 'pe-16' : 'pe-4' }} text-right shadow-sm transition focus:outline-none focus:ring-4 {{ $accentClasses['hoverBorder'] }}"
         >
             <span class="min-w-0 flex-1">
                 <span class="block truncate text-[10px] font-medium text-slate-400">
@@ -195,19 +195,21 @@
                     </span>
                 @endif
             </span>
-            <span class="ms-3 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500">
-                <i class="bi bi-search text-sm"></i>
-            </span>
+            @if(! $groupWorkerId)
+                <span class="ms-3 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500">
+                    <i class="bi bi-search text-sm"></i>
+                </span>
+            @endif
         </button>
 
         @if($groupWorkerId)
             <button
                 type="button"
                 @click.stop="clear()"
-                class="absolute left-3 top-3.5 inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
+                class="absolute left-2 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-xl text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
                 aria-label="پاک کردن مددکار"
             >
-                <i class="bi bi-x-lg text-xs"></i>
+                <i class="bi bi-x-lg text-sm"></i>
             </button>
         @endif
 

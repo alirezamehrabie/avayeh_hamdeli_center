@@ -376,7 +376,7 @@
                                         },
                                     }))
                                 "
-                                class="inline-flex shrink-0 items-center justify-center rounded-lg p-1.5 text-rose-400 transition hover:bg-rose-50 hover:text-rose-600"
+                                class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-rose-400 transition hover:bg-rose-50 hover:text-rose-600"
                                 aria-label="حذف این مددکار"
                             >
                                 <i class="bi bi-trash text-sm"></i>
@@ -469,7 +469,7 @@
                                                             },
                                                         }))
                                                     "
-                                                    class="shrink-0 rounded-xl border border-rose-100 bg-rose-50 px-2.5 py-1.5 text-[11px] font-black text-rose-500 transition hover:border-rose-200 hover:bg-rose-100 hover:text-rose-700"
+                                                    class="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl border border-rose-100 bg-rose-50 px-3 py-1.5 text-[11px] font-black text-rose-500 transition hover:border-rose-200 hover:bg-rose-100 hover:text-rose-700"
                                                     aria-label="حذف دسته‌بندی {{ $ci + 1 }}"
                                                 >
                                                     حذف
