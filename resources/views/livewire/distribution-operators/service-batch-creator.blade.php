@@ -302,8 +302,8 @@
                             </svg>
                         </span>
                         <div class="min-w-0 flex-1">
-                            <h2 class="overflow-x-auto whitespace-nowrap text-base font-extrabold text-cyan-950" :title="fullTitle" aria-label="{{ $predefinedHeaderTitle }}" data-predefined-service-header-title="{{ $predefinedHeaderTitle }}">
-                                <span x-text="shownTitle"></span><span x-show="cursorVisible" class="inline-block h-4 w-0.5 translate-y-0.5 rounded-full bg-cyan-500 align-middle" x-transition.opacity></span>
+                            <h2 class="overflow-hidden whitespace-nowrap text-[15px] font-bold tracking-[-0.01em] text-cyan-900/90" :title="fullTitle" aria-label="{{ $predefinedHeaderTitle }}" data-predefined-service-header-title="{{ $predefinedHeaderTitle }}">
+                                <span x-text="shownTitle"></span><span x-show="cursorVisible" class="inline-block h-4 w-0.5 translate-y-0.5 rounded-full bg-cyan-500/80 align-middle" x-transition.opacity></span>
                             </h2>
                         </div>
                         @include('livewire.distribution-operators.partials.predefined-service-selector', ['compact' => true])

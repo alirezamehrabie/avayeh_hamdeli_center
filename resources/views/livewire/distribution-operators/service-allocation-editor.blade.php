@@ -260,37 +260,20 @@
 
         {{-- Add new social worker --}}
         <div class="border-t border-slate-100 px-4 py-4 sm:px-5">
-            <p class="text-sm font-black text-slate-800">افزودن مددکار جدید</p>
-            <div class="mt-2">
-                @include('livewire.distribution-operators.partials.social-worker-selector', [
-                    'accent' => 'cyan',
-                    'selectorId' => 'allocation-social-worker-selector-' . $service->id,
-                    'socialWorkerId' => $addingSocialWorkerId,
-                ])
-            </div>
-
-            @if($addingSocialWorkerId)
-                <div class="mt-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
-                    <p class="text-sm font-bold text-blue-800">مددکار انتخاب‌شده: {{ $socialWorkerQuery }}</p>
-                    <button
-                        type="button"
-                        wire:click="clearSocialWorkerSelection"
-                        class="mt-1 text-xs font-bold text-blue-600 hover:text-blue-800"
-                    >
-                        تغییر انتخاب
-                    </button>
+            <div class="rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm sm:p-4">
+                <div class="flex items-center justify-between gap-3">
+                    <p class="text-sm font-black text-slate-800">افزودن مددکار</p>
+                    <span class="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">سریع</span>
                 </div>
-            @endif
 
-            @if($addingSocialWorkerId)
-                <button
-                    type="button"
-                    wire:click="addSocialWorkerAllocation"
-                    class="mt-2 inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700"
-                >
-                    افزودن مددکار
-                </button>
-            @endif
+                <div class="mt-2.5">
+                    @include('livewire.distribution-operators.partials.social-worker-selector', [
+                        'accent' => 'cyan',
+                        'selectorId' => 'allocation-social-worker-selector-' . $service->id,
+                        'socialWorkerId' => $addingSocialWorkerId,
+                    ])
+                </div>
+            </div>
         </div>
     </div>
 

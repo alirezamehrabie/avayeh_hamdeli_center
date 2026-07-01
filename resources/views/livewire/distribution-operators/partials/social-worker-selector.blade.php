@@ -261,27 +261,35 @@
                     @foreach($socialWorkerSuggestions as $worker)
                         <button
                             type="button"
-                            @click="choose({{ (int) $worker['id'] }})"
-                            class="group flex w-full items-center gap-2.5 rounded-xl border px-3 py-2.5 text-right transition focus:outline-none focus:ring-4 {{ (int) $socialWorkerId === (int) $worker['id'] ? $accentClasses['activeCard'] : 'border-slate-200 bg-white' }} {{ $accentClasses['hoverCard'] }}"
+                            @if(!($worker['duplicate'] ?? false))
+                                @click="choose({{ (int) $worker['id'] }})"
+                            @endif
+                            @disabled($worker['duplicate'] ?? false)
+                            aria-disabled="{{ ($worker['duplicate'] ?? false) ? 'true' : 'false' }}"
+                            class="group flex w-full items-center gap-2.5 rounded-xl border px-3 py-2.5 text-right transition focus:outline-none focus:ring-4 {{ ($worker['duplicate'] ?? false) ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 opacity-80 disabled:pointer-events-none' : (((int) $socialWorkerId === (int) $worker['id'] ? $accentClasses['activeCard'] : 'border-slate-200 bg-white') . ' ' . $accentClasses['hoverCard']) }}"
                         >
-                            <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-50 {{ $accentClasses['icon'] }}">
-                                <i class="bi bi-person-badge text-sm"></i>
+                            <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg {{ ($worker['duplicate'] ?? false) ? 'bg-white text-slate-400' : 'bg-slate-50 ' . $accentClasses['icon'] }}">
+                                <i class="bi {{ ($worker['duplicate'] ?? false) ? 'bi-person-dash' : 'bi-person-badge' }} text-sm"></i>
                             </span>
 
                             <span class="min-w-0 flex-1">
                                 <span class="flex min-w-0 items-center gap-2">
-                                    <span class="min-w-0 flex-1 truncate text-sm font-black leading-5 text-slate-900">{{ $worker['name'] }}</span>
+                                    <span class="min-w-0 flex-1 truncate text-sm font-black leading-5 {{ ($worker['duplicate'] ?? false) ? 'text-slate-500' : 'text-slate-900' }}">{{ $worker['name'] }}</span>
                                     <span class="shrink-0 text-[11px] font-bold text-slate-400">کد {{ $worker['code'] }}</span>
                                 </span>
 
                                 <span class="mt-1 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-bold leading-5 text-slate-500">
-                                    <span class="truncate {{ $accentClasses['meta'] }}">{{ $worker['district'] }}</span>
+                                    <span class="truncate {{ ($worker['duplicate'] ?? false) ? 'text-slate-400' : $accentClasses['meta'] }}">{{ $worker['district'] }}</span>
                                     <span class="text-slate-300">•</span>
                                     <span class="truncate dir-ltr">{{ $worker['mobile'] }}</span>
+                                    @if($worker['duplicate'] ?? false)
+                                        <span class="text-slate-300">•</span>
+                                        <span class="text-amber-600">قبلاً اضافه شده</span>
+                                    @endif
                                 </span>
                             </span>
-                            <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border {{ (int) $socialWorkerId === (int) $worker['id'] ? 'border-current bg-white/70 ' . $accentClasses['icon'] : 'border-slate-200 text-slate-300 group-hover:border-slate-300 group-hover:text-slate-400' }}">
-                                <i class="bi {{ (int) $socialWorkerId === (int) $worker['id'] ? 'bi-check-lg' : 'bi-chevron-left' }} text-[10px]"></i>
+                            <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border {{ ($worker['duplicate'] ?? false) ? 'border-slate-200 bg-white text-slate-300' : ((int) $socialWorkerId === (int) $worker['id'] ? 'border-current bg-white/70 ' . $accentClasses['icon'] : 'border-slate-200 text-slate-300 group-hover:border-slate-300 group-hover:text-slate-400') }}">
+                                <i class="bi {{ ($worker['duplicate'] ?? false) ? 'bi-dash-lg' : ((int) $socialWorkerId === (int) $worker['id'] ? 'bi-check-lg' : 'bi-chevron-left') }} text-[10px]"></i>
                             </span>
                         </button>
                     @endforeach

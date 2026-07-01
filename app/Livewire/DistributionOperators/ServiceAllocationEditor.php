@@ -61,6 +61,22 @@ class ServiceAllocationEditor extends Component
 
     public function selectSocialWorker(int $socialWorkerId): void
     {
+        if (! $this->service) {
+            return;
+        }
+
+        $existingWorkerIds = $this->service->workerAllocations()
+            ->where('assigned_by_user_id', auth()->id())
+            ->pluck('social_worker_id')
+            ->map(fn ($id): int => (int) $id)
+            ->unique();
+
+        if ($existingWorkerIds->contains($socialWorkerId)) {
+            $this->showSocialWorkerSuggestions = false;
+
+            return;
+        }
+
         $worker = SocialWorker::query()
             ->with('district:id,name')
             ->select(['id', 'first_name', 'last_name', 'worker_code', 'district_id'])
@@ -75,6 +91,8 @@ class ServiceAllocationEditor extends Component
         $this->selectedSocialWorkerDisplay = $this->formatSelectedSocialWorkerDisplay($worker);
         $this->socialWorkerQuery = $this->selectedSocialWorkerDisplay;
         $this->showSocialWorkerSuggestions = false;
+
+        $this->addSocialWorkerAllocation();
     }
 
     public function clearSocialWorkerSelection(): void
@@ -97,12 +115,13 @@ class ServiceAllocationEditor extends Component
         $existingWorkerIds = $this->service->workerAllocations()
             ->where('assigned_by_user_id', auth()->id())
             ->pluck('social_worker_id')
-            ->all();
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->values();
 
         $workers = SocialWorker::query()
             ->select(['id', 'first_name', 'last_name', 'worker_code', 'mobile', 'district_id'])
             ->with('district:id,name')
-            ->whereNotIn('id', $existingWorkerIds)
             ->where(function (Builder $workerQuery) use ($query): void {
                 $workerQuery->where('first_name', 'like', $query.'%')
                     ->orWhere('last_name', 'like', $query.'%')
@@ -117,6 +136,7 @@ class ServiceAllocationEditor extends Component
 
         return $workers->map(fn (SocialWorker $worker): array => [
             'id' => (int) $worker->id,
+            'duplicate' => $existingWorkerIds->contains((int) $worker->id),
             'name' => trim($worker->full_name) ?: 'مددکار بدون نام',
             'code' => $worker->worker_code ? (string) $worker->worker_code : '-',
             'mobile' => $worker->mobile ?: '-',
