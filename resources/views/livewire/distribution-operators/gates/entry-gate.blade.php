@@ -214,6 +214,8 @@
                 x-init="init()"
                 x-on:id-card-scanner-resume.window="resumeFromWire(); categoriesSheetOpen = false"
                 x-on:entry-gate-subject-loaded.window="categoriesSheetOpen = true"
+                x-on:keydown.window.ctrl.enter.prevent="triggerNextScanShortcut()"
+                x-on:keydown.window.meta.enter.prevent="triggerNextScanShortcut()"
                 class="grid gap-5 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
             >
                 {{-- Left: identity (pinned to top) + scanner --}}
@@ -268,10 +270,13 @@
                         <button
                             type="button"
                             wire:click="resumeScanning"
+                            title="اسکن نفر بعدی (Ctrl + Enter)"
                             class="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100"
+                            :class="nextScanShortcutActive ? 'ring-2 ring-emerald-400 ring-offset-1 bg-emerald-100 scale-[0.98]' : ''"
                         >
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M5 9a7 7 0 0111-3.7L20 9M19 15a7 7 0 01-11 3.7L4 15"/></svg>
-                            اسکن نفر بعدی
+                            <span>اسکن نفر بعدی</span>
+                            <kbd class="hidden rounded border border-emerald-300 bg-white/70 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600 sm:inline-block">Ctrl + Enter</kbd>
                         </button>
                     </div>
 

@@ -196,6 +196,8 @@ Alpine.data('idCardScanner', ({
     fallbackEnabledAt: 0,
     resumeAfterSuccessTimer: null,
     successBannerTimer: null,
+    nextScanShortcutActive: false,
+    nextScanFlashTimer: null,
     audioContext: null,
     scanSuccessSoundUrl: successSoundUrl,
     scanSuccessAudio: null,
@@ -344,6 +346,24 @@ Alpine.data('idCardScanner', ({
     },
     resumeFromWire() {
         this.resumeScan();
+    },
+    // Keyboard shortcut (Ctrl + Enter) mirror of the "اسکن نفر بعدی" button.
+    // Runs the exact same server logic (resumeScanning) and flashes the button
+    // so the operator gets immediate visual confirmation the shortcut fired.
+    triggerNextScanShortcut() {
+        if (this.resolvingScan) {
+            return;
+        }
+
+        this.nextScanShortcutActive = true;
+        if (this.nextScanFlashTimer) {
+            clearTimeout(this.nextScanFlashTimer);
+        }
+        this.nextScanFlashTimer = setTimeout(() => {
+            this.nextScanShortcutActive = false;
+        }, 260);
+
+        this.$wire.resumeScanning();
     },
     resumeScan({ clearLastDecoded = true } = {}) {
         if (!this.cameraActive) {
