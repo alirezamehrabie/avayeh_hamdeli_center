@@ -25,6 +25,7 @@ class DefineService extends Component
             'latestMiscServiceSummary' => $latestMiscService
                 ? $this->latestMiscServiceSummary($latestMiscService)
                 : null,
+            'unitOptions' => Service::unitOptions(),
             'todayMiscCount' => $this->miscServicesQuery()->whereDate('created_at', today())->count(),
         ]);
     }

@@ -61,6 +61,9 @@ class DistributionOperatorServiceListTest extends TestCase
 
         Livewire::test(DefineService::class)
             ->assertSee('Latest misc package')
+            ->assertSee('pressHoldPreview()', false)
+            ->assertSee('x-on:pointerdown="beginPreview()"', false)
+            ->assertSee('Latest category')
             ->assertSee(route('distribution-operator.edit-service', $latestService->id), false)
             ->assertDontSee('Older misc package')
             ->assertDontSee('Other operator package');
