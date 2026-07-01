@@ -1,9 +1,53 @@
 @php
     $initialExpandedIndex = $activeWorkerGroupIndex ?? (count($miscWorkerGroups) ? array_key_last($miscWorkerGroups) : null);
+
+    // Worker-group indexes that currently carry a validation error, so a collapsed
+    // header can flag itself instead of hiding the problem inside the accordion (Item 2).
+    $groupErrorIndexes = collect($errors->keys())
+        ->map(fn ($key) => preg_match('/^miscWorkerGroups\.(\d+)(\.|$)/', $key, $matches) ? (int) $matches[1] : null)
+        ->reject(fn ($index) => $index === null)
+        ->unique()
+        ->values()
+        ->all();
 @endphp
 <div
     x-data="{
         expandedIndex: @js($initialExpandedIndex),
+        pendingErrorExpand: false,
+        init() {
+            // After a failed save, open the first worker group that carries an
+            // error so its inline messages aren't hidden behind the accordion.
+            if (window.Livewire) {
+                Livewire.hook('morph.updated', () => {
+                    if (! this.pendingErrorExpand) {
+                        return;
+                    }
+
+                    this.pendingErrorExpand = false;
+                    this.expandFirstErrorGroup();
+                });
+            }
+        },
+        expandFirstErrorGroup() {
+            this.$nextTick(() => {
+                const groups = this.$el.querySelectorAll('[data-worker-group-index]');
+
+                for (const group of groups) {
+                    if (! group.querySelector('[data-validation-error]')) {
+                        continue;
+                    }
+
+                    const index = Number(group.dataset.workerGroupIndex);
+
+                    if (Number.isInteger(index)) {
+                        this.expandedIndex = index;
+                        this.focusGroup(index);
+                    }
+
+                    break;
+                }
+            });
+        },
         isExpanded(index) {
             return this.expandedIndex === index;
         },
@@ -60,6 +104,7 @@
     }"
     x-on:worker-group-added.window="if (Number.isInteger($event.detail?.index)) { expandedIndex = $event.detail.index; } scrollToNewGroup($event)"
     x-on:worker-group-expand.window="expandGroup($event.detail?.index)"
+    x-on:misc-worker-save-attempt.window="pendingErrorExpand = true"
     class="space-y-5 p-4 sm:p-5"
 >
     {{-- Service type --}}
@@ -197,6 +242,7 @@
                     ->filter(fn ($name) => trim((string) $name) !== '')
                     ->take(4)
                     ->implode('، ');
+                $groupHasError = in_array($gi, $groupErrorIndexes, true);
             @endphp
 
             <div
@@ -208,17 +254,23 @@
                 @if($groupLocked)
                     {{-- Locked summary --}}
                     <div class="flex items-center gap-3 px-3.5 py-3 sm:px-4">
-                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-slate-400 ring-1 ring-slate-200">
-                            <i class="bi bi-lock-fill text-sm"></i>
+                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ring-1 {{ $groupHasError ? 'bg-rose-50 text-rose-500 ring-rose-200' : 'bg-white text-slate-400 ring-slate-200' }}">
+                            <i class="bi {{ $groupHasError ? 'bi-exclamation-circle-fill' : 'bi-lock-fill' }} text-sm"></i>
                         </span>
                         <div class="min-w-0 flex-1">
                             <div class="flex min-w-0 items-center gap-2">
                                 <span class="min-w-0 truncate text-sm font-black text-slate-800">{{ $groupWorkerDisplay ?: 'مددکار' }}</span>
                                 <span class="shrink-0 text-[11px] font-bold text-slate-400">کد {{ $groupWorkerCode ?: '-' }}</span>
                             </div>
-                            <p class="mt-0.5 truncate text-[11px] font-semibold text-slate-500">
-                                {{ $groupCategoryCount }} دسته‌بندی @if($groupCategoryPreview !== '')<span class="text-slate-300">·</span> {{ $groupCategoryPreview }}@endif
-                            </p>
+                            @if($groupHasError)
+                                <p class="mt-0.5 truncate text-[11px] font-bold text-rose-600">
+                                    این مددکار خطا دارد؛ برای اصلاح، ویرایش کنید
+                                </p>
+                            @else
+                                <p class="mt-0.5 truncate text-[11px] font-semibold text-slate-500">
+                                    {{ $groupCategoryCount }} دسته‌بندی @if($groupCategoryPreview !== '')<span class="text-slate-300">·</span> {{ $groupCategoryPreview }}@endif
+                                </p>
+                            @endif
                         </div>
                         <button
                             type="button"
@@ -232,8 +284,8 @@
                     </div>
                 @else
                     {{-- Editable --}}
-                    <div class="flex items-center gap-2.5 border-b border-slate-100 bg-emerald-50/40 px-3.5 py-2.5 sm:px-4">
-                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-black text-emerald-700">{{ $gi + 1 }}</span>
+                    <div class="flex items-center gap-2.5 border-b {{ $groupHasError ? 'border-rose-100 bg-rose-50/40' : 'border-slate-100 bg-emerald-50/40' }} px-3.5 py-2.5 sm:px-4">
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-black {{ $groupHasError ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700' }}">{{ $gi + 1 }}</span>
                         <button
                             type="button"
                             @click="toggleGroup({{ $gi }})"
@@ -246,15 +298,21 @@
                                 </span>
                                 <span
                                     x-show="! isExpanded({{ $gi }})"
-                                    class="mt-0.5 block truncate text-[11px] font-bold text-slate-400"
+                                    class="mt-0.5 block truncate text-[11px] font-bold {{ $groupHasError ? 'text-rose-600' : 'text-slate-400' }}"
                                 >
-                                    @if($groupCategoryCount > 0)
+                                    @if($groupHasError)
+                                        <i class="bi bi-exclamation-circle-fill"></i>
+                                        این مددکار خطا دارد؛ برای اصلاح باز کنید
+                                    @elseif($groupCategoryCount > 0)
                                         {{ $groupCategoryCount }} دسته‌بندی@if($groupCategoryPreview !== '')<span class="text-slate-300"> · </span>{{ $groupCategoryPreview }}@endif
                                     @else
                                         برای مشاهده و ویرایش، باز کنید
                                     @endif
                                 </span>
                             </span>
+                            @if($groupHasError)
+                                <span x-show="! isExpanded({{ $gi }})" class="inline-flex h-2 w-2 shrink-0 rounded-full bg-rose-500" aria-hidden="true"></span>
+                            @endif
                             <i
                                 class="bi bi-chevron-down shrink-0 text-sm text-slate-400 transition-transform duration-200"
                                 :class="isExpanded({{ $gi }}) ? 'rotate-180' : ''"

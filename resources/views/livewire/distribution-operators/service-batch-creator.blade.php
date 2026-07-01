@@ -256,7 +256,7 @@
     @endphp
 
     @if($hasSelectedMode)
-    <form wire:submit.prevent="requestSaveConfirmation" x-on:submit="markValidationFocusPending()" class="space-y-2.5">
+    <form wire:submit.prevent="requestSaveConfirmation" x-on:submit="markValidationFocusPending(); window.dispatchEvent(new CustomEvent('misc-worker-save-attempt'))" class="space-y-2.5">
         @if($mode === 'predefined' && !$isEditing)
             <section wire:key="predefined-service-batch-section" class="overflow-visible rounded-xl border border-cyan-100/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
                 <div class="border-b border-cyan-100/80 bg-cyan-50/30 px-4 py-3 sm:px-5 sm:py-4">
