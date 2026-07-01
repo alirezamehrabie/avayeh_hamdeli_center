@@ -88,7 +88,43 @@
         </div>
 
         {{-- Operator allocations --}}
-        <div class="px-4 py-4 sm:px-5">
+        <div
+            x-data="{
+                openWorkerId: null,
+                toggleWorker(workerId, trigger) {
+                    const isOpening = this.openWorkerId !== workerId;
+                    this.openWorkerId = isOpening ? workerId : null;
+
+                    if (! isOpening) {
+                        return;
+                    }
+
+                    this.$nextTick(() => {
+                        const content = trigger?.closest('[data-worker-card]')?.querySelector('[data-worker-content]');
+
+                        if (! content) {
+                            return;
+                        }
+
+                        const top = content.getBoundingClientRect().top + window.scrollY - 140;
+                        const currentTop = window.scrollY;
+
+                        if (Math.abs(top - currentTop) < 48) {
+                            return;
+                        }
+
+                        window.scrollTo({
+                            top: Math.max(0, top),
+                            behavior: 'smooth',
+                        });
+                    });
+                },
+                isOpen(workerId) {
+                    return this.openWorkerId === workerId;
+                }
+            }"
+            class="px-4 py-4 sm:px-5"
+        >
             <div class="flex items-center justify-between gap-3">
                 <p class="text-sm font-black text-slate-800">تخصیص‌های شما</p>
                 <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">{{ $operatorAllocations->count() }} مددکار</span>
@@ -107,25 +143,22 @@
                         @endphp
                         <div
                             x-data="{
-                                open: false,
                                 maxHeight: 0,
                                 refreshHeight() {
                                     this.$nextTick(() => {
                                         this.maxHeight = this.$refs.content ? this.$refs.content.scrollHeight : 0;
                                     });
-                                },
-                                toggle() {
-                                    this.open = ! this.open;
-                                    this.refreshHeight();
                                 }
                             }"
                             x-init="refreshHeight()"
+                            x-effect="if (openWorkerId === {{ $workerId }}) refreshHeight()"
                             @resize.window.debounce.100ms="refreshHeight()"
+                            data-worker-card
                             class="relative isolate rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow duration-200"
                         >
                             <div
                                 x-cloak
-                                x-show="open"
+                                x-show="isOpen({{ $workerId }})"
                                 x-transition:enter="transition ease-out duration-200"
                                 x-transition:enter-start="opacity-0 -translate-y-1"
                                 x-transition:enter-end="opacity-100 translate-y-0"
@@ -151,9 +184,9 @@
                             <div class="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-4 py-3">
                                 <button
                                     type="button"
-                                    @click="toggle()"
+                                    @click="toggleWorker({{ $workerId }}, $event.currentTarget)"
                                     class="flex min-w-0 flex-1 items-center gap-3 text-right"
-                                    :aria-expanded="open.toString()"
+                                    :aria-expanded="isOpen({{ $workerId }}).toString()"
                                 >
                                     <div class="min-w-0 flex-1">
                                         <div class="flex items-center gap-2">
@@ -168,7 +201,7 @@
                                             @endif
                                         </p>
                                     </div>
-                                    <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 shadow-sm transition duration-300 hover:border-blue-200 hover:text-blue-600" :class="open ? 'rotate-180 text-blue-600 border-blue-200' : ''">
+                                    <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 shadow-sm transition duration-300 hover:border-blue-200 hover:text-blue-600" :class="isOpen({{ $workerId }}) ? 'rotate-180 text-blue-600 border-blue-200' : ''">
                                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                             <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                         </svg>
@@ -178,9 +211,9 @@
 
                             <div
                                 class="overflow-hidden transition-all duration-300 ease-out"
-                                x-bind:style="open ? `max-height: ${maxHeight}px; opacity: 1;` : 'max-height: 0px; opacity: 0;'"
+                                x-bind:style="isOpen({{ $workerId }}) ? `max-height: ${maxHeight}px; opacity: 1;` : 'max-height: 0px; opacity: 0;'"
                             >
-                                <div x-ref="content" class="divide-y divide-slate-100">
+                                <div x-ref="content" data-worker-content class="divide-y divide-slate-100">
                                     @foreach($allocations as $allocation)
                                         @php
                                             $category = $service->categories->firstWhere('id', $allocation->service_category_id);
