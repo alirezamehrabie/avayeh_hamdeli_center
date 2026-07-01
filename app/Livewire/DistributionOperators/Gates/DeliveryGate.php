@@ -266,6 +266,7 @@ class DeliveryGate extends Component
         $this->scanMessage = 'اسکن دوباره فعال شد. QR بعدی را مقابل دوربین نگه دارید.';
 
         $this->dispatch('id-card-scanner-resume');
+        $this->dispatch('delivery-confirmed');
     }
 
     public function getSelectedServiceProperty(): ?Service
