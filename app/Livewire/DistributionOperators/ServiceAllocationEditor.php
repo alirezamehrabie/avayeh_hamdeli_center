@@ -275,6 +275,18 @@ class ServiceAllocationEditor extends Component
                 return;
             }
 
+            $hasAnotherWorkerAllocation = ServiceWorkerAllocation::query()
+                ->where('service_id', $this->editingServiceId)
+                ->where('assigned_by_user_id', auth()->id())
+                ->where('social_worker_id', '!=', $socialWorkerId)
+                ->exists();
+
+            if (! $hasAnotherWorkerAllocation) {
+                $errorMessage = 'At least one worker allocation must remain so this service stays available for editing.';
+
+                return;
+            }
+
             $hasDeliveries = ServiceDelivery::query()
                 ->where('service_id', $this->editingServiceId)
                 ->where('social_worker_id', $socialWorkerId)

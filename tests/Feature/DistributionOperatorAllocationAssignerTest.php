@@ -243,6 +243,143 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         ]);
     }
 
+    public function test_editing_allocations_cannot_remove_last_worker_allocation_group(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $manager = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_ADMIN,
+            'is_admin' => true,
+        ]);
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 303,
+            'first_name' => 'Last',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+        $serviceName = ServiceName::query()->create([
+            'name' => 'Last Worker Guard',
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+        $service = Service::query()->create([
+            'name' => 'Last Worker Guard',
+            'service_name_id' => $serviceName->id,
+            'service_type' => 'individual',
+            'total_quantity' => 10,
+            'total_service_value' => 0,
+            'distribution_start_date' => now()->toDateString(),
+            'status' => 'approved',
+            'quantity_delivered' => 0,
+            'created_by' => $manager->id,
+        ]);
+        $category = ServiceCategory::query()->create([
+            'service_name_id' => $serviceName->id,
+            'service_id' => $service->id,
+            'name' => 'Main Category',
+            'quantity' => 10,
+            'unit' => 'pack',
+            'value' => 1000,
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+        $allocation = $service->workerAllocations()->create([
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'allocated_quantity' => 0,
+            'assigned_by_user_id' => $operator->id,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceAllocationEditor::class, ['editingServiceId' => $service->id])
+            ->call('removeWorkerAllocations', $worker->id)
+            ->assertHasErrors(['allocationQuantities']);
+
+        $this->assertDatabaseHas('service_social_worker', [
+            'id' => $allocation->id,
+            'social_worker_id' => $worker->id,
+        ]);
+    }
+
+    public function test_editing_allocations_can_remove_worker_when_another_worker_remains(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $manager = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_ADMIN,
+            'is_admin' => true,
+        ]);
+        $firstWorker = SocialWorker::query()->create([
+            'worker_code' => 304,
+            'first_name' => 'Removed',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+        $secondWorker = SocialWorker::query()->create([
+            'worker_code' => 305,
+            'first_name' => 'Remaining',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+        $serviceName = ServiceName::query()->create([
+            'name' => 'Remaining Worker Guard',
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+        $service = Service::query()->create([
+            'name' => 'Remaining Worker Guard',
+            'service_name_id' => $serviceName->id,
+            'service_type' => 'individual',
+            'total_quantity' => 10,
+            'total_service_value' => 0,
+            'distribution_start_date' => now()->toDateString(),
+            'status' => 'approved',
+            'quantity_delivered' => 0,
+            'created_by' => $manager->id,
+        ]);
+        $category = ServiceCategory::query()->create([
+            'service_name_id' => $serviceName->id,
+            'service_id' => $service->id,
+            'name' => 'Main Category',
+            'quantity' => 10,
+            'unit' => 'pack',
+            'value' => 1000,
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+        $removedAllocation = $service->workerAllocations()->create([
+            'service_category_id' => $category->id,
+            'social_worker_id' => $firstWorker->id,
+            'allocated_quantity' => 0,
+            'assigned_by_user_id' => $operator->id,
+        ]);
+        $remainingAllocation = $service->workerAllocations()->create([
+            'service_category_id' => $category->id,
+            'social_worker_id' => $secondWorker->id,
+            'allocated_quantity' => 0,
+            'assigned_by_user_id' => $operator->id,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceAllocationEditor::class, ['editingServiceId' => $service->id])
+            ->call('removeWorkerAllocations', $firstWorker->id)
+            ->assertHasNoErrors(['allocationQuantities']);
+
+        $this->assertDatabaseMissing('service_social_worker', [
+            'id' => $removedAllocation->id,
+        ]);
+        $this->assertDatabaseHas('service_social_worker', [
+            'id' => $remainingAllocation->id,
+            'social_worker_id' => $secondWorker->id,
+        ]);
+    }
+
     public function test_operator_assignment_records_assigning_user(): void
     {
         $operator = User::factory()->create([
