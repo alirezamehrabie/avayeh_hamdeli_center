@@ -121,9 +121,34 @@
                             }"
                             x-init="refreshHeight()"
                             @resize.window.debounce.100ms="refreshHeight()"
-                            class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow duration-200"
+                            class="relative isolate rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow duration-200"
                         >
-                            <div class="flex items-center gap-2 border-b border-slate-100 bg-slate-50/60 px-4 py-3">
+                            <div
+                                x-cloak
+                                x-show="open"
+                                x-transition:enter="transition ease-out duration-200"
+                                x-transition:enter-start="opacity-0 -translate-y-1"
+                                x-transition:enter-end="opacity-100 translate-y-0"
+                                x-transition:leave="transition ease-in duration-150"
+                                x-transition:leave-start="opacity-100 translate-y-0"
+                                x-transition:leave-end="opacity-0 -translate-y-1"
+                                class="absolute -left-2 -top-2 z-[100]"
+                            >
+                                <button
+                                    type="button"
+                                    wire:click="confirmRemoveWorkerAllocations({{ $workerId }})"
+                                    class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-rose-400 shadow-md shadow-slate-300/40 transition hover:border-rose-200 hover:bg-rose-50/60 hover:text-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-100"
+                                    title="حذف تمام تخصیص‌های این مددکار"
+                                    aria-label="حذف تمام تخصیص‌های این مددکار"
+                                >
+                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                        <path d="M10 4.75h4a1 1 0 0 1 1 1v.75h3.25a.75.75 0 0 1 0 1.5h-1.03l-.63 9.91a2 2 0 0 1-2 1.87H9.41a2 2 0 0 1-2-1.87L6.78 8H5.75a.75.75 0 0 1 0-1.5H9v-.75a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M10 10.25v5.5M14 10.25v5.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <div class="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-4 py-3">
                                 <button
                                     type="button"
                                     @click="toggle()"
@@ -143,22 +168,11 @@
                                             @endif
                                         </p>
                                     </div>
-                                    <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 shadow-sm transition duration-300" :class="open ? 'rotate-180 text-blue-600 border-blue-200' : ''">
+                                    <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 shadow-sm transition duration-300 hover:border-blue-200 hover:text-blue-600" :class="open ? 'rotate-180 text-blue-600 border-blue-200' : ''">
                                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                             <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                         </svg>
                                     </span>
-                                </button>
-                                <button
-                                    type="button"
-                                    wire:click="removeWorkerAllocations({{ $workerId }})"
-                                    wire:confirm="آیا از حذف تمام تخصیص‌های این مددکار اطمینان دارید؟"
-                                    class="shrink-0 rounded-lg p-2 text-rose-400 transition hover:bg-rose-50 hover:text-rose-600"
-                                    title="حذف تخصیص‌ها"
-                                >
-                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
-                                        <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                    </svg>
                                 </button>
                             </div>
 

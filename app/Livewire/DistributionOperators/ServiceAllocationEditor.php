@@ -5,13 +5,17 @@ namespace App\Livewire\DistributionOperators;
 use App\Models\Service;
 use App\Models\ServiceWorkerAllocation;
 use App\Models\SocialWorker;
+use App\Traits\InteractsWithNotificationModal;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class ServiceAllocationEditor extends Component
 {
+    use InteractsWithNotificationModal;
+
     public ?int $editingServiceId = null;
 
     public bool $confirmingSave = false;
@@ -209,6 +213,43 @@ class ServiceAllocationEditor extends Component
 
         $this->loadService();
         $this->loadExistingAllocations();
+    }
+
+    public function confirmRemoveWorkerAllocations(int $socialWorkerId): void
+    {
+        $workerName = trim((string) $this->service?->workerAllocations()
+            ->with('socialWorker:id,first_name,last_name')
+            ->where('assigned_by_user_id', auth()->id())
+            ->where('social_worker_id', $socialWorkerId)
+            ->first()?->socialWorker?->full_name);
+
+        $this->openNotificationModal([
+            'type' => 'warning',
+            'title' => 'حذف تخصیص‌های مددکار',
+            'message' => $workerName !== ''
+                ? "آیا از حذف تمام تخصیص‌های «{$workerName}» مطمئن هستید؟"
+                : 'آیا از حذف تمام تخصیص‌های این مددکار مطمئن هستید؟',
+            'buttons' => [
+                [
+                    'label' => 'حذف تخصیص‌ها',
+                    'action' => 'event',
+                    'event' => 'confirm-remove-worker-allocations',
+                    'payload' => ['socialWorkerId' => $socialWorkerId],
+                    'variant' => 'danger',
+                ],
+                [
+                    'label' => 'انصراف',
+                    'action' => 'close',
+                    'variant' => 'secondary',
+                ],
+            ],
+        ]);
+    }
+
+    #[On('confirm-remove-worker-allocations')]
+    public function removeWorkerAllocationsConfirmed(int $socialWorkerId): void
+    {
+        $this->removeWorkerAllocations($socialWorkerId);
     }
 
     public function requestSaveConfirmation(): void
