@@ -391,12 +391,18 @@
 
                 {{-- Right: authorized items to deliver --}}
                 @php($authorizedItems = $this->authorizedItems)
-                <div class="flex min-h-0 flex-col gap-3">
+                {{-- Optimistic checklist state lives on the client so taps feel instant; the key is
+                     tied to the scanned subject so a new scan reseeds it from the server's DB state. --}}
+                <div
+                    class="flex min-h-0 flex-col gap-3"
+                    x-data="deliveryItems(@js(array_map('intval', $deliveredCategoryIds)))"
+                    wire:key="delivery-column-{{ $scannedPersonId ?? 0 }}-{{ $scannedGuardianId ?? 0 }}"
+                >
                     <div class="flex items-center justify-between">
                         <h2 class="text-sm font-extrabold text-slate-800">اقلام مجاز برای تحویل</h2>
                         @if($lastScanResult && $authorizedItems->isNotEmpty())
                             <span class="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
-                                {{ count($deliveredCategoryIds) }} از {{ $authorizedItems->count() }} تحویل شد
+                                <span x-text="deliveredCount">{{ count($deliveredCategoryIds) }}</span> از {{ $authorizedItems->count() }} تحویل شد
                             </span>
                         @endif
                     </div>
@@ -414,54 +420,66 @@
                         <div class="space-y-2">
                             @foreach($authorizedItems as $item)
                                 @php($category = $item->serviceCategory)
+                                @php($cid = (int) $item->service_category_id)
                                 @php($isFinalized = in_array($item->service_category_id, $finalizedCategoryIds, true))
-                                @php($isDelivered = in_array($item->service_category_id, $deliveredCategoryIds, true))
-                                <button
-                                    type="button"
-                                    @if(! $isFinalized) wire:click="toggleDelivered({{ $item->service_category_id }})" @endif
-                                    @disabled($isFinalized)
-                                    wire:key="delivery-gate-item-{{ $item->id }}"
-                                    @class([
-                                        'flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-right transition',
-                                        'cursor-not-allowed border-indigo-200 bg-indigo-50' => $isFinalized,
-                                        'border-emerald-300 bg-emerald-50' => $isDelivered && ! $isFinalized,
-                                        'border-slate-200 bg-white hover:border-emerald-200 hover:bg-slate-50' => ! $isDelivered && ! $isFinalized,
-                                    ])
-                                >
-                                    <span class="flex items-center gap-3">
-                                        <span @class([
-                                            'flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition',
-                                            'border-indigo-600 bg-indigo-600 text-white' => $isFinalized,
-                                            'border-emerald-600 bg-emerald-600 text-white' => $isDelivered && ! $isFinalized,
-                                            'border-slate-300 bg-white' => ! $isDelivered && ! $isFinalized,
-                                        ])>
-                                            @if($isFinalized)
+                                @if($isFinalized)
+                                    {{-- Locked: already finalized at the Exit Gate, so it's read-only here. --}}
+                                    <div
+                                        wire:key="delivery-gate-item-{{ $item->id }}"
+                                        class="flex w-full cursor-not-allowed items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-right"
+                                    >
+                                        <span class="flex items-center gap-3">
+                                            <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-indigo-600 bg-indigo-600 text-white">
                                                 <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                                            @elseif($isDelivered)
-                                                <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                            </span>
+                                            <span class="flex flex-col">
+                                                <span class="text-sm font-bold text-slate-800">{{ $category?->name ?? '-' }}</span>
+                                                <span class="text-[11px] font-semibold text-slate-400" dir="ltr">{{ $category?->code ?? '-' }}</span>
+                                            </span>
+                                        </span>
+                                        <span class="flex shrink-0 items-center gap-2">
+                                            @if($category?->unit)
+                                                <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ $category->unit }}</span>
+                                            @endif
+                                            <span class="rounded-full bg-indigo-100 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700">خروج نهایی شده</span>
+                                        </span>
+                                    </div>
+                                @else
+                                    {{-- Toggleable: state is client-driven for instant feedback; @click persists in the background. --}}
+                                    <button
+                                        type="button"
+                                        @click="toggle({{ $cid }})"
+                                        wire:key="delivery-gate-item-{{ $item->id }}"
+                                        class="flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-right transition"
+                                        :class="isDelivered({{ $cid }}) ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-white hover:border-emerald-200 hover:bg-slate-50'"
+                                        :aria-pressed="isDelivered({{ $cid }})"
+                                    >
+                                        <span class="flex items-center gap-3">
+                                            <span
+                                                class="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition"
+                                                :class="isDelivered({{ $cid }}) ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 bg-white'"
+                                            >
+                                                <svg x-show="isDelivered({{ $cid }})" x-cloak class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                                                     <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 111.42-1.42l2.79 2.79 6.79-6.79a1 1 0 011.42 0z" clip-rule="evenodd" />
                                                 </svg>
+                                            </span>
+                                            <span class="flex flex-col">
+                                                <span class="text-sm font-bold text-slate-800">{{ $category?->name ?? '-' }}</span>
+                                                <span class="text-[11px] font-semibold text-slate-400" dir="ltr">{{ $category?->code ?? '-' }}</span>
+                                            </span>
+                                        </span>
+                                        <span class="flex shrink-0 items-center gap-2">
+                                            @if($category?->unit)
+                                                <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ $category->unit }}</span>
                                             @endif
+                                            <span
+                                                class="rounded-full px-2.5 py-0.5 text-[11px] font-bold transition"
+                                                :class="isDelivered({{ $cid }}) ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
+                                                x-text="isDelivered({{ $cid }}) ? 'تحویل شد' : 'ثبت تحویل'"
+                                            >{{ in_array($item->service_category_id, $deliveredCategoryIds, true) ? 'تحویل شد' : 'ثبت تحویل' }}</span>
                                         </span>
-                                        <span class="flex flex-col">
-                                            <span class="text-sm font-bold text-slate-800">{{ $category?->name ?? '-' }}</span>
-                                            <span class="text-[11px] font-semibold text-slate-400" dir="ltr">{{ $category?->code ?? '-' }}</span>
-                                        </span>
-                                    </span>
-                                    <span class="flex shrink-0 items-center gap-2">
-                                        @if($category?->unit)
-                                            <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ $category->unit }}</span>
-                                        @endif
-                                        <span @class([
-                                            'rounded-full px-2.5 py-0.5 text-[11px] font-bold',
-                                            'bg-indigo-100 text-indigo-700' => $isFinalized,
-                                            'bg-emerald-100 text-emerald-700' => $isDelivered && ! $isFinalized,
-                                            'bg-slate-100 text-slate-500' => ! $isDelivered && ! $isFinalized,
-                                        ])>
-                                            {{ $isFinalized ? 'خروج نهایی شده' : ($isDelivered ? 'تحویل شد' : 'ثبت تحویل') }}
-                                        </span>
-                                    </span>
-                                </button>
+                                    </button>
+                                @endif
                             @endforeach
                         </div>
 
@@ -471,13 +489,47 @@
                             <button
                                 type="button"
                                 wire:click="confirmDelivery"
+                                wire:loading.attr="disabled"
+                                wire:target="confirmDelivery"
                                 title="تأیید تحویل و اسکن نفر بعدی (Ctrl + Enter)"
-                                class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3.5 text-base font-black text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.99]"
+                                class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3.5 text-base font-black text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.99] disabled:opacity-75 disabled:cursor-not-allowed"
                                 :class="nextScanShortcutActive ? 'ring-2 ring-emerald-300 ring-offset-1' : ''"
                             >
-                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                                <span>تأیید تحویل و نفر بعدی</span>
-                                <span class="rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold" dir="ltr">{{ count($deliveredCategoryIds) }}/{{ $authorizedItems->count() }}</span>
+                                {{-- Loading spinner --}}
+                                <svg
+                                    wire:loading
+                                    wire:target="confirmDelivery"
+                                    class="h-5 w-5 animate-spin"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+                                    <path d="M12 2a10 10 0 0110 10" stroke-linecap="round"></path>
+                                </svg>
+
+                                {{-- Checkmark icon (hidden during loading) --}}
+                                <svg
+                                    wire:loading.remove
+                                    wire:target="confirmDelivery"
+                                    class="h-5 w-5"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                </svg>
+
+                                {{-- Text (hidden during loading) --}}
+                                <div wire:loading.remove wire:target="confirmDelivery" class="flex items-center gap-2">
+                                    <span>تأیید تحویل و نفر بعدی</span>
+                                    <span class="rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold" dir="ltr"><span x-text="deliveredCount">{{ count($deliveredCategoryIds) }}</span>/{{ $authorizedItems->count() }}</span>
+                                </div>
+
+                                {{-- Loading text --}}
+                                <span wire:loading wire:target="confirmDelivery">در حال پردازش...</span>
                             </button>
                             <p class="mt-1.5 text-center text-[11px] font-semibold text-slate-400">اقلام علامت‌خورده ثبت شده‌اند؛ با تأیید به نفر بعدی می‌روید.</p>
                         </div>

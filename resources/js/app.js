@@ -161,6 +161,62 @@ Alpine.data('jalaliDateTimeField', (model) => ({
     },
 }));
 
+// Delivery Gate — eligible-items checklist.
+// The server persists each toggle, but waiting for that round-trip before showing
+// the tick makes selection feel sluggish. This component owns the *visual* state so a
+// tap flips instantly (optimistic), fires the persist call in the background, and rolls
+// back only if the server rejects it. The matching server method skipRender()s, so a
+// toggle never re-renders the list or re-runs its queries.
+Alpine.data('deliveryItems', (initialDelivered = []) => ({
+    delivered: new Set((initialDelivered || []).map(Number)),
+    saving: new Set(),
+    isDelivered(id) {
+        return this.delivered.has(Number(id));
+    },
+    isSaving(id) {
+        return this.saving.has(Number(id));
+    },
+    get deliveredCount() {
+        return this.delivered.size;
+    },
+    toggle(id) {
+        id = Number(id);
+        if (this.saving.has(id)) {
+            // A persist for this item is still in flight — ignore the extra tap so the
+            // client can't drift out of step with the server's flip sequence.
+            return;
+        }
+
+        const wasDelivered = this.delivered.has(id);
+
+        // Optimistic flip (Sets are reassigned so Alpine picks up the change).
+        if (wasDelivered) {
+            this.delivered.delete(id);
+        } else {
+            this.delivered.add(id);
+        }
+        this.delivered = new Set(this.delivered);
+
+        this.saving.add(id);
+        this.saving = new Set(this.saving);
+
+        Promise.resolve(this.$wire.toggleDelivered(id))
+            .catch(() => {
+                // Persist failed — restore the pre-tap state so the UI stays truthful.
+                if (wasDelivered) {
+                    this.delivered.add(id);
+                } else {
+                    this.delivered.delete(id);
+                }
+                this.delivered = new Set(this.delivered);
+            })
+            .finally(() => {
+                this.saving.delete(id);
+                this.saving = new Set(this.saving);
+            });
+    },
+}));
+
 Alpine.data('idCardScanner', ({
     resolveScan,
     successSoundUrl = '',

@@ -219,6 +219,7 @@ class DeliveryGate extends Component
         if ($assignment->status === GateEntryAssignment::STATUS_DELIVERED) {
             $assignment->forceFill(['status' => GateEntryAssignment::STATUS_PENDING])->save();
             $this->deliveredCategoryIds = array_values(array_diff($this->deliveredCategoryIds, [$categoryId]));
+            $this->skipRender();
 
             return;
         }
@@ -228,6 +229,12 @@ class DeliveryGate extends Component
         if (! in_array($categoryId, $this->deliveredCategoryIds, true)) {
             $this->deliveredCategoryIds[] = $categoryId;
         }
+
+        // The client already flipped this item optimistically (see the deliveryItems
+        // Alpine component); persisting is all the server needs to do. Skipping the render
+        // avoids re-querying the service + authorized items and re-diffing the whole gate
+        // on every single tap — the core of the old selection lag.
+        $this->skipRender();
     }
 
     /**
