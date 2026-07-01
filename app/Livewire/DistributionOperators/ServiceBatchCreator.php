@@ -862,6 +862,7 @@ class ServiceBatchCreator extends Component
                 ->withTrashed()
                 ->get()
                 ->keyBy('id');
+            $existingCategoryPool = $this->editableCategoryPool($service);
             $categoryPayloads = [];
             $categoryWorkerAllocations = [];
 
@@ -869,7 +870,7 @@ class ServiceBatchCreator extends Component
                 $workerId = (int) $group['social_worker_id'];
 
                 foreach (array_values($group['categories']) as $categoryRow) {
-                    $categoryId = (int) ($categoryRow['id'] ?? 0);
+                    $categoryId = $this->resolveEditableCategoryId($categoryRow, $existingCategoryPool);
                     $name = trim((string) $categoryRow['name']);
                     $unit = (string) $categoryRow['unit'];
                     $allocatedQuantity = (float) $categoryRow['quantity'];
@@ -1080,9 +1081,19 @@ class ServiceBatchCreator extends Component
 
     protected function validateDistinctWorkerGroupCategories(): void
     {
+        $categoryPool = null;
+
+        if ($this->editingServiceId) {
+            $categoryPool = $this->editableCategoryPool(
+                $this->resolveEditableService($this->editingServiceId)
+            );
+        }
+
         $seenCategories = [];
 
         foreach ($this->miscWorkerGroups as $groupIndex => $group) {
+            $seenCategoryNamesForGroup = [];
+
             foreach (($group['categories'] ?? []) as $categoryIndex => $category) {
                 $categoryName = trim((string) ($category['name'] ?? ''));
                 $normalizedName = mb_strtolower($categoryName);
@@ -1091,7 +1102,14 @@ class ServiceBatchCreator extends Component
                     continue;
                 }
 
-                $categoryId = (int) ($category['id'] ?? 0);
+                if (isset($seenCategoryNamesForGroup[$normalizedName])) {
+                    throw ValidationException::withMessages([
+                        "miscWorkerGroups.{$groupIndex}.categories.{$categoryIndex}.name" => 'هر دسته‌بندی فقط می‌تواند یک‌بار برای این مددکار ثبت شود.',
+                    ]);
+                }
+
+                $seenCategoryNamesForGroup[$normalizedName] = true;
+                $categoryId = $this->resolveEditableCategoryId($category, $categoryPool);
 
                 if (! isset($seenCategories[$normalizedName])) {
                     $seenCategories[$normalizedName] = [
@@ -1121,8 +1139,9 @@ class ServiceBatchCreator extends Component
             ->withTrashed()
             ->get()
             ->keyBy('id');
+        $existingCategoryPool = $this->editableCategoryPool($service);
 
-        $submittedByCategoryId = $this->submittedEditableRowsByCategoryId($workerGroups);
+        $submittedByCategoryId = $this->submittedEditableRowsByCategoryId($workerGroups, $existingCategoryPool);
         $submittedCategoryIds = array_keys($submittedByCategoryId);
         $invalidCategoryIds = array_diff($submittedCategoryIds, $existingCategories->keys()->map(fn ($id): int => (int) $id)->all());
 
@@ -1174,7 +1193,7 @@ class ServiceBatchCreator extends Component
         }
     }
 
-    protected function submittedEditableRowsByCategoryId(array $workerGroups): array
+    protected function submittedEditableRowsByCategoryId(array $workerGroups, ?array $categoryPool = null): array
     {
         $rows = [];
 
@@ -1182,7 +1201,7 @@ class ServiceBatchCreator extends Component
             $workerId = (int) ($group['social_worker_id'] ?? 0);
 
             foreach (array_values($group['categories'] ?? []) as $categoryIndex => $category) {
-                $categoryId = (int) ($category['id'] ?? 0);
+                $categoryId = $this->resolveEditableCategoryId($category, $categoryPool);
 
                 if ($categoryId <= 0) {
                     continue;
@@ -1406,6 +1425,103 @@ class ServiceBatchCreator extends Component
         return $suggestions;
     }
 
+    protected function editableCategoryPool(Service $service): array
+    {
+        $categories = $service->categories()
+            ->withTrashed()
+            ->orderByRaw('CASE WHEN deleted_at IS NULL THEN 0 ELSE 1 END')
+            ->orderBy('sort_id')
+            ->orderBy('id')
+            ->get();
+
+        $usedCategoryIds = ServiceWorkerAllocation::query()
+            ->where('service_id', $service->id)
+            ->pluck('service_category_id')
+            ->merge($service->deliveries()->pluck('service_category_id'))
+            ->merge(GateEntryAssignment::query()
+                ->where('service_id', $service->id)
+                ->pluck('service_category_id'))
+            ->map(fn ($categoryId): int => (int) $categoryId)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        $usedCategoryIdLookup = array_fill_keys($usedCategoryIds, true);
+        $byName = [];
+
+        foreach ($categories as $category) {
+            $normalizedName = $this->normalizeEditableCategoryName((string) $category->name);
+
+            if ($normalizedName === '') {
+                continue;
+            }
+
+            $existing = $byName[$normalizedName] ?? null;
+
+            if (! $existing instanceof ServiceCategory
+                || $this->shouldPreferEditableCategoryCandidate($category, $existing, $usedCategoryIdLookup)) {
+                $byName[$normalizedName] = $category;
+            }
+        }
+
+        return [
+            'by_name' => $byName,
+        ];
+    }
+
+    protected function resolveEditableCategoryId(array $category, ?array $categoryPool = null): int
+    {
+        $categoryId = (int) ($category['id'] ?? 0);
+
+        if ($categoryId > 0) {
+            return $categoryId;
+        }
+
+        $normalizedName = $this->normalizeEditableCategoryName((string) ($category['name'] ?? ''));
+
+        if ($normalizedName === '') {
+            return 0;
+        }
+
+        if ($categoryPool === null && $this->editingServiceId) {
+            $categoryPool = $this->editableCategoryPool(
+                $this->resolveEditableService($this->editingServiceId)
+            );
+        }
+
+        $resolvedCategory = $categoryPool['by_name'][$normalizedName] ?? null;
+
+        return $resolvedCategory instanceof ServiceCategory ? (int) $resolvedCategory->id : 0;
+    }
+
+    protected function normalizeEditableCategoryName(string $name): string
+    {
+        return mb_strtolower(trim($name));
+    }
+
+    protected function shouldPreferEditableCategoryCandidate(
+        ServiceCategory $candidate,
+        ServiceCategory $existing,
+        array $usedCategoryIdLookup
+    ): bool {
+        $candidateIsUsed = isset($usedCategoryIdLookup[(int) $candidate->id]);
+        $existingIsUsed = isset($usedCategoryIdLookup[(int) $existing->id]);
+
+        if ($candidateIsUsed !== $existingIsUsed) {
+            return $candidateIsUsed;
+        }
+
+        $candidateIsActive = $candidate->deleted_at === null;
+        $existingIsActive = $existing->deleted_at === null;
+
+        if ($candidateIsActive !== $existingIsActive) {
+            return $candidateIsActive;
+        }
+
+        return (int) $candidate->id > (int) $existing->id;
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -1605,7 +1721,7 @@ class ServiceBatchCreator extends Component
         }
 
         return ! $this->hasDuplicateWorkerGroups()
-            && ! $this->hasDuplicateWorkerGroupCategoryNames();
+            && ! $this->hasDuplicateWorkerGroupCategoryNames(false);
     }
 
     protected function hasDuplicateWorkerGroups(): bool
@@ -1618,8 +1734,16 @@ class ServiceBatchCreator extends Component
         return $workerIds->count() !== $workerIds->unique()->count();
     }
 
-    protected function hasDuplicateWorkerGroupCategoryNames(): bool
+    protected function hasDuplicateWorkerGroupCategoryNames(bool $resolveExistingByName = true): bool
     {
+        $categoryPool = null;
+
+        if ($resolveExistingByName && $this->editingServiceId) {
+            $categoryPool = $this->editableCategoryPool(
+                $this->resolveEditableService($this->editingServiceId)
+            );
+        }
+
         $seenCategories = [];
 
         foreach ($this->miscWorkerGroups as $group) {
@@ -1631,7 +1755,9 @@ class ServiceBatchCreator extends Component
                     continue;
                 }
 
-                $categoryId = (int) ($category['id'] ?? 0);
+                $categoryId = $resolveExistingByName
+                    ? $this->resolveEditableCategoryId($category, $categoryPool)
+                    : (int) ($category['id'] ?? 0);
 
                 if (! isset($seenCategories[$normalizedName])) {
                     $seenCategories[$normalizedName] = $categoryId > 0 ? $categoryId : null;
@@ -1718,7 +1844,7 @@ class ServiceBatchCreator extends Component
                     $messages[] = 'یک مددکار بیش از یک‌بار انتخاب شده است؛ مددکار تکراری را حذف کنید.';
                 }
 
-                if ($this->hasDuplicateWorkerGroupCategoryNames()) {
+                if ($this->hasDuplicateWorkerGroupCategoryNames(false)) {
                     $messages[] = 'نام یک دسته‌بندی در چند ردیف تکرار شده است؛ برای استفاده مجدد، همان دسته‌بندی موجود را انتخاب کنید.';
                 }
             }

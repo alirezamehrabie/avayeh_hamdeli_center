@@ -1796,6 +1796,7 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id])
             ->call('addGroupCategory', 0)
             ->set('miscWorkerGroups.0.categories.1.name', 'Editable Pack')
+            ->set('miscWorkerGroups.0.categories.1.id', null)
             ->assertHasErrors(['miscWorkerGroups.0.categories.1.name'])
             ->set('miscWorkerGroups.0.categories.1.name', 'Second Pack')
             ->assertHasNoErrors(['miscWorkerGroups.0.categories.1.name'])
@@ -1834,6 +1835,11 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->call('addWorkerGroup')
             ->set('miscWorkerGroups.1.social_worker_id', $otherWorker->id)
             ->set('miscWorkerGroups.1.categories.0.name', $category->name)
+            ->set('miscWorkerGroups.1.categories.0.id', null)
+            ->assertHasNoErrors(['miscWorkerGroups.1.categories.0.name'])
+            ->set('miscWorkerGroups.1.categories.0.name', 'Fresh Duplicate')
+            ->assertHasNoErrors(['miscWorkerGroups.1.categories.0.name'])
+            ->set('miscWorkerGroups.0.categories.0.name', 'Fresh Duplicate')
             ->assertHasErrors(['miscWorkerGroups.1.categories.0.name']);
     }
 
@@ -2024,6 +2030,73 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             'social_worker_id' => $otherWorker->id,
             'allocated_quantity' => 2,
         ]);
+    }
+
+    public function test_editing_misc_service_resolves_name_only_row_to_soft_deleted_matching_category(): void
+    {
+        [$operator, $worker, $service, $category] = $this->editableMiscService();
+
+        $replacementCategory = $service->categories()->create([
+            'service_name_id' => $service->service_name_id,
+            'name' => 'Replacement Pack',
+            'quantity' => 3,
+            'unit' => 'pack',
+            'value' => 0,
+            'sort_id' => 2,
+            'created_by' => $operator->id,
+        ]);
+        $replacementCategory->delete();
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id])
+            ->set('miscWorkerGroups.0.categories.0.id', null)
+            ->set('miscWorkerGroups.0.categories.0.name', 'Replacement Pack')
+            ->set('miscWorkerGroups.0.categories.0.quantity', '4')
+            ->set('miscWorkerGroups.0.categories.0.unit', 'pack')
+            ->call('saveBatch')
+            ->assertHasNoErrors();
+
+        $this->assertSame(1, ServiceCategory::withTrashed()
+            ->where('service_id', $service->id)
+            ->where('name', 'Replacement Pack')
+            ->count());
+        $this->assertDatabaseHas('service_categories', [
+            'id' => $replacementCategory->id,
+            'service_id' => $service->id,
+            'name' => 'Replacement Pack',
+            'deleted_at' => null,
+            'quantity' => 4,
+        ]);
+    }
+
+    public function test_editing_misc_service_name_only_used_category_still_honors_usage_constraints(): void
+    {
+        [$operator, $worker, $service, $category] = $this->editableMiscService();
+
+        ServiceDelivery::query()->create([
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'delivery_channel' => Service::DELIVERY_CHANNEL_HOME,
+            'social_worker_id' => $worker->id,
+            'national_id' => '0000000005',
+            'full_name' => 'Delivered Recipient',
+            'delivered_quantity' => 3,
+            'value_per_unit_snapshot' => 0,
+            'delivered_total_value' => 0,
+            'delivered_at' => '2026-06-20',
+            'created_by' => $operator->id,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id])
+            ->set('miscWorkerGroups.0.categories.0.id', null)
+            ->set('miscWorkerGroups.0.categories.0.name', $category->name)
+            ->set('miscWorkerGroups.0.categories.0.quantity', '2')
+            ->call('requestSaveConfirmation')
+            ->assertHasErrors(['miscWorkerGroups.0.categories.0.quantity'])
+            ->assertSet('confirmingBatchSave', false);
     }
 
     private function editableMiscService(): array
