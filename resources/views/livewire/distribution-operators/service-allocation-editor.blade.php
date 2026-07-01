@@ -40,20 +40,45 @@
                 @foreach($service->categories as $category)
                     @php
                         $metrics = $categoryMetrics[(int) $category->id] ?? ['quantity' => 0, 'allocated' => 0, 'assignable' => 0];
+                        $totalQuantity = max(0, (float) $metrics['quantity']);
+                        $allocatedQuantity = max(0, min((float) $metrics['allocated'], $totalQuantity));
+                        $remainingQuantity = max(0, (float) $metrics['assignable']);
+                        $allocatedPercent = $totalQuantity > 0 ? min(100, round(($allocatedQuantity / $totalQuantity) * 100, 1)) : 0;
+                        $remainingPercent = $totalQuantity > 0 ? min(100, round(($remainingQuantity / $totalQuantity) * 100, 1)) : 0;
                     @endphp
-                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
-                        <div class="flex items-center justify-between">
-                            <p class="text-sm font-black text-slate-800">{{ $category->name }}</p>
-                            <span class="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
+                    <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-blue-50/30 to-slate-50 px-3 py-2.5 shadow-sm shadow-slate-200/50">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0 flex-1">
+                                <p class="truncate text-sm font-black text-slate-800">{{ $category->name }}</p>
+                                <p class="mt-1 text-[11px] font-bold text-slate-400">از {{ number_format($totalQuantity, 2) }} موجودی کل</p>
+                            </div>
+                            <span class="shrink-0 rounded-full border border-blue-100 bg-white/90 px-2 py-0.5 text-[10px] font-bold text-blue-700 shadow-sm">
                                 {{ $unitOptions[$category->unit] ?? $category->unit }}
                             </span>
                         </div>
-                        <div class="mt-1.5 flex flex-wrap items-center gap-x-2 text-[11px] font-bold">
-                            <span class="text-slate-500">کل: {{ number_format($metrics['quantity'], 2) }}</span>
-                            <span class="text-slate-400">·</span>
-                            <span class="text-blue-600">تخصیص‌یافته: {{ number_format($metrics['allocated'], 2) }}</span>
-                            <span class="text-slate-400">·</span>
-                            <span class="text-emerald-600">قابل تخصیص: {{ number_format($metrics['assignable'], 2) }}</span>
+
+                        <div class="mt-3">
+                            <div class="flex items-center justify-between text-[10px] font-bold">
+                                <span class="text-blue-700">تخصیص‌شده {{ $allocatedPercent }}٪</span>
+                                <span class="text-slate-400">باقی‌مانده {{ $remainingPercent }}٪</span>
+                            </div>
+                            <div class="mt-1.5 h-2.5 overflow-hidden rounded-full bg-slate-200/80">
+                                <div
+                                    class="h-full rounded-full bg-gradient-to-r from-blue-500 via-blue-600 to-cyan-500 transition-all duration-300"
+                                    style="width: {{ $allocatedPercent }}%;"
+                                ></div>
+                            </div>
+                        </div>
+
+                        <div class="mt-2.5 flex items-center justify-between gap-3 text-[10px] font-bold">
+                            <p class="text-slate-400">
+                                تخصیص‌شده
+                                <span class="mr-1 text-blue-700">{{ number_format($allocatedQuantity, 2) }}</span>
+                            </p>
+                            <p class="text-slate-400">
+                                آماده تخصیص
+                                <span class="mr-1 text-slate-700">{{ number_format($remainingQuantity, 2) }}</span>
+                            </p>
                         </div>
                     </div>
                 @endforeach
