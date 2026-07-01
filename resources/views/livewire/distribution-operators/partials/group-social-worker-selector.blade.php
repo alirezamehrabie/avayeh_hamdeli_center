@@ -161,6 +161,8 @@
             },
             choose(workerId) {
                 this.closeSelector();
+                // Keep this group as the single expanded section; siblings collapse.
+                window.dispatchEvent(new CustomEvent('worker-group-expand', { detail: { index: {{ $groupIndex }} } }));
                 $wire.selectGroupWorker({{ $groupIndex }}, Number(workerId));
             },
             clear() {

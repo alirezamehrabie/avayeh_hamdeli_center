@@ -1,5 +1,46 @@
+@php
+    $initialExpandedIndex = $activeWorkerGroupIndex ?? (count($miscWorkerGroups) ? array_key_last($miscWorkerGroups) : null);
+@endphp
 <div
     x-data="{
+        expandedIndex: @js($initialExpandedIndex),
+        isExpanded(index) {
+            return this.expandedIndex === index;
+        },
+        toggleGroup(index) {
+            this.expandedIndex = this.expandedIndex === index ? null : index;
+
+            if (this.expandedIndex === index) {
+                this.focusGroup(index);
+            }
+        },
+        expandGroup(index) {
+            if (! Number.isInteger(index)) {
+                return;
+            }
+
+            this.expandedIndex = index;
+            this.focusGroup(index);
+        },
+        focusGroup(index) {
+            // Bring the freshly-expanded card into view, but only when it is not
+            // already comfortably on screen — avoids disorienting jumps.
+            this.$nextTick(() => {
+                const group = this.$el.querySelector(`[data-worker-group-index='${index}']`);
+
+                if (! group) {
+                    return;
+                }
+
+                const rect = group.getBoundingClientRect();
+                const margin = 24;
+                const fullyVisible = rect.top >= margin && rect.bottom <= (window.innerHeight - margin);
+
+                if (! fullyVisible) {
+                    group.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        },
         scrollToNewGroup(event) {
             const index = event.detail?.index;
 
@@ -17,7 +58,8 @@
             });
         }
     }"
-    x-on:worker-group-added.window="scrollToNewGroup($event)"
+    x-on:worker-group-added.window="if (Number.isInteger($event.detail?.index)) { expandedIndex = $event.detail.index; } scrollToNewGroup($event)"
+    x-on:worker-group-expand.window="expandGroup($event.detail?.index)"
     class="space-y-5 p-4 sm:p-5"
 >
     {{-- Service type --}}
@@ -180,6 +222,7 @@
                         </div>
                         <button
                             type="button"
+                            @click="expandGroup({{ $gi }})"
                             wire:click="toggleGroupLock({{ $gi }})"
                             class="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] font-bold text-emerald-700 transition hover:bg-emerald-100"
                         >
@@ -191,12 +234,36 @@
                     {{-- Editable --}}
                     <div class="flex items-center gap-2.5 border-b border-slate-100 bg-emerald-50/40 px-3.5 py-2.5 sm:px-4">
                         <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-black text-emerald-700">{{ $gi + 1 }}</span>
-                        <span class="min-w-0 flex-1 truncate text-sm font-black text-slate-800">
-                            {{ $groupWorkerId ? ($groupWorkerDisplay ?: 'مددکار') : 'مددکار جدید' }}
-                        </span>
+                        <button
+                            type="button"
+                            @click="toggleGroup({{ $gi }})"
+                            :aria-expanded="isExpanded({{ $gi }}).toString()"
+                            class="flex min-w-0 flex-1 items-center gap-2 text-right"
+                        >
+                            <span class="min-w-0 flex-1">
+                                <span class="block truncate text-sm font-black text-slate-800">
+                                    {{ $groupWorkerId ? ($groupWorkerDisplay ?: 'مددکار') : 'مددکار جدید' }}
+                                </span>
+                                <span
+                                    x-show="! isExpanded({{ $gi }})"
+                                    class="mt-0.5 block truncate text-[11px] font-bold text-slate-400"
+                                >
+                                    @if($groupCategoryCount > 0)
+                                        {{ $groupCategoryCount }} دسته‌بندی@if($groupCategoryPreview !== '')<span class="text-slate-300"> · </span>{{ $groupCategoryPreview }}@endif
+                                    @else
+                                        برای مشاهده و ویرایش، باز کنید
+                                    @endif
+                                </span>
+                            </span>
+                            <i
+                                class="bi bi-chevron-down shrink-0 text-sm text-slate-400 transition-transform duration-200"
+                                :class="isExpanded({{ $gi }}) ? 'rotate-180' : ''"
+                            ></i>
+                        </button>
                         @if($groupIsExisting)
                             <button
                                 type="button"
+                                @click.stop
                                 wire:click="toggleGroupLock({{ $gi }})"
                                 class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-slate-500 transition hover:bg-slate-50"
                                 aria-label="قفل‌کردن این مددکار"
@@ -208,7 +275,7 @@
                         @if(count($miscWorkerGroups) > 1)
                             <button
                                 type="button"
-                                x-on:click="
+                                x-on:click.stop="
                                     window.dispatchEvent(new CustomEvent('open-notification-modal', {
                                         detail: {
                                             config: {
@@ -241,7 +308,12 @@
                         @endif
                     </div>
 
-                    <div class="space-y-3 p-3.5 sm:p-4">
+                    <div
+                        x-show="isExpanded({{ $gi }})"
+                        x-collapse
+                        @if($gi !== $initialExpandedIndex) style="display: none;" @endif
+                        class="space-y-3 p-3.5 sm:p-4"
+                    >
                         @include('livewire.distribution-operators.partials.group-social-worker-selector', [
                             'groupIndex' => $gi,
                             'group' => $group,
