@@ -60,6 +60,9 @@ class EntryGate extends Component
     /** @var array<int, mixed> Values entered for the scanned subject, keyed by service_entry_field id. */
     public array $entryFieldValues = [];
 
+    /** @var array<int, string>|null Cached education levels. */
+    private ?array $cachedEducationLevels = null;
+
     public function mount(): void
     {
         $this->authorizeGate();
@@ -135,15 +138,19 @@ class EntryGate extends Component
     {
         $this->authorizeGate();
 
-        if (! $this->selectedService) {
+        if (! $this->selectedServiceId) {
             return;
         }
+
+        $maxSortOrder = ServiceEntryField::query()
+            ->where('service_id', $this->selectedServiceId)
+            ->max('sort_order') ?? 0;
 
         ServiceEntryField::query()->create([
             'service_id' => $this->selectedServiceId,
             'title' => '',
             'type' => ServiceEntryField::TYPE_TEXT,
-            'sort_order' => (int) ($this->selectedService->entryFields->max('sort_order') ?? 0) + 1,
+            'sort_order' => (int) $maxSortOrder + 1,
         ]);
 
         $this->showFieldConfig = true;
@@ -154,7 +161,7 @@ class EntryGate extends Component
     {
         $this->authorizeGate();
 
-        if (! $this->selectedService) {
+        if (! $this->selectedServiceId) {
             return;
         }
 
@@ -243,13 +250,16 @@ class EntryGate extends Component
 
     protected function loadEntryFieldDrafts(): void
     {
-        if (! $this->selectedService) {
+        if (! $this->selectedServiceId) {
             $this->entryFieldDrafts = [];
 
             return;
         }
 
-        $this->entryFieldDrafts = $this->selectedService->entryFields
+        $this->entryFieldDrafts = ServiceEntryField::query()
+            ->where('service_id', $this->selectedServiceId)
+            ->orderBy('sort_order')
+            ->get()
             ->mapWithKeys(fn (ServiceEntryField $field): array => [
                 $field->id => ['title' => (string) $field->title, 'type' => (string) $field->type],
             ])
@@ -475,7 +485,14 @@ class EntryGate extends Component
 
     public function getEducationLevelsProperty(): Collection
     {
-        return EducationLevel::query()->orderBy('sort_order')->get();
+        if ($this->cachedEducationLevels === null) {
+            $this->cachedEducationLevels = EducationLevel::query()
+                ->orderBy('sort_order')
+                ->pluck('name', 'id')
+                ->all();
+        }
+
+        return collect($this->cachedEducationLevels)->map(fn ($name, $id) => (object) ['id' => $id, 'name' => $name]);
     }
 
     public function getGateServicesProperty(): Collection
@@ -568,8 +585,11 @@ class EntryGate extends Component
     {
         $this->authorizeGate();
 
+        $selectedService = $this->selectedService;
+
         return view('livewire.distribution-operators.gates.entry-gate', [
-            'selectedService' => $this->selectedService,
+            'selectedService' => $selectedService,
+            'entryFields' => $selectedService?->entryFields ?? collect(),
             'gateServices' => $this->selectedServiceId ? collect() : $this->gateServices,
         ]);
     }
