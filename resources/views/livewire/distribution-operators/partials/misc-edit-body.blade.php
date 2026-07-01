@@ -269,10 +269,10 @@
                 class="overflow-hidden rounded-2xl border {{ $groupLocked ? 'border-slate-200 bg-slate-50/70' : 'border-emerald-200 bg-white shadow-sm' }}"
             >
                 @if($groupLocked)
-                    {{-- Locked summary --}}
-                    <div class="flex items-center gap-3 px-3.5 py-3 sm:px-4">
-                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ring-1 {{ $groupHasError ? 'bg-rose-50 text-rose-500 ring-rose-200' : 'bg-white text-slate-400 ring-slate-200' }}">
-                            <i class="bi {{ $groupHasError ? 'bi-exclamation-circle-fill' : 'bi-lock-fill' }} text-sm"></i>
+                    {{-- Done / collapsed summary --}}
+                    <div class="flex items-center gap-3 px-3.5 py-3 sm:px-4" @if(! $groupHasError) title="ویرایش این مددکار تمام شده و جمع شده است؛ برای تغییر، دکمه ویرایش را بزنید" @endif>
+                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ring-1 {{ $groupHasError ? 'bg-rose-50 text-rose-500 ring-rose-200' : 'bg-emerald-50 text-emerald-600 ring-emerald-100' }}">
+                            <i class="bi {{ $groupHasError ? 'bi-exclamation-circle-fill' : 'bi-check-circle-fill' }} text-sm"></i>
                         </span>
                         <div class="min-w-0 flex-1">
                             <div class="flex min-w-0 items-center gap-2">
@@ -340,11 +340,12 @@
                                 type="button"
                                 @click.stop
                                 wire:click="toggleGroupLock({{ $gi }})"
-                                class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-slate-500 transition hover:bg-slate-50"
-                                aria-label="قفل‌کردن این مددکار"
+                                class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-slate-500 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+                                title="این مددکار جمع می‌شود تا اشتباهی تغییر نکند (ذخیره نهایی با تأیید خدمت انجام می‌شود)"
+                                aria-label="اتمام ویرایش این مددکار و جمع‌کردن آن"
                             >
-                                <i class="bi bi-lock"></i>
-                                قفل
+                                <i class="bi bi-check2"></i>
+                                تمام شد
                             </button>
                         @endif
                         @if(count($miscWorkerGroups) > 1)
