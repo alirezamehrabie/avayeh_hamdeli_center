@@ -137,15 +137,15 @@
                             value: 'individual',
                             title: 'شخصی',
                             subtitle: 'ثبت برای مددجو',
-                            activeClass: 'border-rose-300 bg-rose-50/80 shadow-sm',
-                            inactiveClass: 'border-slate-200 bg-white hover:border-rose-200 hover:bg-rose-50/40',
-                            iconActiveClass: 'bg-rose-600 text-white',
-                            iconInactiveClass: 'bg-rose-100 text-rose-700',
-                            titleActiveClass: 'text-rose-950',
+                            activeClass: 'border-cyan-300 bg-cyan-50/80 shadow-sm',
+                            inactiveClass: 'border-slate-200 bg-white hover:border-cyan-200 hover:bg-cyan-50/40',
+                            iconActiveClass: 'bg-cyan-600 text-white',
+                            iconInactiveClass: 'bg-cyan-100 text-cyan-700',
+                            titleActiveClass: 'text-cyan-950',
                             titleInactiveClass: 'text-slate-800',
-                            subtitleActiveClass: 'text-rose-700',
+                            subtitleActiveClass: 'text-cyan-700',
                             subtitleInactiveClass: 'text-slate-500',
-                            dotActiveClass: 'bg-rose-600',
+                            dotActiveClass: 'bg-cyan-600',
                         },
                         {
                             value: 'family',
@@ -530,12 +530,7 @@
 
                                         <div class="space-y-3">
                                             <div class="space-y-1.5">
-                                                <div class="flex items-center justify-between gap-2">
-                                                    <label class="block text-[11px] font-black text-slate-500">نام دسته‌بندی</label>
-                                                    @if(!empty($categoryNameSuggestions))
-                                                        <span class="text-[10px] font-bold text-emerald-600">برای انتخاب لمس کنید</span>
-                                                    @endif
-                                                </div>
+                                                <label class="block text-[11px] font-black text-slate-500">نام دسته‌بندی</label>
                                                 <div
                                                     x-data="{
                                                         sheetOpen: false,
@@ -676,47 +671,55 @@
                                                 >
                                                     <div class="relative">
                                                         @if(!empty($categoryNameSuggestions))
-                                                            <span
-                                                                x-show="! directEntry"
-                                                                class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-emerald-600"
-                                                                aria-hidden="true"
-                                                            >
-
-                                                            </span>
-                                                        @endif
-                                                        <input
-                                                            x-ref="nameInput"
-                                                            type="text"
-                                                            wire:model.blur="miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.name"
-                                                            @if(!empty($categoryNameSuggestions))
-                                                                x-bind:readonly="! directEntry"
-                                                                @click="handleNameFieldInteraction($event)"
-                                                                @focus="handleNameFieldInteraction($event)"
-                                                                x-bind:class="{ 'cursor-pointer caret-transparent': ! directEntry }"
-                                                                aria-haspopup="dialog"
-                                                            @endif
-                                                            class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 {{ !empty($categoryNameSuggestions) ? 'pl-10 pr-11' : '' }} text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100"
-                                                            placeholder="نام دسته‌بندی"
-                                                            autocomplete="off"
-                                                        >
-                                                        <input type="hidden" wire:model="miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.id">
-                                                        @if(!empty($categoryNameSuggestions))
+                                                            {{-- Default state reads as a selector (not a text field), so the tap-to-open
+                                                                 behaviour is expected; picking "دسته‌بندی جدید" switches to a real input (Item 3). --}}
                                                             <button
                                                                 type="button"
+                                                                x-show="! directEntry"
                                                                 @click="openSheet()"
-                                                                class="absolute inset-y-0 left-0 my-1 ml-1 inline-flex items-center justify-center rounded-md px-2 text-emerald-700 transition hover:bg-emerald-50"
-                                                                aria-label="انتخاب از دسته‌بندی‌های قبلی"
+                                                                aria-haspopup="dialog"
+                                                                class="flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-right transition hover:border-emerald-300 hover:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
                                                             >
-                                                                <i class="bi bi-chevron-down text-sm"></i>
+                                                                <i class="bi bi-tag shrink-0 text-sm text-emerald-600"></i>
+                                                                <span class="min-w-0 flex-1 truncate text-sm {{ trim((string) ($category['name'] ?? '')) !== '' ? 'font-bold text-slate-800' : 'text-slate-400' }}">
+                                                                    {{ trim((string) ($category['name'] ?? '')) !== '' ? $category['name'] : 'انتخاب دسته‌بندی' }}
+                                                                </span>
+                                                                <i class="bi bi-chevron-down shrink-0 text-sm text-slate-400"></i>
                                                             </button>
+
+                                                            <div x-show="directEntry" style="display: none;">
+                                                                <input
+                                                                    x-ref="nameInput"
+                                                                    type="text"
+                                                                    wire:model.blur="miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.name"
+                                                                    class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
+                                                                    placeholder="نام دسته‌بندی جدید"
+                                                                    autocomplete="off"
+                                                                >
+                                                                <button
+                                                                    type="button"
+                                                                    @click="openSheet()"
+                                                                    class="absolute inset-y-0 left-0 my-1 ml-1 inline-flex items-center justify-center rounded-md px-2 text-emerald-700 transition hover:bg-emerald-50"
+                                                                    aria-label="انتخاب از دسته‌بندی‌های قبلی"
+                                                                >
+                                                                    <i class="bi bi-list-ul text-sm"></i>
+                                                                </button>
+                                                            </div>
+                                                        @else
+                                                            <input
+                                                                x-ref="nameInput"
+                                                                type="text"
+                                                                wire:model.blur="miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.name"
+                                                                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100"
+                                                                placeholder="نام دسته‌بندی"
+                                                                autocomplete="off"
+                                                            >
                                                         @endif
+                                                        <input type="hidden" wire:model="miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.id">
                                                     </div>
                                                     @if(!empty($categoryNameSuggestions))
-                                                        <p x-show="! directEntry" class="mt-1 text-[10px] font-bold text-slate-400">
-                                                            دسته‌بندی مورد نظر را از لیست انتخاب کنید
-                                                        </p>
-                                                        <p x-show="directEntry" class="mt-1 text-[10px] font-bold text-emerald-600">
-                                                            ثبت دسته‌بندی جدید فعال شد، نام را تایپ کنید
+                                                        <p x-show="directEntry" style="display: none;" class="mt-1 text-[10px] font-bold text-emerald-600">
+                                                            در حال افزودن دسته‌بندی جدید — برای انتخاب از لیست، آیکن لیست را بزنید
                                                         </p>
                                                     @endif
                                                     @error("miscWorkerGroups.$gi.categories.$ci.name") <p data-validation-error class="mt-1 text-[11px] text-rose-600">{{ $message }}</p> @enderror
