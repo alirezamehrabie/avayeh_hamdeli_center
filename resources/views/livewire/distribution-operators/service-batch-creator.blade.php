@@ -860,18 +860,29 @@
                         </p>
                     @endif
                 </div>
-                <button
-                    type="submit"
-                    @disabled(! $isEditing && ! $canRequestSaveConfirmation)
-                    wire:loading.attr="disabled"
-                    wire:target="requestSaveConfirmation"
-                    class="inline-flex w-full items-center justify-center rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 px-4 py-3 text-xs font-black text-white shadow-sm shadow-emerald-700/25 transition hover:border-emerald-300 hover:from-emerald-600 hover:via-emerald-700 hover:to-teal-700 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none focus:outline-none focus:ring-4 focus:ring-emerald-500/20 active:scale-[0.99] active:from-emerald-700 active:via-emerald-800 active:to-teal-800 sm:w-auto"
-                >
-                    <span wire:loading.remove wire:target="requestSaveConfirmation">
-                        {{ $mode === 'predefined' && !$isEditing ? 'تأیید تحویل' : 'تأیید خدمت' }}
+                <div class="flex flex-col gap-2 xl:shrink-0 xl:flex-row xl:items-center xl:gap-2.5">
+                    {{-- Dirty-state cue: only in edit mode, clears once the save resets hasUnsavedChanges (Item 10). --}}
+                    <span
+                        x-show="isEditingService && hasUnsavedChanges"
+                        style="display: none;"
+                        class="inline-flex items-center gap-1.5 self-start rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-black text-amber-700 ring-1 ring-amber-200"
+                    >
+                        <span class="inline-flex h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                        تغییرات ذخیره‌نشده
                     </span>
-                    <span wire:loading wire:target="requestSaveConfirmation">در حال بررسی...</span>
-                </button>
+                    <button
+                        type="submit"
+                        @disabled(! $isEditing && ! $canRequestSaveConfirmation)
+                        wire:loading.attr="disabled"
+                        wire:target="requestSaveConfirmation"
+                        class="inline-flex w-full items-center justify-center rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 px-4 py-3 text-xs font-black text-white shadow-sm shadow-emerald-700/25 transition hover:border-emerald-300 hover:from-emerald-600 hover:via-emerald-700 hover:to-teal-700 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none focus:outline-none focus:ring-4 focus:ring-emerald-500/20 active:scale-[0.99] active:from-emerald-700 active:via-emerald-800 active:to-teal-800 sm:w-auto"
+                    >
+                        <span wire:loading.remove wire:target="requestSaveConfirmation">
+                            {{ $mode === 'predefined' && !$isEditing ? 'تأیید تحویل' : 'تأیید خدمت' }}
+                        </span>
+                        <span wire:loading wire:target="requestSaveConfirmation">در حال بررسی...</span>
+                    </button>
+                </div>
             </div>
 
             @if(!empty($reviewSummary['description']))
