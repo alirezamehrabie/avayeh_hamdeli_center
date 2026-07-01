@@ -3,6 +3,7 @@
 namespace App\Livewire\DistributionOperators;
 
 use App\Models\Service;
+use App\Models\ServiceDelivery;
 use App\Models\ServiceWorkerAllocation;
 use App\Models\SocialWorker;
 use App\Traits\InteractsWithNotificationModal;
@@ -196,29 +197,63 @@ class ServiceAllocationEditor extends Component
     public function updateAllocationQuantity(int $allocationId, string $value): void
     {
         $quantity = max(0, (float) $value);
-        $allocation = ServiceWorkerAllocation::query()->find($allocationId);
+        $errorMessage = null;
 
-        if (! $allocation || (int) $allocation->assigned_by_user_id !== (int) auth()->id()) {
+        if (! $this->service) {
             return;
         }
 
-        $category = $this->service->categories()->find($allocation->service_category_id);
+        DB::transaction(function () use ($allocationId, $quantity, &$errorMessage): void {
+            $allocation = ServiceWorkerAllocation::query()
+                ->whereKey($allocationId)
+                ->where('service_id', $this->service->id)
+                ->where('assigned_by_user_id', auth()->id())
+                ->lockForUpdate()
+                ->first();
 
-        if (! $category) {
-            return;
+            if (! $allocation) {
+                return;
+            }
+
+            $category = $this->service->categories()
+                ->whereKey($allocation->service_category_id)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $category) {
+                return;
+            }
+
+            $deliveredQuantity = (float) ServiceDelivery::query()
+                ->where('service_id', $this->service->id)
+                ->where('service_category_id', $category->id)
+                ->where('social_worker_id', $allocation->social_worker_id)
+                ->sum('delivered_quantity');
+
+            if ($quantity < $deliveredQuantity) {
+                $errorMessage = 'Allocation cannot be lower than the quantity already delivered for this worker and category.';
+
+                return;
+            }
+
+            $totalAllocatedForCategory = ServiceWorkerAllocation::query()
+                ->where('service_id', $this->service->id)
+                ->where('service_category_id', $category->id)
+                ->where('id', '!=', $allocationId)
+                ->lockForUpdate()
+                ->get()
+                ->sum(fn (ServiceWorkerAllocation $allocation): float => (float) $allocation->allocated_quantity);
+
+            $maxAllowed = max(0, (float) $category->quantity - (float) $totalAllocatedForCategory);
+
+            $allocation->update([
+                'allocated_quantity' => min($quantity, $maxAllowed),
+            ]);
+        });
+
+        if ($errorMessage) {
+            $this->addError('allocationQuantities', $errorMessage);
         }
-
-        $totalAllocatedForCategory = ServiceWorkerAllocation::query()
-            ->where('service_id', $this->service->id)
-            ->where('service_category_id', $category->id)
-            ->where('id', '!=', $allocationId)
-            ->sum('allocated_quantity');
-
-        $maxAllowed = max(0, (float) $category->quantity - (float) $totalAllocatedForCategory);
-
-        $quantity = min($quantity, $maxAllowed);
-
-        $allocation->update(['allocated_quantity' => $quantity]);
 
         $this->loadService();
         $this->loadExistingAllocations();
@@ -226,11 +261,40 @@ class ServiceAllocationEditor extends Component
 
     public function removeWorkerAllocations(int $socialWorkerId): void
     {
-        ServiceWorkerAllocation::query()
-            ->where('service_id', $this->editingServiceId)
-            ->where('social_worker_id', $socialWorkerId)
-            ->where('assigned_by_user_id', auth()->id())
-            ->delete();
+        $errorMessage = null;
+
+        DB::transaction(function () use ($socialWorkerId, &$errorMessage): void {
+            $allocations = ServiceWorkerAllocation::query()
+                ->where('service_id', $this->editingServiceId)
+                ->where('social_worker_id', $socialWorkerId)
+                ->where('assigned_by_user_id', auth()->id())
+                ->lockForUpdate()
+                ->get();
+
+            if ($allocations->isEmpty()) {
+                return;
+            }
+
+            $hasDeliveries = ServiceDelivery::query()
+                ->where('service_id', $this->editingServiceId)
+                ->where('social_worker_id', $socialWorkerId)
+                ->whereIn('service_category_id', $allocations->pluck('service_category_id')->all())
+                ->exists();
+
+            if ($hasDeliveries) {
+                $errorMessage = 'This worker has delivered quantities for this service and cannot be removed from allocations.';
+
+                return;
+            }
+
+            ServiceWorkerAllocation::query()
+                ->whereIn('id', $allocations->pluck('id')->all())
+                ->delete();
+        });
+
+        if ($errorMessage) {
+            $this->addError('allocationQuantities', $errorMessage);
+        }
 
         $this->loadService();
         $this->loadExistingAllocations();
