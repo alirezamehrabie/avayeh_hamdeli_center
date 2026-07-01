@@ -608,7 +608,7 @@
 
                                             <div class="space-y-1.5">
                                                 <label class="block text-[11px] font-black text-slate-500">مقدار خدمت</label>
-                                                <div class="grid grid-cols-[minmax(0,1fr)_8.5rem] overflow-hidden rounded-lg border border-slate-200 bg-slate-50 transition focus-within:border-emerald-300 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-100">
+                                                <div class="grid grid-cols-[minmax(0,1fr)_auto] items-stretch overflow-hidden rounded-lg border border-slate-200 bg-slate-50 transition focus-within:border-emerald-300 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-100">
                                                     <input
                                                         type="number"
                                                         min="0.01"
@@ -622,7 +622,7 @@
                                                         wire:model.live="miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.unit"
                                                         @disabled($isUnitLocked)
                                                         @if($isUnitLocked) title="این دسته‌بندی استفاده شده است و واحد آن قابل تغییر نیست" @endif
-                                                        class="border-0 border-r border-slate-200 px-2.5 py-2 text-xs font-bold outline-none focus:ring-0 {{ $isUnitLocked ? 'cursor-not-allowed bg-slate-100 text-slate-400' : 'bg-white/70 text-slate-600' }}"
+                                                        class="w-full min-w-[4.5rem] max-w-[6rem] border-0 border-r border-slate-200 px-2 py-2 text-center text-xs font-bold outline-none focus:ring-0 {{ $isUnitLocked ? 'cursor-not-allowed bg-slate-100 text-slate-400' : 'bg-white/70 text-slate-600' }}"
                                                     >
                                                         @foreach($unitOptions as $value => $label)
                                                             <option value="{{ $value }}">{{ $label }}</option>
