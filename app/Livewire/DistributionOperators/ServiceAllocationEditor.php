@@ -353,4 +353,16 @@ class ServiceAllocationEditor extends Component
 
         return $district !== '' ? $name.' - '.$district : $name;
     }
+
+    protected function formatQuantityForUnit(string|int|float|null $value, string $unit): string
+    {
+        $number = (float) ($value ?? 0);
+
+        return number_format($number, $this->isDecimalQuantityUnit($unit) ? 2 : 0, '.', '');
+    }
+
+    protected function isDecimalQuantityUnit(string $unit): bool
+    {
+        return in_array($unit, ['kilogram', 'gram', 'kg', 'g'], true);
+    }
 }

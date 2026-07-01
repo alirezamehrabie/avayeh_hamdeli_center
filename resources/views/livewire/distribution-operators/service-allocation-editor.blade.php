@@ -50,7 +50,9 @@
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0 flex-1">
                                 <p class="truncate text-sm font-black text-slate-800">{{ $category->name }}</p>
-                                <p class="mt-1 text-[11px] font-bold text-slate-400">از {{ number_format($totalQuantity, 2) }} موجودی کل</p>
+                                <p class="mt-0.5 text-[10px] font-medium tracking-tight text-slate-400">
+                                    موجودی کل: {{ $this->formatQuantityForUnit($totalQuantity, (string) $category->unit) }} {{ $unitOptions[$category->unit] ?? $category->unit }}
+                                </p>
                             </div>
                             <span class="shrink-0 rounded-full border border-blue-100 bg-white/90 px-2 py-0.5 text-[10px] font-bold text-blue-700 shadow-sm">
                                 {{ $unitOptions[$category->unit] ?? $category->unit }}
@@ -58,7 +60,7 @@
                         </div>
 
                         <div class="mt-3">
-                            <div class="flex items-center justify-between text-[10px] font-bold">
+                            <div class="flex items-center justify-between text-[9px] font-bold tracking-tight">
                                 <span class="text-blue-700">تخصیص‌شده {{ $allocatedPercent }}٪</span>
                                 <span class="text-slate-400">باقی‌مانده {{ $remainingPercent }}٪</span>
                             </div>
@@ -70,14 +72,14 @@
                             </div>
                         </div>
 
-                        <div class="mt-2.5 flex items-center justify-between gap-3 text-[10px] font-bold">
+                        <div class="mt-2 flex items-center justify-between gap-2 text-[9px] font-medium tracking-tight">
                             <p class="text-slate-400">
                                 تخصیص‌شده
-                                <span class="mr-1 text-blue-700">{{ number_format($allocatedQuantity, 2) }}</span>
+                                <span class="mr-1 text-blue-700">{{ $this->formatQuantityForUnit($allocatedQuantity, (string) $category->unit) }}</span>
                             </p>
                             <p class="text-slate-400">
                                 آماده تخصیص
-                                <span class="mr-1 text-slate-700">{{ number_format($remainingQuantity, 2) }}</span>
+                                <span class="mr-1 text-slate-700">{{ $this->formatQuantityForUnit($remainingQuantity, (string) $category->unit) }}</span>
                             </p>
                         </div>
                     </div>
