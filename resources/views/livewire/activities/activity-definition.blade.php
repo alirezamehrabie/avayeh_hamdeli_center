@@ -345,9 +345,24 @@
                                                         </select>
                                                         @error("activityServices.$serviceIndex.categories.$categoryIndex.unit") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                                                     </div>
-                                                    <div>
+                                                    <div
+                                                        x-data="{
+                                                            value: @entangle('activityServices.' . $serviceIndex . '.categories.' . $categoryIndex . '.value').live,
+                                                            formatGrouped(raw) {
+                                                                return String(raw ?? '')
+                                                                    .replace(/[^\d]/g, '')
+                                                                    .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                                                            },
+                                                            formatValueInput(event) {
+                                                                const formatted = this.formatGrouped(event.target.value);
+
+                                                                event.target.value = formatted;
+                                                                this.value = formatted;
+                                                            },
+                                                        }"
+                                                    >
                                                         <label class="mb-1 block text-xs font-bold text-slate-600">ارزش واحد</label>
-                                                        <input type="text" wire:model="activityServices.{{ $serviceIndex }}.categories.{{ $categoryIndex }}.value" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700">
+                                                        <input type="text" inputmode="numeric" x-model="value" x-on:input="formatValueInput($event)" x-init="value = formatGrouped(value)" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 ltr:text-left">
                                                         @error("activityServices.$serviceIndex.categories.$categoryIndex.value") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                                                     </div>
                                                     <div class="flex items-end">
