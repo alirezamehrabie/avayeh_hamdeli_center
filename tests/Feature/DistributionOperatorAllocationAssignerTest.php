@@ -1716,6 +1716,51 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         ]);
     }
 
+    public function test_editing_misc_service_removes_stale_worker_allocation_from_retained_shared_category(): void
+    {
+        [$operator, $worker, $service, $category] = $this->editableMiscService();
+        $otherWorker = SocialWorker::query()->create([
+            'worker_code' => 996,
+            'first_name' => 'Removed',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+
+        $staleAllocation = $service->workerAllocations()->create([
+            'service_category_id' => $category->id,
+            'social_worker_id' => $otherWorker->id,
+            'allocated_quantity' => 2,
+            'assigned_by_user_id' => $operator->id,
+        ]);
+
+        $category->update(['quantity' => 7]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id])
+            ->call('removeWorkerGroup', 1)
+            ->set('miscDescription', 'Removed stale shared allocation')
+            ->set('miscWorkerGroups.0.categories.0.quantity', '5')
+            ->call('saveBatch')
+            ->assertHasNoErrors();
+
+        $this->assertSame(1, $service->categories()->count());
+        $this->assertDatabaseHas('service_categories', [
+            'id' => $category->id,
+            'service_id' => $service->id,
+            'quantity' => 5,
+        ]);
+        $this->assertDatabaseHas('service_social_worker', [
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'allocated_quantity' => 5,
+        ]);
+        $this->assertDatabaseMissing('service_social_worker', [
+            'id' => $staleAllocation->id,
+        ]);
+    }
+
     public function test_editing_misc_service_preserves_used_category_when_safe_fields_change(): void
     {
         [$operator, $worker, $service, $category] = $this->editableMiscService();

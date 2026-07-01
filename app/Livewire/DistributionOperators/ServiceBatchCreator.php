@@ -858,6 +858,7 @@ class ServiceBatchCreator extends Component
             $sortId = 1;
             $totalQuantity = 0.0;
             $retainedCategoryIds = [];
+            $retainedWorkerIdsByCategory = [];
             $existingCategories = $service->categories()
                 ->withTrashed()
                 ->get()
@@ -916,6 +917,10 @@ class ServiceBatchCreator extends Component
                 }
 
                 $retainedCategoryIds[] = (int) $category->id;
+                $retainedWorkerIdsByCategory[(int) $category->id] = array_map(
+                    'intval',
+                    array_keys($categoryWorkerAllocations[$categoryKey] ?? [])
+                );
                 $totalQuantity += (float) $payload['quantity'];
 
                 foreach (($categoryWorkerAllocations[$categoryKey] ?? []) as $workerId => $allocatedQuantity) {
@@ -928,6 +933,16 @@ class ServiceBatchCreator extends Component
                         'assigned_by_user_id' => auth()->id(),
                     ]);
                 }
+            }
+
+            foreach ($retainedWorkerIdsByCategory as $categoryId => $workerIds) {
+                $service->workerAllocations()
+                    ->where('service_category_id', $categoryId)
+                    ->when(
+                        $workerIds !== [],
+                        fn ($query) => $query->whereNotIn('social_worker_id', $workerIds)
+                    )
+                    ->delete();
             }
 
             $service->workerAllocations()
