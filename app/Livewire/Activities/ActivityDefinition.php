@@ -192,6 +192,7 @@ class ActivityDefinition extends Component
         }
 
         $this->activityServices[$serviceIndex]['categories'][] = $this->emptyActivityServiceCategory();
+        $this->dispatch('activity-category-added', serviceIndex: $serviceIndex);
     }
 
     public function removeActivityServiceCategory(int $serviceIndex, int $categoryIndex): void

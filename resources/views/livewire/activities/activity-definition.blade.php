@@ -315,7 +315,11 @@
                                         </div>
                                     </div>
 
-                                    <div class="space-y-3 rounded-2xl border border-slate-200 bg-white p-3">
+                                    <div
+                                        class="space-y-3 rounded-2xl border border-slate-200 bg-white p-3"
+                                        x-data="{ serviceIndex: {{ $serviceIndex }} }"
+                                        @activity-category-added.window="if ($event.detail.serviceIndex == serviceIndex) setTimeout(() => { const lastItem = $el.querySelector('[data-category-item]:last-of-type'); const nameInput = lastItem?.querySelector('[data-category-name]'); if (nameInput) nameInput.focus(); }, 50)"
+                                    >
                                         <div class="flex items-center justify-between gap-3">
                                             <h4 class="text-sm font-black text-slate-800">دسته‌های خدمت</h4>
                                             <button type="button" wire:click="addActivityServiceCategory({{ $serviceIndex }})" class="inline-flex items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100">
@@ -325,10 +329,10 @@
 
                                         <div class="space-y-3">
                                             @foreach(($service['categories'] ?? []) as $categoryIndex => $category)
-                                                <div wire:key="activity-service-{{ $serviceIndex }}-category-{{ $categoryIndex }}" class="grid gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 md:grid-cols-[minmax(0,1.2fr)_120px_140px_140px_auto]">
+                                                <div wire:key="activity-service-{{ $serviceIndex }}-category-{{ $categoryIndex }}" data-category-item class="grid gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3 md:grid-cols-[minmax(0,1.2fr)_120px_140px_140px_auto]">
                                                     <div>
                                                         <label class="mb-1 block text-xs font-bold text-slate-600">نام دسته</label>
-                                                        <input type="text" wire:model="activityServices.{{ $serviceIndex }}.categories.{{ $categoryIndex }}.name" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700">
+                                                        <input type="text" data-category-name wire:model="activityServices.{{ $serviceIndex }}.categories.{{ $categoryIndex }}.name" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700">
                                                         @error("activityServices.$serviceIndex.categories.$categoryIndex.name") <p class="mt-1 text-xs text-rose-600">{{ $message }}</p> @enderror
                                                     </div>
                                                     <div>
