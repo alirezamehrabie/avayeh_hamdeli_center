@@ -230,6 +230,24 @@ class DeliveryGate extends Component
         }
     }
 
+    /**
+     * Confirm the current subject's delivery and jump straight to the next scan.
+     *
+     * Each item is already persisted the moment it is toggled (see toggleDelivered),
+     * so confirming has nothing left to write — it simply closes out this subject and
+     * re-arms the scanner, i.e. the exact same workflow as the "next scan" button.
+     */
+    public function confirmDelivery(): void
+    {
+        $this->authorizeGate();
+
+        if (! $this->selectedService || ! $this->hasScannedSubject()) {
+            return;
+        }
+
+        $this->resumeScanning();
+    }
+
     public function resumeScanning(): void
     {
         $this->authorizeGate();

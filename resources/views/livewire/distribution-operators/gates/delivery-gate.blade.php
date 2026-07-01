@@ -464,6 +464,23 @@
                                 </button>
                             @endforeach
                         </div>
+
+                        {{-- Confirm + advance: deliveries are already saved per item on toggle, so this
+                             closes out the current subject and jumps to the next scan in one tap. --}}
+                        <div class="sticky bottom-0 mt-1 -mx-1 bg-gradient-to-t from-white via-white to-transparent px-1 pb-1 pt-3">
+                            <button
+                                type="button"
+                                wire:click="confirmDelivery"
+                                title="تأیید تحویل و اسکن نفر بعدی (Ctrl + Enter)"
+                                class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3.5 text-base font-black text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.99]"
+                                :class="nextScanShortcutActive ? 'ring-2 ring-emerald-300 ring-offset-1' : ''"
+                            >
+                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                <span>تأیید تحویل و نفر بعدی</span>
+                                <span class="rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold" dir="ltr">{{ count($deliveredCategoryIds) }}/{{ $authorizedItems->count() }}</span>
+                            </button>
+                            <p class="mt-1.5 text-center text-[11px] font-semibold text-slate-400">اقلام علامت‌خورده ثبت شده‌اند؛ با تأیید به نفر بعدی می‌روید.</p>
+                        </div>
                     @endif
                 </div>
             </div>
