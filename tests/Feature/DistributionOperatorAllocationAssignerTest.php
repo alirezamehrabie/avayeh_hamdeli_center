@@ -380,6 +380,86 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         ]);
     }
 
+    public function test_editing_allocations_cannot_add_worker_already_allocated_by_another_operator(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $otherOperator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $manager = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_ADMIN,
+            'is_admin' => true,
+        ]);
+        $ownedWorker = SocialWorker::query()->create([
+            'worker_code' => 306,
+            'first_name' => 'Owned',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+        $otherWorker = SocialWorker::query()->create([
+            'worker_code' => 307,
+            'first_name' => 'Other',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+        $serviceName = ServiceName::query()->create([
+            'name' => 'Cross Operator Edit Guard',
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+        $service = Service::query()->create([
+            'name' => 'Cross Operator Edit Guard',
+            'service_name_id' => $serviceName->id,
+            'service_type' => 'individual',
+            'total_quantity' => 10,
+            'total_service_value' => 0,
+            'distribution_start_date' => now()->toDateString(),
+            'status' => 'approved',
+            'quantity_delivered' => 0,
+            'created_by' => $manager->id,
+        ]);
+        $category = ServiceCategory::query()->create([
+            'service_name_id' => $serviceName->id,
+            'service_id' => $service->id,
+            'name' => 'Main Category',
+            'quantity' => 10,
+            'unit' => 'pack',
+            'value' => 1000,
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+        $service->workerAllocations()->create([
+            'service_category_id' => $category->id,
+            'social_worker_id' => $ownedWorker->id,
+            'allocated_quantity' => 0,
+            'assigned_by_user_id' => $operator->id,
+        ]);
+        $otherAllocation = $service->workerAllocations()->create([
+            'service_category_id' => $category->id,
+            'social_worker_id' => $otherWorker->id,
+            'allocated_quantity' => 2,
+            'assigned_by_user_id' => $otherOperator->id,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceAllocationEditor::class, ['editingServiceId' => $service->id])
+            ->set('addingSocialWorkerId', $otherWorker->id)
+            ->call('addSocialWorkerAllocation')
+            ->assertHasErrors(['addingSocialWorkerId']);
+
+        $this->assertDatabaseHas('service_social_worker', [
+            'id' => $otherAllocation->id,
+            'social_worker_id' => $otherWorker->id,
+            'assigned_by_user_id' => $otherOperator->id,
+            'allocated_quantity' => 2,
+        ]);
+    }
+
     public function test_operator_assignment_records_assigning_user(): void
     {
         $operator = User::factory()->create([
@@ -689,6 +769,81 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         $this->assertSame(10.0, (float) $category->fresh()->quantity);
         $this->assertSame(10.0, (float) $service->fresh()->total_quantity);
         $this->assertSame(10.0, (float) $service->workerAllocations()->sum('allocated_quantity'));
+    }
+
+    public function test_predefined_mode_does_not_take_over_existing_worker_category_allocation_from_another_operator(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $otherOperator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 915,
+            'first_name' => 'Shared',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+        $manager = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_MANAGER,
+            'is_admin' => true,
+        ]);
+        $serviceName = ServiceName::query()->create([
+            'name' => 'Cross Operator Campaign',
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+        $service = Service::query()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'Cross Operator Campaign',
+            'service_type' => 'individual',
+            'supports_gate_delivery' => true,
+            'supports_home_delivery' => true,
+            'description' => null,
+            'total_quantity' => 10,
+            'total_service_value' => 0,
+            'distribution_start_date' => '2026-06-20',
+            'distribution_end_date' => '2026-06-20',
+            'status' => 'approved',
+            'quantity_delivered' => 0,
+            'created_by' => $manager->id,
+        ]);
+        $category = $service->categories()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'Rice',
+            'quantity' => 10,
+            'unit' => 'pack',
+            'value' => 0,
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+        $allocation = $service->workerAllocations()->create([
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'allocated_quantity' => 2,
+            'assigned_by_user_id' => $otherOperator->id,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class)
+            ->set('mode', ServiceBatchCreator::MODE_PREDEFINED)
+            ->set('selectedServiceId', $service->id)
+            ->call('selectSocialWorker', $worker->id)
+            ->set('predefinedAllocations.'.$category->id, '1')
+            ->call('saveBatch')
+            ->assertHasErrors(['socialWorkerId']);
+
+        $this->assertDatabaseHas('service_social_worker', [
+            'id' => $allocation->id,
+            'social_worker_id' => $worker->id,
+            'assigned_by_user_id' => $otherOperator->id,
+            'allocated_quantity' => 2,
+        ]);
+        $this->assertSame(1, $service->workerAllocations()->count());
     }
 
     public function test_predefined_mode_exposes_minimal_live_remaining_inventory_for_selected_categories(): void

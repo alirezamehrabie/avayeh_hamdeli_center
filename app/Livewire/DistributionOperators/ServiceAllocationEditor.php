@@ -68,7 +68,6 @@ class ServiceAllocationEditor extends Component
         }
 
         $existingWorkerIds = $this->service->workerAllocations()
-            ->where('assigned_by_user_id', auth()->id())
             ->pluck('social_worker_id')
             ->map(fn ($id): int => (int) $id)
             ->unique();
@@ -115,7 +114,6 @@ class ServiceAllocationEditor extends Component
         }
 
         $existingWorkerIds = $this->service->workerAllocations()
-            ->where('assigned_by_user_id', auth()->id())
             ->pluck('social_worker_id')
             ->map(fn ($id): int => (int) $id)
             ->unique()
@@ -154,6 +152,25 @@ class ServiceAllocationEditor extends Component
 
         $workerId = (int) $this->addingSocialWorkerId;
 
+        $existingServiceWorkerAllocation = ServiceWorkerAllocation::query()
+            ->where('service_id', $this->service->id)
+            ->where('social_worker_id', $workerId)
+            ->first();
+
+        if ($existingServiceWorkerAllocation) {
+            if ((int) $existingServiceWorkerAllocation->assigned_by_user_id !== (int) auth()->id()) {
+                $this->addError('addingSocialWorkerId', 'This worker is already allocated to this service by another operator.');
+            }
+
+            $this->addingSocialWorkerId = null;
+            $this->socialWorkerQuery = '';
+            $this->selectedSocialWorkerCode = '';
+            $this->selectedSocialWorkerDisplay = '';
+            $this->showSocialWorkerSuggestions = false;
+
+            return;
+        }
+
         DB::transaction(function () use ($workerId): void {
             $categories = $this->service->categories()->lockForUpdate()->get();
 
@@ -162,7 +179,12 @@ class ServiceAllocationEditor extends Component
                     ->where('service_id', $this->service->id)
                     ->where('service_category_id', $category->id)
                     ->where('social_worker_id', $workerId)
+                    ->lockForUpdate()
                     ->first();
+
+                if ($existing && (int) $existing->assigned_by_user_id !== (int) auth()->id()) {
+                    continue;
+                }
 
                 if (! $existing) {
                     ServiceWorkerAllocation::query()->create([

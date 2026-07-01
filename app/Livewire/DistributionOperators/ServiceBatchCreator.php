@@ -698,7 +698,14 @@ class ServiceBatchCreator extends Component
                     ->where('service_id', $service->id)
                     ->where('service_category_id', $category->id)
                     ->where('social_worker_id', (int) $validated['socialWorkerId'])
+                    ->lockForUpdate()
                     ->first();
+
+                if ($allocation && (int) $allocation->assigned_by_user_id !== (int) auth()->id()) {
+                    throw ValidationException::withMessages([
+                        'socialWorkerId' => 'This worker is already allocated to the selected category by another operator.',
+                    ]);
+                }
 
                 if (! $allocation) {
                     $allocation = new ServiceWorkerAllocation;
