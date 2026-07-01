@@ -1080,23 +1080,37 @@ class ServiceBatchCreator extends Component
 
     protected function validateDistinctWorkerGroupCategories(): void
     {
+        $seenCategories = [];
+
         foreach ($this->miscWorkerGroups as $groupIndex => $group) {
-            $seenCategoryIndexes = [];
-
             foreach (($group['categories'] ?? []) as $categoryIndex => $category) {
-                $categoryName = mb_strtolower(trim((string) ($category['name'] ?? '')));
+                $categoryName = trim((string) ($category['name'] ?? ''));
+                $normalizedName = mb_strtolower($categoryName);
 
-                if ($categoryName === '') {
+                if ($normalizedName === '') {
                     continue;
                 }
 
-                if (array_key_exists($categoryName, $seenCategoryIndexes)) {
-                    throw ValidationException::withMessages([
-                        "miscWorkerGroups.{$groupIndex}.categories.{$categoryIndex}.name" => 'هر دسته‌بندی فقط می‌تواند یک‌بار برای این مددکار ثبت شود.',
-                    ]);
+                $categoryId = (int) ($category['id'] ?? 0);
+
+                if (! isset($seenCategories[$normalizedName])) {
+                    $seenCategories[$normalizedName] = [
+                        'id' => $categoryId > 0 ? $categoryId : null,
+                    ];
+
+                    continue;
                 }
 
-                $seenCategoryIndexes[$categoryName] = $categoryIndex;
+                $seenCategoryId = $seenCategories[$normalizedName]['id'];
+                $isSharedExistingCategory = $seenCategoryId !== null
+                    && $categoryId > 0
+                    && $seenCategoryId === $categoryId;
+
+                if (! $isSharedExistingCategory) {
+                    throw ValidationException::withMessages([
+                        "miscWorkerGroups.{$groupIndex}.categories.{$categoryIndex}.name" => 'هر دسته‌بندی در این خدمت فقط یک‌بار قابل ثبت است؛ برای استفاده مجدد، همان دسته‌بندی موجود را انتخاب کنید.',
+                    ]);
+                }
             }
         }
     }
@@ -1582,7 +1596,8 @@ class ServiceBatchCreator extends Component
             }
         }
 
-        return ! $this->hasDuplicateWorkerGroups();
+        return ! $this->hasDuplicateWorkerGroups()
+            && ! $this->hasDuplicateWorkerGroupCategoryNames();
     }
 
     protected function hasDuplicateWorkerGroups(): bool
@@ -1593,6 +1608,40 @@ class ServiceBatchCreator extends Component
             ->map(fn ($id): int => (int) $id);
 
         return $workerIds->count() !== $workerIds->unique()->count();
+    }
+
+    protected function hasDuplicateWorkerGroupCategoryNames(): bool
+    {
+        $seenCategories = [];
+
+        foreach ($this->miscWorkerGroups as $group) {
+            foreach (($group['categories'] ?? []) as $category) {
+                $categoryName = trim((string) ($category['name'] ?? ''));
+                $normalizedName = mb_strtolower($categoryName);
+
+                if ($normalizedName === '') {
+                    continue;
+                }
+
+                $categoryId = (int) ($category['id'] ?? 0);
+
+                if (! isset($seenCategories[$normalizedName])) {
+                    $seenCategories[$normalizedName] = $categoryId > 0 ? $categoryId : null;
+
+                    continue;
+                }
+
+                $seenCategoryId = $seenCategories[$normalizedName];
+
+                if ($seenCategoryId !== null && $categoryId > 0 && $seenCategoryId === $categoryId) {
+                    continue;
+                }
+
+                return true;
+            }
+        }
+
+        return false;
     }
 
     protected function canRequestSaveConfirmation(?array $predefinedMetrics = null): bool
@@ -1659,6 +1708,10 @@ class ServiceBatchCreator extends Component
 
                 if ($this->hasDuplicateWorkerGroups()) {
                     $messages[] = 'یک مددکار بیش از یک‌بار انتخاب شده است؛ مددکار تکراری را حذف کنید.';
+                }
+
+                if ($this->hasDuplicateWorkerGroupCategoryNames()) {
+                    $messages[] = 'نام یک دسته‌بندی در چند ردیف تکرار شده است؛ برای استفاده مجدد، همان دسته‌بندی موجود را انتخاب کنید.';
                 }
             }
 

@@ -1757,6 +1757,25 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->assertHasErrors(['miscWorkerGroups.1.social_worker_id']);
     }
 
+    public function test_editing_misc_service_rejects_duplicate_category_name_across_workers_without_reusing_existing_category(): void
+    {
+        [$operator, $worker, $service, $category] = $this->editableMiscService();
+        $otherWorker = SocialWorker::query()->create([
+            'worker_code' => 994,
+            'first_name' => 'Duplicate',
+            'last_name' => 'Name',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id])
+            ->call('addWorkerGroup')
+            ->set('miscWorkerGroups.1.social_worker_id', $otherWorker->id)
+            ->set('miscWorkerGroups.1.categories.0.name', $category->name)
+            ->assertHasErrors(['miscWorkerGroups.1.categories.0.name']);
+    }
+
     public function test_editing_misc_service_validates_used_quantity_as_it_changes(): void
     {
         [$operator, $worker, $service, $category] = $this->editableMiscService();
