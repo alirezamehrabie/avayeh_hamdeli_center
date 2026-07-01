@@ -674,6 +674,80 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         ]);
     }
 
+    public function test_service_quantity_columns_support_large_rial_quantities(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $manager = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_ADMIN,
+            'is_admin' => true,
+        ]);
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 310,
+            'first_name' => 'Large',
+            'last_name' => 'Rial',
+            'is_active' => true,
+        ]);
+        $largeQuantity = '1000000000000.00';
+        $deliveredQuantity = '999999999999.00';
+
+        $quantityColumn = DB::selectOne("SHOW COLUMNS FROM `services` WHERE Field = 'total_quantity'");
+        $this->assertSame('decimal(20,2)', strtolower((string) $quantityColumn->Type));
+
+        $serviceName = ServiceName::query()->create([
+            'name' => 'Large Rial Service',
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+        $service = Service::query()->create([
+            'name' => 'Large Rial Service',
+            'service_name_id' => $serviceName->id,
+            'service_type' => 'individual',
+            'total_quantity' => $largeQuantity,
+            'total_service_value' => 0,
+            'distribution_start_date' => now()->toDateString(),
+            'status' => 'approved',
+            'quantity_delivered' => 0,
+            'created_by' => $manager->id,
+        ]);
+        $category = ServiceCategory::query()->create([
+            'service_name_id' => $serviceName->id,
+            'service_id' => $service->id,
+            'name' => 'Cash Credit',
+            'quantity' => $largeQuantity,
+            'unit' => 'rial',
+            'value' => 1,
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+        $allocation = $service->workerAllocations()->create([
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'allocated_quantity' => $largeQuantity,
+            'assigned_by_user_id' => $operator->id,
+        ]);
+
+        ServiceDelivery::query()->create([
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'national_id' => '1234567897',
+            'full_name' => 'Large Rial Recipient',
+            'delivered_quantity' => $deliveredQuantity,
+            'value_per_unit_snapshot' => 1,
+            'delivered_total_value' => 999999999999,
+            'delivered_at' => now()->toDateString(),
+            'created_by' => $operator->id,
+        ]);
+
+        $this->assertSame($largeQuantity, (string) $service->fresh()->total_quantity);
+        $this->assertSame($largeQuantity, (string) $category->fresh()->quantity);
+        $this->assertSame($largeQuantity, (string) $allocation->fresh()->allocated_quantity);
+        $this->assertSame($deliveredQuantity, (string) ServiceDelivery::query()->firstWhere('national_id', '1234567897')->delivered_quantity);
+    }
+
     public function test_operator_assignment_records_assigning_user(): void
     {
         $operator = User::factory()->create([
