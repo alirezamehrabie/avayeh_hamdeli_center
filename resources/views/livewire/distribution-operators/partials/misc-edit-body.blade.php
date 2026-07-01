@@ -260,6 +260,14 @@
                     ->take(4)
                     ->implode('، ');
                 $groupHasError = in_array($gi, $groupErrorIndexes, true);
+                // A brand-new, untouched worker (no helper picked, no category data) can be
+                // removed without a confirm prompt; existing or filled workers still confirm (Item 9).
+                $groupHasData = $groupWorkerId > 0
+                    || collect($groupCategories)->contains(fn ($categoryRow) =>
+                        trim((string) ($categoryRow['name'] ?? '')) !== ''
+                        || (float) ($categoryRow['quantity'] ?? 0) > 0
+                    );
+                $groupDeleteNeedsConfirm = $groupIsExisting || $groupHasData;
             @endphp
 
             <div
@@ -351,31 +359,36 @@
                         @if(count($miscWorkerGroups) > 1)
                             <button
                                 type="button"
-                                x-on:click.stop="
-                                    window.dispatchEvent(new CustomEvent('open-notification-modal', {
-                                        detail: {
-                                            config: {
-                                                type: 'warning',
-                                                title: 'حذف مددکار',
-                                                message: 'آیا از حذف این مددکار و دسته‌بندی‌های ثبت‌شده برای او مطمئن هستید؟',
-                                                buttons: [
-                                                    {
-                                                        label: 'حذف',
-                                                        action: 'event',
-                                                        event: 'confirm-misc-worker-group-delete',
-                                                        payload: { index: {{ $gi }} },
-                                                        variant: 'danger',
-                                                    },
-                                                    {
-                                                        label: 'انصراف',
-                                                        action: 'close',
-                                                        variant: 'secondary',
-                                                    },
-                                                ],
+                                @if($groupDeleteNeedsConfirm)
+                                    x-on:click.stop="
+                                        window.dispatchEvent(new CustomEvent('open-notification-modal', {
+                                            detail: {
+                                                config: {
+                                                    type: 'warning',
+                                                    title: 'حذف مددکار',
+                                                    message: 'آیا از حذف این مددکار و دسته‌بندی‌های ثبت‌شده برای او مطمئن هستید؟',
+                                                    buttons: [
+                                                        {
+                                                            label: 'حذف',
+                                                            action: 'event',
+                                                            event: 'confirm-misc-worker-group-delete',
+                                                            payload: { index: {{ $gi }} },
+                                                            variant: 'danger',
+                                                        },
+                                                        {
+                                                            label: 'انصراف',
+                                                            action: 'close',
+                                                            variant: 'secondary',
+                                                        },
+                                                    ],
+                                                },
                                             },
-                                        },
-                                    }))
-                                "
+                                        }))
+                                    "
+                                @else
+                                    @click.stop
+                                    wire:click="removeWorkerGroup({{ $gi }})"
+                                @endif
                                 class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-rose-400 transition hover:bg-rose-50 hover:text-rose-600"
                                 aria-label="حذف این مددکار"
                             >
@@ -431,6 +444,9 @@
                                             || isset(($usedCategoryLock['names'] ?? [])[$normalizedCategoryName]);
                                         // Shared across worker groups => unit edits must sync live; otherwise defer to blur.
                                         $isSharedCategoryRow = ($sharedCategoryNameCounts[$normalizedCategoryName] ?? 0) >= 2;
+                                        // A blank row (no name, no quantity) can be removed without a confirm prompt (Item 9).
+                                        $categoryDeleteNeedsConfirm = trim((string) ($category['name'] ?? '')) !== ''
+                                            || (float) ($category['quantity'] ?? 0) > 0;
                                     @endphp
                                     <div data-validation-scope class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-200/50 sm:p-3.5">
                                         <div class="mb-3 flex items-center justify-between gap-3 border-b border-slate-100 pb-2.5">
@@ -444,31 +460,35 @@
                                             @if($groupCategoryCount > 1)
                                                 <button
                                                     type="button"
-                                                    x-on:click="
-                                                        window.dispatchEvent(new CustomEvent('open-notification-modal', {
-                                                            detail: {
-                                                                config: {
-                                                                    type: 'warning',
-                                                                    title: 'حذف دسته‌بندی',
-                                                                    message: 'آیا از حذف این دسته‌بندی برای مددکار انتخاب‌شده مطمئن هستید؟',
-                                                                    buttons: [
-                                                                        {
-                                                                            label: 'حذف',
-                                                                            action: 'event',
-                                                                            event: 'confirm-misc-worker-category-delete',
-                                                                            payload: { groupIndex: {{ $gi }}, categoryIndex: {{ $ci }} },
-                                                                            variant: 'danger',
-                                                                        },
-                                                                        {
-                                                                            label: 'انصراف',
-                                                                            action: 'close',
-                                                                            variant: 'secondary',
-                                                                        },
-                                                                    ],
+                                                    @if($categoryDeleteNeedsConfirm)
+                                                        x-on:click="
+                                                            window.dispatchEvent(new CustomEvent('open-notification-modal', {
+                                                                detail: {
+                                                                    config: {
+                                                                        type: 'warning',
+                                                                        title: 'حذف دسته‌بندی',
+                                                                        message: 'آیا از حذف این دسته‌بندی برای مددکار انتخاب‌شده مطمئن هستید؟',
+                                                                        buttons: [
+                                                                            {
+                                                                                label: 'حذف',
+                                                                                action: 'event',
+                                                                                event: 'confirm-misc-worker-category-delete',
+                                                                                payload: { groupIndex: {{ $gi }}, categoryIndex: {{ $ci }} },
+                                                                                variant: 'danger',
+                                                                            },
+                                                                            {
+                                                                                label: 'انصراف',
+                                                                                action: 'close',
+                                                                                variant: 'secondary',
+                                                                            },
+                                                                        ],
+                                                                    },
                                                                 },
-                                                            },
-                                                        }))
-                                                    "
+                                                            }))
+                                                        "
+                                                    @else
+                                                        wire:click="removeGroupCategory({{ $gi }}, {{ $ci }})"
+                                                    @endif
                                                     class="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl border border-rose-100 bg-rose-50 px-3 py-1.5 text-[11px] font-black text-rose-500 transition hover:border-rose-200 hover:bg-rose-100 hover:text-rose-700"
                                                     aria-label="حذف دسته‌بندی {{ $ci + 1 }}"
                                                 >
