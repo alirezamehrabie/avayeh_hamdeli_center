@@ -89,16 +89,15 @@
                     ],
                 ];
                 $isUserAccountActive = request()->routeIs('distribution-operator.user-account');
-                $isSystemSettingsActive = $isUserAccountActive;
             @endphp
 
-            <nav class="flex-1 space-y-2" x-data="{ openMenu: {{ \Illuminate\Support\Js::from($isSystemSettingsActive ? 'system-settings' : '') }} }">
+            <nav class="flex-1 space-y-2">
                 <a
                     href="{{ route('distribution-operator.define-service') }}"
                     class="flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors {{ $isDefineServiceActive ? 'bg-indigo-700' : 'hover:bg-indigo-800' }}"
                 >
-                    <span>تخصیص / خدمت متفرقه</span>
-                    <span class="text-xs text-indigo-100/80">ثبت عملیات</span>
+                    <span>تخصیص خدمت</span>
+                    <span class="text-xs text-indigo-100/80">ثبت</span>
                 </a>
 
                 <a
@@ -121,26 +120,17 @@
                     @endcan
                 @endforeach
 
-                <button type="button" @click="openMenu = openMenu === 'system-settings' ? '' : 'system-settings'"
-                        class="flex w-full items-center justify-between rounded-lg px-4 py-2.5 transition-all duration-200 {{ $isSystemSettingsActive ? 'bg-indigo-700 text-white shadow-sm' : 'text-indigo-100 hover:bg-indigo-800 hover:text-white' }}">
-                    <div class="flex items-center">
-                        <svg class="ml-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M10.325 4.317a1.724 1.724 0 013.35 0 1.724 1.724 0 002.573 1.066 1.724 1.724 0 012.362 2.362 1.724 1.724 0 001.066 2.573 1.724 1.724 0 010 3.35 1.724 1.724 0 00-1.066 2.573 1.724 1.724 0 01-2.362 2.362 1.724 1.724 0 00-2.573 1.066 1.724 1.724 0 01-3.35 0 1.724 1.724 0 00-2.573-1.066 1.724 1.724 0 01-2.362-2.362 1.724 1.724 0 00-1.066-2.573 1.724 1.724 0 010-3.35 1.724 1.724 0 001.066-2.573 1.724 1.724 0 012.362-2.362 1.724 1.724 0 002.573-1.066z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M12 8.75A3.25 3.25 0 1112 15.25 3.25 3.25 0 0112 8.75z"/>
-                        </svg>
-                        <span>تنظیمات سیستم</span>
-                    </div>
-                    <svg class="h-4 w-4 transition-transform duration-200" :class="openMenu === 'system-settings' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M19 9l-7 7-7-7"/>
-                    </svg>
-                </button>
+                <div class="my-1 border-t border-indigo-700/70" role="separator" aria-hidden="true"></div>
 
-                <div x-show="openMenu === 'system-settings'" x-collapse.duration.250ms class="mr-8 mt-2 space-y-1">
-                    <a href="{{ route('distribution-operator.user-account') }}"
-                       class="block rounded px-4 py-2 text-sm {{ $isUserAccountActive ? 'bg-indigo-800 text-white' : 'text-indigo-200 hover:text-white' }}">
-                        حساب کاربری
-                    </a>
-                </div>
+                <a
+                    href="{{ route('distribution-operator.user-account') }}"
+                    class="flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors {{ $isUserAccountActive ? 'bg-indigo-700' : 'hover:bg-indigo-800' }}"
+                >
+                    <div class="flex items-center">
+                        <span>حساب کاربری</span>
+                    </div>
+                    <span class="text-xs text-indigo-100/80">پروفایل</span>
+                </a>
             </nav>
 
                 <div class="mt-auto pt-4 border-t border-indigo-800/50">
@@ -208,7 +198,7 @@
                                 >
                             @else
                                 <div class="flex h-full w-full items-center justify-center bg-indigo-600 text-sm font-bold text-white">
-                                    {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                                    {{ mb_strtoupper(mb_substr(auth()->user()->first_name ?: 'U', 0, 1)) }}
                                 </div>
                             @endif
                         </div>
