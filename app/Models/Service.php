@@ -352,17 +352,29 @@ class Service extends Model
 
     public function refreshFinancialTotals(): void
     {
-        if (! Schema::hasColumn($this->getTable(), 'total_service_value')) {
+        if (! Schema::hasTable('service_categories')) {
             return;
         }
 
-        $totalFinancialValue = (int) $this->categories()
-            ->selectRaw('COALESCE(SUM(quantity * value), 0) as total')
-            ->value('total');
+        $payload = [];
 
-        $this->forceFill([
-            'total_service_value' => $totalFinancialValue,
-        ])->saveQuietly();
+        if (Schema::hasColumn($this->getTable(), 'total_quantity')) {
+            $payload['total_quantity'] = (float) $this->categories()
+                ->selectRaw('COALESCE(SUM(quantity), 0) as total')
+                ->value('total');
+        }
+
+        if (Schema::hasColumn($this->getTable(), 'total_service_value')) {
+            $payload['total_service_value'] = (int) $this->categories()
+                ->selectRaw('COALESCE(SUM(quantity * value), 0) as total')
+                ->value('total');
+        }
+
+        if ($payload === []) {
+            return;
+        }
+
+        $this->forceFill($payload)->saveQuietly();
     }
 
     public function deliveryUnitValue(): int

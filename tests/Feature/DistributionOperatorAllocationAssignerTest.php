@@ -748,6 +748,62 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         $this->assertSame($deliveredQuantity, (string) ServiceDelivery::query()->firstWhere('national_id', '1234567897')->delivered_quantity);
     }
 
+    public function test_service_total_quantity_syncs_from_category_quantities(): void
+    {
+        $manager = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_ADMIN,
+            'is_admin' => true,
+        ]);
+        $serviceName = ServiceName::query()->create([
+            'name' => 'Category Total Sync',
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+        $service = Service::query()->create([
+            'name' => 'Category Total Sync',
+            'service_name_id' => $serviceName->id,
+            'service_type' => 'individual',
+            'total_quantity' => 999,
+            'total_service_value' => 0,
+            'distribution_start_date' => now()->toDateString(),
+            'status' => 'approved',
+            'quantity_delivered' => 0,
+            'created_by' => $manager->id,
+        ]);
+
+        $firstCategory = $service->categories()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'First',
+            'quantity' => 4,
+            'unit' => 'pack',
+            'value' => 100,
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+        $secondCategory = $service->categories()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'Second',
+            'quantity' => 6,
+            'unit' => 'pack',
+            'value' => 200,
+            'sort_id' => 2,
+            'created_by' => $manager->id,
+        ]);
+
+        $this->assertSame('10.00', (string) $service->fresh()->total_quantity);
+        $this->assertSame(1600, (int) $service->fresh()->total_service_value);
+
+        $firstCategory->update(['quantity' => 5]);
+
+        $this->assertSame('11.00', (string) $service->fresh()->total_quantity);
+        $this->assertSame(1700, (int) $service->fresh()->total_service_value);
+
+        $secondCategory->delete();
+
+        $this->assertSame('5.00', (string) $service->fresh()->total_quantity);
+        $this->assertSame(500, (int) $service->fresh()->total_service_value);
+    }
+
     public function test_operator_assignment_records_assigning_user(): void
     {
         $operator = User::factory()->create([
