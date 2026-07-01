@@ -862,47 +862,70 @@ class ServiceBatchCreator extends Component
                 ->withTrashed()
                 ->get()
                 ->keyBy('id');
+            $categoryPayloads = [];
+            $categoryWorkerAllocations = [];
 
             foreach (array_values($validated['miscWorkerGroups']) as $group) {
                 $workerId = (int) $group['social_worker_id'];
 
                 foreach (array_values($group['categories']) as $categoryRow) {
-                    $quantity = (float) $categoryRow['quantity'];
                     $categoryId = (int) ($categoryRow['id'] ?? 0);
-                    $category = $categoryId > 0 ? $existingCategories->get($categoryId) : null;
+                    $name = trim((string) $categoryRow['name']);
+                    $unit = (string) $categoryRow['unit'];
+                    $allocatedQuantity = (float) $categoryRow['quantity'];
+                    $categoryKey = $categoryId > 0 ? 'existing:'.$categoryId : 'new:'.mb_strtolower($name);
 
-                    if (! $category) {
-                        $category = new ServiceCategory;
+                    if (! isset($categoryPayloads[$categoryKey])) {
+                        $categoryPayloads[$categoryKey] = [
+                            'existing_id' => $categoryId > 0 ? $categoryId : null,
+                            'name' => $name,
+                            'unit' => $unit,
+                            'quantity' => 0.0,
+                            'sort_id' => $sortId++,
+                        ];
                     }
 
-                    $category->fill([
-                        'service_name_id' => $serviceNameId,
-                        'name' => trim((string) $categoryRow['name']),
-                        'quantity' => $quantity,
-                        'unit' => $categoryRow['unit'],
-                        'value' => 0,
-                        'sort_id' => $sortId++,
-                        'created_by' => auth()->id(),
-                    ]);
+                    $categoryPayloads[$categoryKey]['quantity'] += $allocatedQuantity;
+                    $categoryWorkerAllocations[$categoryKey][$workerId] = ($categoryWorkerAllocations[$categoryKey][$workerId] ?? 0.0) + $allocatedQuantity;
+                }
+            }
 
-                    $service->categories()->save($category);
+            foreach ($categoryPayloads as $categoryKey => $payload) {
+                $existingCategoryId = (int) ($payload['existing_id'] ?? 0);
+                $category = $existingCategoryId > 0 ? $existingCategories->get($existingCategoryId) : null;
 
-                    if (method_exists($category, 'trashed') && $category->trashed()) {
-                        $category->restore();
-                    }
+                if (! $category) {
+                    $category = new ServiceCategory;
+                }
 
-                    $retainedCategoryIds[] = (int) $category->id;
+                $category->fill([
+                    'service_name_id' => $serviceNameId,
+                    'name' => $payload['name'],
+                    'quantity' => (float) $payload['quantity'],
+                    'unit' => $payload['unit'],
+                    'value' => 0,
+                    'sort_id' => $payload['sort_id'],
+                    'created_by' => auth()->id(),
+                ]);
 
+                $service->categories()->save($category);
+
+                if (method_exists($category, 'trashed') && $category->trashed()) {
+                    $category->restore();
+                }
+
+                $retainedCategoryIds[] = (int) $category->id;
+                $totalQuantity += (float) $payload['quantity'];
+
+                foreach (($categoryWorkerAllocations[$categoryKey] ?? []) as $workerId => $allocatedQuantity) {
                     ServiceWorkerAllocation::query()->updateOrCreate([
                         'service_id' => $service->id,
                         'service_category_id' => $category->id,
+                        'social_worker_id' => (int) $workerId,
                     ], [
-                        'social_worker_id' => $workerId,
-                        'allocated_quantity' => $quantity,
+                        'allocated_quantity' => (float) $allocatedQuantity,
                         'assigned_by_user_id' => auth()->id(),
                     ]);
-
-                    $totalQuantity += $quantity;
                 }
             }
 
@@ -1011,7 +1034,11 @@ class ServiceBatchCreator extends Component
             'miscWorkerGroups' => ['required', 'array', 'min:1'],
             'miscWorkerGroups.*.social_worker_id' => ['required', 'integer', 'exists:social_workers,id'],
             'miscWorkerGroups.*.categories' => ['required', 'array', 'min:1'],
-            'miscWorkerGroups.*.categories.*.id' => ['nullable', 'integer', 'exists:service_categories,id'],
+            'miscWorkerGroups.*.categories.*.id' => [
+                'nullable',
+                'integer',
+                Rule::exists('service_categories', 'id')->where('service_id', $this->editingServiceId),
+            ],
             'miscWorkerGroups.*.categories.*.name' => ['required', 'string', 'max:255'],
             'miscWorkerGroups.*.categories.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'miscWorkerGroups.*.categories.*.unit' => ['required', Rule::in(Service::unitKeys())],
@@ -1108,7 +1135,7 @@ class ServiceBatchCreator extends Component
                 ]);
             }
 
-            if ((int) $submitted['social_worker_id'] !== (int) $usage['social_worker_id']) {
+            if (! in_array((int) $usage['social_worker_id'], $submitted['social_worker_ids'] ?? [], true)) {
                 throw ValidationException::withMessages([
                     $submitted['field_prefix'].'.social_worker_id' => 'مددکار دسته‌بندی‌هایی که تحویل یا ورود برای آن‌ها ثبت شده است قابل تغییر نیست.',
                 ]);
@@ -1145,23 +1172,26 @@ class ServiceBatchCreator extends Component
                     continue;
                 }
 
-                if (isset($seen[$categoryId])) {
-                    throw ValidationException::withMessages([
-                        'miscWorkerGroups' => 'یک دسته‌بندی موجود نمی‌تواند بیش از یک‌بار در فرم ویرایش ثبت شود.',
-                    ]);
+                if (! isset($rows[$categoryId])) {
+                    $rows[$categoryId] = [
+                        'social_worker_id' => $workerId,
+                        'social_worker_ids' => [],
+                        'category_index' => $categoryIndex,
+                        'field_prefix' => 'miscWorkerGroups.'.$groupIndex,
+                        'quantity' => 0.0,
+                        'unit' => (string) ($category['unit'] ?? ''),
+                    ];
                 }
 
-                $seen[$categoryId] = true;
-
-                $rows[$categoryId] = [
-                    'social_worker_id' => $workerId,
-                    'category_index' => $categoryIndex,
-                    'field_prefix' => 'miscWorkerGroups.'.$groupIndex,
-                    'quantity' => (float) ($category['quantity'] ?? 0),
-                    'unit' => (string) ($category['unit'] ?? ''),
-                ];
+                $rows[$categoryId]['social_worker_ids'][] = $workerId;
+                $rows[$categoryId]['quantity'] += (float) ($category['quantity'] ?? 0);
             }
         }
+
+        foreach ($rows as &$row) {
+            $row['social_worker_ids'] = array_values(array_unique(array_map('intval', $row['social_worker_ids'] ?? [])));
+        }
+        unset($row);
 
         return $rows;
     }
@@ -1265,42 +1295,43 @@ class ServiceBatchCreator extends Component
         $allocationsByCategory = $service->workerAllocations()
             ->with('socialWorker.district:id,name')
             ->get()
-            ->keyBy('service_category_id');
+            ->groupBy('service_category_id');
 
         $groups = [];
         $groupIndexByWorker = [];
 
         foreach ($categories as $category) {
-            $allocation = $allocationsByCategory->get($category->id);
-            $worker = $allocation?->socialWorker;
+            foreach ($allocationsByCategory->get($category->id, collect()) as $allocation) {
+                $worker = $allocation->socialWorker;
 
-            if (! $worker) {
-                continue;
-            }
+                if (! $worker) {
+                    continue;
+                }
 
-            $workerId = (int) $worker->id;
+                $workerId = (int) $worker->id;
 
-            if (! array_key_exists($workerId, $groupIndexByWorker)) {
-                $groupIndexByWorker[$workerId] = count($groups);
-                $groups[] = [
-                    'uid' => 'group-'.$workerId,
-                    'social_worker_id' => $workerId,
-                    'worker_query' => trim($worker->full_name.' - کد '.$worker->worker_code),
-                    'worker_search' => '',
-                    'worker_code' => $worker->worker_code ? (string) $worker->worker_code : '-',
-                    'worker_display' => $this->formatSelectedSocialWorkerDisplay($worker),
-                    'locked' => true,
-                    'is_existing' => true,
-                    'categories' => [],
+                if (! array_key_exists($workerId, $groupIndexByWorker)) {
+                    $groupIndexByWorker[$workerId] = count($groups);
+                    $groups[] = [
+                        'uid' => 'group-'.$workerId,
+                        'social_worker_id' => $workerId,
+                        'worker_query' => trim($worker->full_name.' - کد '.$worker->worker_code),
+                        'worker_search' => '',
+                        'worker_code' => $worker->worker_code ? (string) $worker->worker_code : '-',
+                        'worker_display' => $this->formatSelectedSocialWorkerDisplay($worker),
+                        'locked' => true,
+                        'is_existing' => true,
+                        'categories' => [],
+                    ];
+                }
+
+                $groups[$groupIndexByWorker[$workerId]]['categories'][] = [
+                    'id' => (int) $category->id,
+                    'name' => $category->name,
+                    'quantity' => $this->formatDecimal($allocation->allocated_quantity),
+                    'unit' => $category->unit,
                 ];
             }
-
-            $groups[$groupIndexByWorker[$workerId]]['categories'][] = [
-                'id' => (int) $category->id,
-                'name' => $category->name,
-                'quantity' => $this->formatDecimal($category->quantity),
-                'unit' => $category->unit,
-            ];
         }
 
         if ($groups === []) {
@@ -1322,7 +1353,7 @@ class ServiceBatchCreator extends Component
     protected function categoryNameSuggestions(): array
     {
         $seen = [];
-        $names = [];
+        $suggestions = [];
 
         foreach ($this->miscWorkerGroups as $group) {
             foreach (($group['categories'] ?? []) as $category) {
@@ -1339,13 +1370,18 @@ class ServiceBatchCreator extends Component
                 }
 
                 $seen[$key] = true;
-                $names[] = $name;
+                $suggestions[] = [
+                    'id' => (int) ($category['id'] ?? 0),
+                    'name' => $name,
+                ];
             }
         }
 
-        sort($names, SORT_NATURAL | SORT_FLAG_CASE);
+        usort($suggestions, function (array $left, array $right): int {
+            return strnatcasecmp($left['name'], $right['name']);
+        });
 
-        return $names;
+        return $suggestions;
     }
 
     /**

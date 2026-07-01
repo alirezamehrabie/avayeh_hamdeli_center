@@ -1903,6 +1903,49 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         )));
     }
 
+    public function test_editing_misc_service_reuses_existing_category_when_selected_for_another_worker(): void
+    {
+        [$operator, $worker, $service, $category] = $this->editableMiscService();
+        $otherWorker = SocialWorker::query()->create([
+            'worker_code' => 993,
+            'first_name' => 'Second',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id])
+            ->call('addWorkerGroup')
+            ->set('miscWorkerGroups.1.social_worker_id', $otherWorker->id)
+            ->set('miscWorkerGroups.1.categories.0.id', $category->id)
+            ->set('miscWorkerGroups.1.categories.0.name', $category->name)
+            ->set('miscWorkerGroups.1.categories.0.quantity', '2')
+            ->set('miscWorkerGroups.1.categories.0.unit', $category->unit)
+            ->call('saveBatch')
+            ->assertHasNoErrors();
+
+        $this->assertSame(1, $service->categories()->count());
+        $this->assertDatabaseHas('service_categories', [
+            'id' => $category->id,
+            'service_id' => $service->id,
+            'name' => $category->name,
+            'quantity' => 7,
+        ]);
+        $this->assertDatabaseHas('service_social_worker', [
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'allocated_quantity' => 5,
+        ]);
+        $this->assertDatabaseHas('service_social_worker', [
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'social_worker_id' => $otherWorker->id,
+            'allocated_quantity' => 2,
+        ]);
+    }
+
     private function editableMiscService(): array
     {
         $operator = User::factory()->create([

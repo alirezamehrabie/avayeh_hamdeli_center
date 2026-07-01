@@ -339,6 +339,7 @@
                                                         popStateHandler: null,
                                                         scrollLocked: false,
                                                         modelPath: 'miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.name',
+                                                        modelIdPath: 'miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.id',
                                                         assignedCategoryKeys: @js($assignedCategoryKeysForCurrentWorker),
                                                         init() {
                                                             this.popStateHandler = () => this.handleSheetPopState();
@@ -431,17 +432,22 @@
 
                                                             this.closeSheet({ syncHistory: false });
                                                         },
-                                                        pick(name) {
-                                                            if (this.isAlreadyAssigned(name)) {
+                                                        pick(category) {
+                                                            const categoryId = Number(category?.id || 0);
+                                                            const categoryName = String(category?.name || '');
+
+                                                            if (this.isAlreadyAssigned(categoryName)) {
                                                                 return;
                                                             }
 
                                                             this.directEntry = false;
-                                                            $wire.set(this.modelPath, name);
+                                                            $wire.set(this.modelIdPath, categoryId > 0 ? categoryId : null);
+                                                            $wire.set(this.modelPath, categoryName);
                                                             this.closeSheet();
                                                         },
                                                         createNew() {
                                                             this.directEntry = true;
+                                                            $wire.set(this.modelIdPath, null);
                                                             this.closeSheet();
                                                             this.$nextTick(() => this.$refs.nameInput?.focus({ preventScroll: true }));
                                                         },
@@ -482,6 +488,7 @@
                                                             placeholder="نام دسته‌بندی"
                                                             autocomplete="off"
                                                         >
+                                                        <input type="hidden" wire:model="miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.id">
                                                         @if(!empty($categoryNameSuggestions))
                                                             <button
                                                                 type="button"
@@ -549,11 +556,12 @@
                                                                     </div>
 
                                                                     <div class="min-h-0 flex-1 space-y-1.5 overflow-y-auto p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
-                                                                        @foreach($categoryNameSuggestions as $name)
+                                                                        @foreach($categoryNameSuggestions as $suggestion)
                                                                             <button
                                                                                 type="button"
-                                                                                data-name="{{ $name }}"
-                                                                                @click="pick($el.dataset.name)"
+                                                                                data-name="{{ $suggestion['name'] }}"
+                                                                                data-id="{{ $suggestion['id'] }}"
+                                                                                @click="pick({ id: Number($el.dataset.id || 0), name: $el.dataset.name })"
                                                                                 x-bind:disabled="isAlreadyAssigned($el.dataset.name)"
                                                                                 x-bind:aria-disabled="isAlreadyAssigned($el.dataset.name).toString()"
                                                                                 x-bind:class="isAlreadyAssigned($el.dataset.name)
@@ -568,7 +576,7 @@
                                                                                     <i class="bi text-sm" x-bind:class="isAlreadyAssigned($el.closest('button').dataset.name) ? 'bi-lock' : 'bi-tag'"></i>
                                                                                 </span>
                                                                                 <span class="min-w-0 flex-1">
-                                                                                    <span class="block truncate text-sm font-bold">{{ $name }}</span>
+                                                                                    <span class="block truncate text-sm font-bold">{{ $suggestion['name'] }}</span>
                                                                                     <span x-show="isAlreadyAssigned($el.closest('button').dataset.name)" class="mt-0.5 block text-[10px] font-bold text-slate-400">
                                                                                         قبلاً برای این مددکار ثبت شده است
                                                                                     </span>
