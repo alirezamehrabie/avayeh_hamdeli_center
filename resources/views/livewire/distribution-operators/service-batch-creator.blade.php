@@ -789,8 +789,19 @@
         @php
             $reviewRows = $reviewSummary['rows'] ?? [];
             $reviewItemCount = count($reviewRows);
+
+            // In edit mode the save action is the most-repeated task, so keep it
+            // pinned to the bottom of the viewport instead of buried below every
+            // worker accordion. Stays below the worker/category sheets (z-40+).
+            if ($isEditing) {
+                $reviewCardClasses = 'sticky bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-30 border-emerald-200 bg-white shadow-[0_-6px_24px_rgba(15,23,42,0.12)]';
+            } else {
+                $reviewCardClasses = $reviewStepUnlocked
+                    ? 'border-emerald-200 bg-white shadow-sm shadow-emerald-900/5'
+                    : 'border-slate-200 bg-slate-50';
+            }
         @endphp
-        <div class="rounded-2xl border {{ $reviewStepUnlocked ? 'border-emerald-200 bg-white shadow-sm shadow-emerald-900/5' : 'border-slate-200 bg-slate-50' }} px-3 py-2.5">
+        <div class="rounded-2xl border px-3 py-2.5 {{ $reviewCardClasses }}">
             <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                 <div class="min-w-0 flex-1">
                     <div class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
