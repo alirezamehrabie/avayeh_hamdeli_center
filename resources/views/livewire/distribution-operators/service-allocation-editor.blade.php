@@ -105,18 +105,50 @@
                             $firstAllocation = $allocations->first();
                             $worker = $firstAllocation->socialWorker;
                         @endphp
-                        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
-                            <div class="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/60 px-4 py-3">
-                                <div class="min-w-0 flex-1">
-                                    <p class="truncate text-sm font-black text-slate-900">{{ $worker?->full_name ?? '—' }}</p>
-                                    <p class="text-[11px] font-bold text-slate-500">
-                                        کد: {{ $worker?->worker_code ?? '—' }}
-                                        @if($worker?->district)
-                                            <span class="text-slate-300">·</span>
-                                            {{ $worker->district->name }}
-                                        @endif
-                                    </p>
-                                </div>
+                        <div
+                            x-data="{
+                                open: false,
+                                maxHeight: 0,
+                                refreshHeight() {
+                                    this.$nextTick(() => {
+                                        this.maxHeight = this.$refs.content ? this.$refs.content.scrollHeight : 0;
+                                    });
+                                },
+                                toggle() {
+                                    this.open = ! this.open;
+                                    this.refreshHeight();
+                                }
+                            }"
+                            x-init="refreshHeight()"
+                            @resize.window.debounce.100ms="refreshHeight()"
+                            class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow duration-200"
+                        >
+                            <div class="flex items-center gap-2 border-b border-slate-100 bg-slate-50/60 px-4 py-3">
+                                <button
+                                    type="button"
+                                    @click="toggle()"
+                                    class="flex min-w-0 flex-1 items-center gap-3 text-right"
+                                    :aria-expanded="open.toString()"
+                                >
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <p class="truncate text-sm font-black text-slate-900">{{ $worker?->full_name ?? '—' }}</p>
+                                            <span class="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">{{ $allocations->count() }} مورد</span>
+                                        </div>
+                                        <p class="mt-0.5 text-[11px] font-bold text-slate-500">
+                                            کد: {{ $worker?->worker_code ?? '—' }}
+                                            @if($worker?->district)
+                                                <span class="text-slate-300">·</span>
+                                                {{ $worker->district->name }}
+                                            @endif
+                                        </p>
+                                    </div>
+                                    <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 shadow-sm transition duration-300" :class="open ? 'rotate-180 text-blue-600 border-blue-200' : ''">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                            <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                    </span>
+                                </button>
                                 <button
                                     type="button"
                                     wire:click="removeWorkerAllocations({{ $workerId }})"
@@ -130,43 +162,48 @@
                                 </button>
                             </div>
 
-                            <div class="divide-y divide-slate-100">
-                                @foreach($allocations as $allocation)
-                                    @php
-                                        $category = $service->categories->firstWhere('id', $allocation->service_category_id);
-                                        $metrics = $categoryMetrics[(int) $allocation->service_category_id] ?? ['quantity' => 0, 'allocated' => 0, 'assignable' => 0];
-                                        $currentValue = $this->allocationQuantities[$workerId][$allocation->service_category_id] ?? (float) $allocation->allocated_quantity;
-                                        $inputValue = (float) $currentValue > 0 ? $currentValue : '';
-                                        $totalOthersAllocated = $metrics['allocated'] - (float) $allocation->allocated_quantity;
-                                        $maxAllowed = max(0, $metrics['quantity'] - $totalOthersAllocated);
-                                    @endphp
-                                    <div class="px-4 py-3">
-                                        <div class="flex items-center gap-3">
-                                            <div class="min-w-0 flex-1">
-                                                <p class="truncate text-sm font-bold text-slate-800">{{ $category?->name ?? '—' }}</p>
-                                                <p class="text-[11px] font-bold text-slate-400">
-                                                    موجودی کل: {{ number_format($metrics['quantity'], 2) }}
-                                                    · سقف قابل تخصیص: {{ number_format($maxAllowed, 2) }}
-                                                </p>
-                                            </div>
+                            <div
+                                class="overflow-hidden transition-all duration-300 ease-out"
+                                x-bind:style="open ? `max-height: ${maxHeight}px; opacity: 1;` : 'max-height: 0px; opacity: 0;'"
+                            >
+                                <div x-ref="content" class="divide-y divide-slate-100">
+                                    @foreach($allocations as $allocation)
+                                        @php
+                                            $category = $service->categories->firstWhere('id', $allocation->service_category_id);
+                                            $metrics = $categoryMetrics[(int) $allocation->service_category_id] ?? ['quantity' => 0, 'allocated' => 0, 'assignable' => 0];
+                                            $currentValue = $this->allocationQuantities[$workerId][$allocation->service_category_id] ?? (float) $allocation->allocated_quantity;
+                                            $inputValue = (float) $currentValue > 0 ? $currentValue : '';
+                                            $totalOthersAllocated = $metrics['allocated'] - (float) $allocation->allocated_quantity;
+                                            $maxAllowed = max(0, $metrics['quantity'] - $totalOthersAllocated);
+                                        @endphp
+                                        <div class="px-4 py-3">
+                                            <div class="flex items-center gap-3">
+                                                <div class="min-w-0 flex-1">
+                                                    <p class="truncate text-sm font-bold text-slate-800">{{ $category?->name ?? '—' }}</p>
+                                                    <p class="text-[11px] font-bold text-slate-400">
+                                                        موجودی کل: {{ $this->formatQuantityForUnit($metrics['quantity'], (string) ($category?->unit ?? '')) }}
+                                                        · سقف قابل تخصیص: {{ $this->formatQuantityForUnit($maxAllowed, (string) ($category?->unit ?? '')) }}
+                                                    </p>
+                                                </div>
 
-                                            <div class="flex items-center gap-1.5">
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    max="{{ $maxAllowed }}"
-                                                    step="0.01"
-                                                    value="{{ $inputValue }}"
-                                                    wire:change="updateAllocationQuantity({{ $allocation->id }}, $event.target.value)"
-                                                    inputmode="decimal"
-                                                    placeholder="0"
-                                                    class="w-24 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-center text-sm font-black text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
-                                                >
-                                                <span class="text-xs font-bold text-slate-400">{{ $unitOptions[$category?->unit] ?? ($category?->unit ?? '-') }}</span>
+                                                <div class="flex items-center gap-1.5">
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        max="{{ $maxAllowed }}"
+                                                        step="0.01"
+                                                        value="{{ $inputValue }}"
+                                                        wire:change="updateAllocationQuantity({{ $allocation->id }}, $event.target.value)"
+                                                        inputmode="decimal"
+                                                        placeholder="0"
+                                                        class="w-24 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-center text-sm font-black text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                                                    >
+                                                    <span class="text-xs font-bold text-slate-400">{{ $unitOptions[$category?->unit] ?? ($category?->unit ?? '-') }}</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                @endforeach
+                                    @endforeach
+                                </div>
                             </div>
                         </div>
                     @endforeach
