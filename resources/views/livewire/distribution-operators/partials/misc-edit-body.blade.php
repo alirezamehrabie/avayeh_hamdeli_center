@@ -447,6 +447,8 @@
                                         // A blank row (no name, no quantity) can be removed without a confirm prompt (Item 9).
                                         $categoryDeleteNeedsConfirm = trim((string) ($category['name'] ?? '')) !== ''
                                             || (float) ($category['quantity'] ?? 0) > 0;
+                                        // Weight units accept fractions; count-type units (عدد، بسته، ...) must be whole (Item 12).
+                                        $isDecimalUnit = $this->isDecimalQuantityUnit((string) ($category['unit'] ?? ''));
                                     @endphp
                                     <div data-validation-scope class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-200/50 sm:p-3.5">
                                         <div class="mb-3 flex items-center justify-between gap-3 border-b border-slate-100 pb-2.5">
@@ -777,9 +779,9 @@
                                                 <div class="grid grid-cols-[minmax(0,1fr)_auto] items-stretch overflow-hidden rounded-lg border border-slate-200 bg-slate-50 transition focus-within:border-emerald-300 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-100">
                                                     <input
                                                         type="number"
-                                                        min="0.01"
-                                                        step="0.01"
-                                                        inputmode="decimal"
+                                                        min="{{ $isDecimalUnit ? '0.01' : '1' }}"
+                                                        step="{{ $isDecimalUnit ? '0.01' : '1' }}"
+                                                        inputmode="{{ $isDecimalUnit ? 'decimal' : 'numeric' }}"
                                                         wire:model.blur="miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.quantity"
                                                         class="min-w-0 border-0 bg-transparent px-3 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:ring-0"
                                                         placeholder="مقدار خدمت"

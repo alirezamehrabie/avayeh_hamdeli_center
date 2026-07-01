@@ -2649,7 +2649,7 @@ class ServiceBatchCreator extends Component
         return number_format($number, $this->isDecimalQuantityUnit($unit) ? 2 : 0, '.', '');
     }
 
-    protected function isDecimalQuantityUnit(string $unit): bool
+    public function isDecimalQuantityUnit(string $unit): bool
     {
         return in_array($unit, ['kilogram', 'gram', 'kg', 'g'], true);
     }
