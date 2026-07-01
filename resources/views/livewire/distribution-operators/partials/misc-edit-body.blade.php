@@ -452,10 +452,7 @@
                                         <div class="mb-3 flex items-center justify-between gap-3 border-b border-slate-100 pb-2.5">
                                             <div class="flex min-w-0 items-center gap-2">
                                                 <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-black text-emerald-700">{{ $ci + 1 }}</span>
-                                                <div class="min-w-0">
-                                                    <p class="text-xs font-black text-slate-700">دسته‌بندی {{ $ci + 1 }}</p>
-                                                    <p class="mt-0.5 text-[10px] font-bold text-slate-400">نام، مقدار و واحد این ردیف</p>
-                                                </div>
+                                                <p class="min-w-0 truncate text-xs font-black text-slate-700">دسته‌بندی</p>
                                             </div>
                                             @if($groupCategoryCount > 1)
                                                 <button
@@ -777,7 +774,6 @@
                                             </div>
 
                                             <div class="space-y-1.5">
-                                                <label class="block text-[11px] font-black text-slate-500">مقدار خدمت</label>
                                                 <div class="grid grid-cols-[minmax(0,1fr)_auto] items-stretch overflow-hidden rounded-lg border border-slate-200 bg-slate-50 transition focus-within:border-emerald-300 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-100">
                                                     <input
                                                         type="number"
@@ -786,7 +782,8 @@
                                                         inputmode="decimal"
                                                         wire:model.blur="miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.quantity"
                                                         class="min-w-0 border-0 bg-transparent px-3 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:ring-0"
-                                                        placeholder="مقدار"
+                                                        placeholder="مقدار خدمت"
+                                                        aria-label="مقدار خدمت"
                                                     >
                                                     <select
                                                         wire:model{{ $isSharedCategoryRow ? '.live' : '.blur' }}="miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.unit"
