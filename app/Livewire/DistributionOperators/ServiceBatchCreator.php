@@ -666,13 +666,17 @@ class ServiceBatchCreator extends Component
 
         DB::transaction(function () use ($service, $rows, $validated): void {
             $categories = $service->categories()->lockForUpdate()->get()->keyBy('id');
-            $allocatedByCategory = ServiceWorkerAllocation::query()
+            $lockedAllocations = ServiceWorkerAllocation::query()
                 ->where('service_id', $service->id)
                 ->whereIn('service_category_id', $rows->pluck('category_id')->all())
                 ->lockForUpdate()
-                ->get()
+                ->get();
+            $allocatedByCategory = $lockedAllocations
                 ->groupBy('service_category_id')
                 ->map(fn (Collection $allocations): float => (float) $allocations->sum(fn (ServiceWorkerAllocation $allocation) => (float) $allocation->allocated_quantity));
+            $existingWorkerAllocations = $lockedAllocations
+                ->where('social_worker_id', (int) $validated['socialWorkerId'])
+                ->keyBy('service_category_id');
 
             foreach ($rows as $row) {
                 $category = $categories->get($row['category_id']);
@@ -683,27 +687,23 @@ class ServiceBatchCreator extends Component
                     ]);
                 }
 
+                $allocation = $existingWorkerAllocations->get($category->id);
+
+                if ($allocation && (int) $allocation->assigned_by_user_id !== (int) auth()->id()) {
+                    throw ValidationException::withMessages([
+                        'socialWorkerId' => 'This worker is already allocated to the selected category by another operator.',
+                    ]);
+                }
+
+                $currentWorkerQuantity = $allocation ? (float) $allocation->allocated_quantity : 0.0;
                 $remainingAssignable = max(
                     0,
-                    (float) $category->quantity - (float) ($allocatedByCategory[$category->id] ?? 0)
+                    (float) $category->quantity - max(0, (float) ($allocatedByCategory[$category->id] ?? 0) - $currentWorkerQuantity)
                 );
 
                 if ($row['quantity'] > $remainingAssignable) {
                     throw ValidationException::withMessages([
                         'predefinedAllocations.'.$category->id => 'مقدار تخصیص نمی‌تواند از موجودی دسته‌بندی بیشتر باشد.',
-                    ]);
-                }
-
-                $allocation = ServiceWorkerAllocation::query()
-                    ->where('service_id', $service->id)
-                    ->where('service_category_id', $category->id)
-                    ->where('social_worker_id', (int) $validated['socialWorkerId'])
-                    ->lockForUpdate()
-                    ->first();
-
-                if ($allocation && (int) $allocation->assigned_by_user_id !== (int) auth()->id()) {
-                    throw ValidationException::withMessages([
-                        'socialWorkerId' => 'This worker is already allocated to the selected category by another operator.',
                     ]);
                 }
 
@@ -717,7 +717,7 @@ class ServiceBatchCreator extends Component
                 }
 
                 $allocation->fill([
-                    'allocated_quantity' => (float) $allocation->allocated_quantity + $row['quantity'],
+                    'allocated_quantity' => $row['quantity'],
                     'assigned_by_user_id' => auth()->id(),
                 ])->save();
 
