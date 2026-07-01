@@ -261,28 +261,63 @@
         @if($mode === 'predefined' && !$isEditing)
             <section wire:key="predefined-service-batch-section" class="overflow-visible rounded-xl border border-cyan-100/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
                 <div class="border-b border-cyan-100/80 bg-cyan-50/30 px-4 py-3 sm:px-5 sm:py-4">
-                    <div class="flex items-center gap-2.5">
+                    @php
+                        $predefinedHeaderTitle = $selectedService
+                            ? ($selectedService->name ?: ($selectedService->serviceName?->name ?? 'خدمت انتخاب‌شده'))
+                            : 'انتخاب خدمت / پویش';
+                    @endphp
+                    <div
+                        class="flex items-center gap-2.5"
+                        x-data="{
+                            fullTitle: @js($predefinedHeaderTitle),
+                            shownTitle: '',
+                            hasAnimated: false,
+                            cursorVisible: false,
+                            init() {
+                                this.typeTitle();
+                            },
+                            typeTitle() {
+                                this.hasAnimated = true;
+                                this.cursorVisible = true;
+                                const chars = Array.from(this.fullTitle || '');
+                                const step = 34;
+
+                                chars.forEach((char, index) => {
+                                    window.setTimeout(() => {
+                                        this.shownTitle += char;
+
+                                        if (index === chars.length - 1) {
+                                            window.setTimeout(() => {
+                                                this.cursorVisible = false;
+                                            }, 450);
+                                        }
+                                    }, index * step);
+                                });
+                            },
+                        }"
+                    >
                         <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-500 text-white">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                 <path d="M4 7.5h16M7 12h10M9 16.5h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                             </svg>
                         </span>
-                        <div class="min-w-0">
-                            <h2 class="text-sm font-black text-slate-900">انتخاب خدمت / پویش</h2>
+                        <div class="min-w-0 flex-1">
+                            <h2 class="truncate text-base font-extrabold text-cyan-950" :title="fullTitle" aria-label="{{ $predefinedHeaderTitle }}" data-predefined-service-header-title="{{ $predefinedHeaderTitle }}">
+                                <span x-text="shownTitle"></span><span x-show="cursorVisible" class="inline-block h-4 w-0.5 translate-y-0.5 rounded-full bg-cyan-500 align-middle" x-transition.opacity></span>
+                            </h2>
                         </div>
+                        @include('livewire.distribution-operators.partials.predefined-service-selector', ['compact' => true])
                     </div>
                 </div>
 
                 <div class="grid gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-                    @include('livewire.distribution-operators.partials.predefined-service-selector')
-
                     @if($workerStepUnlocked)
                         @include('livewire.distribution-operators.partials.social-worker-selector', [
                             'accent' => 'cyan',
                             'selectorId' => 'predefined-social-worker-selector',
                         ])
                     @else
-                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div class="lg:col-span-2 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                             <p class="text-sm font-black text-slate-500">۲. انتخاب مددکار</p>
                             <p class="mt-1 text-xs font-bold leading-5 text-slate-400">ابتدا خدمت را انتخاب کنید تا انتخاب مددکار فعال شود.</p>
                         </div>

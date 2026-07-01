@@ -1,5 +1,9 @@
+@props(['compact' => false])
+
 <div>
-    <label class="mb-2 block text-sm font-bold text-slate-700">خدمت / پویش </label>
+    @unless($compact)
+        <label class="mb-2 block text-sm font-bold text-slate-700">خدمت / پویش </label>
+    @endunless
     <div
         class="relative"
         x-data="{
@@ -63,37 +67,60 @@
         }"
         x-init="
             window.addEventListener('popstate', () => handleSelectorPopState());
+            window.addEventListener('open-predefined-service-selector', () => {
+                openSelector();
+                $nextTick(() => $refs.serviceSearch?.focus({ preventScroll: true }));
+            });
             $watch('open', (value) => {
                 document.documentElement.classList.toggle('overflow-hidden', value && isMobileSheet);
             });
         "
         x-on:keydown.escape.window="closeSelector()"
     >
-        <button
-            type="button"
-            @click="toggleSelector()"
-            :aria-expanded="open.toString()"
-            aria-haspopup="dialog"
-            class="flex min-h-12 w-full items-center justify-between rounded-2xl border border-slate-300 bg-white px-4 py-3 text-right shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50/50 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10"
-        >
-            <span class="min-w-0 flex-1">
-                <span class="block truncate text-[10px] font-medium text-slate-400">
+        @if($compact)
+            <button
+                type="button"
+                @click="openSelector(); $nextTick(() => $refs.serviceSearch?.focus({ preventScroll: true }))"
+                :aria-expanded="open.toString()"
+                aria-haspopup="dialog"
+                class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-200 bg-white text-cyan-700 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50 focus:outline-none focus:ring-4 focus:ring-cyan-500/10 active:scale-[0.98]"
+                aria-label="{{ $selectedService ? 'تغییر خدمت' : 'انتخاب خدمت' }}"
+                title="{{ $selectedService ? 'تغییر خدمت' : 'انتخاب خدمت' }}"
+            >
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M17 3l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M3 7h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    <path d="M7 21l-4-4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M21 17H3" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                </svg>
+            </button>
+        @else
+            <button
+                type="button"
+                @click="toggleSelector()"
+                :aria-expanded="open.toString()"
+                aria-haspopup="dialog"
+                class="flex min-h-12 w-full items-center justify-between rounded-2xl border border-slate-300 bg-white px-4 py-3 text-right shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50/50 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10"
+            >
+                <span class="min-w-0 flex-1">
+                    <span class="block truncate text-[10px] font-medium text-slate-400">
+                        @if($selectedService)
+                            {{ $selectedService->code }}
+                        @else
+                            یک خدمت یا پویش را انتخاب کنید
+                        @endif
+                    </span>
                     @if($selectedService)
-                        {{ $selectedService->code }}
-                    @else
-                        یک خدمت یا پویش را انتخاب کنید
+                        <span class="mt-1 block truncate text-sm font-bold text-slate-900">
+                            {{ $selectedService->name ?: ($selectedService->serviceName?->name ?? 'بدون عنوان') }}
+                        </span>
                     @endif
                 </span>
-                @if($selectedService)
-                    <span class="mt-1 block truncate text-sm font-bold text-slate-900">
-                        {{ $selectedService->name ?: ($selectedService->serviceName?->name ?? 'بدون عنوان') }}
-                    </span>
-                @endif
-            </span>
-            <svg class="ms-3 h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200" :class="{ 'rotate-180': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-            </svg>
-        </button>
+                <svg class="ms-3 h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200" :class="{ 'rotate-180': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+        @endif
 
         <div
             x-show="open"

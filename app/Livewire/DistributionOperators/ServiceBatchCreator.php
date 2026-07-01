@@ -133,6 +133,10 @@ class ServiceBatchCreator extends Component
 
         $this->resetValidation();
         $this->confirmingBatchSave = false;
+
+        if ($this->mode === self::MODE_PREDEFINED) {
+            $this->dispatch('open-predefined-service-selector');
+        }
     }
 
     public function requestMiscServiceName(): void
