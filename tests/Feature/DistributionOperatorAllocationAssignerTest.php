@@ -222,7 +222,7 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         $this->actingAs($operator);
 
         Livewire::test(ServiceBatchCreator::class)
-            ->set('mode', ServiceBatchCreator::MODE_PREDEFINED)
+            ->call('choosePredefinedMode')
             ->assertDispatched('open-predefined-service-selector')
             ->set('selectedServiceId', $service->id)
             ->set('socialWorkerQuery', $worker->full_name)
@@ -396,6 +396,9 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->set('predefinedAllocations.'.$oil->id, '2')
             ->assertSee('data-predefined-service-header-title="پویش آمار"', false)
             ->assertSee('aria-label="تغییر خدمت"', false)
+            ->assertSee('تغییر خدمت / پویش')
+            ->call('choosePredefinedMode')
+            ->assertDispatched('open-predefined-service-selector')
             ->assertSee('موجودی کل')
             ->assertSee('15.00')
             ->assertSee('10')

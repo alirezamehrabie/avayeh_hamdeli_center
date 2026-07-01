@@ -110,21 +110,20 @@
             <div class="space-y-3 p-4 sm:p-5">
 
                 <div class="grid gap-2 sm:grid-cols-2 sm:gap-3">
-                    <label class="group relative flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition focus-within:ring-2 focus-within:ring-cyan-500 focus-within:ring-offset-2 sm:px-3.5 {{ $mode === 'predefined' ? 'border-cyan-300 bg-cyan-50/70 shadow-[0_0_0_1px_rgba(34,211,238,0.08)]' : 'border-slate-200 bg-white hover:border-cyan-200 hover:bg-cyan-50/30' }}">
-                        <input type="radio" value="predefined" wire:model.change="mode" class="sr-only">
+                    <button type="button" wire:click="choosePredefinedMode" class="group relative flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 text-right transition focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 sm:px-3.5 {{ $mode === 'predefined' ? 'border-cyan-300 bg-cyan-50/70 shadow-[0_0_0_1px_rgba(34,211,238,0.08)]' : 'border-slate-200 bg-white hover:border-cyan-200 hover:bg-cyan-50/30' }}" aria-pressed="{{ $mode === 'predefined' ? 'true' : 'false' }}">
                         <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg {{ $mode === 'predefined' ? 'bg-cyan-500 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-cyan-100 group-hover:text-cyan-700' }}">
                                 <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                     <path d="M4 7.5h16M7 12h10M9 16.5h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                                 </svg>
                         </span>
                         <span class="min-w-0 flex-1">
-                            <span class="block text-sm font-bold leading-5 text-slate-800">انتخاب خدمت / پویش</span>
+                            <span class="block text-sm font-bold leading-5 text-slate-800">{{ $mode === 'predefined' && $selectedService ? 'تغییر خدمت / پویش' : 'انتخاب خدمت / پویش' }}</span>
                             <span class="mt-0.5 block text-[11px] font-medium leading-4 text-slate-500">استفاده از خدمات از پیش تعریف‌شده</span>
                         </span>
                         <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition {{ $mode === 'predefined' ? 'border-cyan-500 bg-cyan-500/10' : 'border-slate-300 bg-white' }}">
                             <span class="h-2 w-2 rounded-full {{ $mode === 'predefined' ? 'bg-cyan-500' : 'bg-transparent' }}"></span>
                         </span>
-                    </label>
+                    </button>
 
                     <button type="button" wire:click="requestMiscServiceName" class="group relative flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 text-right transition focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 sm:px-3.5 {{ $mode === 'misc' ? 'border-emerald-300 bg-emerald-50/70 shadow-[0_0_0_1px_rgba(16,185,129,0.08)]' : 'border-slate-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/30' }}" aria-pressed="{{ $mode === 'misc' ? 'true' : 'false' }}">
                         <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg {{ $mode === 'misc' ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-emerald-100 group-hover:text-emerald-700' }}">

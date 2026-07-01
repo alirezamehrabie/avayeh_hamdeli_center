@@ -139,6 +139,24 @@ class ServiceBatchCreator extends Component
         }
     }
 
+    public function choosePredefinedMode(): void
+    {
+        if ($this->editingServiceId) {
+            return;
+        }
+
+        if ($this->mode !== self::MODE_PREDEFINED) {
+            $this->mode = self::MODE_PREDEFINED;
+            $this->updatedMode();
+
+            return;
+        }
+
+        $this->confirmingBatchSave = false;
+        $this->resetValidation();
+        $this->dispatch('open-predefined-service-selector');
+    }
+
     public function requestMiscServiceName(): void
     {
         if ($this->editingServiceId) {
