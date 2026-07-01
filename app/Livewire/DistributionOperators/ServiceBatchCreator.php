@@ -337,6 +337,16 @@ class ServiceBatchCreator extends Component
             $this->markEditingDirty();
             $this->resetValidation($field);
             $this->validateOnly($field, $this->miscEditRules(), [], $this->validationAttributes());
+
+            $segments = explode('.', $key);
+
+            if (count($segments) >= 4 && $segments[1] === 'categories') {
+                if ($segments[3] === 'unit') {
+                    $this->syncSharedCategoryUnit((int) $segments[0], (int) $segments[2]);
+                } elseif ($segments[3] === 'name') {
+                    $this->autoPopulateCategoryUnit((int) $segments[0], (int) $segments[2]);
+                }
+            }
         } else {
             $this->markEditingDirty();
         }
@@ -642,6 +652,9 @@ class ServiceBatchCreator extends Component
             'typeOptions' => Service::TYPE_OPTIONS,
             'unitOptions' => Service::unitOptions(),
             'categoryNameSuggestions' => $this->editingServiceId ? $this->categoryNameSuggestions() : [],
+            'usedCategoryLock' => $this->editingServiceId
+                ? $this->editableUsedCategoryUnitLocks($this->resolveEditableService($this->editingServiceId))
+                : ['ids' => [], 'names' => []],
         ]);
     }
 
@@ -1290,6 +1303,41 @@ class ServiceBatchCreator extends Component
             ->all();
     }
 
+    /**
+     * Categories whose unit must stay read-only because they already carry real
+     * usage (deliveries or gate-entry assignments). Returned both by category id
+     * and by normalized name so rows resolved either way can be locked.
+     *
+     * @return array{ids: array<int, int>, names: array<string, bool>}
+     */
+    protected function editableUsedCategoryUnitLocks(Service $service): array
+    {
+        $usedCategoryIds = array_map('intval', array_keys($this->editableServiceUsageByCategoryId($service)));
+
+        if ($usedCategoryIds === []) {
+            return ['ids' => [], 'names' => []];
+        }
+
+        $names = $service->categories()
+            ->withTrashed()
+            ->whereIn('id', $usedCategoryIds)
+            ->pluck('name')
+            ->reduce(function (array $carry, $name): array {
+                $normalized = ServiceCategory::normalizeName((string) $name);
+
+                if ($normalized !== '') {
+                    $carry[$normalized] = true;
+                }
+
+                return $carry;
+            }, []);
+
+        return [
+            'ids' => array_values($usedCategoryIds),
+            'names' => $names,
+        ];
+    }
+
     protected function validationAttributes(): array
     {
         return [
@@ -1429,6 +1477,7 @@ class ServiceBatchCreator extends Component
                 $suggestions[] = [
                     'id' => (int) ($category['id'] ?? 0),
                     'name' => $name,
+                    'unit' => (string) ($category['unit'] ?? ''),
                 ];
             }
         }
@@ -1513,6 +1562,139 @@ class ServiceBatchCreator extends Component
     protected function normalizeEditableCategoryName(string $name): string
     {
         return ServiceCategory::normalizeName($name);
+    }
+
+    /**
+     * Stable identity for grouping category rows that represent the same
+     * category: the resolved database id when known, otherwise the normalized
+     * name (so not-yet-persisted rows still share a unit).
+     */
+    protected function sharedCategoryKey(array $category, ?array $categoryPool = null): ?string
+    {
+        $categoryId = $this->resolveEditableCategoryId($category, $categoryPool);
+
+        if ($categoryId > 0) {
+            return 'id:'.$categoryId;
+        }
+
+        $normalizedName = $this->normalizeEditableCategoryName((string) ($category['name'] ?? ''));
+
+        return $normalizedName === '' ? null : 'name:'.$normalizedName;
+    }
+
+    /**
+     * Propagate a unit edit to every other worker-group row that shares the same
+     * category, so a category keeps a single unit across all its assignments.
+     */
+    protected function syncSharedCategoryUnit(int $groupIndex, int $categoryIndex): void
+    {
+        if (! $this->editingServiceId) {
+            return;
+        }
+
+        $changedRow = $this->miscWorkerGroups[$groupIndex]['categories'][$categoryIndex] ?? null;
+
+        if (! is_array($changedRow)) {
+            return;
+        }
+
+        $newUnit = (string) ($changedRow['unit'] ?? '');
+
+        if ($newUnit === '' || ! in_array($newUnit, Service::unitKeys(), true)) {
+            return;
+        }
+
+        $categoryPool = $this->editableCategoryPool(
+            $this->resolveEditableService($this->editingServiceId)
+        );
+
+        $targetKey = $this->sharedCategoryKey($changedRow, $categoryPool);
+
+        if ($targetKey === null) {
+            return;
+        }
+
+        foreach ($this->miscWorkerGroups as $gi => $group) {
+            foreach (($group['categories'] ?? []) as $ci => $category) {
+                if ($gi === $groupIndex && $ci === $categoryIndex) {
+                    continue;
+                }
+
+                if (! is_array($category)) {
+                    continue;
+                }
+
+                if ($this->sharedCategoryKey($category, $categoryPool) === $targetKey
+                    && (string) ($category['unit'] ?? '') !== $newUnit) {
+                    $this->miscWorkerGroups[$gi]['categories'][$ci]['unit'] = $newUnit;
+                }
+            }
+        }
+    }
+
+    /**
+     * When a category row's name resolves to a known category, pre-fill its unit
+     * from the established value (existing DB category, or a sibling row already
+     * carrying that category) so operators avoid re-entering it.
+     */
+    protected function autoPopulateCategoryUnit(int $groupIndex, int $categoryIndex): void
+    {
+        if (! $this->editingServiceId) {
+            return;
+        }
+
+        $row = $this->miscWorkerGroups[$groupIndex]['categories'][$categoryIndex] ?? null;
+
+        if (! is_array($row)) {
+            return;
+        }
+
+        $normalizedName = $this->normalizeEditableCategoryName((string) ($row['name'] ?? ''));
+
+        if ($normalizedName === '') {
+            return;
+        }
+
+        $categoryPool = $this->editableCategoryPool(
+            $this->resolveEditableService($this->editingServiceId)
+        );
+
+        $resolvedUnit = null;
+
+        $poolCategory = $categoryPool['by_name'][$normalizedName] ?? null;
+
+        if ($poolCategory instanceof ServiceCategory) {
+            $resolvedUnit = (string) $poolCategory->unit;
+        }
+
+        if ($resolvedUnit === null) {
+            foreach ($this->miscWorkerGroups as $gi => $group) {
+                foreach (($group['categories'] ?? []) as $ci => $category) {
+                    if ($gi === $groupIndex && $ci === $categoryIndex) {
+                        continue;
+                    }
+
+                    if (! is_array($category)) {
+                        continue;
+                    }
+
+                    if ($this->normalizeEditableCategoryName((string) ($category['name'] ?? '')) === $normalizedName
+                        && (string) ($category['unit'] ?? '') !== '') {
+                        $resolvedUnit = (string) $category['unit'];
+
+                        break 2;
+                    }
+                }
+            }
+        }
+
+        if ($resolvedUnit === null
+            || ! in_array($resolvedUnit, Service::unitKeys(), true)
+            || (string) ($row['unit'] ?? '') === $resolvedUnit) {
+            return;
+        }
+
+        $this->miscWorkerGroups[$groupIndex]['categories'][$categoryIndex]['unit'] = $resolvedUnit;
     }
 
     protected function shouldPreferEditableCategoryCandidate(

@@ -277,6 +277,10 @@
                                             ->unique()
                                             ->values()
                                             ->all();
+
+                                        $normalizedCategoryName = \App\Models\ServiceCategory::normalizeName((string) ($category['name'] ?? ''));
+                                        $isUnitLocked = in_array((int) ($category['id'] ?? 0), $usedCategoryLock['ids'] ?? [], true)
+                                            || isset(($usedCategoryLock['names'] ?? [])[$normalizedCategoryName]);
                                     @endphp
                                     <div data-validation-scope class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-200/50 sm:p-3.5">
                                         <div class="mb-3 flex items-center justify-between gap-3 border-b border-slate-100 pb-2.5">
@@ -340,6 +344,8 @@
                                                         scrollLocked: false,
                                                         modelPath: 'miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.name',
                                                         modelIdPath: 'miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.id',
+                                                        modelUnitPath: 'miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.unit',
+                                                        unitKeys: @js(\App\Models\Service::unitKeys()),
                                                         assignedCategoryKeys: @js($assignedCategoryKeysForCurrentWorker),
                                                         init() {
                                                             this.popStateHandler = () => this.handleSheetPopState();
@@ -435,6 +441,7 @@
                                                         pick(category) {
                                                             const categoryId = Number(category?.id || 0);
                                                             const categoryName = String(category?.name || '');
+                                                            const categoryUnit = String(category?.unit || '');
 
                                                             if (this.isAlreadyAssigned(categoryName)) {
                                                                 return;
@@ -442,6 +449,9 @@
 
                                                             this.directEntry = false;
                                                             $wire.set(this.modelIdPath, categoryId > 0 ? categoryId : null);
+                                                            if (categoryUnit && this.unitKeys.includes(categoryUnit)) {
+                                                                $wire.set(this.modelUnitPath, categoryUnit);
+                                                            }
                                                             $wire.set(this.modelPath, categoryName);
                                                             this.closeSheet();
                                                         },
@@ -561,7 +571,8 @@
                                                                                 type="button"
                                                                                 data-name="{{ $suggestion['name'] }}"
                                                                                 data-id="{{ $suggestion['id'] }}"
-                                                                                @click="pick({ id: Number($el.dataset.id || 0), name: $el.dataset.name })"
+                                                                                data-unit="{{ $suggestion['unit'] ?? '' }}"
+                                                                                @click="pick({ id: Number($el.dataset.id || 0), name: $el.dataset.name, unit: $el.dataset.unit })"
                                                                                 x-bind:disabled="isAlreadyAssigned($el.dataset.name)"
                                                                                 x-bind:aria-disabled="isAlreadyAssigned($el.dataset.name).toString()"
                                                                                 x-bind:class="isAlreadyAssigned($el.dataset.name)
@@ -608,14 +619,22 @@
                                                         placeholder="مقدار"
                                                     >
                                                     <select
-                                                        wire:model="miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.unit"
-                                                        class="border-0 border-r border-slate-200 bg-white/70 px-2.5 py-2 text-xs font-bold text-slate-600 outline-none focus:ring-0"
+                                                        wire:model.live="miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.unit"
+                                                        @disabled($isUnitLocked)
+                                                        @if($isUnitLocked) title="این دسته‌بندی استفاده شده است و واحد آن قابل تغییر نیست" @endif
+                                                        class="border-0 border-r border-slate-200 px-2.5 py-2 text-xs font-bold outline-none focus:ring-0 {{ $isUnitLocked ? 'cursor-not-allowed bg-slate-100 text-slate-400' : 'bg-white/70 text-slate-600' }}"
                                                     >
                                                         @foreach($unitOptions as $value => $label)
                                                             <option value="{{ $value }}">{{ $label }}</option>
                                                         @endforeach
                                                     </select>
                                                 </div>
+                                                @if($isUnitLocked)
+                                                    <p class="flex items-center gap-1 text-[10px] font-bold text-slate-400">
+                                                        <i class="bi bi-lock-fill"></i>
+                                                        واحد این دسته‌بندی به‌دلیل ثبت تحویل یا ورود قابل تغییر نیست
+                                                    </p>
+                                                @endif
                                                 @error("miscWorkerGroups.$gi.categories.$ci.quantity") <p data-validation-error class="text-[11px] text-rose-600">{{ $message }}</p> @enderror
                                             </div>
                                         </div>
