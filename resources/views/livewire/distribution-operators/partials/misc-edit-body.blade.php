@@ -9,6 +9,23 @@
         ->unique()
         ->values()
         ->all();
+
+    // How many rows (across all worker groups) reference each category, keyed by
+    // normalized name. A count >= 2 means the category is shared, so a unit edit
+    // must propagate live; otherwise the unit commits on blur like the quantity,
+    // avoiding a server round-trip per change (Item 5).
+    $sharedCategoryNameCounts = [];
+    foreach ($miscWorkerGroups as $sharedScanGroup) {
+        foreach (($sharedScanGroup['categories'] ?? []) as $sharedScanCategory) {
+            $sharedScanKey = \App\Models\ServiceCategory::normalizeName((string) ($sharedScanCategory['name'] ?? ''));
+
+            if ($sharedScanKey === '') {
+                continue;
+            }
+
+            $sharedCategoryNameCounts[$sharedScanKey] = ($sharedCategoryNameCounts[$sharedScanKey] ?? 0) + 1;
+        }
+    }
 @endphp
 <div
     x-data="{
@@ -411,6 +428,8 @@
                                         $normalizedCategoryName = \App\Models\ServiceCategory::normalizeName((string) ($category['name'] ?? ''));
                                         $isUnitLocked = in_array((int) ($category['id'] ?? 0), $usedCategoryLock['ids'] ?? [], true)
                                             || isset(($usedCategoryLock['names'] ?? [])[$normalizedCategoryName]);
+                                        // Shared across worker groups => unit edits must sync live; otherwise defer to blur.
+                                        $isSharedCategoryRow = ($sharedCategoryNameCounts[$normalizedCategoryName] ?? 0) >= 2;
                                     @endphp
                                     <div data-validation-scope class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-200/50 sm:p-3.5">
                                         <div class="mb-3 flex items-center justify-between gap-3 border-b border-slate-100 pb-2.5">
@@ -749,7 +768,7 @@
                                                         placeholder="مقدار"
                                                     >
                                                     <select
-                                                        wire:model.live="miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.unit"
+                                                        wire:model{{ $isSharedCategoryRow ? '.live' : '.blur' }}="miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.unit"
                                                         @disabled($isUnitLocked)
                                                         @if($isUnitLocked) title="این دسته‌بندی استفاده شده است و واحد آن قابل تغییر نیست" @endif
                                                         class="w-full min-w-[4.5rem] max-w-[6rem] border-0 border-r border-slate-200 px-2 py-2 text-center text-xs font-bold outline-none focus:ring-0 {{ $isUnitLocked ? 'cursor-not-allowed bg-slate-100 text-slate-400' : 'bg-white/70 text-slate-600' }}"
