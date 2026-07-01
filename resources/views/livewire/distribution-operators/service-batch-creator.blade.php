@@ -789,6 +789,9 @@
         @php
             $reviewRows = $reviewSummary['rows'] ?? [];
             $reviewItemCount = count($reviewRows);
+            // Per-worker breakdown so a multi-worker edit can be confirmed as a whole (Item 4).
+            $reviewGroups = $reviewSummary['groups'] ?? [];
+            $reviewWorkerCount = count($reviewGroups);
 
             // In edit mode the save action is the most-repeated task, so keep it
             // pinned to the bottom of the viewport instead of buried below every
@@ -803,7 +806,7 @@
         @endphp
         <div class="rounded-2xl border px-3 py-2.5 {{ $reviewCardClasses }}">
             <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                <div class="min-w-0 flex-1">
+                <div class="min-w-0 flex-1" @if($isEditing && $reviewWorkerCount > 1) x-data="{ showBreakdown: false }" @endif>
                     <div class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
 {{--                        <span class="inline-flex h-6 items-center rounded-lg {{ $reviewStepUnlocked ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100' : 'bg-slate-100 text-slate-500 ring-1 ring-slate-200' }} px-2.5 text-[11px] font-black">۴</span>--}}
                         <span class="max-w-full truncate text-sm font-black {{ $reviewStepUnlocked ? 'text-slate-900' : 'text-slate-500' }}">{{ $reviewSummary['service_name'] ?? '-' }}</span>
@@ -813,15 +816,49 @@
                             <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500">{{ $reviewSummary['service_code'] }}</span>
                         @endif
                     </div>
-                    <p class="mt-1 truncate text-[11px] font-bold leading-5 text-slate-500">
-                        {{ $reviewSummary['worker_name'] ?? '-' }}
-                        <span class="mx-1 text-slate-300">/</span>
-                        {{ $reviewSummary['date_label'] ?? '-' }}
-                        <span class="mx-1 text-slate-300">/</span>
-                        {{ $reviewItemCount }} قلم
-                        <span class="mx-1 text-slate-300">/</span>
-                        جمع {{ $reviewSummary['total_quantity_label'] ?? '0.00' }}
-                    </p>
+                    @if($isEditing && $reviewWorkerCount > 1)
+                        {{-- Multi-worker edit: one-line total that expands into a per-worker breakdown. --}}
+                        <button
+                            type="button"
+                            @click="showBreakdown = ! showBreakdown"
+                            :aria-expanded="showBreakdown.toString()"
+                            class="mt-1 flex w-full items-center gap-1.5 text-right text-[11px] font-bold leading-5 text-slate-500"
+                        >
+                            <span class="inline-flex shrink-0 items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 font-black text-emerald-700">
+                                <i class="bi bi-people-fill text-[10px]"></i>
+                                {{ $reviewWorkerCount }} مددکار
+                            </span>
+                            <span class="text-slate-300">/</span>
+                            {{ $reviewItemCount }} قلم
+                            <span class="text-slate-300">/</span>
+                            جمع {{ $reviewSummary['total_quantity_label'] ?? '0.00' }}
+                            <i class="bi bi-chevron-down mr-auto shrink-0 text-slate-400 transition-transform duration-200" :class="showBreakdown ? 'rotate-180' : ''"></i>
+                        </button>
+
+                        <div x-show="showBreakdown" x-collapse style="display: none;" class="mt-2 space-y-1.5">
+                            @foreach($reviewGroups as $reviewGroup)
+                                <div class="flex items-center gap-2 rounded-lg border border-slate-100 bg-slate-50/70 px-2.5 py-1.5">
+                                    <span class="min-w-0 flex-1 truncate text-[11px] font-black text-slate-700">{{ $reviewGroup['worker_name'] ?? 'مددکار' }}</span>
+                                    @if(!empty($reviewGroup['worker_code']))
+                                        <span class="shrink-0 text-[10px] font-bold text-slate-400">کد {{ $reviewGroup['worker_code'] }}</span>
+                                    @endif
+                                    <span class="shrink-0 text-[10px] font-bold text-slate-500">{{ count($reviewGroup['rows'] ?? []) }} قلم</span>
+                                    <span class="shrink-0 text-[10px] font-black text-emerald-700">جمع {{ $reviewGroup['total_quantity_label'] ?? '0.00' }}</span>
+                                </div>
+                            @endforeach
+                            <p class="px-1 text-[10px] font-bold text-slate-400">تاریخ ثبت: {{ $reviewSummary['date_label'] ?? '-' }}</p>
+                        </div>
+                    @else
+                        <p class="mt-1 truncate text-[11px] font-bold leading-5 text-slate-500">
+                            {{ $reviewSummary['worker_name'] ?? '-' }}
+                            <span class="mx-1 text-slate-300">/</span>
+                            {{ $reviewSummary['date_label'] ?? '-' }}
+                            <span class="mx-1 text-slate-300">/</span>
+                            {{ $reviewItemCount }} قلم
+                            <span class="mx-1 text-slate-300">/</span>
+                            جمع {{ $reviewSummary['total_quantity_label'] ?? '0.00' }}
+                        </p>
+                    @endif
                 </div>
                 <button
                     type="submit"
