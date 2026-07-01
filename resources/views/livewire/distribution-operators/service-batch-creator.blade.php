@@ -266,6 +266,7 @@
                             : 'انتخاب خدمت / پویش';
                     @endphp
                     <div
+                        wire:key="predefined-service-header-{{ $selectedServiceId ?: 'empty' }}"
                         class="flex items-center gap-2.5"
                         x-data="{
                             fullTitle: @js($predefinedHeaderTitle),
@@ -301,7 +302,7 @@
                             </svg>
                         </span>
                         <div class="min-w-0 flex-1">
-                            <h2 class="truncate text-base font-extrabold text-cyan-950" :title="fullTitle" aria-label="{{ $predefinedHeaderTitle }}" data-predefined-service-header-title="{{ $predefinedHeaderTitle }}">
+                            <h2 class="overflow-x-auto whitespace-nowrap text-base font-extrabold text-cyan-950" :title="fullTitle" aria-label="{{ $predefinedHeaderTitle }}" data-predefined-service-header-title="{{ $predefinedHeaderTitle }}">
                                 <span x-text="shownTitle"></span><span x-show="cursorVisible" class="inline-block h-4 w-0.5 translate-y-0.5 rounded-full bg-cyan-500 align-middle" x-transition.opacity></span>
                             </h2>
                         </div>

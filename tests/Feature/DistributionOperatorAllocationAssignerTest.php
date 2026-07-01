@@ -397,6 +397,7 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->assertSee('data-predefined-service-header-title="پویش آمار"', false)
             ->assertSee('aria-label="تغییر خدمت"', false)
             ->assertSee('تغییر خدمت / پویش')
+            ->assertDontSee('data-predefined-service-header-title="انتخاب خدمت / پویش"', false)
             ->call('choosePredefinedMode')
             ->assertDispatched('open-predefined-service-selector')
             ->assertSee('موجودی کل')
