@@ -181,27 +181,26 @@
                                 </button>
                             </div>
 
-                            <div class="flex items-center gap-3 border-b border-slate-100 bg-slate-50/60 px-4 py-3">
+                            <div class="flex items-center gap-3  bg-slate-50/60 px-3 py-2.5 sm:px-4">
                                 <button
                                     type="button"
                                     @click="toggleWorker({{ $workerId }}, $event.currentTarget)"
-                                    class="flex min-w-0 flex-1 items-center gap-3 text-right"
+                                    class="flex min-w-0 flex-1 items-center gap-2 text-right"
                                     :aria-expanded="isOpen({{ $workerId }}).toString()"
                                 >
+                                    <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-xl border text-slate-400 ">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                            <path d="M16 19.25v-1.5A3.75 3.75 0 0 0 12.25 14h-.5A3.75 3.75 0 0 0 8 17.75v1.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                            <path d="M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke="currentColor" stroke-width="1.8"/>
+                                        </svg>
+                                    </span>
                                     <div class="min-w-0 flex-1">
-                                        <div class="flex items-center gap-2">
-                                            <p class="truncate text-sm font-black text-slate-900">{{ $worker?->full_name ?? '—' }}</p>
-                                            <span class="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">{{ $allocations->count() }} مورد</span>
-                                        </div>
-                                        <p class="mt-0.5 text-[11px] font-bold text-slate-500">
-                                            کد: {{ $worker?->worker_code ?? '—' }}
-                                            @if($worker?->district)
-                                                <span class="text-slate-300">·</span>
-                                                {{ $worker->district->name }}
-                                            @endif
+                                        <p class="truncate text-sm font-black text-slate-900">{{ $worker?->full_name ?? '—' }}</p>
+                                        <p class="mt-0.5 text-[11px] font-semibold text-slate-500">
+                                            کد پرسنلی: {{ $worker?->worker_code ?? '—' }}
                                         </p>
                                     </div>
-                                    <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 shadow-sm transition duration-300 hover:border-blue-200 hover:text-blue-600" :class="isOpen({{ $workerId }}) ? 'rotate-180 text-blue-600 border-blue-200' : ''">
+                                    <span class="inline-flex ml-2.5 h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 shadow-sm transition duration-300 hover:border-blue-200 hover:text-blue-600" :class="isOpen({{ $workerId }}) ? 'rotate-180 text-blue-600 border-blue-200' : ''">
                                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                             <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                         </svg>

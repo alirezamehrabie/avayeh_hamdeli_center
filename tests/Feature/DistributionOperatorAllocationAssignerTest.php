@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Livewire\DistributionOperators\ServiceBatchCreator;
+use App\Livewire\DistributionOperators\ServiceAllocationEditor;
 use App\Livewire\DistributionOperators\ServiceList;
 use App\Models\Service;
 use App\Models\ServiceCategory;
@@ -19,6 +20,80 @@ use Tests\TestCase;
 class DistributionOperatorAllocationAssignerTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_editing_allocations_appends_new_worker_in_assignment_order(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $creator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_ADMIN,
+            'is_admin' => true,
+        ]);
+
+        $firstWorker = SocialWorker::query()->create([
+            'worker_code' => 300,
+            'first_name' => 'First',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+        $secondWorker = SocialWorker::query()->create([
+            'worker_code' => 100,
+            'first_name' => 'Second',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+        $thirdWorker = SocialWorker::query()->create([
+            'worker_code' => 200,
+            'first_name' => 'Third',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+
+        $serviceName = ServiceName::query()->create([
+            'name' => 'Allocation Order Service',
+            'sort_id' => 1,
+            'created_by' => $operator->id,
+        ]);
+        $service = Service::query()->create([
+            'name' => 'Allocation Order Service',
+            'service_name_id' => $serviceName->id,
+            'service_type' => 'individual',
+            'total_quantity' => 12,
+            'total_service_value' => 0,
+            'distribution_start_date' => now()->toDateString(),
+            'status' => 'approved',
+            'created_by' => $creator->id,
+        ]);
+        $category = ServiceCategory::query()->create([
+            'service_name_id' => $serviceName->id,
+            'service_id' => $service->id,
+            'name' => 'Main Category',
+            'quantity' => 12,
+            'unit' => 'pack',
+            'value' => 0,
+            'sort_id' => 1,
+            'created_by' => $operator->id,
+        ]);
+
+        foreach ([$firstWorker, $secondWorker] as $worker) {
+            $service->workerAllocations()->create([
+                'service_category_id' => $category->id,
+                'social_worker_id' => $worker->id,
+                'allocated_quantity' => 0,
+                'assigned_by_user_id' => $operator->id,
+            ]);
+        }
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceAllocationEditor::class, ['editingServiceId' => $service->id])
+            ->assertSeeInOrder(['First Worker', 'Second Worker'])
+            ->set('addingSocialWorkerId', $thirdWorker->id)
+            ->call('addSocialWorkerAllocation')
+            ->assertSeeInOrder(['First Worker', 'Second Worker', 'Third Worker']);
+    }
 
     public function test_operator_assignment_records_assigning_user(): void
     {

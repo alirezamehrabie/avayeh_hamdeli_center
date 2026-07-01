@@ -7,6 +7,7 @@ use App\Models\ServiceWorkerAllocation;
 use App\Models\SocialWorker;
 use App\Traits\InteractsWithNotificationModal;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\On;
@@ -311,11 +312,7 @@ class ServiceAllocationEditor extends Component
     public function render()
     {
         $operatorAllocations = $this->service
-            ? $this->service->workerAllocations()
-                ->where('assigned_by_user_id', auth()->id())
-                ->with('socialWorker')
-                ->get()
-                ->groupBy('social_worker_id')
+            ? $this->orderedOperatorAllocations()
             : collect();
 
         $categoryMetrics = $this->service
@@ -371,6 +368,31 @@ class ServiceAllocationEditor extends Component
 
             $this->allocationQuantities[$workerId][$categoryId] = (float) $allocation->allocated_quantity;
         }
+    }
+
+    /**
+     * @return Collection<int, EloquentCollection<int, ServiceWorkerAllocation>>
+     */
+    protected function orderedOperatorAllocations(): Collection
+    {
+        $allocations = $this->service->workerAllocations()
+            ->where('assigned_by_user_id', auth()->id())
+            ->with('socialWorker')
+            ->orderBy('id')
+            ->get();
+
+        $workerOrder = $allocations
+            ->groupBy('social_worker_id')
+            ->map(fn (EloquentCollection $workerAllocations): int => (int) $workerAllocations->min('id'))
+            ->sort();
+
+        $groupedAllocations = $allocations->groupBy('social_worker_id');
+
+        return $workerOrder->mapWithKeys(
+            fn (int $firstAllocationId, int $workerId): array => [
+                $workerId => $groupedAllocations->get($workerId, new EloquentCollection),
+            ]
+        );
     }
 
     /**
