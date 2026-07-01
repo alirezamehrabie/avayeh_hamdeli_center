@@ -417,10 +417,15 @@ class ServiceAllocationEditor extends Component
             ? $this->buildCategoryMetrics()
             : [];
 
+        $workerCategoryDeliveryMetrics = $this->service
+            ? $this->buildWorkerCategoryDeliveryMetrics()
+            : [];
+
         return view('livewire.distribution-operators.service-allocation-editor', [
             'service' => $this->service,
             'operatorAllocations' => $operatorAllocations,
             'categoryMetrics' => $categoryMetrics,
+            'workerCategoryDeliveryMetrics' => $workerCategoryDeliveryMetrics,
             'unitOptions' => \App\Models\Service::unitOptions(),
             'socialWorkerSuggestions' => $this->showSocialWorkerSuggestions ? $this->socialWorkerSuggestions : collect(),
             'socialWorkerId' => $this->addingSocialWorkerId,
@@ -494,7 +499,7 @@ class ServiceAllocationEditor extends Component
     }
 
     /**
-     * @return array<int, array{quantity: float, allocated: float, assignable: float}>
+     * @return array<int, array{quantity: float, allocated: float, delivered: float, remaining_stock: float, assignable: float}>
      */
     protected function buildCategoryMetrics(): array
     {
@@ -511,17 +516,58 @@ class ServiceAllocationEditor extends Component
             ->map(fn ($quantity): float => (float) $quantity)
             ->all();
 
+        $deliveredByCategory = ServiceDelivery::query()
+            ->select('service_category_id')
+            ->selectRaw('COALESCE(SUM(delivered_quantity), 0) as delivered_quantity')
+            ->where('service_id', $this->service->id)
+            ->groupBy('service_category_id')
+            ->pluck('delivered_quantity', 'service_category_id')
+            ->map(fn ($quantity): float => (float) $quantity)
+            ->all();
+
         return $this->service->categories
-            ->mapWithKeys(function ($category) use ($allocatedByCategory): array {
+            ->mapWithKeys(function ($category) use ($allocatedByCategory, $deliveredByCategory): array {
                 $quantity = (float) $category->quantity;
                 $allocated = (float) ($allocatedByCategory[$category->id] ?? 0);
+                $delivered = (float) ($deliveredByCategory[$category->id] ?? 0);
+                $remainingStock = max(0, $quantity - $delivered);
 
                 return [
                     (int) $category->id => [
                         'quantity' => $quantity,
                         'allocated' => $allocated,
+                        'delivered' => $delivered,
+                        'remaining_stock' => $remainingStock,
                         'assignable' => max(0, $quantity - $allocated),
                     ],
+                ];
+            })
+            ->all();
+    }
+
+    /**
+     * @return array<int, array<int, float>>
+     */
+    protected function buildWorkerCategoryDeliveryMetrics(): array
+    {
+        if (! $this->service) {
+            return [];
+        }
+
+        return ServiceDelivery::query()
+            ->select('social_worker_id', 'service_category_id')
+            ->selectRaw('COALESCE(SUM(delivered_quantity), 0) as delivered_quantity')
+            ->where('service_id', $this->service->id)
+            ->groupBy('social_worker_id', 'service_category_id')
+            ->get()
+            ->groupBy('social_worker_id')
+            ->mapWithKeys(function (Collection $rows, int|string $workerId): array {
+                return [
+                    (int) $workerId => $rows
+                        ->mapWithKeys(fn ($row): array => [
+                            (int) $row->service_category_id => (float) $row->delivered_quantity,
+                        ])
+                        ->all(),
                 ];
             })
             ->all();

@@ -88,14 +88,20 @@
             >
                 @foreach($service->categories as $category)
                     @php
-                        $metrics = $categoryMetrics[(int) $category->id] ?? ['quantity' => 0, 'allocated' => 0, 'assignable' => 0];
+                        $metrics = $categoryMetrics[(int) $category->id] ?? ['quantity' => 0, 'allocated' => 0, 'delivered' => 0, 'remaining_stock' => 0, 'assignable' => 0];
                         $totalQuantity = max(0, (float) $metrics['quantity']);
                         $allocatedQuantity = max(0, min((float) $metrics['allocated'], $totalQuantity));
+                        $deliveredQuantity = max(0, min((float) $metrics['delivered'], $totalQuantity));
+                        $remainingStockQuantity = max(0, (float) $metrics['remaining_stock']);
                         $remainingQuantity = max(0, (float) $metrics['assignable']);
                         $allocatedPercent = $totalQuantity > 0 ? min(100, round(($allocatedQuantity / $totalQuantity) * 100, 1)) : 0;
                         $remainingPercent = $totalQuantity > 0 ? min(100, round(($remainingQuantity / $totalQuantity) * 100, 1)) : 0;
                     @endphp
-                    <div class="rounded-2xl border border-slate-100 bg-slate-50/60 px-3 py-2.5">
+                    <div
+                        class="rounded-2xl border border-slate-100 bg-slate-50/60 px-3 py-2.5"
+                        data-category-delivered="{{ $this->formatQuantityForUnit($deliveredQuantity, (string) $category->unit) }}"
+                        data-category-remaining-stock="{{ $this->formatQuantityForUnit($remainingStockQuantity, (string) $category->unit) }}"
+                    >
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0 flex-1">
                                 <p class="truncate text-sm font-black text-slate-800">{{ $category->name }}</p>
@@ -271,11 +277,12 @@
                                     @foreach($allocations as $allocation)
                                         @php
                                             $category = $service->categories->firstWhere('id', $allocation->service_category_id);
-                                            $metrics = $categoryMetrics[(int) $allocation->service_category_id] ?? ['quantity' => 0, 'allocated' => 0, 'assignable' => 0];
+                                            $metrics = $categoryMetrics[(int) $allocation->service_category_id] ?? ['quantity' => 0, 'allocated' => 0, 'delivered' => 0, 'remaining_stock' => 0, 'assignable' => 0];
                                             $currentValue = $this->allocationQuantities[$workerId][$allocation->service_category_id] ?? (float) $allocation->allocated_quantity;
                                             $inputValue = (float) $currentValue > 0 ? $currentValue : '';
                                             $totalOthersAllocated = $metrics['allocated'] - (float) $allocation->allocated_quantity;
                                             $maxAllowed = max(0, $metrics['quantity'] - $totalOthersAllocated);
+                                            $workerDeliveredQuantity = (float) ($workerCategoryDeliveryMetrics[$workerId][$allocation->service_category_id] ?? 0);
                                         @endphp
                                         <div class="px-4 py-3">
                                             <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -290,7 +297,7 @@
                                                 <div class="flex items-center gap-2 sm:flex-shrink-0">
                                                     <input
                                                         type="number"
-                                                        min="0"
+                                                        min="{{ $workerDeliveredQuantity }}"
                                                         max="{{ $maxAllowed }}"
                                                         step="0.01"
                                                         value="{{ $inputValue }}"

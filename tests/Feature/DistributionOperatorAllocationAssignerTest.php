@@ -460,6 +460,76 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         ]);
     }
 
+    public function test_editing_allocations_shows_delivered_and_remaining_stock_metrics(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $manager = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_ADMIN,
+            'is_admin' => true,
+        ]);
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 308,
+            'first_name' => 'Metric',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+        $serviceName = ServiceName::query()->create([
+            'name' => 'Metric Service',
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+        $service = Service::query()->create([
+            'name' => 'Metric Service',
+            'service_name_id' => $serviceName->id,
+            'service_type' => 'individual',
+            'total_quantity' => 10,
+            'total_service_value' => 0,
+            'distribution_start_date' => now()->toDateString(),
+            'status' => 'approved',
+            'quantity_delivered' => 0,
+            'created_by' => $manager->id,
+        ]);
+        $category = ServiceCategory::query()->create([
+            'service_name_id' => $serviceName->id,
+            'service_id' => $service->id,
+            'name' => 'Main Category',
+            'quantity' => 10,
+            'unit' => 'pack',
+            'value' => 1000,
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+        $service->workerAllocations()->create([
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'allocated_quantity' => 7,
+            'assigned_by_user_id' => $operator->id,
+        ]);
+
+        ServiceDelivery::query()->create([
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'national_id' => '1234567892',
+            'full_name' => 'Delivered Recipient',
+            'delivered_quantity' => 3,
+            'value_per_unit_snapshot' => 1000,
+            'delivered_total_value' => 3000,
+            'delivered_at' => now()->toDateString(),
+            'created_by' => $operator->id,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceAllocationEditor::class, ['editingServiceId' => $service->id])
+            ->assertSeeHtml('data-category-delivered="3"')
+            ->assertSeeHtml('data-category-remaining-stock="7"')
+            ->assertSeeHtml('min="3"');
+    }
+
     public function test_operator_assignment_records_assigning_user(): void
     {
         $operator = User::factory()->create([
