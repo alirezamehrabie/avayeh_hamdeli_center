@@ -103,6 +103,20 @@
                 this.focusWorkerSearch();
                 this.pushSelectorHistory();
             },
+            autoOpenForNewGroup(event) {
+                // Direct-trigger flow: when this exact group was just added and
+                // no worker is picked yet, open the selector so the operator lands
+                // straight in search (bottom sheet on mobile, dropdown on desktop).
+                if (event.detail?.index !== {{ $groupIndex }} || this.open) {
+                    return;
+                }
+
+                if (@js((bool) $groupWorkerId)) {
+                    return;
+                }
+
+                this.$nextTick(() => this.openSelector());
+            },
             focusWorkerSearch() {
                 this.$nextTick(() => {
                     this.$refs.workerSearch?.focus({ preventScroll: true });
@@ -156,6 +170,7 @@
             },
         }"
         x-on:keydown.escape.window="closeSelector()"
+        x-on:worker-group-added.window="autoOpenForNewGroup($event)"
     >
         <button
             type="button"
