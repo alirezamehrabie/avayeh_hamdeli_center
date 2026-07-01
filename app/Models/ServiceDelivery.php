@@ -49,6 +49,9 @@ class ServiceDelivery extends Model
     {
         static::saving(function (self $delivery): void {
             $delivery->assertServiceCategoryBelongsToService();
+            $delivery->assertDeliveredQuantityIsNotNegative();
+            $delivery->assertDeliveryQuantityWithinCategoryStock();
+            $delivery->assertDeliveryQuantityWithinWorkerAllocation();
         });
 
         static::created(function (self $delivery): void {
@@ -185,6 +188,78 @@ class ServiceDelivery extends Model
         if (! $categoryBelongsToService) {
             throw ValidationException::withMessages([
                 'service_category_id' => 'دسته‌بندی انتخاب‌شده متعلق به این خدمت نیست.',
+            ]);
+        }
+    }
+
+    protected function assertDeliveryQuantityWithinCategoryStock(): void
+    {
+        $serviceId = (int) $this->service_id;
+        $categoryId = (int) $this->service_category_id;
+        $quantity = (float) $this->delivered_quantity;
+
+        if ($serviceId <= 0 || $categoryId <= 0) {
+            return;
+        }
+
+        $categoryQuantity = ServiceCategory::query()
+            ->whereKey($categoryId)
+            ->where('service_id', $serviceId)
+            ->value('quantity');
+
+        if ($categoryQuantity === null) {
+            return;
+        }
+
+        $alreadyDelivered = (float) static::query()
+            ->where('service_id', $serviceId)
+            ->where('service_category_id', $categoryId)
+            ->when($this->exists, fn ($query) => $query->whereKeyNot($this->getKey()))
+            ->sum('delivered_quantity');
+
+        if ($alreadyDelivered + $quantity > (float) $categoryQuantity) {
+            throw ValidationException::withMessages([
+                'delivered_quantity' => 'Delivered quantity cannot exceed the category stock.',
+            ]);
+        }
+    }
+
+    protected function assertDeliveryQuantityWithinWorkerAllocation(): void
+    {
+        $serviceId = (int) $this->service_id;
+        $categoryId = (int) $this->service_category_id;
+        $workerId = (int) ($this->social_worker_id ?? 0);
+        $quantity = (float) $this->delivered_quantity;
+
+        if ($serviceId <= 0 || $categoryId <= 0 || $workerId <= 0) {
+            return;
+        }
+
+        $allocatedQuantity = (float) ServiceWorkerAllocation::query()
+            ->where('service_id', $serviceId)
+            ->where('service_category_id', $categoryId)
+            ->where('social_worker_id', $workerId)
+            ->sum('allocated_quantity');
+
+        $alreadyDelivered = (float) static::query()
+            ->where('service_id', $serviceId)
+            ->where('service_category_id', $categoryId)
+            ->where('social_worker_id', $workerId)
+            ->when($this->exists, fn ($query) => $query->whereKeyNot($this->getKey()))
+            ->sum('delivered_quantity');
+
+        if ($alreadyDelivered + $quantity > $allocatedQuantity) {
+            throw ValidationException::withMessages([
+                'delivered_quantity' => 'Delivered quantity cannot exceed the worker allocation for this category.',
+            ]);
+        }
+    }
+
+    protected function assertDeliveredQuantityIsNotNegative(): void
+    {
+        if ((float) $this->delivered_quantity < 0) {
+            throw ValidationException::withMessages([
+                'delivered_quantity' => 'Delivered quantity cannot be negative.',
             ]);
         }
     }
