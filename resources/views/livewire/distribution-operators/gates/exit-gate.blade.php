@@ -143,7 +143,7 @@
                     resolveScan: (payload) => $wire.resolveScannedQr(payload),
                     successSoundUrl: '/sounds/scan-card.wav',
                     enableResultBanner: false,
-                    autoStart: false,
+                    autoStart: true,
                     autoResumeAfterSuccess: false,
                 })"
                 x-init="init()"
@@ -279,6 +279,28 @@
 
                         <div class="absolute bottom-3 right-3 rounded-full bg-slate-950/70 px-3 py-1.5 text-[11px] font-semibold text-white backdrop-blur">
                             کد QR را داخل قاب قرار دهید
+                        </div>
+
+                        {{-- Camera permission / error overlay: shown when access is denied or unsupported. --}}
+                        <div
+                            x-show="status === 'camera_denied' || status === 'unsupported'"
+                            style="display: none;"
+                            class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-slate-950/90 px-5 text-center"
+                        >
+                            <svg class="h-9 w-9 text-rose-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>
+                            </svg>
+                            <p class="max-w-xs text-sm font-semibold leading-6 text-white" x-text="message"></p>
+                            <button
+                                type="button"
+                                x-show="status !== 'unsupported'"
+                                @click="startCamera()"
+                                class="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-xs font-bold text-slate-800 transition hover:bg-slate-100"
+                            >
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M5 9a7 7 0 0111-3.7L20 9M19 15a7 7 0 01-11 3.7L4 15"/></svg>
+                                تلاش مجدد برای دوربین
+                            </button>
+                            <p class="text-[11px] font-semibold text-slate-300">در صورت نبود دوربین، از «جستجوی دستی» پایین استفاده کنید</p>
                         </div>
                     </div>
 
