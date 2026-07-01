@@ -2077,6 +2077,55 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         ]);
     }
 
+    public function test_editing_misc_service_reuses_existing_category_by_normalized_name_for_another_worker(): void
+    {
+        [$operator, $worker, $service, $category] = $this->editableMiscService();
+        $otherWorker = SocialWorker::query()->create([
+            'worker_code' => 997,
+            'first_name' => 'Normalized',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+
+        $category->forceFill([
+            'name' => 'بسته ي معيشتي',
+            'quantity' => 5,
+        ])->save();
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id])
+            ->call('addWorkerGroup')
+            ->set('miscWorkerGroups.1.social_worker_id', $otherWorker->id)
+            ->set('miscWorkerGroups.1.categories.0.id', null)
+            ->set('miscWorkerGroups.1.categories.0.name', 'بسته‌ی  معیشتی')
+            ->set('miscWorkerGroups.1.categories.0.quantity', '2')
+            ->set('miscWorkerGroups.1.categories.0.unit', $category->unit)
+            ->call('saveBatch')
+            ->assertHasNoErrors();
+
+        $this->assertSame(1, $service->categories()->count());
+        $this->assertDatabaseHas('service_categories', [
+            'id' => $category->id,
+            'service_id' => $service->id,
+            'name' => 'بسته ي معيشتي',
+            'normalized_name' => 'بسته ی معیشتی',
+            'quantity' => 7,
+        ]);
+        $this->assertDatabaseHas('service_social_worker', [
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'allocated_quantity' => 5,
+        ]);
+        $this->assertDatabaseHas('service_social_worker', [
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'social_worker_id' => $otherWorker->id,
+            'allocated_quantity' => 2,
+        ]);
+    }
+
     public function test_editing_misc_service_resolves_name_only_row_to_soft_deleted_matching_category(): void
     {
         [$operator, $worker, $service, $category] = $this->editableMiscService();

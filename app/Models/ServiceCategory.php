@@ -13,6 +13,8 @@ class ServiceCategory extends Model
 {
     use SoftDeletes;
 
+    public const NORMALIZED_NAME_COLUMN = 'normalized_name';
+
     protected $fillable = [
         'service_name_id',
         'service_id',
@@ -38,6 +40,12 @@ class ServiceCategory extends Model
 
     protected static function booted(): void
     {
+        static::saving(function (self $category): void {
+            if (\Illuminate\Support\Facades\Schema::hasColumn($category->getTable(), self::NORMALIZED_NAME_COLUMN)) {
+                $category->{self::NORMALIZED_NAME_COLUMN} = static::normalizeName((string) $category->name);
+            }
+        });
+
         static::creating(function (self $category): void {
             if (blank($category->service_name_id) && $category->service?->service_name_id) {
                 $category->service_name_id = $category->service->service_name_id;
@@ -72,6 +80,14 @@ class ServiceCategory extends Model
         return $query->orderByRaw('CASE WHEN sort_id IS NULL THEN 1 ELSE 0 END')
             ->orderByDesc('sort_id')
             ->orderByDesc('id');
+    }
+
+    public static function normalizeName(string $name): string
+    {
+        $normalized = str_replace(['ي', 'ى', 'ك', 'ۀ', 'ة'], ['ی', 'ی', 'ک', 'ه', 'ه'], $name);
+        $normalized = str_replace(["\u{200C}", "\u{200D}", "\u{FEFF}", "\u{00A0}"], ' ', $normalized);
+
+        return preg_replace('/[\p{Z}\s]+/u', ' ', trim($normalized)) ?? '';
     }
 
     public static function generateNextCode(int $serviceId): string

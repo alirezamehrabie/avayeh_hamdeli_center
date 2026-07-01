@@ -875,7 +875,7 @@ class ServiceBatchCreator extends Component
                     $name = trim((string) $categoryRow['name']);
                     $unit = (string) $categoryRow['unit'];
                     $allocatedQuantity = (float) $categoryRow['quantity'];
-                    $categoryKey = $categoryId > 0 ? 'existing:'.$categoryId : 'new:'.mb_strtolower($name);
+                    $categoryKey = $categoryId > 0 ? 'existing:'.$categoryId : 'new:'.ServiceCategory::normalizeName($name);
 
                     if (! isset($categoryPayloads[$categoryKey])) {
                         $categoryPayloads[$categoryKey] = [
@@ -1419,7 +1419,7 @@ class ServiceBatchCreator extends Component
                     continue;
                 }
 
-                $key = mb_strtolower($name);
+                $key = ServiceCategory::normalizeName($name);
 
                 if (isset($seen[$key])) {
                     continue;
@@ -1512,7 +1512,7 @@ class ServiceBatchCreator extends Component
 
     protected function normalizeEditableCategoryName(string $name): string
     {
-        return mb_strtolower(trim($name));
+        return ServiceCategory::normalizeName($name);
     }
 
     protected function shouldPreferEditableCategoryCandidate(

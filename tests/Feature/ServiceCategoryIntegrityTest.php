@@ -77,6 +77,33 @@ class ServiceCategoryIntegrityTest extends TestCase
         ]);
     }
 
+    public function test_active_duplicate_category_name_is_rejected_after_persian_normalization_within_same_service(): void
+    {
+        [$manager, $service, $serviceName] = $this->serviceContext();
+
+        $service->categories()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'بسته ي معيشتي',
+            'quantity' => 5,
+            'unit' => 'pack',
+            'value' => 0,
+            'sort_id' => 1,
+            'created_by' => $manager->id,
+        ]);
+
+        $this->expectException(QueryException::class);
+
+        $service->categories()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => 'بسته‌ی  معیشتی',
+            'quantity' => 3,
+            'unit' => 'pack',
+            'value' => 0,
+            'sort_id' => 2,
+            'created_by' => $manager->id,
+        ]);
+    }
+
     private function serviceContext(): array
     {
         $manager = User::factory()->create([
