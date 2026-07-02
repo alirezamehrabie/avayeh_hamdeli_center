@@ -47,13 +47,38 @@
                     </span>
                 </div>
 
-                <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    <select wire:model.live="statusFilter" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
-                        <option value="all">همه وضعیت‌ها</option>
+                <div class="space-y-2">
+                    <label class="block text-xs font-semibold text-slate-600">وضعیت فعالیت:</label>
+                    <div class="flex flex-wrap gap-2">
+                        @php
+                            $badgeClasses = [
+                                'draft' => 'bg-slate-100 text-slate-700 ring-slate-300',
+                                'ongoing' => 'bg-amber-100 text-amber-700 ring-amber-300',
+                                'closed' => 'bg-emerald-100 text-emerald-700 ring-emerald-300',
+                                'cancelled' => 'bg-rose-100 text-rose-700 ring-rose-300',
+                            ];
+                        @endphp
+                        <button type="button" wire:click="$set('statusFilter', 'all')" class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition {{ $statusFilter === 'all' ? 'bg-slate-800 text-white ring-2 ring-slate-400' : 'bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50' }}">
+                            همه
+                            <span class="inline-flex items-center justify-center min-w-5 rounded-full bg-slate-200 px-1.5 text-[10px] font-bold text-slate-700">
+                                @php
+                                    $totalCount = collect($statusCounts)->sum();
+                                @endphp
+                                {{ $totalCount }}
+                            </span>
+                        </button>
                         @foreach($statusOptions as $value => $label)
-                            <option value="{{ $value }}">{{ $label }}</option>
+                            <button type="button" wire:click="$set('statusFilter', '{{ $value }}')" class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition {{ $statusFilter === $value ? 'ring-2 ring-offset-2 ' . $badgeClasses[$value] : 'ring-1 ' . $badgeClasses[$value] }} {{ $statusFilter === $value ? $badgeClasses[$value] . ' ring-offset-slate-50 shadow-sm' : 'hover:shadow-sm' }}">
+                                {{ $label }}
+                                <span class="inline-flex items-center justify-center min-w-5 rounded-full {{ $statusFilter === $value ? 'bg-white/30' : 'bg-black/10' }} px-1.5 text-[10px] font-bold">
+                                    {{ $statusCounts[$value] ?? 0 }}
+                                </span>
+                            </button>
                         @endforeach
-                    </select>
+                    </div>
+                </div>
+
+                <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     <select wire:model.live="typeFilter" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
                         <option value="all">همه نوع‌ها</option>
                         @foreach($typeOptions as $value => $label)

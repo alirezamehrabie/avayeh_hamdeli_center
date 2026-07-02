@@ -339,7 +339,51 @@ class ActivityList extends Component
             'typeOptions' => Activity::TYPE_OPTIONS,
             'attendanceStatusOptions' => ActivityAttendance::STATUS_OPTIONS,
             'attendanceMethodOptions' => ActivityAttendance::METHOD_OPTIONS,
+            'statusCounts' => $this->getStatusCounts($search, $type, $startsFrom, $startsUntil),
         ]);
+    }
+
+    private function getStatusCounts(?string $search, ?string $type, mixed $startsFrom, mixed $startsUntil): array
+    {
+        $baseQuery = Activity::query();
+
+        // Apply search filter
+        if ($search !== '') {
+            $baseQuery->where(function ($query) use ($search): void {
+                $query
+                    ->where('code', 'like', "%{$search}%")
+                    ->orWhere('name', 'like', "%{$search}%")
+                    ->orWhere('location', 'like', "%{$search}%")
+                    ->orWhereHas('creator', function ($creatorQuery) use ($search): void {
+                        $creatorQuery
+                            ->where('name', 'like', "%{$search}%")
+                            ->orWhere('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%")
+                            ->orWhere(DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, ''))"), 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        // Apply type filter
+        if ($type) {
+            $baseQuery->where('activity_type', $type);
+        }
+
+        // Apply date filters
+        if ($startsFrom) {
+            $baseQuery->where('starts_at', '>=', $startsFrom->startOfDay());
+        }
+        if ($startsUntil) {
+            $baseQuery->where('starts_at', '<=', $startsUntil->endOfDay());
+        }
+
+        // Get counts by status
+        $counts = [];
+        foreach (array_keys(Activity::STATUS_OPTIONS) as $statusKey) {
+            $counts[$statusKey] = (clone $baseQuery)->where('status', $statusKey)->count();
+        }
+
+        return $counts;
     }
 
     private function resetAttendanceFilters(): void
