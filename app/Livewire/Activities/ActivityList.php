@@ -140,6 +140,58 @@ class ActivityList extends Component
         ];
     }
 
+    public function getActivityTypeInfo(string $type): array
+    {
+        $typeIcons = [
+            'celebration' => [
+                'icon' => 'bi-balloon-heart',
+                'color' => 'bg-rose-100 text-rose-700 ring-rose-300',
+                'label' => 'جشن',
+            ],
+            'camp' => [
+                'icon' => 'bi-tent',
+                'color' => 'bg-green-100 text-green-700 ring-green-300',
+                'label' => 'اردو',
+            ],
+            'workshop' => [
+                'icon' => 'bi-hammer',
+                'color' => 'bg-amber-100 text-amber-700 ring-amber-300',
+                'label' => 'کارگاه',
+            ],
+            'ceremony' => [
+                'icon' => 'bi-flower1',
+                'color' => 'bg-purple-100 text-purple-700 ring-purple-300',
+                'label' => 'مراسم',
+            ],
+            'group_activity' => [
+                'icon' => 'bi-people',
+                'color' => 'bg-blue-100 text-blue-700 ring-blue-300',
+                'label' => 'فعالیت گروهی',
+            ],
+            'educational_class' => [
+                'icon' => 'bi-book',
+                'color' => 'bg-indigo-100 text-indigo-700 ring-indigo-300',
+                'label' => 'کلاس آموزشی',
+            ],
+            'elite_program_boys' => [
+                'icon' => 'bi-star',
+                'color' => 'bg-cyan-100 text-cyan-700 ring-cyan-300',
+                'label' => 'طرح نخبگان (پسران)',
+            ],
+            'elite_program_girls' => [
+                'icon' => 'bi-star-fill',
+                'color' => 'bg-fuchsia-100 text-fuchsia-700 ring-fuchsia-300',
+                'label' => 'طرح نخبگان (دختران)',
+            ],
+        ];
+
+        return $typeIcons[$type] ?? [
+            'icon' => 'bi-folder',
+            'color' => 'bg-slate-100 text-slate-700 ring-slate-300',
+            'label' => $type,
+        ];
+    }
+
     public function applyDatePreset(string $preset): void
     {
         $today = Jalalian::now();

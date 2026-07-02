@@ -142,6 +142,9 @@
                     <select wire:model.live="typeFilter" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
                         <option value="all">همه نوع‌ها</option>
                         @foreach($typeOptions as $value => $label)
+                            @php
+                                $typeIcon = $this->getActivityTypeInfo($value)['icon'];
+                            @endphp
                             <option value="{{ $value }}">{{ $label }}</option>
                         @endforeach
                     </select>
@@ -269,7 +272,13 @@
                                         <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
                                             <div class="min-w-0">
                                                 <p class="text-[10px] font-semibold text-slate-500">نوع</p>
-                                                <p class="mt-1 truncate rounded-lg bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-700">{{ $typeOptions[$activity->activity_type] ?? $activity->activity_type }}</p>
+                                                @php
+                                                    $typeInfo = $this->getActivityTypeInfo($activity->activity_type);
+                                                @endphp
+                                                <div class="mt-1 inline-flex items-center gap-1.5 truncate rounded-lg px-2.5 py-1 text-xs font-medium ring-1 ring-inset {{ $typeInfo['color'] }}">
+                                                    <i class="bi {{ $typeInfo['icon'] }} shrink-0"></i>
+                                                    <span class="truncate">{{ $typeInfo['label'] }}</span>
+                                                </div>
                                             </div>
                                             <div class="min-w-0">
                                                 <p class="text-[10px] font-semibold text-slate-500">پایان</p>
@@ -468,6 +477,16 @@
                                 <div class="rounded-lg bg-white p-3 ring-1 ring-slate-200">
                                     <p class="text-[10px] font-semibold text-slate-500">ظرفیت</p>
                                     <p class="mt-1.5 text-sm font-bold text-slate-900">{{ $selectedActivity->capacity ?: 'نامحدود' }}</p>
+                                </div>
+                                <div class="rounded-lg bg-white p-3 ring-1 ring-slate-200 col-span-2">
+                                    <p class="text-[10px] font-semibold text-slate-500 mb-1.5">نوع فعالیت</p>
+                                    @php
+                                        $typeInfo = $this->getActivityTypeInfo($selectedActivity->activity_type);
+                                    @endphp
+                                    <div class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold ring-1 ring-inset {{ $typeInfo['color'] }}">
+                                        <i class="bi {{ $typeInfo['icon'] }}"></i>
+                                        {{ $typeInfo['label'] }}
+                                    </div>
                                 </div>
                             </div>
 
