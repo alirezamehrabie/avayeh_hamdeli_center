@@ -47,7 +47,7 @@
                     </span>
                 </div>
 
-                <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+                <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     <select wire:model.live="statusFilter" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
                         <option value="all">همه وضعیت‌ها</option>
                         @foreach($statusOptions as $value => $label)
@@ -60,9 +60,44 @@
                             <option value="{{ $value }}">{{ $label }}</option>
                         @endforeach
                     </select>
-                    <input type="text" wire:model.live.debounce.500ms="startsFrom" placeholder="از تاریخ 1403/01/01" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
-                    <input type="text" wire:model.live.debounce.500ms="startsUntil" placeholder="تا تاریخ" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
-                    <button type="button" wire:click="resetFilters" class="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100">پاک</button>
+                </div>
+
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2">
+                        <label class="text-[11px] font-semibold text-slate-600">بازه زمانی:</label>
+                        <div class="flex flex-wrap gap-1.5">
+                            <button type="button" wire:click="applyDatePreset('today')" class="rounded-lg bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 hover:ring-slate-300">امروز</button>
+                            <button type="button" wire:click="applyDatePreset('week')" class="rounded-lg bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 hover:ring-slate-300">این هفته</button>
+                            <button type="button" wire:click="applyDatePreset('month')" class="rounded-lg bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 hover:ring-slate-300">این ماه</button>
+                            <button type="button" wire:click="applyDatePreset('30days')" class="rounded-lg bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 hover:ring-slate-300">30 روز</button>
+                            <button type="button" wire:click="applyDatePreset('all')" class="rounded-lg bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 hover:ring-slate-300">همه</button>
+                        </div>
+                    </div>
+
+                    <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">تاریخ شروع <span class="text-slate-400">(مثال: 1403/01/15)</span></label>
+                            <input type="text" wire:model.live.debounce.500ms="startsFrom" placeholder="1403/01/15" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-300 focus:ring-4 focus:ring-violet-100" data-jdp>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">تاریخ پایان <span class="text-slate-400">(مثال: 1403/01/20)</span></label>
+                            <input type="text" wire:model.live.debounce.500ms="startsUntil" placeholder="1403/01/20" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-300 focus:ring-4 focus:ring-violet-100" data-jdp>
+                        </div>
+                    </div>
+
+                    @if($errors->has('startsFrom') || $errors->has('startsUntil'))
+                        <div class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700">
+                            @error('startsFrom'){{ $message }}@enderror
+                            @error('startsUntil'){{ $message }}@enderror
+                        </div>
+                    @endif
+                </div>
+
+                <div class="flex gap-2">
+                    <button type="button" wire:click="resetFilters" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100">
+                        <i class="bi bi-arrow-clockwise me-1.5 text-xs"></i>
+                        ریست کردن
+                    </button>
                 </div>
             </div>
 
@@ -269,3 +304,38 @@
         @endif
     @endcan
 </div>
+
+<script>
+document.addEventListener('livewire:navigated', initializeDatePickers);
+document.addEventListener('DOMContentLoaded', initializeDatePickers);
+
+function initializeDatePickers() {
+    const datepickers = document.querySelectorAll('[data-jdp]');
+    datepickers.forEach(element => {
+        if (!element._jdpInitialized) {
+            // Prevent manual time input by blocking non-date characters
+            element.addEventListener('input', function(e) {
+                // Allow only digits, forward slashes (for date format)
+                this.value = this.value.replace(/[^\d/]/g, '');
+                // Limit to YYYY/MM/DD format
+                if (this.value.length > 10) {
+                    this.value = this.value.substring(0, 10);
+                }
+            });
+
+            new jalaliDatepicker.JalaliDatePicker(element, {
+                minDate: new Date(1900, 0, 1),
+                maxDate: new Date(),
+                closeAfterSelect: true,
+                format: 'yyyy/MM/dd',
+                altFieldFormat: 'yyyy/MM/dd',
+                buttons: false,
+                showCloseButton: true,
+                timePicker: false,
+                timePickerSeconds: false,
+            });
+            element._jdpInitialized = true;
+        }
+    });
+}
+</script>

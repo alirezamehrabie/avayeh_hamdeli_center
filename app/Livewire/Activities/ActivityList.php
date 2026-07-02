@@ -117,6 +117,38 @@ class ActivityList extends Component
         $this->resetValidation();
     }
 
+    public function applyDatePreset(string $preset): void
+    {
+        $today = Jalalian::now();
+
+        match ($preset) {
+            'today' => [
+                $this->startsFrom = $today->format('Y/m/d'),
+                $this->startsUntil = $today->format('Y/m/d'),
+            ],
+            'week' => [
+                $this->startsFrom = $today->subDays(7)->format('Y/m/d'),
+                $this->startsUntil = Jalalian::now()->format('Y/m/d'),
+            ],
+            'month' => [
+                $this->startsFrom = $today->subMonth()->format('Y/m/d'),
+                $this->startsUntil = Jalalian::now()->format('Y/m/d'),
+            ],
+            '30days' => [
+                $this->startsFrom = $today->subDays(30)->format('Y/m/d'),
+                $this->startsUntil = Jalalian::now()->format('Y/m/d'),
+            ],
+            'all' => [
+                $this->startsFrom = null,
+                $this->startsUntil = null,
+            ],
+            default => null,
+        };
+
+        $this->resetPage();
+        $this->resetValidation();
+    }
+
     public function updatedSearch(): void
     {
         $this->resetPage();
@@ -353,6 +385,19 @@ class ActivityList extends Component
         $normalized = str_replace(["\u{200c}", "\u{200f}", "\u{00a0}"], ' ', $normalized);
         $normalized = preg_replace('/\s+/u', ' ', trim($normalized)) ?? '';
 
-        return $normalized !== '' ? $normalized : null;
+        if ($normalized === '') {
+            return null;
+        }
+
+        // Extract only the date part (remove any time information)
+        $parts = preg_split('/[\s\/\-]+/', $normalized);
+        if (count($parts) >= 3) {
+            $year = str_pad($parts[0], 4, '0', STR_PAD_LEFT);
+            $month = str_pad($parts[1], 2, '0', STR_PAD_LEFT);
+            $day = str_pad($parts[2], 2, '0', STR_PAD_LEFT);
+            $normalized = "{$year}/{$month}/{$day}";
+        }
+
+        return $normalized;
     }
 }
