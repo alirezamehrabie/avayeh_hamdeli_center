@@ -408,8 +408,7 @@
                                                 @php
                                                     $typeInfo = $this->getActivityTypeInfo($activity->activity_type);
                                                 @endphp
-                                                <div class="mt-1 inline-flex items-center gap-1.5 truncate rounded-lg px-2.5 py-1 text-xs font-medium ring-1 ring-inset {{ $typeInfo['color'] }}">
-                                                    <i class="bi {{ $typeInfo['icon'] }} shrink-0"></i>
+                                                <div class="mt-1 inline-flex items-center truncate rounded-lg px-3 py-1.5 text-xs font-medium {{ $typeInfo['color'] }}">
                                                     <span class="truncate">{{ $typeInfo['label'] }}</span>
                                                 </div>
                                             </div>
@@ -663,8 +662,7 @@
                                     @php
                                         $typeInfo = $this->getActivityTypeInfo($selectedActivity->activity_type);
                                     @endphp
-                                    <div class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold ring-1 ring-inset {{ $typeInfo['color'] }}">
-                                        <i class="bi {{ $typeInfo['icon'] }}"></i>
+                                    <div class="inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold {{ $typeInfo['color'] }}">
                                         {{ $typeInfo['label'] }}
                                     </div>
                                 </div>

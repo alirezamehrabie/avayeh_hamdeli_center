@@ -198,49 +198,49 @@ class ActivityList extends Component
         $typeIcons = [
             'celebration' => [
                 'icon' => 'bi-balloon-heart',
-                'color' => 'bg-rose-100 text-rose-700 ring-rose-300',
+                'color' => 'bg-rose-50 text-rose-500',
                 'label' => 'جشن',
             ],
             'camp' => [
                 'icon' => 'bi-tent',
-                'color' => 'bg-green-100 text-green-700 ring-green-300',
+                'color' => 'bg-emerald-50 text-emerald-500',
                 'label' => 'اردو',
             ],
             'workshop' => [
                 'icon' => 'bi-hammer',
-                'color' => 'bg-amber-100 text-amber-700 ring-amber-300',
+                'color' => 'bg-yellow-50 text-yellow-500',
                 'label' => 'کارگاه',
             ],
             'ceremony' => [
                 'icon' => 'bi-flower1',
-                'color' => 'bg-purple-100 text-purple-700 ring-purple-300',
+                'color' => 'bg-violet-50 text-violet-500',
                 'label' => 'مراسم',
             ],
             'group_activity' => [
                 'icon' => 'bi-people',
-                'color' => 'bg-blue-100 text-blue-700 ring-blue-300',
+                'color' => 'bg-sky-50 text-sky-500',
                 'label' => 'فعالیت گروهی',
             ],
             'educational_class' => [
                 'icon' => 'bi-book',
-                'color' => 'bg-indigo-100 text-indigo-700 ring-indigo-300',
+                'color' => 'bg-indigo-50 text-indigo-500',
                 'label' => 'کلاس آموزشی',
             ],
             'elite_program_boys' => [
                 'icon' => 'bi-star',
-                'color' => 'bg-cyan-100 text-cyan-700 ring-cyan-300',
+                'color' => 'bg-cyan-50 text-cyan-500',
                 'label' => 'طرح نخبگان (پسران)',
             ],
             'elite_program_girls' => [
                 'icon' => 'bi-star-fill',
-                'color' => 'bg-fuchsia-100 text-fuchsia-700 ring-fuchsia-300',
+                'color' => 'bg-pink-50 text-pink-500',
                 'label' => 'طرح نخبگان (دختران)',
             ],
         ];
 
         return $typeIcons[$type] ?? [
             'icon' => 'bi-folder',
-            'color' => 'bg-slate-100 text-slate-700 ring-slate-300',
+            'color' => 'bg-slate-50 text-slate-500',
             'label' => $type,
         ];
     }
