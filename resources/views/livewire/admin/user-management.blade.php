@@ -227,6 +227,8 @@
                                                 <div class="mt-3 text-xs text-slate-500">
                                                     @if($access_level === \App\Models\User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR)
                                                         دسترسی عملیاتی برای یکی از گیت‌های فرآیند توزیع.
+                                                    @elseif($access_level === \App\Models\User::ACCESS_LEVEL_ACTIVITY_OPERATOR)
+                                                        دسترسی ثبت‌نام حضور و غیاب برای فعالیت‌های تعیین‌شده.
                                                     @elseif($permissionKey === \App\Models\User::PERMISSION_FULL_ACCESS)
                                                         دسترسی کامل برای مدیریت همه قابلیت‌های سیستم.
                                                     @else
@@ -304,6 +306,7 @@
                                 <option value="child_supporter">حامی کودک</option>
                                 <option value="social_worker">مددکار</option>
                                 <option value="distribution_operator">اپراتور توزیع</option>
+                                <option value="activity_operator">اپراتور فعالیت</option>
                             </select>
                         </div>
                         <div>
@@ -329,8 +332,8 @@
                     <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                         @forelse($users as $user)
                             @php
-                                $roleLabel = $user->access_level === 'manager' ? 'مدیریت' : ($user->access_level === 'admin' ? 'ادمین' : ($user->access_level === 'social_worker' ? 'مددکار' : ($user->access_level === \App\Models\User::ACCESS_LEVEL_CHILD_SUPPORTER ? 'حامی کودک' : ($user->access_level === 'distribution_operator' ? 'اپراتور توزیع' : 'کاربر عادی'))));
-                                $roleClasses = $user->access_level === 'manager' ? 'bg-indigo-100 text-indigo-700 ring-indigo-200' : ($user->access_level === 'admin' ? 'bg-emerald-100 text-emerald-700 ring-emerald-200' : ($user->access_level === 'social_worker' ? 'bg-cyan-100 text-cyan-700 ring-cyan-200' : ($user->access_level === \App\Models\User::ACCESS_LEVEL_CHILD_SUPPORTER ? 'bg-teal-100 text-teal-700 ring-teal-200' : ($user->access_level === 'distribution_operator' ? 'bg-violet-100 text-violet-700 ring-violet-200' : 'bg-slate-100 text-slate-700 ring-slate-200'))));
+                                $roleLabel = $user->access_level === 'manager' ? 'مدیریت' : ($user->access_level === 'admin' ? 'ادمین' : ($user->access_level === 'social_worker' ? 'مددکار' : ($user->access_level === \App\Models\User::ACCESS_LEVEL_CHILD_SUPPORTER ? 'حامی کودک' : ($user->access_level === 'distribution_operator' ? 'اپراتور توزیع' : ($user->access_level === \App\Models\User::ACCESS_LEVEL_ACTIVITY_OPERATOR ? 'اپراتور فعالیت' : 'کاربر عادی')))));
+                                $roleClasses = $user->access_level === 'manager' ? 'bg-indigo-100 text-indigo-700 ring-indigo-200' : ($user->access_level === 'admin' ? 'bg-emerald-100 text-emerald-700 ring-emerald-200' : ($user->access_level === 'social_worker' ? 'bg-cyan-100 text-cyan-700 ring-cyan-200' : ($user->access_level === \App\Models\User::ACCESS_LEVEL_CHILD_SUPPORTER ? 'bg-teal-100 text-teal-700 ring-teal-200' : ($user->access_level === 'distribution_operator' ? 'bg-violet-100 text-violet-700 ring-violet-200' : ($user->access_level === \App\Models\User::ACCESS_LEVEL_ACTIVITY_OPERATOR ? 'bg-rose-100 text-rose-700 ring-rose-200' : 'bg-slate-100 text-slate-700 ring-slate-200')))));
                                 $isCurrentUser = auth()->id() === $user->id;
                                 $isProtected = $user->isProtectedManagerAccount();
                                 $hasPendingAction = ($pendingActionMap[$user->id]['delete_user'] ?? false);
@@ -652,6 +655,8 @@
                                                 <div class="mt-3 text-xs text-slate-500">
                                                     @if($edit_access_level === \App\Models\User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR)
                                                         دسترسی عملیاتی برای یکی از گیت‌های فرآیند توزیع.
+                                                    @elseif($edit_access_level === \App\Models\User::ACCESS_LEVEL_ACTIVITY_OPERATOR)
+                                                        دسترسی ثبت‌نام حضور و غیاب برای فعالیت‌های تعیین‌شده.
                                                     @elseif($permissionKey === \App\Models\User::PERMISSION_FULL_ACCESS)
                                                         دسترسی کامل برای مدیریت کل سیستم.
                                                     @else

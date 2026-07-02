@@ -214,3 +214,23 @@ Route::get('/admin/child-supporters/sponsors', SponsorList::class)
 Route::get('/child-supporter/system-settings/user-account', ChildSupporterUserAccount::class)
     ->middleware(['auth', 'can:access-child-supporter-panel'])
     ->name('child-supporter.user-account');
+
+Route::get('/activity-operator/dashboard', \App\Livewire\ActivityOperators\Dashboard::class)
+    ->middleware(['auth', 'can:access-activity-operator-panel'])
+    ->name('activity-operator.dashboard');
+
+Route::get('/activity-operator/activities', \App\Livewire\ActivityOperators\ActivityList::class)
+    ->middleware(['auth', 'can:access-activity-operator-panel'])
+    ->name('activity-operator.activity-list');
+
+Route::get('/activity-operator/activities/{id}/check-in', \App\Livewire\ActivityOperators\ActivityCheckIn::class)
+    ->middleware(['auth', 'can:access-activity-operator-panel'])
+    ->name('activity-operator.check-in');
+
+Route::get('/activity-operator/reports', \App\Livewire\ActivityOperators\ActivityReport::class)
+    ->middleware(['auth', 'can:access-activity-operator-panel'])
+    ->name('activity-operator.reports');
+
+Route::get('/activity-operator/system-settings/user-account', \App\Livewire\ActivityOperators\UserAccount::class)
+    ->middleware(['auth', 'can:access-activity-operator-panel'])
+    ->name('activity-operator.user-account');

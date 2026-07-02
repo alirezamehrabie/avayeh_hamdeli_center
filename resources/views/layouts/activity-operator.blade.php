@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>پیشخوان اپراتور توزیع - آوای همدلی</title>
+    <title>پیشخوان اپراتور فعالیت - آوای همدلی</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
@@ -48,7 +48,7 @@
                         <h1 class="bg-gradient-to-l from-indigo-200 via-purple-100 to-indigo-200 bg-clip-text text-3xl font-black text-transparent">
                             آوای همدلی
                         </h1>
-                        <p class="mt-2 text-xs font-semibold text-violet-200">پنل اپراتور توزیع</p>
+                        <p class="mt-2 text-xs font-semibold text-violet-200">پنل اپراتور فعالیت</p>
                     </div>
 
                     <div class="flex justify-center pt-1">
@@ -61,69 +61,42 @@
             </div>
 
             @php
-                $isDefineServiceActive = request()->routeIs('distribution-operator.define-service');
-                $isServiceListActive = request()->routeIs('distribution-operator.service-list')
-                    || request()->routeIs('distribution-operator.edit-service')
-                    || request()->routeIs('distribution-operator.edit-allocations');
-                $gateNavigationItems = [
-                    [
-                        'label' => 'گیت ورود',
-                        'hint' => 'ورود',
-                        'route' => 'distribution-operator.gates.entry',
-                        'ability' => 'access-distribution-inbound-gate',
-                        'active' => request()->routeIs('distribution-operator.gates.entry'),
-                    ],
-                    [
-                        'label' => 'گیت تحویل',
-                        'hint' => 'تحویل',
-                        'route' => 'distribution-operator.gates.delivery',
-                        'ability' => 'access-distribution-delivery-gate',
-                        'active' => request()->routeIs('distribution-operator.gates.delivery'),
-                    ],
-                    [
-                        'label' => 'گیت خروج',
-                        'hint' => 'خروج',
-                        'route' => 'distribution-operator.gates.exit',
-                        'ability' => 'access-distribution-outbound-gate',
-                        'active' => request()->routeIs('distribution-operator.gates.exit'),
-                    ],
-                ];
-                $isUserAccountActive = request()->routeIs('distribution-operator.user-account');
+                $isDashboardActive = request()->routeIs('activity-operator.dashboard');
+                $isActivityListActive = request()->routeIs('activity-operator.activity-list');
+                $isCheckInActive = request()->routeIs('activity-operator.check-in');
+                $isReportsActive = request()->routeIs('activity-operator.reports');
+                $isUserAccountActive = request()->routeIs('activity-operator.user-account');
             @endphp
 
             <nav class="flex-1 space-y-2">
                 <a
-                    href="{{ route('distribution-operator.define-service') }}"
-                    class="flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors {{ $isDefineServiceActive ? 'bg-indigo-700' : 'hover:bg-indigo-800' }}"
+                    href="{{ route('activity-operator.dashboard') }}"
+                    class="flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors {{ $isDashboardActive ? 'bg-indigo-700' : 'hover:bg-indigo-800' }}"
                 >
-                    <span>تخصیص خدمت</span>
-                    <span class="text-xs text-indigo-100/80">ثبت</span>
+                    <span>پیشخوان</span>
+                    <span class="text-xs text-indigo-100/80">خانه</span>
                 </a>
 
                 <a
-                    href="{{ route('distribution-operator.service-list') }}"
-                    class="flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors {{ $isServiceListActive ? 'bg-indigo-700' : 'hover:bg-indigo-800' }}"
+                    href="{{ route('activity-operator.activity-list') }}"
+                    class="flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors {{ $isActivityListActive || $isCheckInActive ? 'bg-indigo-700' : 'hover:bg-indigo-800' }}"
                 >
-                    <span>فهرست خدمات</span>
-                    <span class="text-xs text-indigo-100/80">ویرایش</span>
+                    <span>فعالیت‌های من</span>
+                    <span class="text-xs text-indigo-100/80">لیست</span>
                 </a>
 
-                @foreach($gateNavigationItems as $gateNavigationItem)
-                    @can($gateNavigationItem['ability'])
-                        <a
-                            href="{{ route($gateNavigationItem['route']) }}"
-                            class="flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors {{ $gateNavigationItem['active'] ? 'bg-indigo-700' : 'hover:bg-indigo-800' }}"
-                        >
-                            <span>{{ $gateNavigationItem['label'] }}</span>
-                            <span class="text-xs text-indigo-100/80">{{ $gateNavigationItem['hint'] }}</span>
-                        </a>
-                    @endcan
-                @endforeach
+                <a
+                    href="{{ route('activity-operator.reports') }}"
+                    class="flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors {{ $isReportsActive ? 'bg-indigo-700' : 'hover:bg-indigo-800' }}"
+                >
+                    <span>گزارش‌ها</span>
+                    <span class="text-xs text-indigo-100/80">آمار</span>
+                </a>
 
                 <div class="my-1 border-t border-indigo-700/70" role="separator" aria-hidden="true"></div>
 
                 <a
-                    href="{{ route('distribution-operator.user-account') }}"
+                    href="{{ route('activity-operator.user-account') }}"
                     class="flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors {{ $isUserAccountActive ? 'bg-indigo-700' : 'hover:bg-indigo-800' }}"
                 >
                     <div class="flex items-center">
@@ -133,24 +106,24 @@
                 </a>
             </nav>
 
-                <div class="mt-auto pt-4 border-t border-indigo-800/50">
-                    <form method="POST" action="{{ route('logout') }}" x-data>
-                        @csrf
-                        <button type="submit"
-                                @click.prevent="if (confirm('آیا مطمئن هستید که می‌خواهید از سیستم خارج شوید؟')) $el.closest('form').submit()"
-                                class="group flex min-h-12 w-full items-center gap-3 rounded-xl border border-indigo-700/50 bg-indigo-800/25 px-4 py-3 text-right text-sm font-semibold text-indigo-100 shadow-sm shadow-indigo-950/10 transition-all duration-200 hover:border-rose-300/30 hover:bg-indigo-800/40 hover:text-white hover:shadow-md hover:shadow-indigo-950/20 focus:outline-none focus:ring-4 focus:ring-indigo-400/20 active:scale-[0.99]">
-                            <div
-                                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-indigo-600/35 bg-indigo-500/10 text-indigo-200 transition-all duration-200 group-hover:border-rose-300/40 group-hover:bg-rose-400/10 group-hover:text-rose-100">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none"
-                                     viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                                </svg>
-                            </div>
-                            <span class="transition-colors group-hover:text-white">خروج از سیستم</span>
-                        </button>
-                    </form>
-                </div>
+            <div class="mt-auto pt-4 border-t border-indigo-800/50">
+                <form method="POST" action="{{ route('logout') }}" x-data>
+                    @csrf
+                    <button type="submit"
+                            @click.prevent="if (confirm('آیا مطمئن هستید که می‌خواهید از سیستم خارج شوید؟')) $el.closest('form').submit()"
+                            class="group flex w-full items-center gap-3 rounded-xl bg-indigo-800/30 px-4 py-3 text-sm font-semibold text-indigo-100 shadow-sm transition-all duration-200 hover:bg-indigo-700/40 hover:shadow-md hover:shadow-indigo-500/20 active:scale-[0.98]">
+                        <div
+                            class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/20 transition-all duration-200 group-hover:bg-indigo-400/30">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5 text-indigo-300" fill="none"
+                                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                            </svg>
+                        </div>
+                        <span class="transition-colors group-hover:text-white">خروج از سیستم</span>
+                    </button>
+                </form>
+            </div>
         </aside>
 
         <div
@@ -180,7 +153,7 @@
 
                     <div class="relative">
                         <div class="inline-flex items-center bg-gray-50 border border-gray-100 rounded-lg p-1 pl-3">
-                            <span class="bg-indigo-600 text-white text-[10px] px-2 py-1 rounded-md font-bold ml-2 shadow-sm">اپراتور توزیع</span>
+                            <span class="bg-indigo-600 text-white text-[10px] px-2 py-1 rounded-md font-bold ml-2 shadow-sm">اپراتور فعالیت</span>
                             <span class="text-xs font-semibold text-gray-700">{{ auth()->user()->first_name ?? '' }} {{ auth()->user()->last_name ?? 'کاربر' }}</span>
                         </div>
                     </div>
@@ -215,13 +188,13 @@
     <x-notification-modal />
 
     @livewireScriptConfig
-    @if (session()->has('distribution-operator-notification'))
+    @if (session()->has('activity-operator-notification'))
         <script>
             window.addEventListener('alpine:init', () => {
                 window.requestAnimationFrame(() => {
                     window.dispatchEvent(new CustomEvent('open-notification-modal', {
                         detail: {
-                            config: @js(session('distribution-operator-notification')),
+                            config: @js(session('activity-operator-notification')),
                         },
                     }));
                 });

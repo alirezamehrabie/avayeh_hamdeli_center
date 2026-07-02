@@ -118,6 +118,10 @@ class AppServiceProvider extends ServiceProvider
             return $user->canAccessChildSupporterPanel();
         });
 
+        Gate::define('access-activity-operator-panel', function (User $user) {
+            return $user->canAccessActivityOperatorPanel();
+        });
+
         Gate::define('view-distribution-operator-service', function (User $user, Service $service) {
             return $user->canAccessDistributionOperatorService($service);
         });

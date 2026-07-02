@@ -119,4 +119,17 @@ class Activity extends Model
             ])
             ->withTimestamps();
     }
+
+    public function operators(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'activity_operator_assignments', 'activity_id', 'user_id')
+            ->withPivot(['assigned_at', 'assigned_by', 'notes', 'deleted_at'])
+            ->withTimestamps()
+            ->wherePivotNull('deleted_at');
+    }
+
+    public function operatorAssignments(): HasMany
+    {
+        return $this->hasMany(ActivityOperatorAssignment::class);
+    }
 }

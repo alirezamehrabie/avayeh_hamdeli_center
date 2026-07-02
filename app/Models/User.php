@@ -39,6 +39,8 @@ class User extends Authenticatable
 
     public const ACCESS_LEVEL_CHILD_SUPPORTER = 'child_supporter';
 
+    public const ACCESS_LEVEL_ACTIVITY_OPERATOR = 'activity_operator';
+
     public const PERMISSION_PEOPLE_REGISTER = 'people_register';
 
     public const PERMISSION_PEOPLE_EDIT = 'people_edit';
@@ -52,6 +54,8 @@ class User extends Authenticatable
     public const PERMISSION_DISTRIBUTION_OUTBOUND_GATE = 'distribution_outbound_gate';
 
     public const PERMISSION_FULL_ACCESS = 'full_access';
+
+    public const PERMISSION_ACTIVITY_ATTENDANCE_REGISTER = 'activity_attendance_register';
 
     public const DISTRIBUTION_ACCESS_INBOUND = 'inbound';
 
@@ -154,6 +158,11 @@ class User extends Authenticatable
                 'description' => 'دسترسی به پنل حامیان کودک برای پیگیری حمایت‌ها',
                 'recommended_permissions' => [],
             ],
+            self::ACCESS_LEVEL_ACTIVITY_OPERATOR => [
+                'label' => 'اپراتور فعالیت',
+                'description' => 'دسترسی به ثبت‌نام حضور و غیاب برای فعالیت‌های تعیین‌شده',
+                'recommended_permissions' => [self::PERMISSION_ACTIVITY_ATTENDANCE_REGISTER],
+            ],
             self::ACCESS_LEVEL_MANAGER => [
                 'label' => 'مدیریت',
                 'description' => 'حساب محافظت‌شده سطح بالا',
@@ -193,6 +202,10 @@ class User extends Authenticatable
             self::PERMISSION_FULL_ACCESS => [
                 'label' => 'دسترسی کامل',
                 'group' => 'system',
+            ],
+            self::PERMISSION_ACTIVITY_ATTENDANCE_REGISTER => [
+                'label' => 'ثبت‌نام حضور و غیاب فعالیت‌ها',
+                'group' => 'activity_operator',
             ],
         ];
     }
@@ -238,6 +251,9 @@ class User extends Authenticatable
             ],
             self::ACCESS_LEVEL_SOCIAL_WORKER => [],
             self::ACCESS_LEVEL_CHILD_SUPPORTER => [],
+            self::ACCESS_LEVEL_ACTIVITY_OPERATOR => [
+                self::PERMISSION_ACTIVITY_ATTENDANCE_REGISTER,
+            ],
             self::ACCESS_LEVEL_MANAGER => [
                 self::PERMISSION_FULL_ACCESS,
             ],
@@ -552,6 +568,30 @@ class User extends Authenticatable
             && (int) $service->created_by === (int) $this->id;
     }
 
+    public function canAccessActivityOperatorPanel(): bool
+    {
+        return ! $this->isAdmin()
+            && $this->access_level === self::ACCESS_LEVEL_ACTIVITY_OPERATOR;
+    }
+
+    public function canAccessActivity(Activity $activity): bool
+    {
+        if ($this->hasFullAccess()) {
+            return true;
+        }
+
+        if (! $this->canAccessActivityOperatorPanel()) {
+            return false;
+        }
+
+        return $activity->operators()->where('user_id', $this->id)->exists();
+    }
+
+    public function getAssignedActivities()
+    {
+        return $this->assignedActivities()->get();
+    }
+
     public function getPanelRedirectPath(): string
     {
         return app(LoginRedirector::class)->pathFor($this);
@@ -565,6 +605,19 @@ class User extends Authenticatable
     public function sponsorProfile(): HasOne
     {
         return $this->hasOne(SponsorProfile::class);
+    }
+
+    public function assignedActivities()
+    {
+        return $this->belongsToMany(Activity::class, 'activity_operator_assignments', 'user_id', 'activity_id')
+            ->withPivot(['assigned_at', 'assigned_by', 'notes', 'deleted_at'])
+            ->withTimestamps()
+            ->wherePivotNull('deleted_at');
+    }
+
+    public function activityOperatorAssignments()
+    {
+        return $this->hasMany(ActivityOperatorAssignment::class, 'user_id');
     }
 
     /**

@@ -20,6 +20,7 @@ class UserManagement extends Component
         User::ACCESS_LEVEL_REGULAR,
         User::ACCESS_LEVEL_SOCIAL_WORKER,
         User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+        User::ACCESS_LEVEL_ACTIVITY_OPERATOR,
         User::ACCESS_LEVEL_CHILD_SUPPORTER,
     ];
 

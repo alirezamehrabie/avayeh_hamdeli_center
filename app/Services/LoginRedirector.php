@@ -14,6 +14,7 @@ class LoginRedirector
         ['ability' => 'access-admin-panel', 'route' => 'admin.dashboard'],
         ['ability' => 'access-social-worker-panel', 'route' => 'social-worker.dashboard'],
         ['ability' => 'access-distribution-operator-panel', 'route' => 'distribution-operator.define-service'],
+        ['ability' => 'access-activity-operator-panel', 'route' => 'activity-operator.dashboard'],
     ];
 
     public function pathFor(User $user): string
