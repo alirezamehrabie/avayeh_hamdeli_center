@@ -156,14 +156,44 @@
                                     </div>
                                 </div>
                                 <div class="flex shrink-0 items-center justify-end gap-2 lg:pt-1">
-                                    <button type="button" wire:click="selectActivity({{ $activity->id }})" class="rounded-full border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-bold text-violet-700 hover:bg-violet-100">جزئیات</button>
                                     @if($activity->status === 'ongoing')
-                                        <button type="button" wire:click="openScanner({{ $activity->id }})" class="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-100">ثبت حضور</button>
+                                        <button type="button" wire:click="openScanner({{ $activity->id }})" class="inline-flex items-center gap-1.5 rounded-full bg-cyan-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-cyan-700">
+                                            <i class="bi bi-qr-code text-sm"></i>
+                                            ثبت حضور
+                                        </button>
+                                    @else
+                                        <button type="button" wire:click="selectActivity({{ $activity->id }})" class="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-4 py-2 text-xs font-bold text-violet-700 transition hover:bg-violet-100">
+                                            <i class="bi bi-info-circle text-sm"></i>
+                                            جزئیات
+                                        </button>
                                     @endif
-                                    @can('full-access')
-                                        <button type="button" wire:click="openOperatorAssignment({{ $activity->id }})" class="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100">تخصیص اپراتور</button>
-                                        <button type="button" wire:click="editActivity({{ $activity->id }})" class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100">ویرایش</button>
-                                    @endcan
+
+                                    <div class="relative" x-data="{ open: false }">
+                                        <button type="button" @click="open = !open" class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-3 py-2 text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100">
+                                            <i class="bi bi-list text-lg font-bold"></i>
+                                        </button>
+
+                                        <div x-show="open" @click.outside="open = false" x-transition class="absolute left-0 z-10 mt-2 w-48 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg" style="display: none;">
+                                            @if($activity->status === 'ongoing')
+                                                <button type="button" wire:click="selectActivity({{ $activity->id }})" class="w-full px-4 py-2.5 text-left text-xs font-medium text-slate-700 transition hover:bg-slate-50" @click="open = false">
+                                                    <i class="bi bi-info-circle me-2 text-slate-500"></i>
+                                                    جزئیات و مدیریت
+                                                </button>
+                                                <div class="border-t border-slate-100"></div>
+                                            @endif
+
+                                            @can('full-access')
+                                                <button type="button" wire:click="editActivity({{ $activity->id }})" class="w-full px-4 py-2.5 text-left text-xs font-medium text-slate-700 transition hover:bg-slate-50" @click="open = false">
+                                                    <i class="bi bi-pencil me-2 text-slate-500"></i>
+                                                    ویرایش فعالیت
+                                                </button>
+                                                <button type="button" wire:click="openOperatorAssignment({{ $activity->id }})" class="w-full px-4 py-2.5 text-left text-xs font-medium text-slate-700 transition hover:bg-slate-50" @click="open = false">
+                                                    <i class="bi bi-person-badge me-2 text-slate-500"></i>
+                                                    تخصیص اپراتور
+                                                </button>
+                                            @endcan
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </article>
@@ -228,13 +258,24 @@
                                 </div>
                             @endcan
 
-                            <div class="flex flex-wrap gap-2 border-t border-slate-200 pt-4">
-                                @if($selectedActivity->status === 'ongoing')
-                                    <button type="button" wire:click="openScanner({{ $selectedActivity->id }})" class="rounded-full bg-cyan-600 px-4 py-2 text-xs font-bold text-white hover:bg-cyan-700">شروع ثبت حضور QR</button>
-                                @endif
-                                <button type="button" wire:click="exportAttendances" class="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">خروجی اکسل حضور</button>
+                            <div class="space-y-2 border-t border-slate-200 pt-4">
+                                <div class="flex flex-wrap gap-2">
+                                    @if($selectedActivity->status === 'ongoing')
+                                        <button type="button" wire:click="openScanner({{ $selectedActivity->id }})" class="inline-flex items-center gap-1.5 rounded-full bg-cyan-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-cyan-700">
+                                            <i class="bi bi-qr-code text-sm"></i>
+                                            ثبت حضور
+                                        </button>
+                                    @endif
+                                    <button type="button" wire:click="exportAttendances" class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50">
+                                        <i class="bi bi-file-earmark-spreadsheet text-sm"></i>
+                                        خروجی اکسل
+                                    </button>
+                                </div>
                                 @can('full-access')
-                                    <button type="button" wire:click="openOperatorAssignment({{ $selectedActivity->id }})" class="rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100">تخصیص اپراتور فعالیت</button>
+                                    <button type="button" wire:click="openOperatorAssignment({{ $selectedActivity->id }})" class="w-full inline-flex items-center justify-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100">
+                                        <i class="bi bi-person-badge text-sm"></i>
+                                        تخصیص اپراتور
+                                    </button>
                                 @endcan
                             </div>
 
