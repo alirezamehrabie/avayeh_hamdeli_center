@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Services;
 
+use App\Exports\ServiceReportExport;
 use App\Helpers\Morilog\Jalalian;
 use App\Helpers\Morilog\CalendarUtils;
 use App\Models\Guardian;
@@ -144,6 +145,43 @@ class ServiceReports extends Component
         $this->selectedDeliveryEntryType = 'all';
         $this->closeEditDeliveryModal();
         $this->dispatch('open-dashboard-section', section: 'advanced-service-report');
+    }
+
+    public function exportToExcel()
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+
+        $service = $this->selectedService;
+
+        if (! $service) {
+            session()->flash('error', 'ابتدا یک خدمت را انتخاب کنید.');
+
+            return null;
+        }
+
+        $grouped = $this->groupedDeliveries;
+        $rowCount = $grouped->sum(fn ($group) => $group->deliveries->count());
+
+        if ($rowCount === 0) {
+            session()->flash('error', 'رکوردی برای خروجی گرفتن یافت نشد.');
+
+            return null;
+        }
+
+        $maxRows = 10000;
+
+        if ($rowCount > $maxRows) {
+            session()->flash('error', "تعداد رکوردها ({$rowCount}) از سقف مجاز خروجی ({$maxRows}) بیشتر است. با استفاده از فیلترها دامنه را محدود کنید.");
+
+            return null;
+        }
+
+        $serviceName = $service->serviceName?->name ?: 'خدمت';
+        $filename = 'گزارش-خدمت-'.$serviceName.'-'.Jalalian::now()->format('Y-m-d').'.xlsx';
+
+        $export = new ServiceReportExport($service, $grouped, Service::unitOptions());
+
+        return \Maatwebsite\Excel\Facades\Excel::download($export, $filename);
     }
 
     public function getSelectedServiceProperty(): ?Service

@@ -259,7 +259,26 @@
                             </p>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        <div class="flex flex-col items-stretch gap-3 sm:items-end">
+                            <button
+                                type="button"
+                                wire:click="exportToExcel"
+                                wire:loading.attr="disabled"
+                                wire:target="exportToExcel"
+                                class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500/90 px-4 py-2 text-xs font-bold text-white ring-1 ring-emerald-300/40 backdrop-blur transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                <svg wire:loading.remove wire:target="exportToExcel" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                                </svg>
+                                <svg wire:loading wire:target="exportToExcel" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                                <span wire:loading.remove wire:target="exportToExcel">خروجی اکسل</span>
+                                <span wire:loading wire:target="exportToExcel">در حال آماده‌سازی…</span>
+                            </button>
+
+                            <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
                             <div class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur">
                                 <p class="text-[10px] text-slate-300">نوع خدمت</p>
                                 <p class="mt-1 text-sm font-bold">{{ $typeOptions[$selectedService->service_type] ?? $selectedService->service_type }}</p>
@@ -281,7 +300,14 @@
                             </div>
                         </div>
                     </div>
+                    </div>
                 </div>
+
+                @if(session('error'))
+                    <div class="border-b border-rose-100 bg-rose-50 px-6 py-3 text-xs font-semibold text-rose-700">
+                        {{ session('error') }}
+                    </div>
+                @endif
 
                 <div class="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-slate-200 px-6 py-3">
                     <div class="flex items-center gap-2">
