@@ -183,9 +183,7 @@ class ActivityList extends Component
         }
 
         return Activity::query()
-            ->with([
-                'creator',
-            ])
+            ->with('creator')
             ->withCount([
                 'attendances',
                 'attendances as present_attendances_count' => fn ($query) => $query->where('status', 'present'),
@@ -337,6 +335,8 @@ class ActivityList extends Component
                 ->withCount([
                     'attendances',
                     'attendances as present_attendances_count' => fn ($query) => $query->where('status', 'present'),
+                    'attendances as late_attendances_count' => fn ($query) => $query->where('status', 'late'),
+                    'attendances as absent_attendances_count' => fn ($query) => $query->where('status', 'absent'),
                 ])
                 ->when($search !== '', function ($query) use ($search): void {
                     $query->where(function ($nestedQuery) use ($search): void {
