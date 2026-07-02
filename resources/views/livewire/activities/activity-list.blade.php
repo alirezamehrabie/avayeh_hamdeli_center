@@ -39,7 +39,7 @@
                 <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{{ $message }}</div>
             @enderror
 
-            <div class="sticky top-0 z-40 space-y-3 rounded-2xl border border-slate-100 bg-slate-50/40 shadow-sm transition-all duration-200">
+            <div class="sticky top-0 z-20 space-y-3 rounded-2xl border border-slate-100 bg-slate-50/40 shadow-sm transition-all duration-200">
                 <div class="space-y-3 px-3 pt-3">
                     <div class="relative" x-data="{ helpOpen: false }">
                             <input type="text" wire:model.live.debounce.300ms="search" placeholder="جستجو در کد، نام، مکان یا نام ثبت‌کننده..." class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
