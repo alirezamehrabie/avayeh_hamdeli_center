@@ -72,7 +72,7 @@ class ActivityOperatorAssignment extends Component
         abort_unless($activity, 404);
 
         $operator = User::query()
-            ->where('access_level', User::ACCESS_LEVEL_ACTIVITY_OPERATOR)
+            ->whereIn('access_level', User::activityAttendanceAssignableAccessLevels())
             ->find($userId);
 
         if (! $operator) {
@@ -164,7 +164,7 @@ class ActivityOperatorAssignment extends Component
         $assignedUserIds = $this->currentOperatorAssignments->pluck('user_id')->all();
 
         return User::query()
-            ->where('access_level', User::ACCESS_LEVEL_ACTIVITY_OPERATOR)
+            ->whereIn('access_level', User::activityAttendanceAssignableAccessLevels())
             ->whereNotIn('id', $assignedUserIds)
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($nestedQuery) use ($search) {

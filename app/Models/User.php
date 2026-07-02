@@ -244,6 +244,10 @@ class User extends Authenticatable
                 self::PERMISSION_DISTRIBUTION_INBOUND_GATE,
                 self::PERMISSION_DISTRIBUTION_DELIVERY_GATE,
                 self::PERMISSION_DISTRIBUTION_OUTBOUND_GATE,
+                // Distribution operators may additionally be granted activity
+                // attendance access by an admin (permission grant or activity
+                // assignment). It is never part of the role by default.
+                self::PERMISSION_ACTIVITY_ATTENDANCE_REGISTER,
             ],
             self::ACCESS_LEVEL_REGULAR => [
                 self::PERMISSION_PEOPLE_REGISTER,
@@ -568,10 +572,46 @@ class User extends Authenticatable
             && (int) $service->created_by === (int) $this->id;
     }
 
+    /**
+     * Access levels an admin may assign to (or grant attendance access for)
+     * an activity. Activity operators own the workflow by role; distribution
+     * operators can be opted in individually by an admin.
+     *
+     * @return list<string>
+     */
+    public static function activityAttendanceAssignableAccessLevels(): array
+    {
+        return [
+            self::ACCESS_LEVEL_ACTIVITY_OPERATOR,
+            self::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+        ];
+    }
+
     public function canAccessActivityOperatorPanel(): bool
     {
-        return ! $this->isAdmin()
-            && $this->access_level === self::ACCESS_LEVEL_ACTIVITY_OPERATOR;
+        if ($this->isAdmin()) {
+            return false;
+        }
+
+        // Activity operators own the attendance workflow by their role.
+        if ($this->access_level === self::ACCESS_LEVEL_ACTIVITY_OPERATOR) {
+            return true;
+        }
+
+        // Distribution operators only reach it when an admin explicitly grants
+        // the attendance permission or assigns them to an activity - never by
+        // their role alone.
+        if ($this->access_level === self::ACCESS_LEVEL_DISTRIBUTION_OPERATOR) {
+            return $this->hasActivityAttendanceAccess();
+        }
+
+        return false;
+    }
+
+    public function hasActivityAttendanceAccess(): bool
+    {
+        return $this->hasPermission(self::PERMISSION_ACTIVITY_ATTENDANCE_REGISTER)
+            || $this->activityOperatorAssignments()->exists();
     }
 
     public function canAccessActivity(Activity $activity): bool

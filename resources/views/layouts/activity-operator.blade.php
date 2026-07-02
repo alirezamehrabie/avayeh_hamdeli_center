@@ -95,6 +95,16 @@
 
                 <div class="my-1 border-t border-indigo-700/70" role="separator" aria-hidden="true"></div>
 
+                @can('access-distribution-operator-panel')
+                    <a
+                        href="{{ route('distribution-operator.define-service') }}"
+                        class="flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors hover:bg-indigo-800"
+                    >
+                        <span>پنل اپراتور توزیع</span>
+                        <span class="text-xs text-indigo-100/80">بازگشت</span>
+                    </a>
+                @endcan
+
                 <a
                     href="{{ route('activity-operator.user-account') }}"
                     class="flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors {{ $isUserAccountActive ? 'bg-indigo-700' : 'hover:bg-indigo-800' }}"

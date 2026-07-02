@@ -120,6 +120,18 @@
                     @endcan
                 @endforeach
 
+                @can('access-activity-operator-panel')
+                    <div class="my-1 border-t border-indigo-700/70" role="separator" aria-hidden="true"></div>
+
+                    <a
+                        href="{{ route('activity-operator.dashboard') }}"
+                        class="flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors hover:bg-indigo-800"
+                    >
+                        <span>حضور و غیاب فعالیت‌ها</span>
+                        <span class="text-xs text-indigo-100/80">ثبت حضور</span>
+                    </a>
+                @endcan
+
                 <div class="my-1 border-t border-indigo-700/70" role="separator" aria-hidden="true"></div>
 
                 <a
