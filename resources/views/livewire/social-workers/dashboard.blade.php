@@ -1,5 +1,52 @@
 <div class="space-y-6"
      x-data="{
+        quotaEntries: @entangle('recipientEntries'),
+        toNumber(value) {
+            const normalized = String(value ?? '')
+                .replace(/[۰-۹]/g, (char) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(char)))
+                .replace(/[٠-٩]/g, (char) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(char)))
+                .replace(',', '.');
+            const number = parseFloat(normalized);
+
+            return Number.isFinite(number) ? number : 0;
+        },
+        formatDecimal(value) {
+            return Math.max(0, this.toNumber(value)).toFixed(2);
+        },
+        setCategoryQuantity(rowIndex, categoryId, value) {
+            if (!this.quotaEntries[rowIndex]) {
+                this.quotaEntries[rowIndex] = {};
+            }
+
+            if (!this.quotaEntries[rowIndex].category_quantities) {
+                this.quotaEntries[rowIndex].category_quantities = {};
+            }
+
+            this.quotaEntries[rowIndex].category_quantities[categoryId] = value;
+        },
+        categoryQuantity(rowIndex, categoryId) {
+            return this.toNumber(this.quotaEntries?.[rowIndex]?.category_quantities?.[categoryId]);
+        },
+        categoryPending(categoryId) {
+            return Object.values(this.quotaEntries ?? {}).reduce((total, entry) => {
+                return total + this.toNumber(entry?.category_quantities?.[categoryId]);
+            }, 0);
+        },
+        availableForInput(rowIndex, categoryId, remainingStock, remainingAllocation) {
+            const currentQuantity = this.categoryQuantity(rowIndex, categoryId);
+            const otherRowsPending = Math.max(0, this.categoryPending(categoryId) - currentQuantity);
+
+            return Math.max(0, Math.min(
+                this.toNumber(remainingStock),
+                this.toNumber(remainingAllocation) - otherRowsPending
+            ));
+        },
+        exceedsRemainingQuota(rowIndex, categoryId, remainingStock, remainingAllocation) {
+            const currentQuantity = this.categoryQuantity(rowIndex, categoryId);
+
+            return currentQuantity > 0
+                && currentQuantity > this.availableForInput(rowIndex, categoryId, remainingStock, remainingAllocation);
+        },
         persianNumber(value) {
             return String(value ?? '').replace(/[0-9.,]/g, (char) => ({
                 '0': '۰',
@@ -1286,7 +1333,19 @@
                                                                     $isUnavailable = $remainingStock <= 0;
                                                                 @endphp
 
-                                                                <div class="grid grid-cols-[minmax(0,1fr)_7.5rem] items-center gap-2 border-b border-slate-200 bg-white px-3 py-2.5 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_9rem]">
+                                                                <div class="grid grid-cols-[minmax(0,1fr)_7.5rem] items-center gap-2 border-b border-slate-200 bg-white px-3 py-2.5 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_9rem]"
+                                                                     x-data="{
+                                                                        rowIndex: {{ (int) $index }},
+                                                                        categoryId: '{{ (int) $category->id }}',
+                                                                        remainingStock: {{ json_encode(number_format($remainingStock, 2, '.', '')) }},
+                                                                        remainingAllocation: {{ json_encode(number_format((float) $metrics['remaining_allocation'], 2, '.', '')) }},
+                                                                        get available() {
+                                                                            return availableForInput(this.rowIndex, this.categoryId, this.remainingStock, this.remainingAllocation);
+                                                                        },
+                                                                        get exceeds() {
+                                                                            return exceedsRemainingQuota(this.rowIndex, this.categoryId, this.remainingStock, this.remainingAllocation);
+                                                                        },
+                                                                     }">
                                                                     <div class="min-w-0">
                                                                         <div class="flex min-w-0 flex-wrap items-center gap-1.5">
                                                                             <h4 class="max-w-full truncate text-xs font-bold text-slate-800 sm:text-sm">{{ $category->name }}</h4>
@@ -1296,7 +1355,7 @@
                                                                         </div>
                                                                         <p class="mt-1 flex flex-wrap items-center gap-1 text-[10px] font-bold text-slate-400">
                                                                             <span>باقی‌مانده:</span>
-                                                                            <span>{{ $this->persianNumber(number_format($availableForCurrentInput, 2)) }}</span>
+                                                                            <span x-text="persianNumber(formatDecimal(available))">{{ $this->persianNumber(number_format($availableForCurrentInput, 2)) }}</span>
                                                                             <span>{{ $unitOptions[$category->unit] ?? $category->unit }}</span>
                                                                         </p>
                                                                     </div>
@@ -1308,21 +1367,20 @@
                                                                                data-error-field="recipientEntries.{{ $index }}.category_quantities.{{ $category->id }}"
                                                                                min="0.01"
                                                                                max="{{ number_format($availableForCurrentInput, 2, '.', '') }}"
+                                                                               x-bind:max="formatDecimal(available)"
                                                                                step="0.01"
                                                                                inputmode="decimal"
                                                                                wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.category_quantities.{{ $category->id }}"
+                                                                               x-on:input="setCategoryQuantity(rowIndex, categoryId, $event.target.value)"
                                                                                @disabled(!$this->selectedService || ($isUnavailable && $currentQuantity <= 0))
-                                                                               @class([
-                                                                                   'h-11 w-full rounded-xl border bg-slate-50 px-2.5 text-center text-sm font-black text-slate-800 transition placeholder:text-slate-300 focus:bg-white focus:outline-none disabled:cursor-not-allowed disabled:opacity-60',
-                                                                                   'border-rose-300 bg-rose-50 text-rose-700 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10' => $exceedsRemainingQuota,
-                                                                                   'border-slate-200 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10' => ! $exceedsRemainingQuota,
-                                                                               ])
+                                                                               class="h-11 w-full rounded-xl border bg-slate-50 px-2.5 text-center text-sm font-black text-slate-800 transition placeholder:text-slate-300 focus:bg-white focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                                                                               x-bind:class="exceeds
+                                                                                    ? 'border-rose-300 bg-rose-50 text-rose-700 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10'
+                                                                                    : 'border-slate-200 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10'"
                                                                                placeholder="۰">
-                                                                        @if($exceedsRemainingQuota)
-                                                                            <p class="mt-1.5 text-[10px] font-bold text-rose-600">
+                                                                        <p x-cloak x-show="exceeds" class="mt-1.5 text-[10px] font-bold text-rose-600">
                                                                                 بیشتر از سهمیۀ مجاز
-                                                                            </p>
-                                                                        @endif
+                                                                        </p>
                                                                         @error('recipientEntries.' . $index . '.category_quantities.' . $category->id) <p class="mt-1 rounded-lg bg-rose-50 px-2 py-1.5 text-[11px] font-bold text-rose-700">{{ $message }}</p> @enderror
                                                                     </div>
                                                                 </div>
