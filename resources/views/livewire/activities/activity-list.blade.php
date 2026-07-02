@@ -327,7 +327,101 @@
                             </div>
                         </article>
                     @empty
-                        <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm font-medium text-slate-500">فعالیتی با این فیلترها یافت نشد.</div>
+                        @if($this->totalActivitiesCount() === 0)
+                            <!-- No Activities At All -->
+                            <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+                                <div class="mx-auto w-fit">
+                                    <div class="rounded-full bg-slate-100 p-4 w-fit mx-auto">
+                                        <i class="bi bi-inbox text-2xl text-slate-400"></i>
+                                    </div>
+                                </div>
+                                <h3 class="mt-4 text-base font-semibold text-slate-900">هنوز فعالیتی ایجاد نشده</h3>
+                                <p class="mt-2 text-sm text-slate-600 max-w-sm mx-auto">شروع کنید با ایجاد اولین فعالیت خود تا بتوانید آن را مدیریت کنید.</p>
+                                @can('full-access')
+                                    <button type="button" wire:click="createActivity" class="mt-4 inline-flex items-center gap-2 rounded-full bg-violet-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-violet-700">
+                                        <i class="bi bi-plus-lg text-sm"></i>
+                                        ایجاد فعالیت جدید
+                                    </button>
+                                @endcan
+                            </div>
+                        @elseif($this->hasAnyFiltersApplied())
+                            <!-- No Results Due to Filters -->
+                            <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8">
+                                <div class="text-center">
+                                    <div class="mx-auto w-fit">
+                                        <div class="rounded-full bg-slate-100 p-4 w-fit mx-auto">
+                                            <i class="bi bi-funnel text-2xl text-slate-400"></i>
+                                        </div>
+                                    </div>
+                                    <h3 class="mt-4 text-base font-semibold text-slate-900">نتیجه‌ای یافت نشد</h3>
+                                    <p class="mt-2 text-sm text-slate-600 max-w-sm mx-auto">فیلترهای اعمال شده شامل هیچ فعالیتی نیستند. سعی کنید فیلترها را تعدیل کنید.</p>
+                                </div>
+
+                                <div class="mt-6 space-y-3">
+                                    <p class="text-sm font-semibold text-slate-700">فیلترهای فعال:</p>
+                                    <div class="flex flex-wrap gap-2">
+                                        @if($search)
+                                            <span class="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-700 ring-1 ring-slate-200">
+                                                جستجو: {{ Str::limit($search, 20, '...') }}
+                                                <button type="button" wire:click="$set('search', '')" class="text-slate-400 hover:text-slate-600">
+                                                    <i class="bi bi-x-lg text-sm"></i>
+                                                </button>
+                                            </span>
+                                        @endif
+                                        @if($statusFilter !== 'all')
+                                            <span class="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-700 ring-1 ring-slate-200">
+                                                وضعیت: {{ $statusOptions[$statusFilter] ?? $statusFilter }}
+                                                <button type="button" wire:click="$set('statusFilter', 'all')" class="text-slate-400 hover:text-slate-600">
+                                                    <i class="bi bi-x-lg text-sm"></i>
+                                                </button>
+                                            </span>
+                                        @endif
+                                        @if($typeFilter !== 'all')
+                                            <span class="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-700 ring-1 ring-slate-200">
+                                                نوع: {{ $typeOptions[$typeFilter] ?? $typeFilter }}
+                                                <button type="button" wire:click="$set('typeFilter', 'all')" class="text-slate-400 hover:text-slate-600">
+                                                    <i class="bi bi-x-lg text-sm"></i>
+                                                </button>
+                                            </span>
+                                        @endif
+                                        @if($startsFrom)
+                                            <span class="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-700 ring-1 ring-slate-200">
+                                                از: {{ $startsFrom }}
+                                                <button type="button" wire:click="$set('startsFrom', null)" class="text-slate-400 hover:text-slate-600">
+                                                    <i class="bi bi-x-lg text-sm"></i>
+                                                </button>
+                                            </span>
+                                        @endif
+                                        @if($startsUntil)
+                                            <span class="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-700 ring-1 ring-slate-200">
+                                                تا: {{ $startsUntil }}
+                                                <button type="button" wire:click="$set('startsUntil', null)" class="text-slate-400 hover:text-slate-600">
+                                                    <i class="bi bi-x-lg text-sm"></i>
+                                                </button>
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <div class="mt-6 flex flex-wrap gap-2">
+                                    <button type="button" wire:click="resetFilters" class="inline-flex items-center gap-1.5 rounded-full bg-slate-800 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-900">
+                                        <i class="bi bi-arrow-counterclockwise text-sm"></i>
+                                        ریست تمام فیلترها
+                                    </button>
+                                </div>
+                            </div>
+                        @else
+                            <!-- Default No Results -->
+                            <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+                                <div class="mx-auto w-fit">
+                                    <div class="rounded-full bg-slate-100 p-4 w-fit mx-auto">
+                                        <i class="bi bi-inbox text-2xl text-slate-400"></i>
+                                    </div>
+                                </div>
+                                <h3 class="mt-4 text-base font-semibold text-slate-900">فعالیتی یافت نشد</h3>
+                                <p class="mt-2 text-sm text-slate-600">هیچ فعالیتی در سیستم وجود ندارد.</p>
+                            </div>
+                        @endif
                     @endforelse
 
                     @if($activities->hasPages())
@@ -446,7 +540,27 @@
                             </div>
                         </div>
                     @else
-                        <div class="flex min-h-72 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm font-medium text-slate-400">برای مشاهده جزئیات و مدیریت چرخه، یک فعالیت را انتخاب کنید.</div>
+                        <div class="flex min-h-72 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center">
+                            <div class="rounded-full bg-slate-100 p-4 mb-4">
+                                <i class="bi bi-cursor-text text-2xl text-slate-400"></i>
+                            </div>
+                            <h3 class="text-base font-semibold text-slate-900">هنوز فعالیتی انتخاب نشده</h3>
+                            <p class="mt-2 text-sm text-slate-600 max-w-xs">یک فعالیت را از لیست سمت چپ انتخاب کنید تا جزئیات آن را مشاهده کنید و چرخه زندگی آن را مدیریت کنید.</p>
+                            <div class="mt-4 space-y-2 text-[11px] text-slate-500">
+                                <p class="flex items-start gap-2">
+                                    <i class="bi bi-info-circle shrink-0 mt-0.5"></i>
+                                    <span>اطلاعات کامل فعالیت</span>
+                                </p>
+                                <p class="flex items-start gap-2">
+                                    <i class="bi bi-check2-circle shrink-0 mt-0.5"></i>
+                                    <span>مدیریت حضور شرکت‌کنندگان</span>
+                                </p>
+                                <p class="flex items-start gap-2">
+                                    <i class="bi bi-person-badge shrink-0 mt-0.5"></i>
+                                    <span>تخصیص اپراتورها</span>
+                                </p>
+                            </div>
+                        </div>
                     @endif
                 </aside>
             </div>

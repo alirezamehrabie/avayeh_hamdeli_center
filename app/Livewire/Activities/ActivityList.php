@@ -415,6 +415,20 @@ class ActivityList extends Component
         return $counts;
     }
 
+    public function hasAnyFiltersApplied(): bool
+    {
+        return $this->search !== '' ||
+               $this->statusFilter !== 'all' ||
+               $this->typeFilter !== 'all' ||
+               $this->startsFrom !== null ||
+               $this->startsUntil !== null;
+    }
+
+    public function totalActivitiesCount(): int
+    {
+        return Activity::count();
+    }
+
     private function resetAttendanceFilters(): void
     {
         $this->attendanceSearch = '';
