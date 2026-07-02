@@ -37,8 +37,8 @@
             }, 350);
         })
      ">
-    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div class="border-b border-slate-200 bg-white px-4 py-3 sm:px-6 sm:py-4">
+    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="rounded-t-2xl border-b border-slate-200 bg-white px-4 py-3 sm:px-6 sm:py-4">
             <div class="flex items-center justify-between gap-3">
                 <div class="min-w-0">
                     <h1 class="text-lg font-black text-slate-900 sm:text-2xl">ثبت تحویل خدمت</h1>
@@ -1665,7 +1665,85 @@
                                 ->filter(fn ($row) => (float) $row['quantity'] > 0)
                                 ->values();
                             $totalCategoryCount = $categoryReviewTotals->count();
+
+                            // Live remaining quota per category = allocation left minus what is
+                            // pending in the current form, capped by remaining stock. Kept visible
+                            // while quantities are entered so over-allocation is caught early.
+                            // Whole quantities (e.g. عدد) render without decimals; only fractional
+                            // values (e.g. کیلوگرم) keep two decimals, to avoid visual noise.
+                            $formatQuota = fn (float $value): string => round($value, 2) == round($value)
+                                ? number_format($value, 0)
+                                : number_format($value, 2);
+                            $quotaStripCategories = $assignableCategories
+                                ->map(function ($category) use ($recipientEntries, $categoryMetrics, $unitOptions, $formatQuota) {
+                                    $metrics = $categoryMetrics[$category->id] ?? ['remaining_stock' => 0, 'remaining_allocation' => 0];
+                                    $pending = collect($recipientEntries)
+                                        ->sum(fn ($entry) => (float) data_get($entry, 'category_quantities.' . (int) $category->id, 0));
+                                    $baseRemaining = max(0, (float) $metrics['remaining_allocation']);
+                                    $liveRemaining = max(0, min(
+                                        (float) $metrics['remaining_stock'],
+                                        (float) $metrics['remaining_allocation'] - $pending
+                                    ));
+                                    $state = match (true) {
+                                        $liveRemaining <= 0 => ['dot' => 'bg-rose-500', 'value' => 'text-rose-700', 'chip' => 'border-rose-100 bg-rose-50'],
+                                        $baseRemaining > 0 && $liveRemaining / $baseRemaining <= 0.25 => ['dot' => 'bg-amber-500', 'value' => 'text-amber-700', 'chip' => 'border-amber-100 bg-amber-50'],
+                                        default => ['dot' => 'bg-emerald-500', 'value' => 'text-emerald-700', 'chip' => 'border-emerald-100 bg-emerald-50'],
+                                    };
+
+                                    return [
+                                        'name' => $category->name,
+                                        'unit' => $unitOptions[$category->unit] ?? $category->unit,
+                                        'pending' => $pending,
+                                        'remaining' => $liveRemaining,
+                                        'remaining_display' => $formatQuota($liveRemaining),
+                                        'state' => $state,
+                                    ];
+                                })
+                                ->values();
+                            $overallPending = collect($recipientEntries)
+                                ->sum(fn ($entry) => collect($entry['category_quantities'] ?? [])->sum(fn ($quantity) => (float) $quantity));
+                            $overallLiveRemaining = max(0, (float) ($selectedServiceTotals['remaining'] ?? 0) - $overallPending);
+                            $overallLiveRemainingDisplay = $formatQuota($overallLiveRemaining);
                         @endphp
+
+                        {{-- Remaining quota panel (desktop / tablet) — mirrored by the mobile bar below --}}
+                        <section class="hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-100 sm:p-4 md:block">
+                            <div class="mb-3 flex items-center justify-between gap-3">
+                                <div class="flex min-w-0 items-center gap-2">
+                                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-cyan-50 text-cyan-700">
+                                        <i class="bi bi-speedometer2 text-sm"></i>
+                                    </span>
+                                    <h2 class="truncate text-sm font-black text-slate-800">باقی‌ماندهٔ سهمیه</h2>
+                                </div>
+                                <span class="inline-flex flex-col items-end leading-none">
+                                    <span class="text-[9px] font-bold text-slate-400">مجموع</span>
+                                    <span class="mt-1 text-sm font-black {{ $overallLiveRemaining <= 0 ? 'text-rose-600' : 'text-slate-800' }}">
+                                        {{ $this->persianNumber($overallLiveRemainingDisplay) }}
+                                    </span>
+                                </span>
+                            </div>
+
+                            @if($quotaStripCategories->isNotEmpty())
+                                <div class="space-y-1.5">
+                                    @foreach($quotaStripCategories as $row)
+                                        <div class="flex items-center justify-between gap-3 rounded-xl border {{ $row['state']['chip'] }} px-2.5 py-1.5">
+                                            <span class="inline-flex min-w-0 items-center gap-1.5">
+                                                <span class="h-1.5 w-1.5 shrink-0 rounded-full {{ $row['state']['dot'] }}"></span>
+                                                <span class="min-w-0 truncate text-[11px] font-bold text-slate-700">{{ $row['name'] }}</span>
+                                            </span>
+                                            <span class="shrink-0 text-xs font-black {{ $row['state']['value'] }}">
+                                                {{ $this->persianNumber($row['remaining_display']) }}
+                                                <span class="text-[9px] font-bold text-slate-400">{{ $row['unit'] }}</span>
+                                            </span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="rounded-xl bg-slate-50 px-2.5 py-2 text-xs font-bold text-slate-400">
+                                    سهمیهٔ قابل تحویلی برای این خدمت ثبت نشده است.
+                                </p>
+                            @endif
+                        </section>
 
                         <section class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-100 sm:p-4">
                             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -1737,6 +1815,24 @@
 
                         <div class="fixed inset-x-0 bottom-0 z-30 rounded-t-3xl border-t border-slate-200 bg-white/95 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 shadow-[0_-10px_24px_rgba(15,23,42,0.10)] backdrop-blur md:hidden">
                             <div class="mx-auto max-w-xl">
+                                @if($quotaStripCategories->isNotEmpty())
+                                    <div class="mb-2.5 -mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                                        <span class="inline-flex shrink-0 items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-black text-slate-500">
+                                            <i class="bi bi-speedometer2 text-cyan-600"></i>
+                                            باقی‌مانده
+                                        </span>
+                                        @foreach($quotaStripCategories as $row)
+                                            <span class="inline-flex shrink-0 items-center gap-1 rounded-full border {{ $row['state']['chip'] }} px-2 py-1">
+                                                <span class="h-1.5 w-1.5 rounded-full {{ $row['state']['dot'] }}"></span>
+                                                <span class="max-w-[6rem] truncate text-[10px] font-bold text-slate-600">{{ $row['name'] }}</span>
+                                                <span class="text-[10px] font-black {{ $row['state']['value'] }}">
+                                                    <span dir="ltr">{{ $this->persianNumber($row['remaining_display']) }}</span>
+                                                    <span class="text-[9px] font-bold text-slate-400">{{ $row['unit'] }}</span>
+                                                </span>
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                @endif
                                 <button type="submit"
                                         wire:loading.attr="disabled"
                                         wire:target="saveDelivery"
