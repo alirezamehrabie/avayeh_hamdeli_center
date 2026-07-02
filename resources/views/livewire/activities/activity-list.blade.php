@@ -452,7 +452,8 @@
                                         </button>
                                     @endif
 
-                                    <div class="relative" x-data="{ open: false }">
+                                    <!-- Desktop/tablet: hover dropdown menu -->
+                                    <div class="relative hidden md:block" x-data="{ open: false }">
                                         <button type="button" @click="open = !open" class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-3 py-2 text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100">
                                             <i class="bi bi-list text-lg font-bold"></i>
                                         </button>
@@ -476,6 +477,128 @@
                                                     تخصیص اپراتور
                                                 </button>
                                             @endcan
+                                        </div>
+                                    </div>
+
+                                    <!-- Mobile: bottom sheet (matches the beneficiary list action sheet pattern) -->
+                                    <div
+                                        class="relative md:hidden"
+                                        x-data="{
+                                            open: false,
+                                            historyPushed: false,
+                                            openSheet() {
+                                                if (this.open) {
+                                                    return;
+                                                }
+
+                                                this.open = true;
+                                                window.history.pushState({ activityActionSheet: {{ $activity->id }} }, '', window.location.href);
+                                                this.historyPushed = true;
+                                            },
+                                            closeSheet(fromPopState = false) {
+                                                if (! this.open) {
+                                                    return;
+                                                }
+
+                                                this.open = false;
+
+                                                if (this.historyPushed) {
+                                                    this.historyPushed = false;
+
+                                                    if (! fromPopState) {
+                                                        window.history.back();
+                                                    }
+                                                }
+                                            },
+                                        }"
+                                        @click.stop
+                                        @keydown.escape.window="closeSheet()"
+                                        @popstate.window="closeSheet(true)"
+                                    >
+                                        <button
+                                            type="button"
+                                            class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-3 py-2 text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100"
+                                            aria-label="اقدامات بیشتر"
+                                            aria-haspopup="dialog"
+                                            :aria-expanded="open.toString()"
+                                            @click="open ? closeSheet() : openSheet()"
+                                        >
+                                            <i class="bi bi-list text-lg font-bold"></i>
+                                        </button>
+
+                                        <div
+                                            x-show="open"
+                                            x-transition.opacity
+                                            class="fixed inset-0 z-40 bg-slate-950/35 backdrop-blur-[1px]"
+                                            style="display: none;"
+                                            @click="closeSheet()"
+                                            aria-hidden="true"
+                                        ></div>
+
+                                        <div
+                                            x-show="open"
+                                            x-transition:enter="transition ease-out duration-200"
+                                            x-transition:enter-start="translate-y-6 opacity-0"
+                                            x-transition:enter-end="translate-y-0 opacity-100"
+                                            x-transition:leave="transition ease-in duration-150"
+                                            x-transition:leave-start="translate-y-0 opacity-100"
+                                            x-transition:leave-end="translate-y-6 opacity-0"
+                                            class="fixed inset-x-0 bottom-0 z-50 rounded-t-3xl border border-slate-200 bg-white px-4 pb-5 pt-3 shadow-2xl"
+                                            style="display: none;"
+                                            role="dialog"
+                                            aria-modal="true"
+                                            aria-label="اقدامات فعالیت"
+                                            @click.stop
+                                        >
+                                            <div class="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-200"></div>
+                                            <div class="mb-3 border-b border-slate-100 pb-3 text-right">
+                                                <p class="truncate text-sm font-extrabold text-slate-900">{{ $activity->name }}</p>
+                                                <p class="mt-1 text-[11px] font-semibold text-slate-500" dir="ltr">{{ $activity->code }}</p>
+                                            </div>
+
+                                            <div class="space-y-2">
+                                                @if($activity->status === 'ongoing')
+                                                    <button
+                                                        type="button"
+                                                        wire:click="selectActivity({{ $activity->id }})"
+                                                        class="flex min-h-12 w-full items-center gap-3 rounded-2xl border border-violet-100 bg-violet-50/70 px-4 py-3 text-right text-sm font-bold text-violet-700 transition hover:bg-violet-100 focus:outline-none focus:ring-2 focus:ring-violet-100"
+                                                        @click="closeSheet()"
+                                                    >
+                                                        <i class="bi bi-info-circle text-base"></i>
+                                                        جزئیات و مدیریت
+                                                    </button>
+                                                @endif
+
+                                                @can('full-access')
+                                                    <button
+                                                        type="button"
+                                                        wire:click="editActivity({{ $activity->id }})"
+                                                        class="flex min-h-12 w-full items-center gap-3 rounded-2xl border border-amber-100 bg-amber-50/70 px-4 py-3 text-right text-sm font-bold text-amber-800 transition hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-100"
+                                                        @click="closeSheet()"
+                                                    >
+                                                        <i class="bi bi-pencil text-base"></i>
+                                                        ویرایش فعالیت
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        wire:click="openOperatorAssignment({{ $activity->id }})"
+                                                        class="flex min-h-12 w-full items-center gap-3 rounded-2xl border border-cyan-100 bg-cyan-50/70 px-4 py-3 text-right text-sm font-bold text-cyan-800 transition hover:bg-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-100"
+                                                        @click="closeSheet()"
+                                                    >
+                                                        <i class="bi bi-person-badge text-base"></i>
+                                                        تخصیص اپراتور
+                                                    </button>
+                                                @endcan
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                                                @click="closeSheet()"
+                                            >
+                                                بستن
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
