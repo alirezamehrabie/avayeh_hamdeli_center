@@ -57,7 +57,7 @@
         $guardiansOpen = $dashboardMode ? $isActive(['guardians-list', 'guardians-block-list']) : request()->routeIs('guardians.*');
         $reportsOpen = $dashboardMode ? $isActive(['advanced-reports', 'advanced-service-report', 'advanced-beneficiary-report', 'advanced-operator-report', 'advanced-supervisor-report', 'advanced-social-worker-report', 'advanced-gate-report']) : false;
         $servicesOpen = $dashboardMode ? $isActive(['service-definition', 'service-management', 'service-list', 'service-delivery', 'service-archive']) : false;
-        $activitiesOpen = $dashboardMode ? $isActive(['activity-definition', 'activity-list', 'activity-scanner']) : false;
+        $activitiesOpen = $dashboardMode ? $isActive(['activity-definition', 'activity-list', 'activity-scanner', 'activity-operator-assignments']) : false;
         $childSupporterOpen = $dashboardMode ? $isActive(['child-supporter-sponsor-registration', 'child-supporter-sponsor-edit', 'child-supporter-sponsor-list']) : false;
         $specialFeaturesOpen = $dashboardMode ? $isActive(['special-features-id-card-scanner']) : false;
         $systemSettingsOpen = $dashboardMode ? $isActive(['system-settings-user-definition', 'system-settings-user-list', 'system-settings-user-account']) : request()->routeIs('admin.user-definition') || request()->routeIs('admin.user-management') || request()->routeIs('admin.user-list') || request()->routeIs('admin.user-account');
@@ -108,6 +108,7 @@
             'activities' => [
                 ['section' => 'activity-list', 'label' => 'مدیریت فعالیت‌ها'],
                 ['section' => 'activity-definition', 'label' => 'تعریف فعالیت', 'visible' => $user?->can('full-access')],
+                ['section' => 'activity-operator-assignments', 'label' => 'تخصیص اپراتور فعالیت', 'visible' => $user?->can('full-access')],
             ],
             'child-supporter' => [
                 ['section' => 'child-supporter-sponsor-registration', 'label' => 'ثبت نام حامی'],

@@ -122,6 +122,10 @@ Route::get('/admin/activities/activity-list', DashboardHome::class)
     ->middleware(['auth', 'can:access-admin-panel'])
     ->name('admin.activity-list');
 
+Route::get('/admin/activities/activity-operator-assignments', DashboardHome::class)
+    ->middleware(['auth', 'can:full-access'])
+    ->name('admin.activity-operator-assignments');
+
 
 Route::post('/admin/activities/{activity}/check-in/qr', [ActivityCheckInController::class, 'qr'])
     ->middleware(['auth', 'can:access-admin-panel'])

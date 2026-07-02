@@ -460,6 +460,10 @@
                         @endif
                         @break
 
+                    @case('activity-operator-assignments')
+                        <livewire:admin.activity-operator-assignment :key="'activity-operator-assignments'" />
+                        @break
+
                     @case('system-settings-user-definition')
                         <livewire:admin.user-management :key="'system-settings-user-definition'" />
                         @break

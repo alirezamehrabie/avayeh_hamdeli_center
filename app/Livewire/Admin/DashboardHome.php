@@ -62,6 +62,8 @@ class DashboardHome extends Component
             $this->activeSection = 'activity-definition';
         } elseif (! request()->has('section') && request()->routeIs('admin.activity-list')) {
             $this->activeSection = 'activity-list';
+        } elseif (! request()->has('section') && request()->routeIs('admin.activity-operator-assignments')) {
+            $this->activeSection = 'activity-operator-assignments';
         } elseif (! request()->has('section') && request()->routeIs('admin.special-features.id-card-scanner')) {
             $this->activeSection = 'special-features-id-card-scanner';
         }
@@ -219,6 +221,7 @@ class DashboardHome extends Component
                 'service-management',
                 'service-archive',
                 'activity-definition',
+                'activity-operator-assignments',
                 'child-supporter-sponsor-registration',
                 'child-supporter-sponsor-edit',
                 'child-supporter-sponsor-list',
