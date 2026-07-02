@@ -40,12 +40,72 @@
             @enderror
 
             <div class="space-y-3 rounded-2xl border border-slate-100 bg-slate-50/40 p-3">
-                <div class="relative">
-                    <input type="text" wire:model.live.debounce.300ms="search" placeholder="جستجو کد، نام، مکان یا ثبت‌کننده" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-4 pr-10 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
+                <div class="relative" x-data="{ helpOpen: false, isSearching: false }" @wire:updated.debounce.100ms="isSearching = false">
+                    <input type="text" wire:model.live.debounce.300ms="search" placeholder="جستجو در کد، نام، مکان یا نام ثبت‌کننده..." class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-300 focus:ring-4 focus:ring-violet-100" @input="isSearching = true">
+
                     <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
                         <i class="bi bi-search text-sm"></i>
                     </span>
+
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3">
+                        <div class="relative">
+                            <button type="button" @click="helpOpen = !helpOpen" class="inline-flex items-center justify-center rounded-full text-slate-400 transition hover:text-slate-600 focus:outline-none">
+                                <i class="bi bi-question-circle text-sm"></i>
+                            </button>
+
+                            <div x-show="helpOpen" @click.outside="helpOpen = false" x-transition class="absolute left-0 z-20 mt-2 w-64 rounded-lg border border-slate-200 bg-white p-3 shadow-lg" style="display: none;">
+                                <div class="space-y-2">
+                                    <h4 class="text-xs font-semibold text-slate-900">نحوه جستجو:</h4>
+                                    <ul class="space-y-1.5 text-xs text-slate-600">
+                                        <li class="flex gap-2">
+                                            <span class="shrink-0 font-semibold text-slate-700">کد:</span>
+                                            <span>کد فعالیت را جستجو کنید (مثال: ACT001)</span>
+                                        </li>
+                                        <li class="flex gap-2">
+                                            <span class="shrink-0 font-semibold text-slate-700">نام:</span>
+                                            <span>نام فعالیت را جستجو کنید (مثال: ورزشی)</span>
+                                        </li>
+                                        <li class="flex gap-2">
+                                            <span class="shrink-0 font-semibold text-slate-700">مکان:</span>
+                                            <span>محل برگزاری را جستجو کنید (مثال: سالن)</span>
+                                        </li>
+                                        <li class="flex gap-2">
+                                            <span class="shrink-0 font-semibold text-slate-700">ثبت‌کننده:</span>
+                                            <span>نام کسی که فعالیت را ایجاد کرد</span>
+                                        </li>
+                                    </ul>
+                                    <div class="border-t border-slate-100 pt-2">
+                                        <p class="text-[11px] text-slate-500">جستجو در تمام موارد بالا همزمان انجام می‌شود.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if($search)
+                        <div class="absolute inset-y-0 left-8 flex items-center">
+                            <div x-show="isSearching" x-transition class="flex items-center gap-1.5 text-[11px] text-slate-500">
+                                <div class="h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse"></div>
+                                جستجو...
+                            </div>
+                        </div>
+                    @endif
                 </div>
+
+                @if($search)
+                    <div class="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2.5 ring-1 ring-violet-200">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span class="text-[11px] font-medium text-slate-600 shrink-0">جستجو فعال:</span>
+                            <span class="inline-flex items-center gap-1.5 rounded-lg bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 truncate">
+                                <i class="bi bi-search text-sm"></i>
+                                {{ Str::limit($search, 30, '...') }}
+                            </span>
+                        </div>
+                        <button type="button" wire:click="$set('search', '')" class="inline-flex items-center justify-center shrink-0 rounded-full text-slate-400 transition hover:text-slate-600 hover:bg-slate-100 p-1">
+                            <i class="bi bi-x-lg text-sm"></i>
+                        </button>
+                    </div>
+                @endif
 
                 <div class="space-y-2">
                     <label class="block text-xs font-semibold text-slate-600">وضعیت فعالیت:</label>
@@ -179,6 +239,21 @@
                                         <span>پایان: {{ $this->formatJalaliDateTime($activity->ends_at) }}</span>
                                         <span>ثبت‌کننده: {{ $creatorName }}</span>
                                     </div>
+
+                                    @php
+                                        $matchedFields = $this->getMatchedSearchFields($activity);
+                                    @endphp
+                                    @if($matchedFields)
+                                        <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                                            <span class="text-[10px] font-medium text-slate-500">موارد مطابق:</span>
+                                            @foreach($matchedFields as $field)
+                                                <span class="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-semibold text-amber-700">
+                                                    <i class="bi bi-check-circle text-xs me-1"></i>
+                                                    {{ $field }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 </div>
                                 <div class="flex shrink-0 items-center justify-end gap-2 lg:pt-1">
                                     @if($activity->status === 'ongoing')

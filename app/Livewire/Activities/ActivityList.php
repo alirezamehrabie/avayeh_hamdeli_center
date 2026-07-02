@@ -257,6 +257,35 @@ class ActivityList extends Component
         return $dateTime ? Jalalian::fromDateTime($dateTime)->format('Y/m/d H:i') : '-';
     }
 
+    public function getMatchedSearchFields(Activity $activity): array
+    {
+        if (!$this->search) {
+            return [];
+        }
+
+        $search = strtolower(trim($this->search));
+        $matched = [];
+
+        if (str_contains(strtolower($activity->code), $search)) {
+            $matched[] = 'کد';
+        }
+        if (str_contains(strtolower($activity->name), $search)) {
+            $matched[] = 'نام';
+        }
+        if (str_contains(strtolower($activity->location ?? ''), $search)) {
+            $matched[] = 'مکان';
+        }
+        if ($activity->creator && (
+            str_contains(strtolower($activity->creator->name ?? ''), $search) ||
+            str_contains(strtolower($activity->creator->first_name ?? ''), $search) ||
+            str_contains(strtolower($activity->creator->last_name ?? ''), $search)
+        )) {
+            $matched[] = 'ثبت‌کننده';
+        }
+
+        return $matched;
+    }
+
     public function getCapacityInfo(Activity $activity): array
     {
         if (!$activity->capacity) {
