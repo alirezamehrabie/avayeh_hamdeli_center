@@ -138,13 +138,27 @@
                     </div>
                 </div>
 
-                <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
                     <select wire:model.live="typeFilter" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
                         <option value="all">همه نوع‌ها</option>
                         @foreach($typeOptions as $value => $label)
                             <option value="{{ $value }}">{{ $label }}</option>
                         @endforeach
                     </select>
+                    <div class="relative">
+                        <select wire:model="sortBy" wire:change="updateSort($event.target.value)" class="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 pr-8 text-sm text-slate-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
+                            @foreach($this->getSortOptions() as $value => $label)
+                                <option value="{{ $value }}" {{ $sortBy === $value ? 'selected' : '' }}>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                            @if($sortDirection === 'asc')
+                                <i class="bi bi-arrow-up text-slate-500 text-sm"></i>
+                            @else
+                                <i class="bi bi-arrow-down text-slate-500 text-sm"></i>
+                            @endif
+                        </div>
+                    </div>
                 </div>
 
                 <div class="space-y-2">

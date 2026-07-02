@@ -33,6 +33,8 @@ class ActivityList extends Component
     public string $attendanceMethodFilter = 'all';
     public string $attendanceStatusFilter = 'all';
     public ?int $assigningOperatorActivityId = null;
+    public string $sortBy = 'date';
+    public string $sortDirection = 'desc';
 
     public function mount(): void
     {
@@ -115,6 +117,27 @@ class ActivityList extends Component
         $this->typeFilter = 'all';
         $this->resetPage();
         $this->resetValidation();
+    }
+
+    public function updateSort(string $sort): void
+    {
+        if ($this->sortBy === $sort) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortBy = $sort;
+            $this->sortDirection = 'desc';
+        }
+        $this->resetPage();
+    }
+
+    public function getSortOptions(): array
+    {
+        return [
+            'date' => 'تاریخ شروع',
+            'attendance' => 'تعداد حضور‌کنندگان',
+            'capacity' => 'درصد ظرفیت',
+            'name' => 'نام',
+        ];
     }
 
     public function applyDatePreset(string $preset): void
@@ -329,38 +352,47 @@ class ActivityList extends Component
         $hasInvalidDateFilter = $this->getErrorBag()->has('startsFrom')
             || $this->getErrorBag()->has('startsUntil');
 
+        $query = Activity::query()
+            ->with('creator')
+            ->withCount([
+                'attendances',
+                'attendances as present_attendances_count' => fn ($query) => $query->where('status', 'present'),
+                'attendances as late_attendances_count' => fn ($query) => $query->where('status', 'late'),
+                'attendances as absent_attendances_count' => fn ($query) => $query->where('status', 'absent'),
+            ])
+            ->when($search !== '', function ($query) use ($search): void {
+                $query->where(function ($nestedQuery) use ($search): void {
+                    $nestedQuery
+                        ->where('code', 'like', "%{$search}%")
+                        ->orWhere('name', 'like', "%{$search}%")
+                        ->orWhere('location', 'like', "%{$search}%")
+                        ->orWhereHas('creator', function ($creatorQuery) use ($search): void {
+                            $creatorQuery
+                                ->where('name', 'like', "%{$search}%")
+                                ->orWhere('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%")
+                                ->orWhere(DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, ''))"), 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->when($status, fn ($query) => $query->where('status', $status))
+            ->when($type, fn ($query) => $query->where('activity_type', $type))
+            ->when($hasInvalidDateFilter, fn ($query) => $query->whereRaw('1 = 0'))
+            ->when($startsFrom, fn ($query) => $query->where('starts_at', '>=', $startsFrom->startOfDay()))
+            ->when($startsUntil, fn ($query) => $query->where('starts_at', '<=', $startsUntil->endOfDay()));
+
+        $query = match ($this->sortBy) {
+            'date' => $query->orderBy('starts_at', $this->sortDirection)->latest('id'),
+            'attendance' => $query->orderBy('attendances_count', $this->sortDirection)->latest('id'),
+            'capacity' => $query
+                ->orderByRaw("COALESCE(ROUND((attendances_count / NULLIF(capacity, 0)) * 100), 0) {$this->sortDirection}")
+                ->latest('id'),
+            'name' => $query->orderBy('name', $this->sortDirection)->latest('id'),
+            default => $query->orderBy('starts_at', 'desc')->latest('id'),
+        };
+
         return view('livewire.activities.activity-list', [
-            'activities' => Activity::query()
-                ->with('creator')
-                ->withCount([
-                    'attendances',
-                    'attendances as present_attendances_count' => fn ($query) => $query->where('status', 'present'),
-                    'attendances as late_attendances_count' => fn ($query) => $query->where('status', 'late'),
-                    'attendances as absent_attendances_count' => fn ($query) => $query->where('status', 'absent'),
-                ])
-                ->when($search !== '', function ($query) use ($search): void {
-                    $query->where(function ($nestedQuery) use ($search): void {
-                        $nestedQuery
-                            ->where('code', 'like', "%{$search}%")
-                            ->orWhere('name', 'like', "%{$search}%")
-                            ->orWhere('location', 'like', "%{$search}%")
-                            ->orWhereHas('creator', function ($creatorQuery) use ($search): void {
-                                $creatorQuery
-                                    ->where('name', 'like', "%{$search}%")
-                                    ->orWhere('first_name', 'like', "%{$search}%")
-                                    ->orWhere('last_name', 'like', "%{$search}%")
-                                    ->orWhere(DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, ''))"), 'like', "%{$search}%");
-                            });
-                    });
-                })
-                ->when($status, fn ($query) => $query->where('status', $status))
-                ->when($type, fn ($query) => $query->where('activity_type', $type))
-                ->when($hasInvalidDateFilter, fn ($query) => $query->whereRaw('1 = 0'))
-                ->when($startsFrom, fn ($query) => $query->where('starts_at', '>=', $startsFrom->startOfDay()))
-                ->when($startsUntil, fn ($query) => $query->where('starts_at', '<=', $startsUntil->endOfDay()))
-                ->latest('starts_at')
-                ->latest()
-                ->paginate(self::ACTIVITIES_PER_PAGE),
+            'activities' => $query->paginate(self::ACTIVITIES_PER_PAGE),
             'selectedActivity' => $this->selectedActivity,
             'filteredAttendances' => $this->filteredAttendances,
             'attendanceDisplayLimit' => self::ATTENDANCES_DISPLAY_LIMIT,
