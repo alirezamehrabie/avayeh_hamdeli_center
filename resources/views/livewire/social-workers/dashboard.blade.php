@@ -689,29 +689,13 @@
                                                     @endif
                                                 </div>
 
-                                                <div class="mt-2 space-y-1">
-                                                    <div class="flex min-w-0 flex-wrap items-center gap-2">
-                                                        @if($recipientDisplayName !== '')
-                                                            <p class="min-w-0 truncate text-sm font-semibold text-slate-700">
-                                                                {{ $recipientDisplayName }}
-                                                            </p>
-                                                        @else
-                                                            <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-500">
-                                                                هنوز ثبت نشده
-                                                            </span>
-                                                        @endif
-                                                        @if($familyMemberCount !== null)
-                                                            <span class="inline-flex shrink-0 items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-500">
-                                                                {{ $this->persianNumber($familyMemberCount) }} خانوار
-                                                            </span>
-                                                        @endif
-                                                    </div>
-                                                    @if($recipientNationalId !== '')
-                                                        <span class="inline-flex w-fit items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold text-slate-500" dir="ltr">
-                                                            {{ $this->persianNumber($recipientNationalId) }}
+                                                @if($recipientDisplayName === '')
+                                                    <div class="mt-2">
+                                                        <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-500">
+                                                            هنوز ثبت نشده
                                                         </span>
-                                                    @endif
-                                                </div>
+                                                    </div>
+                                                @endif
                                             </div>
 
                                             <div class="flex flex-col gap-2 md:w-44">
@@ -869,7 +853,28 @@
                                                         </button>
                                                         </div>
 
-                                                        <!-- Search Suggestions -->
+                                                        {{-- Selected recipient confirmation (compact, subtle) --}}
+                                                        @if($recipientDisplayName !== '' || $recipientNationalId !== '')
+                                                            <div class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 px-0.5 text-[11px] leading-4">
+                                                                <span class="inline-flex items-center gap-1 font-bold {{ $recipientDisplayName !== '' ? 'text-emerald-600' : 'text-slate-400' }}">
+                                                                    <i class="bi bi-check-circle-fill text-[10px]"></i>
+                                                                    <span>گیرنده:</span>
+                                                                </span>
+                                                                @if($recipientDisplayName !== '')
+                                                                    <span class="min-w-0 truncate font-extrabold text-slate-700">{{ $recipientDisplayName }}</span>
+                                                                @else
+                                                                    <span class="font-bold text-slate-400">در حال شناسایی…</span>
+                                                                @endif
+                                                                @if($familyMemberCount !== null)
+                                                                    <span class="text-slate-300">·</span>
+                                                                    <span class="font-bold text-slate-500">{{ $this->persianNumber($familyMemberCount) }} خانوار</span>
+                                                                @endif
+                                                                @if($recipientNationalId !== '')
+                                                                    <span class="text-slate-300">·</span>
+                                                                    <span class="font-bold text-slate-500" dir="ltr">{{ $this->persianNumber($recipientNationalId) }}</span>
+                                                                @endif
+                                                            </div>
+                                                        @endif
                                                         @if($recipientSuggestionItems->isNotEmpty() && $this->activeRecipientSearchIndex === $index)
                                                             <div class="absolute z-20 mt-1 hidden max-h-72 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5 sm:block">
                                                                 @foreach($recipientSuggestionItems as $suggestion)
