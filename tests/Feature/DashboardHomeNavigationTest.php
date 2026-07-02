@@ -5,8 +5,11 @@ namespace Tests\Feature;
 use App\Livewire\Admin\DashboardHome;
 use App\Livewire\Activities\ActivityList;
 use App\Livewire\Services\ServiceArchive;
+use App\Livewire\Services\ServiceReports;
 use App\Models\Activity;
 use App\Models\Guardian;
+use App\Models\Service;
+use App\Models\ServiceName;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -154,6 +157,66 @@ class DashboardHomeNavigationTest extends TestCase
             ->assertSet('editingGuardianId', null);
     }
 
+    public function test_service_reports_route_opens_service_reports_section(): void
+    {
+        $this->actingAs($this->adminPanelUserWithoutFullAccess());
+
+        $this->get('/admin/reports/services')
+            ->assertOk()
+            ->assertSeeLivewire(ServiceReports::class);
+    }
+
+    public function test_service_reports_route_with_id_deep_links_to_selected_service(): void
+    {
+        $this->actingAs($this->manager());
+        $service = $this->service();
+
+        $this->get('/admin/reports/services?id=' . $service->id)
+            ->assertOk()
+            ->assertSeeLivewire(ServiceReports::class);
+    }
+
+    public function test_service_report_context_survives_mount_from_url(): void
+    {
+        $this->actingAs($this->manager());
+        $service = $this->service();
+
+        Livewire::withQueryParams([
+            'section' => 'advanced-service-report',
+            'id' => $service->id,
+        ])
+            ->test(DashboardHome::class)
+            ->assertSet('activeSection', 'advanced-service-report')
+            ->assertSet('sectionContextId', $service->id)
+            ->assertSet('serviceReportServiceId', $service->id);
+    }
+
+    public function test_selecting_non_context_section_clears_service_report_context(): void
+    {
+        $this->actingAs($this->manager());
+        $service = $this->service();
+
+        Livewire::withQueryParams([
+            'section' => 'advanced-service-report',
+            'id' => $service->id,
+        ])
+            ->test(DashboardHome::class)
+            ->call('selectSection', 'advanced-operator-report')
+            ->assertSet('activeSection', 'advanced-operator-report')
+            ->assertSet('sectionContextId', null)
+            ->assertSet('serviceReportServiceId', null);
+    }
+
+    public function test_legacy_dashboard_section_query_still_opens_service_reports(): void
+    {
+        $this->actingAs($this->manager());
+        $service = $this->service();
+
+        $this->get('/admin/dashboard?section=advanced-service-report&id=' . $service->id)
+            ->assertOk()
+            ->assertSeeLivewire(ServiceReports::class);
+    }
+
     private function manager(): User
     {
         return User::factory()->create([
@@ -187,6 +250,25 @@ class DashboardHomeNavigationTest extends TestCase
             'guardian_code' => random_int(100000, 999999),
             'first_name' => 'Guardian',
             'last_name' => 'Navigation',
+        ]);
+    }
+
+    private function service(): Service
+    {
+        $serviceName = ServiceName::query()->create([
+            'name' => 'Test Service Name',
+            'sort_id' => ((int) ServiceName::query()->max('sort_id') ?? 0) + 1,
+        ]);
+
+        return Service::query()->create([
+            'code' => 'SVC-' . random_int(10000, 99999),
+            'service_name_id' => $serviceName->id,
+            'name' => 'Test Service',
+            'service_type' => 'individual',
+            'total_quantity' => 100,
+            'supports_gate_delivery' => true,
+            'distribution_start_date' => now()->toDateString(),
+            'created_by' => auth()->id() ?? $this->manager()->id,
         ]);
     }
 }

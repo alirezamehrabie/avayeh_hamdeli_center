@@ -56,6 +56,8 @@ class DashboardHome extends Component
             $this->activeSection = 'service-list';
         } elseif (! request()->has('section') && request()->routeIs('admin.service-delivery')) {
             $this->activeSection = 'service-delivery';
+        } elseif (! request()->has('section') && request()->routeIs('admin.service-reports')) {
+            $this->activeSection = 'advanced-service-report';
         } elseif (! request()->has('section') && request()->routeIs('admin.activity-definition')) {
             $this->activeSection = 'activity-definition';
         } elseif (! request()->has('section') && request()->routeIs('admin.activity-list')) {
@@ -78,7 +80,6 @@ class DashboardHome extends Component
         $this->editingActivityId = $this->activeSection === 'activity-definition' ? $id : null;
         $this->scanningActivityId = $this->activeSection === 'activity-scanner' ? $id : null;
         $this->activityContextId = in_array($this->activeSection, ['activity-definition', 'activity-scanner'], true) ? $id : null;
-        $this->serviceReportServiceId = $section === 'advanced-service-report' ? $id : null;
         $this->showDeletedUsers = false;
         $this->dispatchDashboardSectionChanged();
     }
@@ -135,6 +136,7 @@ class DashboardHome extends Component
         $this->editingGuardianId = $this->activeSection === 'guardian-edit' ? $id : null;
         $this->editingSponsorId = $this->activeSection === 'child-supporter-sponsor-edit' ? $id : null;
         $this->editingServiceId = $this->activeSection === 'service-definition' ? $id : null;
+        $this->serviceReportServiceId = $this->activeSection === 'advanced-service-report' ? $id : null;
     }
 
     private function sectionUsesContextId(string $section): bool
@@ -146,6 +148,7 @@ class DashboardHome extends Component
             'guardian-edit',
             'child-supporter-sponsor-edit',
             'service-definition',
+            'advanced-service-report',
         ], true);
     }
 

@@ -110,6 +110,10 @@ Route::get('/admin/services/service-delivery', DashboardHome::class)
     ->middleware(['auth', 'can:full-access'])
     ->name('admin.service-delivery');
 
+Route::get('/admin/reports/services', DashboardHome::class)
+    ->middleware(['auth', 'can:access-admin-panel'])
+    ->name('admin.service-reports');
+
 Route::get('/admin/activities/activity-definition', DashboardHome::class)
     ->middleware(['auth', 'can:full-access'])
     ->name('admin.activity-definition');
