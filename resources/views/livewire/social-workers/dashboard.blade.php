@@ -463,25 +463,73 @@
 
                     </section>
 
-                    <section class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-100 sm:p-4">
+                    <section
+                        class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-100"
+                        x-data="{ quotaSummaryOpen: false }"
+                    >
+                        @php
+                            $formatQuotaValue = static function ($value): string {
+                                $formatted = rtrim(rtrim(number_format((float) $value, 2, '.', ''), '0'), '.');
 
-                        <div class="flex items-start justify-between gap-3">
+                                return $formatted === '-0' || $formatted === '' ? '0' : $formatted;
+                            };
+                        @endphp
+
+                        <button
+                            type="button"
+                            class="group flex w-full flex-col gap-2 rounded-2xl p-3 text-right transition duration-200 hover:bg-slate-50/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 sm:p-4"
+                            x-on:click="quotaSummaryOpen = !quotaSummaryOpen"
+                            x-bind:aria-expanded="quotaSummaryOpen.toString()"
+                            aria-controls="service-quota-summary-details"
+                        >
+                        <div class="flex w-full items-start justify-between gap-3">
                             <div class="flex min-w-0 items-start gap-3">
                                 <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-sm font-black text-slate-600">
                                     <i class="bi bi-box-seam"></i>
                                 </span>
                                 <div class="min-w-0">
                                     <h2 class="text-sm font-extrabold text-slate-800">خلاصه سهمیه خدمت</h2>
+                                    @if($selectedService)
+                                        <p class="mt-1 truncate text-xs font-bold leading-5 text-slate-500">
+                                            {{ $selectedService->serviceName?->name }}
+                                        </p>
+                                        <p class="mt-0.5 text-[10px] font-bold leading-4 text-slate-400" dir="ltr">
+                                            <span class="text-emerald-700">
+                                                {{ $this->persianNumber($formatQuotaValue($selectedServiceTotals['remaining'] ?? 0)) }}
+                                            </span>
+                                            <span class="px-0.5">/</span>
+                                            <span>{{ $this->persianNumber($formatQuotaValue($selectedServiceTotals['allocated'] ?? 0)) }}</span>
+                                        </p>
+                                    @else
+                                        <p class="mt-1 text-xs font-bold leading-5 text-slate-400">
+                                            ابتدا خدمت را انتخاب کنید.
+                                        </p>
+                                    @endif
                                 </div>
                             </div>
+                            <div class="flex shrink-0 items-center gap-2">
                             @if($selectedService)
                                 <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-bold text-slate-500 shadow-sm">
                                     {{ $this->selectedServiceTypeLabel }}
                                 </span>
                             @endif
+                                <span class="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition duration-200 group-hover:border-cyan-100 group-hover:text-cyan-700">
+                                    <i class="bi bi-chevron-down text-xs transition-transform duration-200" x-bind:class="{ 'rotate-180': quotaSummaryOpen }"></i>
+                                </span>
+                            </div>
                         </div>
 
+                        </button>
+
                         @if($selectedService)
+                            <div
+                                id="service-quota-summary-details"
+                                class="overflow-hidden border-t border-slate-100"
+                                x-show="quotaSummaryOpen"
+                                x-collapse.duration.250ms
+                                x-cloak
+                            >
+                                <div class="p-3 pt-2 sm:p-4 sm:pt-3">
 
                             <div class="mt-3 flex flex-wrap items-center gap-2">
                                 <p class="min-w-0 text-sm font-bold text-slate-700 sm:text-base">
@@ -560,14 +608,14 @@
                                             <div class="min-w-0">
                                                 <span class="block text-[9px] font-bold leading-4 text-slate-400">باقی‌مانده</span>
                                                 <span class="block truncate text-base font-extrabold leading-6 {{ $quotaState['value'] }}">
-                                                    {{ $this->persianNumber(number_format($remaining, 2)) }}
+                                                    {{ $this->persianNumber($formatQuotaValue($remaining)) }}
                                                     <span class="text-[10px] font-bold text-slate-400">{{ $unitLabel }}</span>
                                                 </span>
                                             </div>
 
                                             <div class="shrink-0 text-left text-[10px] font-bold leading-4 text-slate-500">
-                                                <span class="block">تحویل {{ $this->persianNumber(number_format($delivered, 2)) }}</span>
-                                                <span class="block text-slate-400">از {{ $this->persianNumber(number_format($allocated, 2)) }}</span>
+                                                <span class="block">تحویل {{ $this->persianNumber($formatQuotaValue($delivered)) }}</span>
+                                                <span class="block text-slate-400">از {{ $this->persianNumber($formatQuotaValue($allocated)) }}</span>
                                             </div>
                                         </div>
 
@@ -598,8 +646,9 @@
 
 
 
+                                </div>
+                            </div>
                         @else
-                            <p class="mt-2.5 text-xs leading-5 text-slate-400">ابتدا خدمت را انتخاب کنید تا خلاصه سهمیه نمایش داده شود.</p>
                         @endif
 
                     </section>
