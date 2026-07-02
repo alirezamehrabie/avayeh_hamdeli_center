@@ -95,105 +95,38 @@
 
         <div class="px-3 py-4 sm:px-4 sm:py-6">
             <form wire:submit.prevent="saveDelivery"
-                  class="space-y-5 pb-20 md:pb-0">
-                @php
-                    $workflowHasRecipients = $selectedService
-                        && collect($recipientEntries)->contains(fn ($entry) => filled($entry['national_id'] ?? '') || filled($entry['resolved_name'] ?? '') || filled($entry['full_name'] ?? '') || collect($entry['category_quantities'] ?? [])->contains(fn ($quantity) => (float) $quantity > 0));
-                    $workflowHasQuantities = $selectedService
-                        && collect($recipientEntries)->contains(fn ($entry) => collect($entry['category_quantities'] ?? [])->contains(fn ($quantity) => (float) $quantity > 0));
-                    $workflowSteps = [
-                        ['number' => '۱', 'label' => 'انتخاب خدمت', 'short' => 'خدمت', 'active' => true, 'done' => (bool) $selectedService],
-                        ['number' => '۲', 'label' => 'گیرندگان و مقدار', 'short' => 'گیرندگان', 'active' => (bool) $selectedService, 'done' => (bool) $workflowHasRecipients && (bool) $workflowHasQuantities],
-                        ['number' => '۳', 'label' => 'جزئیات تحویل', 'short' => 'جزئیات', 'active' => (bool) $selectedService, 'done' => (bool) $selectedService && filled($deliveredAt)],
-                        ['number' => '۴', 'label' => 'مرور و ثبت', 'short' => 'ثبت', 'active' => (bool) $selectedService, 'done' => false],
-                    ];
-                    $currentWorkflowStep = match (true) {
-                        ! $selectedService => 1,
-                        ! $workflowHasRecipients || ! $workflowHasQuantities => 2,
-                        blank($deliveredAt) => 3,
-                        default => 4,
-                    };
-                @endphp
-
-                <nav class="rounded-2xl border border-slate-200/80 bg-transparent px-2.5 py-2 sm:px-3 sm:py-2.5" aria-label="مراحل ثبت تحویل">
-                    <div class="hidden">
-                        <svg class="h-full w-full" viewBox="0 0 800 130" preserveAspectRatio="none" aria-hidden="true">
-                            <defs>
-                                <linearGradient id="social-worker-workflow-orb-grid" x1="0" x2="1" y1="0" y2="1">
-                                    <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.14"/>
-                                    <stop offset="55%" stop-color="#14b8a6" stop-opacity="0.08"/>
-                                    <stop offset="100%" stop-color="#64748b" stop-opacity="0.04"/>
-                                </linearGradient>
-                            </defs>
-                            <path d="M0 66 C 150 22, 248 108, 400 62 S 648 28, 800 76" fill="none" stroke="url(#social-worker-workflow-orb-grid)" stroke-width="24" stroke-linecap="round"/>
-                            <path d="M0 66 C 150 22, 248 108, 400 62 S 648 28, 800 76" fill="none" stroke="#ffffff" stroke-opacity="0.64" stroke-width="1" stroke-dasharray="4 12"/>
-                        </svg>
-                    </div>
-
-                    <ol class="grid grid-cols-4 items-start gap-1 sm:gap-2.5">
-                        @foreach($workflowSteps as $stepIndex => $step)
-                            @php
-                                $stepPosition = $stepIndex + 1;
-                                $isCurrentStep = $stepPosition === $currentWorkflowStep;
-                                $isCompletedStep = (bool) $step['done'];
-                                $isLockedStep = ! $step['active'] && ! $isCurrentStep && ! $isCompletedStep;
-                            @endphp
-                            <li class="relative min-w-0 text-center" @if($isCurrentStep) aria-current="step" @endif>
-                                @if(! $loop->last)
-                                    <span class="absolute right-1/2 top-3.5 h-px w-full translate-x-1/2 rounded-full sm:top-4 {{ $isCompletedStep ? 'bg-emerald-200' : ($stepPosition < $currentWorkflowStep ? 'bg-cyan-100' : 'bg-slate-200') }}" aria-hidden="true"></span>
-                                @endif
-
-                                <div class="relative z-10 mx-auto flex h-7 w-7 items-center justify-center rounded-full border bg-white transition duration-200 sm:h-8 sm:w-8 {{ $isCompletedStep ? 'border-emerald-200 text-emerald-700' : ($isCurrentStep ? 'border-cyan-300 text-cyan-700 shadow-[0_0_0_3px_rgba(6,182,212,0.08)]' : 'border-slate-200 text-slate-400') }}">
-                                    <span class="relative flex h-full w-full items-center justify-center overflow-hidden rounded-full">
-                                        @if($isCompletedStep)
-                                            <i class="bi bi-check2 text-sm text-emerald-600"></i>
-                                        @else
-                                            <span class="text-[10px] font-black sm:text-xs">{{ $step['number'] }}</span>
-                                        @endif
-
-                                        @if($isCurrentStep)
-                                            <svg class="pointer-events-none absolute -inset-1 h-[calc(100%+0.5rem)] w-[calc(100%+0.5rem)] animate-spin text-cyan-300/70 [animation-duration:10s]" viewBox="0 0 64 64" aria-hidden="true">
-                                                <circle cx="32" cy="32" r="29" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="12 172" stroke-linecap="round"/>
-                                            </svg>
-                                        @endif
-                                    </span>
-                                </div>
-
-                                <div class="mt-1 min-w-0">
-                                    <p class="truncate text-[9px] font-black leading-3.5 sm:text-[10px] {{ $isCurrentStep ? 'text-cyan-800' : ($isCompletedStep ? 'text-emerald-700' : ($isLockedStep ? 'text-slate-400' : 'text-slate-600')) }}">
-                                        <span class="sm:hidden">{{ $step['short'] }}</span>
-                                        <span class="hidden sm:inline">{{ $step['label'] }}</span>
-                                    </p>
-                                    <span class="mt-0.5 hidden text-[8px] font-bold leading-3 text-slate-400 sm:block">
-                                        @if($isCompletedStep)
-                                            تکمیل شده
-                                        @elseif($isCurrentStep)
-                                            مرحله فعلی
-                                        @elseif($isLockedStep)
-                                            در انتظار
-                                        @else
-                                            آماده
-                                        @endif
-                                    </span>
-                                </div>
-                            </li>
-                        @endforeach
-                    </ol>
-                </nav>
-
-                <div class="grid gap-4 xl:gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] xl:items-start">
+                  class="space-y-5 {{ $selectedService ? 'pb-20 md:pb-0' : 'pb-0' }}">
+                <div class="{{ $selectedService ? 'grid gap-4 xl:gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] xl:items-start' : 'mx-auto grid max-w-2xl gap-4' }}">
                     <div class="space-y-5">
-                    <section class="rounded-2xl border border-cyan-100 bg-white p-3 shadow-sm shadow-slate-100 sm:p-4">
-                        <div class="mb-3 flex items-start gap-3">
-                            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-600 text-sm font-black text-white">۱</span>
-                            <div class="min-w-0">
-                                <h2 class="text-sm font-black text-slate-900">انتخاب خدمت</h2>
+                    <section class="rounded-2xl border {{ $selectedService ? 'border-cyan-100' : 'border-slate-200' }} bg-white shadow-sm shadow-slate-100">
+                        <div class="p-4 sm:p-5">
+                            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                                <div class="flex min-w-0 items-start gap-3">
+                                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl {{ $selectedService ? 'bg-cyan-600 text-white' : 'bg-slate-100 text-cyan-700' }} text-sm font-black">
+                                        <i class="bi bi-box-seam"></i>
+                                    </span>
+                                    <div class="min-w-0">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <h2 class="text-base font-black text-slate-900">انتخاب خدمت</h2>
+                                            @if($selectedService)
+                                                <span class="inline-flex items-center rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[10px] font-black text-emerald-700">
+                                                    انتخاب شده
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black text-slate-500">
+                                                    انتخاب نشده
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <p class="mt-1.5 text-xs font-medium leading-5 text-slate-500 sm:text-sm">
+                                            برای شروع ثبت تحویل، یکی از خدمات تخصیص‌یافته را انتخاب کنید.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <label class="mb-2 block text-xs font-bold text-slate-600">
-                            خدمت
-                        </label>
+                        <div class="border-t border-slate-100 px-4 pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
 
                         @php
                             $serviceOptions = $assignedServices->map(function ($service) {
@@ -460,9 +393,11 @@
                             {{ $message }}
                         </p>
                         @enderror
+                        </div>
 
                     </section>
 
+                    @if($selectedService)
                     <section
                         class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-100"
                         x-data="{ quotaSummaryOpen: false }"
@@ -652,6 +587,7 @@
                         @endif
 
                     </section>
+                    @endif
 
                     @if($serviceSelectionWarning !== '')
                         <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
@@ -660,6 +596,7 @@
                     @endif
 
 
+                    @if($selectedService)
                     <section class="rounded-2xl border border-cyan-100 bg-white p-3 shadow-sm shadow-slate-100 sm:p-4">
                         <!-- Header Section -->
                         <div class="mb-4 flex items-center justify-between gap-4">
@@ -1812,8 +1749,10 @@
                         </div>
                         @endif
                     </section>
+                    @endif
 
 
+                    @if($selectedService)
                     <section class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-100 sm:p-4">
                         <div class="mb-3 flex items-start gap-3">
                             <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl {{ $selectedService ? 'bg-cyan-600 text-white' : 'bg-slate-100 text-slate-400' }} text-xs font-black">۳</span>
@@ -1883,9 +1822,11 @@
                             </div>
                         @endif
                     </section>
+                    @endif
 
                     </div>
 
+                    @if($selectedService)
                     <aside class="space-y-4 xl:sticky xl:top-4">
                     @if($selectedService)
                         @php
@@ -2113,6 +2054,7 @@
                         </span>
                     </button>
                     </aside>
+                    @endif
                 </div>
             </form>
         </div>
