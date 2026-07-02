@@ -1410,7 +1410,6 @@
                                     @error('recipientEntries') <p class="mt-2 rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{{ $message }}</p> @enderror
 
                                     </div>
-                                    </details>
                                 </article>
                             @endforeach
                         </div>

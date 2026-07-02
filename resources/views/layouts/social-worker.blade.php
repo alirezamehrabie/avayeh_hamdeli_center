@@ -54,19 +54,7 @@
 
                 <div class="flex items-center gap-3">
                     <div class="relative">
-                        <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white ring-2 ring-indigo-100 shadow-sm">
-                            @if (auth()->user()->profile_photo_path)
-                                <img
-                                    src="{{ asset(auth()->user()->profile_photo_path) }}"
-                                    alt="تصویر پروفایل {{ auth()->user()->name }}"
-                                    class="h-full w-full object-cover"
-                                >
-                            @else
-                                <div class="flex h-full w-full items-center justify-center bg-indigo-600 text-sm font-bold text-white">
-                                    {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
-                                </div>
-                            @endif
-                        </div>
+                        <x-user-avatar />
                     </div>
                 </div>
             </header>
