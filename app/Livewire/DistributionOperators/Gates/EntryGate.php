@@ -455,6 +455,17 @@ class EntryGate extends Component
         }
     }
 
+    public function confirmPermission(): void
+    {
+        $this->authorizeGate();
+
+        if (! $this->selectedService || ! $this->hasScannedSubject()) {
+            return;
+        }
+
+        $this->resumeScanning();
+    }
+
     public function resumeScanning(): void
     {
         $this->authorizeGate();
