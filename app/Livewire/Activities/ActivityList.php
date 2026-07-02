@@ -32,6 +32,7 @@ class ActivityList extends Component
     public string $attendanceSearch = '';
     public string $attendanceMethodFilter = 'all';
     public string $attendanceStatusFilter = 'all';
+    public ?int $assigningOperatorActivityId = null;
 
     public function mount(): void
     {
@@ -73,6 +74,18 @@ class ActivityList extends Component
         $this->transitionNotes = '';
         $this->resetAttendanceFilters();
         $this->resetValidation();
+    }
+
+    public function openOperatorAssignment(int $activityId): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
+
+        $this->assigningOperatorActivityId = $activityId;
+    }
+
+    public function closeOperatorAssignment(): void
+    {
+        $this->assigningOperatorActivityId = null;
     }
 
     public function transitionActivity(int $activityId, string $targetStatus): void

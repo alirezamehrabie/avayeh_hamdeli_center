@@ -108,7 +108,6 @@
             'activities' => [
                 ['section' => 'activity-list', 'label' => 'مدیریت فعالیت‌ها'],
                 ['section' => 'activity-definition', 'label' => 'تعریف فعالیت', 'visible' => $user?->can('full-access')],
-                ['section' => 'activity-operator-assignments', 'label' => 'تخصیص اپراتور فعالیت', 'visible' => $user?->can('full-access')],
             ],
             'child-supporter' => [
                 ['section' => 'child-supporter-sponsor-registration', 'label' => 'ثبت نام حامی'],

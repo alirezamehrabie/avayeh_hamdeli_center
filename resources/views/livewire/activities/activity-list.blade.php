@@ -102,6 +102,7 @@
                                         <button type="button" wire:click="openScanner({{ $activity->id }})" class="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs font-bold text-cyan-700 hover:bg-cyan-100">ثبت حضور</button>
                                     @endif
                                     @can('full-access')
+                                        <button type="button" wire:click="openOperatorAssignment({{ $activity->id }})" class="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100">تخصیص اپراتور</button>
                                         <button type="button" wire:click="editActivity({{ $activity->id }})" class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100">ویرایش</button>
                                     @endcan
                                 </div>
@@ -173,6 +174,9 @@
                                     <button type="button" wire:click="openScanner({{ $selectedActivity->id }})" class="rounded-full bg-cyan-600 px-4 py-2 text-xs font-bold text-white hover:bg-cyan-700">شروع ثبت حضور QR</button>
                                 @endif
                                 <button type="button" wire:click="exportAttendances" class="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">خروجی اکسل حضور</button>
+                                @can('full-access')
+                                    <button type="button" wire:click="openOperatorAssignment({{ $selectedActivity->id }})" class="rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100">تخصیص اپراتور فعالیت</button>
+                                @endcan
                             </div>
 
                             <div class="space-y-3 border-t border-slate-200 pt-4">
@@ -219,4 +223,25 @@
             </div>
         </div>
     </div>
+
+    @can('full-access')
+        @if($assigningOperatorActivityId)
+            <div
+                x-data
+                x-on:close-activity-operator-assignment-modal.window="$wire.closeOperatorAssignment()"
+                x-on:keydown.escape.window="$wire.closeOperatorAssignment()"
+                class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+            >
+                <div
+                    x-on:click.outside="$wire.closeOperatorAssignment()"
+                    class="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl"
+                >
+                    <livewire:admin.activity-operator-assignment
+                        :activity-id="$assigningOperatorActivityId"
+                        :key="'activity-operator-assignment-modal-' . $assigningOperatorActivityId"
+                    />
+                </div>
+            </div>
+        @endif
+    @endcan
 </div>

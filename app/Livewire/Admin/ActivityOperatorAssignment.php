@@ -20,13 +20,20 @@ class ActivityOperatorAssignment extends Component
 
     public ?int $selectedActivityId = null;
 
+    public ?int $lockedActivityId = null;
+
     public string $operatorSearch = '';
 
     public string $assignmentNotes = '';
 
-    public function mount(): void
+    public function mount(?int $activityId = null): void
     {
         abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
+
+        if ($activityId) {
+            $this->lockedActivityId = $activityId;
+            $this->selectedActivityId = $activityId;
+        }
     }
 
     public function updatedSearch(): void
