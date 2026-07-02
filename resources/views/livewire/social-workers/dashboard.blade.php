@@ -798,6 +798,15 @@
                                                         $recipientSuggestionItems = collect($this->recipientSuggestions[$index] ?? []);
                                                         $recipientSuggestionType = $this->selectedService?->service_type === 'family' ? 'guardian' : 'person';
                                                         $recipientSuggestionTypeLabel = $recipientSuggestionType === 'guardian' ? 'سرپرست' : 'مددجو';
+                                                        $recipientSearchTitle = $recipientSuggestionType === 'guardian'
+                                                            ? 'جستجوی سرپرست / خانواده'
+                                                            : 'جستجوی مددجو';
+                                                        $recipientSearchPlaceholder = $recipientSuggestionType === 'guardian'
+                                                            ? 'نام یا کد ملی سرپرست خانواده'
+                                                            : 'نام یا کد ملی مددجو';
+                                                        $recipientServiceTypeChip = $recipientSuggestionType === 'guardian'
+                                                            ? 'خدمت خانوادگی'
+                                                            : 'خدمت شخصی';
                                                         $recipientNationalDigits = preg_replace('/\D+/', '', $recipientNationalId) ?? '';
                                                         $showManualRecipientNotice = $isUnregisteredRecipient
                                                             && strlen($recipientNationalDigits) === 10
@@ -927,16 +936,21 @@
                                                                 <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-cyan-700 shadow-sm">
                                                                     <i class="bi bi-person-plus text-sm"></i>
                                                                 </span>
-                                                                <span class="truncate">افزودن گیرنده</span>
+                                                                <span class="truncate">{{ $recipientSearchTitle }}</span>
                                                             </label>
-                                                            @if($recipientFieldSearchState)
-                                                                <span class="inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-black {{ $recipientFieldSearchState['class'] }}">
-                                                                    <i class="bi {{ $recipientFieldSearchState['icon'] }} text-[10px]"></i>
-                                                                    {{ $recipientFieldSearchState['label'] }}
+                                                            <div class="flex shrink-0 items-center gap-1.5">
+                                                                <span class="hidden rounded-full border border-cyan-100 bg-white px-2 py-0.5 text-[10px] font-black text-cyan-700 sm:inline">
+                                                                    {{ $recipientServiceTypeChip }}
                                                                 </span>
-                                                            @else
-                                                                <span class="hidden rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-400 sm:inline">جستجو</span>
-                                                            @endif
+                                                                @if($recipientFieldSearchState)
+                                                                    <span class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-black {{ $recipientFieldSearchState['class'] }}">
+                                                                        <i class="bi {{ $recipientFieldSearchState['icon'] }} text-[10px]"></i>
+                                                                        {{ $recipientFieldSearchState['label'] }}
+                                                                    </span>
+                                                                @else
+                                                                    <span class="hidden rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-400 sm:inline">جستجو</span>
+                                                                @endif
+                                                            </div>
                                                         </div>
 
                                                         <div class="relative">
@@ -950,7 +964,7 @@
                                                             x-on:keydown.enter.prevent="chooseRecipientSuggestionFromInput()"
                                                             @disabled(!$this->selectedService)
                                                             class="h-12 w-full rounded-xl border border-cyan-300 bg-white py-2.5 pl-12 pr-10 text-sm font-bold text-slate-800 transition-all placeholder:text-xs placeholder:font-normal placeholder:text-slate-400 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10"
-                                                            placeholder="نام یا کدملی گیرنده خدمت"
+                                                            placeholder="{{ $recipientSearchPlaceholder }}"
                                                             autocomplete="off"
                                                         >
                                                         <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-cyan-600">
@@ -1050,11 +1064,11 @@
                                                             <div class="mb-3 flex items-center justify-between gap-3 border-b border-slate-200/70 pb-3">
                                                                 <div class="min-w-0">
                                                                     <h4 class="text-sm font-black leading-5 text-slate-800">
-                                                                        جستجوی {{ $recipientSuggestionTypeLabel }}
+                                                                        {{ $recipientSearchTitle }}
                                                                     </h4>
                                                                     <p class="mt-0.5 truncate text-[11px] font-bold leading-5 text-slate-500">
                                                                         <span wire:loading.remove wire:target="recipientEntries.{{ $index }}.national_id">
-                                                                            {{ $recipientSuggestionItems->isNotEmpty() ? $this->persianNumber($recipientSuggestionItems->count()) . ' مورد پیدا شد' : 'نام یا کد ملی را وارد کنید' }}
+                                                                            {{ $recipientSuggestionItems->isNotEmpty() ? $this->persianNumber($recipientSuggestionItems->count()) . ' مورد پیدا شد' : $recipientSearchPlaceholder . ' را وارد کنید' }}
                                                                         </span>
                                                                         <span wire:loading.inline-flex wire:target="recipientEntries.{{ $index }}.national_id" class="hidden items-center gap-1.5 text-cyan-700">
                                                                             <span class="h-3 w-3 animate-spin rounded-full border-2 border-cyan-200 border-t-cyan-600" aria-hidden="true"></span>
@@ -1083,7 +1097,7 @@
                                                                         x-on:keydown.enter.prevent="chooseRecipientSuggestionFromInput()"
                                                                         @disabled(!$this->selectedService)
                                                                         class="min-h-12 w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm text-slate-700 shadow-sm transition placeholder:text-xs placeholder:font-normal placeholder:text-slate-400 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10"
-                                                                        placeholder="نام یا کدملی گیرنده خدمت"
+                                                                        placeholder="{{ $recipientSearchPlaceholder }}"
                                                                         autocomplete="off"
                                                                     >
                                                                     <svg wire:loading.remove wire:target="recipientEntries.{{ $index }}.national_id" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
