@@ -439,8 +439,8 @@
                                             </span>
                                         </span>
                                         <span class="flex shrink-0 items-center gap-2">
-                                            @if($category?->unit)
-                                                <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ $category->unit }}</span>
+                                            @if($category?->unitLabel)
+                                                <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ $category->unitLabel }}</span>
                                             @endif
                                             <span class="rounded-full bg-indigo-100 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700">خروج نهایی شده</span>
                                         </span>
@@ -470,8 +470,8 @@
                                             </span>
                                         </span>
                                         <span class="flex shrink-0 items-center gap-2">
-                                            @if($category?->unit)
-                                                <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ $category->unit }}</span>
+                                            @if($category?->unitLabel)
+                                                <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ $category->unitLabel }}</span>
                                             @endif
                                             <span
                                                 class="rounded-full px-2.5 py-0.5 text-[11px] font-bold transition"

@@ -606,8 +606,8 @@
                                         @if($isLocked)
                                             <span class="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">ثبت‌شده در گیت بعدی</span>
                                         @endif
-                                        @if($category->unit)
-                                            <span class="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ $category->unit }}</span>
+                                        @if($category->unitLabel)
+                                            <span class="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ $category->unitLabel }}</span>
                                         @endif
                                     </span>
                                 </button>

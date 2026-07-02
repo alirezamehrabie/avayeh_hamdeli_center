@@ -138,7 +138,15 @@ class ServiceCategory extends Model
 
     public function getUnitLabelAttribute(): string
     {
-        return (string) ($this->attributes['unit'] ?? '');
+        $unitKey = $this->attributes['unit'] ?? '';
+
+        if (! $unitKey) {
+            return '';
+        }
+
+        $unitOptions = Service::unitOptions();
+
+        return $unitOptions[$unitKey] ?? (string) $unitKey;
     }
 
     public function getAvailableQuantityAttribute(): float
