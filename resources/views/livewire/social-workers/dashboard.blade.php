@@ -756,6 +756,27 @@
                                                             && strlen($recipientNationalDigits) === 10
                                                             && $recipientSuggestionItems->isEmpty()
                                                             && $this->activeRecipientSearchIndex === $index;
+                                                        // Field-level search outcome shown as a chip on the input
+                                                        // itself, so the worker always knows which of the input's two
+                                                        // modes (name lookup vs. 10-digit auto-resolve) is in effect.
+                                                        $recipientFieldSearchState = match (true) {
+                                                            $recipientDisplayName !== '' && ! $isUnregisteredRecipient => [
+                                                                'label' => 'شناسایی شد',
+                                                                'class' => 'border-emerald-200 bg-emerald-50 text-emerald-700',
+                                                                'icon' => 'bi-check-circle-fill',
+                                                            ],
+                                                            $isUnregisteredRecipient => [
+                                                                'label' => 'یافت نشد',
+                                                                'class' => 'border-amber-200 bg-amber-50 text-amber-700',
+                                                                'icon' => 'bi-exclamation-circle-fill',
+                                                            ],
+                                                            $recipientNationalId !== '' => [
+                                                                'label' => 'در حال جستجو…',
+                                                                'class' => 'border-cyan-200 bg-cyan-50 text-cyan-700',
+                                                                'icon' => 'bi-search',
+                                                            ],
+                                                            default => null,
+                                                        };
                                                     @endphp
                                                     <div
                                                         class="rounded-2xl border p-2.5 transition {{ $recipientDisplayName === '' && $recipientNationalId === '' ? 'border-cyan-300 bg-cyan-50/70' : 'border-slate-200 bg-slate-50' }}"
@@ -822,7 +843,14 @@
                                                                 </span>
                                                                 <span class="truncate">افزودن گیرنده</span>
                                                             </label>
-                                                            <span class="hidden rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-400 sm:inline">جستجو</span>
+                                                            @if($recipientFieldSearchState)
+                                                                <span class="inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-black {{ $recipientFieldSearchState['class'] }}">
+                                                                    <i class="bi {{ $recipientFieldSearchState['icon'] }} text-[10px]"></i>
+                                                                    {{ $recipientFieldSearchState['label'] }}
+                                                                </span>
+                                                            @else
+                                                                <span class="hidden rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-slate-400 sm:inline">جستجو</span>
+                                                            @endif
                                                         </div>
 
                                                         <div class="relative">
@@ -852,6 +880,13 @@
                                                             <i class="bi bi-qr-code-scan text-base"></i>
                                                         </button>
                                                         </div>
+
+                                                        @if($recipientDisplayName === '' && $recipientNationalId === '')
+                                                            <p class="mt-1.5 flex items-center gap-1 px-0.5 text-[10px] font-medium leading-4 text-slate-400">
+                                                                <i class="bi bi-info-circle text-[10px] text-slate-300"></i>
+                                                                نام را تایپ کنید یا کد ملی ۱۰ رقمی را کامل وارد کنید.
+                                                            </p>
+                                                        @endif
 
                                                         {{-- Selected recipient confirmation (compact, subtle) --}}
                                                         @if($recipientDisplayName !== '' || $recipientNationalId !== '')
