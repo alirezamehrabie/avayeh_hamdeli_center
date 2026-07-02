@@ -20,6 +20,7 @@ class ActivityCheckIn extends Component
     public array $recentScans = [];
     public string $manualSearch = '';
     public ?int $selectedPersonId = null;
+    public bool $activityUnavailable = false;
 
     public function mount(int $id): void
     {
@@ -27,10 +28,17 @@ class ActivityCheckIn extends Component
 
         $this->activityId = $id;
         $activity = $this->activity;
-        abort_unless($activity, 404);
 
-        $this->scanStatus = $activity?->status === 'ongoing' ? 'ready' : 'paused';
-        $this->scanMessage = $activity?->status === 'ongoing'
+        if (! $activity) {
+            // Activity doesn't exist or isn't assigned to this operator. Render a
+            // friendly Persian explanation instead of a hard 403/404 abort.
+            $this->activityUnavailable = true;
+
+            return;
+        }
+
+        $this->scanStatus = $activity->status === 'ongoing' ? 'ready' : 'paused';
+        $this->scanMessage = $activity->status === 'ongoing'
             ? 'دوربین را فعال کنید و QR مددجو را اسکن کنید.'
             : 'ثبت حضور فقط زمانی فعال است که فعالیت در وضعیت آماده برگزاری باشد.';
     }
@@ -89,16 +97,16 @@ class ActivityCheckIn extends Component
 
     public function getActivityProperty(): ?Activity
     {
-        $activity = auth()->user()->assignedActivities()->find($this->activityId);
-        if (! $activity) {
-            return null;
-        }
-
-        return $activity->load('creator')
+        // Scoped through assignedActivities() so the query itself enforces that
+        // the activity belongs to the current operator - find() only ever
+        // returns a match if $this->activityId is actually assigned to them.
+        return auth()->user()->assignedActivities()
+            ->with('creator')
             ->withCount([
                 'attendances',
                 'attendances as present_attendances_count' => fn ($query) => $query->where('status', 'present'),
-            ])->first();
+            ])
+            ->find($this->activityId);
     }
 
     public function getManualCandidatesProperty(): Collection
@@ -153,6 +161,10 @@ class ActivityCheckIn extends Component
 
     public function render()
     {
+        if ($this->activityUnavailable) {
+            return view('livewire.activity-operators.activity-check-in-unavailable');
+        }
+
         return view('livewire.activity-operators.activity-check-in', [
             'activity' => $this->activity,
             'manualCandidates' => $this->manualCandidates,
