@@ -74,26 +74,37 @@ class ActivityOperatorAssignment extends Component
             return;
         }
 
-        $alreadyAssigned = ActivityOperatorAssignmentModel::query()
+        $existingAssignment = ActivityOperatorAssignmentModel::withTrashed()
             ->where('activity_id', $activity->id)
             ->where('user_id', $operator->id)
-            ->whereNull('deleted_at')
-            ->exists();
+            ->first();
 
-        if ($alreadyAssigned) {
+        if ($existingAssignment && ! $existingAssignment->trashed()) {
             session()->flash('success', 'این اپراتور قبلاً به این فعالیت تخصیص داده شده است.');
             $this->operatorSearch = '';
 
             return;
         }
 
-        ActivityOperatorAssignmentModel::create([
-            'activity_id' => $activity->id,
-            'user_id' => $operator->id,
-            'assigned_by' => auth()->id(),
-            'notes' => trim($this->assignmentNotes) ?: null,
-            'assigned_at' => now(),
-        ]);
+        if ($existingAssignment) {
+            // Restore the previously removed assignment rather than inserting a new
+            // row, since the unique(activity_id, user_id) index still blocks inserts
+            // while the old soft-deleted row exists.
+            $existingAssignment->restore();
+            $existingAssignment->update([
+                'assigned_by' => auth()->id(),
+                'notes' => trim($this->assignmentNotes) ?: null,
+                'assigned_at' => now(),
+            ]);
+        } else {
+            ActivityOperatorAssignmentModel::create([
+                'activity_id' => $activity->id,
+                'user_id' => $operator->id,
+                'assigned_by' => auth()->id(),
+                'notes' => trim($this->assignmentNotes) ?: null,
+                'assigned_at' => now(),
+            ]);
+        }
 
         $this->operatorSearch = '';
         $this->assignmentNotes = '';
