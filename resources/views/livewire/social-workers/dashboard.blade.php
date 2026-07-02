@@ -830,11 +830,50 @@
 
                                                                 this.closeRecipientSheet({ syncHistory: false });
                                                             },
+                                                            recipientSuggestionButtons() {
+                                                                return Array.from(this.$el.querySelectorAll('[data-recipient-suggestion]'))
+                                                                    .filter((button) => button.offsetParent !== null);
+                                                            },
+                                                            focusRecipientSuggestion(direction, event) {
+                                                                const items = this.recipientSuggestionButtons();
+
+                                                                if (items.length === 0) {
+                                                                    return;
+                                                                }
+
+                                                                event?.preventDefault();
+
+                                                                const current = items.indexOf(document.activeElement);
+                                                                let next = current === -1
+                                                                    ? (direction > 0 ? 0 : items.length - 1)
+                                                                    : current + direction;
+
+                                                                if (next < 0) {
+                                                                    next = items.length - 1;
+                                                                }
+
+                                                                if (next >= items.length) {
+                                                                    next = 0;
+                                                                }
+
+                                                                items[next].focus();
+                                                            },
+                                                            chooseRecipientSuggestionFromInput() {
+                                                                const items = this.recipientSuggestionButtons();
+
+                                                                if (items.length === 0) {
+                                                                    return;
+                                                                }
+
+                                                                items[0].click();
+                                                            },
                                                         }"
                                                         x-init="window.addEventListener('popstate', () => handleRecipientSheetPopState()); $watch('recipientSheetOpen', (value) => {
                                                             document.documentElement.classList.toggle('overflow-hidden', value && isMobileRecipientSheet);
                                                         })"
                                                         x-on:keydown.escape.window="closeRecipientSheet()"
+                                                        x-on:keydown.arrow-down="focusRecipientSuggestion(1, $event)"
+                                                        x-on:keydown.arrow-up="focusRecipientSuggestion(-1, $event)"
                                                     >
                                                         <div class="mb-2 flex items-center justify-between gap-2">
                                                             <label class="inline-flex min-w-0 items-center gap-2 text-xs font-black text-slate-700">
@@ -861,13 +900,20 @@
                                                             wire:focus="setActiveRecipientSearch({{ $index }})"
                                                             x-on:focus="openRecipientSheet()"
                                                             x-on:click="openRecipientSheet()"
+                                                            x-on:keydown.enter.prevent="chooseRecipientSuggestionFromInput()"
                                                             @disabled(!$this->selectedService)
                                                             class="h-12 w-full rounded-xl border border-cyan-300 bg-white py-2.5 pl-12 pr-10 text-sm font-bold text-slate-800 transition-all placeholder:text-xs placeholder:font-normal placeholder:text-slate-400 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10"
                                                             placeholder="نام یا کدملی گیرنده خدمت"
                                                             autocomplete="off"
                                                         >
                                                         <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-cyan-600">
-                                                            <i class="bi bi-search text-base"></i>
+                                                            <span wire:loading.remove wire:target="recipientEntries.{{ $index }}.national_id">
+                                                                <i class="bi bi-search text-base"></i>
+                                                            </span>
+                                                            <span wire:loading.flex wire:target="recipientEntries.{{ $index }}.national_id" class="hidden">
+                                                                <span class="h-4 w-4 animate-spin rounded-full border-2 border-cyan-200 border-t-cyan-600" aria-hidden="true"></span>
+                                                                <span class="sr-only">در حال جستجو</span>
+                                                            </span>
                                                         </span>
                                                         <button
                                                             type="button"
@@ -914,8 +960,9 @@
                                                             <div class="absolute z-20 mt-1 hidden max-h-72 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5 sm:block">
                                                                 @foreach($recipientSuggestionItems as $suggestion)
                                                                     <button type="button"
+                                                                            data-recipient-suggestion
                                                                             wire:click="selectRecipientSuggestion({{ $index }}, '{{ $recipientSuggestionType }}', {{ $suggestion->id }})"
-                                                                    class="flex min-h-16 w-full items-center justify-between gap-3 border-b border-slate-50 px-4 py-3 text-right transition hover:bg-cyan-50/70 focus:bg-cyan-50 focus:outline-none last:border-b-0"
+                                                                    class="flex min-h-16 w-full items-center justify-between gap-3 border-b border-slate-50 px-4 py-3 text-right transition hover:bg-cyan-50/70 focus:bg-cyan-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-cyan-400 last:border-b-0"
                                                                     >
                                             <span class="block">
                                                 <span class="block text-sm font-bold text-slate-800">{{ trim(($suggestion->first_name ?? '') . ' ' . ($suggestion->last_name ?? '')) ?: '-' }}</span>
@@ -959,7 +1006,13 @@
                                                                         جستجوی {{ $recipientSuggestionTypeLabel }}
                                                                     </h4>
                                                                     <p class="mt-0.5 truncate text-[11px] font-bold leading-5 text-slate-500">
-                                                                        {{ $recipientSuggestionItems->isNotEmpty() ? $this->persianNumber($recipientSuggestionItems->count()) . ' مورد پیدا شد' : 'نام یا کد ملی را وارد کنید' }}
+                                                                        <span wire:loading.remove wire:target="recipientEntries.{{ $index }}.national_id">
+                                                                            {{ $recipientSuggestionItems->isNotEmpty() ? $this->persianNumber($recipientSuggestionItems->count()) . ' مورد پیدا شد' : 'نام یا کد ملی را وارد کنید' }}
+                                                                        </span>
+                                                                        <span wire:loading.inline-flex wire:target="recipientEntries.{{ $index }}.national_id" class="hidden items-center gap-1.5 text-cyan-700">
+                                                                            <span class="h-3 w-3 animate-spin rounded-full border-2 border-cyan-200 border-t-cyan-600" aria-hidden="true"></span>
+                                                                            در حال جستجو…
+                                                                        </span>
                                                                     </p>
                                                                 </div>
                                                                 <button
@@ -980,16 +1033,20 @@
                                                                         data-error-field="recipientEntries.{{ $index }}.national_id"
                                                                         wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.national_id"
                                                                         wire:focus="setActiveRecipientSearch({{ $index }})"
+                                                                        x-on:keydown.enter.prevent="chooseRecipientSuggestionFromInput()"
                                                                         @disabled(!$this->selectedService)
                                                                         class="min-h-12 w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm text-slate-700 shadow-sm transition placeholder:text-xs placeholder:font-normal placeholder:text-slate-400 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10"
                                                                         placeholder="نام یا کدملی گیرنده خدمت"
                                                                         autocomplete="off"
                                                                     >
-                                                                    <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                                                                    <svg wire:loading.remove wire:target="recipientEntries.{{ $index }}.national_id" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
                                                                          fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                                               d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z"/>
                                                                     </svg>
+                                                                    <span wire:loading.flex wire:target="recipientEntries.{{ $index }}.national_id" class="pointer-events-none absolute left-3 top-1/2 hidden h-4 w-4 -translate-y-1/2 items-center justify-center">
+                                                                        <span class="h-4 w-4 animate-spin rounded-full border-2 border-cyan-200 border-t-cyan-600" aria-hidden="true"></span>
+                                                                    </span>
                                                                 </div>
                                                             </div>
 
@@ -1001,6 +1058,7 @@
                                                                             $mobileSuggestionNationalId = $recipientSuggestionType === 'guardian' ? $suggestion->national_code : $suggestion->national_id;
                                                                         @endphp
                                                                         <button type="button"
+                                                                                data-recipient-suggestion
                                                                                 wire:click="selectRecipientSuggestion({{ $index }}, '{{ $recipientSuggestionType }}', {{ $suggestion->id }})"
                                                                                 @click="closeRecipientSheet()"
                                                                                 class="flex min-h-[5rem] w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-right shadow-sm shadow-slate-200/70 transition hover:border-cyan-200 hover:bg-cyan-50/60 active:bg-cyan-50 focus:outline-none focus:ring-4 focus:ring-cyan-500/10"
