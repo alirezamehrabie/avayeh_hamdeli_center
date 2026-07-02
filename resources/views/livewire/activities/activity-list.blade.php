@@ -196,19 +196,36 @@
                         <article class="rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-violet-200 hover:bg-slate-50/40">
                             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                 <div class="min-w-0 flex-1">
+                                    <!-- Header: Code + Name + Status -->
                                     <div class="flex items-start justify-between gap-2">
-                                        <h2 class="min-w-0 flex-1 truncate text-base font-bold text-slate-900">{{ $activity->name }}</h2>
-                                        <span class="inline-flex max-w-28 shrink-0 items-center truncate rounded-full px-2 py-0.5 text-[10px] font-bold leading-5 ring-1 ring-inset ring-black/5 sm:max-w-none sm:px-3 sm:py-1 sm:text-[11px] {{ $badgeClasses[$activity->status] ?? 'bg-slate-100 text-slate-700' }}">{{ $statusOptions[$activity->status] ?? $activity->status }}</span>
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex items-center gap-2">
+                                                <span class="inline-flex shrink-0 items-center rounded-lg border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{{ $activity->code }}</span>
+                                                <h2 class="min-w-0 flex-1 text-base font-bold text-slate-900">{{ $activity->name }}</h2>
+                                            </div>
+                                        </div>
+                                        <span class="inline-flex max-w-24 shrink-0 items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-bold leading-5 ring-1 ring-inset ring-black/5 sm:max-w-none sm:px-3 sm:py-1 sm:text-[11px] {{ $badgeClasses[$activity->status] ?? 'bg-slate-100 text-slate-700' }}">{{ $statusOptions[$activity->status] ?? $activity->status }}</span>
                                     </div>
 
-                                    <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-                                        <span class="font-medium text-slate-600">{{ $this->formatJalaliDateTime($activity->starts_at) }}</span>
-                                        <span class="text-slate-300">|</span>
-                                        <span>{{ $activity->location ?: '-' }}</span>
-                                        <span class="text-slate-300">|</span>
-                                        <span>{{ $activity->attendances_count }} نفر</span>
+                                    <!-- Main Context: Date + Location + Attendance -->
+                                    <div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+                                        <div class="flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+                                            <i class="bi bi-calendar-event text-slate-500"></i>
+                                            {{ $this->formatJalaliDateTime($activity->starts_at) }}
+                                        </div>
+                                        <div class="hidden text-slate-300 sm:block">|</div>
+                                        <div class="flex items-center gap-1.5 text-sm text-slate-600">
+                                            <i class="bi bi-geo-alt text-slate-400"></i>
+                                            {{ $activity->location ?: '—' }}
+                                        </div>
+                                        <div class="hidden text-slate-300 sm:block">|</div>
+                                        <div class="flex items-center gap-1.5 text-sm text-slate-600">
+                                            <i class="bi bi-people text-slate-400"></i>
+                                            <span>{{ $activity->attendances_count }} نفر</span>
+                                        </div>
                                     </div>
 
+                                    <!-- Capacity Indicator -->
                                     @php
                                         $capacityInfo = $this->getCapacityInfo($activity);
                                         $capacityPercentage = $capacityInfo['percentage'];
@@ -233,18 +250,30 @@
                                         </div>
                                     @endif
 
-                                    <div class="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
-                                        <span class="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 font-medium text-slate-500">{{ $activity->code }}</span>
-                                        <span class="rounded-lg bg-violet-50 px-2.5 py-1 font-medium text-violet-700">{{ $typeOptions[$activity->activity_type] ?? $activity->activity_type }}</span>
-                                        <span>پایان: {{ $this->formatJalaliDateTime($activity->ends_at) }}</span>
-                                        <span>ثبت‌کننده: {{ $creatorName }}</span>
+                                    <!-- Secondary Info: Type + End Time + Creator -->
+                                    <div class="mt-3 border-t border-slate-100 pt-3">
+                                        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+                                            <div class="min-w-0">
+                                                <p class="text-[10px] font-semibold text-slate-500">نوع</p>
+                                                <p class="mt-1 truncate rounded-lg bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-700">{{ $typeOptions[$activity->activity_type] ?? $activity->activity_type }}</p>
+                                            </div>
+                                            <div class="min-w-0">
+                                                <p class="text-[10px] font-semibold text-slate-500">پایان</p>
+                                                <p class="mt-1 truncate text-xs text-slate-600">{{ $this->formatJalaliDateTime($activity->ends_at) }}</p>
+                                            </div>
+                                            <div class="min-w-0">
+                                                <p class="text-[10px] font-semibold text-slate-500">ثبت‌کننده</p>
+                                                <p class="mt-1 truncate text-xs text-slate-600">{{ $creatorName }}</p>
+                                            </div>
+                                        </div>
                                     </div>
 
+                                    <!-- Matched Search Fields -->
                                     @php
                                         $matchedFields = $this->getMatchedSearchFields($activity);
                                     @endphp
                                     @if($matchedFields)
-                                        <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                                        <div class="mt-3 flex flex-wrap items-center gap-1.5">
                                             <span class="text-[10px] font-medium text-slate-500">موارد مطابق:</span>
                                             @foreach($matchedFields as $field)
                                                 <span class="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-semibold text-amber-700">
