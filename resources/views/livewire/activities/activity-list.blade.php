@@ -203,6 +203,74 @@
                 </div>
             </div>
 
+            @if($this->hasAnyFiltersApplied())
+                <div class="sticky top-0 z-20 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span class="shrink-0 text-sm font-semibold text-slate-700">
+                                <i class="bi bi-funnel me-1.5"></i>
+                                فیلترهای فعال:
+                            </span>
+                            <div class="flex flex-wrap gap-2 min-w-0">
+                                @if($search)
+                                    <div class="inline-flex items-center gap-2 rounded-full bg-violet-50 px-3 py-1.5 text-xs font-medium text-violet-700 ring-1 ring-violet-200 shrink-0">
+                                        <i class="bi bi-search text-sm"></i>
+                                        <span class="truncate max-w-[120px]">{{ Str::limit($search, 15, '...') }}</span>
+                                        <button type="button" wire:click="$set('search', '')" class="ml-1 shrink-0 text-violet-400 hover:text-violet-600 transition">
+                                            <i class="bi bi-x-lg text-xs"></i>
+                                        </button>
+                                    </div>
+                                @endif
+
+                                @if($statusFilter !== 'all')
+                                    <div class="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 ring-1 ring-amber-200 shrink-0">
+                                        <i class="bi bi-tag text-sm"></i>
+                                        <span>{{ $statusOptions[$statusFilter] ?? $statusFilter }}</span>
+                                        <button type="button" wire:click="$set('statusFilter', 'all')" class="ml-1 shrink-0 text-amber-400 hover:text-amber-600 transition">
+                                            <i class="bi bi-x-lg text-xs"></i>
+                                        </button>
+                                    </div>
+                                @endif
+
+                                @if($typeFilter !== 'all')
+                                    <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 ring-1 ring-blue-200 shrink-0">
+                                        <i class="bi bi-folder text-sm"></i>
+                                        <span>{{ $typeOptions[$typeFilter] ?? $typeFilter }}</span>
+                                        <button type="button" wire:click="$set('typeFilter', 'all')" class="ml-1 shrink-0 text-blue-400 hover:text-blue-600 transition">
+                                            <i class="bi bi-x-lg text-xs"></i>
+                                        </button>
+                                    </div>
+                                @endif
+
+                                @if($startsFrom)
+                                    <div class="inline-flex items-center gap-2 rounded-full bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-700 ring-1 ring-rose-200 shrink-0">
+                                        <i class="bi bi-calendar-range text-sm"></i>
+                                        <span>از: {{ $startsFrom }}</span>
+                                        <button type="button" wire:click="$set('startsFrom', null)" class="ml-1 shrink-0 text-rose-400 hover:text-rose-600 transition">
+                                            <i class="bi bi-x-lg text-xs"></i>
+                                        </button>
+                                    </div>
+                                @endif
+
+                                @if($startsUntil)
+                                    <div class="inline-flex items-center gap-2 rounded-full bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-700 ring-1 ring-rose-200 shrink-0">
+                                        <i class="bi bi-calendar-range text-sm"></i>
+                                        <span>تا: {{ $startsUntil }}</span>
+                                        <button type="button" wire:click="$set('startsUntil', null)" class="ml-1 shrink-0 text-rose-400 hover:text-rose-600 transition">
+                                            <i class="bi bi-x-lg text-xs"></i>
+                                        </button>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                        <button type="button" wire:click="resetFilters" class="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition">
+                            <i class="bi bi-x-circle text-sm"></i>
+                            پاک کردن همه
+                        </button>
+                    </div>
+                </div>
+            @endif
+
             <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_24rem]">
                 <div class="space-y-3">
                     @forelse($activities as $activity)
