@@ -140,6 +140,50 @@ class ActivityList extends Component
         ];
     }
 
+    public function getCapacityBadgeInfo(Activity $activity): array
+    {
+        if (!$activity->capacity) {
+            return [
+                'status' => 'unlimited',
+                'icon' => 'bi-infinity',
+                'label' => 'نامحدود',
+                'color' => 'bg-slate-100 text-slate-700 ring-slate-200',
+                'bgColor' => 'bg-slate-100',
+            ];
+        }
+
+        $percentage = round(($activity->attendances_count / max(1, $activity->capacity)) * 100);
+
+        if ($percentage < 80) {
+            return [
+                'status' => 'available',
+                'icon' => 'bi-check-circle-fill',
+                'label' => 'ظرفیت دارد',
+                'color' => 'bg-emerald-100 text-emerald-700 ring-emerald-200',
+                'bgColor' => 'bg-emerald-100',
+                'percentage' => $percentage,
+            ];
+        } elseif ($percentage < 100) {
+            return [
+                'status' => 'warning',
+                'icon' => 'bi-exclamation-circle-fill',
+                'label' => 'نزدیک به ظرفیت',
+                'color' => 'bg-amber-100 text-amber-700 ring-amber-200',
+                'bgColor' => 'bg-amber-100',
+                'percentage' => $percentage,
+            ];
+        } else {
+            return [
+                'status' => 'full',
+                'icon' => 'bi-x-circle-fill',
+                'label' => 'ظرفیت تکمیل',
+                'color' => 'bg-rose-100 text-rose-700 ring-rose-200',
+                'bgColor' => 'bg-rose-100',
+                'percentage' => $percentage,
+            ];
+        }
+    }
+
     public function getActivityTypeInfo(string $type): array
     {
         $typeIcons = [

@@ -292,7 +292,7 @@
                                         <span class="inline-flex max-w-24 shrink-0 items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-bold leading-5 ring-1 ring-inset ring-black/5 sm:max-w-none sm:px-3 sm:py-1 sm:text-[11px] {{ $badgeClasses[$activity->status] ?? 'bg-slate-100 text-slate-700' }}">{{ $statusOptions[$activity->status] ?? $activity->status }}</span>
                                     </div>
 
-                                    <!-- Main Context: Date + Location + Attendance -->
+                                    <!-- Main Context: Date + Location + Attendance + Capacity Status -->
                                     <div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                                         <div class="flex items-center gap-1.5 text-sm font-semibold text-slate-900">
                                             <i class="bi bi-calendar-event text-slate-500"></i>
@@ -304,9 +304,18 @@
                                             {{ $activity->location ?: '—' }}
                                         </div>
                                         <div class="hidden text-slate-300 sm:block">|</div>
-                                        <div class="flex items-center gap-1.5 text-sm text-slate-600">
-                                            <i class="bi bi-people text-slate-400"></i>
-                                            <span>{{ $activity->attendances_count }} نفر</span>
+                                        <div class="flex items-center gap-2 text-sm">
+                                            <div class="flex items-center gap-1.5 text-slate-600">
+                                                <i class="bi bi-people text-slate-400"></i>
+                                                <span>{{ $activity->attendances_count }} نفر</span>
+                                            </div>
+                                            @php
+                                                $capacityBadge = $this->getCapacityBadgeInfo($activity);
+                                            @endphp
+                                            <div class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset {{ $capacityBadge['color'] }}">
+                                                <i class="bi {{ $capacityBadge['icon'] }} text-xs"></i>
+                                                <span>{{ $capacityBadge['label'] }}</span>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -320,12 +329,15 @@
                                     @endphp
 
                                     @if(!$isUnlimited)
-                                        <div class="mt-3 w-full space-y-1">
+                                        <div class="mt-3 w-full space-y-2">
                                             <div class="flex items-center justify-between gap-2">
                                                 <span class="text-[11px] font-medium text-slate-600">ظرفیت:</span>
-                                                <span class="text-[11px] font-bold {{ $capacityClass }}">{{ $capacityText }}</span>
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-[11px] font-bold {{ $capacityClass }}">{{ $capacityPercentage }}%</span>
+                                                    <span class="text-[10px] font-medium text-slate-500">{{ $activity->attendances_count }}/{{ $activity->capacity }}</span>
+                                                </div>
                                             </div>
-                                            <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+                                            <div class="h-2 w-full overflow-hidden rounded-full bg-slate-200">
                                                 <div class="h-full transition-all duration-300 {{ $capacityInfo['barClass'] }}" style="width: {{ min(100, $capacityPercentage) }}%"></div>
                                             </div>
                                         </div>
