@@ -89,6 +89,30 @@
                                         <span>{{ $activity->attendances_count }} نفر</span>
                                     </div>
 
+                                    @php
+                                        $capacityInfo = $this->getCapacityInfo($activity);
+                                        $capacityPercentage = $capacityInfo['percentage'];
+                                        $capacityClass = $capacityInfo['class'];
+                                        $capacityText = $capacityInfo['text'];
+                                        $isUnlimited = $capacityInfo['isUnlimited'];
+                                    @endphp
+
+                                    @if(!$isUnlimited)
+                                        <div class="mt-3 w-full space-y-1">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <span class="text-[11px] font-medium text-slate-600">ظرفیت:</span>
+                                                <span class="text-[11px] font-bold {{ $capacityClass }}">{{ $capacityText }}</span>
+                                            </div>
+                                            <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+                                                <div class="h-full transition-all duration-300 {{ $capacityInfo['barClass'] }}" style="width: {{ min(100, $capacityPercentage) }}%"></div>
+                                            </div>
+                                        </div>
+                                    @else
+                                        <div class="mt-3">
+                                            <span class="text-[11px] font-medium text-slate-500">ظرفیت: نامحدود</span>
+                                        </div>
+                                    @endif
+
                                     <div class="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
                                         <span class="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 font-medium text-slate-500">{{ $activity->code }}</span>
                                         <span class="rounded-lg bg-violet-50 px-2.5 py-1 font-medium text-violet-700">{{ $typeOptions[$activity->activity_type] ?? $activity->activity_type }}</span>

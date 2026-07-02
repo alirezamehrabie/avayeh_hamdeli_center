@@ -225,6 +225,41 @@ class ActivityList extends Component
         return $dateTime ? Jalalian::fromDateTime($dateTime)->format('Y/m/d H:i') : '-';
     }
 
+    public function getCapacityInfo(Activity $activity): array
+    {
+        if (!$activity->capacity) {
+            return [
+                'percentage' => 0,
+                'text' => 'نامحدود',
+                'class' => 'text-slate-600',
+                'barClass' => 'bg-slate-300',
+                'isUnlimited' => true,
+            ];
+        }
+
+        $percentage = round(($activity->attendances_count / max(1, $activity->capacity)) * 100);
+        $text = "{$percentage}% : {$activity->attendances_count}/{$activity->capacity}";
+
+        if ($percentage < 80) {
+            $class = 'text-emerald-700';
+            $barClass = 'bg-emerald-500';
+        } elseif ($percentage < 100) {
+            $class = 'text-amber-700';
+            $barClass = 'bg-amber-500';
+        } else {
+            $class = 'text-rose-700';
+            $barClass = 'bg-rose-500';
+        }
+
+        return [
+            'percentage' => $percentage,
+            'text' => $text,
+            'class' => $class,
+            'barClass' => $barClass,
+            'isUnlimited' => false,
+        ];
+    }
+
     public function render(): mixed
     {
         $search = trim($this->search);
