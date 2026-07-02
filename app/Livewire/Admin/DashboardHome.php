@@ -182,6 +182,7 @@ class DashboardHome extends Component
         if ($user?->can('access-admin-panel')) {
             $validSections[] = 'advanced-service-report';
             $validSections[] = 'advanced-operator-report';
+            $validSections[] = 'advanced-gate-report';
             $validSections[] = 'child-supporter-sponsor-registration';
             $validSections[] = 'child-supporter-sponsor-edit';
             $validSections[] = 'child-supporter-sponsor-list';
@@ -206,6 +207,7 @@ class DashboardHome extends Component
                 'advanced-operator-report',
                 'advanced-supervisor-report',
                 'advanced-social-worker-report',
+                'advanced-gate-report',
                 'system-settings-user-definition',
                 'system-settings-user-list',
                 'service-definition',

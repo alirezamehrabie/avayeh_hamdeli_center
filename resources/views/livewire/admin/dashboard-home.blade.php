@@ -375,6 +375,22 @@
                                         </div>
                                     </div>
                                 </button>
+
+                                <button type="button" wire:click="selectSection('advanced-gate-report')" class="group relative text-right overflow-hidden rounded-xl border border-rose-100 bg-gradient-to-br from-rose-50 to-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-rose-100">
+                                    <span class="absolute inset-y-0 right-0 w-1 bg-rose-500"></span>
+                                    <div class="flex items-start justify-between">
+                                        <div>
+                                            <p class="text-xs font-semibold text-rose-600 mb-2">Advanced Report</p>
+                                            <h2 class="text-base font-bold text-gray-800">گزارش گیت‌های توزیع</h2>
+                                            <p class="text-xs text-gray-500 mt-2">پیگیری ورود، تحویل و خروج مددجویان و خانوارها در ایستگاه‌های توزیع</p>
+                                        </div>
+                                        <div class="rounded-lg bg-rose-100 p-2 text-rose-600">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </button>
                             </div>
                         </div>
                         @break
@@ -397,6 +413,10 @@
 
                     @case('advanced-social-worker-report')
                         <livewire:social-workers.advanced-social-worker-report :key="'advanced-social-worker-report'" />
+                        @break
+
+                    @case('advanced-gate-report')
+                        <livewire:admin.gate-report :key="'advanced-gate-report'" />
                         @break
 
                     @case('service-definition')

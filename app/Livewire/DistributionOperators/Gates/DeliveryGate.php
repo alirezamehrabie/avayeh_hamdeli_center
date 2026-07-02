@@ -217,14 +217,22 @@ class DeliveryGate extends Component
         }
 
         if ($assignment->status === GateEntryAssignment::STATUS_DELIVERED) {
-            $assignment->forceFill(['status' => GateEntryAssignment::STATUS_PENDING])->save();
+            $assignment->forceFill([
+                'status' => GateEntryAssignment::STATUS_PENDING,
+                'delivered_at' => null,
+                'delivered_by' => null,
+            ])->save();
             $this->deliveredCategoryIds = array_values(array_diff($this->deliveredCategoryIds, [$categoryId]));
             $this->skipRender();
 
             return;
         }
 
-        $assignment->forceFill(['status' => GateEntryAssignment::STATUS_DELIVERED])->save();
+        $assignment->forceFill([
+            'status' => GateEntryAssignment::STATUS_DELIVERED,
+            'delivered_at' => now(),
+            'delivered_by' => auth()->id(),
+        ])->save();
 
         if (! in_array($categoryId, $this->deliveredCategoryIds, true)) {
             $this->deliveredCategoryIds[] = $categoryId;

@@ -55,7 +55,7 @@
         $peopleOpen = $dashboardMode ? $isActive(['people-fast-create', 'people-list', 'people-block-list', 'person-create', 'person-edit']) : request()->routeIs('people.*');
         $socialWorkersOpen = $dashboardMode ? $isActive(['social-workers-list', 'social-workers-block-list', 'social-worker-create', 'social-worker-edit']) : request()->routeIs('social-workers.*');
         $guardiansOpen = $dashboardMode ? $isActive(['guardians-list', 'guardians-block-list']) : request()->routeIs('guardians.*');
-        $reportsOpen = $dashboardMode ? $isActive(['advanced-reports', 'advanced-service-report', 'advanced-beneficiary-report', 'advanced-operator-report', 'advanced-supervisor-report', 'advanced-social-worker-report']) : false;
+        $reportsOpen = $dashboardMode ? $isActive(['advanced-reports', 'advanced-service-report', 'advanced-beneficiary-report', 'advanced-operator-report', 'advanced-supervisor-report', 'advanced-social-worker-report', 'advanced-gate-report']) : false;
         $servicesOpen = $dashboardMode ? $isActive(['service-definition', 'service-management', 'service-list', 'service-delivery', 'service-archive']) : false;
         $activitiesOpen = $dashboardMode ? $isActive(['activity-definition', 'activity-list', 'activity-scanner']) : false;
         $childSupporterOpen = $dashboardMode ? $isActive(['child-supporter-sponsor-registration', 'child-supporter-sponsor-edit', 'child-supporter-sponsor-list']) : false;
@@ -122,6 +122,7 @@
                 ['section' => 'advanced-social-worker-report', 'label' => 'گزارش مددکاران', 'visible' => $user?->can('full-access')],
                 ['section' => 'advanced-service-report', 'label' => 'گزارش خدمات'],
                 ['section' => 'advanced-operator-report', 'label' => 'گزارش اپراتورها'],
+                ['section' => 'advanced-gate-report', 'label' => 'گزارش گیت‌ها'],
             ],
             'system-settings' => [
                 ['section' => 'system-settings-user-definition', 'label' => 'تعریف کاربر', 'visible' => $user?->can('full-access')],
@@ -446,7 +447,7 @@
         @if($dashboardMode && auth()->user()?->can('access-admin-panel'))
             <div>
                 <button type="button" @click="openMenu = openMenu === 'reports' ? '' : 'reports'"
-                        class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $isActive(['advanced-reports', 'advanced-service-report', 'advanced-beneficiary-report', 'advanced-operator-report', 'advanced-supervisor-report', 'advanced-social-worker-report']) ? 'bg-indigo-700' : '' }}">
+                        class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $isActive(['advanced-reports', 'advanced-service-report', 'advanced-beneficiary-report', 'advanced-operator-report', 'advanced-supervisor-report', 'advanced-social-worker-report', 'advanced-gate-report']) ? 'bg-indigo-700' : '' }}">
                     <div class="flex items-center">
                         <svg class="w-5 h-5 ml-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                              stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
