@@ -120,6 +120,14 @@ class ActivityList extends Component
         $this->resetValidation();
     }
 
+    public function clearDateFilters(): void
+    {
+        $this->startsFrom = null;
+        $this->startsUntil = null;
+        $this->resetPage();
+        $this->resetValidation(['startsFrom', 'startsUntil']);
+    }
+
     public function updateSort(string $sort): void
     {
         if ($this->sortBy === $sort) {
@@ -159,7 +167,7 @@ class ActivityList extends Component
             return [
                 'status' => 'available',
                 'icon' => 'bi-check-circle-fill',
-                'label' => 'ظرفیت دارد',
+                'label' => 'دارای ظرفیت',
                 'color' => 'bg-emerald-100 text-emerald-700 ring-emerald-200',
                 'bgColor' => 'bg-emerald-100',
                 'percentage' => $percentage,
