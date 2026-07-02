@@ -4,6 +4,7 @@ namespace App\Livewire\ActivityOperators;
 
 use App\Models\Activity;
 use App\Models\ActivityAttendance;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -68,8 +69,19 @@ class ActivityReport extends Component
 
     public function getFilteredAttendancesProperty()
     {
-        if (! $this->selectedActivityId) {
-            return $this->paginate([]);
+        // Route through selectedActivity (itself scoped to assignedActivities())
+        // rather than the raw id, so a tampered selectedActivityId can never pull
+        // attendance for an activity that isn't assigned to this operator.
+        $activity = $this->selectedActivity;
+
+        if (! $activity) {
+            return new LengthAwarePaginator(
+                [],
+                0,
+                15,
+                1,
+                ['path' => request()->url(), 'pageName' => 'page']
+            );
         }
 
         $search = trim($this->attendanceSearch);
@@ -77,7 +89,7 @@ class ActivityReport extends Component
 
         $query = ActivityAttendance::query()
             ->with(['person', 'recorder'])
-            ->where('activity_id', $this->selectedActivityId)
+            ->where('activity_id', $activity->id)
             ->when($status !== 'all', fn ($q) => $q->where('status', $status))
             ->when($search !== '', function ($q) use ($search) {
                 $q->where(function ($nestedQ) use ($search) {
