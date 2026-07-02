@@ -327,139 +327,165 @@
                     </div>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead>
-                        <tr class="bg-slate-50 text-slate-600">
-                            <th class="px-4 py-4 text-right font-bold">نام گیرنده</th>
-                            <th class="px-4 py-4 text-center font-bold">نوع</th>
-                            <th class="px-4 py-4 text-center font-bold">کد ملی</th>
-                            <th class="px-4 py-4 text-center font-bold">مقدار تحویل</th>
-                            <th class="px-4 py-4 text-center font-bold">ارزش تحویل</th>
-                            <th class="px-4 py-4 text-center font-bold">مددکار</th>
-                            <th class="px-4 py-4 text-center font-bold">تاریخ تحویل</th>
-                            <th class="px-4 py-4 w-16 text-center font-bold">عملیات</th>
-                        </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                        @forelse($filteredDeliveries as $delivery)
-                            @php
-                                $recipientType = $delivery->person
-                                    ? 'شخصی'
-                                    : ($delivery->guardian ? 'خانوادگی' : 'ثبت دستی');
-                                $typeBadge = match ($recipientType) {
-                                    'شخصی' => 'bg-indigo-100 text-indigo-700',
-                                    'خانوادگی' => 'bg-emerald-100 text-emerald-700',
-                                    default => 'bg-amber-100 text-amber-700',
-                                };
-                                $guardianLabel = $delivery->person?->guardian?->full_name
-                                    ?: $delivery->guardian?->full_name;
-                                $socialWorkerName = $delivery->socialWorker?->full_name ?: '-';
-                                $creatorName = $delivery->creator?->full_name ?: $delivery->creator?->name ?: '-';
-                                $socialWorkerInitial = $socialWorkerName !== '-' ? strtoupper(mb_substr($socialWorkerName, 0, 1, 'UTF-8')) : '-';
-                                $creatorInitial = $creatorName !== '-' ? strtoupper(mb_substr($creatorName, 0, 1, 'UTF-8')) : '-';
-                                $createdDate = $jalaliDateTime($delivery->created_at) ?: '-';
-                            @endphp
-                            <tr class="align-top transition hover:bg-slate-50">
-                                <td class="px-4 py-4 text-slate-700">
-                                    <p class="font-bold text-slate-900">{{ $delivery->recipient_name }}</p>
-                                    <div class="mt-2 space-y-1 text-xs text-slate-500">
-                                        @if($delivery->person)
-                                            <p>کد مددجو: {{ $delivery->person->person_code ?: '-' }}</p>
-                                        @endif
-                                        @if($delivery->guardian)
-                                            <p>کد خانوار: {{ $delivery->guardian->guardian_code ?: '-' }}</p>
-                                        @elseif($guardianLabel)
-                                            <p>سرپرست مرتبط: {{ $guardianLabel }}</p>
-                                        @endif
-                                        @if($delivery->mobile)
-                                            <p>موبایل: {{ $delivery->mobile }}</p>
-                                        @endif
-                                        <p>دسته‌بندی: {{ $delivery->serviceCategory?->name ?: '-' }}</p>
-                                    </div>
-                                </td>
-                                <td class="px-4 py-4 text-center"><span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold {{ $typeBadge }}">{{ $recipientType }}</span></td>
-                                <td class="px-4 py-4 text-center text-slate-700">{{ $delivery->recipient_national_id }}</td>
-                                <td class="px-4 py-4 text-center font-bold text-slate-800">
-                                    {{ number_format((float) $delivery->delivered_quantity, 2) }}
-                                    {{ $unitOptions[$selectedService->service_unit] ?? ($selectedService->service_unit ?? '-') }}
-                                </td>
-                                <td class="px-4 py-4 text-center font-bold text-emerald-600">
-                                    {{ number_format($delivery->delivered_total_value) }} ریال
-                                </td>
-                                <td class="px-4 py-4 text-center">
-                                    <div class="inline-flex items-center justify-center gap-3">
-                                        {{-- Social Worker --}}
-                                        <div class="group relative cursor-default" x-data>
-                                            <div class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-indigo-700 text-sm font-bold ring-2 ring-white">
-                                                {{ $socialWorkerInitial }}
-                                            </div>
-                                            <div class="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 hidden whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 shadow-lg group-hover:block rtl:translate-x-1/2 rtl:left-auto rtl:right-1/2 rtl:mr-2">
-                                                <p class="font-semibold text-slate-900">مددکار: {{ $socialWorkerName }}</p>
-                                                <p class="mt-0.5 text-slate-500">تاریخ ثبت: {{ $createdDate }}</p>
-                                            </div>
+                <div class="space-y-4 bg-slate-50/70 px-4 py-4 sm:px-6">
+                    @forelse($groupedDeliveries as $group)
+                        @php
+                            $typeBadge = match ($group->recipientType) {
+                                'شخصی' => 'bg-indigo-100 text-indigo-700 ring-indigo-200/60',
+                                'خانوادگی' => 'bg-emerald-100 text-emerald-700 ring-emerald-200/60',
+                                default => 'bg-amber-100 text-amber-700 ring-amber-200/60',
+                            };
+                            $guardianLabel = $group->person?->guardian?->full_name
+                                ?: $group->guardian?->full_name;
+                        @endphp
+
+                        <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white text-sm shadow-sm ring-1 ring-slate-950/[0.02]">
+                            <div class="border-b border-slate-200 bg-gradient-to-l from-white via-slate-50 to-slate-100 px-4 py-4 sm:px-5">
+                                <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                                    <div class="min-w-0">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <span class="h-2.5 w-2.5 rounded-full bg-indigo-500"></span>
+                                            <h3 class="text-base font-extrabold leading-6 text-slate-950 sm:text-lg">{{ $group->recipientName ?: '-' }}</h3>
+                                            <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold ring-1 {{ $typeBadge }}">{{ $group->recipientType }}</span>
+                                        </div>
+
+                                        <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+                                            <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 font-medium">کد ملی: {{ $group->recipientNationalId ?: '-' }}</span>
+                                            @if($group->person)
+                                                <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 font-medium">کد مددجو: {{ $group->person->person_code ?: '-' }}</span>
+                                            @endif
+                                            @if($group->guardian)
+                                                <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 font-medium">کد خانوار: {{ $group->guardian->guardian_code ?: '-' }}</span>
+                                            @elseif($guardianLabel)
+                                                <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 font-medium">سرپرست مرتبط: {{ $guardianLabel }}</span>
+                                            @endif
+                                            @if($group->mobile)
+                                                <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 font-medium">موبایل: {{ $group->mobile }}</span>
+                                            @endif
+                                            <span class="inline-flex items-center rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1 font-bold text-indigo-700">{{ $group->deliveries->count() }} دسته‌بندی</span>
                                         </div>
                                     </div>
-                                </td>
-                                <td class="px-4 py-4 text-center text-slate-700">
-                                    {{ str_replace(' ', ' - ', $jalaliDateTime($delivery->created_at)) ?: '-' }}
-                                </td>
-                                <td class="px-4 py-4 text-center">
-                                    <div class="inline-flex items-center justify-center gap-1">
-                                        {{-- Edit --}}
-                                        <button
-                                            type="button"
-                                            wire:click="editDelivery({{ $delivery->id }})"
-                                            class="rounded-lg border border-sky-200 bg-sky-50 p-1.5 text-sky-600 transition hover:bg-sky-100 hover:text-sky-700"
-                                            title="ویرایش"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                            </svg>
-                                        </button>
-                                        {{-- Delete --}}
-                                        <button
-                                            type="button"
-                                            wire:click="deleteDelivery({{ $delivery->id }})"
-                                            onclick="return confirm('آیا از حذف این رکورد اطمینان دارید؟')"
-                                            class="rounded-lg border border-rose-200 bg-rose-50 p-1.5 text-rose-600 transition hover:bg-rose-100 hover:text-rose-700"
-                                            title="حذف"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
-                                        {{-- Print Receipt --}}
-                                        <button
-                                            type="button"
-                                            wire:click="printReceipt({{ $delivery->id }})"
-                                            class="rounded-lg border border-emerald-200 bg-emerald-50 p-1.5 text-emerald-600 transition hover:bg-emerald-100 hover:text-emerald-700"
-                                            title="چاپ رسید"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                                            </svg>
-                                        </button>
+
+                                    <div class="grid grid-cols-2 gap-2 text-xs sm:min-w-72">
+                                        <div class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-center shadow-[0_1px_0_rgba(15,23,42,0.03)]">
+                                            <p class="text-slate-500">جمع مقدار</p>
+                                            <p class="mt-1 font-extrabold text-slate-900">
+                                                {{ number_format($group->totalQuantity, 2) }}
+                                                {{ $unitOptions[$selectedService->service_unit] ?? ($selectedService->service_unit ?? '-') }}
+                                            </p>
+                                        </div>
+                                        <div class="rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 py-2 text-center shadow-[0_1px_0_rgba(15,23,42,0.03)]">
+                                            <p class="text-emerald-700/80">جمع ارزش</p>
+                                            <p class="mt-1 font-extrabold text-emerald-700">{{ number_format($group->totalValue) }} ریال</p>
+                                        </div>
                                     </div>
-                                </td>
-                            </tr>
-                            @if($delivery->notes)
-                                <tr class="bg-slate-50/70">
-                                    <td colspan="8" class="px-4 pb-2 pt-2 text-xs text-slate-600">
-                                        <span class="font-bold text-slate-700">توضیحات:</span>
-                                        {{ $delivery->notes }}
-                                    </td>
-                                </tr>
-                            @endif
-                        @empty
-                            <tr>
-                                <td colspan="8" class="px-4 py-12 text-center text-slate-500">
-                                    {{ trim($deliverySearch ?? "") !== "" ? "موردی برای جستجوی فعلی پیدا نشد." : "هنوز هیچ تحویلی برای این خدمت ثبت نشده است." }}
-                                </td>
-                            </tr>
-                        @endforelse
-                        </tbody>
-                    </table>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto">
+                                <table class="w-full min-w-[760px] text-sm">
+                                    <thead>
+                                    <tr class="border-b border-slate-200 bg-white text-slate-500">
+                                        <th class="px-4 py-3 text-right text-xs font-bold">دسته‌بندی</th>
+                                        <th class="px-4 py-3 text-center text-xs font-bold">مقدار تحویل</th>
+                                        <th class="px-4 py-3 text-center text-xs font-bold">ارزش تحویل</th>
+                                        <th class="px-4 py-3 text-center text-xs font-bold">مددکار</th>
+                                        <th class="px-4 py-3 text-center text-xs font-bold">تاریخ تحویل</th>
+                                        <th class="w-16 px-4 py-3 text-center text-xs font-bold">عملیات</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                    @foreach($group->deliveries as $delivery)
+                                        @php
+                                            $socialWorkerName = $delivery->socialWorker?->full_name ?: '-';
+                                            $socialWorkerInitial = $socialWorkerName !== '-' ? strtoupper(mb_substr($socialWorkerName, 0, 1, 'UTF-8')) : '-';
+                                            $createdDate = $jalaliDateTime($delivery->created_at) ?: '-';
+                                        @endphp
+                                        <tr class="align-top transition hover:bg-slate-50/80">
+                                            <td class="px-4 py-4 text-slate-700">
+                                                <p class="font-bold text-slate-900">{{ $delivery->serviceCategory?->name ?: '-' }}</p>
+                                            </td>
+                                            <td class="px-4 py-4 text-center font-bold text-slate-800">
+                                                {{ number_format((float) $delivery->delivered_quantity, 2) }}
+                                                {{ $unitOptions[$selectedService->service_unit] ?? ($selectedService->service_unit ?? '-') }}
+                                            </td>
+                                            <td class="px-4 py-4 text-center font-bold text-emerald-600">
+                                                {{ number_format($delivery->delivered_total_value) }} ریال
+                                            </td>
+                                            <td class="px-4 py-4 text-center">
+                                                <div class="inline-flex items-center justify-center gap-3">
+                                                    {{-- Social Worker --}}
+                                                    <div class="group relative cursor-default" x-data>
+                                                        <div class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700 ring-2 ring-white">
+                                                            {{ $socialWorkerInitial }}
+                                                        </div>
+                                                        <div class="pointer-events-none absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 shadow-lg group-hover:block rtl:left-auto rtl:right-1/2 rtl:mr-2 rtl:translate-x-1/2">
+                                                            <p class="font-semibold text-slate-900">مددکار: {{ $socialWorkerName }}</p>
+                                                            <p class="mt-0.5 text-slate-500">تاریخ ثبت: {{ $createdDate }}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-4 text-center text-slate-700">
+                                                {{ str_replace(' ', ' - ', $jalaliDateTime($delivery->created_at)) ?: '-' }}
+                                            </td>
+                                            <td class="px-4 py-4 text-center">
+                                                <div class="inline-flex items-center justify-center gap-1">
+                                                    {{-- Edit --}}
+                                                    <button
+                                                        type="button"
+                                                        wire:click="editDelivery({{ $delivery->id }})"
+                                                        class="rounded-lg border border-sky-200 bg-sky-50 p-1.5 text-sky-600 transition hover:bg-sky-100 hover:text-sky-700"
+                                                        title="ویرایش"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        </svg>
+                                                    </button>
+                                                    {{-- Delete --}}
+                                                    <button
+                                                        type="button"
+                                                        wire:click="deleteDelivery({{ $delivery->id }})"
+                                                        onclick="return confirm('آیا از حذف این رکورد اطمینان دارید؟')"
+                                                        class="rounded-lg border border-rose-200 bg-rose-50 p-1.5 text-rose-600 transition hover:bg-rose-100 hover:text-rose-700"
+                                                        title="حذف"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                    {{-- Print Receipt --}}
+                                                    <button
+                                                        type="button"
+                                                        wire:click="printReceipt({{ $delivery->id }})"
+                                                        class="rounded-lg border border-emerald-200 bg-emerald-50 p-1.5 text-emerald-600 transition hover:bg-emerald-100 hover:text-emerald-700"
+                                                        title="چاپ رسید"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        @if($delivery->notes)
+                                            <tr class="bg-slate-50/80">
+                                                <td colspan="6" class="px-4 pb-3 pt-2 text-xs text-slate-600">
+                                                    <span class="font-bold text-slate-700">توضیحات:</span>
+                                                    {{ $delivery->notes }}
+                                                </td>
+                                            </tr>
+                                        @endif
+                                    @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                    @empty
+                        <div class="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-12 text-center text-slate-500">
+                            {{ trim($deliverySearch ?? "") !== "" ? "موردی برای جستجوی فعلی پیدا نشد." : "هنوز هیچ تحویلی برای این خدمت ثبت نشده است." }}
+                        </div>
+                    @endforelse
                 </div>
             </div>
         </div>

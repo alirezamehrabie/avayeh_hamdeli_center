@@ -83,6 +83,38 @@ class ServiceReports extends Component
         });
     }
 
+    public function getGroupedDeliveriesProperty()
+    {
+        return $this->filteredDeliveries
+            ->groupBy(function ($delivery) {
+                if ($delivery->person_id) {
+                    return 'person-' . $delivery->person_id;
+                }
+                if ($delivery->guardian_id) {
+                    return 'guardian-' . $delivery->guardian_id;
+                }
+                $nationalId = trim((string) ($delivery->national_id ?? ''));
+
+                return $nationalId !== '' ? 'manual-' . $nationalId : 'manual-delivery-' . $delivery->id;
+            })
+            ->map(function ($deliveries) {
+                $first = $deliveries->first();
+
+                return (object) [
+                    'recipientName' => $first->recipient_name,
+                    'recipientNationalId' => $first->recipient_national_id,
+                    'recipientType' => $first->person ? 'شخصی' : ($first->guardian ? 'خانوادگی' : 'ثبت دستی'),
+                    'person' => $first->person,
+                    'guardian' => $first->guardian,
+                    'mobile' => $deliveries->pluck('mobile')->filter()->first(),
+                    'totalQuantity' => $deliveries->sum(fn ($d) => (float) $d->delivered_quantity),
+                    'totalValue' => $deliveries->sum('delivered_total_value'),
+                    'deliveries' => $deliveries->values(),
+                ];
+            })
+            ->values();
+    }
+
     public function mount(?int $selectedServiceId = null): void
     {
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
@@ -179,6 +211,7 @@ class ServiceReports extends Component
                 ->get(),
             'selectedService' => $this->selectedService,
             'filteredDeliveries' => $this->filteredDeliveries,
+            'groupedDeliveries' => $this->groupedDeliveries,
             'statusOptions' => Service::STATUS_OPTIONS,
             'typeOptions' => Service::TYPE_OPTIONS,
             'unitOptions' => Service::unitOptions(),
