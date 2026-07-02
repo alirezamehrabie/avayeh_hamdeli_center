@@ -35,6 +35,7 @@ class ActivityList extends Component
     public ?int $assigningOperatorActivityId = null;
     public string $sortBy = 'date';
     public string $sortDirection = 'desc';
+    public bool $filtersPanelOpen = false;
 
     public function mount(): void
     {
@@ -550,6 +551,17 @@ class ActivityList extends Component
                $this->typeFilter !== 'all' ||
                $this->startsFrom !== null ||
                $this->startsUntil !== null;
+    }
+
+    public function getActiveFilterCount(): int
+    {
+        $count = 0;
+        if ($this->search !== '') $count++;
+        if ($this->statusFilter !== 'all') $count++;
+        if ($this->typeFilter !== 'all') $count++;
+        if ($this->startsFrom !== null) $count++;
+        if ($this->startsUntil !== null) $count++;
+        return $count;
     }
 
     public function totalActivitiesCount(): int

@@ -39,168 +39,186 @@
                 <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{{ $message }}</div>
             @enderror
 
-            <div class="space-y-3 rounded-2xl border border-slate-100 bg-slate-50/40 p-3">
-                <div class="relative" x-data="{ helpOpen: false, isSearching: false }" @wire:updated.debounce.100ms="isSearching = false">
-                    <input type="text" wire:model.live.debounce.300ms="search" placeholder="جستجو در کد، نام، مکان یا نام ثبت‌کننده..." class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-300 focus:ring-4 focus:ring-violet-100" @input="isSearching = true">
+            <div class="sticky top-0 z-40 space-y-3 rounded-2xl border border-slate-100 bg-slate-50/40 shadow-sm transition-all duration-200">
+                <div class="space-y-3 px-3 pt-3">
+                    <div class="relative" x-data="{ helpOpen: false, isSearching: false }" @wire:updated.debounce.100ms="isSearching = false">
+                            <input type="text" wire:model.live.debounce.300ms="search" placeholder="جستجو در کد، نام، مکان یا نام ثبت‌کننده..." class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-300 focus:ring-4 focus:ring-violet-100" @input="isSearching = true">
 
-                    <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
-                        <i class="bi bi-search text-sm"></i>
-                    </span>
+                            <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
+                                <i class="bi bi-search text-sm"></i>
+                            </span>
 
-                    <div class="absolute inset-y-0 left-0 flex items-center pl-3">
-                        <div class="relative">
-                            <button type="button" @click="helpOpen = !helpOpen" class="inline-flex items-center justify-center rounded-full text-slate-400 transition hover:text-slate-600 focus:outline-none">
-                                <i class="bi bi-question-circle text-sm"></i>
-                            </button>
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                <div class="relative">
+                                    <button type="button" @click="helpOpen = !helpOpen" class="inline-flex items-center justify-center rounded-full text-slate-400 transition hover:text-slate-600 focus:outline-none">
+                                        <i class="bi bi-question-circle text-sm"></i>
+                                    </button>
 
-                            <div x-show="helpOpen" @click.outside="helpOpen = false" x-transition class="absolute left-0 z-20 mt-2 w-64 rounded-lg border border-slate-200 bg-white p-3 shadow-lg" style="display: none;">
-                                <div class="space-y-2">
-                                    <h4 class="text-xs font-semibold text-slate-900">نحوه جستجو:</h4>
-                                    <ul class="space-y-1.5 text-xs text-slate-600">
-                                        <li class="flex gap-2">
-                                            <span class="shrink-0 font-semibold text-slate-700">کد:</span>
-                                            <span>کد فعالیت را جستجو کنید (مثال: ACT001)</span>
-                                        </li>
-                                        <li class="flex gap-2">
-                                            <span class="shrink-0 font-semibold text-slate-700">نام:</span>
-                                            <span>نام فعالیت را جستجو کنید (مثال: ورزشی)</span>
-                                        </li>
-                                        <li class="flex gap-2">
-                                            <span class="shrink-0 font-semibold text-slate-700">مکان:</span>
-                                            <span>محل برگزاری را جستجو کنید (مثال: سالن)</span>
-                                        </li>
-                                        <li class="flex gap-2">
-                                            <span class="shrink-0 font-semibold text-slate-700">ثبت‌کننده:</span>
-                                            <span>نام کسی که فعالیت را ایجاد کرد</span>
-                                        </li>
-                                    </ul>
-                                    <div class="border-t border-slate-100 pt-2">
-                                        <p class="text-[11px] text-slate-500">جستجو در تمام موارد بالا همزمان انجام می‌شود.</p>
+                                    <div x-show="helpOpen" @click.outside="helpOpen = false" x-transition class="absolute left-0 z-20 mt-2 w-64 rounded-lg border border-slate-200 bg-white p-3 shadow-lg" style="display: none;">
+                                        <div class="space-y-2">
+                                            <h4 class="text-xs font-semibold text-slate-900">نحوه جستجو:</h4>
+                                            <ul class="space-y-1.5 text-xs text-slate-600">
+                                                <li class="flex gap-2">
+                                                    <span class="shrink-0 font-semibold text-slate-700">کد:</span>
+                                                    <span>کد فعالیت را جستجو کنید (مثال: ACT001)</span>
+                                                </li>
+                                                <li class="flex gap-2">
+                                                    <span class="shrink-0 font-semibold text-slate-700">نام:</span>
+                                                    <span>نام فعالیت را جستجو کنید (مثال: ورزشی)</span>
+                                                </li>
+                                                <li class="flex gap-2">
+                                                    <span class="shrink-0 font-semibold text-slate-700">مکان:</span>
+                                                    <span>محل برگزاری را جستجو کنید (مثال: سالن)</span>
+                                                </li>
+                                                <li class="flex gap-2">
+                                                    <span class="shrink-0 font-semibold text-slate-700">ثبت‌کننده:</span>
+                                                    <span>نام کسی که فعالیت را ایجاد کرد</span>
+                                                </li>
+                                            </ul>
+                                            <div class="border-t border-slate-100 pt-2">
+                                                <p class="text-[11px] text-slate-500">جستجو در تمام موارد بالا همزمان انجام می‌شود.</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
 
-                    @if($search)
-                        <div class="absolute inset-y-0 left-8 flex items-center">
-                            <div x-show="isSearching" x-transition class="flex items-center gap-1.5 text-[11px] text-slate-500">
-                                <div class="h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse"></div>
-                                جستجو...
-                            </div>
-                        </div>
-                    @endif
-                </div>
-
-                @if($search)
-                    <div class="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2.5 ring-1 ring-violet-200">
-                        <div class="flex items-center gap-2 min-w-0">
-                            <span class="text-[11px] font-medium text-slate-600 shrink-0">جستجو فعال:</span>
-                            <span class="inline-flex items-center gap-1.5 rounded-lg bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 truncate">
-                                <i class="bi bi-search text-sm"></i>
-                                {{ Str::limit($search, 30, '...') }}
-                            </span>
-                        </div>
-                        <button type="button" wire:click="$set('search', '')" class="inline-flex items-center justify-center shrink-0 rounded-full text-slate-400 transition hover:text-slate-600 hover:bg-slate-100 p-1">
-                            <i class="bi bi-x-lg text-sm"></i>
-                        </button>
-                    </div>
-                @endif
-
-                <div class="space-y-2">
-                    <label class="block text-xs font-semibold text-slate-600">وضعیت فعالیت:</label>
-                    <div class="flex flex-wrap gap-2">
-                        @php
-                            $badgeClasses = [
-                                'draft' => 'bg-slate-100 text-slate-700 ring-slate-300',
-                                'ongoing' => 'bg-amber-100 text-amber-700 ring-amber-300',
-                                'closed' => 'bg-emerald-100 text-emerald-700 ring-emerald-300',
-                                'cancelled' => 'bg-rose-100 text-rose-700 ring-rose-300',
-                            ];
-                        @endphp
-                        <button type="button" wire:click="$set('statusFilter', 'all')" class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition {{ $statusFilter === 'all' ? 'bg-slate-800 text-white ring-2 ring-slate-400' : 'bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50' }}">
-                            همه
-                            <span class="inline-flex items-center justify-center min-w-5 rounded-full bg-slate-200 px-1.5 text-[10px] font-bold text-slate-700">
-                                @php
-                                    $totalCount = collect($statusCounts)->sum();
-                                @endphp
-                                {{ $totalCount }}
-                            </span>
-                        </button>
-                        @foreach($statusOptions as $value => $label)
-                            <button type="button" wire:click="$set('statusFilter', '{{ $value }}')" class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition {{ $statusFilter === $value ? 'ring-2 ring-offset-2 ' . $badgeClasses[$value] : 'ring-1 ' . $badgeClasses[$value] }} {{ $statusFilter === $value ? $badgeClasses[$value] . ' ring-offset-slate-50 shadow-sm' : 'hover:shadow-sm' }}">
-                                {{ $label }}
-                                <span class="inline-flex items-center justify-center min-w-5 rounded-full {{ $statusFilter === $value ? 'bg-white/30' : 'bg-black/10' }} px-1.5 text-[10px] font-bold">
-                                    {{ $statusCounts[$value] ?? 0 }}
-                                </span>
-                            </button>
-                        @endforeach
-                    </div>
-                </div>
-
-                <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-                    <select wire:model.live="typeFilter" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
-                        <option value="all">همه نوع‌ها</option>
-                        @foreach($typeOptions as $value => $label)
-                            @php
-                                $typeIcon = $this->getActivityTypeInfo($value)['icon'];
-                            @endphp
-                            <option value="{{ $value }}">{{ $label }}</option>
-                        @endforeach
-                    </select>
-                    <div class="relative">
-                        <select wire:model="sortBy" wire:change="updateSort($event.target.value)" class="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 pr-8 text-sm text-slate-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
-                            @foreach($this->getSortOptions() as $value => $label)
-                                <option value="{{ $value }}" {{ $sortBy === $value ? 'selected' : '' }}>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                            @if($sortDirection === 'asc')
-                                <i class="bi bi-arrow-up text-slate-500 text-sm"></i>
-                            @else
-                                <i class="bi bi-arrow-down text-slate-500 text-sm"></i>
+                            @if($search)
+                                <div class="absolute inset-y-0 left-8 flex items-center">
+                                    <div x-show="isSearching" x-transition class="flex items-center gap-1.5 text-[11px] text-slate-500">
+                                        <div class="h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse"></div>
+                                        جستجو...
+                                    </div>
+                                </div>
                             @endif
                         </div>
-                    </div>
-                </div>
 
-                <div class="space-y-2">
+                        @if($search)
+                            <div class="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2.5 ring-1 ring-violet-200">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="text-[11px] font-medium text-slate-600 shrink-0">جستجو فعال:</span>
+                                    <span class="inline-flex items-center gap-1.5 rounded-lg bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 truncate">
+                                        <i class="bi bi-search text-sm"></i>
+                                        {{ Str::limit($search, 30, '...') }}
+                                    </span>
+                                </div>
+                                <button type="button" wire:click="$set('search', '')" class="inline-flex items-center justify-center shrink-0 rounded-full text-slate-400 transition hover:text-slate-600 hover:bg-slate-100 p-1">
+                                    <i class="bi bi-x-lg text-sm"></i>
+                                </button>
+                            </div>
+                        @endif
+                    </div>
+
+                <button type="button" wire:click="$toggle('filtersPanelOpen')" class="flex w-full items-center justify-between border-t border-slate-200 px-3 py-3 hover:bg-slate-100/40 transition">
                     <div class="flex items-center gap-2">
-                        <label class="text-[11px] font-semibold text-slate-600">بازه زمانی:</label>
-                        <div class="flex flex-wrap gap-1.5">
-                            <button type="button" wire:click="applyDatePreset('today')" class="rounded-lg bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 hover:ring-slate-300">امروز</button>
-                            <button type="button" wire:click="applyDatePreset('week')" class="rounded-lg bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 hover:ring-slate-300">این هفته</button>
-                            <button type="button" wire:click="applyDatePreset('month')" class="rounded-lg bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 hover:ring-slate-300">این ماه</button>
-                            <button type="button" wire:click="applyDatePreset('30days')" class="rounded-lg bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 hover:ring-slate-300">30 روز</button>
-                            <button type="button" wire:click="applyDatePreset('all')" class="rounded-lg bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 hover:ring-slate-300">همه</button>
+                        <span class="text-sm font-semibold text-slate-700">فیلترهای بیشتر</span>
+                        @if($this->getActiveFilterCount() > 0)
+                            <span class="inline-flex items-center justify-center min-w-5 rounded-full bg-violet-100 px-2 text-[11px] font-bold text-violet-700">{{ $this->getActiveFilterCount() }}</span>
+                        @endif
+                    </div>
+                    <div class="flex items-center transition duration-300 {{ $filtersPanelOpen ? 'rotate-180' : '' }}">
+                        <i class="bi bi-chevron-down text-slate-500"></i>
+                    </div>
+                </button>
+
+                @if($filtersPanelOpen)
+                    <div class="space-y-3 border-t border-slate-200 px-3 pb-3 max-h-[500px] overflow-y-auto animate-slideDown">
+                        <div class="space-y-2">
+                            <label class="block text-xs font-semibold text-slate-600">وضعیت فعالیت:</label>
+                            <div class="flex flex-wrap gap-2">
+                                @php
+                                    $badgeClasses = [
+                                        'draft' => 'bg-slate-100 text-slate-700 ring-slate-300',
+                                        'ongoing' => 'bg-amber-100 text-amber-700 ring-amber-300',
+                                        'closed' => 'bg-emerald-100 text-emerald-700 ring-emerald-300',
+                                        'cancelled' => 'bg-rose-100 text-rose-700 ring-rose-300',
+                                    ];
+                                @endphp
+                                <button type="button" wire:click="$set('statusFilter', 'all')" class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition {{ $statusFilter === 'all' ? 'bg-slate-800 text-white ring-2 ring-slate-400' : 'bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50' }}">
+                                    همه
+                                    <span class="inline-flex items-center justify-center min-w-5 rounded-full bg-slate-200 px-1.5 text-[10px] font-bold text-slate-700">
+                                        @php
+                                            $totalCount = collect($statusCounts)->sum();
+                                        @endphp
+                                        {{ $totalCount }}
+                                    </span>
+                                </button>
+                                @foreach($statusOptions as $value => $label)
+                                    <button type="button" wire:click="$set('statusFilter', '{{ $value }}')" class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition {{ $statusFilter === $value ? 'ring-2 ring-offset-2 ' . $badgeClasses[$value] : 'ring-1 ' . $badgeClasses[$value] }} {{ $statusFilter === $value ? $badgeClasses[$value] . ' ring-offset-slate-50 shadow-sm' : 'hover:shadow-sm' }}">
+                                        {{ $label }}
+                                        <span class="inline-flex items-center justify-center min-w-5 rounded-full {{ $statusFilter === $value ? 'bg-white/30' : 'bg-black/10' }} px-1.5 text-[10px] font-bold">
+                                            {{ $statusCounts[$value] ?? 0 }}
+                                        </span>
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                            <select wire:model.live="typeFilter" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
+                                <option value="all">همه نوع‌ها</option>
+                                @foreach($typeOptions as $value => $label)
+                                    @php
+                                        $typeIcon = $this->getActivityTypeInfo($value)['icon'];
+                                    @endphp
+                                    <option value="{{ $value }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            <div class="relative">
+                                <select wire:model="sortBy" wire:change="updateSort($event.target.value)" class="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 pr-8 text-sm text-slate-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
+                                    @foreach($this->getSortOptions() as $value => $label)
+                                        <option value="{{ $value }}" {{ $sortBy === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    @if($sortDirection === 'asc')
+                                        <i class="bi bi-arrow-up text-slate-500 text-sm"></i>
+                                    @else
+                                        <i class="bi bi-arrow-down text-slate-500 text-sm"></i>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2">
+                                <label class="text-[11px] font-semibold text-slate-600">بازه زمانی:</label>
+                                <div class="flex flex-wrap gap-1.5">
+                                    <button type="button" wire:click="applyDatePreset('today')" class="rounded-lg bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 hover:ring-slate-300">امروز</button>
+                                    <button type="button" wire:click="applyDatePreset('week')" class="rounded-lg bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 hover:ring-slate-300">این هفته</button>
+                                    <button type="button" wire:click="applyDatePreset('month')" class="rounded-lg bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 hover:ring-slate-300">این ماه</button>
+                                    <button type="button" wire:click="applyDatePreset('30days')" class="rounded-lg bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 hover:ring-slate-300">30 روز</button>
+                                    <button type="button" wire:click="applyDatePreset('all')" class="rounded-lg bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 hover:ring-slate-300">همه</button>
+                                </div>
+                            </div>
+
+                            <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2">
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">تاریخ شروع <span class="text-slate-400">(مثال: 1403/01/15)</span></label>
+                                    <input type="text" wire:model.live.debounce.500ms="startsFrom" placeholder="1403/01/15" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-300 focus:ring-4 focus:ring-violet-100" data-jdp>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">تاریخ پایان <span class="text-slate-400">(مثال: 1403/01/20)</span></label>
+                                    <input type="text" wire:model.live.debounce.500ms="startsUntil" placeholder="1403/01/20" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-300 focus:ring-4 focus:ring-violet-100" data-jdp>
+                                </div>
+                            </div>
+
+                            @if($errors->has('startsFrom') || $errors->has('startsUntil'))
+                                <div class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700">
+                                    @error('startsFrom'){{ $message }}@enderror
+                                    @error('startsUntil'){{ $message }}@enderror
+                                </div>
+                            @endif
+                        </div>
+
+                        <div class="flex gap-2">
+                            <button type="button" wire:click="resetFilters" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100">
+                                <i class="bi bi-arrow-clockwise me-1.5 text-xs"></i>
+                                ریست کردن
+                            </button>
                         </div>
                     </div>
-
-                    <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2">
-                        <div>
-                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">تاریخ شروع <span class="text-slate-400">(مثال: 1403/01/15)</span></label>
-                            <input type="text" wire:model.live.debounce.500ms="startsFrom" placeholder="1403/01/15" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-300 focus:ring-4 focus:ring-violet-100" data-jdp>
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">تاریخ پایان <span class="text-slate-400">(مثال: 1403/01/20)</span></label>
-                            <input type="text" wire:model.live.debounce.500ms="startsUntil" placeholder="1403/01/20" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-300 focus:ring-4 focus:ring-violet-100" data-jdp>
-                        </div>
-                    </div>
-
-                    @if($errors->has('startsFrom') || $errors->has('startsUntil'))
-                        <div class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700">
-                            @error('startsFrom'){{ $message }}@enderror
-                            @error('startsUntil'){{ $message }}@enderror
-                        </div>
-                    @endif
-                </div>
-
-                <div class="flex gap-2">
-                    <button type="button" wire:click="resetFilters" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100">
-                        <i class="bi bi-arrow-clockwise me-1.5 text-xs"></i>
-                        ریست کردن
-                    </button>
-                </div>
+                @endif
             </div>
 
             @if($this->hasAnyFiltersApplied())
@@ -742,6 +760,25 @@
             </div>
         @endif
     @endcan
+
+    <style>
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                max-height: 0;
+                overflow: hidden;
+            }
+            to {
+                opacity: 1;
+                max-height: 500px;
+                overflow: visible;
+            }
+        }
+
+        .animate-slideDown {
+            animation: slideDown 0.3s ease-in-out forwards;
+        }
+    </style>
 </div>
 
 <script>
