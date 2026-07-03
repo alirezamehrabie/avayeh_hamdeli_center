@@ -69,7 +69,6 @@
             window.addEventListener('popstate', () => handleSelectorPopState());
             window.addEventListener('open-predefined-service-selector', () => {
                 openSelector();
-                $nextTick(() => $refs.serviceSearch?.focus({ preventScroll: true }));
             });
             $watch('open', (value) => {
                 document.documentElement.classList.toggle('overflow-hidden', value && isMobileSheet);
@@ -80,7 +79,7 @@
         @if($compact)
             <button
                 type="button"
-                @click="openSelector(); $nextTick(() => $refs.serviceSearch?.focus({ preventScroll: true }))"
+                @click="openSelector()"
                 :aria-expanded="open.toString()"
                 aria-haspopup="dialog"
                 class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-200 bg-white text-cyan-700 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50 focus:outline-none focus:ring-4 focus:ring-cyan-500/10 active:scale-[0.98]"

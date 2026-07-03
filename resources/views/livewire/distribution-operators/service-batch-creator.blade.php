@@ -655,7 +655,7 @@
                         <div class="sm:col-span-2 xl:col-span-3">
                             <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-5 text-center">
                                 <p class="text-sm font-black text-slate-600">۲. انتخاب مددکار</p>
-                                <p class="mt-1 text-xs font-bold leading-5 text-slate-400">پس از انتخاب نوع خدمت، امکان جستجو و انتخاب مددکار فعال می‌شود.</p>
+                                <p class="mt-1 text-xs font-bold leading-5 text-slate-400">ابتدا نوع خدمت را تعیین کنید</p>
                             </div>
                         </div>
                     @endif
