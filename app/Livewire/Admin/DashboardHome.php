@@ -66,6 +66,8 @@ class DashboardHome extends Component
             $this->activeSection = 'activity-operator-assignments';
         } elseif (! request()->has('section') && request()->routeIs('admin.special-features.id-card-scanner')) {
             $this->activeSection = 'special-features-id-card-scanner';
+        } elseif (! request()->has('section') && request()->routeIs('admin.people.case-file')) {
+            $this->activeSection = 'beneficiary-case-file';
         }
         $this->normalizeActiveSection();
         $this->syncSectionContext();
@@ -185,6 +187,7 @@ class DashboardHome extends Component
         }
 
         if ($user?->can('access-admin-panel')) {
+            $validSections[] = 'beneficiary-case-file';
             $validSections[] = 'advanced-service-report';
             $validSections[] = 'advanced-operator-report';
             $validSections[] = 'advanced-gate-report';

@@ -246,6 +246,13 @@
                         <livewire:people.deleted-people :embedded="true" :key="'people-block-list'" />
                         @break
 
+                    @case('beneficiary-case-file')
+                        <div class="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+                            <h1 class="mb-2 text-2xl font-bold text-gray-800">پرونده مددجو</h1>
+                            <p class="text-sm text-gray-500">این بخش برای تکمیل قابلیت پرونده مددجو در آینده آماده شده است.</p>
+                        </div>
+                        @break
+
                     @case('person-create')
                         <livewire:people.create-person mode="create" :embedded="true" :key="'person-create'" />
                         @break

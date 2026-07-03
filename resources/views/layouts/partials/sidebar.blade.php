@@ -52,7 +52,7 @@
         $dashboardMode = $dashboardMode ?? false;
         $activeSection = $activeSection ?? null;
         $isActive = fn ($sections) => in_array($activeSection, (array) $sections, true);
-        $peopleOpen = $dashboardMode ? $isActive(['people-fast-create', 'people-list', 'people-block-list', 'person-create', 'person-edit']) : request()->routeIs('people.*');
+        $peopleOpen = $dashboardMode ? $isActive(['people-fast-create', 'people-list', 'people-block-list', 'person-create', 'person-edit', 'beneficiary-case-file']) : request()->routeIs('people.*');
         $socialWorkersOpen = $dashboardMode ? $isActive(['social-workers-list', 'social-workers-block-list', 'social-worker-create', 'social-worker-edit']) : request()->routeIs('social-workers.*');
         $guardiansOpen = $dashboardMode ? $isActive(['guardians-list', 'guardians-block-list']) : request()->routeIs('guardians.*');
         $reportsOpen = $dashboardMode ? $isActive(['advanced-reports', 'advanced-service-report', 'advanced-beneficiary-report', 'advanced-operator-report', 'advanced-supervisor-report', 'advanced-social-worker-report', 'advanced-gate-report']) : false;
@@ -89,6 +89,7 @@
                 ['section' => 'person-create', 'label' => 'فرم کامل ثبت نام', 'icon' => 'fa fa-user-plus', 'visible' => $user?->can('people-register')],
                 ['section' => 'people-fast-create', 'label' => 'ثبت سریع مددجو', 'icon' => 'fa fa-bolt', 'visible' => $user?->can('people-register')],
                 ['section' => 'people-block-list', 'label' => 'مددجویان غیرفعال', 'icon' => 'fa fa-ban', 'visible' => $user?->can('people-delete')],
+                ['section' => 'beneficiary-case-file', 'label' => 'پرونده مددجو', 'icon' => 'fa fa-folder-open', 'visible' => $user?->can('access-admin-panel')],
             ],
             'social-workers' => [
                 ['section' => 'social-workers-list', 'label' => 'لیست مددکاران', 'active' => ['social-workers-list', 'social-worker-edit']],
