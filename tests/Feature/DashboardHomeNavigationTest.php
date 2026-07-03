@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Livewire\Admin\DashboardHome;
 use App\Livewire\Activities\ActivityList;
+use App\Livewire\Admin\DashboardHome;
 use App\Livewire\Services\ServiceArchive;
 use App\Livewire\Services\ServiceReports;
 use App\Models\Activity;
@@ -44,6 +44,15 @@ class DashboardHomeNavigationTest extends TestCase
         $this->get('/admin/services/service-archive')
             ->assertOk()
             ->assertSeeLivewire(ServiceArchive::class);
+    }
+
+    public function test_legacy_people_case_file_route_name_opens_case_file_section(): void
+    {
+        $this->actingAs($this->manager());
+
+        $this->get(route('people.case-file'))
+            ->assertOk()
+            ->assertSee('beneficiary-case-file');
     }
 
     public function test_activity_definition_context_survives_mount_from_url(): void
@@ -171,7 +180,7 @@ class DashboardHomeNavigationTest extends TestCase
         $this->actingAs($this->manager());
         $service = $this->service();
 
-        $this->get('/admin/reports/services?id=' . $service->id)
+        $this->get('/admin/reports/services?id='.$service->id)
             ->assertOk()
             ->assertSeeLivewire(ServiceReports::class);
     }
@@ -212,7 +221,7 @@ class DashboardHomeNavigationTest extends TestCase
         $this->actingAs($this->manager());
         $service = $this->service();
 
-        $this->get('/admin/dashboard?section=advanced-service-report&id=' . $service->id)
+        $this->get('/admin/dashboard?section=advanced-service-report&id='.$service->id)
             ->assertOk()
             ->assertSeeLivewire(ServiceReports::class);
     }
@@ -261,7 +270,7 @@ class DashboardHomeNavigationTest extends TestCase
         ]);
 
         return Service::query()->create([
-            'code' => 'SVC-' . random_int(10000, 99999),
+            'code' => 'SVC-'.random_int(10000, 99999),
             'service_name_id' => $serviceName->id,
             'name' => 'Test Service',
             'service_type' => 'individual',

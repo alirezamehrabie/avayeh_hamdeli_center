@@ -9,10 +9,10 @@ use App\Models\Guardian;
 use App\Models\Person;
 use App\Models\SocialWorker;
 use App\Models\SponsorProfile;
-use Livewire\Component;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
+use Livewire\Component;
 
 #[AllowDynamicProperties]
 #[Layout('layouts.admin')] // متصل کردن به لایوت ساخته شده
@@ -20,20 +20,33 @@ class DashboardHome extends Component
 {
     #[Url(as: 'section', history: true)]
     public string $activeSection = 'overview';
+
     #[Url(as: 'id', history: true)]
     public ?int $sectionContextId = null;
+
     public ?int $editingPersonId = null;
+
     public ?int $editingSocialWorkerId = null;
+
     public ?int $editingGuardianId = null;
+
     public ?int $editingSponsorId = null;
+
     public ?int $editingServiceId = null;
+
     public ?int $editingActivityId = null;
+
     public ?int $scanningActivityId = null;
+
     #[Url(as: 'activity', history: true)]
     public ?int $activityContextId = null;
+
     public ?int $serviceReportServiceId = null;
+
     public bool $showDeletedUsers = false;
+
     public string $newReminderTitle = '';
+
     public string $newReminderCategory = 'today_tasks';
 
     public function mount(): void
@@ -66,7 +79,7 @@ class DashboardHome extends Component
             $this->activeSection = 'activity-operator-assignments';
         } elseif (! request()->has('section') && request()->routeIs('admin.special-features.id-card-scanner')) {
             $this->activeSection = 'special-features-id-card-scanner';
-        } elseif (! request()->has('section') && request()->routeIs('admin.people.case-file')) {
+        } elseif (! request()->has('section') && request()->routeIs('admin.people.case-file', 'people.case-file')) {
             $this->activeSection = 'beneficiary-case-file';
         }
         $this->normalizeActiveSection();
@@ -232,7 +245,7 @@ class DashboardHome extends Component
             );
         }
 
-        if (!in_array($this->activeSection, $validSections, true)) {
+        if (! in_array($this->activeSection, $validSections, true)) {
             $this->activeSection = 'overview';
         }
     }
@@ -269,7 +282,7 @@ class DashboardHome extends Component
             ->where('user_id', auth()->id())
             ->findOrFail($reminderId);
 
-        $reminder->update(['is_done' => !$reminder->is_done]);
+        $reminder->update(['is_done' => ! $reminder->is_done]);
     }
 
     public function deleteReminder(int $reminderId): void

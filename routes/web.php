@@ -1,21 +1,14 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Livewire\People\CreatePerson;
-use App\Livewire\People\FastCreatePerson;
-use App\Livewire\People\IndexPeople;
-use App\Livewire\People\DeletedPeople;
-use App\Livewire\People\AdvancedFilterBuilder;
-use App\Livewire\Guardians\EditGuardian;
-use App\Livewire\Guardians\IndexGuardians;
-use App\Livewire\Guardians\DeletedGuardians;
-use App\Livewire\SocialWorkers\EditSocialWorker;
-use App\Livewire\SocialWorkers\CreateSocialWorker;
-use App\Livewire\SocialWorkers\IndexSocialWorkers;
-use App\Livewire\SocialWorkers\DeletedSocialWorkers;
+use App\Http\Controllers\ActivityCheckInController;
+use App\Http\Controllers\QrIdentityController;
 use App\Livewire\Admin\DashboardHome;
 use App\Livewire\Admin\UserAccount;
 use App\Livewire\Auth\Login;
+use App\Livewire\ChildSupporters\Dashboard as ChildSupporterDashboard;
+use App\Livewire\ChildSupporters\SponsorList;
+use App\Livewire\ChildSupporters\SponsorRegistration;
+use App\Livewire\ChildSupporters\UserAccount as ChildSupporterUserAccount;
 use App\Livewire\DistributionOperators\DefineService;
 use App\Livewire\DistributionOperators\EditMiscService;
 use App\Livewire\DistributionOperators\EditServiceAllocations;
@@ -24,26 +17,32 @@ use App\Livewire\DistributionOperators\Gates\EntryGate;
 use App\Livewire\DistributionOperators\Gates\ExitGate;
 use App\Livewire\DistributionOperators\ServiceList;
 use App\Livewire\DistributionOperators\UserAccount as DistributionOperatorUserAccount;
-use App\Livewire\ChildSupporters\Dashboard as ChildSupporterDashboard;
-use App\Livewire\ChildSupporters\SponsorList;
-use App\Livewire\ChildSupporters\SponsorRegistration;
-use App\Livewire\ChildSupporters\UserAccount as ChildSupporterUserAccount;
-use App\Livewire\SocialWorkers\DeliveryHistory as SocialWorkerDeliveryHistory;
+use App\Livewire\Guardians\DeletedGuardians;
+use App\Livewire\Guardians\EditGuardian;
+use App\Livewire\Guardians\IndexGuardians;
+use App\Livewire\People\AdvancedFilterBuilder;
+use App\Livewire\People\CreatePerson;
+use App\Livewire\People\DeletedPeople;
+use App\Livewire\People\FastCreatePerson;
+use App\Livewire\People\IndexPeople;
+use App\Livewire\SocialWorkers\CreateSocialWorker;
 use App\Livewire\SocialWorkers\Dashboard as SocialWorkerDashboard;
+use App\Livewire\SocialWorkers\DeletedSocialWorkers;
+use App\Livewire\SocialWorkers\DeliveryHistory as SocialWorkerDeliveryHistory;
+use App\Livewire\SocialWorkers\EditSocialWorker;
+use App\Livewire\SocialWorkers\IndexSocialWorkers;
 use App\Livewire\SocialWorkers\UserAccount as SocialWorkerUserAccount;
-use App\Http\Controllers\QrIdentityController;
-use App\Http\Controllers\ActivityCheckInController;
-
+use Illuminate\Support\Facades\Route;
 
 // مسیر لاگین با استفاده از کامپوننت Livewire
 Route::get('/login', Login::class)->name('login')->middleware('guest');
-
 
 // روت خروج (چون یک عملیات ساده است، می‌تواند در یک کنترلر یا به صورت Closure باشد)
 Route::post('/logout', function () {
     auth()->logout();
     request()->session()->invalidate();
     request()->session()->regenerateToken();
+
     return redirect()->route('login');
 })->name('logout');
 
@@ -68,6 +67,9 @@ Route::get('/people/fast-create/{person?}', FastCreatePerson::class)
 Route::get('/people', IndexPeople::class)->middleware(['auth', 'can:manage-people'])->name('people.index');
 Route::get('/people/advanced-reporting', AdvancedFilterBuilder::class)->middleware(['auth', 'can:full-access'])->name('people.advanced-reporting');
 Route::get('/people/block-list', DeletedPeople::class)->middleware(['auth', 'can:people-delete'])->name('people.block-list');
+Route::get('/people/case-file', DashboardHome::class)
+    ->middleware(['auth', 'can:access-admin-panel'])
+    ->name('people.case-file');
 Route::get('/guardians', IndexGuardians::class)->middleware(['auth', 'can:full-access'])->name('guardians.index');
 Route::get('/guardians/block-list', DeletedGuardians::class)->middleware(['auth', 'can:full-access'])->name('guardians.block-list');
 Route::get('/guardians/{guardian}/edit', EditGuardian::class)->middleware(['auth', 'can:full-access'])->name('guardians.edit');
@@ -129,7 +131,6 @@ Route::get('/admin/activities/activity-list', DashboardHome::class)
 Route::get('/admin/activities/activity-operator-assignments', DashboardHome::class)
     ->middleware(['auth', 'can:full-access'])
     ->name('admin.activity-operator-assignments');
-
 
 Route::post('/admin/activities/{activity}/check-in/qr', [ActivityCheckInController::class, 'qr'])
     ->middleware(['auth', 'can:access-admin-panel'])
