@@ -162,6 +162,24 @@
                                                             @endforeach
                                                         </div>
                                                     @endif
+                                                    @if(($row['attachments'] ?? collect())->isNotEmpty())
+                                                        <div class="mt-2 flex flex-wrap gap-1.5">
+                                                            @foreach($row['attachments'] as $attachment)
+                                                                <a
+                                                                    href="{{ $attachment->url }}"
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    class="inline-flex items-center gap-1 rounded-lg border border-violet-100 bg-violet-50 px-2 py-1 text-[11px] font-bold text-violet-700 transition hover:bg-violet-100"
+                                                                >
+                                                                    <i class="bi bi-paperclip"></i>
+                                                                    <span>{{ $attachment->original_name }}</span>
+                                                                    @if($attachment->size_label)
+                                                                        <span class="font-semibold text-violet-400">({{ $attachment->size_label }})</span>
+                                                                    @endif
+                                                                </a>
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
                                                 </td>
                                                 <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700">{{ $row['quantity'] }}</td>
                                                 <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700">{{ $row['value'] }}</td>
@@ -286,10 +304,36 @@
                             @error('recordDescription') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
                         </div>
 
+                        <div>
+                            <label for="case-record-attachments" class="mb-1 block text-xs font-bold text-slate-600">پیوست‌ها</label>
+                            <input
+                                id="case-record-attachments"
+                                type="file"
+                                multiple
+                                wire:model="recordAttachments"
+                                accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 file:ml-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-indigo-700 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                            >
+                            <p class="mt-1 text-[11px] leading-5 text-slate-400">حداکثر ۵ فایل؛ تصویر یا PDF؛ هر فایل تا ۴ مگابایت.</p>
+                            @error('recordAttachments') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                            @error('recordAttachments.*') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+
+                            @if(count($recordAttachments) > 0)
+                                <div class="mt-2 space-y-1">
+                                    @foreach($recordAttachments as $attachment)
+                                        <div class="flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-2 py-1.5 text-xs text-slate-500">
+                                            <span class="truncate">{{ $attachment->getClientOriginalName() }}</span>
+                                            <span class="shrink-0">{{ number_format($attachment->getSize() / 1024, 1) }} KB</span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+
                         <button
                             type="submit"
                             wire:loading.attr="disabled"
-                            wire:target="saveCaseRecord"
+                            wire:target="saveCaseRecord,recordAttachments"
                             class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             ثبت در پرونده

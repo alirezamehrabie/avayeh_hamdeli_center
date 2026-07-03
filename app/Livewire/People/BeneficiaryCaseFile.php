@@ -6,17 +6,23 @@ use App\Helpers\Morilog\Jalalian;
 use App\Models\Activity;
 use App\Models\ActivityAttendance;
 use App\Models\BeneficiaryCaseRecord;
+use App\Models\BeneficiaryCaseRecordAttachment;
 use App\Models\Person;
 use App\Models\Service;
 use App\Models\ServiceDelivery;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Livewire\Attributes\Validate;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class BeneficiaryCaseFile extends Component
 {
+    use WithFileUploads;
+
     public string $search = '';
 
     public ?int $selectedPersonId = null;
@@ -32,6 +38,9 @@ class BeneficiaryCaseFile extends Component
     public ?string $recordAmount = null;
 
     public string $recordReferenceNumber = '';
+
+    #[Validate(['recordAttachments.*' => 'file|mimes:jpg,jpeg,png,webp,pdf|max:4096'])]
+    public array $recordAttachments = [];
 
     public function mount(?int $personId = null): void
     {
@@ -71,6 +80,8 @@ class BeneficiaryCaseFile extends Component
             'recordedAt' => ['nullable', 'date'],
             'recordAmount' => ['nullable', 'integer', 'min:0', 'max:999999999999'],
             'recordReferenceNumber' => ['nullable', 'string', 'max:255'],
+            'recordAttachments' => ['array', 'max:5'],
+            'recordAttachments.*' => ['file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:4096'],
         ], [], [
             'recordType' => 'نوع رکورد',
             'recordTitle' => 'عنوان',
@@ -78,18 +89,36 @@ class BeneficiaryCaseFile extends Component
             'recordedAt' => 'تاریخ',
             'recordAmount' => 'مبلغ',
             'recordReferenceNumber' => 'شماره مرجع',
+            'recordAttachments' => 'پیوست‌ها',
+            'recordAttachments.*' => 'پیوست',
         ]);
 
-        BeneficiaryCaseRecord::query()->create([
-            'person_id' => $this->selectedPerson->id,
-            'created_by' => auth()->id(),
-            'record_type' => $validated['recordType'],
-            'title' => trim($validated['recordTitle']),
-            'description' => filled($validated['recordDescription']) ? trim($validated['recordDescription']) : null,
-            'recorded_at' => filled($validated['recordedAt']) ? Carbon::parse($validated['recordedAt'])->toDateString() : null,
-            'amount' => filled($validated['recordAmount']) ? (int) $validated['recordAmount'] : null,
-            'reference_number' => filled($validated['recordReferenceNumber']) ? trim($validated['recordReferenceNumber']) : null,
-        ]);
+        DB::transaction(function () use ($validated): void {
+            $record = BeneficiaryCaseRecord::query()->create([
+                'person_id' => $this->selectedPerson->id,
+                'created_by' => auth()->id(),
+                'record_type' => $validated['recordType'],
+                'title' => trim($validated['recordTitle']),
+                'description' => filled($validated['recordDescription']) ? trim($validated['recordDescription']) : null,
+                'recorded_at' => filled($validated['recordedAt']) ? Carbon::parse($validated['recordedAt'])->toDateString() : null,
+                'amount' => filled($validated['recordAmount']) ? (int) $validated['recordAmount'] : null,
+                'reference_number' => filled($validated['recordReferenceNumber']) ? trim($validated['recordReferenceNumber']) : null,
+            ]);
+
+            foreach ($this->recordAttachments as $attachment) {
+                $path = $attachment->store("beneficiary-case-records/{$record->person_id}/{$record->id}", 'public');
+
+                BeneficiaryCaseRecordAttachment::query()->create([
+                    'beneficiary_case_record_id' => $record->id,
+                    'uploaded_by' => auth()->id(),
+                    'disk' => 'public',
+                    'path' => $path,
+                    'original_name' => $attachment->getClientOriginalName(),
+                    'mime_type' => $attachment->getMimeType(),
+                    'size' => $attachment->getSize(),
+                ]);
+            }
+        });
 
         $this->resetRecordForm();
         session()->flash('case-record-success', 'رکورد پرونده با موفقیت ثبت شد.');
@@ -207,7 +236,7 @@ class BeneficiaryCaseFile extends Component
         }
 
         return BeneficiaryCaseRecord::query()
-            ->with('creator:id,name')
+            ->with(['creator:id,name', 'attachments:id,beneficiary_case_record_id,disk,path,original_name,mime_type,size'])
             ->where('person_id', $this->selectedPersonId)
             ->latest('recorded_at')
             ->latest('id')
@@ -277,7 +306,9 @@ class BeneficiaryCaseFile extends Component
                 'details' => array_filter([
                     'شماره مرجع' => $record->reference_number,
                     'ثبت‌کننده' => $record->creator?->name,
+                    'پیوست‌ها' => $record->attachments->isNotEmpty() ? number_format($record->attachments->count()).' فایل' : null,
                 ]),
+                'attachments' => $record->attachments,
             ];
         });
 
@@ -336,6 +367,7 @@ class BeneficiaryCaseFile extends Component
         $this->recordedAt = now()->toDateString();
         $this->recordAmount = null;
         $this->recordReferenceNumber = '';
+        $this->recordAttachments = [];
         $this->resetValidation([
             'recordType',
             'recordTitle',
@@ -343,6 +375,8 @@ class BeneficiaryCaseFile extends Component
             'recordedAt',
             'recordAmount',
             'recordReferenceNumber',
+            'recordAttachments',
+            'recordAttachments.*',
         ]);
     }
 
