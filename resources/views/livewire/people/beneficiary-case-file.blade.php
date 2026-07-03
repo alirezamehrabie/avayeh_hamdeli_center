@@ -85,9 +85,23 @@
                             <h2 class="text-lg font-black text-slate-900">{{ $selectedPerson->full_name ?: trim($selectedPerson->first_name.' '.$selectedPerson->last_name) }}</h2>
                             <p class="mt-1 text-sm text-slate-500">کد مددجو: {{ $selectedPerson->person_code ?: '-' }}</p>
                         </div>
-                        <span class="inline-flex w-fit rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
-                            {{ $selectedPerson->created_at ? 'عضویت از '.$this->formatDate($selectedPerson->created_at) : 'تاریخ عضویت ثبت نشده' }}
-                        </span>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button
+                                type="button"
+                                wire:click="exportToExcel"
+                                wire:loading.attr="disabled"
+                                wire:target="exportToExcel"
+                                class="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                <i wire:loading.remove wire:target="exportToExcel" class="bi bi-file-earmark-excel"></i>
+                                <i wire:loading wire:target="exportToExcel" class="bi bi-arrow-repeat animate-spin"></i>
+                                <span wire:loading.remove wire:target="exportToExcel">خروجی اکسل</span>
+                                <span wire:loading wire:target="exportToExcel">در حال آماده‌سازی…</span>
+                            </button>
+                            <span class="inline-flex w-fit rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
+                                {{ $selectedPerson->created_at ? 'عضویت از '.$this->formatDate($selectedPerson->created_at) : 'تاریخ عضویت ثبت نشده' }}
+                            </span>
+                        </div>
                     </div>
 
                     <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -223,6 +237,12 @@
                     @if(session()->has('case-record-success'))
                         <div class="mt-3 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
                             {{ session('case-record-success') }}
+                        </div>
+                    @endif
+
+                    @if(session()->has('case-record-error'))
+                        <div class="mt-3 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">
+                            {{ session('case-record-error') }}
                         </div>
                     @endif
 

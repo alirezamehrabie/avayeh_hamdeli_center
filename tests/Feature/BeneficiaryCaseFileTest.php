@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Helpers\Morilog\Jalalian;
 use App\Livewire\People\BeneficiaryCaseFile;
 use App\Models\BeneficiaryCaseRecord;
 use App\Models\Person;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Maatwebsite\Excel\Facades\Excel;
 use Tests\TestCase;
 
 class BeneficiaryCaseFileTest extends TestCase
@@ -65,6 +67,31 @@ class BeneficiaryCaseFileTest extends TestCase
             ->assertSee('پیگیری درمان')
             ->assertSee('هماهنگی با مرکز درمانی')
             ->assertSee('REF-200');
+    }
+
+    public function test_admin_can_export_selected_beneficiary_case_file_to_excel(): void
+    {
+        Excel::fake();
+
+        $person = $this->person();
+
+        BeneficiaryCaseRecord::query()->create([
+            'person_id' => $person->id,
+            'created_by' => $this->admin()->id,
+            'record_type' => BeneficiaryCaseRecord::TYPE_INVOICE,
+            'title' => 'فاکتور دارو',
+            'description' => 'پرداخت کمک‌هزینه دارو',
+            'recorded_at' => '2026-07-03',
+            'amount' => 2500000,
+            'reference_number' => 'INV-100',
+        ]);
+
+        $this->actingAs($this->admin());
+
+        Livewire::test(BeneficiaryCaseFile::class, ['personId' => $person->id])
+            ->call('exportToExcel');
+
+        Excel::assertDownloaded('پرونده-مددجو-'.$person->person_code.'-'.Jalalian::now()->format('Y-m-d').'.xlsx');
     }
 
     private function admin(): User

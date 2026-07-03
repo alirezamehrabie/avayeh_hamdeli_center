@@ -2,6 +2,7 @@
 
 namespace App\Livewire\People;
 
+use App\Exports\BeneficiaryCaseFileExport;
 use App\Helpers\Morilog\Jalalian;
 use App\Models\Activity;
 use App\Models\ActivityAttendance;
@@ -18,6 +19,7 @@ use Illuminate\Validation\Rule;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Maatwebsite\Excel\Facades\Excel;
 
 class BeneficiaryCaseFile extends Component
 {
@@ -66,6 +68,31 @@ class BeneficiaryCaseFile extends Component
     {
         $this->selectedPersonId = null;
         $this->resetRecordForm();
+    }
+
+    public function exportToExcel()
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+
+        $person = $this->selectedPerson;
+
+        if (! $person) {
+            session()->flash('case-record-error', 'ابتدا یک مددجو را انتخاب کنید.');
+
+            return null;
+        }
+
+        $timeline = $this->timeline;
+
+        if ($timeline->isEmpty()) {
+            session()->flash('case-record-error', 'رکوردی برای خروجی گرفتن یافت نشد.');
+
+            return null;
+        }
+
+        $fileName = 'پرونده-مددجو-'.($person->person_code ?: $person->id).'-'.Jalalian::now()->format('Y-m-d').'.xlsx';
+
+        return Excel::download(new BeneficiaryCaseFileExport($person, $timeline), $fileName);
     }
 
     public function saveCaseRecord(): void
@@ -313,8 +340,9 @@ class BeneficiaryCaseFile extends Component
         });
 
         return $serviceRows
-            ->merge($attendanceRows)
-            ->merge($caseRecordRows)
+            ->toBase()
+            ->merge($attendanceRows->toBase())
+            ->merge($caseRecordRows->toBase())
             ->sortByDesc('timestamp')
             ->values();
     }
