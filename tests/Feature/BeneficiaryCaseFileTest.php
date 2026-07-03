@@ -4,8 +4,13 @@ namespace Tests\Feature;
 
 use App\Helpers\Morilog\Jalalian;
 use App\Livewire\People\BeneficiaryCaseFile;
+use App\Models\Activity;
+use App\Models\ActivityAttendance;
 use App\Models\BeneficiaryCaseRecord;
 use App\Models\Person;
+use App\Models\Service;
+use App\Models\ServiceDelivery;
+use App\Models\ServiceName;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -94,6 +99,75 @@ class BeneficiaryCaseFileTest extends TestCase
         Excel::assertDownloaded('پرونده-مددجو-'.$person->person_code.'-'.Jalalian::now()->format('Y-m-d').'.xlsx');
     }
 
+    public function test_activity_without_linked_service_shows_activity_only_label(): void
+    {
+        $person = $this->person();
+        $activity = $this->activity('کلاس آموزشی بدون خدمت');
+
+        ActivityAttendance::query()->create([
+            'activity_id' => $activity->id,
+            'person_id' => $person->id,
+            'status' => 'present',
+            'registration_method' => 'manual',
+            'checked_in_at' => '2026-07-03 10:00:00',
+            'recorded_by' => $this->admin()->id,
+        ]);
+
+        $this->actingAs($this->admin());
+
+        Livewire::test(BeneficiaryCaseFile::class, ['personId' => $person->id])
+            ->assertSee('کلاس آموزشی بدون خدمت')
+            ->assertSee('فقط فعالیت / فاقد خدمت');
+    }
+
+    public function test_activity_with_linked_service_shows_category_breakdown_and_valuation(): void
+    {
+        $admin = $this->admin();
+        $person = $this->person();
+        $activity = $this->activity('جشن خدماتی');
+        $service = $this->activityService($activity, $admin, 'پذیرایی مراسم');
+        $category = $service->categories()->create([
+            'service_name_id' => $service->service_name_id,
+            'name' => 'بسته پذیرایی',
+            'quantity' => 20,
+            'unit' => 'count',
+            'value' => 150000,
+            'created_by' => $admin->id,
+        ]);
+        $attendance = ActivityAttendance::query()->create([
+            'activity_id' => $activity->id,
+            'person_id' => $person->id,
+            'status' => 'present',
+            'registration_method' => 'manual',
+            'checked_in_at' => '2026-07-03 10:00:00',
+            'recorded_by' => $admin->id,
+        ]);
+
+        ServiceDelivery::query()->create([
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'activity_attendance_id' => $attendance->id,
+            'delivery_channel' => Service::DELIVERY_CHANNEL_ACTIVITY,
+            'person_id' => $person->id,
+            'national_id' => $person->national_id,
+            'full_name' => $person->full_name ?: trim($person->first_name.' '.$person->last_name),
+            'delivered_quantity' => 2,
+            'value_per_unit_snapshot' => 150000,
+            'delivered_total_value' => 300000,
+            'delivered_at' => '2026-07-03',
+            'created_by' => $admin->id,
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(BeneficiaryCaseFile::class, ['personId' => $person->id])
+            ->assertSee('جشن خدماتی')
+            ->assertSee('پذیرایی مراسم')
+            ->assertSee('بسته پذیرایی')
+            ->assertSee('300,000 ریال')
+            ->assertDontSee('فقط فعالیت / فاقد خدمت');
+    }
+
     private function admin(): User
     {
         return User::factory()->create([
@@ -113,6 +187,43 @@ class BeneficiaryCaseFileTest extends TestCase
             'birth_year' => 1390,
             'birth_month' => 1,
             'birth_day' => 1,
+        ]);
+    }
+
+    private function activity(string $name): Activity
+    {
+        return Activity::query()->create([
+            'name' => $name,
+            'activity_type' => 'group_activity',
+            'status' => 'ongoing',
+            'created_by' => null,
+        ]);
+    }
+
+    private function activityService(Activity $activity, User $creator, string $name): Service
+    {
+        $serviceName = ServiceName::query()->create([
+            'name' => $name,
+            'sort_id' => ((int) ServiceName::query()->max('sort_id')) + 1,
+            'created_by' => $creator->id,
+        ]);
+
+        return Service::query()->create([
+            'activity_id' => $activity->id,
+            'service_name_id' => $serviceName->id,
+            'name' => $name,
+            'service_type' => 'individual',
+            'supports_gate_delivery' => false,
+            'supports_home_delivery' => false,
+            'supports_activity_delivery' => true,
+            'distribution_start_date' => now()->toDateString(),
+            'distribution_end_date' => null,
+            'priority' => 'normal',
+            'status' => 'in_distribution',
+            'total_quantity' => 20,
+            'total_service_value' => 3000000,
+            'quantity_delivered' => 0,
+            'created_by' => $creator->id,
         ]);
     }
 }

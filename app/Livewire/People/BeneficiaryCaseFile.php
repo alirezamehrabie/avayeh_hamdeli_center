@@ -248,7 +248,15 @@ class BeneficiaryCaseFile extends Component
         }
 
         return ActivityAttendance::query()
-            ->with(['activity:id,code,name,activity_type,starts_at,ends_at,location', 'recorder:id,name'])
+            ->with([
+                'activity:id,code,name,activity_type,starts_at,ends_at,location',
+                'recorder:id,name',
+                'serviceDeliveries.service:id,code,name,service_name_id,service_type,activity_id',
+                'serviceDeliveries.service.serviceName:id,name',
+                'serviceDeliveries.serviceCategory:id,service_id,name,unit,value',
+                'serviceDeliveries.socialWorker:id,first_name,last_name,worker_code',
+                'serviceDeliveries.creator:id,name',
+            ])
             ->where('person_id', $this->selectedPersonId)
             ->latest('checked_in_at')
             ->latest('id')
@@ -299,21 +307,31 @@ class BeneficiaryCaseFile extends Component
 
         $attendanceRows = $this->activityAttendances->map(function (ActivityAttendance $attendance): array {
             $activity = $attendance->activity;
+            $linkedDeliveries = $attendance->serviceDeliveries;
+            $hasLinkedServices = $linkedDeliveries->isNotEmpty();
+            $activityServiceDetails = $hasLinkedServices ? $this->activityServiceDetails($linkedDeliveries) : [];
 
             return [
                 'type' => 'activity',
                 'date' => $attendance->checked_in_at,
                 'timestamp' => optional($attendance->checked_in_at)->timestamp ?? optional($attendance->created_at)->timestamp ?? 0,
                 'title' => $activity?->name ?: 'فعالیت ثبت‌شده',
-                'subtitle' => $activity ? (Activity::TYPE_OPTIONS[$activity->activity_type] ?? $activity->activity_type) : null,
+                'subtitle' => $hasLinkedServices
+                    ? $this->activityServiceSubtitle($linkedDeliveries)
+                    : ($activity ? (Activity::TYPE_OPTIONS[$activity->activity_type] ?? $activity->activity_type) : null),
                 'badge' => ActivityAttendance::STATUS_OPTIONS[$attendance->status] ?? $attendance->status,
                 'quantity' => ActivityAttendance::METHOD_OPTIONS[$attendance->registration_method] ?? $attendance->registration_method,
-                'value' => 'وابسته به خدمات فعالیت',
+                'value' => $hasLinkedServices
+                    ? number_format((int) $linkedDeliveries->sum('delivered_total_value')).' ریال'
+                    : 'فقط فعالیت / فاقد خدمت',
                 'details' => array_filter([
                     'کد فعالیت' => $activity?->code,
                     'مکان' => $activity?->location,
                     'زمان ورود' => $this->formatDateTime($attendance->checked_in_at),
                     'زمان خروج' => $this->formatDateTime($attendance->checked_out_at),
+                    'خدمات مرتبط' => $activityServiceDetails['services'] ?? null,
+                    'جزئیات دسته‌بندی' => $activityServiceDetails['categories'] ?? null,
+                    'جمع ارزش خدمات' => $activityServiceDetails['total'] ?? null,
                     'ثبت‌کننده' => $attendance->recorder?->name,
                     'یادداشت' => $attendance->notes,
                 ]),
@@ -376,6 +394,60 @@ class BeneficiaryCaseFile extends Component
         $unit = $delivery->serviceCategory?->unit_label;
 
         return trim($quantity.' '.($unit ?: 'واحد'));
+    }
+
+    protected function activityServiceSubtitle(Collection $deliveries): string
+    {
+        $serviceNames = $deliveries
+            ->map(fn (ServiceDelivery $delivery): string => $this->serviceDisplayName($delivery))
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($serviceNames->isEmpty()) {
+            return 'خدمت مرتبط با فعالیت';
+        }
+
+        return 'خدمات مرتبط: '.$serviceNames->implode('، ');
+    }
+
+    protected function activityServiceDetails(Collection $deliveries): array
+    {
+        $serviceNames = $deliveries
+            ->map(fn (ServiceDelivery $delivery): string => $this->serviceDisplayName($delivery))
+            ->filter()
+            ->unique()
+            ->values()
+            ->implode('، ');
+
+        $categoryBreakdown = $deliveries
+            ->map(function (ServiceDelivery $delivery): string {
+                $category = $delivery->serviceCategory;
+                $categoryName = $category?->name ?: 'دسته‌بندی ثبت‌شده';
+                $quantity = $this->formatQuantity($delivery);
+                $unitValue = $delivery->value_per_unit_snapshot !== null
+                    ? number_format((int) $delivery->value_per_unit_snapshot).' ریال'
+                    : 'ارزش واحد ثبت نشده';
+                $totalValue = $delivery->delivered_total_value !== null
+                    ? number_format((int) $delivery->delivered_total_value).' ریال'
+                    : 'جمع ثبت نشده';
+
+                return "{$categoryName}: {$quantity} × {$unitValue} = {$totalValue}";
+            })
+            ->implode(' | ');
+
+        return [
+            'services' => $serviceNames !== '' ? $serviceNames : null,
+            'categories' => $categoryBreakdown !== '' ? $categoryBreakdown : null,
+            'total' => number_format((int) $deliveries->sum('delivered_total_value')).' ریال',
+        ];
+    }
+
+    protected function serviceDisplayName(ServiceDelivery $delivery): string
+    {
+        $service = $delivery->service;
+
+        return $service?->name ?: $service?->serviceName?->name ?: 'خدمت ثبت‌شده';
     }
 
     protected function socialWorkerName(ServiceDelivery $delivery): ?string
