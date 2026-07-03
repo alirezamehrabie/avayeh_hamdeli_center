@@ -125,10 +125,10 @@
 
                     <a
                         href="{{ route('activity-operator.dashboard') }}"
-                        class="flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors hover:bg-indigo-800"
+                        class="flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors hover:bg-indigo-800 bg-blue-700"
                     >
-                        <span>حضور و غیاب فعالیت‌ها</span>
-                        <span class="text-xs text-indigo-100/80">ثبت حضور</span>
+                        <span>حضور و غیاب</span>
+                        <span class="text-xs text-indigo-100/80">فعالیت</span>
                     </a>
                 @endcan
 

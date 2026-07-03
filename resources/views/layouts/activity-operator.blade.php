@@ -98,7 +98,7 @@
                 @can('access-distribution-operator-panel')
                     <a
                         href="{{ route('distribution-operator.define-service') }}"
-                        class="flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors hover:bg-indigo-800"
+                        class="flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors hover:bg-indigo-800 bg-blue-700"
                     >
                         <span>پنل اپراتور توزیع</span>
                         <span class="text-xs text-indigo-100/80">بازگشت</span>

@@ -72,11 +72,11 @@ class ActivityOperatorAssignment extends Component
         abort_unless($activity, 404);
 
         $operator = User::query()
-            ->whereIn('access_level', User::activityAttendanceAssignableAccessLevels())
+            ->eligibleForActivityAttendanceAssignment()
             ->find($userId);
 
         if (! $operator) {
-            $this->addError('operatorSearch', 'اپراتور انتخاب‌شده معتبر نیست.');
+            $this->addError('operatorSearch', 'این کاربر مجوز «ثبت حضور و غیاب» را ندارد یا معتبر نیست.');
 
             return;
         }
@@ -164,7 +164,7 @@ class ActivityOperatorAssignment extends Component
         $assignedUserIds = $this->currentOperatorAssignments->pluck('user_id')->all();
 
         return User::query()
-            ->whereIn('access_level', User::activityAttendanceAssignableAccessLevels())
+            ->eligibleForActivityAttendanceAssignment()
             ->whereNotIn('id', $assignedUserIds)
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($nestedQuery) use ($search) {

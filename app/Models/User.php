@@ -573,9 +573,9 @@ class User extends Authenticatable
     }
 
     /**
-     * Access levels an admin may assign to (or grant attendance access for)
-     * an activity. Activity operators own the workflow by role; distribution
-     * operators can be opted in individually by an admin.
+     * Access levels that may be assigned to an activity for attendance. Being
+     * one of these roles is necessary but never sufficient - the user must also
+     * hold the explicit attendance permission (see hasActivityAttendanceAccess).
      *
      * @return list<string>
      */
@@ -587,31 +587,34 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * Users eligible to be assigned as activity attendance operators: one of the
+     * assignable roles AND holding the explicit attendance permission. This is
+     * enforced in the query so unauthorized users cannot be assigned even via a
+     * hand-crafted request.
+     */
+    public function scopeEligibleForActivityAttendanceAssignment($query)
+    {
+        return $query
+            ->whereIn('access_level', self::activityAttendanceAssignableAccessLevels())
+            ->whereJsonContains('permissions', self::PERMISSION_ACTIVITY_ATTENDANCE_REGISTER);
+    }
+
     public function canAccessActivityOperatorPanel(): bool
     {
         if ($this->isAdmin()) {
             return false;
         }
 
-        // Activity operators own the attendance workflow by their role.
-        if ($this->access_level === self::ACCESS_LEVEL_ACTIVITY_OPERATOR) {
-            return true;
-        }
-
-        // Distribution operators only reach it when an admin explicitly grants
-        // the attendance permission or assigns them to an activity - never by
-        // their role alone.
-        if ($this->access_level === self::ACCESS_LEVEL_DISTRIBUTION_OPERATOR) {
-            return $this->hasActivityAttendanceAccess();
-        }
-
-        return false;
+        // Attendance access is driven by the explicit permission for both
+        // activity and distribution operators - never by role name alone.
+        return in_array($this->access_level, self::activityAttendanceAssignableAccessLevels(), true)
+            && $this->hasActivityAttendanceAccess();
     }
 
     public function hasActivityAttendanceAccess(): bool
     {
-        return $this->hasPermission(self::PERMISSION_ACTIVITY_ATTENDANCE_REGISTER)
-            || $this->activityOperatorAssignments()->exists();
+        return $this->hasPermission(self::PERMISSION_ACTIVITY_ATTENDANCE_REGISTER);
     }
 
     public function canAccessActivity(Activity $activity): bool
@@ -620,6 +623,8 @@ class User extends Authenticatable
             return true;
         }
 
+        // Both the permission (via the panel gate) and an explicit assignment
+        // are required to register attendance for a given activity.
         if (! $this->canAccessActivityOperatorPanel()) {
             return false;
         }
