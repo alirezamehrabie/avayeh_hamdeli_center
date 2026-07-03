@@ -151,73 +151,153 @@
     @if($confirmingMiscServiceName)
         <div
             x-data="{
+                viewportHeight: window.innerHeight,
+                viewportOffsetTop: 0,
+                viewportSyncHandler: null,
                 init() {
                     document.body.classList.add('overflow-hidden');
-                    this.$nextTick(() => this.$refs.serviceNameInput?.focus({ preventScroll: true }));
+                    document.documentElement.classList.add('overflow-hidden');
+
+                    this.viewportSyncHandler = () => this.syncViewport();
+                    window.addEventListener('resize', this.viewportSyncHandler);
+
+                    if (window.visualViewport) {
+                        window.visualViewport.addEventListener('resize', this.viewportSyncHandler);
+                        window.visualViewport.addEventListener('scroll', this.viewportSyncHandler);
+                    }
+
+                    this.syncViewport();
+
+                    this.$nextTick(() => {
+                        this.focusInput();
+                        this.scrollFieldIntoView();
+                    });
                 },
                 destroy() {
                     document.body.classList.remove('overflow-hidden');
+                    document.documentElement.classList.remove('overflow-hidden');
+
+                    if (this.viewportSyncHandler) {
+                        window.removeEventListener('resize', this.viewportSyncHandler);
+                    }
+
+                    if (window.visualViewport && this.viewportSyncHandler) {
+                        window.visualViewport.removeEventListener('resize', this.viewportSyncHandler);
+                        window.visualViewport.removeEventListener('scroll', this.viewportSyncHandler);
+                    }
+                },
+                syncViewport() {
+                    if (window.visualViewport) {
+                        this.viewportHeight = window.visualViewport.height;
+                        this.viewportOffsetTop = window.visualViewport.offsetTop;
+
+                        return;
+                    }
+
+                    this.viewportHeight = window.innerHeight;
+                    this.viewportOffsetTop = 0;
+                },
+                focusInput() {
+                    const input = this.$refs.serviceNameInput;
+
+                    if (! input) {
+                        return;
+                    }
+
+                    input.focus({ preventScroll: true });
+
+                    const length = input.value?.length ?? 0;
+
+                    if (typeof input.setSelectionRange === 'function') {
+                        input.setSelectionRange(length, length);
+                    }
+                },
+                scrollFieldIntoView() {
+                    this.$nextTick(() => {
+                        const field = this.$refs.serviceNameField ?? this.$refs.serviceNameInput;
+
+                        field?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    });
                 },
                 close() {
                     document.body.classList.remove('overflow-hidden');
+                    document.documentElement.classList.remove('overflow-hidden');
                     $wire.cancelMiscServiceName();
                 },
             }"
             x-on:keydown.escape.window.prevent="close()"
-            class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 px-4 py-6 backdrop-blur-sm"
+            class="fixed inset-0 z-[100] bg-slate-900/50 backdrop-blur-sm"
+            x-bind:style="`height:${viewportHeight}px; transform:translateY(${viewportOffsetTop}px);`"
             role="dialog"
             aria-modal="true"
             aria-labelledby="misc-service-name-title"
         >
             <div class="absolute inset-0" @click="close()"></div>
 
-            <form wire:submit.prevent="confirmMiscServiceName" class="relative w-full max-w-md rounded-[28px] bg-white p-6 shadow-2xl" @click.stop>
-                <button
-                    type="button"
-                    @click="close()"
-                    class="absolute left-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200"
-                    aria-label="بستن"
+            <div class="relative flex h-full items-end justify-center px-0 pt-2 sm:items-center sm:px-4 sm:py-6">
+                <form
+                    wire:submit.prevent="confirmMiscServiceName"
+                    class="relative flex max-h-full w-full flex-col overflow-hidden rounded-t-3xl border border-slate-200 bg-white text-right shadow-[0_-18px_45px_rgba(15,23,42,0.22)] sm:max-w-md sm:rounded-[28px] sm:shadow-2xl"
+                    x-bind:style="'padding-bottom:calc(env(safe-area-inset-bottom) + 0.75rem);'"
+                    @click.stop
                 >
-                    <span class="text-xl leading-none">&times;</span>
-                </button>
+                    <div class="flex items-center justify-between gap-3 border-b border-slate-200/80 px-4 pb-3 pt-3 sm:border-b-0 sm:px-6 sm:pb-0 sm:pt-6">
+                        <div class="flex-1 sm:hidden">
+                            <div class="mx-auto h-1.5 w-14 rounded-full bg-slate-200"></div>
+                        </div>
+                        <button
+                            type="button"
+                            @click="close()"
+                            class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                            aria-label="بستن"
+                        >
+                            <span class="text-xl leading-none">&times;</span>
+                        </button>
+                    </div>
 
-                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                    <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                    </svg>
-                </div>
+                    <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 pt-4 sm:px-6 sm:pb-6 sm:pt-2">
+                        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                            <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                            </svg>
+                        </div>
 
-                <div class="mt-4 text-center">
-                    <h2 id="misc-service-name-title" class="text-lg font-extrabold text-slate-800">نام خدمت جدید</h2>
-                    <p class="mt-2 text-sm font-medium leading-6 text-slate-600">نام اختصاصی این خدمت متفرقه را وارد کنید</p>
-                </div>
+                        <div class="mt-4 text-center">
+                            <h2 id="misc-service-name-title" class="text-lg font-extrabold text-slate-800">نام خدمت جدید</h2>
+                            <p class="mt-2 text-sm font-medium leading-6 text-slate-600">نام اختصاصی این خدمت متفرقه را وارد کنید</p>
+                        </div>
 
-                <div class="mt-5 text-right">
-                    <label for="misc-service-name-input" class="mb-2 block text-sm font-bold text-slate-700">نام خدمت</label>
-                    <input
-                        id="misc-service-name-input"
-                        x-ref="serviceNameInput"
-                        type="text"
-                        wire:model.blur="miscServiceName"
-                        maxlength="120"
-                        autocomplete="off"
-                        class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
-                        placeholder="مثلاً سفره ام‌البنین - 14"
-                    >
-                    @error('miscServiceName')
-                        <p data-validation-error class="mt-2 text-xs font-semibold text-rose-600">{{ $message }}</p>
-                    @enderror
-                </div>
+                        <div x-ref="serviceNameField" class="mt-5 scroll-mt-24 text-right">
+                            <label for="misc-service-name-input" class="mb-2 block text-sm font-bold text-slate-700">نام خدمت</label>
+                            <input
+                                id="misc-service-name-input"
+                                x-ref="serviceNameInput"
+                                type="text"
+                                wire:model.blur="miscServiceName"
+                                maxlength="120"
+                                autocomplete="off"
+                                inputmode="text"
+                                dir="rtl"
+                                class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                placeholder="مثلاً سفره ام‌البنین - 14"
+                                @focus="window.setTimeout(() => scrollFieldIntoView(), 180)"
+                            >
+                            @error('miscServiceName')
+                                <p data-validation-error class="mt-2 text-xs font-semibold text-rose-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
 
-                <div class="mt-6 flex flex-wrap gap-3">
-                    <button type="button" @click="close()" class="inline-flex min-w-32 flex-1 items-center justify-center rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-200 active:scale-[0.98]">
-                        انصراف
-                    </button>
-                    <button type="submit" class="inline-flex min-w-32 flex-1 items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-500 active:scale-[0.98]">
-                        تأیید و ادامه
-                    </button>
-                </div>
-            </form>
+                    <div class="flex flex-col-reverse gap-2 border-t border-slate-200 px-4 pt-3 sm:flex-row sm:justify-end sm:px-6">
+                        <button type="button" @click="close()" class="inline-flex min-h-12 flex-1 items-center justify-center rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-200 active:scale-[0.98]">
+                            انصراف
+                        </button>
+                        <button type="submit" class="inline-flex min-h-12 flex-1 items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-500 active:scale-[0.98]">
+                            تأیید و ادامه
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     @endif
 
