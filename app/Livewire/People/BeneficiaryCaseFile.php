@@ -5,11 +5,14 @@ namespace App\Livewire\People;
 use App\Helpers\Morilog\Jalalian;
 use App\Models\Activity;
 use App\Models\ActivityAttendance;
+use App\Models\BeneficiaryCaseRecord;
 use App\Models\Person;
 use App\Models\Service;
 use App\Models\ServiceDelivery;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 class BeneficiaryCaseFile extends Component
@@ -18,11 +21,24 @@ class BeneficiaryCaseFile extends Component
 
     public ?int $selectedPersonId = null;
 
+    public string $recordType = BeneficiaryCaseRecord::TYPE_NOTE;
+
+    public string $recordTitle = '';
+
+    public string $recordDescription = '';
+
+    public string $recordedAt = '';
+
+    public ?string $recordAmount = null;
+
+    public string $recordReferenceNumber = '';
+
     public function mount(?int $personId = null): void
     {
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
 
         $this->selectedPersonId = $personId;
+        $this->recordedAt = now()->toDateString();
     }
 
     public function updatedSearch(): void
@@ -40,6 +56,43 @@ class BeneficiaryCaseFile extends Component
     public function clearSelection(): void
     {
         $this->selectedPersonId = null;
+        $this->resetRecordForm();
+    }
+
+    public function saveCaseRecord(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless((bool) $this->selectedPerson, 404);
+
+        $validated = $this->validate([
+            'recordType' => ['required', Rule::in(array_keys(BeneficiaryCaseRecord::TYPE_OPTIONS))],
+            'recordTitle' => ['required', 'string', 'max:255'],
+            'recordDescription' => ['nullable', 'string', 'max:5000'],
+            'recordedAt' => ['nullable', 'date'],
+            'recordAmount' => ['nullable', 'integer', 'min:0', 'max:999999999999'],
+            'recordReferenceNumber' => ['nullable', 'string', 'max:255'],
+        ], [], [
+            'recordType' => 'نوع رکورد',
+            'recordTitle' => 'عنوان',
+            'recordDescription' => 'توضیحات',
+            'recordedAt' => 'تاریخ',
+            'recordAmount' => 'مبلغ',
+            'recordReferenceNumber' => 'شماره مرجع',
+        ]);
+
+        BeneficiaryCaseRecord::query()->create([
+            'person_id' => $this->selectedPerson->id,
+            'created_by' => auth()->id(),
+            'record_type' => $validated['recordType'],
+            'title' => trim($validated['recordTitle']),
+            'description' => filled($validated['recordDescription']) ? trim($validated['recordDescription']) : null,
+            'recorded_at' => filled($validated['recordedAt']) ? Carbon::parse($validated['recordedAt'])->toDateString() : null,
+            'amount' => filled($validated['recordAmount']) ? (int) $validated['recordAmount'] : null,
+            'reference_number' => filled($validated['recordReferenceNumber']) ? trim($validated['recordReferenceNumber']) : null,
+        ]);
+
+        $this->resetRecordForm();
+        session()->flash('case-record-success', 'رکورد پرونده با موفقیت ثبت شد.');
     }
 
     public function getSearchResultsProperty(): Collection
@@ -66,10 +119,9 @@ class BeneficiaryCaseFile extends Component
                 'birth_month',
                 'birth_year',
                 'guardian_id',
-                'social_worker_id',
                 'created_at',
             ])
-            ->with(['guardian:id,first_name,last_name,national_code', 'socialWorker:id,first_name,last_name,worker_code'])
+            ->with(['guardian:id,first_name,last_name,national_code,social_worker_id'])
             ->where(function (Builder $query) use ($search, $prefixSearch, $nameColumn): void {
                 if (ctype_digit($search)) {
                     $query->where('person_code', 'like', $prefixSearch)
@@ -93,8 +145,8 @@ class BeneficiaryCaseFile extends Component
 
         return Person::query()
             ->with([
-                'guardian:id,first_name,last_name,national_code,guardian_phone_number',
-                'socialWorker:id,first_name,last_name,worker_code',
+                'guardian:id,first_name,last_name,national_code,guardian_phone_number,social_worker_id',
+                'guardian.socialWorker:id,first_name,last_name,worker_code',
             ])
             ->withCount(['serviceDeliveries', 'activityAttendances'])
             ->find($this->selectedPersonId);
@@ -143,6 +195,21 @@ class BeneficiaryCaseFile extends Component
             ->with(['activity:id,code,name,activity_type,starts_at,ends_at,location', 'recorder:id,name'])
             ->where('person_id', $this->selectedPersonId)
             ->latest('checked_in_at')
+            ->latest('id')
+            ->limit(50)
+            ->get();
+    }
+
+    public function getCaseRecordsProperty(): Collection
+    {
+        if (! $this->selectedPersonId) {
+            return collect();
+        }
+
+        return BeneficiaryCaseRecord::query()
+            ->with('creator:id,name')
+            ->where('person_id', $this->selectedPersonId)
+            ->latest('recorded_at')
             ->latest('id')
             ->limit(50)
             ->get();
@@ -197,8 +264,26 @@ class BeneficiaryCaseFile extends Component
             ];
         });
 
+        $caseRecordRows = $this->caseRecords->map(function (BeneficiaryCaseRecord $record): array {
+            return [
+                'type' => 'manual',
+                'date' => $record->recorded_at,
+                'timestamp' => optional($record->recorded_at)->timestamp ?? optional($record->created_at)->timestamp ?? 0,
+                'title' => $record->title,
+                'subtitle' => $record->description,
+                'badge' => $record->record_type_label,
+                'quantity' => $record->reference_number ?: 'ثبت دستی',
+                'value' => $record->amount !== null ? number_format((int) $record->amount).' ریال' : 'ثبت نشده',
+                'details' => array_filter([
+                    'شماره مرجع' => $record->reference_number,
+                    'ثبت‌کننده' => $record->creator?->name,
+                ]),
+            ];
+        });
+
         return $serviceRows
             ->merge($attendanceRows)
+            ->merge($caseRecordRows)
             ->sortByDesc('timestamp')
             ->values();
     }
@@ -243,10 +328,30 @@ class BeneficiaryCaseFile extends Component
         return trim($delivery->socialWorker->first_name.' '.$delivery->socialWorker->last_name) ?: null;
     }
 
+    protected function resetRecordForm(): void
+    {
+        $this->recordType = BeneficiaryCaseRecord::TYPE_NOTE;
+        $this->recordTitle = '';
+        $this->recordDescription = '';
+        $this->recordedAt = now()->toDateString();
+        $this->recordAmount = null;
+        $this->recordReferenceNumber = '';
+        $this->resetValidation([
+            'recordType',
+            'recordTitle',
+            'recordDescription',
+            'recordedAt',
+            'recordAmount',
+            'recordReferenceNumber',
+        ]);
+    }
+
     public function render()
     {
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
 
-        return view('livewire.people.beneficiary-case-file');
+        return view('livewire.people.beneficiary-case-file', [
+            'recordTypeOptions' => BeneficiaryCaseRecord::TYPE_OPTIONS,
+        ]);
     }
 }

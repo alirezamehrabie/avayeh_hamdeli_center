@@ -4,6 +4,7 @@
         $searchResults = $this->searchResults;
         $serviceDeliveries = $this->serviceDeliveries;
         $activityAttendances = $this->activityAttendances;
+        $caseRecords = $this->caseRecords;
         $timeline = $this->timeline;
     @endphp
 
@@ -104,7 +105,7 @@
                         </div>
                         <div class="rounded-xl bg-slate-50 p-3">
                             <p class="text-xs font-bold text-slate-400">مددکار</p>
-                            <p class="mt-1 text-sm font-bold text-slate-800">{{ $selectedPerson->socialWorker ? trim($selectedPerson->socialWorker->first_name.' '.$selectedPerson->socialWorker->last_name) : '-' }}</p>
+                            <p class="mt-1 text-sm font-bold text-slate-800">{{ $selectedPerson->guardian?->socialWorker ? trim($selectedPerson->guardian->socialWorker->first_name.' '.$selectedPerson->guardian->socialWorker->last_name) : '-' }}</p>
                         </div>
                     </div>
                 </div>
@@ -140,7 +141,12 @@
                                             <tr>
                                                 <td class="whitespace-nowrap px-4 py-3 text-slate-600">{{ $this->formatDate($row['date']) }}</td>
                                                 <td class="px-4 py-3">
-                                                    <span class="inline-flex rounded-full {{ $row['type'] === 'service' ? 'bg-emerald-50 text-emerald-700' : 'bg-cyan-50 text-cyan-700' }} px-2.5 py-1 text-xs font-bold">
+                                                    <span @class([
+                                                        'inline-flex rounded-full px-2.5 py-1 text-xs font-bold',
+                                                        'bg-emerald-50 text-emerald-700' => $row['type'] === 'service',
+                                                        'bg-cyan-50 text-cyan-700' => $row['type'] === 'activity',
+                                                        'bg-violet-50 text-violet-700' => $row['type'] === 'manual',
+                                                    ])>
                                                         {{ $row['badge'] }}
                                                     </span>
                                                 </td>
@@ -183,15 +189,118 @@
                         </div>
                         <div class="flex items-center justify-between rounded-xl bg-amber-50 px-3 py-2">
                             <span class="text-xs font-bold text-amber-700">ارزش ثبت‌شده</span>
-                            <span class="text-sm font-black text-amber-900">{{ number_format((int) $serviceDeliveries->sum('delivered_total_value')) }} ریال</span>
+                            <span class="text-sm font-black text-amber-900">{{ number_format((int) $serviceDeliveries->sum('delivered_total_value') + (int) $caseRecords->sum('amount')) }} ریال</span>
+                        </div>
+                        <div class="flex items-center justify-between rounded-xl bg-violet-50 px-3 py-2">
+                            <span class="text-xs font-bold text-violet-700">رکوردهای دستی</span>
+                            <span class="text-sm font-black text-violet-900">{{ number_format($caseRecords->count()) }}</span>
                         </div>
                     </div>
                 </div>
 
+                <form wire:submit.prevent="saveCaseRecord" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <h2 class="text-base font-black text-slate-900">ثبت رکورد پرونده</h2>
+                    <p class="mt-1 text-xs leading-5 text-slate-500">برای مواردی که در چرخه خدمات، گیت یا فعالیت ثبت نشده‌اند.</p>
+
+                    @if(session()->has('case-record-success'))
+                        <div class="mt-3 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
+                            {{ session('case-record-success') }}
+                        </div>
+                    @endif
+
+                    <div class="mt-4 space-y-3">
+                        <div>
+                            <label for="case-record-type" class="mb-1 block text-xs font-bold text-slate-600">نوع رکورد</label>
+                            <select
+                                id="case-record-type"
+                                wire:model="recordType"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                            >
+                                @foreach($recordTypeOptions as $value => $label)
+                                    <option value="{{ $value }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            @error('recordType') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label for="case-record-title" class="mb-1 block text-xs font-bold text-slate-600">عنوان</label>
+                            <input
+                                id="case-record-title"
+                                type="text"
+                                wire:model.defer="recordTitle"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                                placeholder="مثلا فاکتور دارو یا پیگیری مددکاری"
+                            >
+                            @error('recordTitle') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                            <div>
+                                <label for="case-record-date" class="mb-1 block text-xs font-bold text-slate-600">تاریخ</label>
+                                <input
+                                    id="case-record-date"
+                                    type="date"
+                                    wire:model.defer="recordedAt"
+                                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                                >
+                                @error('recordedAt') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                            </div>
+
+                            <div>
+                                <label for="case-record-amount" class="mb-1 block text-xs font-bold text-slate-600">مبلغ ریالی</label>
+                                <input
+                                    id="case-record-amount"
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    wire:model.defer="recordAmount"
+                                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                                    placeholder="اختیاری"
+                                >
+                                @error('recordAmount') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="case-record-reference" class="mb-1 block text-xs font-bold text-slate-600">شماره مرجع</label>
+                            <input
+                                id="case-record-reference"
+                                type="text"
+                                wire:model.defer="recordReferenceNumber"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                                placeholder="شماره فاکتور، رسید یا ارجاع"
+                            >
+                            @error('recordReferenceNumber') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label for="case-record-description" class="mb-1 block text-xs font-bold text-slate-600">توضیحات</label>
+                            <textarea
+                                id="case-record-description"
+                                rows="4"
+                                wire:model.defer="recordDescription"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                                placeholder="جزئیات رکورد پرونده..."
+                            ></textarea>
+                            @error('recordDescription') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                        </div>
+
+                        <button
+                            type="submit"
+                            wire:loading.attr="disabled"
+                            wire:target="saveCaseRecord"
+                            class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            ثبت در پرونده
+                        </button>
+                    </div>
+                </form>
+
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <h2 class="text-sm font-black text-slate-800">یادداشت فاز بعد</h2>
                     <p class="mt-2 text-xs leading-6 text-slate-500">
-                        در این نسخه فقط داده‌های موجود نمایش داده می‌شود. برای فاکتور رسمی، پیوست‌ها، یادداشت دستی مددکاری و ثبت سوابق خارج از چرخه توزیع، نیاز به طراحی جدول‌های اختصاصی پرونده داریم.
+                        در این نسخه پیوست فایل و تصویر فاکتور هنوز اضافه نشده است. مرحله بعد می‌تواند افزودن آپلود مدارک و اتصال رکورد دستی به فایل‌ها باشد.
                     </p>
                 </div>
             </aside>

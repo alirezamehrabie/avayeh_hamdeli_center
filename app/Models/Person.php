@@ -563,6 +563,11 @@ class Person extends Model
         return $this->hasMany(BeneficiaryAuditLog::class)->latest();
     }
 
+    public function caseRecords()
+    {
+        return $this->hasMany(BeneficiaryCaseRecord::class)->latest('recorded_at')->latest();
+    }
+
     public function activityAttendances()
     {
         return $this->hasMany(ActivityAttendance::class);
