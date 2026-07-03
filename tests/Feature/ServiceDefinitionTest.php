@@ -333,6 +333,32 @@ class ServiceDefinitionTest extends TestCase
             });
     }
 
+    public function test_category_value_update_refreshes_existing_delivery_values(): void
+    {
+        $manager = $this->manager();
+        $service = $this->serviceWithCategory($manager, 'Case File Valuation Sync', true);
+        $category = $service->categories()->firstOrFail();
+
+        $delivery = ServiceDelivery::query()->create([
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'national_id' => '1111111111',
+            'full_name' => 'Valuation Recipient',
+            'delivered_quantity' => 3,
+            'value_per_unit_snapshot' => 1000,
+            'delivered_total_value' => 3000,
+            'delivered_at' => now()->toDateString(),
+            'created_by' => $manager->id,
+        ]);
+
+        $category->forceFill(['value' => 2500])->save();
+
+        $delivery->refresh();
+
+        $this->assertSame(2500, $delivery->value_per_unit_snapshot);
+        $this->assertSame(7500, $delivery->delivered_total_value);
+    }
+
     public function test_social_worker_scanned_qr_resolves_recipient_entry(): void
     {
         $manager = $this->manager();

@@ -400,7 +400,9 @@ class Service extends Model
             ->with('serviceCategory')
             ->get()
             ->each(function (ServiceDelivery $delivery): void {
-                $valuePerUnit = (int) ($delivery->serviceCategory?->value ?? $this->deliveryUnitValue());
+                $valuePerUnit = $delivery->serviceCategory
+                    ? (int) ($delivery->serviceCategory->value ?? 0)
+                    : $this->deliveryUnitValue();
 
                 $delivery->forceFill([
                     'value_per_unit_snapshot' => $valuePerUnit,

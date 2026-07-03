@@ -62,10 +62,12 @@ class ServiceCategory extends Model
 
         static::saved(function (self $category): void {
             $category->service?->refreshFinancialTotals();
+            $category->syncDeliveryValues();
         });
 
         static::deleted(function (self $category): void {
             $category->service?->refreshFinancialTotals();
+            $category->service?->syncDeliveryValues();
         });
 
         static::forceDeleting(function (self $category): void {
@@ -157,5 +159,19 @@ class ServiceCategory extends Model
     public function recalculateServiceTotals(): void
     {
         $this->service?->refreshFinancialTotals();
+    }
+
+    public function syncDeliveryValues(): void
+    {
+        $valuePerUnit = (int) ($this->value ?? 0);
+
+        $this->deliveries()
+            ->get()
+            ->each(function (ServiceDelivery $delivery) use ($valuePerUnit): void {
+                $delivery->forceFill([
+                    'value_per_unit_snapshot' => $valuePerUnit,
+                    'delivered_total_value' => (int) round((float) $delivery->delivered_quantity * $valuePerUnit),
+                ])->saveQuietly();
+            });
     }
 }
