@@ -247,10 +247,7 @@
                         @break
 
                     @case('beneficiary-case-file')
-                        <div class="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-                            <h1 class="mb-2 text-2xl font-bold text-gray-800">پرونده مددجو</h1>
-                            <p class="text-sm text-gray-500">این بخش برای تکمیل قابلیت پرونده مددجو در آینده آماده شده است.</p>
-                        </div>
+                        <livewire:people.beneficiary-case-file :key="'beneficiary-case-file'" />
                         @break
 
                     @case('person-create')
