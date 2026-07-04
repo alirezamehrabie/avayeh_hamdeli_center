@@ -325,29 +325,37 @@ class BeneficiaryCaseFile extends Component
             return $this->timelineCache;
         }
 
-        $serviceRows = $this->serviceDeliveries->map(function (ServiceDelivery $delivery): array {
-            $service = $delivery->service;
-            $activity = $delivery->activityAttendance?->activity ?? $service?->activity;
+        $activityAttendanceIds = $this->activityAttendances
+            ->pluck('id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
 
-            return [
-                'type' => 'service',
-                'date' => $delivery->delivered_at,
-                'timestamp' => optional($delivery->delivered_at)->timestamp ?? optional($delivery->created_at)->timestamp ?? 0,
-                'title' => $service?->name ?: $service?->serviceName?->name ?: 'خدمت ثبت‌شده',
-                'subtitle' => $delivery->serviceCategory?->name,
-                'badge' => $this->deliveryChannelLabel($delivery->delivery_channel),
-                'quantity' => $this->formatQuantity($delivery),
-                'value' => $delivery->delivered_total_value ? number_format((int) $delivery->delivered_total_value).' ریال' : 'ثبت نشده',
-                'details' => array_filter([
-                    'دریافت‌کننده' => $delivery->recipient_name,
-                    'کد خدمت' => $service?->code,
-                    'فعالیت مرتبط' => $activity?->name,
-                    'مددکار/تحویل‌دهنده' => $this->socialWorkerName($delivery),
-                    'ثبت‌کننده' => $delivery->creator?->name,
-                    'یادداشت' => $delivery->notes,
-                ]),
-            ];
-        });
+        $serviceRows = $this->serviceDeliveries
+            ->reject(fn (ServiceDelivery $delivery): bool => $delivery->activity_attendance_id
+                && in_array((int) $delivery->activity_attendance_id, $activityAttendanceIds, true))
+            ->map(function (ServiceDelivery $delivery): array {
+                $service = $delivery->service;
+                $activity = $delivery->activityAttendance?->activity ?? $service?->activity;
+
+                return [
+                    'type' => 'service',
+                    'date' => $delivery->delivered_at,
+                    'timestamp' => optional($delivery->delivered_at)->timestamp ?? optional($delivery->created_at)->timestamp ?? 0,
+                    'title' => $service?->name ?: $service?->serviceName?->name ?: 'خدمت ثبت‌شده',
+                    'subtitle' => $delivery->serviceCategory?->name,
+                    'badge' => $this->deliveryChannelLabel($delivery->delivery_channel),
+                    'quantity' => $this->formatQuantity($delivery),
+                    'value' => $delivery->delivered_total_value ? number_format((int) $delivery->delivered_total_value).' ریال' : 'ثبت نشده',
+                    'details' => array_filter([
+                        'دریافت‌کننده' => $delivery->recipient_name,
+                        'کد خدمت' => $service?->code,
+                        'فعالیت مرتبط' => $activity?->name,
+                        'مددکار/تحویل‌دهنده' => $this->socialWorkerName($delivery),
+                        'ثبت‌کننده' => $delivery->creator?->name,
+                        'یادداشت' => $delivery->notes,
+                    ]),
+                ];
+            });
 
         $attendanceRows = $this->activityAttendances->map(function (ActivityAttendance $attendance): array {
             $activity = $attendance->activity;

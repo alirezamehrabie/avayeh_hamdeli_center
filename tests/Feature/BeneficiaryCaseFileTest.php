@@ -166,6 +166,12 @@ class BeneficiaryCaseFileTest extends TestCase
             ->assertSee('بسته پذیرایی')
             ->assertSee('300,000 ریال')
             ->assertDontSee('فقط فعالیت / فاقد خدمت');
+        $timeline = Livewire::test(BeneficiaryCaseFile::class, ['personId' => $person->id])
+            ->instance()
+            ->getTimelineProperty();
+
+        $this->assertSame(1, $timeline->count());
+        $this->assertSame('activity', $timeline->first()['type']);
     }
 
     private function admin(): User
