@@ -1752,9 +1752,11 @@ class ServiceBatchCreator extends Component
 
     protected function resolveEditableService(int $serviceId): Service
     {
+        // Any distribution operator may edit a shared misc service; scope to
+        // operator-defined services and let the gate enforce authorization.
         $service = Service::query()
             ->with(['socialWorkers', 'categories'])
-            ->where('created_by', auth()->id())
+            ->createdByDistributionOperator()
             ->findOrFail($serviceId);
 
         abort_unless(auth()->user()?->can('view-distribution-operator-service', $service), 403);

@@ -568,8 +568,11 @@ class User extends Authenticatable
 
     public function canAccessDistributionOperatorService(Service $service): bool
     {
+        // Misc services are shared across all distribution operators: any
+        // operator may view and edit a service defined by a distribution
+        // operator, regardless of who originally created it.
         return $this->canAccessDistributionOperatorPanel()
-            && (int) $service->created_by === (int) $this->id;
+            && $service->isMiscDefinedService();
     }
 
     /**

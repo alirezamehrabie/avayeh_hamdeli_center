@@ -251,7 +251,7 @@
         <div wire:loading.class="opacity-60" wire:target="switchTab,search,sort,clearCatalogFilters" class="grid gap-4 p-4 transition-opacity md:grid-cols-2 xl:grid-cols-3">
             @forelse($services as $service)
                 @php
-                    $isMisc = (int) ($service->created_by ?? 0) === (int) auth()->id();
+                    $isMisc = $activeTab === 'misc';
                     $operatorAllocations = $service->workerAllocations
                         ->filter(fn ($a) => (int) $a->assigned_by_user_id === (int) auth()->id())
                         ->groupBy(fn ($a) => (int) $a->social_worker_id)

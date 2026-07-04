@@ -17,10 +17,8 @@ class EditMiscService extends Component
 
         $service = Service::query()->findOrFail($serviceId);
 
-        if ((int) $service->created_by !== (int) auth()->id()) {
-            abort(403);
-        }
-
+        // Misc services are shared across distribution operators; the gate
+        // authorizes any operator to edit a service defined by an operator.
         abort_unless(auth()->user()?->can('view-distribution-operator-service', $service), 403);
 
         $this->serviceId = $service->id;

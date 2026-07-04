@@ -4,7 +4,6 @@ namespace App\Livewire\DistributionOperators;
 
 use App\Helpers\Morilog\Jalalian;
 use App\Models\Service;
-use App\Models\User;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -40,11 +39,10 @@ class DefineService extends Component
 
     protected function miscServicesQuery()
     {
-        return Service::query()
-            ->where('created_by', auth()->id())
-            ->whereHas('creator', function ($creatorQuery): void {
-                $creatorQuery->where('access_level', User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR);
-            });
+        // Misc services are shared across all distribution operators, so the
+        // quick-access panel reflects the latest misc service defined by any
+        // operator rather than only the current one's own.
+        return Service::query()->createdByDistributionOperator();
     }
 
     protected function latestMiscServiceSummary(Service $service): array

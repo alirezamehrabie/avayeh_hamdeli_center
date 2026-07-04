@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Livewire\DistributionOperators\DefineService;
+use App\Livewire\DistributionOperators\EditMiscService;
+use App\Livewire\DistributionOperators\ServiceBatchCreator;
 use App\Livewire\DistributionOperators\ServiceList;
 use App\Models\Service;
 use App\Models\ServiceCategory;
@@ -121,6 +123,70 @@ class DistributionOperatorServiceListTest extends TestCase
             ->assertSet('activeTab', ServiceList::TAB_MISC)
             ->assertSee('Misc package')
             ->assertDontSee('Campaign package');
+    }
+
+    public function test_misc_service_is_visible_and_editable_by_other_operators(): void
+    {
+        $creator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $otherOperator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 942,
+            'first_name' => 'Shared',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+
+        $miscService = $this->makeService($creator, 'Shared misc package');
+        $miscCategory = $this->makeCategory($miscService, 'Shared misc category', $creator);
+        $miscService->socialWorkers()->attach($worker->id, [
+            'service_category_id' => $miscCategory->id,
+            'allocated_quantity' => 2,
+            'assigned_by_user_id' => $creator->id,
+        ]);
+
+        // A different operator sees the misc service in the misc tab...
+        $this->actingAs($otherOperator);
+
+        Livewire::withQueryParams(['tab' => ServiceList::TAB_MISC])
+            ->test(ServiceList::class)
+            ->assertSet('activeTab', ServiceList::TAB_MISC)
+            ->assertSee('Shared misc package')
+            ->assertSee(route('distribution-operator.edit-service', $miscService->id), false);
+
+        // ...and can open both edit entry points without a 403.
+        Livewire::test(EditMiscService::class, ['serviceId' => $miscService->id])
+            ->assertSet('serviceId', $miscService->id);
+
+        Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $miscService->id])
+            ->assertSet('editingServiceId', $miscService->id);
+    }
+
+    public function test_misc_service_is_not_shared_with_non_operators_predefined_services(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $manager = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_MANAGER,
+            'is_admin' => true,
+        ]);
+
+        // Predefined (admin-created) service must never be editable via the
+        // operator misc-edit entry point.
+        $predefinedService = $this->makeService($manager, 'Predefined package');
+
+        $this->actingAs($operator);
+
+        $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+
+        Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $predefinedService->id]);
     }
 
     public function test_operator_can_search_service_catalog(): void

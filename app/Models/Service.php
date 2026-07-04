@@ -138,6 +138,41 @@ class Service extends Model
         return $query->where('supports_activity_delivery', true);
     }
 
+    /**
+     * Misc ("متفرقه") services are those defined by a distribution operator.
+     * They are shared across every distribution operator rather than being
+     * scoped to the operator who created them.
+     */
+    public function scopeCreatedByDistributionOperator($query)
+    {
+        return $query->whereHas('creator', function ($creatorQuery): void {
+            $creatorQuery->where('access_level', User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR);
+        });
+    }
+
+    /**
+     * Predefined / campaign services are everything that is NOT a misc service:
+     * services with no creator or whose creator is not a distribution operator.
+     */
+    public function scopeNotCreatedByDistributionOperator($query)
+    {
+        return $query->where(function ($outerQuery): void {
+            $outerQuery->whereNull('created_by')
+                ->orWhereDoesntHave('creator', function ($creatorQuery): void {
+                    $creatorQuery->where('access_level', User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR);
+                });
+        });
+    }
+
+    /**
+     * Whether this service was defined by a distribution operator (a misc
+     * service), as opposed to an admin-defined predefined/campaign service.
+     */
+    public function isMiscDefinedService(): bool
+    {
+        return $this->creator?->access_level === User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR;
+    }
+
     public function getDeliveryChannelLabelsAttribute(): array
     {
         $labels = [];

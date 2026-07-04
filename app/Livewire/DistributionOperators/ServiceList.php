@@ -4,7 +4,6 @@ namespace App\Livewire\DistributionOperators;
 
 use App\Livewire\DistributionOperators\Concerns\SummarizesMiscServices;
 use App\Models\Service;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
@@ -195,11 +194,11 @@ class ServiceList extends Component
     {
         abort_unless(auth()->check() && auth()->user()->can('access-distribution-operator-panel'), 403);
 
+        // Campaign tab shows predefined (admin-defined) services the operator
+        // has allocations in. Misc services are excluded here so they never
+        // appear in both tabs now that they are shared across operators.
         return Service::query()
-            ->where(function (Builder $query): void {
-                $query->where('created_by', '!=', auth()->id())
-                    ->orWhereNull('created_by');
-            })
+            ->notCreatedByDistributionOperator()
             ->whereHas('workerAllocations', function (Builder $allocationQuery): void {
                 $allocationQuery->where('assigned_by_user_id', auth()->id());
             });
@@ -209,11 +208,9 @@ class ServiceList extends Component
     {
         abort_unless(auth()->check() && auth()->user()->can('access-distribution-operator-panel'), 403);
 
-        return Service::query()
-            ->where('created_by', auth()->id())
-            ->whereHas('creator', function (Builder $creatorQuery): void {
-                $creatorQuery->where('access_level', User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR);
-            });
+        // Misc services are shared: show every service defined by any
+        // distribution operator, not only the current operator's own.
+        return Service::query()->createdByDistributionOperator();
     }
 
     protected function latestMiscService(): ?Service
