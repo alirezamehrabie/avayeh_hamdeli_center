@@ -20,9 +20,13 @@
 
 @include('layouts.header')
 
+<x-flash-alerts />
+
 <main class="container py-4">
     {{ $slot }}
 </main>
+
+<x-notification-modal />
 
 @livewireScriptConfig
 @stack('scripts')

@@ -4,6 +4,7 @@ namespace App\Livewire\SocialWorkers;
 
 use AllowDynamicProperties;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\SocialWorker;
@@ -68,12 +69,33 @@ class IndexSocialWorkers extends Component
 
     public function deleteSocialWorker(SocialWorker $socialWorker): void
     {
+        // اگر مددکار خانوار تحت پوشش دارد، ابتدا باید خانوارها به مددکار دیگری
+        // منتقل شوند تا هیچ خانواری روی مددکار غیرفعال باقی نماند.
+        if ($socialWorker->guardians()->exists()) {
+            $this->dispatch('open-reassign-before-deactivate', workerId: $socialWorker->id);
+
+            return;
+        }
+
         $socialWorker->deactivate();
         $this->expandedSocialWorkerId = null;
         $this->clearExpandedWorkerCache();
         $this->resetPage();
 
         session()->flash('success', 'مددکار با موفقیت غیرفعال شد.');
+    }
+
+    public function transferHouseholds(int $socialWorkerId): void
+    {
+        $this->dispatch('open-transfer-households', workerId: $socialWorkerId);
+    }
+
+    #[On('households-transferred')]
+    public function onHouseholdsTransferred(): void
+    {
+        $this->expandedSocialWorkerId = null;
+        $this->clearExpandedWorkerCache();
+        $this->resetPage();
     }
 
     public function toggleSocialWorker(int $socialWorkerId): void
