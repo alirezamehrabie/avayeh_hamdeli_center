@@ -716,32 +716,10 @@
 
                                     </div>
 
-                                    <details class="group" @if($recipientEditorOpen) open @endif>
-                                        <summary class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-right transition hover:border-slate-300 hover:bg-slate-100/70 focus:outline-none focus:ring-4 focus:ring-slate-200">
-                                            <div class="min-w-0">
-                                                <span class="block text-xs font-extrabold text-slate-700">
-                                                    {{ $recipientEditorOpen ? 'تکمیل گیرنده و مقدار' : 'ویرایش گیرنده و مقادیر' }}
-                                                </span>
-                                                <span class="mt-0.5 block truncate text-[10px] font-bold text-slate-400">
-                                                    @if($recipientDisplayName !== '' && $rowEnteredCategoryCountForHeader > 0)
-                                                        {{ $recipientDisplayName }} / {{ $this->persianNumber($rowEnteredCategoryCountForHeader) }} دسته / جمع {{ $this->persianNumber(number_format($rowTotalQuantityForHeader, 2)) }}
-                                                    @elseif($recipientDisplayName !== '')
-                                                        مقدار تحویل هنوز وارد نشده است.
-                                                    @else
-                                                        گیرنده هنوز شناسایی نشده است.
-                                                    @endif
-                                                </span>
-                                            </div>
-                                            <span class="inline-flex shrink-0 items-center gap-2 text-[10px] font-bold text-slate-500 group-open:text-cyan-700">
-                                                <span class="hidden sm:inline">جزئیات</span>
-                                                <i class="bi bi-chevron-down text-xs text-slate-400 transition group-open:rotate-180"></i>
-                                            </span>
-                                        </summary>
-
                                     <div class="mt-3 space-y-3 md:space-y-4">
                                         <div class="border-b border-slate-100 pb-3">
                                             <div class="mb-3 flex items-center gap-2">
-                                                <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[11px] font-bold text-slate-600 group-open:bg-cyan-600 group-open:text-white">۱</span>
+                                                <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-600 text-[11px] font-bold text-white">۱</span>
                                                 <h3 class="text-xs font-extrabold text-slate-700">شناسایی گیرنده</h3>
                                             </div>
 
@@ -917,7 +895,7 @@
                                                             x-on:click="openRecipientSheet()"
                                                             x-on:keydown.enter.prevent="chooseRecipientSuggestionFromInput()"
                                                             @disabled(!$this->selectedService)
-                                                            class="h-12 w-full rounded-xl border border-cyan-300 bg-white py-2.5 pl-12 pr-10 text-sm font-bold text-slate-800 transition-all placeholder:text-xs placeholder:font-normal placeholder:text-slate-400 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10"
+                                                            class="h-12 w-full border border-cyan-300 bg-white py-2.5 pl-12 pr-10 text-sm font-bold text-slate-800 transition-all placeholder:text-xs placeholder:font-normal placeholder:text-slate-400 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 {{ $recipientDisplayName !== '' && ! ($entry['is_unregistered'] ?? false) ? 'rounded-t-xl rounded-b-none' : 'rounded-xl' }}"
                                                             placeholder="{{ $recipientSearchPlaceholder }}"
                                                             autocomplete="off"
                                                         >
@@ -941,6 +919,29 @@
                                                             <i class="bi bi-qr-code-scan text-base"></i>
                                                         </button>
                                                         </div>
+
+                                                        @if($recipientDisplayName !== '' && ! ($entry['is_unregistered'] ?? false))
+                                                            <div class="-mt-px flex flex-col gap-1 rounded-b-xl border border-t-0 border-emerald-200 bg-emerald-50/80 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+                                                                <div class="min-w-0">
+                                                                    <p class="truncate text-xs font-black text-emerald-900">{{ $recipientDisplayName }}</p>
+                                                                    <p class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-bold text-emerald-700">
+                                                                        <span>{{ $recipientSuggestionTypeLabel }}</span>
+                                                                        @if($recipientNationalId !== '')
+                                                                            <span class="text-emerald-300">|</span>
+                                                                            <span dir="ltr">{{ $this->persianNumber($recipientNationalId) }}</span>
+                                                                        @endif
+                                                                        @if($familyMemberCount !== null)
+                                                                            <span class="text-emerald-300">|</span>
+                                                                            <span>{{ $this->persianNumber($familyMemberCount) }} خانوار</span>
+                                                                        @endif
+                                                                    </p>
+                                                                </div>
+                                                                <span class="inline-flex w-fit items-center gap-1 text-[10px] font-black text-emerald-700">
+                                                                    <i class="bi bi-check2-circle text-xs"></i>
+                                                                    تایید شده
+                                                                </span>
+                                                            </div>
+                                                        @endif
 
                                                         @if($recipientDisplayName === '' && $recipientNationalId === '')
                                                             <p class="mt-1.5 flex items-center gap-1 px-0.5 text-[10px] font-medium leading-4 text-slate-400">
@@ -1135,36 +1136,7 @@
                                             </div>
                                         </div>
 
-                                        <div class="rounded-2xl border border-slate-200 bg-white p-3">
-                                            <div class="mb-3 flex items-center gap-2">
-                                                <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[11px] font-bold text-slate-600">۲</span>
-                                                <h3 class="text-xs font-extrabold text-slate-700">تایید گیرنده</h3>
-                                            </div>
-
-                                            @if($recipientDisplayName !== '' && ! ($entry['is_unregistered'] ?? false))
-                                                <div class="rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2.5">
-                                                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                                        <div class="min-w-0">
-                                                            <p class="truncate text-sm font-black text-emerald-900">{{ $recipientDisplayName }}</p>
-                                                            <p class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-bold text-emerald-700">
-                                                                <span>{{ $recipientSuggestionTypeLabel }}</span>
-                                                                @if($recipientNationalId !== '')
-                                                                    <span class="text-emerald-300">|</span>
-                                                                    <span dir="ltr">{{ $this->persianNumber($recipientNationalId) }}</span>
-                                                                @endif
-                                                                @if($familyMemberCount !== null)
-                                                                    <span class="text-emerald-300">|</span>
-                                                                    <span>{{ $this->persianNumber($familyMemberCount) }} خانوار</span>
-                                                                @endif
-                                                            </p>
-                                                        </div>
-                                                        <span class="inline-flex w-fit items-center gap-1 rounded-full border border-emerald-200 bg-white px-2.5 py-1 text-[10px] font-black text-emerald-700">
-                                                            <i class="bi bi-check2-circle text-xs"></i>
-                                                            تایید شده
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            @elseif($entry['is_unregistered'] ?? false)
+                                        @if($entry['is_unregistered'] ?? false)
                                                 <div class="rounded-2xl border border-amber-200 bg-amber-50 p-3">
                                                     <div class="flex items-start gap-2.5">
                                                         <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-amber-600 shadow-sm">
@@ -1216,12 +1188,7 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                            @else
-                                                <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-3 py-3 text-xs font-bold text-slate-500">
-                                                    ابتدا گیرنده را با جستجو یا QR شناسایی کنید؛ سپس مقدار دسته‌بندی‌ها را وارد کنید.
-                                                </div>
-                                            @endif
-                                        </div>
+                                        @endif
 
                                         <div class="grid grid-cols-1 gap-3">
                                             <div class="pt-1">
@@ -1243,10 +1210,10 @@
                                                     $hiddenUnavailableCount = max(0, $assignableCategories->count() - $visibleCategories->count());
                                                 @endphp
 
-                                                <details class="group rounded-2xl bg-slate-50 p-2.5" open>
-                                                    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-1 py-1.5 focus:outline-none focus:ring-4 focus:ring-slate-200">
+                                                <section class="rounded-2xl bg-slate-50 p-2.5">
+                                                    <div class="flex items-center justify-between gap-3 rounded-xl px-1 py-1.5">
                                                         <div class="flex min-w-0 items-center gap-2">
-                                                            <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[11px] font-bold text-slate-600 group-open:bg-cyan-600 group-open:text-white">۳</span>
+                                                            <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-600 text-[11px] font-bold text-white">۲</span>
                                                             <div class="min-w-0">
                                                                 <h3 class="truncate text-xs font-extrabold text-slate-700">دسته‌بندی و مقدار</h3>
                                                             </div>
@@ -1258,9 +1225,8 @@
                                                                     جمع: {{ $this->persianNumber(number_format($rowTotalQuantity, 2)) }}
                                                                 </span>
                                                             @endif
-                                                            <i class="bi bi-chevron-down text-xs text-slate-400 transition group-open:rotate-180"></i>
                                                         </div>
-                                                    </summary>
+                                                    </div>
 
                                                     <div class="mt-2">
                                                         <div class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
@@ -1345,7 +1311,7 @@
 
                                                         @error('recipientEntries.' . $index . '.service_category_id') <p class="mt-2 rounded-lg bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{{ $message }}</p> @enderror
                                                     </div>
-                                                </details>
+                                                </section>
                                             </div>
                                         </div>
                                     </div>
