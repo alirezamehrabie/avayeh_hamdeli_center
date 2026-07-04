@@ -273,6 +273,24 @@ class BeneficiaryCaseFile extends Component
             ->get();
     }
 
+    public function getDirectServiceDeliveriesProperty(): Collection
+    {
+        if (! $this->selectedPersonId) {
+            return collect();
+        }
+
+        return $this->serviceDeliveries
+            ->filter(fn (ServiceDelivery $delivery): bool => (int) $delivery->person_id === (int) $this->selectedPersonId)
+            ->values();
+    }
+
+    public function getFamilyServiceDeliveriesProperty(): Collection
+    {
+        return $this->serviceDeliveries
+            ->filter(fn (ServiceDelivery $delivery): bool => $this->isFamilyServiceDelivery($delivery))
+            ->values();
+    }
+
     public function getActivityAttendancesProperty(): Collection
     {
         if ($this->activityAttendancesCache !== null) {
@@ -343,11 +361,13 @@ class BeneficiaryCaseFile extends Component
                     'timestamp' => optional($delivery->delivered_at)->timestamp ?? optional($delivery->created_at)->timestamp ?? 0,
                     'title' => $service?->name ?: $service?->serviceName?->name ?: 'خدمت ثبت‌شده',
                     'subtitle' => $delivery->serviceCategory?->name,
-                    'badge' => $this->deliveryChannelLabel($delivery->delivery_channel),
+                    'badge' => $this->isFamilyServiceDelivery($delivery) ? 'خدمت خانوار' : $this->deliveryChannelLabel($delivery->delivery_channel),
                     'quantity' => $this->formatQuantity($delivery),
                     'value' => $delivery->delivered_total_value ? number_format((int) $delivery->delivered_total_value).' ریال' : 'ثبت نشده',
                     'details' => array_filter([
+                        'سطح ثبت' => $this->isFamilyServiceDelivery($delivery) ? 'خانوار/سرپرست' : 'مددجوی منتخب',
                         'دریافت‌کننده' => $delivery->recipient_name,
+                        'کانال تحویل' => $this->deliveryChannelLabel($delivery->delivery_channel),
                         'کد خدمت' => $service?->code,
                         'فعالیت مرتبط' => $activity?->name,
                         'مددکار/تحویل‌دهنده' => $this->socialWorkerName($delivery),
@@ -509,6 +529,23 @@ class BeneficiaryCaseFile extends Component
         }
 
         return trim($delivery->socialWorker->first_name.' '.$delivery->socialWorker->last_name) ?: null;
+    }
+
+    protected function isFamilyServiceDelivery(ServiceDelivery $delivery): bool
+    {
+        if (! $this->selectedPersonId) {
+            return false;
+        }
+
+        $selectedPersonId = (int) $this->selectedPersonId;
+
+        if ((int) $delivery->person_id === $selectedPersonId) {
+            return false;
+        }
+
+        $selectedGuardianId = (int) ($this->selectedPerson?->guardian_id ?? 0);
+
+        return $selectedGuardianId > 0 && (int) $delivery->guardian_id === $selectedGuardianId;
     }
 
     protected function resetRecordForm(): void

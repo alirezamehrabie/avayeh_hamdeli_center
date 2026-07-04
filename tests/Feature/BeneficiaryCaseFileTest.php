@@ -7,6 +7,7 @@ use App\Livewire\People\BeneficiaryCaseFile;
 use App\Models\Activity;
 use App\Models\ActivityAttendance;
 use App\Models\BeneficiaryCaseRecord;
+use App\Models\Guardian;
 use App\Models\Person;
 use App\Models\Service;
 use App\Models\ServiceDelivery;
@@ -174,6 +175,67 @@ class BeneficiaryCaseFileTest extends TestCase
         $this->assertSame('activity', $timeline->first()['type']);
     }
 
+    public function test_guardian_services_are_separated_from_direct_beneficiary_totals(): void
+    {
+        $admin = $this->admin();
+        $guardian = Guardian::query()->create([
+            'first_name' => 'Family',
+            'last_name' => 'Guardian',
+            'national_code' => '8811223344',
+            'guardian_code' => 881,
+        ]);
+        $person = $this->person([
+            'guardian_id' => $guardian->id,
+        ]);
+
+        [$directService, $directCategory] = $this->serviceWithCategory($admin, 'Direct Medicine');
+        [$familyService, $familyCategory] = $this->serviceWithCategory($admin, 'Family Food Basket', 'family');
+
+        ServiceDelivery::query()->create([
+            'service_id' => $directService->id,
+            'service_category_id' => $directCategory->id,
+            'delivery_channel' => Service::DELIVERY_CHANNEL_HOME,
+            'person_id' => $person->id,
+            'national_id' => $person->national_id,
+            'full_name' => $person->full_name ?: trim($person->first_name.' '.$person->last_name),
+            'delivered_quantity' => 1,
+            'value_per_unit_snapshot' => 100000,
+            'delivered_total_value' => 100000,
+            'delivered_at' => '2026-07-03',
+            'created_by' => $admin->id,
+        ]);
+
+        ServiceDelivery::query()->create([
+            'service_id' => $familyService->id,
+            'service_category_id' => $familyCategory->id,
+            'delivery_channel' => Service::DELIVERY_CHANNEL_HOME,
+            'guardian_id' => $guardian->id,
+            'national_id' => $guardian->national_code,
+            'full_name' => $guardian->full_name,
+            'delivered_quantity' => 1,
+            'value_per_unit_snapshot' => 500000,
+            'delivered_total_value' => 500000,
+            'delivered_at' => '2026-07-03',
+            'created_by' => $admin->id,
+        ]);
+
+        $this->actingAs($admin);
+
+        $component = Livewire::test(BeneficiaryCaseFile::class, ['personId' => $person->id])
+            ->assertSee('خدمات مستقیم مددجو')
+            ->assertSee('خدمات خانوار/سرپرست')
+            ->assertSee('ارزش مستقیم + دستی')
+            ->assertSee('ارزش خانوار/سرپرست')
+            ->assertSee('خدمت خانوار');
+
+        $instance = $component->instance();
+
+        $this->assertSame(1, $instance->getDirectServiceDeliveriesProperty()->count());
+        $this->assertSame(1, $instance->getFamilyServiceDeliveriesProperty()->count());
+        $this->assertSame(100000, (int) $instance->getDirectServiceDeliveriesProperty()->sum('delivered_total_value'));
+        $this->assertSame(500000, (int) $instance->getFamilyServiceDeliveriesProperty()->sum('delivered_total_value'));
+    }
+
     private function admin(): User
     {
         return User::factory()->create([
@@ -183,9 +245,9 @@ class BeneficiaryCaseFileTest extends TestCase
         ]);
     }
 
-    private function person(): Person
+    private function person(array $overrides = []): Person
     {
-        return Person::query()->create([
+        return Person::query()->create(array_merge([
             'first_name' => 'Case',
             'last_name' => 'Beneficiary',
             'national_id' => (string) random_int(1000000000, 9999999999),
@@ -193,7 +255,7 @@ class BeneficiaryCaseFileTest extends TestCase
             'birth_year' => 1390,
             'birth_month' => 1,
             'birth_day' => 1,
-        ]);
+        ], $overrides));
     }
 
     private function activity(string $name): Activity
@@ -231,5 +293,42 @@ class BeneficiaryCaseFileTest extends TestCase
             'quantity_delivered' => 0,
             'created_by' => $creator->id,
         ]);
+    }
+
+    private function serviceWithCategory(User $creator, string $name, string $serviceType = 'individual'): array
+    {
+        $serviceName = ServiceName::query()->create([
+            'name' => $name,
+            'sort_id' => ((int) ServiceName::query()->max('sort_id')) + 1,
+            'created_by' => $creator->id,
+        ]);
+
+        $service = Service::query()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => $name,
+            'service_type' => $serviceType,
+            'supports_gate_delivery' => false,
+            'supports_home_delivery' => true,
+            'supports_activity_delivery' => false,
+            'distribution_start_date' => now()->toDateString(),
+            'distribution_end_date' => null,
+            'priority' => 'normal',
+            'status' => 'in_distribution',
+            'total_quantity' => 20,
+            'total_service_value' => 3000000,
+            'quantity_delivered' => 0,
+            'created_by' => $creator->id,
+        ]);
+
+        $category = $service->categories()->create([
+            'service_name_id' => $serviceName->id,
+            'name' => $name.' Category',
+            'quantity' => 20,
+            'unit' => 'count',
+            'value' => 100000,
+            'created_by' => $creator->id,
+        ]);
+
+        return [$service, $category];
     }
 }

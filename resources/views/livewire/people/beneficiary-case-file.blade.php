@@ -3,6 +3,8 @@
         $selectedPerson = $this->selectedPerson;
         $searchResults = $this->searchResults;
         $serviceDeliveries = $this->serviceDeliveries;
+        $directServiceDeliveries = $this->directServiceDeliveries;
+        $familyServiceDeliveries = $this->familyServiceDeliveries;
         $activityAttendances = $this->activityAttendances;
         $caseRecords = $this->caseRecords;
         $timeline = $this->timeline;
@@ -212,16 +214,24 @@
                     <h2 class="text-base font-black text-slate-900">خلاصه پرونده</h2>
                     <div class="mt-4 space-y-2">
                         <div class="flex items-center justify-between rounded-xl bg-emerald-50 px-3 py-2">
-                            <span class="text-xs font-bold text-emerald-700">خدمات تحویل‌شده</span>
-                            <span class="text-sm font-black text-emerald-900">{{ number_format($serviceDeliveries->count()) }}</span>
+                            <span class="text-xs font-bold text-emerald-700">خدمات مستقیم مددجو</span>
+                            <span class="text-sm font-black text-emerald-900">{{ number_format($directServiceDeliveries->count()) }}</span>
+                        </div>
+                        <div class="flex items-center justify-between rounded-xl bg-teal-50 px-3 py-2">
+                            <span class="text-xs font-bold text-teal-700">خدمات خانوار/سرپرست</span>
+                            <span class="text-sm font-black text-teal-900">{{ number_format($familyServiceDeliveries->count()) }}</span>
                         </div>
                         <div class="flex items-center justify-between rounded-xl bg-cyan-50 px-3 py-2">
                             <span class="text-xs font-bold text-cyan-700">حضور در فعالیت‌ها</span>
                             <span class="text-sm font-black text-cyan-900">{{ number_format($activityAttendances->count()) }}</span>
                         </div>
                         <div class="flex items-center justify-between rounded-xl bg-amber-50 px-3 py-2">
-                            <span class="text-xs font-bold text-amber-700">ارزش ثبت‌شده</span>
-                            <span class="text-sm font-black text-amber-900">{{ number_format((int) $serviceDeliveries->sum('delivered_total_value') + (int) $caseRecords->sum('amount')) }} ریال</span>
+                            <span class="text-xs font-bold text-amber-700">ارزش مستقیم + دستی</span>
+                            <span class="text-sm font-black text-amber-900">{{ number_format((int) $directServiceDeliveries->sum('delivered_total_value') + (int) $caseRecords->sum('amount')) }} ریال</span>
+                        </div>
+                        <div class="flex items-center justify-between rounded-xl bg-orange-50 px-3 py-2">
+                            <span class="text-xs font-bold text-orange-700">ارزش خانوار/سرپرست</span>
+                            <span class="text-sm font-black text-orange-900">{{ number_format((int) $familyServiceDeliveries->sum('delivered_total_value')) }} ریال</span>
                         </div>
                         <div class="flex items-center justify-between rounded-xl bg-violet-50 px-3 py-2">
                             <span class="text-xs font-bold text-violet-700">رکوردهای دستی</span>
