@@ -104,6 +104,37 @@ class BeneficiaryCaseFileTest extends TestCase
         Excel::assertDownloaded('پرونده-مددجو-'.$person->person_code.'-'.Jalalian::now()->format('Y-m-d').'.xlsx');
     }
 
+    public function test_case_file_search_uses_shared_people_search_for_last_name_matches(): void
+    {
+        $admin = $this->admin();
+        $person = $this->person([
+            'first_name' => 'Ali',
+            'last_name' => 'SharedSearchTarget',
+            'person_code' => '14001',
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(BeneficiaryCaseFile::class)
+            ->set('search', 'SharedSearchTarget')
+            ->assertSee($person->person_code)
+            ->assertSee('SharedSearchTarget');
+    }
+
+    public function test_case_file_search_allows_short_numeric_code_searches(): void
+    {
+        $admin = $this->admin();
+        $person = $this->person([
+            'person_code' => '14002',
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(BeneficiaryCaseFile::class)
+            ->set('search', '1')
+            ->assertSee($person->person_code);
+    }
+
     public function test_activity_without_linked_service_shows_activity_only_label(): void
     {
         $person = $this->person();

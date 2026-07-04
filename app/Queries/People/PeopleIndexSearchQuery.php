@@ -40,19 +40,30 @@ class PeopleIndexSearchQuery
             ->orderByDesc('created_at')
             ->orderByDesc('id');
 
-        $search = $this->normalizeSearchTerm($search);
-
-        if ($search === '') {
+        if ($this->normalizeSearchTerm($search) === '') {
             return $query->paginate($perPage);
         }
 
-        if ($this->needsMoreInput($search, $searchField)) {
-            return $query->whereRaw('1 = 0')->simplePaginate($perPage);
-        }
-
-        $this->applySearch($query, $search, $searchField, $hasNormalizedSearchColumns);
+        $this->applyTo($query, $search, $searchField);
 
         return $query->simplePaginate($perPage);
+    }
+
+    public function applyTo(Builder $query, string $search = '', string $searchField = 'all'): Builder
+    {
+        $search = $this->normalizeSearchTerm($search);
+
+        if ($search === '') {
+            return $query;
+        }
+
+        if ($this->needsMoreInput($search, $searchField)) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        $this->applySearch($query, $search, $searchField, Person::hasNormalizedSearchColumns());
+
+        return $query;
     }
 
     public function normalizeSearchTerm(string $search): string
@@ -63,6 +74,7 @@ class PeopleIndexSearchQuery
     public function needsMoreInput(string $search, string $searchField): bool
     {
         return $search !== ''
+            && ! ctype_digit($search)
             && in_array($searchField, ['all', 'full_name', 'first_name', 'last_name'], true)
             && mb_strlen($search) < 2;
     }

@@ -11,6 +11,7 @@ use App\Models\BeneficiaryCaseRecordAttachment;
 use App\Models\Person;
 use App\Models\Service;
 use App\Models\ServiceDelivery;
+use App\Queries\People\PeopleIndexSearchQuery;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -196,11 +197,7 @@ class BeneficiaryCaseFile extends Component
             return $this->searchResultsCache = collect();
         }
 
-        $hasNormalizedSearchColumns = Person::hasNormalizedSearchColumns();
-        $nameColumn = $hasNormalizedSearchColumns ? 'normalized_full_name' : 'full_name';
-        $prefixSearch = "{$search}%";
-
-        return $this->searchResultsCache = Person::query()
+        $query = Person::query()
             ->select([
                 'id',
                 'person_code',
@@ -215,17 +212,11 @@ class BeneficiaryCaseFile extends Component
                 'created_at',
             ])
             ->with(['guardian:id,first_name,last_name,national_code,social_worker_id'])
-            ->where(function (Builder $query) use ($search, $prefixSearch, $nameColumn): void {
-                if (ctype_digit($search)) {
-                    $query->where('person_code', 'like', $prefixSearch)
-                        ->orWhere('national_id', strlen($search) === 10 ? '=' : 'like', strlen($search) === 10 ? $search : $prefixSearch);
+            ->orderByDesc('created_at');
 
-                    return;
-                }
+        app(PeopleIndexSearchQuery::class)->applyTo($query, $search);
 
-                $query->where($nameColumn, 'like', $prefixSearch);
-            })
-            ->orderByDesc('created_at')
+        return $this->searchResultsCache = $query
             ->limit(8)
             ->get();
     }
