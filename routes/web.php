@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityCheckInController;
+use App\Http\Controllers\BeneficiaryCaseRecordAttachmentController;
 use App\Http\Controllers\QrIdentityController;
 use App\Livewire\Admin\DashboardHome;
 use App\Livewire\Admin\UserAccount;
@@ -91,6 +92,10 @@ Route::get('/admin/dashboard', DashboardHome::class)
 Route::get('/admin/people/case-file', DashboardHome::class)
     ->middleware(['auth', 'can:access-admin-panel'])
     ->name('admin.people.case-file');
+
+Route::get('/admin/people/case-file/attachments/{attachment}', [BeneficiaryCaseRecordAttachmentController::class, 'show'])
+    ->middleware(['auth', 'can:access-admin-panel'])
+    ->name('admin.people.case-file.attachments.show');
 
 Route::get('/admin/services/service-definition', DashboardHome::class)
     ->middleware(['auth', 'can:full-access'])

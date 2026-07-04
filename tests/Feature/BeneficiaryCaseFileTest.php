@@ -312,6 +312,79 @@ class BeneficiaryCaseFileTest extends TestCase
         $this->assertDatabaseCount('beneficiary_case_record_attachments', 0);
     }
 
+    public function test_admin_can_open_case_record_attachment_through_authorized_route(): void
+    {
+        Storage::fake('public');
+
+        $admin = $this->admin();
+        $person = $this->person();
+        $record = BeneficiaryCaseRecord::query()->create([
+            'person_id' => $person->id,
+            'created_by' => $admin->id,
+            'record_type' => BeneficiaryCaseRecord::TYPE_INVOICE,
+            'title' => 'فاکتور تست',
+            'recorded_at' => '2026-07-03',
+        ]);
+
+        $path = "beneficiary-case-records/{$person->id}/{$record->id}/invoice.pdf";
+        Storage::disk('public')->put($path, 'secure invoice content');
+
+        $attachment = BeneficiaryCaseRecordAttachment::query()->create([
+            'beneficiary_case_record_id' => $record->id,
+            'uploaded_by' => $admin->id,
+            'disk' => 'public',
+            'path' => $path,
+            'original_name' => 'invoice.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => 22,
+        ]);
+
+        $this->assertSame(route('admin.people.case-file.attachments.show', ['attachment' => $attachment]), $attachment->url);
+        $this->assertStringNotContainsString('/storage/', $attachment->url);
+
+        $this->actingAs($admin)
+            ->get($attachment->url)
+            ->assertOk()
+            ->assertHeader('content-disposition', 'inline; filename=invoice.pdf');
+    }
+
+    public function test_non_admin_cannot_open_case_record_attachment(): void
+    {
+        Storage::fake('public');
+
+        $admin = $this->admin();
+        $person = $this->person();
+        $record = BeneficiaryCaseRecord::query()->create([
+            'person_id' => $person->id,
+            'created_by' => $admin->id,
+            'record_type' => BeneficiaryCaseRecord::TYPE_INVOICE,
+            'title' => 'فاکتور تست',
+            'recorded_at' => '2026-07-03',
+        ]);
+
+        $path = "beneficiary-case-records/{$person->id}/{$record->id}/invoice.pdf";
+        Storage::disk('public')->put($path, 'secure invoice content');
+
+        $attachment = BeneficiaryCaseRecordAttachment::query()->create([
+            'beneficiary_case_record_id' => $record->id,
+            'uploaded_by' => $admin->id,
+            'disk' => 'public',
+            'path' => $path,
+            'original_name' => 'invoice.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => 22,
+        ]);
+
+        $user = User::factory()->create([
+            'is_admin' => false,
+            'permissions' => [],
+        ]);
+
+        $this->actingAs($user)
+            ->get($attachment->url)
+            ->assertForbidden();
+    }
+
     private function admin(): User
     {
         return User::factory()->create([

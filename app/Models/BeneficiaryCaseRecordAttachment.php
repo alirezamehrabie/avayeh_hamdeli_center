@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Storage;
 
 class BeneficiaryCaseRecordAttachment extends Model
 {
@@ -39,7 +38,7 @@ class BeneficiaryCaseRecordAttachment extends Model
 
     public function getUrlAttribute(): string
     {
-        return Storage::disk($this->disk)->url($this->path);
+        return route('admin.people.case-file.attachments.show', ['attachment' => $this]);
     }
 
     public function getSizeLabelAttribute(): string
