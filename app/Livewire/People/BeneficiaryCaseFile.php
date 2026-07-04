@@ -234,7 +234,6 @@ class BeneficiaryCaseFile extends Component
                 'guardian:id,first_name,last_name,national_code,guardian_phone_number,social_worker_id',
                 'guardian.socialWorker:id,first_name,last_name,worker_code',
             ])
-            ->withCount(['serviceDeliveries', 'activityAttendances'])
             ->find($this->selectedPersonId);
     }
 
