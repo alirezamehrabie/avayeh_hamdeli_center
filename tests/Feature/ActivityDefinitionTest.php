@@ -4,7 +4,10 @@ namespace Tests\Feature;
 
 use App\Livewire\Activities\ActivityDefinition;
 use App\Models\Activity;
+use App\Models\ActivityAttendance;
+use App\Models\Person;
 use App\Models\Service;
+use App\Models\ServiceDelivery;
 use App\Models\ServiceName;
 use App\Models\User;
 use Carbon\Carbon;
@@ -380,6 +383,172 @@ class ActivityDefinitionTest extends TestCase
         ]);
     }
 
+    public function test_retroactive_activity_service_assignment_creates_deliveries_for_existing_attendees(): void
+    {
+        $user = $this->manager();
+        $activity = $this->activity('Retroactive Ceremony', $user);
+        $firstPerson = $this->person('1234567890', '15001');
+        $secondPerson = $this->person('2234567890', '15002');
+
+        ActivityAttendance::query()->create([
+            'activity_id' => $activity->id,
+            'person_id' => $firstPerson->id,
+            'status' => 'present',
+            'registration_method' => 'manual',
+            'checked_in_at' => '2026-07-03 10:00:00',
+            'recorded_by' => $user->id,
+        ]);
+        ActivityAttendance::query()->create([
+            'activity_id' => $activity->id,
+            'person_id' => $secondPerson->id,
+            'status' => 'present',
+            'registration_method' => 'manual',
+            'checked_in_at' => '2026-07-03 10:05:00',
+            'recorded_by' => $user->id,
+        ]);
+
+        $this->actingAs($user);
+
+        Livewire::test(ActivityDefinition::class, ['activityId' => $activity->id])
+            ->set('activityServices', [[
+                'id' => null,
+                'selectedServiceNameId' => null,
+                'serviceName' => 'Retroactive Food',
+                'serviceType' => 'individual',
+                'description' => '',
+                'serviceDistrictId' => null,
+                'distributionStartDate' => '1405/04/12',
+                'distributionEndDate' => null,
+                'priority' => 'normal',
+                'status' => 'in_distribution',
+                'statusNotes' => '',
+                'categories' => [[
+                    'id' => null,
+                    'code' => '',
+                    'name' => 'Food Pack',
+                    'quantity' => '10',
+                    'unit' => 'pack',
+                    'value' => '120000',
+                ]],
+            ]])
+            ->call('save')
+            ->assertRedirect('/admin/dashboard?section=activity-list');
+
+        $service = Service::query()->where('activity_id', $activity->id)->firstOrFail();
+        $category = $service->categories()->firstOrFail();
+
+        $this->assertSame(2, ServiceDelivery::query()
+            ->where('service_id', $service->id)
+            ->where('service_category_id', $category->id)
+            ->where('delivery_channel', Service::DELIVERY_CHANNEL_ACTIVITY)
+            ->count());
+        $this->assertSame('2.00', (string) $service->fresh()->quantity_delivered);
+        $this->assertDatabaseHas('service_deliveries', [
+            'person_id' => $firstPerson->id,
+            'activity_attendance_id' => ActivityAttendance::query()->where('person_id', $firstPerson->id)->value('id'),
+            'service_category_id' => $category->id,
+            'delivered_quantity' => 1,
+            'value_per_unit_snapshot' => 120000,
+            'delivered_total_value' => 120000,
+        ]);
+    }
+
+    public function test_retroactive_activity_service_sync_removes_deleted_category_deliveries_without_duplicates(): void
+    {
+        $user = $this->manager();
+        $activity = $this->activity('Category Removal Ceremony', $user);
+        $person = $this->person('3234567890', '15003');
+        $attendance = ActivityAttendance::query()->create([
+            'activity_id' => $activity->id,
+            'person_id' => $person->id,
+            'status' => 'present',
+            'registration_method' => 'manual',
+            'checked_in_at' => '2026-07-03 10:00:00',
+            'recorded_by' => $user->id,
+        ]);
+        $service = $this->activityService($activity, $user, 'Removable Service');
+        $firstCategory = $service->categories()->create([
+            'service_name_id' => $service->service_name_id,
+            'name' => 'Keep Pack',
+            'quantity' => 10,
+            'unit' => 'pack',
+            'value' => 100000,
+            'created_by' => $user->id,
+        ]);
+        $secondCategory = $service->categories()->create([
+            'service_name_id' => $service->service_name_id,
+            'name' => 'Remove Pack',
+            'quantity' => 10,
+            'unit' => 'pack',
+            'value' => 50000,
+            'created_by' => $user->id,
+        ]);
+
+        foreach ([$firstCategory, $secondCategory] as $category) {
+            ServiceDelivery::query()->create([
+                'service_id' => $service->id,
+                'service_category_id' => $category->id,
+                'activity_attendance_id' => $attendance->id,
+                'delivery_channel' => Service::DELIVERY_CHANNEL_ACTIVITY,
+                'person_id' => $person->id,
+                'national_id' => $person->national_id,
+                'full_name' => $person->full_name ?: trim($person->first_name.' '.$person->last_name),
+                'delivered_quantity' => 1,
+                'value_per_unit_snapshot' => (int) $category->value,
+                'delivered_total_value' => (int) $category->value,
+                'delivered_at' => '2026-07-03',
+                'created_by' => $user->id,
+            ]);
+        }
+
+        $this->actingAs($user);
+
+        Livewire::test(ActivityDefinition::class, ['activityId' => $activity->id])
+            ->set('activityServices', [[
+                'id' => $service->id,
+                'selectedServiceNameId' => $service->service_name_id,
+                'serviceName' => $service->name,
+                'serviceType' => 'individual',
+                'description' => '',
+                'serviceDistrictId' => null,
+                'distributionStartDate' => '1405/04/12',
+                'distributionEndDate' => null,
+                'priority' => 'normal',
+                'status' => 'in_distribution',
+                'statusNotes' => '',
+                'categories' => [[
+                    'id' => $firstCategory->id,
+                    'code' => $firstCategory->code,
+                    'name' => 'Keep Pack',
+                    'quantity' => '10',
+                    'unit' => 'pack',
+                    'value' => '140000',
+                ]],
+            ]])
+            ->call('save')
+            ->assertRedirect('/admin/dashboard?section=activity-list');
+
+        $this->assertSame(1, ServiceDelivery::query()
+            ->where('activity_attendance_id', $attendance->id)
+            ->where('delivery_channel', Service::DELIVERY_CHANNEL_ACTIVITY)
+            ->count());
+        $this->assertDatabaseHas('service_deliveries', [
+            'activity_attendance_id' => $attendance->id,
+            'service_category_id' => $firstCategory->id,
+            'value_per_unit_snapshot' => 140000,
+            'delivered_total_value' => 140000,
+            'deleted_at' => null,
+        ]);
+        $this->assertSoftDeleted('service_deliveries', [
+            'activity_attendance_id' => $attendance->id,
+            'service_category_id' => $secondCategory->id,
+        ]);
+        $this->assertSame(1, ServiceDelivery::withTrashed()
+            ->where('activity_attendance_id', $attendance->id)
+            ->where('service_category_id', $firstCategory->id)
+            ->count());
+    }
+
     public function test_new_activity_code_ignores_soft_deleted_rows_when_generating_sequence(): void
     {
         $user = $this->manager();
@@ -406,6 +575,53 @@ class ActivityDefinitionTest extends TestCase
             'access_level' => User::ACCESS_LEVEL_ADMIN,
             'is_admin' => true,
             'permissions' => [User::PERMISSION_FULL_ACCESS],
+        ]);
+    }
+
+    private function activity(string $name, User $creator): Activity
+    {
+        return Activity::query()->create([
+            'name' => $name,
+            'activity_type' => 'ceremony',
+            'status' => 'ongoing',
+            'created_by' => $creator->id,
+        ]);
+    }
+
+    private function person(string $nationalId, string $personCode): Person
+    {
+        return Person::query()->create([
+            'first_name' => 'Activity',
+            'last_name' => 'Attendee',
+            'national_id' => $nationalId,
+            'person_code' => $personCode,
+        ]);
+    }
+
+    private function activityService(Activity $activity, User $creator, string $name): Service
+    {
+        $serviceName = ServiceName::query()->create([
+            'name' => $name,
+            'sort_id' => ((int) ServiceName::query()->max('sort_id')) + 1,
+            'created_by' => $creator->id,
+        ]);
+
+        return Service::query()->create([
+            'activity_id' => $activity->id,
+            'service_name_id' => $serviceName->id,
+            'name' => $name,
+            'service_type' => 'individual',
+            'supports_gate_delivery' => false,
+            'supports_home_delivery' => false,
+            'supports_activity_delivery' => true,
+            'distribution_start_date' => now()->toDateString(),
+            'distribution_end_date' => null,
+            'priority' => 'normal',
+            'status' => 'in_distribution',
+            'total_quantity' => 20,
+            'total_service_value' => 1500000,
+            'quantity_delivered' => 0,
+            'created_by' => $creator->id,
         ]);
     }
 }

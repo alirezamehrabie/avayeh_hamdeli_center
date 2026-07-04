@@ -10,6 +10,7 @@ use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\ServiceCategoryTemplate;
 use App\Models\ServiceName;
+use App\Services\ActivityServiceDeliverySyncService;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -115,6 +116,7 @@ class ActivityDefinition extends Component
                 $activity->save();
 
                 $this->syncActivityServices($activity, $validated['activityServices']);
+                app(ActivityServiceDeliverySyncService::class)->syncActivity($activity);
             });
         } else {
             $this->saveNewActivity($payload, $validated['activityServices']);
@@ -472,6 +474,7 @@ class ActivityDefinition extends Component
                     $activity->save();
 
                     $this->syncActivityServices($activity, $services);
+                    app(ActivityServiceDeliverySyncService::class)->syncActivity($activity);
                 });
 
                 return;
@@ -717,8 +720,8 @@ class ActivityDefinition extends Component
         $activityName = trim($this->name);
 
         return $activityName !== ''
-            ? 'خدمت ' . $activityName
-            : 'خدمت - ' . $this->currentJalaliDateLabel();
+            ? 'خدمت '.$activityName
+            : 'خدمت - '.$this->currentJalaliDateLabel();
     }
 
     protected function currentJalaliDateLabel(): string
@@ -739,7 +742,7 @@ class ActivityDefinition extends Component
             12 => 'اسفند',
         ];
 
-        return $date->getDay() . ' ' . ($months[$date->getMonth()] ?? '') . ' ' . $date->getYear();
+        return $date->getDay().' '.($months[$date->getMonth()] ?? '').' '.$date->getYear();
     }
 
     protected function defaultServiceEndDate(): ?string
