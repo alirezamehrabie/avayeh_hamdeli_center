@@ -7,6 +7,7 @@ use App\Livewire\People\BeneficiaryCaseFile;
 use App\Models\Activity;
 use App\Models\ActivityAttendance;
 use App\Models\BeneficiaryCaseRecord;
+use App\Models\BeneficiaryCaseRecordAttachment;
 use App\Models\Guardian;
 use App\Models\Person;
 use App\Models\Service;
@@ -14,8 +15,11 @@ use App\Models\ServiceDelivery;
 use App\Models\ServiceName;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Maatwebsite\Excel\Facades\Excel;
+use RuntimeException;
 use Tests\TestCase;
 
 class BeneficiaryCaseFileTest extends TestCase
@@ -271,6 +275,41 @@ class BeneficiaryCaseFileTest extends TestCase
 
         $this->assertSame(55, $totals['direct_services_count']);
         $this->assertSame(55000, $totals['direct_services_value']);
+    }
+
+    public function test_uploaded_case_record_files_are_removed_when_database_save_fails(): void
+    {
+        Storage::fake('public');
+
+        $admin = $this->admin();
+        $person = $this->person();
+
+        BeneficiaryCaseRecordAttachment::creating(function (): void {
+            throw new RuntimeException('Forced attachment failure.');
+        });
+
+        $this->actingAs($admin);
+
+        try {
+            Livewire::test(BeneficiaryCaseFile::class, ['personId' => $person->id])
+                ->set('recordType', BeneficiaryCaseRecord::TYPE_INVOICE)
+                ->set('recordTitle', 'فاکتور دارای خطا')
+                ->set('recordedAt', '2026-07-03')
+                ->set('recordAttachments', [
+                    UploadedFile::fake()->create('invoice.pdf', 10, 'application/pdf'),
+                ])
+                ->call('saveCaseRecord');
+
+            $this->fail('Expected forced attachment failure was not thrown.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('Forced attachment failure.', $exception->getMessage());
+        } finally {
+            BeneficiaryCaseRecordAttachment::flushEventListeners();
+        }
+
+        $this->assertSame([], Storage::disk('public')->allFiles('beneficiary-case-records'));
+        $this->assertDatabaseCount('beneficiary_case_records', 0);
+        $this->assertDatabaseCount('beneficiary_case_record_attachments', 0);
     }
 
     private function admin(): User

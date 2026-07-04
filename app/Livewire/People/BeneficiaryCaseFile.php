@@ -15,11 +15,13 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Maatwebsite\Excel\Facades\Excel;
+use Throwable;
 
 class BeneficiaryCaseFile extends Component
 {
@@ -139,32 +141,43 @@ class BeneficiaryCaseFile extends Component
             'recordAttachments.*' => 'پیوست',
         ]);
 
-        DB::transaction(function () use ($validated): void {
-            $record = BeneficiaryCaseRecord::query()->create([
-                'person_id' => $this->selectedPerson->id,
-                'created_by' => auth()->id(),
-                'record_type' => $validated['recordType'],
-                'title' => trim($validated['recordTitle']),
-                'description' => filled($validated['recordDescription']) ? trim($validated['recordDescription']) : null,
-                'recorded_at' => filled($validated['recordedAt']) ? Carbon::parse($validated['recordedAt'])->toDateString() : null,
-                'amount' => filled($validated['recordAmount']) ? (int) $validated['recordAmount'] : null,
-                'reference_number' => filled($validated['recordReferenceNumber']) ? trim($validated['recordReferenceNumber']) : null,
-            ]);
+        $storedAttachmentPaths = [];
 
-            foreach ($this->recordAttachments as $attachment) {
-                $path = $attachment->store("beneficiary-case-records/{$record->person_id}/{$record->id}", 'public');
-
-                BeneficiaryCaseRecordAttachment::query()->create([
-                    'beneficiary_case_record_id' => $record->id,
-                    'uploaded_by' => auth()->id(),
-                    'disk' => 'public',
-                    'path' => $path,
-                    'original_name' => $attachment->getClientOriginalName(),
-                    'mime_type' => $attachment->getMimeType(),
-                    'size' => $attachment->getSize(),
+        try {
+            DB::transaction(function () use ($validated, &$storedAttachmentPaths): void {
+                $record = BeneficiaryCaseRecord::query()->create([
+                    'person_id' => $this->selectedPerson->id,
+                    'created_by' => auth()->id(),
+                    'record_type' => $validated['recordType'],
+                    'title' => trim($validated['recordTitle']),
+                    'description' => filled($validated['recordDescription']) ? trim($validated['recordDescription']) : null,
+                    'recorded_at' => filled($validated['recordedAt']) ? Carbon::parse($validated['recordedAt'])->toDateString() : null,
+                    'amount' => filled($validated['recordAmount']) ? (int) $validated['recordAmount'] : null,
+                    'reference_number' => filled($validated['recordReferenceNumber']) ? trim($validated['recordReferenceNumber']) : null,
                 ]);
+
+                foreach ($this->recordAttachments as $attachment) {
+                    $path = $attachment->store("beneficiary-case-records/{$record->person_id}/{$record->id}", 'public');
+                    $storedAttachmentPaths[] = $path;
+
+                    BeneficiaryCaseRecordAttachment::query()->create([
+                        'beneficiary_case_record_id' => $record->id,
+                        'uploaded_by' => auth()->id(),
+                        'disk' => 'public',
+                        'path' => $path,
+                        'original_name' => $attachment->getClientOriginalName(),
+                        'mime_type' => $attachment->getMimeType(),
+                        'size' => $attachment->getSize(),
+                    ]);
+                }
+            });
+        } catch (Throwable $exception) {
+            if ($storedAttachmentPaths !== []) {
+                Storage::disk('public')->delete($storedAttachmentPaths);
             }
-        });
+
+            throw $exception;
+        }
 
         $this->resetLoadedCaseFileData();
         $this->resetRecordForm();
