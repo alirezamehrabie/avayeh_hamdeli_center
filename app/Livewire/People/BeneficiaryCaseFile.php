@@ -44,6 +44,20 @@ class BeneficiaryCaseFile extends Component
     #[Validate(['recordAttachments.*' => 'file|mimes:jpg,jpeg,png,webp,pdf|max:4096'])]
     public array $recordAttachments = [];
 
+    protected ?Collection $searchResultsCache = null;
+
+    protected ?Person $selectedPersonCache = null;
+
+    protected bool $selectedPersonCacheLoaded = false;
+
+    protected ?Collection $serviceDeliveriesCache = null;
+
+    protected ?Collection $activityAttendancesCache = null;
+
+    protected ?Collection $caseRecordsCache = null;
+
+    protected ?Collection $timelineCache = null;
+
     public function mount(?int $personId = null): void
     {
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
@@ -55,6 +69,7 @@ class BeneficiaryCaseFile extends Component
     public function updatedSearch(): void
     {
         $this->search = Person::normalizeSearchText($this->search);
+        $this->searchResultsCache = null;
     }
 
     public function selectPerson(int $personId): void
@@ -62,11 +77,13 @@ class BeneficiaryCaseFile extends Component
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
 
         $this->selectedPersonId = $personId;
+        $this->resetLoadedCaseFileData();
     }
 
     public function clearSelection(): void
     {
         $this->selectedPersonId = null;
+        $this->resetLoadedCaseFileData();
         $this->resetRecordForm();
     }
 
@@ -147,23 +164,28 @@ class BeneficiaryCaseFile extends Component
             }
         });
 
+        $this->resetLoadedCaseFileData();
         $this->resetRecordForm();
         session()->flash('case-record-success', 'رکورد پرونده با موفقیت ثبت شد.');
     }
 
     public function getSearchResultsProperty(): Collection
     {
+        if ($this->searchResultsCache !== null) {
+            return $this->searchResultsCache;
+        }
+
         $search = Person::normalizeSearchText($this->search);
 
         if (mb_strlen($search) < 2 && ! ctype_digit($search)) {
-            return collect();
+            return $this->searchResultsCache = collect();
         }
 
         $hasNormalizedSearchColumns = Person::hasNormalizedSearchColumns();
         $nameColumn = $hasNormalizedSearchColumns ? 'normalized_full_name' : 'full_name';
         $prefixSearch = "{$search}%";
 
-        return Person::query()
+        return $this->searchResultsCache = Person::query()
             ->select([
                 'id',
                 'person_code',
@@ -195,11 +217,17 @@ class BeneficiaryCaseFile extends Component
 
     public function getSelectedPersonProperty(): ?Person
     {
-        if (! $this->selectedPersonId) {
-            return null;
+        if ($this->selectedPersonCacheLoaded) {
+            return $this->selectedPersonCache;
         }
 
-        return Person::query()
+        $this->selectedPersonCacheLoaded = true;
+
+        if (! $this->selectedPersonId) {
+            return $this->selectedPersonCache = null;
+        }
+
+        return $this->selectedPersonCache = Person::query()
             ->with([
                 'guardian:id,first_name,last_name,national_code,guardian_phone_number,social_worker_id',
                 'guardian.socialWorker:id,first_name,last_name,worker_code',
@@ -210,13 +238,17 @@ class BeneficiaryCaseFile extends Component
 
     public function getServiceDeliveriesProperty(): Collection
     {
+        if ($this->serviceDeliveriesCache !== null) {
+            return $this->serviceDeliveriesCache;
+        }
+
         $person = $this->selectedPerson;
 
         if (! $person) {
-            return collect();
+            return $this->serviceDeliveriesCache = collect();
         }
 
-        return ServiceDelivery::query()
+        return $this->serviceDeliveriesCache = ServiceDelivery::query()
             ->with([
                 'service:id,code,name,service_name_id,service_type,activity_id',
                 'service.serviceName:id,name',
@@ -243,11 +275,15 @@ class BeneficiaryCaseFile extends Component
 
     public function getActivityAttendancesProperty(): Collection
     {
-        if (! $this->selectedPersonId) {
-            return collect();
+        if ($this->activityAttendancesCache !== null) {
+            return $this->activityAttendancesCache;
         }
 
-        return ActivityAttendance::query()
+        if (! $this->selectedPersonId) {
+            return $this->activityAttendancesCache = collect();
+        }
+
+        return $this->activityAttendancesCache = ActivityAttendance::query()
             ->with([
                 'activity:id,code,name,activity_type,starts_at,ends_at,location',
                 'recorder:id,name',
@@ -266,11 +302,15 @@ class BeneficiaryCaseFile extends Component
 
     public function getCaseRecordsProperty(): Collection
     {
-        if (! $this->selectedPersonId) {
-            return collect();
+        if ($this->caseRecordsCache !== null) {
+            return $this->caseRecordsCache;
         }
 
-        return BeneficiaryCaseRecord::query()
+        if (! $this->selectedPersonId) {
+            return $this->caseRecordsCache = collect();
+        }
+
+        return $this->caseRecordsCache = BeneficiaryCaseRecord::query()
             ->with(['creator:id,name', 'attachments:id,beneficiary_case_record_id,disk,path,original_name,mime_type,size'])
             ->where('person_id', $this->selectedPersonId)
             ->latest('recorded_at')
@@ -281,6 +321,10 @@ class BeneficiaryCaseFile extends Component
 
     public function getTimelineProperty(): Collection
     {
+        if ($this->timelineCache !== null) {
+            return $this->timelineCache;
+        }
+
         $serviceRows = $this->serviceDeliveries->map(function (ServiceDelivery $delivery): array {
             $service = $delivery->service;
             $activity = $delivery->activityAttendance?->activity ?? $service?->activity;
@@ -357,7 +401,7 @@ class BeneficiaryCaseFile extends Component
             ];
         });
 
-        return $serviceRows
+        return $this->timelineCache = $serviceRows
             ->toBase()
             ->merge($attendanceRows->toBase())
             ->merge($caseRecordRows->toBase())
@@ -478,6 +522,16 @@ class BeneficiaryCaseFile extends Component
             'recordAttachments',
             'recordAttachments.*',
         ]);
+    }
+
+    protected function resetLoadedCaseFileData(): void
+    {
+        $this->selectedPersonCache = null;
+        $this->selectedPersonCacheLoaded = false;
+        $this->serviceDeliveriesCache = null;
+        $this->activityAttendancesCache = null;
+        $this->caseRecordsCache = null;
+        $this->timelineCache = null;
     }
 
     public function render()
