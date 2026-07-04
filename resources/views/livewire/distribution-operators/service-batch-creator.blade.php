@@ -3,11 +3,18 @@
         shouldFocusValidationError: false,
         isEditingService: @js($isEditing),
         hasUnsavedChanges: @entangle('hasUnsavedChanges').live,
+        isSaving: false,
         beforeUnloadHandler: null,
         navigationGuardHandler: null,
         init() {
             if (window.Livewire) {
-                Livewire.hook('morph.updated', () => this.focusFirstValidationError());
+                Livewire.hook('morph.updated', () => {
+                    // A morph after a save attempt means the request did NOT redirect
+                    // (validation failed and we're still on the form), so the intentional
+                    // -save flag is cleared and the unsaved-change guard is restored.
+                    this.isSaving = false;
+                    this.focusFirstValidationError();
+                });
             }
 
             this.navigationGuardHandler = () => this.canNavigateAway();
@@ -33,7 +40,10 @@
             }
         },
         hasDirtyEdit() {
-            return this.isEditingService && this.hasUnsavedChanges;
+            // A confirmed final submit is an intentional exit, so the unsaved-change
+            // guard must stand down while the save/redirect is in flight; it is
+            // restored (isSaving = false) if the save fails validation.
+            return this.isEditingService && this.hasUnsavedChanges && ! this.isSaving;
         },
         canNavigateAway() {
             return ! this.hasDirtyEdit()
@@ -1230,6 +1240,7 @@
                     </button>
                     <button
                         type="button"
+                        x-on:click="isSaving = true"
                         wire:click="confirmSaveBatch"
                         wire:loading.attr="disabled"
                         wire:target="confirmSaveBatch"

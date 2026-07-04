@@ -1978,6 +1978,27 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
             ->assertSee('distributionOperatorConfirmServiceEditNavigation', false);
     }
 
+    public function test_editing_misc_service_suppresses_unload_guard_during_final_submit(): void
+    {
+        [$operator, $worker, $service] = $this->editableMiscService();
+
+        $this->actingAs($operator);
+
+        // The beforeunload guard must gate on an intentional-save flag so a
+        // confirmed final submit does not trigger the browser "Leave Site?"
+        // prompt during the save/redirect navigation.
+        $component = Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id])
+            ->assertSeeHtml('isSaving')
+            ->assertSeeHtml('&& ! this.isSaving')
+            ->assertSee($worker->full_name);
+
+        // The final-submit button (rendered only in the confirmation modal) sets
+        // the flag before the Livewire save/redirect fires.
+        $component->call('requestSaveConfirmation')
+            ->assertSet('confirmingBatchSave', true)
+            ->assertSeeHtml('isSaving = true');
+    }
+
     public function test_editing_misc_service_keeps_group_worker_search_state_isolated(): void
     {
         [$operator, $worker, $service] = $this->editableMiscService();
