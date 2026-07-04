@@ -664,28 +664,6 @@
                                             && $entry['family_members_count'] !== null
                                                 ? (int) $entry['family_members_count']
                                                 : null;
-                                        $recipientStatus = match (true) {
-                                            $recipientDisplayName !== '' && $isUnregisteredRecipient => [
-                                                'label' => 'ثبت دستی',
-                                                'class' => 'border-amber-200 bg-amber-50 text-amber-700',
-                                            ],
-                                            $recipientDisplayName !== '' => [
-                                                'label' => 'شناسایی شده',
-                                                'class' => 'border-emerald-200 bg-emerald-50 text-emerald-700',
-                                            ],
-                                            $recipientNationalId !== '' && $isUnregisteredRecipient => [
-                                                'label' => 'نیاز به تکمیل',
-                                                'class' => 'border-amber-200 bg-amber-50 text-amber-700',
-                                            ],
-                                            $recipientNationalId !== '' => [
-                                                'label' => 'در حال جستجو',
-                                                'class' => 'border-cyan-200 bg-cyan-50 text-cyan-700',
-                                            ],
-                                            default => [
-                                                'label' => 'خالی',
-                                                'class' => 'border-slate-200 bg-slate-50 text-slate-500',
-                                            ],
-                                        };
                                         $rowErrorPrefix = 'recipientEntries.' . $index . '.';
                                         $rowErrors = collect($errors->getMessages())
                                             ->filter(fn ($messages, $key) => $key === 'recipientEntries' || str_starts_with($key, $rowErrorPrefix))
@@ -707,27 +685,17 @@
                                     <div class="mb-3 border-b border-slate-100 pb-1 md:mb-4 md:pb-4">
                                         <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                                             <div class="min-w-0 flex-1">
-                                                <div class="flex flex-wrap items-center gap-2">
-                                                    <h3 class="text-sm font-extrabold text-slate-900">
-                                                        گیرنده {{ $this->persianNumber($index + 1) }}
-                                                    </h3>
-                                                    <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold {{ $recipientStatus['class'] }}">
-                                                        {{ $recipientStatus['label'] }}
-                                                    </span>
-                                                    @if($hasRowErrors)
-                                                        <span class="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[10px] font-black text-rose-700">
-                                                            <i class="bi bi-exclamation-circle text-xs"></i>
-                                                            نیاز به اصلاح
-                                                        </span>
-                                                    @endif
-                                                </div>
-
-                                                @if($recipientDisplayName === '')
-                                                    <div class="mt-2">
-                                                        <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-500">
-                                                            هنوز ثبت نشده
-                                                        </span>
+                                                @if($recipientDisplayName !== '' || $recipientNationalId !== '')
+                                                    <div class="flex min-w-0 flex-col gap-1">
+                                                        @if($recipientDisplayName !== '')
+                                                            <p class="truncate text-sm font-extrabold text-slate-900">{{ $recipientDisplayName }}</p>
+                                                        @endif
+                                                        @if($recipientNationalId !== '')
+                                                            <p class="text-xs font-bold text-slate-500" dir="ltr">{{ $this->persianNumber($recipientNationalId) }}</p>
+                                                        @endif
                                                     </div>
+                                                @else
+                                                    <p class="text-sm font-bold text-slate-500">گیرنده انتخاب نشده است.</p>
                                                 @endif
                                             </div>
 
@@ -981,28 +949,6 @@
                                                             </p>
                                                         @endif
 
-                                                        {{-- Selected recipient confirmation (compact, subtle) --}}
-                                                        @if($recipientDisplayName !== '' || $recipientNationalId !== '')
-                                                            <div class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 px-0.5 text-[11px] leading-4">
-                                                                <span class="inline-flex items-center gap-1 font-bold {{ $recipientDisplayName !== '' ? 'text-emerald-600' : 'text-slate-400' }}">
-                                                                    <i class="bi bi-check-circle-fill text-[10px]"></i>
-                                                                    <span>گیرنده:</span>
-                                                                </span>
-                                                                @if($recipientDisplayName !== '')
-                                                                    <span class="min-w-0 truncate font-extrabold text-slate-700">{{ $recipientDisplayName }}</span>
-                                                                @else
-                                                                    <span class="font-bold text-slate-400">در حال شناسایی…</span>
-                                                                @endif
-                                                                @if($familyMemberCount !== null)
-                                                                    <span class="text-slate-300">·</span>
-                                                                    <span class="font-bold text-slate-500">{{ $this->persianNumber($familyMemberCount) }} خانوار</span>
-                                                                @endif
-                                                                @if($recipientNationalId !== '')
-                                                                    <span class="text-slate-300">·</span>
-                                                                    <span class="font-bold text-slate-500" dir="ltr">{{ $this->persianNumber($recipientNationalId) }}</span>
-                                                                @endif
-                                                            </div>
-                                                        @endif
                                                         @if($recipientSuggestionItems->isNotEmpty() && $this->activeRecipientSearchIndex === $index)
                                                             <div class="absolute z-20 mt-1 hidden max-h-72 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5 sm:block">
                                                                 @foreach($recipientSuggestionItems as $suggestion)
