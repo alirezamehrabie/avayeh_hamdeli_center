@@ -2,12 +2,8 @@
     @php
         $selectedPerson = $this->selectedPerson;
         $searchResults = $this->searchResults;
-        $serviceDeliveries = $this->serviceDeliveries;
-        $directServiceDeliveries = $this->directServiceDeliveries;
-        $familyServiceDeliveries = $this->familyServiceDeliveries;
-        $activityAttendances = $this->activityAttendances;
-        $caseRecords = $this->caseRecords;
         $timeline = $this->timeline;
+        $caseFileTotals = $this->caseFileTotals;
     @endphp
 
     <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
@@ -97,7 +93,7 @@
                             >
                                 <i wire:loading.remove wire:target="exportToExcel" class="bi bi-file-earmark-excel"></i>
                                 <i wire:loading wire:target="exportToExcel" class="bi bi-arrow-repeat animate-spin"></i>
-                                <span wire:loading.remove wire:target="exportToExcel">خروجی اکسل</span>
+                                <span wire:loading.remove wire:target="exportToExcel">خروجی اکسل آخرین رکوردها</span>
                                 <span wire:loading wire:target="exportToExcel">در حال آماده‌سازی…</span>
                             </button>
                             <span class="inline-flex w-fit rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
@@ -130,9 +126,9 @@
                     <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                             <h2 class="text-base font-black text-slate-900">خط زمانی پرونده</h2>
-                            <p class="mt-1 text-sm text-slate-500">ترکیب خدمات تحویل‌شده و حضورهای ثبت‌شده در فعالیت‌ها</p>
+                            <p class="mt-1 text-sm text-slate-500">آخرین رکوردهای خدمات تحویل‌شده، حضورهای ثبت‌شده و رکوردهای دستی</p>
                         </div>
-                        <span class="text-xs font-bold text-slate-400">{{ number_format($timeline->count()) }} رکورد</span>
+                        <span class="text-xs font-bold text-slate-400">آخرین {{ number_format($timeline->count()) }} رکورد</span>
                     </div>
 
                     @if($timeline->isEmpty())
@@ -215,27 +211,27 @@
                     <div class="mt-4 space-y-2">
                         <div class="flex items-center justify-between rounded-xl bg-emerald-50 px-3 py-2">
                             <span class="text-xs font-bold text-emerald-700">خدمات مستقیم مددجو</span>
-                            <span class="text-sm font-black text-emerald-900">{{ number_format($directServiceDeliveries->count()) }}</span>
+                            <span class="text-sm font-black text-emerald-900">{{ number_format($caseFileTotals['direct_services_count']) }}</span>
                         </div>
                         <div class="flex items-center justify-between rounded-xl bg-teal-50 px-3 py-2">
                             <span class="text-xs font-bold text-teal-700">خدمات خانوار/سرپرست</span>
-                            <span class="text-sm font-black text-teal-900">{{ number_format($familyServiceDeliveries->count()) }}</span>
+                            <span class="text-sm font-black text-teal-900">{{ number_format($caseFileTotals['family_services_count']) }}</span>
                         </div>
                         <div class="flex items-center justify-between rounded-xl bg-cyan-50 px-3 py-2">
                             <span class="text-xs font-bold text-cyan-700">حضور در فعالیت‌ها</span>
-                            <span class="text-sm font-black text-cyan-900">{{ number_format($activityAttendances->count()) }}</span>
+                            <span class="text-sm font-black text-cyan-900">{{ number_format($caseFileTotals['activity_attendances_count']) }}</span>
                         </div>
                         <div class="flex items-center justify-between rounded-xl bg-amber-50 px-3 py-2">
                             <span class="text-xs font-bold text-amber-700">ارزش مستقیم + دستی</span>
-                            <span class="text-sm font-black text-amber-900">{{ number_format((int) $directServiceDeliveries->sum('delivered_total_value') + (int) $caseRecords->sum('amount')) }} ریال</span>
+                            <span class="text-sm font-black text-amber-900">{{ number_format($caseFileTotals['direct_services_value'] + $caseFileTotals['manual_records_amount']) }} ریال</span>
                         </div>
                         <div class="flex items-center justify-between rounded-xl bg-orange-50 px-3 py-2">
                             <span class="text-xs font-bold text-orange-700">ارزش خانوار/سرپرست</span>
-                            <span class="text-sm font-black text-orange-900">{{ number_format((int) $familyServiceDeliveries->sum('delivered_total_value')) }} ریال</span>
+                            <span class="text-sm font-black text-orange-900">{{ number_format($caseFileTotals['family_services_value']) }} ریال</span>
                         </div>
                         <div class="flex items-center justify-between rounded-xl bg-violet-50 px-3 py-2">
                             <span class="text-xs font-bold text-violet-700">رکوردهای دستی</span>
-                            <span class="text-sm font-black text-violet-900">{{ number_format($caseRecords->count()) }}</span>
+                            <span class="text-sm font-black text-violet-900">{{ number_format($caseFileTotals['manual_records_count']) }}</span>
                         </div>
                     </div>
                 </div>

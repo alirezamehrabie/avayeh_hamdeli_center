@@ -58,6 +58,8 @@ class BeneficiaryCaseFile extends Component
 
     protected ?Collection $timelineCache = null;
 
+    protected ?array $caseFileTotalsCache = null;
+
     public function mount(?int $personId = null): void
     {
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
@@ -289,6 +291,58 @@ class BeneficiaryCaseFile extends Component
         return $this->serviceDeliveries
             ->filter(fn (ServiceDelivery $delivery): bool => $this->isFamilyServiceDelivery($delivery))
             ->values();
+    }
+
+    public function getCaseFileTotalsProperty(): array
+    {
+        if ($this->caseFileTotalsCache !== null) {
+            return $this->caseFileTotalsCache;
+        }
+
+        $person = $this->selectedPerson;
+
+        if (! $person) {
+            return $this->caseFileTotalsCache = [
+                'direct_services_count' => 0,
+                'direct_services_value' => 0,
+                'family_services_count' => 0,
+                'family_services_value' => 0,
+                'activity_attendances_count' => 0,
+                'manual_records_count' => 0,
+                'manual_records_amount' => 0,
+            ];
+        }
+
+        $directServices = ServiceDelivery::query()
+            ->where('person_id', $person->id);
+
+        $familyServices = ServiceDelivery::query()
+            ->whereRaw('1 = 0');
+
+        if ($person->guardian_id) {
+            $familyServices = ServiceDelivery::query()
+                ->where('guardian_id', $person->guardian_id)
+                ->where(function (Builder $query) use ($person): void {
+                    $query->whereNull('person_id')
+                        ->orWhere('person_id', '!=', $person->id);
+                });
+        }
+
+        return $this->caseFileTotalsCache = [
+            'direct_services_count' => (clone $directServices)->count(),
+            'direct_services_value' => (int) (clone $directServices)->sum('delivered_total_value'),
+            'family_services_count' => (clone $familyServices)->count(),
+            'family_services_value' => (int) (clone $familyServices)->sum('delivered_total_value'),
+            'activity_attendances_count' => ActivityAttendance::query()
+                ->where('person_id', $person->id)
+                ->count(),
+            'manual_records_count' => BeneficiaryCaseRecord::query()
+                ->where('person_id', $person->id)
+                ->count(),
+            'manual_records_amount' => (int) BeneficiaryCaseRecord::query()
+                ->where('person_id', $person->id)
+                ->sum('amount'),
+        ];
     }
 
     public function getActivityAttendancesProperty(): Collection
@@ -577,6 +631,7 @@ class BeneficiaryCaseFile extends Component
         $this->activityAttendancesCache = null;
         $this->caseRecordsCache = null;
         $this->timelineCache = null;
+        $this->caseFileTotalsCache = null;
     }
 
     public function render()

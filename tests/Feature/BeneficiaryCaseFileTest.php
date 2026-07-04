@@ -236,6 +236,43 @@ class BeneficiaryCaseFileTest extends TestCase
         $this->assertSame(500000, (int) $instance->getFamilyServiceDeliveriesProperty()->sum('delivered_total_value'));
     }
 
+    public function test_case_file_summary_totals_are_not_limited_to_latest_timeline_rows(): void
+    {
+        $admin = $this->admin();
+        $person = $this->person();
+        [$service, $category] = $this->serviceWithCategory($admin, 'Long Service History', 'individual', 100);
+
+        for ($i = 0; $i < 55; $i++) {
+            ServiceDelivery::query()->create([
+                'service_id' => $service->id,
+                'service_category_id' => $category->id,
+                'delivery_channel' => Service::DELIVERY_CHANNEL_HOME,
+                'person_id' => $person->id,
+                'national_id' => $person->national_id,
+                'full_name' => $person->full_name ?: trim($person->first_name.' '.$person->last_name),
+                'delivered_quantity' => 1,
+                'value_per_unit_snapshot' => 1000,
+                'delivered_total_value' => 1000,
+                'delivered_at' => now()->subDays($i)->toDateString(),
+                'created_by' => $admin->id,
+            ]);
+        }
+
+        $this->actingAs($admin);
+
+        $instance = Livewire::test(BeneficiaryCaseFile::class, ['personId' => $person->id])
+            ->assertSee('آخرین 50 رکورد')
+            ->instance();
+
+        $this->assertSame(50, $instance->getDirectServiceDeliveriesProperty()->count());
+        $this->assertSame(50, $instance->getTimelineProperty()->count());
+
+        $totals = $instance->getCaseFileTotalsProperty();
+
+        $this->assertSame(55, $totals['direct_services_count']);
+        $this->assertSame(55000, $totals['direct_services_value']);
+    }
+
     private function admin(): User
     {
         return User::factory()->create([
@@ -295,7 +332,7 @@ class BeneficiaryCaseFileTest extends TestCase
         ]);
     }
 
-    private function serviceWithCategory(User $creator, string $name, string $serviceType = 'individual'): array
+    private function serviceWithCategory(User $creator, string $name, string $serviceType = 'individual', int $categoryQuantity = 20): array
     {
         $serviceName = ServiceName::query()->create([
             'name' => $name,
@@ -323,7 +360,7 @@ class BeneficiaryCaseFileTest extends TestCase
         $category = $service->categories()->create([
             'service_name_id' => $serviceName->id,
             'name' => $name.' Category',
-            'quantity' => 20,
+            'quantity' => $categoryQuantity,
             'unit' => 'count',
             'value' => 100000,
             'created_by' => $creator->id,

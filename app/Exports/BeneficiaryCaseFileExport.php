@@ -70,10 +70,12 @@ class BeneficiaryCaseFileExport implements FromArray, ShouldAutoSize, WithEvents
                 $sheet->mergeCells('A1:H1');
                 $sheet->mergeCells('A2:H2');
                 $sheet->mergeCells('A3:H3');
+                $sheet->mergeCells('A4:H4');
 
                 $sheet->setCellValue('A1', 'پرونده مددجو');
                 $sheet->setCellValue('A2', $this->personName());
                 $sheet->setCellValue('A3', 'کد مددجو: '.($this->person->person_code ?: '-').' | کد ملی: '.($this->person->national_id ?: '-'));
+                $sheet->setCellValue('A4', 'این خروجی شامل آخرین رکوردهای نمایش‌داده‌شده در خط زمانی است.');
 
                 $sheet->getStyle("A1:{$lastCol}".($lastRow + 4))->applyFromArray([
                     'font' => [
@@ -87,7 +89,7 @@ class BeneficiaryCaseFileExport implements FromArray, ShouldAutoSize, WithEvents
                     ],
                 ]);
 
-                $sheet->getStyle('A1:A3')->applyFromArray([
+                $sheet->getStyle('A1:A4')->applyFromArray([
                     'font' => [
                         'name' => 'B Zar',
                         'bold' => true,
