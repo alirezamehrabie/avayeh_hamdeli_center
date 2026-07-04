@@ -70,6 +70,8 @@ class AdvancedFilterBuilder extends Component
         'birth_month' => 'ماه تولد',
         'beneficiary_injury_disability_type' => 'آسیب / نوع آسیب',
         'related_description' => 'معلولیت / نوع معلولیت',
+        'disability_description' => 'شرح معلولیت / بیماری',
+        'client_case_history' => 'سوابق / شرح وضعیت مددجو',
 //        'created_at' => 'تاریخ ثبت',
     ];
 

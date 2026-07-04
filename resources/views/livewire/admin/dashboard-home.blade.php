@@ -547,9 +547,7 @@
                                 <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                                     <div>
                                         <p class="text-xs font-semibold tracking-[0.16em] text-slate-400">دسترسی سریع</p>
-                                        <h2 class="mt-1 text-lg font-semibold text-slate-800">اقدام‌های اصلی</h2>
                                     </div>
-                                    <p class="text-sm text-slate-500">میانبر بخش‌های پرتکرار برای اجرای سریع کارهای روزانه</p>
                                 </div>
 
                                 <div class="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">

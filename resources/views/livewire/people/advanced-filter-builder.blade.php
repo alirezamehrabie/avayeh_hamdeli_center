@@ -417,6 +417,12 @@
                                         @case('related_description')
                                             {{ $person->disability_description ?: '-' }}
                                             @break
+                                        @case('disability_description')
+                                            {{ $person->disability_description ?: '-' }}
+                                            @break
+                                        @case('client_case_history')
+                                            {{ $person->client_case_history ?: '-' }}
+                                            @break
                                         @case('created_at')
                                             {{ optional($person->created_at)->format('Y/m/d') }}
                                             @break

@@ -50,6 +50,8 @@ class PeopleExport implements FromQuery, WithHeadings, WithMapping, WithTitle, S
             'birth_month'                        => fn ($p) => $p->birth_month,
             'beneficiary_injury_disability_type' => fn ($p) => $p->harmTypes->pluck('title')->implode('، '),
             'related_description'                => fn ($p) => $p->disabilityType?->name ?? '-',
+            'disability_description'             => fn ($p) => $p->disability_description ?: '-',
+            'client_case_history'               => fn ($p) => $p->client_case_history ?: '-',
             'responsible_social_worker'          => fn ($p) => $p->guardian?->socialWorker?->full_name ?? '-',
             'created_at'                         => fn ($p) => $p->created_at?->format('Y-m-d'),
         ];
