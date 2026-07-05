@@ -1003,9 +1003,10 @@
 
             // In edit mode the save action is the most-repeated task, so keep it
             // pinned to the bottom of the viewport instead of relying on sticky
-            // inside the layout's nested mobile scroll container.
+            // inside the layout's nested mobile scroll container. Keep it above
+            // page content but below navigation overlays and modal/sheet layers.
             if ($isEditing) {
-                $reviewCardClasses = 'fixed bottom-[calc(0.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-30 border-emerald-200 bg-white shadow-[0_-6px_24px_rgba(15,23,42,0.12)] sm:left-6 sm:right-6 lg:sticky lg:bottom-4 lg:left-auto lg:right-auto';
+                $reviewCardClasses = 'fixed bottom-[calc(0.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-20 border-emerald-200 bg-white shadow-[0_-6px_24px_rgba(15,23,42,0.12)] sm:left-6 sm:right-6 lg:sticky lg:bottom-4 lg:left-auto lg:right-auto';
             } else {
                 $reviewCardClasses = $reviewStepUnlocked
                     ? 'border-emerald-200 bg-white shadow-sm shadow-emerald-900/5'
