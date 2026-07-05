@@ -661,6 +661,7 @@
                             'accent' => 'emerald',
                             'selectorId' => 'misc-social-worker-selector',
                             'guideSelection' => ! $socialWorkerId,
+                            'keyboardAwareMobileSheet' => true,
                         ])
                     @else
                         <div class="sm:col-span-2 xl:col-span-3">

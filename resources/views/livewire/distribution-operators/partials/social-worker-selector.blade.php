@@ -1,6 +1,7 @@
 @php
     $accent = $accent ?? 'cyan';
     $selectorId = $selectorId ?? 'social-worker-selector';
+    $keyboardAwareMobileSheet = $keyboardAwareMobileSheet ?? false;
     $isEmerald = $accent === 'emerald';
     $accentClasses = $isEmerald
         ? [
@@ -52,22 +53,48 @@
             mediaQuery: null,
             mediaQueryHandler: null,
             scrollLocked: false,
+            viewportHeight: window.innerHeight,
+            viewportOffsetTop: 0,
+            viewportSyncHandler: null,
+            keyboardAwareMobileSheet: @js((bool) $keyboardAwareMobileSheet),
             guideSelection: @js($guideSelection ?? false),
             search: @entangle('socialWorkerQuery').live,
             get isMobileSheet() {
                 return this.mediaQuery?.matches ?? window.matchMedia('(max-width: 639px)').matches;
             },
+            get keyboardInset() {
+                return Math.max(0, window.innerHeight - (this.viewportHeight + this.viewportOffsetTop));
+            },
+            get mobileSheetStyle() {
+                if (! this.keyboardAwareMobileSheet || ! this.isMobileSheet) {
+                    return '';
+                }
+
+                const maxHeight = Math.max(320, this.viewportHeight - 12);
+                const minHeight = Math.min(maxHeight, Math.max(280, this.viewportHeight * 0.48));
+
+                return `transform:translateY(-${this.keyboardInset}px);max-height:${maxHeight}px;min-height:${minHeight}px;`;
+            },
             init() {
                 this.mediaQuery = window.matchMedia('(max-width: 639px)');
                 this.popStateHandler = () => this.handleSelectorPopState();
                 this.mediaQueryHandler = () => this.syncPageScrollLock(this.open);
+                this.viewportSyncHandler = () => this.syncViewport();
 
                 window.addEventListener('popstate', this.popStateHandler);
+                window.addEventListener('resize', this.viewportSyncHandler);
                 if (this.mediaQuery.addEventListener) {
                     this.mediaQuery.addEventListener('change', this.mediaQueryHandler);
                 } else {
                     this.mediaQuery.addListener?.(this.mediaQueryHandler);
                 }
+
+                if (window.visualViewport) {
+                    window.visualViewport.addEventListener('resize', this.viewportSyncHandler);
+                    window.visualViewport.addEventListener('scroll', this.viewportSyncHandler);
+                }
+
+                this.syncViewport();
 
                 this.$watch('open', (value) => this.syncPageScrollLock(value));
 
@@ -83,6 +110,10 @@
                     window.removeEventListener('popstate', this.popStateHandler);
                 }
 
+                if (this.viewportSyncHandler) {
+                    window.removeEventListener('resize', this.viewportSyncHandler);
+                }
+
                 if (this.mediaQueryHandler) {
                     if (this.mediaQuery?.removeEventListener) {
                         this.mediaQuery.removeEventListener('change', this.mediaQueryHandler);
@@ -91,8 +122,24 @@
                     }
                 }
 
+                if (window.visualViewport && this.viewportSyncHandler) {
+                    window.visualViewport.removeEventListener('resize', this.viewportSyncHandler);
+                    window.visualViewport.removeEventListener('scroll', this.viewportSyncHandler);
+                }
+
                 this.releasePageScrollLock();
                 this.historyActive = false;
+            },
+            syncViewport() {
+                if (window.visualViewport) {
+                    this.viewportHeight = window.visualViewport.height;
+                    this.viewportOffsetTop = window.visualViewport.offsetTop;
+
+                    return;
+                }
+
+                this.viewportHeight = window.innerHeight;
+                this.viewportOffsetTop = 0;
             },
             syncPageScrollLock(shouldLock) {
                 if (shouldLock && this.isMobileSheet) {
@@ -139,6 +186,7 @@
             focusWorkerSearch() {
                 this.$nextTick(() => {
                     this.$refs.workerSearch?.focus({ preventScroll: true });
+                    this.$refs.workerSearch?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 });
             },
             closeSelector({ syncHistory = true } = {}) {
@@ -252,6 +300,7 @@
             role="dialog"
             aria-modal="true"
             aria-label="انتخاب مددکار"
+            x-bind:style="mobileSheetStyle"
             style="display: none;"
         >
             <div class="mb-3 flex items-center justify-between gap-3 border-b border-slate-200/70 pb-3 sm:hidden">
@@ -277,7 +326,7 @@
                         type="search"
                         x-ref="workerSearch"
                         x-model.debounce.250ms="search"
-                        @focus="$wire.set('showSocialWorkerSuggestions', true)"
+                        @focus="$wire.set('showSocialWorkerSuggestions', true); syncViewport()"
                         class="min-h-12 w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm text-slate-700 shadow-sm transition placeholder:text-xs placeholder:text-slate-400 focus:outline-none focus:ring-4 {{ $accentClasses['focus'] }}"
                         placeholder="نام، کد مددکار یا موبایل"
                         autocomplete="off"
