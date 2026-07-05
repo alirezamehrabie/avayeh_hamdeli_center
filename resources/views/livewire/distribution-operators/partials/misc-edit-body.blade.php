@@ -913,9 +913,15 @@
         <button
             type="button"
             wire:click="addWorkerGroup"
-            class="flex w-full items-center justify-center gap-2 rounded-2xl border border-blue-600 bg-gradient-to-b from-blue-500 to-blue-600 px-3 py-3.5 text-sm font-bold text-white shadow-sm transition hover:from-blue-600 hover:to-blue-700 active:scale-[0.99]"
+            wire:loading.attr="disabled"
+            wire:target="addWorkerGroup"
+            class="flex w-full items-center justify-center gap-2 rounded-2xl border border-blue-600 bg-gradient-to-b from-blue-500 to-blue-600 px-3 py-3.5 text-sm font-bold text-white shadow-sm transition hover:from-blue-600 hover:to-blue-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-85"
         >
-            <i class="bi bi-person-plus-fill text-base"></i>
+            <i class="bi bi-person-plus-fill text-base" wire:loading.remove wire:target="addWorkerGroup"></i>
+            <svg wire:loading wire:target="addWorkerGroup" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+                <path d="M12 2a10 10 0 0110 10" stroke-linecap="round"></path>
+            </svg>
             افزودن مددکار
         </button>
     </div>

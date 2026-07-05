@@ -1019,6 +1019,12 @@
                 <div class="min-w-0 flex-1" @if($isEditing && $reviewWorkerCount > 1) x-data="{ showBreakdown: false }" @endif>
                     <div class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
 {{--                        <span class="inline-flex h-6 items-center rounded-lg {{ $reviewStepUnlocked ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100' : 'bg-slate-100 text-slate-500 ring-1 ring-slate-200' }} px-2.5 text-[11px] font-black">۴</span>--}}
+                        <span
+                            x-show="isEditingService && hasUnsavedChanges"
+                            style="display: none;"
+                            class="inline-flex h-2 w-2 shrink-0 rounded-full bg-amber-400"
+                            aria-hidden="true"
+                        ></span>
                         <span class="max-w-full truncate text-sm font-black {{ $reviewStepUnlocked ? 'text-slate-900' : 'text-slate-500' }}">{{ $reviewSummary['service_name'] ?? '-' }}</span>
                         @if(!empty($reviewSummary['service_type']))
                             <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500">{{ $reviewSummary['service_type'] }}</span>
@@ -1071,15 +1077,6 @@
                     @endif
                 </div>
                 <div class="flex flex-col gap-2 xl:shrink-0 xl:flex-row xl:items-center xl:gap-2.5">
-                    {{-- Dirty-state cue: only in edit mode, clears once the save resets hasUnsavedChanges (Item 10). --}}
-                    <span
-                        x-show="isEditingService && hasUnsavedChanges"
-                        style="display: none;"
-                        class="inline-flex items-center gap-1.5 self-start rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-black text-amber-700 ring-1 ring-amber-200"
-                    >
-                        <span class="inline-flex h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-                        تغییرات ذخیره‌نشده
-                    </span>
                     <button
                         type="submit"
                         @disabled(! $isEditing && ! $canRequestSaveConfirmation)
