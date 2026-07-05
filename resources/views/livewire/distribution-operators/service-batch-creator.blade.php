@@ -1,6 +1,7 @@
 <div
     x-data="{
         shouldFocusValidationError: false,
+        shouldScrollToMiscServiceType: false,
         isEditingService: @js($isEditing),
         hasUnsavedChanges: @entangle('hasUnsavedChanges').live,
         isSaving: false,
@@ -14,6 +15,7 @@
                     // -save flag is cleared and the unsaved-change guard is restored.
                     this.isSaving = false;
                     this.focusFirstValidationError();
+                    this.scrollToMiscServiceTypeWhenReady();
                 });
             }
 
@@ -56,6 +58,29 @@
         },
         markValidationFocusPending() {
             this.shouldFocusValidationError = true;
+        },
+        queueMiscServiceTypeScroll() {
+            if (this.isEditingService) {
+                return;
+            }
+
+            this.shouldScrollToMiscServiceType = true;
+        },
+        scrollToMiscServiceTypeWhenReady() {
+            if (! this.shouldScrollToMiscServiceType) {
+                return;
+            }
+
+            this.$nextTick(() => {
+                const target = this.$el.querySelector('[data-misc-service-type-guidance]');
+
+                if (! target) {
+                    return;
+                }
+
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                this.shouldScrollToMiscServiceType = false;
+            });
         },
         focusFirstValidationError() {
             if (! this.shouldFocusValidationError) {
@@ -247,6 +272,7 @@
             <div class="relative flex h-full items-end justify-center px-0 pt-2 sm:items-center sm:px-4 sm:py-6">
                 <form
                     wire:submit.prevent="confirmMiscServiceName"
+                    x-on:submit="queueMiscServiceTypeScroll()"
                     class="relative flex max-h-full w-full flex-col overflow-hidden rounded-t-3xl border border-slate-200 bg-white text-right shadow-[0_-18px_45px_rgba(15,23,42,0.22)] sm:max-w-md sm:rounded-[28px] sm:shadow-2xl"
                     x-bind:style="'padding-bottom:calc(env(safe-area-inset-bottom) + 0.75rem);'"
                     @click.stop
@@ -563,7 +589,7 @@
                     @include('livewire.distribution-operators.partials.misc-edit-body')
                 @else
                 <div class="grid gap-4 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-4">
-                    <div class="sm:col-span-2 xl:col-span-1">
+                    <div class="sm:col-span-2 xl:col-span-1" data-misc-service-type-guidance>
                         <label class="mb-2 block text-sm font-bold text-slate-700">نوع خدمت</label>
                         <div
                             x-data="{
