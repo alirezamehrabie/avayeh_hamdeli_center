@@ -80,6 +80,8 @@ class ServiceBatchCreator extends Component
 
     public string $editingServiceName = '';
 
+    public ?string $editingServiceVersion = null;
+
     protected ?Collection $predefinedServicesCache = null;
 
     protected ?array $predefinedServiceOptionsCache = null;
@@ -871,8 +873,35 @@ class ServiceBatchCreator extends Component
         $this->validateDistinctWorkerGroupCategories();
 
         DB::transaction(function () use ($validated): void {
-            $service = $this->resolveEditableService($this->editingServiceId);
+            $service = Service::query()
+                ->createdByDistributionOperator()
+                ->whereKey($this->editingServiceId)
+                ->lockForUpdate()
+                ->firstOrFail();
+            abort_unless(auth()->user()?->can('edit-distribution-operator-service', $service), 403);
+            $this->ensureEditableServiceVersionMatches($service);
             $serviceNameId = $service->service_name_id;
+
+            $existingCategories = $service->categories()
+                ->withTrashed()
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+            ServiceWorkerAllocation::query()
+                ->where('service_id', $service->id)
+                ->lockForUpdate()
+                ->get();
+            $service->deliveries()
+                ->lockForUpdate()
+                ->get();
+            GateEntryAssignment::query()
+                ->where('service_id', $service->id)
+                ->lockForUpdate()
+                ->get();
+
+            $service->setRelation('categories', $existingCategories
+                ->filter(fn (ServiceCategory $category): bool => $category->deleted_at === null)
+                ->values());
 
             $this->validateEditableServiceUsageConstraints($service, $validated['miscWorkerGroups']);
 
@@ -880,10 +909,6 @@ class ServiceBatchCreator extends Component
             $totalQuantity = 0.0;
             $retainedCategoryIds = [];
             $retainedWorkerIdsByCategory = [];
-            $existingCategories = $service->categories()
-                ->withTrashed()
-                ->get()
-                ->keyBy('id');
             $existingCategoryPool = $this->editableCategoryPool($service);
             $categoryPayloads = [];
             $categoryWorkerAllocations = [];
@@ -983,6 +1008,7 @@ class ServiceBatchCreator extends Component
             ])->save();
 
             $service->refreshFinancialTotals();
+            $this->editingServiceVersion = $service->fresh()->updated_at?->toISOString();
         });
 
         $this->hasUnsavedChanges = false;
@@ -1388,6 +1414,7 @@ class ServiceBatchCreator extends Component
         $this->miscServiceType = (string) $service->service_type;
         $this->miscDescription = (string) $service->description;
         $this->date = $jalaliDate->format('Y/m/d');
+        $this->editingServiceVersion = $service->updated_at?->toISOString();
 
         $this->miscWorkerGroups = $this->buildWorkerGroupsFromService($service);
     }
@@ -1780,6 +1807,17 @@ class ServiceBatchCreator extends Component
 
         abort_unless(auth()->check() && auth()->user()->can('manage-distribution-operator-services'), 403);
         $this->resolveEditableService($this->editingServiceId);
+    }
+
+    protected function ensureEditableServiceVersionMatches(Service $service): void
+    {
+        $currentVersion = $service->updated_at?->toISOString();
+
+        if ($this->editingServiceVersion !== null && $currentVersion !== $this->editingServiceVersion) {
+            throw ValidationException::withMessages([
+                'miscWorkerGroups' => 'این خدمت توسط اپراتور دیگری تغییر کرده است. صفحه را تازه‌سازی کنید و دوباره تلاش کنید.',
+            ]);
+        }
     }
 
     protected function predefinedServices(): Collection
