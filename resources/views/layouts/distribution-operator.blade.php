@@ -174,7 +174,7 @@
         ></div>
 
         <div class="flex min-w-0 flex-1 flex-col overflow-y-auto">
-            <header class="flex items-center justify-between gap-4 border-b bg-white px-4 py-3 shadow-sm sm:px-6">
+            <header class="flex items-center justify-between gap-4 border-b bg-white px-4 py-2.5 shadow-sm sm:px-6">
                 <div class="flex items-center gap-4">
                     <button
                         type="button"
@@ -209,8 +209,16 @@
                                     class="h-full w-full object-cover"
                                 >
                             @else
-                                <div class="flex h-full w-full items-center justify-center bg-indigo-600 text-sm font-bold text-white">
-                                    {{ mb_strtoupper(mb_substr(auth()->user()->first_name ?: 'U', 0, 1)) }}
+                                <div class="flex h-full w-full items-center justify-center bg-indigo-50 text-indigo-300">
+                                    <svg
+                                        class="h-6 w-6"
+                                        viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                        aria-hidden="true"
+                                    >
+                                        <path d="M12 12.75a5.25 5.25 0 1 0 0-10.5 5.25 5.25 0 0 0 0 10.5Z" />
+                                        <path d="M12 14.25c-4.418 0-8 2.573-8 5.745 0 .417.338.755.755.755h14.49A.755.755 0 0 0 20 19.995c0-3.172-3.582-5.745-8-5.745Z" />
+                                    </svg>
                                 </div>
                             @endif
                         </div>
