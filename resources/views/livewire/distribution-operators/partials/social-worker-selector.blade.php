@@ -21,6 +21,26 @@
         ];
 @endphp
 
+@once
+    <style>
+        @keyframes distributionOperatorGuideBorder {
+            0% { background-position: 0 0, 0% 50%; }
+            100% { background-position: 0 0, 300% 50%; }
+        }
+        .distribution-operator-guide-border {
+            border: 2px solid transparent !important;
+            background:
+                linear-gradient(#ffffff, #ffffff) padding-box,
+                linear-gradient(90deg, #ea2e34, #ff9eac, #ffe0e3, #fb7185, #f43f5e) border-box;
+            background-size: 100% 100%, 300% 100%;
+            animation: distributionOperatorGuideBorder 2.0s linear infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .distribution-operator-guide-border { animation: none; }
+        }
+    </style>
+@endonce
+
 <div wire:key="{{ $selectorId }}-root">
     <label class="mb-2 block text-sm font-bold text-slate-700">مددکار</label>
     <div
@@ -32,6 +52,7 @@
             mediaQuery: null,
             mediaQueryHandler: null,
             scrollLocked: false,
+            guideSelection: @js($guideSelection ?? false),
             search: @entangle('socialWorkerQuery').live,
             get isMobileSheet() {
                 return this.mediaQuery?.matches ?? window.matchMedia('(max-width: 639px)').matches;
@@ -49,6 +70,13 @@
                 }
 
                 this.$watch('open', (value) => this.syncPageScrollLock(value));
+
+                if (this.guideSelection) {
+                    this.$nextTick(() => this.scrollIntoViewForGuidance());
+                }
+            },
+            scrollIntoViewForGuidance() {
+                this.$el.scrollIntoView({ behavior: 'smooth', block: 'center' });
             },
             destroy() {
                 if (this.popStateHandler) {
@@ -151,6 +179,7 @@
                 this.closeSelector({ syncHistory: false });
             },
             choose(workerId) {
+                this.guideSelection = false;
                 this.closeSelector();
                 $wire.selectSocialWorker(Number(workerId));
             },
@@ -164,10 +193,11 @@
     >
         <button
             type="button"
-            @click="toggleSelector()"
+            @click="guideSelection = false; toggleSelector()"
             :aria-expanded="open.toString()"
             aria-haspopup="dialog"
-            class="flex min-h-12 w-full items-center justify-between rounded-2xl border border-slate-300 bg-white px-4 py-3 text-right shadow-sm transition focus:outline-none focus:ring-4 {{ $accentClasses['hoverBorder'] }}"
+            x-bind:class="guideSelection ? 'distribution-operator-guide-border' : 'border-slate-300 bg-white {{ $accentClasses['hoverBorder'] }}'"
+            class="flex min-h-12 w-full items-center justify-between rounded-2xl border px-4 py-3 text-right shadow-sm transition focus:outline-none focus:ring-4"
         >
             <span class="min-w-0 flex-1">
                 <span class="block truncate text-[10px] font-medium text-slate-400">

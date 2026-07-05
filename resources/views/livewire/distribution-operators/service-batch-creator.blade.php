@@ -660,6 +660,7 @@
                         @include('livewire.distribution-operators.partials.social-worker-selector', [
                             'accent' => 'emerald',
                             'selectorId' => 'misc-social-worker-selector',
+                            'guideSelection' => ! $socialWorkerId,
                         ])
                     @else
                         <div class="sm:col-span-2 xl:col-span-3">
