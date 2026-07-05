@@ -7,6 +7,9 @@
         isSaving: false,
         beforeUnloadHandler: null,
         navigationGuardHandler: null,
+        reviewPanelHeight: 0,
+        reviewPanelResizeHandler: null,
+        reviewPanelResizeObserver: null,
         init() {
             if (window.Livewire) {
                 Livewire.hook('morph.updated', () => {
@@ -16,6 +19,10 @@
                     this.isSaving = false;
                     this.focusFirstValidationError();
                     this.scrollToMiscServiceTypeWhenReady();
+                    this.$nextTick(() => {
+                        this.syncReviewPanelHeight();
+                        this.observeReviewPanelHeight();
+                    });
                 });
             }
 
@@ -31,10 +38,26 @@
             };
 
             window.addEventListener('beforeunload', this.beforeUnloadHandler);
+
+            this.reviewPanelResizeHandler = () => this.syncReviewPanelHeight();
+            window.addEventListener('resize', this.reviewPanelResizeHandler);
+
+            this.$nextTick(() => {
+                this.syncReviewPanelHeight();
+                this.observeReviewPanelHeight();
+            });
         },
         destroy() {
             if (this.beforeUnloadHandler) {
                 window.removeEventListener('beforeunload', this.beforeUnloadHandler);
+            }
+
+            if (this.reviewPanelResizeHandler) {
+                window.removeEventListener('resize', this.reviewPanelResizeHandler);
+            }
+
+            if (this.reviewPanelResizeObserver) {
+                this.reviewPanelResizeObserver.disconnect();
             }
 
             if (window.distributionOperatorConfirmServiceEditNavigation === this.navigationGuardHandler) {
@@ -105,6 +128,46 @@
 
                 this.shouldFocusValidationError = false;
             });
+        },
+        usesFixedMobileReviewPanel() {
+            return this.isEditingService && window.innerWidth < 1024;
+        },
+        syncReviewPanelHeight() {
+            if (! this.usesFixedMobileReviewPanel()) {
+                this.reviewPanelHeight = 0;
+                return;
+            }
+
+            const reviewPanel = this.$refs.reviewPanel;
+
+            if (! reviewPanel) {
+                this.reviewPanelHeight = 0;
+                return;
+            }
+
+            this.reviewPanelHeight = Math.ceil(reviewPanel.getBoundingClientRect().height);
+        },
+        observeReviewPanelHeight() {
+            const reviewPanel = this.$refs.reviewPanel;
+
+            if (this.reviewPanelResizeObserver) {
+                this.reviewPanelResizeObserver.disconnect();
+                this.reviewPanelResizeObserver = null;
+            }
+
+            if (! reviewPanel || typeof ResizeObserver === 'undefined') {
+                return;
+            }
+
+            this.reviewPanelResizeObserver = new ResizeObserver(() => this.syncReviewPanelHeight());
+            this.reviewPanelResizeObserver.observe(reviewPanel);
+        },
+        reviewPanelSpacerStyle() {
+            if (! this.usesFixedMobileReviewPanel() || this.reviewPanelHeight === 0) {
+                return 'display:none;';
+            }
+
+            return `height: calc(${this.reviewPanelHeight}px + 0.75rem);`;
         },
     }"
     data-service-batch-creator-root
@@ -939,17 +1002,18 @@
             $reviewWorkerCount = count($reviewGroups);
 
             // In edit mode the save action is the most-repeated task, so keep it
-            // pinned to the bottom of the viewport instead of buried below every
-            // worker accordion. Stays below the worker/category sheets (z-40+).
+            // pinned to the bottom of the viewport instead of relying on sticky
+            // inside the layout's nested mobile scroll container.
             if ($isEditing) {
-                $reviewCardClasses = 'sticky bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-30 border-emerald-200 bg-white shadow-[0_-6px_24px_rgba(15,23,42,0.12)]';
+                $reviewCardClasses = 'fixed bottom-[calc(0.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-30 border-emerald-200 bg-white shadow-[0_-6px_24px_rgba(15,23,42,0.12)] sm:left-6 sm:right-6 lg:sticky lg:bottom-4 lg:left-auto lg:right-auto';
             } else {
                 $reviewCardClasses = $reviewStepUnlocked
                     ? 'border-emerald-200 bg-white shadow-sm shadow-emerald-900/5'
                     : 'border-slate-200 bg-slate-50';
             }
         @endphp
-        <div class="rounded-2xl border px-3 py-2.5 {{ $reviewCardClasses }}">
+        <div x-bind:style="reviewPanelSpacerStyle()" aria-hidden="true"></div>
+        <div x-ref="reviewPanel" class="rounded-2xl border px-3 py-2.5 {{ $reviewCardClasses }}">
             <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                 <div class="min-w-0 flex-1" @if($isEditing && $reviewWorkerCount > 1) x-data="{ showBreakdown: false }" @endif>
                     <div class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
