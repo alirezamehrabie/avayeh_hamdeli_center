@@ -82,6 +82,26 @@ class ServiceBatchCreator extends Component
 
     public ?string $editingServiceVersion = null;
 
+    protected ?Service $editableServiceCache = null;
+
+    protected ?int $editableServiceCacheId = null;
+
+    protected ?Collection $editableAllCategoriesCache = null;
+
+    protected ?int $editableAllCategoriesCacheServiceId = null;
+
+    protected ?array $editableCategoryPoolCache = null;
+
+    protected ?int $editableCategoryPoolCacheServiceId = null;
+
+    protected ?array $editableServiceUsageByCategoryIdCache = null;
+
+    protected ?int $editableServiceUsageByCategoryIdCacheServiceId = null;
+
+    protected ?array $editableUsedCategoryUnitLocksCache = null;
+
+    protected ?int $editableUsedCategoryUnitLocksCacheServiceId = null;
+
     protected ?Collection $predefinedServicesCache = null;
 
     protected ?array $predefinedServiceOptionsCache = null;
@@ -356,7 +376,7 @@ class ServiceBatchCreator extends Component
         $this->validateDistinctWorkerGroups();
         $this->validateDistinctWorkerGroupCategories();
         $this->validateEditableServiceUsageConstraints(
-            $this->resolveEditableService($this->editingServiceId),
+            $this->editableService(),
             $this->miscWorkerGroups
         );
     }
@@ -587,7 +607,7 @@ class ServiceBatchCreator extends Component
             $this->validateDistinctWorkerGroups();
             $this->validateDistinctWorkerGroupCategories();
             $this->validateEditableServiceUsageConstraints(
-                $this->resolveEditableService($this->editingServiceId),
+                $this->editableService(),
                 $validated['miscWorkerGroups']
             );
         } elseif ($this->mode === self::MODE_MISC) {
@@ -643,6 +663,8 @@ class ServiceBatchCreator extends Component
         $selectedService = $isPredefinedMode ? $this->selectedPredefinedService : null;
         $selectedServiceCategories = $selectedService ? $this->selectedPredefinedServiceCategories : collect();
         $selectedServiceCategoryMetrics = $selectedService ? $this->selectedPredefinedCategoryMetrics() : [];
+        $editableService = $this->editingServiceId ? $this->editableService() : null;
+        $reviewSummary = $this->confirmationSummary();
 
         return view('livewire.distribution-operators.service-batch-creator', [
             'services' => $services,
@@ -653,16 +675,16 @@ class ServiceBatchCreator extends Component
             'hasPredefinedOverAllocation' => $isPredefinedMode && $this->hasPredefinedOverAllocation($selectedServiceCategoryMetrics),
             'canRequestSaveConfirmation' => $this->canRequestSaveConfirmation($selectedServiceCategoryMetrics),
             'savePreventionMessages' => $this->savePreventionMessages($selectedServiceCategoryMetrics),
-            'reviewSummary' => $this->confirmationSummary(),
+            'reviewSummary' => $reviewSummary,
             'reviewWarnings' => $this->reviewWarnings($selectedServiceCategoryMetrics),
-            'confirmationSummary' => $this->confirmingBatchSave ? $this->confirmationSummary() : [],
+            'confirmationSummary' => $this->confirmingBatchSave ? $reviewSummary : [],
             'socialWorkerSuggestions' => $this->showSocialWorkerSuggestions ? $this->socialWorkerSuggestions : collect(),
             'isEditing' => $this->editingServiceId !== null,
             'typeOptions' => Service::TYPE_OPTIONS,
             'unitOptions' => Service::unitOptions(),
             'categoryNameSuggestions' => $this->editingServiceId ? $this->categoryNameSuggestions() : [],
-            'usedCategoryLock' => $this->editingServiceId
-                ? $this->editableUsedCategoryUnitLocks($this->resolveEditableService($this->editingServiceId))
+            'usedCategoryLock' => $editableService
+                ? $this->editableUsedCategoryUnitLocks($editableService)
                 : ['ids' => [], 'names' => []],
         ]);
     }
@@ -873,6 +895,8 @@ class ServiceBatchCreator extends Component
         $this->validateDistinctWorkerGroupCategories();
 
         DB::transaction(function () use ($validated): void {
+            $this->flushEditableServiceCaches();
+
             $service = Service::query()
                 ->createdByDistributionOperator()
                 ->whereKey($this->editingServiceId)
@@ -887,6 +911,8 @@ class ServiceBatchCreator extends Component
                 ->lockForUpdate()
                 ->get()
                 ->keyBy('id');
+            $this->editableAllCategoriesCache = $existingCategories->values();
+            $this->editableAllCategoriesCacheServiceId = (int) $service->id;
             $existingAllocations = ServiceWorkerAllocation::query()
                 ->where('service_id', $service->id)
                 ->lockForUpdate()
@@ -1026,6 +1052,7 @@ class ServiceBatchCreator extends Component
             $this->editingServiceVersion = $service->fresh()->updated_at?->toISOString();
         });
 
+        $this->flushEditableServiceCaches();
         $this->hasUnsavedChanges = false;
 
         return redirect()
@@ -1161,9 +1188,7 @@ class ServiceBatchCreator extends Component
         $categoryPool = null;
 
         if ($this->editingServiceId) {
-            $categoryPool = $this->editableCategoryPool(
-                $this->resolveEditableService($this->editingServiceId)
-            );
+            $categoryPool = $this->editableCategoryPool($this->editableService());
         }
 
         $seenCategories = [];
@@ -1213,10 +1238,7 @@ class ServiceBatchCreator extends Component
 
     protected function validateEditableServiceUsageConstraints(Service $service, array $workerGroups): void
     {
-        $existingCategories = $service->categories()
-            ->withTrashed()
-            ->get()
-            ->keyBy('id');
+        $existingCategories = $this->editableAllCategories($service)->keyBy('id');
         $existingCategoryPool = $this->editableCategoryPool($service);
 
         $submittedByCategoryId = $this->submittedEditableRowsByCategoryId($workerGroups, $existingCategoryPool);
@@ -1311,6 +1333,13 @@ class ServiceBatchCreator extends Component
 
     protected function editableServiceUsageByCategoryId(Service $service): array
     {
+        $serviceId = (int) $service->id;
+
+        if ($this->editableServiceUsageByCategoryIdCacheServiceId === $serviceId
+            && is_array($this->editableServiceUsageByCategoryIdCache)) {
+            return $this->editableServiceUsageByCategoryIdCache;
+        }
+
         $allocatedWorkerIds = ServiceWorkerAllocation::query()
             ->where('service_id', $service->id)
             ->get(['service_category_id', 'social_worker_id'])
@@ -1338,7 +1367,9 @@ class ServiceBatchCreator extends Component
             ->pluck('assigned_quantity', 'service_category_id')
             ->map(fn ($quantity): float => (float) $quantity);
 
-        return $deliveredByCategory
+        $this->editableServiceUsageByCategoryIdCacheServiceId = $serviceId;
+
+        return $this->editableServiceUsageByCategoryIdCache = $deliveredByCategory
             ->keys()
             ->merge($assignedByCategory->keys())
             ->map(fn ($categoryId): int => (int) $categoryId)
@@ -1362,14 +1393,22 @@ class ServiceBatchCreator extends Component
      */
     protected function editableUsedCategoryUnitLocks(Service $service): array
     {
+        $serviceId = (int) $service->id;
+
+        if ($this->editableUsedCategoryUnitLocksCacheServiceId === $serviceId
+            && is_array($this->editableUsedCategoryUnitLocksCache)) {
+            return $this->editableUsedCategoryUnitLocksCache;
+        }
+
         $usedCategoryIds = array_map('intval', array_keys($this->editableServiceUsageByCategoryId($service)));
 
         if ($usedCategoryIds === []) {
-            return ['ids' => [], 'names' => []];
+            $this->editableUsedCategoryUnitLocksCacheServiceId = $serviceId;
+
+            return $this->editableUsedCategoryUnitLocksCache = ['ids' => [], 'names' => []];
         }
 
-        $names = $service->categories()
-            ->withTrashed()
+        $names = $this->editableAllCategories($service)
             ->whereIn('id', $usedCategoryIds)
             ->pluck('name')
             ->reduce(function (array $carry, $name): array {
@@ -1382,7 +1421,9 @@ class ServiceBatchCreator extends Component
                 return $carry;
             }, []);
 
-        return [
+        $this->editableUsedCategoryUnitLocksCacheServiceId = $serviceId;
+
+        return $this->editableUsedCategoryUnitLocksCache = [
             'ids' => array_values($usedCategoryIds),
             'names' => $names,
         ];
@@ -1542,12 +1583,14 @@ class ServiceBatchCreator extends Component
 
     protected function editableCategoryPool(Service $service): array
     {
-        $categories = $service->categories()
-            ->withTrashed()
-            ->orderByRaw('CASE WHEN deleted_at IS NULL THEN 0 ELSE 1 END')
-            ->orderBy('sort_id')
-            ->orderBy('id')
-            ->get();
+        $serviceId = (int) $service->id;
+
+        if ($this->editableCategoryPoolCacheServiceId === $serviceId
+            && is_array($this->editableCategoryPoolCache)) {
+            return $this->editableCategoryPoolCache;
+        }
+
+        $categories = $this->editableAllCategories($service);
 
         $usedCategoryIds = ServiceWorkerAllocation::query()
             ->where('service_id', $service->id)
@@ -1580,7 +1623,9 @@ class ServiceBatchCreator extends Component
             }
         }
 
-        return [
+        $this->editableCategoryPoolCacheServiceId = $serviceId;
+
+        return $this->editableCategoryPoolCache = [
             'by_name' => $byName,
         ];
     }
@@ -1600,9 +1645,7 @@ class ServiceBatchCreator extends Component
         }
 
         if ($categoryPool === null && $this->editingServiceId) {
-            $categoryPool = $this->editableCategoryPool(
-                $this->resolveEditableService($this->editingServiceId)
-            );
+            $categoryPool = $this->editableCategoryPool($this->editableService());
         }
 
         $resolvedCategory = $categoryPool['by_name'][$normalizedName] ?? null;
@@ -1655,9 +1698,7 @@ class ServiceBatchCreator extends Component
             return;
         }
 
-        $categoryPool = $this->editableCategoryPool(
-            $this->resolveEditableService($this->editingServiceId)
-        );
+        $categoryPool = $this->editableCategoryPool($this->editableService());
 
         $targetKey = $this->sharedCategoryKey($changedRow, $categoryPool);
 
@@ -1706,9 +1747,7 @@ class ServiceBatchCreator extends Component
             return;
         }
 
-        $categoryPool = $this->editableCategoryPool(
-            $this->resolveEditableService($this->editingServiceId)
-        );
+        $categoryPool = $this->editableCategoryPool($this->editableService());
 
         $resolvedUnit = null;
 
@@ -1803,6 +1842,10 @@ class ServiceBatchCreator extends Component
 
     protected function resolveEditableService(int $serviceId): Service
     {
+        if ($this->editableServiceCache instanceof Service && $this->editableServiceCacheId === $serviceId) {
+            return $this->editableServiceCache;
+        }
+
         // Any distribution operator may edit a shared misc service; scope to
         // operator-defined services and let the gate enforce authorization.
         $service = Service::query()
@@ -1811,6 +1854,9 @@ class ServiceBatchCreator extends Component
             ->findOrFail($serviceId);
 
         abort_unless(auth()->user()?->can('edit-distribution-operator-service', $service), 403);
+
+        $this->editableServiceCache = $service;
+        $this->editableServiceCacheId = $serviceId;
 
         return $service;
     }
@@ -1823,6 +1869,44 @@ class ServiceBatchCreator extends Component
 
         abort_unless(auth()->check() && auth()->user()->can('manage-distribution-operator-services'), 403);
         $this->resolveEditableService($this->editingServiceId);
+    }
+
+    protected function editableService(): Service
+    {
+        return $this->resolveEditableService((int) $this->editingServiceId);
+    }
+
+    protected function editableAllCategories(Service $service): Collection
+    {
+        $serviceId = (int) $service->id;
+
+        if ($this->editableAllCategoriesCache instanceof Collection
+            && $this->editableAllCategoriesCacheServiceId === $serviceId) {
+            return $this->editableAllCategoriesCache;
+        }
+
+        $this->editableAllCategoriesCacheServiceId = $serviceId;
+
+        return $this->editableAllCategoriesCache = $service->categories()
+            ->withTrashed()
+            ->orderByRaw('CASE WHEN deleted_at IS NULL THEN 0 ELSE 1 END')
+            ->orderBy('sort_id')
+            ->orderBy('id')
+            ->get();
+    }
+
+    protected function flushEditableServiceCaches(): void
+    {
+        $this->editableServiceCache = null;
+        $this->editableServiceCacheId = null;
+        $this->editableAllCategoriesCache = null;
+        $this->editableAllCategoriesCacheServiceId = null;
+        $this->editableCategoryPoolCache = null;
+        $this->editableCategoryPoolCacheServiceId = null;
+        $this->editableServiceUsageByCategoryIdCache = null;
+        $this->editableServiceUsageByCategoryIdCacheServiceId = null;
+        $this->editableUsedCategoryUnitLocksCache = null;
+        $this->editableUsedCategoryUnitLocksCacheServiceId = null;
     }
 
     protected function ensureEditableServiceVersionMatches(Service $service): void
@@ -2010,9 +2094,7 @@ class ServiceBatchCreator extends Component
         $categoryPool = null;
 
         if ($resolveExistingByName && $this->editingServiceId) {
-            $categoryPool = $this->editableCategoryPool(
-                $this->resolveEditableService($this->editingServiceId)
-            );
+            $categoryPool = $this->editableCategoryPool($this->editableService());
         }
 
         $seenCategories = [];
