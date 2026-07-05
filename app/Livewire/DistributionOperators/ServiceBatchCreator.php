@@ -1154,24 +1154,25 @@ class ServiceBatchCreator extends Component
         $seenCategories = [];
 
         foreach ($this->miscWorkerGroups as $groupIndex => $group) {
-            $seenCategoryNamesForGroup = [];
+            $seenCategoryIdentitiesForGroup = [];
 
             foreach (($group['categories'] ?? []) as $categoryIndex => $category) {
-                $categoryName = trim((string) ($category['name'] ?? ''));
-                $normalizedName = mb_strtolower($categoryName);
+                $normalizedName = $this->normalizeEditableCategoryName((string) ($category['name'] ?? ''));
 
                 if ($normalizedName === '') {
                     continue;
                 }
 
-                if (isset($seenCategoryNamesForGroup[$normalizedName])) {
+                $categoryId = $this->resolveEditableCategoryId($category, $categoryPool);
+                $groupIdentity = $categoryId > 0 ? 'existing:'.$categoryId : 'name:'.$normalizedName;
+
+                if (isset($seenCategoryIdentitiesForGroup[$groupIdentity])) {
                     throw ValidationException::withMessages([
                         "miscWorkerGroups.{$groupIndex}.categories.{$categoryIndex}.name" => 'هر دسته‌بندی فقط می‌تواند یک‌بار برای این مددکار ثبت شود.',
                     ]);
                 }
 
-                $seenCategoryNamesForGroup[$normalizedName] = true;
-                $categoryId = $this->resolveEditableCategoryId($category, $categoryPool);
+                $seenCategoryIdentitiesForGroup[$groupIdentity] = true;
 
                 if (! isset($seenCategories[$normalizedName])) {
                     $seenCategories[$normalizedName] = [
