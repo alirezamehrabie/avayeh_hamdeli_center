@@ -21,7 +21,7 @@ class ServiceList extends Component
     public const TAB_MISC = 'misc';
 
     #[Url(as: 'tab')]
-    public string $activeTab = self::TAB_CAMPAIGNS;
+    public string $activeTab = self::TAB_MISC;
 
     #[Url(as: 'q', except: '')]
     public string $search = '';
@@ -36,7 +36,7 @@ class ServiceList extends Component
         abort_unless(auth()->check() && auth()->user()->can('access-distribution-operator-panel'), 403);
 
         if (! in_array($this->activeTab, $this->availableTabs(), true)) {
-            $this->activeTab = self::TAB_CAMPAIGNS;
+            $this->activeTab = self::TAB_MISC;
         }
     }
 
