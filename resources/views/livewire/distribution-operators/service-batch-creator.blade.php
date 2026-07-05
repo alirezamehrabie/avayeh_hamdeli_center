@@ -590,7 +590,7 @@
             <section wire:key="misc-service-batch-section" class="overflow-visible rounded-xl border border-emerald-100/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
                 <div class="border-b border-emerald-100/80 bg-emerald-50/30 px-4 py-3 sm:px-5 sm:py-4">
                     @php
-                        $miscHeaderTitle = $isEditing ? 'جزئیات خدمت' : trim($miscServiceName);
+                        $miscHeaderTitle = $isEditing ? 'ویرایش '.trim($editingServiceName).'' : trim($miscServiceName);
                         $miscHeaderTitle = $miscHeaderTitle !== '' ? $miscHeaderTitle : 'تعریف خدمت جدید';
                     @endphp
                     <div
