@@ -887,7 +887,7 @@ class ServiceBatchCreator extends Component
                 ->lockForUpdate()
                 ->get()
                 ->keyBy('id');
-            ServiceWorkerAllocation::query()
+            $existingAllocations = ServiceWorkerAllocation::query()
                 ->where('service_id', $service->id)
                 ->lockForUpdate()
                 ->get();
@@ -912,6 +912,8 @@ class ServiceBatchCreator extends Component
             $existingCategoryPool = $this->editableCategoryPool($service);
             $categoryPayloads = [];
             $categoryWorkerAllocations = [];
+            $existingAllocationsByWorkerAndCategory = $existingAllocations
+                ->keyBy(fn (ServiceWorkerAllocation $allocation): string => $allocation->service_category_id.':'.$allocation->social_worker_id);
 
             foreach (array_values($validated['miscWorkerGroups']) as $group) {
                 $workerId = (int) $group['social_worker_id'];
@@ -970,14 +972,27 @@ class ServiceBatchCreator extends Component
                 $totalQuantity += (float) $payload['quantity'];
 
                 foreach (($categoryWorkerAllocations[$categoryKey] ?? []) as $workerId => $allocatedQuantity) {
-                    ServiceWorkerAllocation::query()->updateOrCreate([
+                    $allocationKey = $category->id.':'.(int) $workerId;
+                    $existingAllocation = $existingAllocationsByWorkerAndCategory->get($allocationKey);
+
+                    if ($existingAllocation) {
+                        $existingAllocation->fill([
+                            'allocated_quantity' => (float) $allocatedQuantity,
+                        ])->save();
+
+                        continue;
+                    }
+
+                    $allocation = new ServiceWorkerAllocation;
+                    $allocation->fill([
                         'service_id' => $service->id,
                         'service_category_id' => $category->id,
                         'social_worker_id' => (int) $workerId,
-                    ], [
                         'allocated_quantity' => (float) $allocatedQuantity,
                         'assigned_by_user_id' => auth()->id(),
-                    ]);
+                    ])->save();
+
+                    $existingAllocationsByWorkerAndCategory->put($allocationKey, $allocation);
                 }
             }
 
