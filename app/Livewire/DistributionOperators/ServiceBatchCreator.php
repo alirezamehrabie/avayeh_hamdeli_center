@@ -544,6 +544,12 @@ class ServiceBatchCreator extends Component
         $this->confirmingBatchSave = false;
         $this->markEditingDirty();
         $this->resetValidation("miscWorkerGroups.{$index}.categories");
+
+        // Let the freshly added row (always a second-or-later category for the
+        // worker) auto-open its category picker so the operator does not need to
+        // tap the field manually. The first row is guided via inline highlight.
+        $newCategoryIndex = (int) array_key_last($this->miscWorkerGroups[$index]['categories']);
+        $this->dispatch('misc-worker-category-added', groupIndex: $index, categoryIndex: $newCategoryIndex);
     }
 
     public function removeGroupCategory(int $groupIndex, int $categoryIndex): void

@@ -481,6 +481,12 @@
                                             || (float) ($category['quantity'] ?? 0) > 0;
                                         // Weight units accept fractions; count-type units (عدد، بسته، ...) must be whole (Item 12).
                                         $isDecimalUnit = $this->isDecimalQuantityUnit((string) ($category['unit'] ?? ''));
+                                        // The first category row of each worker is guided with a red highlight
+                                        // until a category is picked/typed, steering the operator to name it.
+                                        // Later rows instead auto-open the picker (see addGroupCategory dispatch).
+                                        $isFirstCategoryRow = $ci === 0;
+                                        $categoryNameIsEmpty = trim((string) ($category['name'] ?? '')) === '';
+                                        $shouldGuideCategoryName = $isFirstCategoryRow && $categoryNameIsEmpty;
                                     @endphp
                                     <div data-validation-scope class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-200/50 sm:p-3.5">
                                         <div class="mb-3 flex items-center justify-between gap-3 border-b border-slate-100 pb-2.5">
@@ -538,6 +544,12 @@
                                                         directEntry: false,
                                                         popStateHandler: null,
                                                         scrollLocked: false,
+                                                        groupIndex: {{ $gi }},
+                                                        categoryIndex: {{ $ci }},
+                                                        hasSuggestions: @js(! empty($categoryNameSuggestions)),
+                                                        // First-row guide highlight; cleared client-side the moment a
+                                                        // category is picked or a non-empty name is typed (Item 1).
+                                                        guideActive: @js($shouldGuideCategoryName),
                                                         modelPath: 'miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.name',
                                                         modelIdPath: 'miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.id',
                                                         modelUnitPath: 'miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.unit',
@@ -546,6 +558,23 @@
                                                         init() {
                                                             this.popStateHandler = () => this.handleSheetPopState();
                                                             window.addEventListener('popstate', this.popStateHandler);
+                                                        },
+                                                        handleCategoryAdded(event) {
+                                                            // Only the freshly added row (matched by group + index) reacts, so
+                                                            // adding a category to one worker never disturbs another's rows.
+                                                            if (Number(event.detail?.groupIndex) !== this.groupIndex
+                                                                || Number(event.detail?.categoryIndex) !== this.categoryIndex) {
+                                                                return;
+                                                            }
+
+                                                            this.$nextTick(() => {
+                                                                if (this.hasSuggestions) {
+                                                                    this.openSheet();
+                                                                } else {
+                                                                    this.directEntry = true;
+                                                                    this.$nextTick(() => this.$refs.nameInput?.focus({ preventScroll: true }));
+                                                                }
+                                                            });
                                                         },
                                                         destroy() {
                                                             if (this.popStateHandler) {
@@ -644,6 +673,7 @@
                                                             }
 
                                                             this.directEntry = false;
+                                                            this.guideActive = false;
                                                             $wire.set(this.modelIdPath, categoryId > 0 ? categoryId : null);
                                                             if (categoryUnit && this.unitKeys.includes(categoryUnit)) {
                                                                 $wire.set(this.modelUnitPath, categoryUnit);
@@ -668,6 +698,7 @@
                                                         },
                                                     }"
                                                     x-on:keydown.escape.window="closeSheet()"
+                                                    x-on:misc-worker-category-added.window="handleCategoryAdded($event)"
                                                 >
                                                     <div class="relative">
                                                         @if(!empty($categoryNameSuggestions))
@@ -678,9 +709,13 @@
                                                                 x-show="! directEntry"
                                                                 @click="openSheet()"
                                                                 aria-haspopup="dialog"
-                                                                class="flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-right transition hover:border-emerald-300 hover:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-100"
+                                                                x-bind:aria-invalid="guideActive.toString()"
+                                                                class="flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-right transition focus:outline-none focus:ring-2"
+                                                                x-bind:class="guideActive
+                                                                    ? 'border-rose-300 bg-rose-50/50 ring-2 ring-rose-100 hover:border-rose-400 focus:ring-rose-100'
+                                                                    : 'border-slate-200 bg-slate-50 hover:border-emerald-300 hover:bg-white focus:ring-emerald-100'"
                                                             >
-                                                                <i class="bi bi-tag shrink-0 text-sm text-emerald-600"></i>
+                                                                <i class="bi bi-tag shrink-0 text-sm" x-bind:class="guideActive ? 'text-rose-500' : 'text-emerald-600'"></i>
                                                                 <span class="min-w-0 flex-1 truncate text-sm {{ trim((string) ($category['name'] ?? '')) !== '' ? 'font-bold text-slate-800' : 'text-slate-400' }}">
                                                                     {{ trim((string) ($category['name'] ?? '')) !== '' ? $category['name'] : 'انتخاب دسته‌بندی' }}
                                                                 </span>
@@ -692,7 +727,11 @@
                                                                     x-ref="nameInput"
                                                                     type="text"
                                                                     wire:model.blur="miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.name"
-                                                                    class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
+                                                                    x-on:input="if ($event.target.value.trim() !== '') guideActive = false"
+                                                                    class="w-full rounded-lg border py-2 pl-10 pr-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:ring-2"
+                                                                    x-bind:class="guideActive
+                                                                        ? 'border-rose-300 bg-rose-50/40 ring-2 ring-rose-100 focus:border-rose-400 focus:ring-rose-100'
+                                                                        : 'border-slate-200 bg-white focus:border-emerald-300 focus:ring-emerald-100'"
                                                                     placeholder="نام دسته‌بندی جدید"
                                                                     autocomplete="off"
                                                                 >
@@ -710,7 +749,11 @@
                                                                 x-ref="nameInput"
                                                                 type="text"
                                                                 wire:model.blur="miscWorkerGroups.{{ $gi }}.categories.{{ $ci }}.name"
-                                                                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100"
+                                                                x-on:input="if ($event.target.value.trim() !== '') guideActive = false"
+                                                                class="w-full rounded-lg border px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:ring-2"
+                                                                x-bind:class="guideActive
+                                                                    ? 'border-rose-300 bg-rose-50/40 ring-2 ring-rose-100 focus:border-rose-400 focus:ring-rose-100'
+                                                                    : 'border-slate-200 bg-slate-50 focus:border-emerald-300 focus:bg-white focus:ring-emerald-100'"
                                                                 placeholder="نام دسته‌بندی"
                                                                 autocomplete="off"
                                                             >
@@ -845,13 +888,17 @@
                                     </div>
                                 @endforeach
 
-                                {{-- Lighter, inline secondary action: adds one row to the current worker. --}}
+                                {{-- Local/secondary action: soft green fill so it reads as green yet stays lighter than the global blue action. --}}
+                                {{-- Loading state is scoped per worker via wire:target with the $gi argument. --}}
                                 <button
                                     type="button"
                                     wire:click="addGroupCategory({{ $gi }})"
-                                    class="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-600 transition hover:border-emerald-300 hover:bg-emerald-50/60"
+                                    wire:loading.attr="disabled"
+                                    wire:target="addGroupCategory({{ $gi }})"
+                                    class="flex w-full items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-70"
                                 >
-                                    <i class="bi bi-plus-lg text-sm"></i>
+                                    <i class="bi bi-plus-lg text-sm" wire:loading.remove wire:target="addGroupCategory({{ $gi }})"></i>
+                                    <svg wire:loading wire:target="addGroupCategory({{ $gi }})" class="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle><path d="M12 2a10 10 0 0110 10" stroke-linecap="round"></path></svg>
                                     افزودن دسته‌بندی
                                 </button>
                             </div>
@@ -862,11 +909,11 @@
             </div>
         @endforeach
 
-        {{-- Stronger, solid-filled primary: creates a whole new worker section. --}}
+        {{-- Stronger, global action: solid blue with a very soft top-to-bottom gradient so it anchors the form. --}}
         <button
             type="button"
             wire:click="addWorkerGroup"
-            class="flex w-full items-center justify-center gap-2 rounded-2xl border border-emerald-300 bg-emerald-50 px-3 py-3.5 text-sm font-black text-emerald-700 shadow-sm transition hover:border-emerald-400 hover:bg-emerald-100 active:scale-[0.99]"
+            class="flex w-full items-center justify-center gap-2 rounded-2xl border border-blue-600 bg-gradient-to-b from-blue-500 to-blue-600 px-3 py-3.5 text-sm font-bold text-white shadow-sm transition hover:from-blue-600 hover:to-blue-700 active:scale-[0.99]"
         >
             <i class="bi bi-person-plus-fill text-base"></i>
             افزودن مددکار

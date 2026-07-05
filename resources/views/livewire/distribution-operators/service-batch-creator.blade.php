@@ -801,9 +801,12 @@
                             <button
                                 type="button"
                                 wire:click="addCategory"
-                                class="flex w-full items-center justify-center gap-2 px-3 py-2.5 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50"
+                                wire:loading.attr="disabled"
+                                wire:target="addCategory"
+                                class="flex w-full items-center justify-center gap-2 px-3 py-2.5 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-70"
                             >
-                                <span class="text-lg leading-none">+</span>
+                                <span class="text-lg leading-none" wire:loading.remove wire:target="addCategory">+</span>
+                                <svg wire:loading wire:target="addCategory" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle><path d="M12 2a10 10 0 0110 10" stroke-linecap="round"></path></svg>
                                 افزودن دسته‌بندی
                             </button>
                         </div>
