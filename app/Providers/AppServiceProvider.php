@@ -108,6 +108,10 @@ class AppServiceProvider extends ServiceProvider
             return $user->canAccessDistributionOperatorPanel();
         });
 
+        Gate::define('manage-distribution-operator-services', function (User $user) {
+            return $user->canManageDistributionOperatorServices();
+        });
+
         foreach (User::distributionAccessDefinitions() as $accessType => $definition) {
             Gate::define($definition['gate'], function (User $user) use ($accessType) {
                 return $user->canAccessDistributionGate($accessType);
@@ -124,6 +128,10 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::define('view-distribution-operator-service', function (User $user, Service $service) {
             return $user->canAccessDistributionOperatorService($service);
+        });
+
+        Gate::define('edit-distribution-operator-service', function (User $user, Service $service) {
+            return $user->canEditDistributionOperatorService($service);
         });
     }
 }

@@ -580,6 +580,7 @@ class ServiceBatchCreator extends Component
         $this->date = $this->normalizeJalaliDate($this->date);
 
         if ($this->editingServiceId) {
+            $this->authorizeEditableMiscServiceAccess();
             $validated = $this->validate($this->miscEditRules(), [], $this->validationAttributes());
             $this->validateDistinctWorkerGroups();
             $this->validateDistinctWorkerGroupCategories();
@@ -864,6 +865,7 @@ class ServiceBatchCreator extends Component
 
     protected function saveMiscServiceEdit()
     {
+        $this->authorizeEditableMiscServiceAccess();
         $validated = $this->validate($this->miscEditRules(), [], $this->validationAttributes());
         $this->validateDistinctWorkerGroups();
         $this->validateDistinctWorkerGroupCategories();
@@ -1765,9 +1767,19 @@ class ServiceBatchCreator extends Component
             ->createdByDistributionOperator()
             ->findOrFail($serviceId);
 
-        abort_unless(auth()->user()?->can('view-distribution-operator-service', $service), 403);
+        abort_unless(auth()->user()?->can('edit-distribution-operator-service', $service), 403);
 
         return $service;
+    }
+
+    protected function authorizeEditableMiscServiceAccess(): void
+    {
+        if (! $this->editingServiceId) {
+            return;
+        }
+
+        abort_unless(auth()->check() && auth()->user()->can('manage-distribution-operator-services'), 403);
+        $this->resolveEditableService($this->editingServiceId);
     }
 
     protected function predefinedServices(): Collection

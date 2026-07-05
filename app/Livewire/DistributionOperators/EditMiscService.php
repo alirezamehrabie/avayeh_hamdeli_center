@@ -13,13 +13,11 @@ class EditMiscService extends Component
 
     public function mount(int $serviceId): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-distribution-operator-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('manage-distribution-operator-services'), 403);
 
         $service = Service::query()->findOrFail($serviceId);
 
-        // Misc services are shared across distribution operators; the gate
-        // authorizes any operator to edit a service defined by an operator.
-        abort_unless(auth()->user()?->can('view-distribution-operator-service', $service), 403);
+        abort_unless(auth()->user()?->can('edit-distribution-operator-service', $service), 403);
 
         $this->serviceId = $service->id;
     }

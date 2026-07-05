@@ -53,6 +53,8 @@ class User extends Authenticatable
 
     public const PERMISSION_DISTRIBUTION_OUTBOUND_GATE = 'distribution_outbound_gate';
 
+    public const PERMISSION_DISTRIBUTION_SERVICE_MANAGE = 'distribution_service_manage';
+
     public const PERMISSION_FULL_ACCESS = 'full_access';
 
     public const PERMISSION_ACTIVITY_ATTENDANCE_REGISTER = 'activity_attendance_register';
@@ -138,6 +140,7 @@ class User extends Authenticatable
                 'label' => 'اپراتور توزیع',
                 'description' => 'دسترسی مرحله‌ای به گیت‌های توزیع خدمات',
                 'recommended_permissions' => [
+                    self::PERMISSION_DISTRIBUTION_SERVICE_MANAGE,
                     self::PERMISSION_DISTRIBUTION_INBOUND_GATE,
                     self::PERMISSION_DISTRIBUTION_DELIVERY_GATE,
                     self::PERMISSION_DISTRIBUTION_OUTBOUND_GATE,
@@ -199,6 +202,10 @@ class User extends Authenticatable
                 'gate' => 'access-distribution-outbound-gate',
                 'distribution_access' => self::DISTRIBUTION_ACCESS_OUTBOUND,
             ],
+            self::PERMISSION_DISTRIBUTION_SERVICE_MANAGE => [
+                'label' => 'مدیریت خدمات متفرقه توزیع',
+                'group' => 'distribution_operator',
+            ],
             self::PERMISSION_FULL_ACCESS => [
                 'label' => 'دسترسی کامل',
                 'group' => 'system',
@@ -241,6 +248,7 @@ class User extends Authenticatable
                 self::PERMISSION_DISTRIBUTION_OUTBOUND_GATE,
             ],
             self::ACCESS_LEVEL_DISTRIBUTION_OPERATOR => [
+                self::PERMISSION_DISTRIBUTION_SERVICE_MANAGE,
                 self::PERMISSION_DISTRIBUTION_INBOUND_GATE,
                 self::PERMISSION_DISTRIBUTION_DELIVERY_GATE,
                 self::PERMISSION_DISTRIBUTION_OUTBOUND_GATE,
@@ -568,10 +576,21 @@ class User extends Authenticatable
 
     public function canAccessDistributionOperatorService(Service $service): bool
     {
-        // Misc services are shared across all distribution operators: any
-        // operator may view and edit a service defined by a distribution
-        // operator, regardless of who originally created it.
         return $this->canAccessDistributionOperatorPanel()
+            && $service->isMiscDefinedService();
+    }
+
+    public function canManageDistributionOperatorServices(): bool
+    {
+        return $this->canAccessDistributionOperatorPanel()
+            && $this->hasPermission(self::PERMISSION_DISTRIBUTION_SERVICE_MANAGE);
+    }
+
+    public function canEditDistributionOperatorService(Service $service): bool
+    {
+        // Shared misc services stay editable across operators, but only when
+        // the operator holds the explicit service-management permission.
+        return $this->canManageDistributionOperatorServices()
             && $service->isMiscDefinedService();
     }
 

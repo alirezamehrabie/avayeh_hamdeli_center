@@ -190,7 +190,7 @@ Route::get('/distribution-operator/services', ServiceList::class)
     ->name('distribution-operator.service-list');
 
 Route::get('/distribution-operator/services/{serviceId}/edit', EditMiscService::class)
-    ->middleware(['auth', 'can:access-distribution-operator-panel'])
+    ->middleware(['auth', 'can:manage-distribution-operator-services'])
     ->name('distribution-operator.edit-service');
 
 Route::get('/distribution-operator/services/{serviceId}/allocations', EditServiceAllocations::class)
