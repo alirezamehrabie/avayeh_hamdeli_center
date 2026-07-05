@@ -594,7 +594,7 @@
                         $miscHeaderTitle = $miscHeaderTitle !== '' ? $miscHeaderTitle : 'تعریف خدمت جدید';
                     @endphp
                     <div
-                        class="flex items-center gap-2.5"
+                        class="flex items-center justify-between gap-3"
                         x-data="{
                             fullTitle: @js($miscHeaderTitle),
                             shownTitle: @js($isEditing ? $miscHeaderTitle : ''),
@@ -627,24 +627,31 @@
                             },
                         }"
                     >
-                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-white">
-                            @if($isEditing)
-                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                    <path d="M11 5H6.5A2.5 2.5 0 0 0 4 7.5v10A2.5 2.5 0 0 0 6.5 20h10A2.5 2.5 0 0 0 19 17.5V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                    <path d="M13 4.8 18.2 10M11.5 11.5 17.8 5.2a1.84 1.84 0 1 1 2.6 2.6l-6.3 6.3-3.1.6.5-3.2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                </svg>
-                            @else
-                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                    <path d="M7 7.5h10M7 12h10M7 16.5h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                                    <path d="M5.5 3.5h13A2.5 2.5 0 0 1 21 6v12a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 18V6a2.5 2.5 0 0 1 2.5-2.5Z" stroke="currentColor" stroke-width="2" />
-                                </svg>
-                            @endif
-                        </span>
-                        <div class="min-w-0">
-                            <h2 class="truncate text-base font-extrabold text-emerald-950" :title="fullTitle" aria-label="{{ $miscHeaderTitle }}" data-service-header-title="{{ $miscHeaderTitle }}">
-                                <span x-text="shownTitle"></span><span x-show="cursorVisible" class="inline-block h-4 w-0.5 translate-y-0.5 rounded-full bg-emerald-500 align-middle" x-transition.opacity></span>
-                            </h2>
+                        <div class="flex min-w-0 items-center gap-2.5">
+                            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-white">
+                                @if($isEditing)
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                        <path d="M11 5H6.5A2.5 2.5 0 0 0 4 7.5v10A2.5 2.5 0 0 0 6.5 20h10A2.5 2.5 0 0 0 19 17.5V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                        <path d="M13 4.8 18.2 10M11.5 11.5 17.8 5.2a1.84 1.84 0 1 1 2.6 2.6l-6.3 6.3-3.1.6.5-3.2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                @else
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                        <path d="M7 7.5h10M7 12h10M7 16.5h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                        <path d="M5.5 3.5h13A2.5 2.5 0 0 1 21 6v12a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 18V6a2.5 2.5 0 0 1 2.5-2.5Z" stroke="currentColor" stroke-width="2" />
+                                    </svg>
+                                @endif
+                            </span>
+                            <div class="min-w-0">
+                                <h2 class="truncate text-sm font-bold text-emerald-950" :title="fullTitle" aria-label="{{ $miscHeaderTitle }}" data-service-header-title="{{ $miscHeaderTitle }}">
+                                    <span x-text="shownTitle"></span><span x-show="cursorVisible" class="inline-block h-4 w-0.5 translate-y-0.5 rounded-full bg-emerald-500 align-middle" x-transition.opacity></span>
+                                </h2>
+                            </div>
                         </div>
+                        @if($isEditing)
+                            <a href="{{ route('distribution-operator.service-list') }}" x-on:click="if (window.distributionOperatorConfirmServiceEditNavigation && ! window.distributionOperatorConfirmServiceEditNavigation()) $event.preventDefault()" class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-emerald-700/60 transition hover:bg-white/70 hover:text-emerald-800" aria-label="بازگشت به فهرست خدمات">
+                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </a>
+                        @endif
                     </div>
                 </div>
 
