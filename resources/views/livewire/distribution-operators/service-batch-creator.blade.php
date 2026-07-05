@@ -928,7 +928,7 @@
                             <i class="bi bi-chevron-down mr-auto shrink-0 text-slate-400 transition-transform duration-200" :class="showBreakdown ? 'rotate-180' : ''"></i>
                         </button>
 
-                        <div x-show="showBreakdown" x-collapse style="display: none;" class="mt-2 space-y-1.5">
+                        <div x-show="showBreakdown" x-collapse style="display: none;" class="mt-2 space-y-1.5 max-h-[50vh] overflow-y-auto">
                             @foreach($reviewGroups as $reviewGroup)
                                 <div class="flex items-center gap-2 rounded-lg border border-slate-100 bg-slate-50/70 px-2.5 py-1.5">
                                     <span class="min-w-0 flex-1 truncate text-[11px] font-black text-slate-700">{{ $reviewGroup['worker_name'] ?? 'مددکار' }}</span>
@@ -977,13 +977,6 @@
                     </button>
                 </div>
             </div>
-
-            @if(!empty($reviewSummary['description']))
-                <p class="mt-2 line-clamp-1 rounded-xl bg-slate-50 px-3 py-2 text-[11px] font-semibold leading-5 text-slate-600">
-                    <span class="font-black text-slate-500">توضیحات:</span>
-                    {{ $reviewSummary['description'] }}
-                </p>
-            @endif
         </div>
     </form>
 
