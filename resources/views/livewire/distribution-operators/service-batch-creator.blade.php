@@ -692,10 +692,26 @@
                                     return;
                                 }
 
-                                category.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                category.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
                                 window.setTimeout(() => {
-                                    category.querySelector('[data-category-name-input]')?.focus({ preventScroll: true });
+                                    const input = category.querySelector('[data-category-name-input]');
+                                    input?.focus({ preventScroll: true });
+
+                                    // Keyboard-aware scroll adjustment on mobile
+                                    if (window.visualViewport) {
+                                        const handleKeyboardAppearance = () => {
+                                            const rect = category.getBoundingClientRect();
+                                            const bottomPadding = 60;
+
+                                            if (rect.bottom > window.visualViewport.height - bottomPadding) {
+                                                const offset = rect.bottom - (window.visualViewport.height - bottomPadding);
+                                                window.scrollBy({ top: offset, behavior: 'smooth' });
+                                            }
+                                        };
+
+                                        window.visualViewport.addEventListener('resize', handleKeyboardAppearance);
+                                    }
                                 }, 350);
                             });
                         }
@@ -714,7 +730,11 @@
                         <div class="divide-y divide-slate-100">
                             @foreach($miscCategories as $index => $category)
                                 <div data-service-category-index="{{ $index }}"
-                                     x-data="{ open: {{ $index === count($miscCategories) - 1 ? 'true' : 'false' }} }"
+                                     x-data="{
+                                         open: {{ $index === count($miscCategories) - 1 ? 'true' : 'false' }},
+                                         isNewCategory: {{ $index === count($miscCategories) - 1 ? 'true' : 'false' }},
+                                         nameHasValue: @js(trim((string) ($category['name'] ?? '')) !== ''),
+                                     }"
                                      class="p-3 sm:p-3.5">
                                     <div class="flex items-center gap-2.5">
                                         <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-black text-emerald-700">
@@ -773,7 +793,11 @@
                                             type="text"
                                             wire:model.blur="miscCategories.{{ $index }}.name"
                                             data-category-name-input
-                                            class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100"
+                                            @input="nameHasValue = $el.value.trim().length > 0"
+                                            x-bind:class="isNewCategory && ! nameHasValue
+                                                ? 'border-rose-400 bg-rose-50 ring-2 ring-rose-200'
+                                                : 'border-slate-200 bg-slate-50 focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100'"
+                                            class="w-full rounded-lg border px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400"
                                             placeholder="نام دسته‌بندی"
                                         >
                                         @error("miscCategories.$index.name") <p class="text-[11px] text-rose-600">{{ $message }}</p> @enderror
