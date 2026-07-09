@@ -207,6 +207,99 @@ class IndexPeopleTest extends TestCase
         $this->assertArrayNotHasKey('sadaat_status_label', $attributes);
     }
 
+    public function test_national_id_search_uses_exact_match_for_ten_digit_input(): void
+    {
+        $target = $this->person('P810012', '8100010012');
+        $this->person('P810013', '8100010013');
+
+        $results = app(PeopleIndexSearchQuery::class)
+            ->applyTo(Person::query(), '8100010012', 'national_id')
+            ->pluck('id');
+
+        $this->assertSame([$target->id], $results->all());
+    }
+
+    public function test_person_code_search_supports_prefix_matches_for_short_input(): void
+    {
+        $target = $this->person('14012', '8100010014');
+        $this->person('15012', '8100010015');
+
+        $results = app(PeopleIndexSearchQuery::class)
+            ->applyTo(Person::query(), '14', 'person_code')
+            ->pluck('id');
+
+        $this->assertTrue($results->contains($target->id));
+        $this->assertCount(1, $results);
+    }
+
+    public function test_full_name_search_matches_normalized_persian_character_variants(): void
+    {
+        $target = $this->person('P810014', '8100010016', [
+            'first_name' => 'علي',
+            'last_name' => 'رضايي',
+        ]);
+
+        $results = app(PeopleIndexSearchQuery::class)
+            ->applyTo(Person::query(), 'علی رضایی', 'full_name')
+            ->pluck('id');
+
+        $this->assertSame([$target->id], $results->all());
+    }
+
+    public function test_short_text_search_is_blocked_for_name_fields(): void
+    {
+        $this->person('P810015', '8100010017', [
+            'first_name' => 'آرمان',
+            'last_name' => 'کریمی',
+        ]);
+
+        $query = app(PeopleIndexSearchQuery::class)->applyTo(Person::query(), 'آ', 'all');
+
+        $this->assertTrue(app(PeopleIndexSearchQuery::class)->needsMoreInput('آ', 'all'));
+        $this->assertCount(0, $query->get());
+    }
+
+    public function test_search_update_resets_people_index_pagination_to_first_page(): void
+    {
+        $this->actingAs($this->manager());
+
+        for ($i = 1; $i <= 21; $i++) {
+            $this->person(
+                'P82'.str_pad((string) $i, 3, '0', STR_PAD_LEFT),
+                '8200'.str_pad((string) $i, 6, '0', STR_PAD_LEFT),
+                ['first_name' => sprintf('Person %02d', $i)]
+            );
+        }
+
+        Livewire::test(IndexPeople::class)
+            ->call('gotoPage', 2)
+            ->assertDontSee('Person 21')
+            ->set('search', 'Person 21')
+            ->assertSet('search', 'Person 21')
+            ->assertSee('Person 21')
+            ->assertDontSee('Person 01');
+    }
+
+    public function test_short_text_search_is_allowed_for_explicit_first_name_search(): void
+    {
+        $target = $this->person('P810016', '8100010018', [
+            'first_name' => 'آرمان',
+            'last_name' => 'حسینی',
+        ]);
+        $this->person('P810017', '8100010019', [
+            'first_name' => 'مینا',
+            'last_name' => 'آرمان',
+        ]);
+
+        $results = app(PeopleIndexSearchQuery::class)
+            ->applyTo(Person::query(), 'آ', 'first_name')
+            ->pluck('id');
+
+        $this->assertFalse(app(PeopleIndexSearchQuery::class)->needsMoreInput('آ', 'first_name'));
+        $this->assertTrue($results->contains($target->id));
+        $this->assertCount(1, $results);
+    }
+
     private function manager(): User
     {
         return User::factory()->create([

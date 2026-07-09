@@ -69,7 +69,7 @@ class PeopleIndexSearchQuery
     {
         return $search !== ''
             && ! ctype_digit($search)
-            && in_array($searchField, ['all', 'full_name', 'first_name', 'last_name'], true)
+            && in_array($searchField, ['all', 'full_name'], true)
             && mb_strlen($search) < 2;
     }
 
