@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Helpers\Morilog\Jalalian;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -40,8 +39,6 @@ class Person extends Model
     ];
 
     use SoftDeletes;
-
-    protected static ?bool $hasNormalizedSearchColumns = null;
 
     protected $fillable = [
         'guardian_id',
@@ -607,10 +604,6 @@ class Person extends Model
 
     private function syncNormalizedSearchFields(): void
     {
-        if (! self::hasNormalizedSearchColumns()) {
-            return;
-        }
-
         $firstName = self::normalizeSearchText($this->first_name);
         $lastName = self::normalizeSearchText($this->last_name);
 
@@ -621,6 +614,6 @@ class Person extends Model
 
     public static function hasNormalizedSearchColumns(): bool
     {
-        return self::$hasNormalizedSearchColumns ??= Schema::hasColumn('people', 'normalized_full_name');
+        return true;
     }
 }

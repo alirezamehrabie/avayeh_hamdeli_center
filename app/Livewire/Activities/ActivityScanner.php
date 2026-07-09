@@ -112,11 +112,9 @@ class ActivityScanner extends Component
         $escapedNormalizedSearch = $this->escapeLike($normalizedSearch);
         $digits = preg_replace('/\D+/', '', $search) ?: '';
         $escapedDigits = $this->escapeLike($digits);
-        $hasNormalizedColumns = Person::hasNormalizedSearchColumns();
-
         return Person::query()
             ->select(['id', 'first_name', 'last_name', 'full_name', 'person_code', 'national_id'])
-            ->where(function ($query) use ($escapedSearch, $escapedNormalizedSearch, $escapedDigits, $hasNormalizedColumns, $normalizedSearch): void {
+            ->where(function ($query) use ($escapedSearch, $escapedNormalizedSearch, $escapedDigits, $normalizedSearch): void {
                 if ($escapedDigits !== '') {
                     $query->where('person_code', 'like', "{$escapedDigits}%")
                         ->orWhere('national_id', 'like', "{$escapedDigits}%");
@@ -125,21 +123,15 @@ class ActivityScanner extends Component
                         ->orWhere('national_id', 'like', "{$escapedSearch}%");
                 }
 
-                if ($hasNormalizedColumns && $escapedNormalizedSearch !== '') {
+                if ($escapedNormalizedSearch !== '') {
                     $query->orWhere('normalized_full_name', 'like', "{$escapedNormalizedSearch}%")
                         ->orWhere('normalized_first_name', 'like', "{$escapedNormalizedSearch}%")
                         ->orWhere('normalized_last_name', 'like', "{$escapedNormalizedSearch}%");
-                } else {
-                    $query->orWhere('full_name', 'like', "{$escapedSearch}%")
-                        ->orWhere('first_name', 'like', "{$escapedSearch}%")
-                        ->orWhere('last_name', 'like', "{$escapedSearch}%");
                 }
 
                 if (mb_strlen($normalizedSearch) >= 3) {
-                    if ($hasNormalizedColumns && $escapedNormalizedSearch !== '') {
+                    if ($escapedNormalizedSearch !== '') {
                         $query->orWhere('normalized_full_name', 'like', "%{$escapedNormalizedSearch}%");
-                    } else {
-                        $query->orWhere('full_name', 'like', "%{$escapedSearch}%");
                     }
                 }
             })

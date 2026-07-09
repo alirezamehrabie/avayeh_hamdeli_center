@@ -11,8 +11,6 @@ class PeopleIndexSearchQuery
 {
     public function paginate(string $search = '', string $searchField = 'all', int $perPage = 20): LengthAwarePaginator|Paginator
     {
-        $hasNormalizedSearchColumns = Person::hasNormalizedSearchColumns();
-
         $query = Person::query()
             ->select([
                 'id',
@@ -28,14 +26,10 @@ class PeopleIndexSearchQuery
                 'updated_by',
                 'created_at',
                 'updated_at',
+                'normalized_first_name',
+                'normalized_last_name',
+                'normalized_full_name',
             ])
-            ->when($hasNormalizedSearchColumns, function (Builder $query) {
-                $query->addSelect([
-                    'normalized_first_name',
-                    'normalized_last_name',
-                    'normalized_full_name',
-                ]);
-            })
             ->with(['creator:id,name', 'updater:id,name'])
             ->orderByDesc('created_at')
             ->orderByDesc('id');
@@ -61,7 +55,7 @@ class PeopleIndexSearchQuery
             return $query->whereRaw('1 = 0');
         }
 
-        $this->applySearch($query, $search, $searchField, Person::hasNormalizedSearchColumns());
+        $this->applySearch($query, $search, $searchField);
 
         return $query;
     }
@@ -79,14 +73,14 @@ class PeopleIndexSearchQuery
             && mb_strlen($search) < 2;
     }
 
-    private function applySearch(Builder $query, string $search, string $searchField, bool $hasNormalizedSearchColumns): void
+    private function applySearch(Builder $query, string $search, string $searchField): void
     {
         $isNumeric = ctype_digit($search);
         $escapedSearch = $this->escapeLike($search);
         $prefixSearch = "{$escapedSearch}%";
-        $fullNameColumn = $hasNormalizedSearchColumns ? 'normalized_full_name' : 'full_name';
-        $firstNameColumn = $hasNormalizedSearchColumns ? 'normalized_first_name' : 'first_name';
-        $lastNameColumn = $hasNormalizedSearchColumns ? 'normalized_last_name' : 'last_name';
+        $fullNameColumn = 'normalized_full_name';
+        $firstNameColumn = 'normalized_first_name';
+        $lastNameColumn = 'normalized_last_name';
 
         match ($searchField) {
             'person_code' => strlen($search) >= 5
