@@ -3,8 +3,9 @@
 namespace App\Livewire\Services;
 
 use App\Exports\ServiceReportExport;
-use App\Helpers\Morilog\Jalalian;
 use App\Helpers\Morilog\CalendarUtils;
+use App\Helpers\Morilog\Jalalian;
+use App\Livewire\Services\Concerns\SummarizesServiceDeliveries;
 use App\Models\Guardian;
 use App\Models\Person;
 use App\Models\Service;
@@ -15,28 +16,48 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
-
 class ServiceReports extends Component
 {
+    use SummarizesServiceDeliveries;
+
     public ?int $selectedServiceId = null;
+
     public string $search = '';
+
     public string $selectedStatus = 'all';
+
     public string $selectedCategory = 'all';
+
     public string $selectedType = 'all';
+
     public string $selectedServiceName = 'all';
+
     public string $displayMode = 'list';
+
     public string $deliverySearch = '';
+
     public string $selectedDeliveryEntryType = 'all';
+
     public ?int $editingDeliveryId = null;
+
     public bool $showEditDeliveryModal = false;
+
     public string $editRecipientName = '';
+
     public string $editNationalId = '';
+
     public string $editMobile = '';
+
     public ?int $editServiceCategoryId = null;
+
     public string $editDeliveredQuantity = '';
+
     public string $editDeliveredAt = '';
+
     public string $editNotes = '';
+
     public string $editConnectMessage = '';
+
     public string $editConnectMessageType = 'info';
 
     public function getFilteredDeliveriesProperty()
@@ -89,14 +110,14 @@ class ServiceReports extends Component
         return $this->filteredDeliveries
             ->groupBy(function ($delivery) {
                 if ($delivery->person_id) {
-                    return 'person-' . $delivery->person_id;
+                    return 'person-'.$delivery->person_id;
                 }
                 if ($delivery->guardian_id) {
-                    return 'guardian-' . $delivery->guardian_id;
+                    return 'guardian-'.$delivery->guardian_id;
                 }
                 $nationalId = trim((string) ($delivery->national_id ?? ''));
 
-                return $nationalId !== '' ? 'manual-' . $nationalId : 'manual-delivery-' . $delivery->id;
+                return $nationalId !== '' ? 'manual-'.$nationalId : 'manual-delivery-'.$delivery->id;
             })
             ->map(function ($deliveries) {
                 $first = $deliveries->first();
@@ -227,7 +248,16 @@ class ServiceReports extends Component
 
         return view('livewire.services.service-reports', [
             'services' => Service::query()
-                ->with(['serviceName', 'categories', 'district', 'socialWorkers', 'creator'])
+                ->with([
+                    'serviceName',
+                    'categories' => fn ($query) => $query->ordered(),
+                    'district',
+                    'socialWorkers',
+                    'creator',
+                    'workerAllocations.socialWorker',
+                    'deliveries.person.guardian',
+                    'deliveries.guardian',
+                ])
                 ->when($status, fn ($q) => $q->where('status', $status))
                 ->when($category, fn ($q) => $q->whereHas('serviceCategory', fn ($q) => $q->where('name', $category)))
                 ->when($type, fn ($q) => $q->where('service_type', $type))
@@ -237,13 +267,13 @@ class ServiceReports extends Component
                         $inner->orWhere('id', (int) $search);
                     }
                     $inner
-                        ->orWhere('code', 'like', '%' . $search . '%')
-                        ->orWhere('description', 'like', '%' . $search . '%')
-                        ->orWhereHas('serviceName', fn ($q) => $q->where('name', 'like', '%' . $search . '%'))
-                        ->orWhereHas('serviceCategory', fn ($q) => $q->where('name', 'like', '%' . $search . '%'))
-                        ->orWhereHas('creator', fn ($q) => $q->where('name', 'like', '%' . $search . '%')
-                            ->orWhere('first_name', 'like', '%' . $search . '%')
-                            ->orWhere('last_name', 'like', '%' . $search . '%'));
+                        ->orWhere('code', 'like', '%'.$search.'%')
+                        ->orWhere('description', 'like', '%'.$search.'%')
+                        ->orWhereHas('serviceName', fn ($q) => $q->where('name', 'like', '%'.$search.'%'))
+                        ->orWhereHas('serviceCategory', fn ($q) => $q->where('name', 'like', '%'.$search.'%'))
+                        ->orWhereHas('creator', fn ($q) => $q->where('name', 'like', '%'.$search.'%')
+                            ->orWhere('first_name', 'like', '%'.$search.'%')
+                            ->orWhere('last_name', 'like', '%'.$search.'%'));
                 }))
                 ->latest()
                 ->get(),

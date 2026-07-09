@@ -3,6 +3,12 @@
         categoriesOpen: false,
         categories: [],
         categoryTitle: '',
+        workersOpen: false,
+        workersSummary: null,
+        openWorkers(payload) {
+            this.workersSummary = payload;
+            this.workersOpen = true;
+        },
     }"
     class="space-y-6"
 >
@@ -123,6 +129,7 @@
                             <th class="px-3 py-3 text-right font-semibold">دسته‌بندی</th>
                             <th class="px-3 py-3 text-right font-semibold">نوع</th>
                             <th class="px-3 py-3 text-right font-semibold">توضیحات</th>
+                            <th class="px-3 py-3 text-center font-semibold">تحویل خدمات</th>
                             <th class="px-3 py-3 text-right font-semibold">اپراتور</th>
                             <th class="px-3 py-3 text-center font-semibold">وضعیت</th>
                             <th class="px-3 py-3 text-right font-semibold">تاریخ</th>
@@ -165,6 +172,15 @@
                             <td class="px-3 py-3 text-center">
                                 <x-description-popover :text="$service->description" />
                             </td>
+                            <td class="px-3 py-3 text-center">
+                                @include('livewire.services.partials.delivery-summary-trigger', [
+                                    'service' => $service,
+                                    'unitOptions' => $unitOptions,
+                                    'label' => 'وضعیت',
+                                    'minimal' => true,
+                                    'compact' => true,
+                                ])
+                            </td>
                             <td class="px-3 py-3 text-right text-slate-600 text-xs">{{ $creatorName }}</td>
                             <td class="px-3 py-3 text-center">
                                 <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold {{ $statusBadgeClasses[$service->status] ?? 'bg-slate-100 text-slate-700' }}">
@@ -187,7 +203,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-4 py-12 text-center text-slate-500">
+                            <td colspan="9" class="px-4 py-12 text-center text-slate-500">
                                 {{ trim($search ?? '') !== '' ? 'موردی برای جستجوی فعلی پیدا نشد.' : 'هنوز خدمتی تعریف نشده است.' }}
                             </td>
                         </tr>
@@ -247,6 +263,16 @@
                             </div>
 
                             <div class="grid gap-2 rounded-xl bg-slate-50 px-3 py-3">
+                                <div class="flex items-center justify-between gap-3">
+                                    <span class="text-[11px] text-slate-500">تحویل خدمات</span>
+                                    @include('livewire.services.partials.delivery-summary-trigger', [
+                                        'service' => $service,
+                                        'unitOptions' => $unitOptions,
+                                        'label' => 'وضعیت',
+                                        'minimal' => true,
+                                        'compact' => true,
+                                    ])
+                                </div>
                                 <div class="flex items-center justify-between gap-3">
                                     <span class="text-[11px] text-slate-500">اپراتور توزیع</span>
                                     <span class="text-xs font-bold text-slate-800 text-left">{{ $creatorName }}</span>
@@ -709,6 +735,8 @@
             </div>
         @endif
     @endif
+
+    @include('livewire.services.partials.delivery-summary-modal')
 
     {{-- Categories Modal --}}
     <div
