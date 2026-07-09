@@ -1,4 +1,11 @@
-<div class="space-y-6">
+<div
+    x-data="{
+        categoriesOpen: false,
+        categories: [],
+        categoryTitle: '',
+    }"
+    class="space-y-6"
+>
     @php
         $statusBadgeClasses = [
             'draft' => 'bg-slate-100 text-slate-700',
@@ -138,7 +145,26 @@
                                 </span>
                             </td>
                             <td class="px-3 py-3 text-right font-semibold text-slate-900">{{ $service->serviceName?->name ?: '-' }}</td>
-                            <td class="px-3 py-3 text-right text-slate-600">{{ $service->serviceCategory?->name ?: 'بدون دسته‌بندی' }}</td>
+                            <td class="px-3 py-3 text-right">
+                                @if($service->categories->count() > 0)
+                                    <button
+                                        type="button"
+                                        @click.stop="categoryTitle = @js($service->serviceName?->name ?: 'خدمت'); categories = @js($service->categories->map(fn ($category) => [
+                                            'name' => $category->name,
+                                            'quantity' => number_format((float) $category->quantity, 2),
+                                            'unit' => $unitOptions[$category->unit] ?? ($category->unit ?? '-'),
+                                        ])->values()); categoriesOpen = true"
+                                        class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+                                    >
+                                        <svg class="h-3 w-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h10M4 17h7"/>
+                                        </svg>
+                                        <span>{{ $service->categories->count() }} مورد</span>
+                                    </button>
+                                @else
+                                    <span class="text-slate-400 text-xs">بدون دسته‌بندی</span>
+                                @endif
+                            </td>
                             <td class="px-3 py-3 text-right text-slate-600">{{ $typeOptions[$service->service_type] ?? $service->service_type }}</td>
                             <td class="px-3 py-3 text-right text-slate-600 max-w-[200px] truncate">{{ $service->description ?: 'بدون توضیحات' }}</td>
                             <td class="px-3 py-3 text-right text-slate-600 text-xs">{{ $creatorName }}</td>
@@ -192,10 +218,25 @@
                         <div class="mt-3 min-h-[54px] rounded-xl bg-slate-50 px-3 py-3">
                             <p class="text-sm font-black text-slate-900 leading-5">
                                 {{ $service->serviceName?->name ?: '-' }}
-                                <span class="text-xs font-medium text-slate-500">
-                                    / {{ $service->serviceCategory?->name ?: 'بدون دسته‌بندی' }}
-                                </span>
                             </p>
+                            @if($service->categories->count() > 0)
+                                <button
+                                    type="button"
+                                    @click.stop="categoryTitle = @js($service->serviceName?->name ?: 'خدمت'); categories = @js($service->categories->map(fn ($category) => [
+                                        'name' => $category->name,
+                                        'quantity' => number_format((float) $category->quantity, 2),
+                                        'unit' => $unitOptions[$category->unit] ?? ($category->unit ?? '-'),
+                                    ])->values()); categoriesOpen = true"
+                                    class="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+                                >
+                                    <svg class="h-3 w-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h10M4 17h7"/>
+                                    </svg>
+                                    <span>{{ $service->categories->count() }} دسته‌بندی</span>
+                                </button>
+                            @else
+                                <p class="mt-1 text-xs text-slate-400">بدون دسته‌بندی</p>
+                            @endif
                         </div>
 
                         <div class="mt-3 flex-1 space-y-3">
@@ -255,7 +296,26 @@
                             </button>
                             <h1 class="mt-3 text-2xl font-extrabold">{{ $selectedService->serviceName?->name ?: 'خدمت بدون نام' }}</h1>
                             <p class="mt-2 text-sm text-slate-200">
-                                {{ $selectedService->code }} · {{ $selectedService->serviceCategory?->name ?: 'بدون دسته‌بندی' }}
+                                {{ $selectedService->code }}
+                                @if($selectedService->categories->count() > 0)
+                                    ·
+                                    <button
+                                        type="button"
+                                        @click.stop="categoryTitle = @js($selectedService->serviceName?->name ?: 'خدمت'); categories = @js($selectedService->categories->map(fn ($category) => [
+                                            'name' => $category->name,
+                                            'quantity' => number_format((float) $category->quantity, 2),
+                                            'unit' => $unitOptions[$category->unit] ?? ($category->unit ?? '-'),
+                                        ])->values()); categoriesOpen = true"
+                                        class="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-xs font-semibold text-white transition hover:bg-white/20"
+                                    >
+                                        <svg class="h-3 w-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h10M4 17h7"/>
+                                        </svg>
+                                        {{ $selectedService->categories->count() }} دسته‌بندی
+                                    </button>
+                                @else
+                                    · بدون دسته‌بندی
+                                @endif
                             </p>
                         </div>
 
@@ -644,4 +704,53 @@
             </div>
         @endif
     @endif
+
+    {{-- Categories Modal --}}
+    <div
+        x-show="categoriesOpen"
+        x-cloak
+        x-transition.opacity
+        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 px-4"
+        style="display: none;"
+    >
+        <div @click.outside="categoriesOpen = false" class="w-full max-w-xl rounded-[28px] border border-slate-200 bg-white shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+                <div class="min-w-0">
+                    <h3 class="text-lg font-black text-slate-800">دسته‌بندی‌های خدمت</h3>
+                    <p class="mt-1 truncate text-sm text-slate-500" x-text="categoryTitle"></p>
+                </div>
+                <button type="button" @click="categoriesOpen = false" class="rounded-full border border-slate-200 p-2 text-slate-400 transition hover:text-slate-700" aria-label="بستن">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 6l12 12M18 6L6 18"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="max-h-[70vh] overflow-y-auto px-5 py-5">
+                <template x-if="categories.length">
+                    <div class="space-y-3">
+                        <template x-for="(category, index) in categories" :key="`${category.name}-${index}`">
+                            <div class="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div class="min-w-0">
+                                    <p class="text-xs text-slate-400">نام دسته</p>
+                                    <p class="mt-1 truncate text-sm font-bold text-slate-800" x-text="category.name"></p>
+                                </div>
+                                <div class="flex items-center gap-2 self-start rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 sm:self-center">
+                                    <span x-text="category.quantity"></span>
+                                    <span class="text-slate-300">|</span>
+                                    <span x-text="category.unit"></span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <template x-if="!categories.length">
+                    <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
+                        دسته‌بندی‌ای برای این خدمت ثبت نشده است.
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
 </div>
