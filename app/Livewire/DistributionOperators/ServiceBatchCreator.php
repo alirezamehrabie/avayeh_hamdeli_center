@@ -20,6 +20,10 @@ use Livewire\Component;
 
 class ServiceBatchCreator extends Component
 {
+    protected const MISC_CATEGORY_INDEX_PENDING_CLASS = 'bg-amber-100 text-amber-700';
+
+    protected const MISC_CATEGORY_INDEX_COMPLETE_CLASS = 'bg-emerald-100 text-emerald-700';
+
     public const MODE_PREDEFINED = 'predefined';
 
     public const MODE_MISC = 'misc';
@@ -2037,6 +2041,15 @@ class ServiceBatchCreator extends Component
             ->contains(fn ($quantity): bool => (float) $quantity > 0);
     }
 
+    public function getMiscCategoryIndexBadgeClassesProperty(): array
+    {
+        return collect($this->miscCategories)
+            ->mapWithKeys(fn (mixed $category, int|string $index): array => [
+                (int) $index => $this->miscCategoryIndexBadgeClass($category),
+            ])
+            ->all();
+    }
+
     protected function hasValidMiscCategoryRows(): bool
     {
         return collect($this->miscCategories)
@@ -2065,6 +2078,18 @@ class ServiceBatchCreator extends Component
             && trim((string) ($category['name'] ?? '')) !== ''
             && (float) ($category['quantity'] ?? 0) > 0
             && in_array((string) ($category['unit'] ?? ''), Service::unitKeys(), true);
+    }
+
+    protected function isMiscCategoryComplete(mixed $category): bool
+    {
+        return $this->isValidMiscCategoryRow($category);
+    }
+
+    protected function miscCategoryIndexBadgeClass(mixed $category): string
+    {
+        return $this->isMiscCategoryComplete($category)
+            ? self::MISC_CATEGORY_INDEX_COMPLETE_CLASS
+            : self::MISC_CATEGORY_INDEX_PENDING_CLASS;
     }
 
     protected function hasValidWorkerGroups(): bool

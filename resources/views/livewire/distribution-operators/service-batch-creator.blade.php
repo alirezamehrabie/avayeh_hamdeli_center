@@ -855,15 +855,18 @@
 
                         <div class="divide-y divide-slate-100">
                             @foreach($miscCategories as $index => $category)
+                                @php
+                                    $categoryIndexBadgeClass = (string) ($miscCategoryIndexBadgeClasses[$index] ?? 'bg-amber-100 text-amber-700');
+                                @endphp
                                 <div data-service-category-index="{{ $index }}"
                                      x-data="{
                                          open: {{ $index === count($miscCategories) - 1 ? 'true' : 'false' }},
                                          isNewCategory: {{ $index === count($miscCategories) - 1 ? 'true' : 'false' }},
                                          nameHasValue: @js(trim((string) ($category['name'] ?? '')) !== ''),
-                                     }"
-                                     class="p-3 sm:p-3.5">
+                                    }"
+                                    class="p-3 sm:p-3.5">
                                     <div class="flex items-center gap-2.5">
-                                        <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-black text-emerald-700">
+                                        <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-black {{ $categoryIndexBadgeClass }}">
                                             {{ $index + 1 }}
                                         </span>
                                         <span class="min-w-0 flex-1 truncate text-sm font-bold text-slate-800">
@@ -917,7 +920,7 @@
                                     <div x-show="open" x-collapse class="mt-3 space-y-2.5">
                                         <input
                                             type="text"
-                                            wire:model.blur="miscCategories.{{ $index }}.name"
+                                            wire:model.live="miscCategories.{{ $index }}.name"
                                             data-category-name-input
                                             @input="nameHasValue = $el.value.trim().length > 0"
                                             x-bind:class="isNewCategory && ! nameHasValue
@@ -933,11 +936,11 @@
                                                 type="number"
                                                 min="0.01"
                                                 step="0.01"
-                                                wire:model.blur="miscCategories.{{ $index }}.quantity"
+                                                wire:model.live="miscCategories.{{ $index }}.quantity"
                                                 class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100"
                                                 placeholder="مقدار"
                                             >
-                                            <select wire:model="miscCategories.{{ $index }}.unit" class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100">
+                                            <select wire:model.live="miscCategories.{{ $index }}.unit" class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100">
                                                 @foreach($unitOptions as $value => $label)
                                                     <option value="{{ $value }}">{{ $label }}</option>
                                                 @endforeach
