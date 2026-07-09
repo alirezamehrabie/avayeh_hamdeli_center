@@ -82,7 +82,8 @@ class PeopleIndexSearchQuery
     private function applySearch(Builder $query, string $search, string $searchField, bool $hasNormalizedSearchColumns): void
     {
         $isNumeric = ctype_digit($search);
-        $prefixSearch = "{$search}%";
+        $escapedSearch = $this->escapeLike($search);
+        $prefixSearch = "{$escapedSearch}%";
         $fullNameColumn = $hasNormalizedSearchColumns ? 'normalized_full_name' : 'full_name';
         $firstNameColumn = $hasNormalizedSearchColumns ? 'normalized_first_name' : 'first_name';
         $lastNameColumn = $hasNormalizedSearchColumns ? 'normalized_last_name' : 'last_name';
@@ -91,13 +92,13 @@ class PeopleIndexSearchQuery
             'person_code' => strlen($search) >= 5
                 ? $query->where('person_code', $search)
                 : $query->where('person_code', 'LIKE', $prefixSearch),
-            'full_name' => $query->where($fullNameColumn, 'LIKE', $prefixSearch),
+            'full_name' => $this->applyFullNameSearch($query, $fullNameColumn, $prefixSearch, $escapedSearch),
             'first_name' => $query->where($firstNameColumn, 'LIKE', $prefixSearch),
             'last_name' => $query->where($lastNameColumn, 'LIKE', $prefixSearch),
             'national_id' => $this->applyIdentifierSearch($query, 'national_id', $search, $prefixSearch),
             'mother_national_id' => $this->applyIdentifierSearch($query, 'mother_national_id', $search, $prefixSearch),
             'father_national_id' => $this->applyIdentifierSearch($query, 'father_national_id', $search, $prefixSearch),
-            default => $query->where(function (Builder $q) use ($search, $prefixSearch, $isNumeric, $fullNameColumn, $firstNameColumn, $lastNameColumn) {
+            default => $query->where(function (Builder $q) use ($search, $escapedSearch, $prefixSearch, $isNumeric, $fullNameColumn, $firstNameColumn, $lastNameColumn) {
                 if ($isNumeric) {
                     $q->where('person_code', 'LIKE', $prefixSearch)
                         ->orWhere('national_id', strlen($search) === 10 ? '=' : 'LIKE', strlen($search) === 10 ? $search : $prefixSearch)
@@ -110,6 +111,10 @@ class PeopleIndexSearchQuery
                 $q->where($fullNameColumn, 'LIKE', $prefixSearch)
                     ->orWhere($firstNameColumn, 'LIKE', $prefixSearch)
                     ->orWhere($lastNameColumn, 'LIKE', $prefixSearch);
+
+                if (mb_strlen($search) >= 3) {
+                    $q->orWhere($fullNameColumn, 'LIKE', "%{$escapedSearch}%");
+                }
             }),
         };
     }
@@ -119,5 +124,21 @@ class PeopleIndexSearchQuery
         strlen($search) === 10
             ? $query->where($column, $search)
             : $query->where($column, 'LIKE', $prefixSearch);
+    }
+
+    private function applyFullNameSearch(Builder $query, string $fullNameColumn, string $prefixSearch, string $escapedSearch): void
+    {
+        $query->where(function (Builder $q) use ($fullNameColumn, $prefixSearch, $escapedSearch): void {
+            $q->where($fullNameColumn, 'LIKE', $prefixSearch);
+
+            if (mb_strlen($escapedSearch) >= 3) {
+                $q->orWhere($fullNameColumn, 'LIKE', "%{$escapedSearch}%");
+            }
+        });
+    }
+
+    private function escapeLike(string $value): string
+    {
+        return addcslashes($value, '\\%_');
     }
 }

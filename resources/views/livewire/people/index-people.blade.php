@@ -70,7 +70,7 @@
                         <input
                             id="beneficiary-search"
                             type="text"
-                            wire:model.live.debounce.600ms="search"
+                            wire:model.live.debounce.800ms="search"
                             class="w-full rounded-xl border bg-white py-2.5 pr-9 pl-4 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:outline-none focus:ring-4 sm:rounded-2xl sm:py-3"
                             style="border-color: #f5d0e1;"
                             placeholder="نام، کد ملی یا کد مددجو..."
@@ -81,7 +81,7 @@
                         <span class="shrink-0 text-[11px] font-bold text-slate-500">در</span>
                         <select
                             id="beneficiary-search-field"
-                            wire:model.live="searchField"
+                            wire:model.change="searchField"
                             class="min-w-0 flex-1 bg-transparent text-xs font-bold text-slate-700 focus:outline-none"
                             aria-label="معیار جستجو"
                         >
@@ -98,7 +98,7 @@
 
                     <div class="hidden md:grid md:grid-cols-[minmax(180px,240px)_1fr] md:gap-3">
                         <select
-                            wire:model.live="searchField"
+                            wire:model.change="searchField"
                             class="w-full rounded-2xl border bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition focus:outline-none focus:ring-4"
                             style="border-color: #f5d0e1;"
                             aria-label="معیار جستجو"

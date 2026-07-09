@@ -6,6 +6,7 @@ use App\Livewire\People\IndexPeople;
 use App\Models\Person;
 use App\Models\User;
 use App\Queries\People\DeletingPersonDetailsQuery;
+use App\Queries\People\PeopleIndexSearchQuery;
 use App\Queries\People\SelectedPersonDetailsQuery;
 use App\Queries\People\TrackingPersonDetailsQuery;
 use App\Services\People\SoftDeletePerson;
@@ -142,6 +143,43 @@ class IndexPeopleTest extends TestCase
             'No longer eligible',
             Person::withTrashed()->findOrFail($person->id)->deletion_reason
         );
+    }
+
+    public function test_full_name_search_matches_second_name_token_for_longer_terms(): void
+    {
+        $target = $this->person('P810007', '8100010007', [
+            'first_name' => 'علی',
+            'last_name' => 'رضایی',
+        ]);
+        $this->person('P810008', '8100010008', [
+            'first_name' => 'رضا',
+            'last_name' => 'کاظمی',
+        ]);
+
+        $results = app(PeopleIndexSearchQuery::class)
+            ->applyTo(Person::query(), 'رضایی', 'full_name')
+            ->pluck('id');
+
+        $this->assertTrue($results->contains($target->id));
+        $this->assertCount(1, $results);
+    }
+
+    public function test_all_search_matches_longer_name_fragment_inside_full_name(): void
+    {
+        $target = $this->person('P810009', '8100010009', [
+            'first_name' => 'محمدحسین',
+            'last_name' => 'احمدی',
+        ]);
+        $this->person('P810010', '8100010010', [
+            'first_name' => 'محمد',
+            'last_name' => 'حسینی',
+        ]);
+
+        $results = app(PeopleIndexSearchQuery::class)
+            ->applyTo(Person::query(), 'حسین', 'all')
+            ->pluck('id');
+
+        $this->assertTrue($results->contains($target->id));
     }
 
     private function manager(): User
