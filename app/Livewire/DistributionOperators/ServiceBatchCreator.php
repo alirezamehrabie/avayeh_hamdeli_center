@@ -76,6 +76,8 @@ class ServiceBatchCreator extends Component
 
     public string $miscServiceName = '';
 
+    public string $miscServiceNameSnapshot = '';
+
     public string $date = '';
 
     public string $editingServiceName = '';
@@ -186,6 +188,7 @@ class ServiceBatchCreator extends Component
         }
 
         $this->miscServiceName = trim($this->miscServiceName);
+        $this->miscServiceNameSnapshot = $this->miscServiceName;
         $this->resetValidation('miscServiceName');
         $this->confirmingBatchSave = false;
         $this->confirmingMiscServiceName = true;
@@ -193,6 +196,7 @@ class ServiceBatchCreator extends Component
 
     public function cancelMiscServiceName(): void
     {
+        $this->miscServiceName = trim($this->miscServiceNameSnapshot);
         $this->confirmingMiscServiceName = false;
 
         if (trim($this->miscServiceName) === '' && $this->mode === self::MODE_MISC) {
@@ -207,6 +211,7 @@ class ServiceBatchCreator extends Component
         $validated = $this->validate($this->miscServiceNameRules(), [], $this->validationAttributes());
 
         $this->miscServiceName = trim($validated['miscServiceName']);
+        $this->miscServiceNameSnapshot = $this->miscServiceName;
         $this->mode = self::MODE_MISC;
         $this->confirmingMiscServiceName = false;
         $this->confirmingBatchSave = false;

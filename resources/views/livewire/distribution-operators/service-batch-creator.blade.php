@@ -247,6 +247,9 @@
     @endif
 
     @if($confirmingMiscServiceName)
+        @php
+            $isEditingMiscServiceName = $mode === 'misc' && trim($miscServiceNameSnapshot ?? $miscServiceName) !== '';
+        @endphp
         <div
             x-data="{
                 viewportHeight: window.innerHeight,
@@ -335,7 +338,7 @@
             <div class="relative flex h-full items-end justify-center px-0 pt-2 sm:items-center sm:px-4 sm:py-6">
                 <form
                     wire:submit.prevent="confirmMiscServiceName"
-                    x-on:submit="queueMiscServiceTypeScroll()"
+                    x-on:submit="@if(! $isEditingMiscServiceName) queueMiscServiceTypeScroll() @endif"
                     class="relative flex max-h-full w-full flex-col overflow-hidden rounded-t-3xl border border-slate-200 bg-white text-right shadow-[0_-18px_45px_rgba(15,23,42,0.22)] sm:max-w-md sm:rounded-[28px] sm:shadow-2xl"
                     x-bind:style="'padding-bottom:calc(env(safe-area-inset-bottom) + 0.75rem);'"
                     @click.stop
@@ -356,9 +359,15 @@
 
                     <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 pt-4 sm:px-6 sm:pb-6 sm:pt-2">
                         <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                            <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                            </svg>
+                            @if($isEditingMiscServiceName)
+                                <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M4 20h4l10.5-10.5a2.12 2.12 0 1 0-3-3L5.5 17v3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            @else
+                                <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                </svg>
+                            @endif
                         </div>
 
                         <div class="mt-4 text-center">
@@ -594,6 +603,7 @@
                         $miscHeaderTitle = $miscHeaderTitle !== '' ? $miscHeaderTitle : 'تعریف خدمت جدید';
                     @endphp
                     <div
+                        wire:key="misc-service-header-{{ $isEditing ? 'edit-'.$editingServiceId : md5(trim($miscServiceName)) }}"
                         class="flex items-center justify-between gap-3"
                         x-data="{
                             fullTitle: @js($miscHeaderTitle),
@@ -641,10 +651,23 @@
                                     </svg>
                                 @endif
                             </span>
-                            <div class="min-w-0">
+                            <div class="min-w-0 flex items-center gap-1.5">
                                 <h2 class="truncate text-sm font-bold text-emerald-950" :title="fullTitle" aria-label="{{ $miscHeaderTitle }}" data-service-header-title="{{ $miscHeaderTitle }}">
                                     <span x-text="shownTitle"></span><span x-show="cursorVisible" class="inline-block h-4 w-0.5 translate-y-0.5 rounded-full bg-emerald-500 align-middle" x-transition.opacity></span>
                                 </h2>
+                                @if(! $isEditing && trim($miscServiceName) !== '')
+                                    <button
+                                        type="button"
+                                        wire:click="requestMiscServiceName"
+                                        class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-emerald-700/70 transition hover:bg-white/80 hover:text-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                                        aria-label="ویرایش نام خدمت"
+                                        title="ویرایش نام خدمت"
+                                    >
+                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                            <path d="M4 20h4l10.5-10.5a2.12 2.12 0 1 0-3-3L5.5 17v3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                    </button>
+                                @endif
                             </div>
                         </div>
                         @if($isEditing)
