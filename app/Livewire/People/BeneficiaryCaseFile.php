@@ -2,6 +2,7 @@
 
 namespace App\Livewire\People;
 
+use App\Helpers\Morilog\CalendarUtils;
 use App\Exports\BeneficiaryCaseFileExport;
 use App\Helpers\Morilog\Jalalian;
 use App\Models\ActivityAttendance;
@@ -14,7 +15,6 @@ use App\Queries\People\PeopleIndexSearchQuery;
 use App\Services\People\BeneficiaryCaseFileTimeline;
 use App\Services\QrIdentityService;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -70,7 +70,7 @@ class BeneficiaryCaseFile extends Component
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
 
         $this->selectedPersonId = $personId;
-        $this->recordedAt = now()->toDateString();
+        $this->recordedAt = Jalalian::now()->format('Y/m/d');
     }
 
     public function updatedSearch(): void
@@ -168,7 +168,19 @@ class BeneficiaryCaseFile extends Component
             'recordType' => ['required', Rule::in(array_keys(BeneficiaryCaseRecord::TYPE_OPTIONS))],
             'recordTitle' => ['required', 'string', 'max:255'],
             'recordDescription' => ['nullable', 'string', 'max:5000'],
-            'recordedAt' => ['nullable', 'date'],
+            'recordedAt' => [
+                'nullable',
+                'string',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (blank($value)) {
+                        return;
+                    }
+
+                    if (! $this->isValidJalaliDate((string) $value)) {
+                        $fail('تاریخ شمسی معتبر نیست.');
+                    }
+                },
+            ],
             'recordAmount' => ['nullable', 'integer', 'min:0', 'max:999999999999'],
             'recordReferenceNumber' => ['nullable', 'string', 'max:255'],
             'recordAttachments' => ['array', 'max:5'],
@@ -194,7 +206,7 @@ class BeneficiaryCaseFile extends Component
                     'record_type' => $validated['recordType'],
                     'title' => trim($validated['recordTitle']),
                     'description' => filled($validated['recordDescription']) ? trim($validated['recordDescription']) : null,
-                    'recorded_at' => filled($validated['recordedAt']) ? Carbon::parse($validated['recordedAt'])->toDateString() : null,
+                    'recorded_at' => filled($validated['recordedAt']) ? $this->jalaliToGregorian($validated['recordedAt']) : null,
                     'amount' => filled($validated['recordAmount']) ? (int) $validated['recordAmount'] : null,
                     'reference_number' => filled($validated['recordReferenceNumber']) ? trim($validated['recordReferenceNumber']) : null,
                 ]);
@@ -490,7 +502,7 @@ class BeneficiaryCaseFile extends Component
         $this->recordType = BeneficiaryCaseRecord::TYPE_NOTE;
         $this->recordTitle = '';
         $this->recordDescription = '';
-        $this->recordedAt = now()->toDateString();
+        $this->recordedAt = Jalalian::now()->format('Y/m/d');
         $this->recordAmount = null;
         $this->recordReferenceNumber = '';
         $this->recordAttachments = [];
@@ -503,6 +515,56 @@ class BeneficiaryCaseFile extends Component
             'recordReferenceNumber',
             'recordAttachments',
             'recordAttachments.*',
+        ]);
+    }
+
+    protected function isValidJalaliDate(string $date): bool
+    {
+        $parts = explode('/', $this->normalizeJalaliDate($date));
+
+        if (count($parts) !== 3) {
+            return false;
+        }
+
+        [$year, $month, $day] = array_map('intval', $parts);
+
+        return CalendarUtils::isValidateJalaliDate($year, $month, $day);
+    }
+
+    protected function jalaliToGregorian(string $date): string
+    {
+        return Jalalian::fromFormat('Y/m/d', $this->normalizeJalaliDate($date))->toCarbon()->toDateString();
+    }
+
+    protected function normalizeJalaliDate(?string $value): string
+    {
+        $normalized = trim((string) $value);
+
+        if ($normalized === '') {
+            return '';
+        }
+
+        return strtr((string) str($normalized)->before(' ')->trim(), [
+            '۰' => '0',
+            '۱' => '1',
+            '۲' => '2',
+            '۳' => '3',
+            '۴' => '4',
+            '۵' => '5',
+            '۶' => '6',
+            '۷' => '7',
+            '۸' => '8',
+            '۹' => '9',
+            '٠' => '0',
+            '١' => '1',
+            '٢' => '2',
+            '٣' => '3',
+            '٤' => '4',
+            '٥' => '5',
+            '٦' => '6',
+            '٧' => '7',
+            '٨' => '8',
+            '٩' => '9',
         ]);
     }
 

@@ -37,7 +37,7 @@ class BeneficiaryCaseFileTest extends TestCase
             ->set('recordType', BeneficiaryCaseRecord::TYPE_INVOICE)
             ->set('recordTitle', 'فاکتور دارو')
             ->set('recordDescription', 'پرداخت کمک‌هزینه دارو')
-            ->set('recordedAt', '2026-07-03')
+            ->set('recordedAt', '1405/04/12')
             ->set('recordAmount', '2500000')
             ->set('recordReferenceNumber', 'INV-100')
             ->call('saveCaseRecord')
@@ -54,6 +54,29 @@ class BeneficiaryCaseFileTest extends TestCase
         $this->assertSame('2026-07-03', $record->recorded_at?->toDateString());
         $this->assertSame(2500000, $record->amount);
         $this->assertSame('INV-100', $record->reference_number);
+    }
+
+    public function test_case_record_form_defaults_to_today_in_jalali(): void
+    {
+        $this->actingAs($this->admin());
+
+        Livewire::test(BeneficiaryCaseFile::class)
+            ->assertSet('recordedAt', Jalalian::now()->format('Y/m/d'));
+    }
+
+    public function test_manual_case_record_rejects_invalid_jalali_date(): void
+    {
+        $admin = $this->admin();
+        $person = $this->person();
+
+        $this->actingAs($admin);
+
+        Livewire::test(BeneficiaryCaseFile::class, ['personId' => $person->id])
+            ->set('recordType', BeneficiaryCaseRecord::TYPE_INVOICE)
+            ->set('recordTitle', 'ÙØ§Ú©ØªÙˆØ± Ø¯Ø§Ø±Ùˆ')
+            ->set('recordedAt', '1405/13/40')
+            ->call('saveCaseRecord')
+            ->assertHasErrors(['recordedAt']);
     }
 
     public function test_manual_case_record_is_rendered_in_case_file_timeline(): void
@@ -325,7 +348,7 @@ class BeneficiaryCaseFileTest extends TestCase
             Livewire::test(BeneficiaryCaseFile::class, ['personId' => $person->id])
                 ->set('recordType', BeneficiaryCaseRecord::TYPE_INVOICE)
                 ->set('recordTitle', 'فاکتور دارای خطا')
-                ->set('recordedAt', '2026-07-03')
+                ->set('recordedAt', '1405/04/12')
                 ->set('recordAttachments', [
                     UploadedFile::fake()->create('invoice.pdf', 10, 'application/pdf'),
                 ])

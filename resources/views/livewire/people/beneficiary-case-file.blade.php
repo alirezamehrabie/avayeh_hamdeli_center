@@ -530,12 +530,27 @@
                         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
                             <div>
                                 <label for="case-record-date" class="mb-1 block text-xs font-bold text-slate-600">تاریخ</label>
-                                <input
-                                    id="case-record-date"
-                                    type="date"
-                                    wire:model.defer="recordedAt"
-                                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100"
-                                >
+                                <div x-data="jalaliDateTimeField($wire.entangle('recordedAt').live)">
+                                    <input
+                                        id="case-record-date"
+                                        type="text"
+                                        x-ref="input"
+                                        x-model="draft"
+                                        x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                        x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                        x-on:jalali-picker-open="handlePickerOpen()"
+                                        x-on:jalali-picker-close="handlePickerClose()"
+                                        x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                        readonly
+                                        inputmode="none"
+                                        autocomplete="off"
+                                        data-jdp-readonly
+                                        data-jdp
+                                        data-jdp-only-date
+                                        placeholder="انتخاب تاریخ شمسی"
+                                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                                    >
+                                </div>
                                 @error('recordedAt') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
                             </div>
 
