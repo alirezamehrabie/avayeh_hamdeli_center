@@ -182,6 +182,31 @@ class IndexPeopleTest extends TestCase
         $this->assertTrue($results->contains($target->id));
     }
 
+    public function test_people_index_paginator_limits_appended_attributes_to_birth_date(): void
+    {
+        $this->person('P810011', '8100010011', [
+            'birth_year' => 1390,
+            'birth_month' => 7,
+            'birth_day' => 15,
+        ]);
+
+        $person = app(PeopleIndexSearchQuery::class)
+            ->paginate()
+            ->items()[0];
+
+        $attributes = $person->toArray();
+
+        $this->assertArrayHasKey('birth_date', $attributes);
+        $this->assertArrayNotHasKey('birth_month_name', $attributes);
+        $this->assertArrayNotHasKey('age', $attributes);
+        $this->assertArrayNotHasKey('exact_age', $attributes);
+        $this->assertArrayNotHasKey('formatted_birth_date', $attributes);
+        $this->assertArrayNotHasKey('days_until_birthday', $attributes);
+        $this->assertArrayNotHasKey('is_birthday_today', $attributes);
+        $this->assertArrayNotHasKey('gender_label', $attributes);
+        $this->assertArrayNotHasKey('sadaat_status_label', $attributes);
+    }
+
     private function manager(): User
     {
         return User::factory()->create([

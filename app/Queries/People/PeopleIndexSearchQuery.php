@@ -41,12 +41,12 @@ class PeopleIndexSearchQuery
             ->orderByDesc('id');
 
         if ($this->normalizeSearchTerm($search) === '') {
-            return $query->paginate($perPage);
+            return $this->prepareIndexPaginator($query->paginate($perPage));
         }
 
         $this->applyTo($query, $search, $searchField);
 
-        return $query->simplePaginate($perPage);
+        return $this->prepareIndexPaginator($query->simplePaginate($perPage));
     }
 
     public function applyTo(Builder $query, string $search = '', string $searchField = 'all'): Builder
@@ -140,5 +140,14 @@ class PeopleIndexSearchQuery
     private function escapeLike(string $value): string
     {
         return addcslashes($value, '\\%_');
+    }
+
+    private function prepareIndexPaginator(LengthAwarePaginator|Paginator $paginator): LengthAwarePaginator|Paginator
+    {
+        return $paginator->through(function (Person $person): Person {
+            $person->setAppends(['birth_date']);
+
+            return $person;
+        });
     }
 }
