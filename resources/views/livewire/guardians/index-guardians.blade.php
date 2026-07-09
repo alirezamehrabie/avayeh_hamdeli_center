@@ -25,51 +25,51 @@
 
     <div class="container mx-auto p-0">
         <div
-            class="rounded-2xl border border-amber-100 bg-gradient-to-br from-white via-amber-50/30 to-white p-5 shadow-sm">
-            <div class="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            class="rounded-2xl border border-amber-100 bg-gradient-to-br from-white via-amber-50/30 to-white p-4 shadow-sm sm:p-4">
+            <div class="mb-3 flex flex-col gap-2.5 sm:mb-5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                 <div>
-                    <h1 class="text-2xl font-bold text-slate-800">لیست سرپرستان</h1>
-                    <p class="mt-1 text-sm text-slate-500">مشاهده سرپرستان و مددجویان تحت نظارت هر سرپرست</p>
+                    <h1 class="text-lg font-bold text-slate-800 sm:text-2xl">لیست سرپرستان</h1>
+                    <p class="mt-0.5 hidden text-sm text-slate-500 sm:block">مشاهده سرپرستان و مددجویان تحت نظارت هر سرپرست</p>
                 </div>
 
-                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-stretch gap-2 sm:flex sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                     <!-- Stat Card -->
-                    <div class="rounded-2xl border border-emerald-100 bg-white/90 px-5 py-3 shadow-sm ring-1 ring-emerald-50 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
-                        <p class="text-xs font-semibold text-slate-500">تعداد سرپرستان</p>
-                        <div class="mt-1 flex items-center justify-center gap-3" dir="ltr">
-                            <span class="relative flex h-3 w-3" aria-label="به‌روزرسانی زنده">
+                    <div class="rounded-xl border border-emerald-100 bg-white/90 px-3 py-2 shadow-sm ring-1 ring-emerald-50 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md sm:rounded-2xl sm:px-5 sm:py-3">
+                        <p class="truncate text-[10px] font-semibold text-slate-500 sm:text-xs">تعداد سرپرستان</p>
+                        <div class="mt-0.5 flex items-center justify-center gap-2 sm:mt-1 sm:gap-3" dir="ltr">
+                            <span class="relative hidden h-3 w-3 sm:flex" aria-label="به‌روزرسانی زنده">
                                 <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60"></span>
                                 <span class="relative inline-flex h-3 w-3 animate-pulse rounded-full bg-emerald-500 shadow-sm shadow-emerald-300"></span>
                             </span>
-                            <span class="text-xl font-extrabold tracking-tight text-emerald-600 iranyekan-bold">
+                            <span class="text-lg font-extrabold tracking-tight text-emerald-600 iranyekan-bold sm:text-xl">
                                 {{ number_format($totalGuardians) }}
                             </span>
                         </div>
                     </div>
 
-                    <div class="rounded-2xl border border-cyan-100 bg-white/90 px-5 py-3 shadow-sm ring-1 ring-cyan-50 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
-                        <p class="text-xs font-semibold text-slate-500 mb-1">کل اعضای مرکز</p>
-                        <div class="mt-1 flex items-center justify-center gap-3" dir="ltr">
-                            <span class="relative flex h-3 w-3" aria-label="جمع اعضای مرکز">
+                    <div class="rounded-xl border border-cyan-100 bg-white/90 px-3 py-2 shadow-sm ring-1 ring-cyan-50 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md sm:rounded-2xl sm:px-5 sm:py-3">
+                        <p class="truncate text-[10px] font-semibold text-slate-500 sm:text-xs">کل اعضای مرکز</p>
+                        <div class="mt-0.5 flex items-center justify-center gap-2 sm:mt-1 sm:gap-3" dir="ltr">
+                            <span class="relative hidden h-3 w-3 sm:flex" aria-label="جمع اعضای مرکز">
                                 <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-60"></span>
                                 <span class="relative inline-flex h-3 w-3 animate-pulse rounded-full bg-cyan-500 shadow-sm shadow-cyan-300"></span>
                             </span>
-                            <span class="text-xl font-extrabold tracking-tight text-cyan-600 iranyekan-bold">
+                            <span class="text-lg font-extrabold tracking-tight text-cyan-600 iranyekan-bold sm:text-xl">
                                 {{ number_format($totalCenterMembers) }}
                             </span>
                         </div>
                     </div>
 
                     <!-- Actions -->
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1.5 sm:gap-2">
                         <!-- Details Button -->
                         <button
                             type="button"
                             wire:click="showHouseholdSizeDetails"
                             title="مشاهده جزئیات"
-                            class="group inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-violet-100 bg-white text-violet-600 shadow-sm transition-all duration-200 hover:border-violet-300 hover:bg-violet-50 hover:shadow-md"
+                            class="group inline-flex h-9 w-9 items-center justify-center rounded-xl border border-violet-100 bg-white text-violet-600 shadow-sm transition-all duration-200 hover:border-violet-300 hover:bg-violet-50 hover:shadow-md sm:h-11 sm:w-11 sm:rounded-2xl"
                         >
-                            <svg class="h-5 w-5 stroke-[1.8]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="h-4 w-4 stroke-[1.8] sm:h-5 sm:w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z"/>
                             </svg>
                         </button>
@@ -79,9 +79,9 @@
                             type="button"
                             wire:click="refreshStats"
                             title="بروزرسانی داده‌ها"
-                            class="group inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-100 bg-white text-sky-600 shadow-sm transition-all duration-200 hover:border-sky-300 hover:bg-sky-50 hover:shadow-md"
+                            class="group inline-flex h-9 w-9 items-center justify-center rounded-xl border border-sky-100 bg-white text-sky-600 shadow-sm transition-all duration-200 hover:border-sky-300 hover:bg-sky-50 hover:shadow-md sm:h-11 sm:w-11 sm:rounded-2xl"
                         >
-                            <svg class="h-5 w-5 stroke-[1.8] transition-transform duration-500 group-hover:rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="h-4 w-4 stroke-[1.8] transition-transform duration-500 group-hover:rotate-180 sm:h-5 sm:w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/>
                             </svg>
                         </button>
@@ -98,14 +98,14 @@
                 </div>
             @endif
 
-            <div class="mb-5">
-                <label for="guardian-search" class="mb-2 block text-sm font-semibold text-slate-700">جستجوی سریع
+            <div class="mb-3 sm:mb-5">
+                <label for="guardian-search" class="mb-1.5 block text-xs font-semibold text-slate-700 sm:mb-2 sm:text-sm">جستجوی سریع
                     سرپرستان</label>
-                <div class="grid gap-3 md:grid-cols-[minmax(180px,240px)_1fr]">
+                <div class="grid gap-2 sm:gap-3 md:grid-cols-[minmax(180px,240px)_1fr]">
                     <select
                         id="guardian-search-field"
                         wire:model.live="searchField"
-                        class="w-full rounded-2xl border border-amber-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-100"
+                        class="w-full rounded-xl border border-amber-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 shadow-sm transition focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-100 sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm"
                         aria-label="معیار جستجو"
                     >
                         <option value="all">همه فیلدها</option>
@@ -119,7 +119,7 @@
                             id="guardian-search"
                             type="text"
                             wire:model.live.debounce.250ms="search"
-                            class="w-full rounded-2xl border border-amber-200 bg-white px-10 py-3 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-100"
+                            class="w-full rounded-xl border border-amber-200 bg-white py-2.5 pl-3 pr-9 text-xs text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-100 sm:rounded-2xl sm:px-10 sm:py-3 sm:text-sm"
                             placeholder="عبارت جستجو را وارد کنید..."
                         >
                         <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-amber-500">
@@ -133,7 +133,7 @@
                 @error('search') <span class="mt-1 block text-sm text-red-600">{{ $message }}</span> @enderror
             </div>
 
-            <div class="space-y-3 md:hidden">
+            <div class="space-y-2.5 md:hidden">
                 @forelse ($guardians as $guardian)
                     @php
                         $guardianFullName = trim($guardian->first_name . ' ' . $guardian->last_name) ?: 'بدون نام';
@@ -145,7 +145,7 @@
                             wire:click="toggleGuardian({{ $guardian->id }})"
                             wire:loading.attr="disabled"
                             wire:target="toggleGuardian({{ $guardian->id }})"
-                            class="block w-full px-4 py-4 text-right transition hover:bg-amber-50/50 focus:outline-none focus:ring-4 focus:ring-amber-100 disabled:cursor-wait disabled:opacity-70"
+                            class="block w-full px-3 py-3 text-right transition hover:bg-amber-50/50 focus:outline-none focus:ring-4 focus:ring-amber-100 disabled:cursor-wait disabled:opacity-70 sm:px-4 sm:py-4"
                         >
                             <div class="flex items-start justify-between gap-3">
                                 <div class="min-w-0 flex-1">
