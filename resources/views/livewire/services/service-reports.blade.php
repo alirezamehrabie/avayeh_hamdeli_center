@@ -81,8 +81,9 @@
                         {{-- Type Filter --}}
                         <select wire:model.live="selectedType" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
                             <option value="all">همه انواع</option>
-                            <option value="family">خانوادگی</option>
-                            <option value="individual">شخصی</option>
+                            @foreach($typeDisplayOptions as $typeValue => $typeLabel)
+                                <option value="{{ $typeValue }}">{{ $typeLabel }}</option>
+                            @endforeach
                         </select>
 
 
@@ -165,7 +166,9 @@
                                     <span class="text-slate-400 text-xs">بدون دسته‌بندی</span>
                                 @endif
                             </td>
-                            <td class="px-3 py-3 text-right text-slate-600">{{ $typeOptions[$service->service_type] ?? $service->service_type }}</td>
+                            <td class="px-3 py-3 text-right">
+                                <x-service-type-badge :type="$service->service_type" />
+                            </td>
                             <td class="px-3 py-3 text-right text-slate-600 max-w-[200px] truncate">{{ $service->description ?: 'بدون توضیحات' }}</td>
                             <td class="px-3 py-3 text-right text-slate-600 text-xs">{{ $creatorName }}</td>
                             <td class="px-3 py-3 text-right text-slate-500 text-xs">{{ $jalaliDateTime($service->created_at) }}</td>
@@ -341,7 +344,13 @@
                             <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
                             <div class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur">
                                 <p class="text-[10px] text-slate-300">نوع خدمت</p>
-                                <p class="mt-1 text-sm font-bold">{{ $typeOptions[$selectedService->service_type] ?? $selectedService->service_type }}</p>
+                                <div class="mt-1">
+                                    <x-service-type-badge
+                                        :type="$selectedService->service_type"
+                                        text-class="text-white"
+                                        icon-wrap-class="bg-white/10 ring-white/15 text-white"
+                                    />
+                                </div>
                             </div>
                             <div class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur">
                                 <p class="text-[10px] text-slate-300">کل مقدار</p>
@@ -382,7 +391,7 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="text-xs font-medium text-slate-500">نوع:</span>
-                        <span class="text-xs font-bold text-slate-800">{{ $typeOptions[$selectedService->service_type] ?? $selectedService->service_type }}</span>
+                        <x-service-type-badge :type="$selectedService->service_type" />
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="text-xs font-medium text-slate-500">واحد:</span>

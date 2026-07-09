@@ -12,6 +12,16 @@ use Illuminate\Support\Facades\Schema;
 
 class Service extends Model
 {
+    public const TYPE_DISPLAY_META = [
+        'individual' => [
+            'label' => 'شخصی',
+            'icon' => 'person',
+        ],
+        'family' => [
+            'label' => 'خانوادگی',
+            'icon' => 'family',
+        ],
+    ];
     public const TYPE_OPTIONS = [
         'individual' => 'شخصی (مددجو)',
         'family' => 'خانوادگی (سرپرست)',
@@ -226,6 +236,21 @@ class Service extends Model
     public static function unitKeys(): array
     {
         return array_keys(static::unitOptions());
+    }
+
+    public static function typeDisplayMeta(?string $type): array
+    {
+        return static::TYPE_DISPLAY_META[$type] ?? [
+            'label' => (string) $type,
+            'icon' => 'person',
+        ];
+    }
+
+    public static function typeDisplayOptions(): array
+    {
+        return collect(static::TYPE_DISPLAY_META)
+            ->mapWithKeys(fn (array $meta, string $key) => [$key => $meta['label']])
+            ->all();
     }
 
     protected static function sortUnitOptions(array $units): array

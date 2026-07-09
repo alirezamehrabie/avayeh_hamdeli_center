@@ -251,7 +251,7 @@ class ServiceReports extends Component
             'filteredDeliveries' => $this->filteredDeliveries,
             'groupedDeliveries' => $this->groupedDeliveries,
             'statusOptions' => Service::STATUS_OPTIONS,
-            'typeOptions' => Service::TYPE_OPTIONS,
+            'typeDisplayOptions' => Service::typeDisplayOptions(),
             'unitOptions' => Service::unitOptions(),
             'categoryOptions' => $categories,
             'serviceNames' => $serviceNames,
