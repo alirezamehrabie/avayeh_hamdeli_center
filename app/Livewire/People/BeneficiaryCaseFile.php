@@ -7,15 +7,18 @@ use App\Helpers\Morilog\Jalalian;
 use App\Models\ActivityAttendance;
 use App\Models\BeneficiaryCaseRecord;
 use App\Models\BeneficiaryCaseRecordAttachment;
+use App\Models\QrIdentity;
 use App\Models\Person;
 use App\Models\ServiceDelivery;
 use App\Queries\People\PeopleIndexSearchQuery;
 use App\Services\People\BeneficiaryCaseFileTimeline;
+use App\Services\QrIdentityService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -89,6 +92,46 @@ class BeneficiaryCaseFile extends Component
         $this->selectedPersonId = null;
         $this->resetLoadedCaseFileData();
         $this->resetRecordForm();
+    }
+
+    public function resolveScannedBeneficiaryQr(string $payload): array
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+
+        $token = $this->extractQrToken(trim((string) $payload));
+
+        if (! $token) {
+            return $this->beneficiaryQrScanResponse(false, 'QR خوانده‌شده معتبر نیست یا به این سامانه تعلق ندارد.');
+        }
+
+        $identity = app(QrIdentityService::class)->resolveToken($token, 'admin-beneficiary-case-file');
+
+        if (! $identity) {
+            $identity = $this->resolvePublicCode($token);
+        }
+
+        if (! $identity || $identity->subject_type !== QrIdentity::SUBJECT_PERSON) {
+            return $this->beneficiaryQrScanResponse(
+                false,
+                $identity ? 'این کد QR برای این بخش قابل استفاده نیست.' : 'QR نامعتبر، ابطال‌شده یا غیرقابل دسترس است.'
+            );
+        }
+
+        $person = Person::query()->find((int) $identity->subject_id);
+
+        if (! $person) {
+            return $this->beneficiaryQrScanResponse(false, 'اطلاعات مددجو برای این QR پیدا نشد.');
+        }
+
+        $this->selectPerson((int) $person->id);
+        $this->search = '';
+        $this->searchResultsCache = collect();
+
+        return $this->beneficiaryQrScanResponse(
+            true,
+            'مددجو شناسایی شد.',
+            (string) ($person->full_name ?: trim($person->first_name.' '.$person->last_name))
+        );
     }
 
     public function exportToExcel()
@@ -472,6 +515,64 @@ class BeneficiaryCaseFile extends Component
         $this->caseRecordsCache = null;
         $this->timelineCache = null;
         $this->caseFileTotalsCache = null;
+    }
+
+    protected function beneficiaryQrScanResponse(bool $ok, string $message, string $name = ''): array
+    {
+        return [
+            'ok' => $ok,
+            'status' => $ok ? 'paused' : 'scan_error',
+            'message' => $message,
+            'result' => [
+                'ok' => $ok,
+                'code' => $ok ? 'resolved' : 'invalid_qr',
+                'message' => $message,
+                'name' => $name,
+            ],
+        ];
+    }
+
+    protected function resolvePublicCode(string $token): ?QrIdentity
+    {
+        $identity = QrIdentity::query()
+            ->where('public_code', strtoupper(trim($token)))
+            ->where('status', QrIdentity::STATUS_ACTIVE)
+            ->first();
+
+        if (! $identity) {
+            return null;
+        }
+
+        $subject = $identity->subject;
+
+        if (! $subject || method_exists($subject, 'trashed') && $subject->trashed()) {
+            return null;
+        }
+
+        $identity->forceFill(['last_scanned_at' => now()])->save();
+
+        return $identity->setRelation('subject', $subject);
+    }
+
+    protected function extractQrToken(string $value): ?string
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        if (! Str::contains($value, ['http://', 'https://'])) {
+            return $value;
+        }
+
+        $payloadPath = parse_url($value, PHP_URL_PATH) ?: $value;
+
+        if (! preg_match('/\\/qr\\/r\\/([^\\/\\?#]+)/', (string) $payloadPath, $matches)) {
+            return null;
+        }
+
+        return isset($matches[1]) ? urldecode($matches[1]) : null;
     }
 
     public function render()
