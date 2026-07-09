@@ -86,6 +86,55 @@ class ServiceDefinitionTest extends TestCase
         ]);
     }
 
+    public function test_service_definition_create_still_requires_category_value(): void
+    {
+        $this->actingAs($this->manager());
+
+        Livewire::test(ServiceDefinition::class)
+            ->set('serviceName', 'Create Requires Value')
+            ->set('serviceType', 'individual')
+            ->set('distributionStartDate', '1405/03/30')
+            ->set('status', 'draft')
+            ->set('categories', [[
+                'id' => null,
+                'code' => '',
+                'name' => 'Food Pack',
+                'quantity' => '10',
+                'unit' => 'pack',
+                'value' => '',
+            ]])
+            ->call('save')
+            ->assertHasErrors(['categories.0.value']);
+
+        $this->assertDatabaseMissing('services', [
+            'name' => 'Create Requires Value',
+        ]);
+    }
+
+    public function test_service_definition_edit_allows_empty_category_value(): void
+    {
+        $user = $this->manager();
+        $service = $this->serviceWithCategory($user, 'Editable Empty Value Service', true);
+        $category = $service->categories()->firstOrFail();
+
+        $this->actingAs($user);
+
+        Livewire::test(ServiceDefinition::class, ['serviceId' => $service->id])
+            ->set('categories', [[
+                'id' => $category->id,
+                'code' => $category->code,
+                'name' => $category->name,
+                'quantity' => '10',
+                'unit' => 'pack',
+                'value' => '',
+            ]])
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertNull($category->fresh()->value);
+        $this->assertSame(0, $service->fresh()->total_service_value);
+    }
+
     public function test_new_category_is_auto_created_as_template_when_saving_service_definition(): void
     {
         $user = $this->manager();

@@ -549,6 +549,18 @@ class ServiceReports extends Component
         return number_format($number, 2, '.', '');
     }
 
+    public function formatQuantityForUnit(string|int|float|null $value, string $unit): string
+    {
+        $number = (float) ($value ?? 0);
+
+        return number_format($number, $this->isDecimalQuantityUnit($unit) ? 2 : 0, '.', '');
+    }
+
+    public function isDecimalQuantityUnit(string $unit): bool
+    {
+        return in_array($unit, ['kilogram', 'gram', 'kg', 'g'], true);
+    }
+
     protected function isValidJalaliDate(string $date): bool
     {
         $parts = explode('/', trim($date));

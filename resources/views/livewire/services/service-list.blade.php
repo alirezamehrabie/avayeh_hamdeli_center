@@ -150,7 +150,7 @@
                                     type="button"
                                     @click.stop="categoryTitle = @js($service->serviceName?->name ?: 'خدمت'); categories = @js($service->categories->map(fn ($category) => [
                                         'name' => $category->name,
-                                        'quantity' => number_format((float) $category->quantity, 2),
+                                        'quantity' => $this->formatQuantityForUnit($category->quantity, (string) $category->unit),
                                         'unit' => $unitOptions[$category->unit] ?? ($category->unit ?? '-'),
                                     ])->values()); categoriesOpen = true"
                                     class="mt-1 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
