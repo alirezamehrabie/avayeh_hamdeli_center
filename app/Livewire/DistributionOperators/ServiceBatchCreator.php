@@ -216,6 +216,16 @@ class ServiceBatchCreator extends Component
     public function updatedMiscServiceName(mixed $value): void
     {
         $this->miscServiceName = trim((string) $value);
+
+        if ($this->confirmingMiscServiceName && $this->miscServiceName !== '') {
+            $this->validateOnly(
+                'miscServiceName',
+                $this->miscServiceNameRules(),
+                [],
+                $this->validationAttributes()
+            );
+        }
+
         $this->confirmingBatchSave = false;
     }
 
@@ -1122,6 +1132,7 @@ class ServiceBatchCreator extends Component
                 'min:2',
                 'max:120',
                 'regex:/\A[\pL\pM\pN\s\-_()\/،.]+\z/u',
+                Rule::unique('services', 'name')->ignore($this->editingServiceId),
             ],
         ];
     }

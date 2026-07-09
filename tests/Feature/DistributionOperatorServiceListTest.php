@@ -234,6 +234,64 @@ class DistributionOperatorServiceListTest extends TestCase
             ->assertDontSee('Winter blankets');
     }
 
+    public function test_misc_service_creation_rejects_duplicate_name_in_name_step(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 945,
+            'first_name' => 'Duplicate',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+
+        $this->makeService($operator, 'بسته زمستانه');
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class)
+            ->call('requestMiscServiceName')
+            ->set('miscServiceName', 'بسته زمستانه')
+            ->call('confirmMiscServiceName')
+            ->assertHasErrors(['miscServiceName'])
+            ->assertSet('mode', '');
+    }
+
+    public function test_misc_service_creation_rejects_duplicate_name_in_save_step(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 946,
+            'first_name' => 'DuplicateSave',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+
+        $this->makeService($operator, 'بسته پنیر');
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class)
+            ->set('mode', ServiceBatchCreator::MODE_MISC)
+            ->set('miscServiceName', 'بسته پنیر')
+            ->set('miscServiceType', 'individual')
+            ->set('miscCategories.0.name', 'پنیر')
+            ->set('miscCategories.0.quantity', '2')
+            ->set('miscCategories.0.unit', 'pack')
+            ->set('date', '1405/03/30')
+            ->set('socialWorkerQuery', $worker->full_name)
+            ->set('socialWorkerId', $worker->id)
+            ->call('saveBatch')
+            ->assertHasErrors(['miscServiceName']);
+
+        $this->assertDatabaseCount('services', 1);
+    }
+
     protected function makeService(User $creator, string $name): Service
     {
         $serviceName = ServiceName::query()->create([
