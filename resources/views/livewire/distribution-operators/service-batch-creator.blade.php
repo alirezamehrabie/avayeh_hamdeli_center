@@ -918,6 +918,11 @@
                                     </div>
 
                                     <div x-show="open" x-collapse class="mt-3 space-y-2.5">
+                                        @php
+                                            $categoryImage = $category['image'] ?? null;
+                                            $categoryImagePreviewUrl = is_object($categoryImage) && method_exists($categoryImage, 'temporaryUrl') ? $categoryImage->temporaryUrl() : null;
+                                            $categoryImageName = is_object($categoryImage) && method_exists($categoryImage, 'getClientOriginalName') ? $categoryImage->getClientOriginalName() : null;
+                                        @endphp
                                         <input
                                             type="text"
                                             wire:model.live="miscCategories.{{ $index }}.name"
@@ -947,6 +952,61 @@
                                             </select>
                                         </div>
                                         @error("miscCategories.$index.quantity") <p class="text-[11px] text-rose-600">{{ $message }}</p> @enderror
+
+                                        <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+                                            <div class="flex items-center justify-between gap-3">
+                                                <div class="min-w-0 flex items-center gap-2.5">
+                                                    @if($categoryImagePreviewUrl)
+                                                        <img src="{{ $categoryImagePreviewUrl }}" alt="" class="h-10 w-10 shrink-0 rounded-lg object-cover ring-1 ring-slate-200">
+                                                    @else
+                                                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-slate-400 ring-1 ring-slate-200">
+                                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+                                                                <path d="M4 7a2 2 0 0 1 2-2h3l1.2 1.5H18a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                                                <circle cx="9" cy="10" r="1.2" fill="currentColor"/>
+                                                                <path d="m7 17 3.2-3.2a1 1 0 0 1 1.4 0L14 16l1.2-1.2a1 1 0 0 1 1.4 0L18 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                                            </svg>
+                                                        </span>
+                                                    @endif
+
+                                                    <div class="min-w-0">
+                                                        <p class="text-[11px] font-black text-slate-600">تصویر اختیاری</p>
+                                                        <p class="truncate text-[11px] font-semibold text-slate-400">
+                                                            {{ $categoryImageName ?: 'در صورت نیاز یک تصویر سبک برای این دسته‌بندی انتخاب کنید' }}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <div class="flex shrink-0 items-center gap-2">
+                                                    <label class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[11px] font-bold text-slate-600 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700">
+                                                        <input
+                                                            type="file"
+                                                            class="hidden"
+                                                            accept="image/jpeg,image/png,image/webp"
+                                                            wire:model.live="miscCategories.{{ $index }}.image"
+                                                        >
+                                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+                                                            <path d="M12 16V6m0 0 4 4m-4-4-4 4M5 18h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                                        </svg>
+                                                        انتخاب
+                                                    </label>
+
+                                                    @if($categoryImageName)
+                                                        <button
+                                                            type="button"
+                                                            wire:click="removeCategoryImage({{ $index }})"
+                                                            class="inline-flex items-center rounded-lg px-2 py-2 text-[11px] font-bold text-rose-500 transition hover:bg-rose-50 hover:text-rose-600"
+                                                        >
+                                                            حذف
+                                                        </button>
+                                                    @endif
+                                                </div>
+                                            </div>
+
+                                            <div wire:loading wire:target="miscCategories.{{ $index }}.image" class="mt-2 text-[11px] font-semibold text-emerald-600">
+                                                در حال بارگذاری تصویر...
+                                            </div>
+                                        </div>
+                                        @error("miscCategories.$index.image") <p class="text-[11px] text-rose-600">{{ $message }}</p> @enderror
                                     </div>
                                 </div>
                             @endforeach

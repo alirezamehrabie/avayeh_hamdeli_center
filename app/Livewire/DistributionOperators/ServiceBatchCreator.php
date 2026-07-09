@@ -10,16 +10,21 @@ use App\Models\ServiceName;
 use App\Models\ServiceWorkerAllocation;
 use App\Models\SocialWorker;
 use App\Models\User;
+use App\Support\Images\OptimizedImageStorage;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\On;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class ServiceBatchCreator extends Component
 {
+    use WithFileUploads;
+
     protected const MISC_CATEGORY_INDEX_PENDING_CLASS = 'bg-amber-100 text-amber-700';
 
     protected const MISC_CATEGORY_INDEX_COMPLETE_CLASS = 'bg-emerald-100 text-emerald-700';
@@ -462,6 +467,17 @@ class ServiceBatchCreator extends Component
         $this->confirmingBatchSave = false;
     }
 
+    public function removeCategoryImage(int $index): void
+    {
+        if (! isset($this->miscCategories[$index])) {
+            return;
+        }
+
+        $this->miscCategories[$index]['image'] = null;
+        $this->confirmingBatchSave = false;
+        $this->resetValidation("miscCategories.{$index}.image");
+    }
+
     #[On('confirm-misc-category-delete')]
     public function confirmMiscCategoryDelete(int $index): void
     {
@@ -831,71 +847,79 @@ class ServiceBatchCreator extends Component
 
         $validated = $this->validate($this->miscRules(), [], $this->validationAttributes());
         $miscName = trim($validated['miscServiceName']);
+        $storedImagePaths = [];
 
-        DB::transaction(function () use ($validated, $miscName): void {
-            $serviceName = ServiceName::query()
-                ->where('name', $miscName)
-                ->first();
+        try {
+            DB::transaction(function () use ($validated, $miscName, &$storedImagePaths): void {
+                $serviceName = ServiceName::query()
+                    ->where('name', $miscName)
+                    ->first();
 
-            if (! $serviceName) {
-                $serviceName = new ServiceName;
-                $serviceName->fill([
+                if (! $serviceName) {
+                    $serviceName = new ServiceName;
+                    $serviceName->fill([
+                        'name' => $miscName,
+                        'sort_id' => ((int) ServiceName::query()->max('sort_id')) + 1,
+                        'created_by' => auth()->id(),
+                    ])->save();
+                }
+
+                $totalQuantity = collect($validated['miscCategories'])
+                    ->sum(fn (array $category): float => (float) $category['quantity']);
+
+                $service = new Service;
+
+                $service->fill([
+                    'code' => Service::generateNextCode(),
+                    'created_by' => auth()->id(),
+                    'quantity_delivered' => 0,
                     'name' => $miscName,
-                    'sort_id' => ((int) ServiceName::query()->max('sort_id')) + 1,
-                    'created_by' => auth()->id(),
-                ])->save();
-            }
-
-            $totalQuantity = collect($validated['miscCategories'])
-                ->sum(fn (array $category): float => (float) $category['quantity']);
-
-            $service = new Service;
-
-            $service->fill([
-                'code' => Service::generateNextCode(),
-                'created_by' => auth()->id(),
-                'quantity_delivered' => 0,
-                'name' => $miscName,
-                'service_name_id' => $serviceName->id,
-                'service_type' => $validated['miscServiceType'],
-                'supports_gate_delivery' => false,
-                'supports_home_delivery' => true,
-                'description' => $validated['miscDescription'] ?? null,
-                'total_quantity' => $totalQuantity,
-                'total_service_value' => 0,
-                'district_id' => null,
-                'distribution_start_date' => $this->jalaliToGregorian($validated['date']),
-                'distribution_end_date' => $this->jalaliToGregorian($validated['date']),
-                'priority' => null,
-                'status' => 'in_distribution',
-                'status_notes' => 'خدمت متفرقه ایجادشده توسط اپراتور توزیع.',
-            ])->save();
-
-            foreach (array_values($validated['miscCategories']) as $index => $categoryRow) {
-                $category = new ServiceCategory;
-                $category->fill([
                     'service_name_id' => $serviceName->id,
-                    'name' => trim((string) $categoryRow['name']),
-                    'quantity' => (float) $categoryRow['quantity'],
-                    'unit' => $categoryRow['unit'],
-                    'value' => 0,
-                    'sort_id' => $index + 1,
-                    'created_by' => auth()->id(),
-                ]);
-                $service->categories()->save($category);
+                    'service_type' => $validated['miscServiceType'],
+                    'supports_gate_delivery' => false,
+                    'supports_home_delivery' => true,
+                    'description' => $validated['miscDescription'] ?? null,
+                    'total_quantity' => $totalQuantity,
+                    'total_service_value' => 0,
+                    'district_id' => null,
+                    'distribution_start_date' => $this->jalaliToGregorian($validated['date']),
+                    'distribution_end_date' => $this->jalaliToGregorian($validated['date']),
+                    'priority' => null,
+                    'status' => 'in_distribution',
+                    'status_notes' => 'خدمت متفرقه ایجادشده توسط اپراتور توزیع.',
+                ])->save();
 
-                $allocation = new ServiceWorkerAllocation;
-                $allocation->fill([
-                    'social_worker_id' => (int) $validated['socialWorkerId'],
-                    'service_category_id' => $category->id,
-                    'allocated_quantity' => (float) $categoryRow['quantity'],
-                    'assigned_by_user_id' => auth()->id(),
-                ]);
-                $service->workerAllocations()->save($allocation);
-            }
+                foreach (array_values($validated['miscCategories']) as $index => $categoryRow) {
+                    $category = new ServiceCategory;
+                    $category->fill([
+                        'service_name_id' => $serviceName->id,
+                        'name' => trim((string) $categoryRow['name']),
+                        'image_path' => $this->storeMiscCategoryImage($service, $categoryRow, $storedImagePaths),
+                        'quantity' => (float) $categoryRow['quantity'],
+                        'unit' => $categoryRow['unit'],
+                        'value' => 0,
+                        'sort_id' => $index + 1,
+                        'created_by' => auth()->id(),
+                    ]);
+                    $service->categories()->save($category);
 
-            $service->refreshFinancialTotals();
-        });
+                    $allocation = new ServiceWorkerAllocation;
+                    $allocation->fill([
+                        'social_worker_id' => (int) $validated['socialWorkerId'],
+                        'service_category_id' => $category->id,
+                        'allocated_quantity' => (float) $categoryRow['quantity'],
+                        'assigned_by_user_id' => auth()->id(),
+                    ]);
+                    $service->workerAllocations()->save($allocation);
+                }
+
+                $service->refreshFinancialTotals();
+            });
+        } catch (\Throwable $e) {
+            $this->cleanupMiscCategoryImages($storedImagePaths);
+
+            throw $e;
+        }
 
         return redirect()
             ->route('distribution-operator.service-list', ['tab' => ServiceList::TAB_MISC])
@@ -1127,6 +1151,7 @@ class ServiceBatchCreator extends Component
             'socialWorkerId' => ['required', 'integer', 'exists:social_workers,id'],
             'miscCategories' => ['required', 'array', 'min:1'],
             'miscCategories.*.name' => ['required', 'string', 'max:255'],
+            'miscCategories.*.image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:6144'],
             'miscCategories.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'miscCategories.*.unit' => ['required', Rule::in(Service::unitKeys())],
         ]);
@@ -1460,6 +1485,7 @@ class ServiceBatchCreator extends Component
             'miscDescription' => 'توضیحات',
             'date' => 'تاریخ',
             'miscCategories.*.name' => 'نام دسته‌بندی',
+            'miscCategories.*.image' => 'تصویر دسته‌بندی',
             'miscCategories.*.quantity' => 'مقدار دسته‌بندی',
             'miscCategories.*.unit' => 'واحد',
             'miscWorkerGroups.*.social_worker_id' => 'مددکار',
@@ -1477,9 +1503,46 @@ class ServiceBatchCreator extends Component
     {
         return [
             'name' => '',
+            'image' => null,
             'quantity' => '',
             'unit' => array_key_first(Service::unitOptions()) ?? 'count',
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $categoryRow
+     * @param  array<int, string>  $storedImagePaths
+     */
+    protected function storeMiscCategoryImage(Service $service, array $categoryRow, array &$storedImagePaths): ?string
+    {
+        $image = $categoryRow['image'] ?? null;
+
+        if (! $image instanceof UploadedFile) {
+            return null;
+        }
+
+        $path = app(OptimizedImageStorage::class)->store(
+            $image,
+            'service-categories/'.$service->id,
+            'public',
+            'category'
+        );
+
+        $storedImagePaths[] = $path;
+
+        return $path;
+    }
+
+    /**
+     * @param  array<int, string>  $storedImagePaths
+     */
+    protected function cleanupMiscCategoryImages(array $storedImagePaths): void
+    {
+        $storage = app(OptimizedImageStorage::class);
+
+        foreach ($storedImagePaths as $path) {
+            $storage->delete($path, 'public');
+        }
     }
 
     protected function loadEditableMiscService(Service $service): void

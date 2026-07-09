@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Livewire\DistributionOperators\ServiceBatchCreator;
 use App\Livewire\DistributionOperators\ServiceAllocationEditor;
+use App\Livewire\DistributionOperators\ServiceBatchCreator;
 use App\Livewire\DistributionOperators\ServiceList;
 use App\Models\Service;
 use App\Models\ServiceCategory;
@@ -13,7 +13,9 @@ use App\Models\ServiceName;
 use App\Models\SocialWorker;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -26,6 +28,7 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         $operator = User::factory()->create([
             'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
             'is_admin' => false,
+            'permissions' => [User::PERMISSION_DISTRIBUTION_SERVICE_MANAGE],
         ]);
         $creator = User::factory()->create([
             'access_level' => User::ACCESS_LEVEL_ADMIN,
@@ -926,6 +929,50 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         ]);
     }
 
+    public function test_misc_service_creation_can_store_optimized_category_image(): void
+    {
+        Storage::fake('public');
+
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 906,
+            'first_name' => 'Image',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class)
+            ->set('mode', ServiceBatchCreator::MODE_MISC)
+            ->set('miscServiceName', 'خدمت عکسی')
+            ->set('miscServiceType', 'individual')
+            ->set('miscCategories.0.name', 'غذای گرم')
+            ->set('miscCategories.0.quantity', '12')
+            ->set('miscCategories.0.unit', 'portion')
+            ->set('miscCategories.0.image', UploadedFile::fake()->image('hot-food.png', 2400, 1800))
+            ->set('date', '1405/03/30')
+            ->set('socialWorkerQuery', $worker->full_name)
+            ->set('socialWorkerId', $worker->id)
+            ->call('saveBatch')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('distribution-operator.service-list', ['tab' => ServiceList::TAB_MISC]));
+
+        $service = Service::query()
+            ->where('created_by', $operator->id)
+            ->latest('id')
+            ->firstOrFail();
+        $category = $service->categories()->firstOrFail();
+
+        $this->assertNotNull($category->image_path);
+        $this->assertTrue(str_ends_with((string) $category->image_path, '.jpg'));
+        Storage::disk('public')->assertExists((string) $category->image_path);
+        $this->assertLessThanOrEqual(600 * 1024, Storage::disk('public')->size((string) $category->image_path));
+    }
+
     public function test_misc_service_type_must_be_selected_before_save_confirmation(): void
     {
         $operator = User::factory()->create([
@@ -1799,6 +1846,34 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         ]);
     }
 
+    public function test_editing_misc_service_preserves_existing_category_image_when_other_fields_change(): void
+    {
+        Storage::fake('public');
+
+        [$operator, $worker, $service, $category] = $this->editableMiscService();
+
+        Storage::disk('public')->put(
+            'service-categories/'.$service->id.'/existing-category.jpg',
+            'existing-image'
+        );
+
+        $category->forceFill([
+            'image_path' => 'service-categories/'.$service->id.'/existing-category.jpg',
+        ])->saveQuietly();
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class, ['editingServiceId' => $service->id])
+            ->set('miscDescription', 'Image path should stay intact')
+            ->set('miscWorkerGroups.0.categories.0.quantity', '6')
+            ->call('saveBatch')
+            ->assertHasNoErrors();
+
+        $this->assertSame('service-categories/'.$service->id.'/existing-category.jpg', $category->fresh()->image_path);
+        Storage::disk('public')->assertExists('service-categories/'.$service->id.'/existing-category.jpg');
+        $this->assertSame($worker->id, $service->workerAllocations()->firstOrFail()->social_worker_id);
+    }
+
     public function test_editing_misc_service_redirects_to_misc_services_tab_after_successful_save(): void
     {
         [$operator, $worker, $service] = $this->editableMiscService();
@@ -2219,6 +2294,7 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         $operator = User::factory()->create([
             'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
             'is_admin' => false,
+            'permissions' => [User::PERMISSION_DISTRIBUTION_SERVICE_MANAGE],
         ]);
         $worker = SocialWorker::query()->create([
             'worker_code' => 990,

@@ -2,12 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\DB;
 
 class ServiceCategory extends Model
 {
@@ -20,6 +19,7 @@ class ServiceCategory extends Model
         'service_id',
         'code',
         'name',
+        'image_path',
         'quantity',
         'unit',
         'value',
@@ -111,7 +111,7 @@ class ServiceCategory extends Model
                 ->count();
         }
 
-        return $service->code . '-CAT' . str_pad((string) ($nextIndex + 1), 3, '0', STR_PAD_LEFT);
+        return $service->code.'-CAT'.str_pad((string) ($nextIndex + 1), 3, '0', STR_PAD_LEFT);
     }
 
     public static function nextSortId(int $serviceId): int
