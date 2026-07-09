@@ -47,8 +47,11 @@ $scrollIntoViewJsSnippet = ($scrollTo !== false)
                             <span class="font-medium">{{ $paginator->firstItem() }}</span>
                             <span>تا</span>
                             <span class="font-medium">{{ $paginator->lastItem() }}</span>
-                            <span>از</span>
-                            <span class="font-medium">{{ $paginator->total() }}</span>
+                            {{-- Simple paginators (simplePaginate) have no total(); only show it when available. --}}
+                            @if (method_exists($paginator, 'total'))
+                                <span>از</span>
+                                <span class="font-medium">{{ $paginator->total() }}</span>
+                            @endif
                             <span>مورد</span>
                         @else
                             <span>نمایش</span>
@@ -78,7 +81,7 @@ $scrollIntoViewJsSnippet = ($scrollTo !== false)
                             @endif
                         </span>
 
-                        @foreach ($elements as $element)
+                        @foreach (($elements ?? []) as $element)
                             @if (is_string($element))
                                 <span aria-disabled="true">
                                     <span class="relative inline-flex items-center px-4 py-2 -ml-px text-sm font-medium text-gray-700 bg-white border border-gray-300 cursor-default leading-5 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300">{{ $element }}</span>
