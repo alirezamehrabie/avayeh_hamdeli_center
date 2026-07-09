@@ -659,10 +659,11 @@
                     @include('livewire.distribution-operators.partials.misc-edit-body')
                 @else
                 <div class="grid gap-4 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-4">
-                    <div class="sm:col-span-2 xl:col-span-1" data-misc-service-type-guidance>
-                        <label class="mb-2 block text-sm font-bold text-slate-700">نوع خدمت</label>
-                        <div
-                            x-data="{
+                    <div class="sm:col-span-2 xl:col-span-1 space-y-4">
+                        <div data-misc-service-type-guidance>
+                            <label class="mb-2 block text-sm font-bold text-slate-700">نوع خدمت</label>
+                            <div
+                                x-data="{
                                 serviceType: @entangle('miscServiceType').live,
                                 get options() {
                                     return [
@@ -699,11 +700,11 @@
                                 selectServiceType(value) {
                                     this.serviceType = value;
                                 },
-                            }"
-                        >
-                            <div class="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
-                                <template x-for="item in options" :key="item.value">
-                                    <button
+                                }"
+                            >
+                                <div class="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+                                    <template x-for="item in options" :key="item.value">
+                                        <button
                                         type="button"
                                         x-on:click="selectServiceType(item.value)"
                                         class="group flex min-h-[56px] w-full items-center gap-2.5 rounded-2xl border px-3 py-2.5 text-right transition focus:outline-none focus:ring-4 focus:ring-emerald-100"
@@ -746,10 +747,14 @@
                                             x-bind:class="serviceType === item.value ? item.dotActiveClass : 'bg-slate-200'"
                                             aria-hidden="true"
                                         ></span>
-                                    </button>
-                                </template>
+                                        </button>
+                                    </template>
+                                </div>
                             </div>
                         </div>
+                        @include('livewire.distribution-operators.partials.misc-date-field', [
+                            'hint' => 'تاریخ با تقویم شمسی ثبت می‌شود (پیش فرض: تاریخ امروز)',
+                        ])
                     </div>
 
                     @if($workerStepUnlocked)
@@ -936,36 +941,6 @@
                 </div>
 
                 <div class="grid gap-4 px-4 pb-5 sm:grid-cols-2 sm:px-5 xl:grid-cols-4">
-                    <div class="sm:col-span-2">
-                        <div x-data="jalaliDateTimeField($wire.entangle('date').live)">
-                            <label class="mb-2 block text-sm font-bold text-slate-700">تاریخ ثبت</label>
-                            <div class="relative">
-                                <input
-                                    type="text"
-                                    x-ref="input"
-                                    x-model="draft"
-                                    x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                                    x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                                    x-on:jalali-picker-open="handlePickerOpen()"
-                                    x-on:jalali-picker-close="handlePickerClose()"
-                                    x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                                    readonly
-                                    inputmode="none"
-                                    autocomplete="off"
-                                    data-jdp-readonly
-                                    data-jdp
-                                    placeholder="1405/04/03"
-                                    class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pe-11 text-sm font-medium text-slate-700 outline-none transition ltr:text-left focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-                                >
-                                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
-                                    <i class="bi bi-calendar2-event text-base"></i>
-                                </span>
-                            </div>
-                            <p class="mt-1 text-xs leading-5 text-slate-500">تاریخ با تقویم شمسی ثبت می‌شود (پیش فرض: تاریح امروز)</p>
-                            @error('date') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
-                        </div>
-                    </div>
-
                     <div class="sm:col-span-2 xl:col-span-4">
                         <label class="mb-2 block text-sm font-bold text-slate-700">توضیحات</label>
                         <textarea rows="3" wire:model.blur="miscDescription" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"></textarea>
