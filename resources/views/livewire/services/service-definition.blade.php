@@ -572,7 +572,7 @@
                                             </div>
                                             <div>
                                                 <label class="mb-2 block text-sm font-bold text-slate-700">ارزش واحد</label>
-                                                <input type="text" inputmode="numeric" x-model="value" x-on:input="formatValueInput($event)" x-init="value = formatGrouped(value)" class="h-[50px] w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 transition ltr:text-left focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100" placeholder="0">
+                                                <input type="text" inputmode="numeric" x-model="value" x-on:input="formatValueInput($event)" x-init="value = formatGrouped(value)" class="h-[50px] w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 transition ltr:text-left focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100">
                                                 <p x-cloak x-show="hasLineTotal" class="mt-1.5 text-xs font-medium text-slate-400">
                                                     جمع این دسته:
                                                     <span class="font-semibold text-slate-500" x-text="formattedLineTotal"></span>

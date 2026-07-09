@@ -86,12 +86,12 @@ class ServiceDefinitionTest extends TestCase
         ]);
     }
 
-    public function test_service_definition_create_still_requires_category_value(): void
+    public function test_service_definition_create_allows_empty_category_value(): void
     {
         $this->actingAs($this->manager());
 
         Livewire::test(ServiceDefinition::class)
-            ->set('serviceName', 'Create Requires Value')
+            ->set('serviceName', 'Create Allows Empty Value')
             ->set('serviceType', 'individual')
             ->set('distributionStartDate', '1405/03/30')
             ->set('status', 'draft')
@@ -104,10 +104,14 @@ class ServiceDefinitionTest extends TestCase
                 'value' => '',
             ]])
             ->call('save')
-            ->assertHasErrors(['categories.0.value']);
+            ->assertHasNoErrors();
 
-        $this->assertDatabaseMissing('services', [
-            'name' => 'Create Requires Value',
+        $service = Service::query()->where('name', 'Create Allows Empty Value')->firstOrFail();
+
+        $this->assertDatabaseHas('service_categories', [
+            'service_id' => $service->id,
+            'name' => 'Food Pack',
+            'value' => 0,
         ]);
     }
 
@@ -131,7 +135,7 @@ class ServiceDefinitionTest extends TestCase
             ->call('save')
             ->assertHasNoErrors();
 
-        $this->assertNull($category->fresh()->value);
+        $this->assertSame(0, $category->fresh()->value);
         $this->assertSame(0, $service->fresh()->total_service_value);
     }
 

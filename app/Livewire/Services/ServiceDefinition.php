@@ -88,7 +88,7 @@ class ServiceDefinition extends Component
             $validated = $this->validate($this->rules(), [], $this->validationAttributes());
             $validated['categories'] = collect($validated['categories'])
                 ->map(function (array $category): array {
-                    $category['value'] = $this->digitsOnly((string) ($category['value'] ?? ''));
+                    $category['value'] = $this->digitsOnly((string) ($category['value'] ?? '')) ?: '0';
 
                     return $category;
                 })
@@ -265,7 +265,7 @@ class ServiceDefinition extends Component
                 'name' => $category->name,
                 'quantity' => $this->formatDecimal($category->quantity),
                 'unit' => (string) $category->unit,
-                'value' => (string) $category->value,
+                'value' => (int) $category->value > 0 ? (string) $category->value : '',
             ])
             ->values()
             ->all();
@@ -374,9 +374,13 @@ class ServiceDefinition extends Component
             'categories.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'categories.*.unit' => ['required', Rule::in(Service::unitKeys())],
             'categories.*.value' => [
-                'required',
+                'nullable',
                 'regex:/^[\d,\s]+$/',
                 function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (blank($value)) {
+                        return;
+                    }
+
                     if ($this->digitsOnly((string) $value) === '') {
                         $fail('ارزش واحد معتبر نیست.');
                     }
