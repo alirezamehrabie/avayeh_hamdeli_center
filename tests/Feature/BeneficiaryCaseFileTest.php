@@ -64,6 +64,72 @@ class BeneficiaryCaseFileTest extends TestCase
             ->assertSet('recordedAt', Jalalian::now()->format('Y/m/d'));
     }
 
+    public function test_manual_case_record_edit_panel_loads_stored_date_as_jalali(): void
+    {
+        $admin = $this->admin();
+        $person = $this->person();
+        $record = BeneficiaryCaseRecord::query()->create([
+            'person_id' => $person->id,
+            'created_by' => $admin->id,
+            'record_type' => BeneficiaryCaseRecord::TYPE_FOLLOW_UP,
+            'title' => 'Initial title',
+            'description' => 'Initial description',
+            'recorded_at' => '2026-07-03',
+            'amount' => 120000,
+            'reference_number' => 'REF-1',
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(BeneficiaryCaseFile::class, ['personId' => $person->id])
+            ->call('startEditingCaseRecord', $record->id)
+            ->assertSet('editingCaseRecordId', $record->id)
+            ->assertSet('editRecordType', BeneficiaryCaseRecord::TYPE_FOLLOW_UP)
+            ->assertSet('editRecordTitle', 'Initial title')
+            ->assertSet('editRecordedAt', '1405/04/12')
+            ->assertSet('editRecordAmount', '120000')
+            ->assertSet('editRecordReferenceNumber', 'REF-1');
+    }
+
+    public function test_admin_can_update_manual_case_record_from_edit_panel_with_jalali_date(): void
+    {
+        $admin = $this->admin();
+        $person = $this->person();
+        $record = BeneficiaryCaseRecord::query()->create([
+            'person_id' => $person->id,
+            'created_by' => $admin->id,
+            'record_type' => BeneficiaryCaseRecord::TYPE_NOTE,
+            'title' => 'Old title',
+            'description' => 'Old description',
+            'recorded_at' => '2026-07-03',
+            'amount' => 1000,
+            'reference_number' => 'OLD-REF',
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(BeneficiaryCaseFile::class, ['personId' => $person->id])
+            ->call('startEditingCaseRecord', $record->id)
+            ->set('editRecordType', BeneficiaryCaseRecord::TYPE_INVOICE)
+            ->set('editRecordTitle', 'Updated title')
+            ->set('editRecordDescription', 'Updated description')
+            ->set('editRecordedAt', '1405/04/13')
+            ->set('editRecordAmount', '2500000')
+            ->set('editRecordReferenceNumber', 'NEW-REF')
+            ->call('updateCaseRecord')
+            ->assertHasNoErrors()
+            ->assertSet('editingCaseRecordId', null);
+
+        $record->refresh();
+
+        $this->assertSame(BeneficiaryCaseRecord::TYPE_INVOICE, $record->record_type);
+        $this->assertSame('Updated title', $record->title);
+        $this->assertSame('Updated description', $record->description);
+        $this->assertSame('2026-07-04', $record->recorded_at?->toDateString());
+        $this->assertSame(2500000, $record->amount);
+        $this->assertSame('NEW-REF', $record->reference_number);
+    }
+
     public function test_manual_case_record_rejects_invalid_jalali_date(): void
     {
         $admin = $this->admin();

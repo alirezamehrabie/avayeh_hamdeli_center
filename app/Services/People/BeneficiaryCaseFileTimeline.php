@@ -118,6 +118,7 @@ class BeneficiaryCaseFileTimeline
     {
         return [
             'type' => 'manual',
+            'record_id' => $record->id,
             'date' => $record->recorded_at,
             'timestamp' => optional($record->recorded_at)->timestamp ?? optional($record->created_at)->timestamp ?? 0,
             'title' => $record->title,

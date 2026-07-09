@@ -411,7 +411,18 @@
                                                     </span>
                                                 </td>
                                                 <td class="px-4 py-3">
-                                                    <p class="font-bold text-slate-800">{{ $row['title'] }}</p>
+                                                    <div class="flex items-start justify-between gap-3">
+                                                        <p class="font-bold text-slate-800">{{ $row['title'] }}</p>
+                                                        @if($row['type'] === 'manual' && ! empty($row['record_id']))
+                                                            <button
+                                                                type="button"
+                                                                wire:click="startEditingCaseRecord({{ $row['record_id'] }})"
+                                                                class="shrink-0 rounded-lg border border-violet-200 bg-violet-50 px-2 py-1 text-[11px] font-bold text-violet-700 transition hover:bg-violet-100 focus:outline-none focus:ring-4 focus:ring-violet-100"
+                                                            >
+                                                                ویرایش
+                                                            </button>
+                                                        @endif
+                                                    </div>
                                                     @if($row['subtitle'])
                                                         <p class="mt-1 text-xs text-slate-500">{{ $row['subtitle'] }}</p>
                                                     @endif
@@ -483,6 +494,138 @@
                         </div>
                     </div>
                 </div>
+
+                @if($editingCaseRecordId)
+                    <form wire:submit.prevent="updateCaseRecord" class="rounded-2xl border border-violet-200 bg-violet-50/40 p-4 shadow-sm">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <h2 class="text-base font-black text-slate-900">ویرایش رکورد دستی</h2>
+                                <p class="mt-1 text-xs leading-5 text-slate-500">تاریخ ذخیره‌شده به‌صورت شمسی بارگذاری شده و پس از ویرایش دوباره به فرمت پایگاه‌داده تبدیل می‌شود.</p>
+                            </div>
+                            <button
+                                type="button"
+                                wire:click="cancelEditingCaseRecord"
+                                class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100"
+                            >
+                                بستن
+                            </button>
+                        </div>
+
+                        @if(session()->has('case-record-edit-success'))
+                            <div class="mt-3 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
+                                {{ session('case-record-edit-success') }}
+                            </div>
+                        @endif
+
+                        <div class="mt-4 space-y-3">
+                            <div>
+                                <label for="edit-case-record-type" class="mb-1 block text-xs font-bold text-slate-600">نوع رکورد</label>
+                                <select
+                                    id="edit-case-record-type"
+                                    wire:model="editRecordType"
+                                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-violet-300 focus:outline-none focus:ring-4 focus:ring-violet-100"
+                                >
+                                    @foreach($recordTypeOptions as $value => $label)
+                                        <option value="{{ $value }}">{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                                @error('editRecordType') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                            </div>
+
+                            <div>
+                                <label for="edit-case-record-title" class="mb-1 block text-xs font-bold text-slate-600">عنوان</label>
+                                <input
+                                    id="edit-case-record-title"
+                                    type="text"
+                                    wire:model.defer="editRecordTitle"
+                                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-violet-300 focus:outline-none focus:ring-4 focus:ring-violet-100"
+                                >
+                                @error('editRecordTitle') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                            </div>
+
+                            <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                                <div>
+                                    <label for="edit-case-record-date" class="mb-1 block text-xs font-bold text-slate-600">تاریخ</label>
+                                    <div x-data="jalaliDateTimeField($wire.entangle('editRecordedAt').live)">
+                                        <input
+                                            id="edit-case-record-date"
+                                            type="text"
+                                            x-ref="input"
+                                            x-model="draft"
+                                            x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                            x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                            x-on:jalali-picker-open="handlePickerOpen()"
+                                            x-on:jalali-picker-close="handlePickerClose()"
+                                            x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                            readonly
+                                            inputmode="none"
+                                            autocomplete="off"
+                                            data-jdp-readonly
+                                            data-jdp
+                                            data-jdp-only-date
+                                            placeholder="انتخاب تاریخ شمسی"
+                                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 focus:border-violet-300 focus:outline-none focus:ring-4 focus:ring-violet-100"
+                                        >
+                                    </div>
+                                    @error('editRecordedAt') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                                </div>
+
+                                <div>
+                                    <label for="edit-case-record-amount" class="mb-1 block text-xs font-bold text-slate-600">مبلغ ریالی</label>
+                                    <input
+                                        id="edit-case-record-amount"
+                                        type="number"
+                                        min="0"
+                                        step="1"
+                                        wire:model.defer="editRecordAmount"
+                                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-violet-300 focus:outline-none focus:ring-4 focus:ring-violet-100"
+                                    >
+                                    @error('editRecordAmount') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="edit-case-record-reference" class="mb-1 block text-xs font-bold text-slate-600">شماره مرجع</label>
+                                <input
+                                    id="edit-case-record-reference"
+                                    type="text"
+                                    wire:model.defer="editRecordReferenceNumber"
+                                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-violet-300 focus:outline-none focus:ring-4 focus:ring-violet-100"
+                                >
+                                @error('editRecordReferenceNumber') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                            </div>
+
+                            <div>
+                                <label for="edit-case-record-description" class="mb-1 block text-xs font-bold text-slate-600">توضیحات</label>
+                                <textarea
+                                    id="edit-case-record-description"
+                                    rows="4"
+                                    wire:model.defer="editRecordDescription"
+                                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-violet-300 focus:outline-none focus:ring-4 focus:ring-violet-100"
+                                ></textarea>
+                                @error('editRecordDescription') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <button
+                                    type="submit"
+                                    wire:loading.attr="disabled"
+                                    wire:target="updateCaseRecord"
+                                    class="inline-flex flex-1 items-center justify-center rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-violet-700 focus:outline-none focus:ring-4 focus:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    ذخیره تغییرات
+                                </button>
+                                <button
+                                    type="button"
+                                    wire:click="cancelEditingCaseRecord"
+                                    class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100"
+                                >
+                                    انصراف
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                @endif
 
                 <form wire:submit.prevent="saveCaseRecord" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <h2 class="text-base font-black text-slate-900">ثبت رکورد پرونده</h2>

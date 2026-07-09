@@ -46,6 +46,20 @@ class BeneficiaryCaseFile extends Component
 
     public string $recordReferenceNumber = '';
 
+    public ?int $editingCaseRecordId = null;
+
+    public string $editRecordType = BeneficiaryCaseRecord::TYPE_NOTE;
+
+    public string $editRecordTitle = '';
+
+    public string $editRecordDescription = '';
+
+    public string $editRecordedAt = '';
+
+    public ?string $editRecordAmount = null;
+
+    public string $editRecordReferenceNumber = '';
+
     #[Validate(['recordAttachments.*' => 'file|mimes:jpg,jpeg,png,webp,pdf|max:4096'])]
     public array $recordAttachments = [];
 
@@ -85,6 +99,7 @@ class BeneficiaryCaseFile extends Component
 
         $this->selectedPersonId = $personId;
         $this->resetLoadedCaseFileData();
+        $this->resetEditRecordForm();
     }
 
     public function clearSelection(): void
@@ -92,6 +107,7 @@ class BeneficiaryCaseFile extends Component
         $this->selectedPersonId = null;
         $this->resetLoadedCaseFileData();
         $this->resetRecordForm();
+        $this->resetEditRecordForm();
     }
 
     public function resolveScannedBeneficiaryQr(string $payload): array
@@ -164,37 +180,7 @@ class BeneficiaryCaseFile extends Component
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
         abort_unless((bool) $this->selectedPerson, 404);
 
-        $validated = $this->validate([
-            'recordType' => ['required', Rule::in(array_keys(BeneficiaryCaseRecord::TYPE_OPTIONS))],
-            'recordTitle' => ['required', 'string', 'max:255'],
-            'recordDescription' => ['nullable', 'string', 'max:5000'],
-            'recordedAt' => [
-                'nullable',
-                'string',
-                function (string $attribute, mixed $value, \Closure $fail): void {
-                    if (blank($value)) {
-                        return;
-                    }
-
-                    if (! $this->isValidJalaliDate((string) $value)) {
-                        $fail('تاریخ شمسی معتبر نیست.');
-                    }
-                },
-            ],
-            'recordAmount' => ['nullable', 'integer', 'min:0', 'max:999999999999'],
-            'recordReferenceNumber' => ['nullable', 'string', 'max:255'],
-            'recordAttachments' => ['array', 'max:5'],
-            'recordAttachments.*' => ['file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:4096'],
-        ], [], [
-            'recordType' => 'نوع رکورد',
-            'recordTitle' => 'عنوان',
-            'recordDescription' => 'توضیحات',
-            'recordedAt' => 'تاریخ',
-            'recordAmount' => 'مبلغ',
-            'recordReferenceNumber' => 'شماره مرجع',
-            'recordAttachments' => 'پیوست‌ها',
-            'recordAttachments.*' => 'پیوست',
-        ]);
+        $validated = $this->validate($this->createRecordRules(), [], $this->recordValidationAttributes());
 
         $storedAttachmentPaths = [];
 
@@ -237,6 +223,61 @@ class BeneficiaryCaseFile extends Component
         $this->resetLoadedCaseFileData();
         $this->resetRecordForm();
         session()->flash('case-record-success', 'رکورد پرونده با موفقیت ثبت شد.');
+    }
+
+    public function startEditingCaseRecord(int $recordId): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless((bool) $this->selectedPerson, 404);
+
+        $record = $this->resolveEditableCaseRecord($recordId);
+
+        $this->editingCaseRecordId = $record->id;
+        $this->editRecordType = (string) $record->record_type;
+        $this->editRecordTitle = (string) $record->title;
+        $this->editRecordDescription = (string) ($record->description ?? '');
+        $this->editRecordedAt = $record->recorded_at
+            ? Jalalian::fromDateTime($record->recorded_at)->format('Y/m/d')
+            : '';
+        $this->editRecordAmount = $record->amount !== null ? (string) $record->amount : null;
+        $this->editRecordReferenceNumber = (string) ($record->reference_number ?? '');
+
+        $this->resetValidation([
+            'editRecordType',
+            'editRecordTitle',
+            'editRecordDescription',
+            'editRecordedAt',
+            'editRecordAmount',
+            'editRecordReferenceNumber',
+        ]);
+    }
+
+    public function cancelEditingCaseRecord(): void
+    {
+        $this->resetEditRecordForm();
+    }
+
+    public function updateCaseRecord(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless((bool) $this->selectedPerson, 404);
+        abort_unless($this->editingCaseRecordId !== null, 404);
+
+        $record = $this->resolveEditableCaseRecord($this->editingCaseRecordId);
+        $validated = $this->validate($this->editRecordRules(), [], $this->recordValidationAttributes());
+
+        $record->update([
+            'record_type' => $validated['editRecordType'],
+            'title' => trim($validated['editRecordTitle']),
+            'description' => filled($validated['editRecordDescription']) ? trim($validated['editRecordDescription']) : null,
+            'recorded_at' => filled($validated['editRecordedAt']) ? $this->jalaliToGregorian($validated['editRecordedAt']) : null,
+            'amount' => filled($validated['editRecordAmount']) ? (int) $validated['editRecordAmount'] : null,
+            'reference_number' => filled($validated['editRecordReferenceNumber']) ? trim($validated['editRecordReferenceNumber']) : null,
+        ]);
+
+        $this->resetLoadedCaseFileData();
+        $this->resetEditRecordForm();
+        session()->flash('case-record-edit-success', 'رکورد پرونده به‌روزرسانی شد.');
     }
 
     public function getSearchResultsProperty(): Collection
@@ -518,6 +559,25 @@ class BeneficiaryCaseFile extends Component
         ]);
     }
 
+    protected function resetEditRecordForm(): void
+    {
+        $this->editingCaseRecordId = null;
+        $this->editRecordType = BeneficiaryCaseRecord::TYPE_NOTE;
+        $this->editRecordTitle = '';
+        $this->editRecordDescription = '';
+        $this->editRecordedAt = '';
+        $this->editRecordAmount = null;
+        $this->editRecordReferenceNumber = '';
+        $this->resetValidation([
+            'editRecordType',
+            'editRecordTitle',
+            'editRecordDescription',
+            'editRecordedAt',
+            'editRecordAmount',
+            'editRecordReferenceNumber',
+        ]);
+    }
+
     protected function isValidJalaliDate(string $date): bool
     {
         $parts = explode('/', $this->normalizeJalaliDate($date));
@@ -577,6 +637,76 @@ class BeneficiaryCaseFile extends Component
         $this->caseRecordsCache = null;
         $this->timelineCache = null;
         $this->caseFileTotalsCache = null;
+    }
+
+    protected function createRecordRules(): array
+    {
+        return [
+            'recordType' => ['required', Rule::in(array_keys(BeneficiaryCaseRecord::TYPE_OPTIONS))],
+            'recordTitle' => ['required', 'string', 'max:255'],
+            'recordDescription' => ['nullable', 'string', 'max:5000'],
+            'recordedAt' => $this->jalaliDateRule(),
+            'recordAmount' => ['nullable', 'integer', 'min:0', 'max:999999999999'],
+            'recordReferenceNumber' => ['nullable', 'string', 'max:255'],
+            'recordAttachments' => ['array', 'max:5'],
+            'recordAttachments.*' => ['file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:4096'],
+        ];
+    }
+
+    protected function editRecordRules(): array
+    {
+        return [
+            'editRecordType' => ['required', Rule::in(array_keys(BeneficiaryCaseRecord::TYPE_OPTIONS))],
+            'editRecordTitle' => ['required', 'string', 'max:255'],
+            'editRecordDescription' => ['nullable', 'string', 'max:5000'],
+            'editRecordedAt' => $this->jalaliDateRule(),
+            'editRecordAmount' => ['nullable', 'integer', 'min:0', 'max:999999999999'],
+            'editRecordReferenceNumber' => ['nullable', 'string', 'max:255'],
+        ];
+    }
+
+    protected function recordValidationAttributes(): array
+    {
+        return [
+            'recordType' => 'نوع رکورد',
+            'recordTitle' => 'عنوان',
+            'recordDescription' => 'توضیحات',
+            'recordedAt' => 'تاریخ',
+            'recordAmount' => 'مبلغ',
+            'recordReferenceNumber' => 'شماره مرجع',
+            'recordAttachments' => 'پیوست‌ها',
+            'recordAttachments.*' => 'پیوست',
+            'editRecordType' => 'نوع رکورد',
+            'editRecordTitle' => 'عنوان',
+            'editRecordDescription' => 'توضیحات',
+            'editRecordedAt' => 'تاریخ',
+            'editRecordAmount' => 'مبلغ',
+            'editRecordReferenceNumber' => 'شماره مرجع',
+        ];
+    }
+
+    protected function jalaliDateRule(): array
+    {
+        return [
+            'nullable',
+            'string',
+            function (string $attribute, mixed $value, \Closure $fail): void {
+                if (blank($value)) {
+                    return;
+                }
+
+                if (! $this->isValidJalaliDate((string) $value)) {
+                    $fail('تاریخ شمسی معتبر نیست.');
+                }
+            },
+        ];
+    }
+
+    protected function resolveEditableCaseRecord(int $recordId): BeneficiaryCaseRecord
+    {
+        return BeneficiaryCaseRecord::query()
+            ->where('person_id', $this->selectedPersonId)
+            ->findOrFail($recordId);
     }
 
     protected function beneficiaryQrScanResponse(bool $ok, string $message, string $name = ''): array
