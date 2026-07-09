@@ -223,7 +223,7 @@
                     </form>
 
                     <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80 px-3 py-3 text-center text-xs leading-6 text-slate-600 sm:mt-6">
-                        <p>در صورت فراموشی رمز یا مشکل در ورود، با پشتیبانی فنی سامانه تماس بگیرید.</p>
+                        <p>در صورت مشکل در ورود، با پشتیبانی فنی سامانه تماس بگیرید.</p>
                         @if($supportPhone['href'] && $supportPhone['label'])
                             <a
                                 href="{{ $supportPhone['href'] }}"

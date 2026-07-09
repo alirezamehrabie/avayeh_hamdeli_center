@@ -4,6 +4,7 @@
         $searchResults = $this->searchResults;
         $timeline = $this->timeline;
         $caseFileTotals = $this->caseFileTotals;
+        $editingCaseRecord = $this->editingCaseRecord;
     @endphp
 
     <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
@@ -394,6 +395,7 @@
                                             <th class="px-4 py-3 text-right">عنوان</th>
                                             <th class="px-4 py-3 text-right">مقدار/روش</th>
                                             <th class="px-4 py-3 text-right">ارزش/فاکتور</th>
+                                            <th class="px-4 py-3 text-center">عملیات</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-100 bg-white">
@@ -411,18 +413,7 @@
                                                     </span>
                                                 </td>
                                                 <td class="px-4 py-3">
-                                                    <div class="flex items-start justify-between gap-3">
-                                                        <p class="font-bold text-slate-800">{{ $row['title'] }}</p>
-                                                        @if($row['type'] === 'manual' && ! empty($row['record_id']))
-                                                            <button
-                                                                type="button"
-                                                                wire:click="startEditingCaseRecord({{ $row['record_id'] }})"
-                                                                class="shrink-0 rounded-lg border border-violet-200 bg-violet-50 px-2 py-1 text-[11px] font-bold text-violet-700 transition hover:bg-violet-100 focus:outline-none focus:ring-4 focus:ring-violet-100"
-                                                            >
-                                                                ویرایش
-                                                            </button>
-                                                        @endif
-                                                    </div>
+                                                    <p class="font-bold text-slate-800">{{ $row['title'] }}</p>
                                                     @if($row['subtitle'])
                                                         <p class="mt-1 text-xs text-slate-500">{{ $row['subtitle'] }}</p>
                                                     @endif
@@ -454,6 +445,19 @@
                                                 </td>
                                                 <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700">{{ $row['quantity'] }}</td>
                                                 <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700">{{ $row['value'] }}</td>
+                                                <td class="px-4 py-3 text-center">
+                                                    @if($row['type'] === 'manual' && ! empty($row['record_id']))
+                                                        <button
+                                                            type="button"
+                                                            wire:click="startEditingCaseRecord({{ $row['record_id'] }})"
+                                                            class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-violet-200 bg-violet-50 text-violet-700 transition hover:bg-violet-100 focus:outline-none focus:ring-4 focus:ring-violet-100"
+                                                            aria-label="ویرایش رکورد"
+                                                            title="ویرایش رکورد"
+                                                        >
+                                                            <i class="bi bi-pencil-square text-sm"></i>
+                                                        </button>
+                                                    @endif
+                                                </td>
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -606,11 +610,125 @@
                                 @error('editRecordDescription') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
                             </div>
 
+                            <div>
+                                <label for="edit-case-record-attachments" class="mb-1 block text-xs font-bold text-slate-600">مدیریت پیوست‌ها</label>
+
+                                @if(($editingCaseRecord?->attachments ?? collect())->isNotEmpty())
+                                    <div class="space-y-2">
+                                        @foreach($editingCaseRecord->attachments as $attachment)
+                                            @php $markedForRemoval = in_array($attachment->id, $editRemovedAttachmentIds, true); @endphp
+                                            <div @class([
+                                                'flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-xs',
+                                                'border-rose-200 bg-rose-50 text-rose-700' => $markedForRemoval,
+                                                'border-slate-200 bg-white text-slate-600' => ! $markedForRemoval,
+                                            ])>
+                                                <div class="min-w-0">
+                                                    <a href="{{ $attachment->url }}" target="_blank" rel="noopener noreferrer" class="truncate font-bold hover:underline">
+                                                        {{ $attachment->original_name }}
+                                                    </a>
+                                                    <p class="mt-0.5 text-[11px] {{ $markedForRemoval ? 'text-rose-500' : 'text-slate-400' }}">
+                                                        {{ $attachment->size_label ?: 'بدون اندازه' }}
+                                                        @if($markedForRemoval)
+                                                            · در انتظار حذف
+                                                        @endif
+                                                    </p>
+                                                </div>
+                                                @if($markedForRemoval)
+                                                    <button
+                                                        type="button"
+                                                        wire:click="unmarkEditAttachmentForRemoval({{ $attachment->id }})"
+                                                        class="shrink-0 rounded-lg border border-rose-200 bg-white px-2 py-1 font-bold text-rose-700 transition hover:bg-rose-100"
+                                                    >
+                                                        بازگردانی
+                                                    </button>
+                                                @else
+                                                    <button
+                                                        type="button"
+                                                        wire:click="markEditAttachmentForRemoval({{ $attachment->id }})"
+                                                        class="shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 font-bold text-slate-600 transition hover:bg-slate-100"
+                                                    >
+                                                        حذف
+                                                    </button>
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <div class="rounded-xl border border-dashed border-slate-200 bg-white px-3 py-3 text-xs text-slate-500">
+                                        پیوست ثبت‌شده‌ای برای این رکورد وجود ندارد.
+                                    </div>
+                                @endif
+
+                                @if(count($editRemovedAttachmentIds) > 0)
+                                    <div class="mt-3 rounded-xl border {{ $editAttachmentRemovalConfirmed ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50' }} px-3 py-3 text-xs">
+                                        <p class="font-bold {{ $editAttachmentRemovalConfirmed ? 'text-emerald-700' : 'text-amber-700' }}">
+                                            {{ $editAttachmentRemovalConfirmed ? 'حذف پیوست‌ها تایید شد.' : 'حذف پیوست‌ها هنوز تایید نهایی نشده است.' }}
+                                        </p>
+                                        <p class="mt-1 leading-5 {{ $editAttachmentRemovalConfirmed ? 'text-emerald-600' : 'text-amber-600' }}">
+                                            {{ number_format(count($editRemovedAttachmentIds)) }} پیوست در انتظار حذف است. این حذف فقط بعد از ذخیره تغییرات اعمال می‌شود.
+                                        </p>
+                                        <div class="mt-2 flex items-center gap-2">
+                                            @if(! $editAttachmentRemovalConfirmed)
+                                                <button
+                                                    type="button"
+                                                    wire:click="confirmEditAttachmentRemoval"
+                                                    class="rounded-lg border border-amber-300 bg-white px-3 py-1.5 font-bold text-amber-700 transition hover:bg-amber-100"
+                                                >
+                                                    تایید حذف
+                                                </button>
+                                            @else
+                                                <button
+                                                    type="button"
+                                                    wire:click="cancelEditAttachmentRemovalConfirmation"
+                                                    class="rounded-lg border border-emerald-300 bg-white px-3 py-1.5 font-bold text-emerald-700 transition hover:bg-emerald-100"
+                                                >
+                                                    لغو تایید حذف
+                                                </button>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endif
+
+                                @error('editRemovedAttachmentIds') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+
+                                <input
+                                    id="edit-case-record-attachments"
+                                    type="file"
+                                    multiple
+                                    wire:model="editRecordAttachments"
+                                    accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
+                                    class="mt-3 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 file:ml-3 file:rounded-lg file:border-0 file:bg-violet-50 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-violet-700 focus:border-violet-300 focus:outline-none focus:ring-4 focus:ring-violet-100"
+                                >
+                                <p class="mt-1 text-[11px] leading-5 text-slate-400">می‌توانید پیوست جدید اضافه کنید و حذف پیوست‌های فعلی را تا قبل از ذخیره نهایی، برگردانید. سقف کل پیوست‌ها ۵ فایل است.</p>
+                                @error('editRecordAttachments') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+                                @error('editRecordAttachments.*') <p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p> @enderror
+
+                                @if(count($editRecordAttachments) > 0)
+                                    <div class="mt-2 space-y-1">
+                                        @foreach($editRecordAttachments as $index => $attachment)
+                                            <div class="flex items-center justify-between gap-2 rounded-lg bg-white px-2 py-1.5 text-xs text-slate-500">
+                                                <span class="truncate">{{ $attachment->getClientOriginalName() }}</span>
+                                                <div class="flex items-center gap-2 shrink-0">
+                                                    <span>{{ number_format($attachment->getSize() / 1024, 1) }} KB</span>
+                                                    <button
+                                                        type="button"
+                                                        wire:click="removeEditPendingAttachment({{ $index }})"
+                                                        class="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 font-bold text-slate-600 transition hover:bg-slate-100"
+                                                    >
+                                                        برداشتن
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+
                             <div class="flex items-center gap-2">
                                 <button
                                     type="submit"
                                     wire:loading.attr="disabled"
-                                    wire:target="updateCaseRecord"
+                                    wire:target="updateCaseRecord,editRecordAttachments"
                                     class="inline-flex flex-1 items-center justify-center rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-violet-700 focus:outline-none focus:ring-4 focus:ring-violet-100 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
                                     ذخیره تغییرات

@@ -130,6 +130,100 @@ class BeneficiaryCaseFileTest extends TestCase
         $this->assertSame('NEW-REF', $record->reference_number);
     }
 
+    public function test_admin_can_add_and_remove_attachments_while_editing_manual_case_record(): void
+    {
+        Storage::fake('public');
+
+        $admin = $this->admin();
+        $person = $this->person();
+        $record = BeneficiaryCaseRecord::query()->create([
+            'person_id' => $person->id,
+            'created_by' => $admin->id,
+            'record_type' => BeneficiaryCaseRecord::TYPE_NOTE,
+            'title' => 'Attachment edit',
+            'recorded_at' => '2026-07-03',
+        ]);
+
+        $oldPath = "beneficiary-case-records/{$person->id}/{$record->id}/old.pdf";
+        Storage::disk('public')->put($oldPath, 'old-file');
+
+        $oldAttachment = BeneficiaryCaseRecordAttachment::query()->create([
+            'beneficiary_case_record_id' => $record->id,
+            'uploaded_by' => $admin->id,
+            'disk' => 'public',
+            'path' => $oldPath,
+            'original_name' => 'old.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => strlen('old-file'),
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(BeneficiaryCaseFile::class, ['personId' => $person->id])
+            ->call('startEditingCaseRecord', $record->id)
+            ->call('markEditAttachmentForRemoval', $oldAttachment->id)
+            ->call('confirmEditAttachmentRemoval')
+            ->set('editRecordAttachments', [
+                UploadedFile::fake()->create('new.pdf', 10, 'application/pdf'),
+            ])
+            ->call('updateCaseRecord')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseMissing('beneficiary_case_record_attachments', [
+            'id' => $oldAttachment->id,
+        ]);
+
+        $newAttachment = BeneficiaryCaseRecordAttachment::query()
+            ->where('beneficiary_case_record_id', $record->id)
+            ->first();
+
+        $this->assertNotNull($newAttachment);
+        $this->assertSame('new.pdf', $newAttachment->original_name);
+        Storage::disk('public')->assertMissing($oldPath);
+        Storage::disk('public')->assertExists($newAttachment->path);
+    }
+
+    public function test_attachment_removal_during_edit_requires_explicit_confirmation(): void
+    {
+        Storage::fake('public');
+
+        $admin = $this->admin();
+        $person = $this->person();
+        $record = BeneficiaryCaseRecord::query()->create([
+            'person_id' => $person->id,
+            'created_by' => $admin->id,
+            'record_type' => BeneficiaryCaseRecord::TYPE_NOTE,
+            'title' => 'Attachment confirmation',
+            'recorded_at' => '2026-07-03',
+        ]);
+
+        $path = "beneficiary-case-records/{$person->id}/{$record->id}/keep.pdf";
+        Storage::disk('public')->put($path, 'keep-file');
+
+        $attachment = BeneficiaryCaseRecordAttachment::query()->create([
+            'beneficiary_case_record_id' => $record->id,
+            'uploaded_by' => $admin->id,
+            'disk' => 'public',
+            'path' => $path,
+            'original_name' => 'keep.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => strlen('keep-file'),
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(BeneficiaryCaseFile::class, ['personId' => $person->id])
+            ->call('startEditingCaseRecord', $record->id)
+            ->call('markEditAttachmentForRemoval', $attachment->id)
+            ->call('updateCaseRecord')
+            ->assertHasErrors(['editRemovedAttachmentIds']);
+
+        $this->assertDatabaseHas('beneficiary_case_record_attachments', [
+            'id' => $attachment->id,
+        ]);
+        Storage::disk('public')->assertExists($path);
+    }
+
     public function test_manual_case_record_rejects_invalid_jalali_date(): void
     {
         $admin = $this->admin();

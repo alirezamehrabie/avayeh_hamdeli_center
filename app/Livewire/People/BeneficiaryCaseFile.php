@@ -63,6 +63,13 @@ class BeneficiaryCaseFile extends Component
     #[Validate(['recordAttachments.*' => 'file|mimes:jpg,jpeg,png,webp,pdf|max:4096'])]
     public array $recordAttachments = [];
 
+    #[Validate(['editRecordAttachments.*' => 'file|mimes:jpg,jpeg,png,webp,pdf|max:4096'])]
+    public array $editRecordAttachments = [];
+
+    public array $editRemovedAttachmentIds = [];
+
+    public bool $editAttachmentRemovalConfirmed = false;
+
     protected ?Collection $searchResultsCache = null;
 
     protected ?Person $selectedPersonCache = null;
@@ -257,6 +264,60 @@ class BeneficiaryCaseFile extends Component
         $this->resetEditRecordForm();
     }
 
+    public function markEditAttachmentForRemoval(int $attachmentId): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless($this->editingCaseRecordId !== null, 404);
+
+        $attachment = BeneficiaryCaseRecordAttachment::query()
+            ->where('beneficiary_case_record_id', $this->editingCaseRecordId)
+            ->findOrFail($attachmentId);
+
+        if (! in_array($attachment->id, $this->editRemovedAttachmentIds, true)) {
+            $this->editRemovedAttachmentIds[] = (int) $attachment->id;
+        }
+
+        $this->editAttachmentRemovalConfirmed = false;
+    }
+
+    public function unmarkEditAttachmentForRemoval(int $attachmentId): void
+    {
+        $this->editRemovedAttachmentIds = array_values(array_filter(
+            $this->editRemovedAttachmentIds,
+            fn (int $id): bool => $id !== $attachmentId
+        ));
+
+        if ($this->editRemovedAttachmentIds === []) {
+            $this->editAttachmentRemovalConfirmed = false;
+        }
+    }
+
+    public function confirmEditAttachmentRemoval(): void
+    {
+        if ($this->editRemovedAttachmentIds === []) {
+            $this->editAttachmentRemovalConfirmed = false;
+
+            return;
+        }
+
+        $this->editAttachmentRemovalConfirmed = true;
+    }
+
+    public function cancelEditAttachmentRemovalConfirmation(): void
+    {
+        $this->editAttachmentRemovalConfirmed = false;
+    }
+
+    public function removeEditPendingAttachment(int $index): void
+    {
+        if (! array_key_exists($index, $this->editRecordAttachments)) {
+            return;
+        }
+
+        unset($this->editRecordAttachments[$index]);
+        $this->editRecordAttachments = array_values($this->editRecordAttachments);
+    }
+
     public function updateCaseRecord(): void
     {
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
@@ -266,14 +327,61 @@ class BeneficiaryCaseFile extends Component
         $record = $this->resolveEditableCaseRecord($this->editingCaseRecordId);
         $validated = $this->validate($this->editRecordRules(), [], $this->recordValidationAttributes());
 
-        $record->update([
-            'record_type' => $validated['editRecordType'],
-            'title' => trim($validated['editRecordTitle']),
-            'description' => filled($validated['editRecordDescription']) ? trim($validated['editRecordDescription']) : null,
-            'recorded_at' => filled($validated['editRecordedAt']) ? $this->jalaliToGregorian($validated['editRecordedAt']) : null,
-            'amount' => filled($validated['editRecordAmount']) ? (int) $validated['editRecordAmount'] : null,
-            'reference_number' => filled($validated['editRecordReferenceNumber']) ? trim($validated['editRecordReferenceNumber']) : null,
-        ]);
+        if ($this->editRemovedAttachmentIds !== [] && ! $this->editAttachmentRemovalConfirmed) {
+            $this->addError('editRemovedAttachmentIds', 'برای حذف نهایی پیوست‌ها، ابتدا تایید حذف را فعال کنید.');
+
+            return;
+        }
+
+        $newAttachmentPaths = [];
+        $removedAttachments = $record->attachments()
+            ->whereKey($this->editRemovedAttachmentIds)
+            ->get();
+
+        try {
+            DB::transaction(function () use ($record, $validated, &$newAttachmentPaths): void {
+                $record->update([
+                    'record_type' => $validated['editRecordType'],
+                    'title' => trim($validated['editRecordTitle']),
+                    'description' => filled($validated['editRecordDescription']) ? trim($validated['editRecordDescription']) : null,
+                    'recorded_at' => filled($validated['editRecordedAt']) ? $this->jalaliToGregorian($validated['editRecordedAt']) : null,
+                    'amount' => filled($validated['editRecordAmount']) ? (int) $validated['editRecordAmount'] : null,
+                    'reference_number' => filled($validated['editRecordReferenceNumber']) ? trim($validated['editRecordReferenceNumber']) : null,
+                ]);
+
+                foreach ($this->editRecordAttachments as $attachment) {
+                    $path = $attachment->store("beneficiary-case-records/{$record->person_id}/{$record->id}", 'public');
+                    $newAttachmentPaths[] = $path;
+
+                    BeneficiaryCaseRecordAttachment::query()->create([
+                        'beneficiary_case_record_id' => $record->id,
+                        'uploaded_by' => auth()->id(),
+                        'disk' => 'public',
+                        'path' => $path,
+                        'original_name' => $attachment->getClientOriginalName(),
+                        'mime_type' => $attachment->getMimeType(),
+                        'size' => $attachment->getSize(),
+                    ]);
+                }
+
+                if ($this->editRemovedAttachmentIds !== []) {
+                    BeneficiaryCaseRecordAttachment::query()
+                        ->where('beneficiary_case_record_id', $record->id)
+                        ->whereKey($this->editRemovedAttachmentIds)
+                        ->delete();
+                }
+            });
+        } catch (Throwable $exception) {
+            if ($newAttachmentPaths !== []) {
+                Storage::disk('public')->delete($newAttachmentPaths);
+            }
+
+            throw $exception;
+        }
+
+        foreach ($removedAttachments as $attachment) {
+            Storage::disk($attachment->disk)->delete($attachment->path);
+        }
 
         $this->resetLoadedCaseFileData();
         $this->resetEditRecordForm();
@@ -503,6 +611,18 @@ class BeneficiaryCaseFile extends Component
         );
     }
 
+    public function getEditingCaseRecordProperty(): ?BeneficiaryCaseRecord
+    {
+        if (! $this->editingCaseRecordId || ! $this->selectedPersonId) {
+            return null;
+        }
+
+        return BeneficiaryCaseRecord::query()
+            ->with(['attachments:id,beneficiary_case_record_id,disk,path,original_name,mime_type,size'])
+            ->where('person_id', $this->selectedPersonId)
+            ->find($this->editingCaseRecordId);
+    }
+
     public function formatDate($date): string
     {
         if (! $date) {
@@ -568,6 +688,9 @@ class BeneficiaryCaseFile extends Component
         $this->editRecordedAt = '';
         $this->editRecordAmount = null;
         $this->editRecordReferenceNumber = '';
+        $this->editRecordAttachments = [];
+        $this->editRemovedAttachmentIds = [];
+        $this->editAttachmentRemovalConfirmed = false;
         $this->resetValidation([
             'editRecordType',
             'editRecordTitle',
@@ -575,6 +698,9 @@ class BeneficiaryCaseFile extends Component
             'editRecordedAt',
             'editRecordAmount',
             'editRecordReferenceNumber',
+            'editRecordAttachments',
+            'editRecordAttachments.*',
+            'editRemovedAttachmentIds',
         ]);
     }
 
@@ -662,6 +788,25 @@ class BeneficiaryCaseFile extends Component
             'editRecordedAt' => $this->jalaliDateRule(),
             'editRecordAmount' => ['nullable', 'integer', 'min:0', 'max:999999999999'],
             'editRecordReferenceNumber' => ['nullable', 'string', 'max:255'],
+            'editRecordAttachments' => [
+                'array',
+                'max:5',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    $existingCount = $this->editingCaseRecordId
+                        ? BeneficiaryCaseRecordAttachment::query()
+                            ->where('beneficiary_case_record_id', $this->editingCaseRecordId)
+                            ->count()
+                        : 0;
+
+                    $remainingCount = max(0, $existingCount - count($this->editRemovedAttachmentIds));
+                    $newCount = count((array) $value);
+
+                    if (($remainingCount + $newCount) > 5) {
+                        $fail('هر رکورد حداکثر می‌تواند ۵ پیوست داشته باشد.');
+                    }
+                },
+            ],
+            'editRecordAttachments.*' => ['file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:4096'],
         ];
     }
 
@@ -682,6 +827,8 @@ class BeneficiaryCaseFile extends Component
             'editRecordedAt' => 'تاریخ',
             'editRecordAmount' => 'مبلغ',
             'editRecordReferenceNumber' => 'شماره مرجع',
+            'editRecordAttachments' => 'پیوست‌های جدید',
+            'editRecordAttachments.*' => 'پیوست جدید',
         ];
     }
 
