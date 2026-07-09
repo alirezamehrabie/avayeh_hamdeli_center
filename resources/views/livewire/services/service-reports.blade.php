@@ -119,13 +119,12 @@
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="border-b border-slate-200 text-slate-500">
-                            <th class="px-3 py-3 text-center font-semibold">شناسه</th>
-                            <th class="px-3 py-3 text-center font-semibold">وضعیت</th>
                             <th class="px-3 py-3 text-right font-semibold">خدمت</th>
                             <th class="px-3 py-3 text-right font-semibold">دسته‌بندی</th>
                             <th class="px-3 py-3 text-right font-semibold">نوع</th>
                             <th class="px-3 py-3 text-right font-semibold">توضیحات</th>
                             <th class="px-3 py-3 text-right font-semibold">اپراتور</th>
+                            <th class="px-3 py-3 text-center font-semibold">وضعیت</th>
                             <th class="px-3 py-3 text-right font-semibold">تاریخ</th>
                             <th class="px-3 py-3 text-center font-semibold">عملیات</th>
                         </tr>
@@ -139,12 +138,6 @@
                             ]))) ?: ($service->creator?->name ?: '-');
                         @endphp
                         <tr class="transition hover:bg-slate-50">
-                            <td class="px-3 py-3 text-center text-slate-700 font-bold">{{ $service->id }}</td>
-                            <td class="px-3 py-3 text-center">
-                                <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold {{ $statusBadgeClasses[$service->status] ?? 'bg-slate-100 text-slate-700' }}">
-                                    {{ $statusOptions[$service->status] ?? $service->status }}
-                                </span>
-                            </td>
                             <td class="px-3 py-3 text-right font-semibold text-slate-900">{{ $service->serviceName?->name ?: '-' }}</td>
                             <td class="px-3 py-3 text-right">
                                 @if($service->categories->count() > 0)
@@ -169,8 +162,15 @@
                             <td class="px-3 py-3 text-right">
                                 <x-service-type-badge :type="$service->service_type" />
                             </td>
-                            <td class="px-3 py-3 text-right text-slate-600 max-w-[200px] truncate">{{ $service->description ?: 'بدون توضیحات' }}</td>
+                            <td class="px-3 py-3 text-center">
+                                <x-description-popover :text="$service->description" />
+                            </td>
                             <td class="px-3 py-3 text-right text-slate-600 text-xs">{{ $creatorName }}</td>
+                            <td class="px-3 py-3 text-center">
+                                <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold {{ $statusBadgeClasses[$service->status] ?? 'bg-slate-100 text-slate-700' }}">
+                                    {{ $statusOptions[$service->status] ?? $service->status }}
+                                </span>
+                            </td>
                             <td class="px-3 py-3 text-right text-slate-500 text-xs">{{ $jalaliDateTime($service->created_at) }}</td>
                             <td class="px-3 py-3 text-center">
                                 <button
@@ -187,7 +187,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="px-4 py-12 text-center text-slate-500">
+                            <td colspan="8" class="px-4 py-12 text-center text-slate-500">
                                 {{ trim($search ?? '') !== '' ? 'موردی برای جستجوی فعلی پیدا نشد.' : 'هنوز خدمتی تعریف نشده است.' }}
                             </td>
                         </tr>
@@ -209,10 +209,6 @@
                     @endphp
                     <div class="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-4 text-right shadow-sm transition-all duration-200 hover:border-indigo-200 hover:shadow-md">
                         <div class="flex items-start justify-between gap-3">
-                            <div class="min-w-0">
-                                <p class="text-[11px] font-semibold text-slate-500">شناسه خدمت</p>
-                                <p class="mt-1 text-sm font-black text-slate-800">{{ $service->id }}</p>
-                            </div>
                             <span class="inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold {{ $statusBadgeClasses[$service->status] ?? 'bg-slate-100 text-slate-700' }}">
                                 {{ $statusOptions[$service->status] ?? $service->status }}
                             </span>
