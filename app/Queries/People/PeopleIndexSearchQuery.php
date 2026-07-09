@@ -30,17 +30,26 @@ class PeopleIndexSearchQuery
                 'normalized_last_name',
                 'normalized_full_name',
             ])
-            ->with(['creator:id,name', 'updater:id,name'])
-            ->orderByDesc('created_at')
-            ->orderByDesc('id');
+            ->with(['creator:id,name', 'updater:id,name']);
 
         if ($this->normalizeSearchTerm($search) === '') {
-            return $this->prepareIndexPaginator($query->paginate($perPage));
+            return $this->prepareIndexPaginator(
+                $query
+                    ->orderByDesc('created_at')
+                    ->orderByDesc('id')
+                    ->paginate($perPage)
+            );
         }
 
         $this->applyTo($query, $search, $searchField);
+        $this->applyRelevanceOrdering($query, $search, $searchField);
 
-        return $this->prepareIndexPaginator($query->simplePaginate($perPage));
+        return $this->prepareIndexPaginator(
+            $query
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
+                ->simplePaginate($perPage)
+        );
     }
 
     public function applyTo(Builder $query, string $search = '', string $searchField = 'all'): Builder
@@ -143,5 +152,77 @@ class PeopleIndexSearchQuery
 
             return $person;
         });
+    }
+
+    private function applyRelevanceOrdering(Builder $query, string $search, string $searchField): void
+    {
+        $search = $this->normalizeSearchTerm($search);
+
+        if ($search === '') {
+            return;
+        }
+
+        $escapedSearch = $this->escapeLike($search);
+        $prefixSearch = "{$escapedSearch}%";
+
+        match ($searchField) {
+            'person_code' => $query->orderByRaw(
+                'CASE WHEN person_code = ? THEN 0 ELSE 1 END',
+                [$search]
+            ),
+            'national_id' => $query->orderByRaw(
+                'CASE WHEN national_id = ? THEN 0 ELSE 1 END',
+                [$search]
+            ),
+            'mother_national_id' => $query->orderByRaw(
+                'CASE WHEN mother_national_id = ? THEN 0 ELSE 1 END',
+                [$search]
+            ),
+            'father_national_id' => $query->orderByRaw(
+                'CASE WHEN father_national_id = ? THEN 0 ELSE 1 END',
+                [$search]
+            ),
+            'full_name' => $query->orderByRaw(
+                'CASE
+                    WHEN normalized_full_name LIKE ? THEN 0
+                    WHEN normalized_full_name LIKE ? THEN 1
+                    ELSE 2
+                END',
+                [$prefixSearch, "%{$escapedSearch}%"]
+            ),
+            'first_name' => $query->orderByRaw(
+                'CASE WHEN normalized_first_name LIKE ? THEN 0 ELSE 1 END',
+                [$prefixSearch]
+            ),
+            'last_name' => $query->orderByRaw(
+                'CASE WHEN normalized_last_name LIKE ? THEN 0 ELSE 1 END',
+                [$prefixSearch]
+            ),
+            default => ctype_digit($search)
+                ? $query->orderByRaw(
+                    'CASE
+                        WHEN person_code = ? THEN 0
+                        WHEN national_id = ? THEN 1
+                        WHEN mother_national_id = ? THEN 2
+                        WHEN father_national_id = ? THEN 3
+                        WHEN person_code LIKE ? THEN 4
+                        WHEN national_id LIKE ? THEN 5
+                        WHEN mother_national_id LIKE ? THEN 6
+                        WHEN father_national_id LIKE ? THEN 7
+                        ELSE 8
+                    END',
+                    [$search, $search, $search, $search, $prefixSearch, $prefixSearch, $prefixSearch, $prefixSearch]
+                )
+                : $query->orderByRaw(
+                    'CASE
+                        WHEN normalized_full_name LIKE ? THEN 0
+                        WHEN normalized_first_name LIKE ? THEN 1
+                        WHEN normalized_last_name LIKE ? THEN 2
+                        WHEN normalized_full_name LIKE ? THEN 3
+                        ELSE 4
+                    END',
+                    [$prefixSearch, $prefixSearch, $prefixSearch, "%{$escapedSearch}%"]
+                ),
+        };
     }
 }

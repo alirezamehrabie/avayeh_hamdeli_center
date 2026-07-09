@@ -300,6 +300,38 @@ class IndexPeopleTest extends TestCase
         $this->assertCount(1, $results);
     }
 
+    public function test_all_numeric_search_ranks_exact_identifier_match_before_prefix_matches(): void
+    {
+        $exact = $this->person('P810018', '8100010020');
+        $prefix = $this->person('810001', '8100010021');
+
+        $results = app(PeopleIndexSearchQuery::class)
+            ->paginate(search: '8100010020', searchField: 'all')
+            ->items();
+
+        $this->assertSame($exact->id, $results[0]->id);
+        $this->assertNotSame($prefix->id, $results[0]->id);
+    }
+
+    public function test_all_text_search_ranks_full_name_prefix_before_weaker_name_matches(): void
+    {
+        $weaker = $this->person('P810019', '8100010022', [
+            'first_name' => 'رضا',
+            'last_name' => 'محمدی',
+        ]);
+        $stronger = $this->person('P810020', '8100010023', [
+            'first_name' => 'محمدرضا',
+            'last_name' => 'حسینی',
+        ]);
+
+        $results = app(PeopleIndexSearchQuery::class)
+            ->paginate(search: 'محمد', searchField: 'all')
+            ->items();
+
+        $this->assertSame($stronger->id, $results[0]->id);
+        $this->assertNotSame($weaker->id, $results[0]->id);
+    }
+
     private function manager(): User
     {
         return User::factory()->create([
