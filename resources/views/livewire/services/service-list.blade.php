@@ -50,6 +50,18 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
                         </svg>
                     </a>
+                    <a
+                        href="{{ route('admin.service-archive') }}"
+                        class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/12 text-cyan-50/90 shadow-sm shadow-cyan-950/10 ring-1 ring-white/10 transition duration-200 hover:-translate-y-0.5 hover:bg-white/18 hover:text-white focus:outline-none focus:ring-4 focus:ring-white/25 active:translate-y-0 active:scale-[0.98] sm:h-10 sm:w-10"
+                        title="بایگانی خدمات"
+                        aria-label="بایگانی خدمات"
+                    >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7.5A1.5 1.5 0 0 1 5.5 6h13A1.5 1.5 0 0 1 20 7.5v2A1.5 1.5 0 0 1 18.5 11h-13A1.5 1.5 0 0 1 4 9.5v-2Z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6 11v6.5A1.5 1.5 0 0 0 7.5 19h9a1.5 1.5 0 0 0 1.5-1.5V11"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10 14h4"/>
+                        </svg>
+                    </a>
                     <button
                         type="button"
                         wire:click="createService"
