@@ -346,16 +346,18 @@ class IncompleteCasesQueue extends Component
 
     protected function buildFieldBasis(array $field): string
     {
-        $requirementText = match ($field['requirement_type']) {
-            'required' => 'این فیلد در فرآیند ثبت‌نام اجباری است.',
-            'conditional' => 'این فیلد بر اساس شرط‌های فرم باید تکمیل شود.',
-            'management' => 'این فیلد به‌عنوان کیفیت پرونده برای پیگیری مدیریتی رصد می‌شود.',
-            default => 'این فیلد در بررسی کامل بودن پرونده رصد می‌شود.',
+        return match ($field['key']) {
+            'sadaat_relation_id' => 'این فیلد فقط برای مددجویان سادات باید تکمیل شود.',
+            'disability_type_id' => 'اگر وضعیت معلولیت فعال باشد، نوع معلولیت باید مشخص شود.',
+            'disability_description' => 'اگر مددجو دارای معلولیت باشد، شرح معلولیت باید ثبت شود.',
+            'reason_for_not_studying' => 'اگر مددجو در حال تحصیل نیست، دلیل عدم تحصیل باید مشخص شود.',
+            'education_degree' => 'اگر دلیل عدم تحصیل «فارغ‌التحصیلی» یا «ترک تحصیل» باشد، مقطع تحصیلی باید ثبت شود.',
+            'parent_disability_description' => 'اگر معلولیت والدین ثبت شده باشد، شرح آن نیز باید تکمیل شود.',
+            'guardian_first_name', 'guardian_last_name' => 'در صورتی که سرپرست از قبل در سامانه ثبت نشده باشد، مشخصات او باید کامل ثبت شود.',
+            'insurance_type_id' => 'اگر سرپرست دارای بیمه باشد، نوع بیمه نیز باید مشخص شود.',
+            'other_organization_name' => 'اگر نهاد حمایتی از نوع «سایر» انتخاب شده باشد، نام آن باید نوشته شود.',
+            default => '',
         };
-
-        $note = filled($field['note']) ? ' '.$field['note'] : '';
-
-        return $requirementText.' مسیر داده: `'.$field['path'].'`.'.$note;
     }
 
     protected function buildSeverity(array $reasons): array

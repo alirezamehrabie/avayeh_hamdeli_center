@@ -7,6 +7,56 @@
         'conditional' => 'مشروط',
         'management' => 'مدیریتی',
     ];
+    $fieldPathLabels = [
+        'people.first_name' => 'نام مددجو',
+        'people.last_name' => 'نام خانوادگی مددجو',
+        'people.national_id' => 'کد ملی مددجو',
+        'people.shenasnameh_serial' => 'سریال شناسنامه',
+        'people.shenasnameh_series_number' => 'شماره سری شناسنامه',
+        'people.shenasnameh_series_letter' => 'حرف سری شناسنامه',
+        'people.birth_day' => 'روز تولد',
+        'people.birth_month' => 'ماه تولد',
+        'people.birth_year' => 'سال تولد',
+        'people.father_name' => 'نام پدر',
+        'people.father_national_id' => 'کد ملی پدر',
+        'people.mother_national_id' => 'کد ملی مادر',
+        'people.phone_number' => 'شماره همراه مددجو',
+        'people.gender' => 'جنسیت',
+        'people.role' => 'نقش مددجو',
+        'people.sadaat_status' => 'وضعیت سادات',
+        'people.sadaat_relation_id' => 'نسبت سادات',
+        'harm_type_person.harm_type_id' => 'آسیب‌های ثبت‌شده',
+        'people.has_disability' => 'وضعیت معلولیت',
+        'people.disability_type_id' => 'نوع معلولیت',
+        'people.disability_description' => 'شرح معلولیت',
+        'people.profile_photo' => 'عکس مددجو',
+        'people.photo_id_card' => 'تصویر کارت ملی',
+        'people.photo_birth_certificate' => 'تصویر شناسنامه',
+        'educations.is_studying' => 'وضعیت تحصیل',
+        'educations.reason_for_not_studying' => 'دلیل عدم تحصیل',
+        'educations.education_degree' => 'مقطع یا درجه تحصیلی',
+        'family_statuses.guardian_relation_type_id' => 'نسبت با سرپرست',
+        'people.client_case_history' => 'شرح وضعیت و تاریخچه پرونده',
+        'family_statuses.has_parent_disability' => 'وضعیت معلولیت والدین',
+        'family_statuses.parent_disability_description' => 'شرح معلولیت والدین',
+        'guardians.national_code' => 'کد ملی سرپرست',
+        'guardians.first_name' => 'نام سرپرست',
+        'guardians.last_name' => 'نام خانوادگی سرپرست',
+        'guardians.social_worker_id' => 'مددکار مسئول',
+        'guardians.insurance_status' => 'وضعیت بیمه سرپرست',
+        'guardians.insurance_type_id' => 'نوع بیمه سرپرست',
+        'guardians.guardian_phone_number' => 'شماره همراه سرپرست',
+        'residences.residence_status_id' => 'وضعیت سکونت',
+        'residences.district_id' => 'ناحیه سکونت',
+        'residences.address' => 'نشانی',
+        'contacts.landline_phone' => 'تلفن ثابت',
+        'contacts.trusted_person_phone' => 'شماره فرد مورد اعتماد',
+        'support_coverages.support_organization_id' => 'سازمان حمایتی',
+        'support_coverages.description' => 'شرح پوشش حمایتی',
+        'support_coverages.other_organization_name' => 'نام نهاد حمایتی آزاد',
+        'support_coverages.support_card_image' => 'تصویر کارت حمایتی',
+        'needs_levels.need_level_id' => 'سطح نیازمندی',
+    ];
     $reasonCards = collect($reasonLabels)
         ->reject(fn ($label, $key) => $key === 'all')
         ->map(fn ($label, $key) => [
@@ -206,36 +256,18 @@
                         </div>
 
                         <div>
-                            <p class="mb-3 text-xs font-semibold text-slate-500">موارد ناقص بر اساس بخش فرم</p>
-                            <div class="space-y-3">
-                                @foreach($reasonsBySection as $sectionLabel => $sectionReasons)
-                                    <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
-                                        <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
-                                            <h4 class="text-sm font-bold text-slate-700">{{ $sectionLabel }}</h4>
-                                            <span class="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600">
-                                                {{ number_format($sectionReasons->count()) }} فیلد ناقص
-                                            </span>
-                                        </div>
-
-                                        <div class="space-y-2">
-                                            @foreach($sectionReasons as $reason)
-                                                <div class="rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-3 text-[11px] text-amber-900">
-                                                    <div class="flex flex-wrap items-center gap-2">
-                                                        <span class="font-bold">{{ $reason['label'] }}</span>
-                                                        <span class="rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-slate-700">
-                                                            {{ $requirementTypeLabels[$reason['requirement_type']] ?? $reason['requirement_type'] }}
-                                                        </span>
-                                                        <span class="rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
-                                                            شدت فیلد: {{ $severityLabels[$reason['severity']] ?? $reason['severity'] }}
-                                                        </span>
-                                                        <code class="rounded bg-white/80 px-1.5 py-0.5 text-[10px] text-amber-800">{{ $reason['field'] }}</code>
-                                                    </div>
-                                                    <p class="mt-2 leading-5 text-amber-800">{{ $reason['basis'] }}</p>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                @endforeach
+                            <p class="mb-3 text-xs font-semibold text-slate-500">فهرست فیلدهای ناقص</p>
+                            <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+                                <div class="space-y-2 text-xs text-slate-700">
+                                    @foreach($reasonsBySection as $sectionLabel => $sectionReasons)
+                                        <p class="leading-6">
+                                            <span class="font-bold text-slate-800">{{ $sectionLabel }}:</span>
+                                            {{ $sectionReasons
+                                                ->map(fn ($reason) => $fieldPathLabels[$reason['field']] ?? $reason['label'])
+                                                ->implode('، ') }}
+                                        </p>
+                                    @endforeach
+                                </div>
                             </div>
                         </div>
 
