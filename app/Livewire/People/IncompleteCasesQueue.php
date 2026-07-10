@@ -33,6 +33,10 @@ class IncompleteCasesQueue extends Component
 
     protected array $incompleteStateCache = [];
 
+    protected ?array $catalogFieldsCache = null;
+
+    protected ?array $reasonOptionsCache = null;
+
     protected ?Collection $personContactsCache = null;
 
     protected ?Collection $guardianContactsCache = null;
@@ -150,10 +154,7 @@ class IncompleteCasesQueue extends Component
 
     protected function buildScanResults(): array
     {
-        $reasonCounts = $this->catalogFields()
-            ->pluck('key')
-            ->mapWithKeys(fn (string $key): array => [$key => 0])
-            ->all();
+        $reasonCounts = array_fill_keys($this->catalogFieldKeys(), 0);
 
         $severityCounts = array_fill_keys(
             array_diff(array_keys($this->severityOptions()), ['all']),
@@ -221,7 +222,7 @@ class IncompleteCasesQueue extends Component
 
         $reasons = [];
 
-        foreach ($this->catalogFields() as $field) {
+        foreach ($this->catalogFieldsArray() as $field) {
             $reason = $this->evaluateFieldDefect($person, $field);
 
             if ($reason !== null) {
@@ -359,10 +360,24 @@ class IncompleteCasesQueue extends Component
             'low' => 1,
         ];
 
-        $score = collect($reasons)->sum(fn (array $reason): int => $weights[$reason['severity']] ?? 1);
-        $criticalCount = collect($reasons)->where('severity', 'critical')->count();
-        $highCount = collect($reasons)->where('severity', 'high')->count();
-        $mediumCount = collect($reasons)->where('severity', 'medium')->count();
+        $score = 0;
+        $criticalCount = 0;
+        $highCount = 0;
+        $mediumCount = 0;
+
+        foreach ($reasons as $reason) {
+            $severity = $reason['severity'];
+
+            $score += $weights[$severity] ?? 1;
+
+            if ($severity === 'critical') {
+                $criticalCount++;
+            } elseif ($severity === 'high') {
+                $highCount++;
+            } elseif ($severity === 'medium') {
+                $mediumCount++;
+            }
+        }
 
         if ($criticalCount > 0 || $score >= 14 || $reasonCount >= 8) {
             return [
@@ -424,7 +439,21 @@ class IncompleteCasesQueue extends Component
 
     protected function catalogFields(): Collection
     {
-        return collect(app(BeneficiaryCompletenessCatalog::class)->fields());
+        return collect($this->catalogFieldsArray());
+    }
+
+    protected function catalogFieldsArray(): array
+    {
+        if ($this->catalogFieldsCache !== null) {
+            return $this->catalogFieldsCache;
+        }
+
+        return $this->catalogFieldsCache = app(BeneficiaryCompletenessCatalog::class)->fields();
+    }
+
+    protected function catalogFieldKeys(): array
+    {
+        return array_column($this->catalogFieldsArray(), 'key');
     }
 
     protected function loadPeopleForIds(array $personIds): EloquentCollection
