@@ -10,6 +10,7 @@ use App\Models\SocialWorker;
 use App\Models\SupportOrganization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -161,6 +162,35 @@ class IncompleteCasesQueueTest extends TestCase
             ->assertSet('activeSection', 'beneficiary-case-file')
             ->assertSet('sectionContextId', $person->id)
             ->assertSet('caseFilePersonId', $person->id);
+    }
+
+    public function test_queue_reuses_cached_scan_results_across_requests(): void
+    {
+        $this->actingAs($this->admin());
+
+        $person = $this->createCatalogCompletePerson([
+            'person_code' => '16020',
+            'national_id' => '',
+        ]);
+
+        $component = Livewire::test(IncompleteCasesQueue::class)->instance();
+        $cacheKey = $this->invokeProtectedMethod($component, 'scanCacheKey');
+
+        Cache::put($cacheKey, [
+            'incomplete_count' => 99,
+            'reason_counts' => array_fill_keys(array_keys($component->reasonOptions()), 0),
+            'severity_counts' => [
+                'critical' => 9,
+                'high' => 8,
+                'medium' => 7,
+                'low' => 6,
+            ],
+            'filtered_ids' => [],
+        ], now()->addMinutes(5));
+
+        Livewire::test(IncompleteCasesQueue::class)
+            ->assertSee('99')
+            ->assertDontSee($person->person_code);
     }
 
     private function admin(): User
@@ -361,5 +391,13 @@ class IncompleteCasesQueueTest extends TestCase
         ], $relationOverrides['needsLevel'] ?? []));
 
         return $person->fresh();
+    }
+
+    private function invokeProtectedMethod(object $target, string $method): mixed
+    {
+        $reflection = new \ReflectionMethod($target, $method);
+        $reflection->setAccessible(true);
+
+        return $reflection->invoke($target);
     }
 }

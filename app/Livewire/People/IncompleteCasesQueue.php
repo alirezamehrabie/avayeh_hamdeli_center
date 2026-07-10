@@ -7,6 +7,8 @@ use App\Models\Person;
 use App\Services\People\BeneficiaryCompletenessCatalog;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator as LengthAwarePaginatorInstance;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
@@ -133,6 +135,15 @@ class IncompleteCasesQueue extends Component
             return $this->scanResultsCache;
         }
 
+        return $this->scanResultsCache = Cache::remember(
+            $this->scanCacheKey(),
+            now()->addMinutes(5),
+            fn (): array => $this->buildScanResults()
+        );
+    }
+
+    protected function buildScanResults(): array
+    {
         $reasonCounts = $this->catalogFields()
             ->pluck('key')
             ->mapWithKeys(fn (string $key): array => [$key => 0])
@@ -441,6 +452,44 @@ class IncompleteCasesQueue extends Component
             $person->created_at?->getTimestamp() ?? 0,
             $person->id
         );
+    }
+
+    protected function scanCacheKey(): string
+    {
+        return implode(':', [
+            'people-incomplete-cases',
+            $this->selectedReason,
+            $this->selectedSeverity,
+            $this->scanDataFingerprint(),
+        ]);
+    }
+
+    protected function scanDataFingerprint(): string
+    {
+        $segments = collect([
+            'people',
+            'guardians',
+            'educations',
+            'family_statuses',
+            'residences',
+            'contacts',
+            'support_coverages',
+            'needs_levels',
+            'harm_type_person',
+            'support_organizations',
+        ])->map(function (string $table): string {
+            $aggregate = DB::table($table)
+                ->selectRaw('COUNT(*) as aggregate_count, MAX(updated_at) as aggregate_updated_at')
+                ->first();
+
+            return implode('|', [
+                $table,
+                (string) ($aggregate->aggregate_count ?? 0),
+                (string) ($aggregate->aggregate_updated_at ?? 'null'),
+            ]);
+        });
+
+        return sha1($segments->implode(';'));
     }
 
     protected function personColumns(): array
