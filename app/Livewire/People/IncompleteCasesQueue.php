@@ -6,6 +6,7 @@ use App\Models\Contact;
 use App\Models\Person;
 use App\Services\People\BeneficiaryCompletenessCatalog;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Pagination\LengthAwarePaginator as LengthAwarePaginatorInstance;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
@@ -24,7 +25,7 @@ class IncompleteCasesQueue extends Component
 
     public string $selectedSeverity = 'all';
 
-    protected ?Collection $peopleCache = null;
+    protected ?Collection $incompletePeopleCache = null;
 
     protected array $incompleteStateCache = [];
 
@@ -160,81 +161,37 @@ class IncompleteCasesQueue extends Component
 
     protected function baseIncompletePeopleCollection(): Collection
     {
-        return $this->basePeopleCollection()
-            ->filter(fn (Person $person): bool => count($this->buildIncompleteState($person)['reasons']) > 0)
-            ->values();
-    }
-
-    protected function basePeopleCollection(): Collection
-    {
-        if ($this->peopleCache instanceof Collection) {
-            return $this->peopleCache;
+        if ($this->incompletePeopleCache instanceof Collection) {
+            return $this->incompletePeopleCache;
         }
 
-        $people = Person::query()
-            ->select([
-                'id',
-                'person_code',
-                'first_name',
-                'last_name',
-                'full_name',
-                'guardian_id',
-                'national_id',
-                'shenasnameh_serial',
-                'shenasnameh_series_number',
-                'shenasnameh_series_letter',
-                'birth_day',
-                'birth_month',
-                'birth_year',
-                'father_name',
-                'father_national_id',
-                'mother_national_id',
-                'phone_number',
-                'gender',
-                'role',
-                'sadaat_status',
-                'sadaat_relation_id',
-                'has_disability',
-                'disability_type_id',
-                'disability_description',
-                'photo_id_card',
-                'photo_birth_certificate',
-                'profile_photo',
-                'client_case_history',
-                'created_at',
-            ])
-            ->with([
-                'guardian:id,social_worker_id,national_code,first_name,last_name,guardian_phone_number,insurance_status,insurance_type_id',
-                'guardian.socialWorker:id,first_name,last_name',
-                'guardian.residence:id,guardian_id,residence_status_id,district_id,address',
-                'education:id,person_id,is_studying,reason_for_not_studying,education_degree',
-                'familyStatus:id,person_id,guardian_relation_type_id,has_parent_disability,parent_disability_description',
-                'harmTypes:id',
-                'residenceContact:id,person_id,residence_status_id,district_id,address',
-                'supportCoverage:id,person_id,support_organization_id,description,other_organization_name,support_card_image',
-                'supportCoverage.organization:id,slug',
-                'needsLevel:id,person_id,need_level_id',
-            ])
-            ->latest('created_at')
-            ->latest('id')
-            ->get();
+        $incompletePeople = collect();
 
-        $personIds = $people->pluck('id')->filter()->values();
-        $guardianIds = $people->pluck('guardian_id')->filter()->unique()->values();
+        Person::query()
+            ->select($this->personColumns())
+            ->with($this->completenessRelations())
+            ->orderBy('id')
+            ->chunkById(200, function (EloquentCollection $people) use (&$incompletePeople): void {
+                $this->primeContactCachesForPeople($people);
 
-        $this->personContactsCache = Contact::query()
-            ->select(['id', 'person_id', 'guardian_id', 'landline_phone', 'trusted_person_phone'])
-            ->whereIn('person_id', $personIds)
-            ->get()
-            ->keyBy('person_id');
+                foreach ($people as $person) {
+                    if (count($this->buildIncompleteState($person)['reasons']) > 0) {
+                        $incompletePeople->push($person);
+                    } else {
+                        unset($this->incompleteStateCache[$person->id]);
+                    }
+                }
 
-        $this->guardianContactsCache = Contact::query()
-            ->select(['id', 'person_id', 'guardian_id', 'landline_phone', 'trusted_person_phone'])
-            ->whereIn('guardian_id', $guardianIds)
-            ->get()
-            ->keyBy('guardian_id');
+                $this->flushContactCaches();
+            });
 
-        return $this->peopleCache = $people;
+        return $this->incompletePeopleCache = $incompletePeople
+            ->sortByDesc(fn (Person $person): string => sprintf(
+                '%010d-%010d',
+                $person->created_at?->getTimestamp() ?? 0,
+                $person->id
+            ))
+            ->values();
     }
 
     protected function buildIncompleteState(Person $person): array
@@ -242,6 +199,8 @@ class IncompleteCasesQueue extends Component
         if (array_key_exists($person->id, $this->incompleteStateCache)) {
             return $this->incompleteStateCache[$person->id];
         }
+
+        $person = $this->hydrateCompletenessContext($person);
 
         $reasons = [];
 
@@ -436,6 +395,99 @@ class IncompleteCasesQueue extends Component
     protected function catalogFields(): Collection
     {
         return collect(app(BeneficiaryCompletenessCatalog::class)->fields());
+    }
+
+    protected function personColumns(): array
+    {
+        return [
+            'id',
+            'person_code',
+            'first_name',
+            'last_name',
+            'full_name',
+            'guardian_id',
+            'national_id',
+            'shenasnameh_serial',
+            'shenasnameh_series_number',
+            'shenasnameh_series_letter',
+            'birth_day',
+            'birth_month',
+            'birth_year',
+            'father_name',
+            'father_national_id',
+            'mother_national_id',
+            'phone_number',
+            'gender',
+            'role',
+            'sadaat_status',
+            'sadaat_relation_id',
+            'has_disability',
+            'disability_type_id',
+            'disability_description',
+            'photo_id_card',
+            'photo_birth_certificate',
+            'profile_photo',
+            'client_case_history',
+            'created_at',
+        ];
+    }
+
+    protected function completenessRelations(): array
+    {
+        return [
+            'guardian:id,social_worker_id,national_code,first_name,last_name,guardian_phone_number,insurance_status,insurance_type_id',
+            'guardian.socialWorker:id,first_name,last_name',
+            'guardian.residence:id,guardian_id,residence_status_id,district_id,address',
+            'education:id,person_id,is_studying,reason_for_not_studying,education_degree',
+            'familyStatus:id,person_id,guardian_relation_type_id,has_parent_disability,parent_disability_description',
+            'harmTypes:id',
+            'residenceContact:id,person_id,residence_status_id,district_id,address',
+            'supportCoverage:id,person_id,support_organization_id,description,other_organization_name,support_card_image',
+            'supportCoverage.organization:id,slug',
+            'needsLevel:id,person_id,need_level_id',
+        ];
+    }
+
+    protected function hydrateCompletenessContext(Person $person): Person
+    {
+        $person->loadMissing($this->completenessRelations());
+
+        if (
+            ! ($this->personContactsCache?->has($person->id) ?? false)
+            && ! ($this->guardianContactsCache?->has($person->guardian_id) ?? false)
+        ) {
+            $this->primeContactCachesForPeople(collect([$person]));
+        }
+
+        return $person;
+    }
+
+    protected function primeContactCachesForPeople(Collection $people): void
+    {
+        $personIds = $people->pluck('id')->filter()->values();
+        $guardianIds = $people->pluck('guardian_id')->filter()->unique()->values();
+
+        $this->personContactsCache = $personIds->isEmpty()
+            ? collect()
+            : Contact::query()
+                ->select(['id', 'person_id', 'guardian_id', 'landline_phone', 'trusted_person_phone'])
+                ->whereIn('person_id', $personIds)
+                ->get()
+                ->keyBy('person_id');
+
+        $this->guardianContactsCache = $guardianIds->isEmpty()
+            ? collect()
+            : Contact::query()
+                ->select(['id', 'person_id', 'guardian_id', 'landline_phone', 'trusted_person_phone'])
+                ->whereIn('guardian_id', $guardianIds)
+                ->get()
+                ->keyBy('guardian_id');
+    }
+
+    protected function flushContactCaches(): void
+    {
+        $this->personContactsCache = null;
+        $this->guardianContactsCache = null;
     }
 
     public function render()
