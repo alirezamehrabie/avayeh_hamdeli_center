@@ -2,6 +2,20 @@
     $summary = $this->summary;
     $reasonLabels = $this->reasonOptions();
     $severityLabels = $this->severityOptions();
+    $requirementTypeLabels = [
+        'required' => 'الزامی',
+        'conditional' => 'مشروط',
+        'management' => 'مدیریتی',
+    ];
+    $reasonCards = collect($reasonLabels)
+        ->reject(fn ($label, $key) => $key === 'all')
+        ->map(fn ($label, $key) => [
+            'key' => $key,
+            'label' => $label,
+            'count' => $summary['reason_counts'][$key] ?? 0,
+        ])
+        ->sortByDesc('count')
+        ->values();
 @endphp
 
 <div class="space-y-6" dir="rtl">
@@ -11,7 +25,8 @@
                 <p class="text-xs font-semibold tracking-[0.16em] text-slate-400">Management Queue</p>
                 <h1 class="mt-1 text-xl font-bold text-slate-800">صف پرونده‌های ناقص</h1>
                 <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-                    این بخش پرونده‌هایی را نشان می‌دهد که برای تکمیل اطلاعات پایه نیاز به پیگیری دارند. در این مرحله فقط نمایش و پایش انجام می‌شود.
+                    این بخش تمام فیلدهای الزامی، مشروط و مدیریتی فرم کامل ثبت‌نام مددجو را پایش می‌کند تا نقص هر پرونده
+                    به‌صورت دقیق، قابل دسته‌بندی و قابل اولویت‌بندی دیده شود.
                 </p>
             </div>
 
@@ -29,7 +44,7 @@
         <div class="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <div>
                 <div class="mb-3 flex items-center justify-between gap-3">
-                    <h2 class="text-sm font-semibold text-slate-700">تفکیک بر اساس دلیل</h2>
+                    <h2 class="text-sm font-semibold text-slate-700">پرتکرارترین نقص‌های فرم</h2>
                     <button
                         type="button"
                         wire:click="clearFilters"
@@ -39,17 +54,16 @@
                     </button>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-4">
-                    @foreach($reasonLabels as $reasonKey => $label)
-                        @continue($reasonKey === 'all')
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    @foreach($reasonCards->take(12) as $reasonCard)
                         <button
                             type="button"
-                            wire:click="selectReason('{{ $reasonKey }}')"
-                            class="rounded-2xl border px-3 py-3 text-right transition {{ $selectedReason === $reasonKey ? 'border-indigo-300 bg-indigo-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white' }}"
+                            wire:click="selectReason('{{ $reasonCard['key'] }}')"
+                            class="rounded-2xl border px-3 py-3 text-right transition {{ $selectedReason === $reasonCard['key'] ? 'border-indigo-300 bg-indigo-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white' }}"
                         >
-                            <p class="text-[11px] font-semibold text-slate-500">{{ $label }}</p>
+                            <p class="text-[11px] font-semibold leading-5 text-slate-500">{{ $reasonCard['label'] }}</p>
                             <p class="mt-2 text-lg font-bold text-slate-800">
-                                {{ number_format($summary['reason_counts'][$reasonKey] ?? 0) }}
+                                {{ number_format($reasonCard['count']) }}
                             </p>
                         </button>
                     @endforeach
@@ -58,7 +72,7 @@
 
             <div>
                 <h2 class="mb-3 text-sm font-semibold text-slate-700">تفکیک بر اساس شدت</h2>
-                <div class="grid grid-cols-3 gap-3 xl:grid-cols-1">
+                <div class="grid grid-cols-2 gap-3 xl:grid-cols-1">
                     @foreach($summary['severity_counts'] as $severityKey => $count)
                         <div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
                             <p class="text-[11px] font-semibold text-slate-500">{{ $severityLabels[$severityKey] }}</p>
@@ -73,7 +87,7 @@
     <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <div>
-                <label for="incomplete-reason-filter" class="mb-2 block text-xs font-semibold text-slate-500">فیلتر دلیل</label>
+                <label for="incomplete-reason-filter" class="mb-2 block text-xs font-semibold text-slate-500">فیلتر فیلد ناقص</label>
                 <select
                     id="incomplete-reason-filter"
                     wire:model.live="selectedReason"
@@ -86,7 +100,7 @@
             </div>
 
             <div>
-                <label for="incomplete-severity-filter" class="mb-2 block text-xs font-semibold text-slate-500">فیلتر شدت</label>
+                <label for="incomplete-severity-filter" class="mb-2 block text-xs font-semibold text-slate-500">فیلتر شدت پرونده</label>
                 <select
                     id="incomplete-severity-filter"
                     wire:model.live="selectedSeverity"
@@ -115,7 +129,7 @@
             <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h2 class="text-base font-semibold text-slate-800">فهرست پرونده‌های نیازمند تکمیل</h2>
-                    <p class="mt-1 text-sm text-slate-500">پرونده‌ها بر اساس جدیدترین ثبت مرتب شده‌اند.</p>
+                    <p class="mt-1 text-sm text-slate-500">پرونده‌ها بر اساس جدیدترین ثبت مرتب شده‌اند و هر نقص با فیلد دقیق فرم نمایش داده می‌شود.</p>
                 </div>
                 <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
                     {{ number_format($summary['filtered_count']) }} نتیجه
@@ -135,83 +149,121 @@
                         : null;
                     $reasons = $this->reasonsFor($person);
                     $severity = $this->severityFor($person);
+                    $reasonsBySection = $reasons->groupBy('section');
                 @endphp
 
                 <article class="px-5 py-4">
-                    <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                        <div class="min-w-0 flex-1">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <h3 class="text-sm font-bold text-slate-800 sm:text-base">
-                                    {{ $personName !== '' ? $personName : 'مددجوی بدون نام' }}
-                                </h3>
-                                <span class="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
-                                    {{ $person->person_code ?: 'بدون کد' }}
-                                </span>
-                                <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold {{ $severity['classes'] }}">
-                                    شدت {{ $severity['label'] }}
-                                </span>
+                    <div class="flex flex-col gap-4">
+                        <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <h3 class="text-sm font-bold text-slate-800 sm:text-base">
+                                        {{ $personName !== '' ? $personName : 'مددجوی بدون نام' }}
+                                    </h3>
+                                    <span class="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
+                                        {{ $person->person_code ?: 'بدون کد' }}
+                                    </span>
+                                    <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold {{ $severity['classes'] }}">
+                                        شدت {{ $severity['label'] }}
+                                    </span>
+                                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                                        {{ number_format($reasons->count()) }} نقص ثبت‌شده
+                                    </span>
+                                </div>
+
+                                <div class="mt-3 grid grid-cols-1 gap-2 text-xs text-slate-500 sm:grid-cols-2 xl:grid-cols-4">
+                                    <div>
+                                        <span class="font-semibold text-slate-600">کد ملی:</span>
+                                        {{ $person->national_id ?: 'ثبت نشده' }}
+                                    </div>
+                                    <div>
+                                        <span class="font-semibold text-slate-600">سرپرست:</span>
+                                        {{ $guardianName ?: 'ثبت نشده' }}
+                                    </div>
+                                    <div>
+                                        <span class="font-semibold text-slate-600">مددکار:</span>
+                                        {{ $socialWorkerName ?: 'ثبت نشده' }}
+                                    </div>
+                                    <div>
+                                        <span class="font-semibold text-slate-600">تاریخ ثبت:</span>
+                                        {{ optional($person->created_at)->format('Y-m-d H:i') ?: '-' }}
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="mt-3 grid grid-cols-1 gap-2 text-xs text-slate-500 sm:grid-cols-2 xl:grid-cols-4">
-                                <div>
-                                    <span class="font-semibold text-slate-600">کد ملی:</span>
-                                    {{ $person->national_id ?: 'ثبت نشده' }}
-                                </div>
-                                <div>
-                                    <span class="font-semibold text-slate-600">سرپرست:</span>
-                                    {{ $guardianName ?: 'ثبت نشده' }}
-                                </div>
-                                <div>
-                                    <span class="font-semibold text-slate-600">مددکار:</span>
-                                    {{ $socialWorkerName ?: 'ثبت نشده' }}
-                                </div>
-                                <div>
-                                    <span class="font-semibold text-slate-600">تاریخ ثبت:</span>
-                                    {{ optional($person->created_at)->format('Y-m-d H:i') ?: '-' }}
+                            <div class="xl:max-w-sm">
+                                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                                    <p class="text-xs font-semibold text-slate-500">جمع‌بندی نقص‌ها</p>
+                                    <div class="mt-3 flex flex-wrap gap-2">
+                                        @foreach($reasons->groupBy('severity') as $severityKey => $severityReasons)
+                                            <span class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700">
+                                                {{ $severityLabels[$severityKey] ?? $severityKey }}: {{ number_format($severityReasons->count()) }}
+                                            </span>
+                                        @endforeach
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="xl:max-w-xl">
-                            <p class="mb-2 text-xs font-semibold text-slate-500">موارد ناقص</p>
-                            <div class="space-y-2">
-                                @foreach($reasons as $reason)
-                                    <div class="rounded-xl border border-amber-200 bg-amber-50/70 px-3 py-2 text-[11px] text-amber-900">
-                                        <div class="flex flex-wrap items-center gap-2">
-                                            <span class="font-bold">{{ $reason['label'] }}</span>
-                                            <code class="rounded bg-white/80 px-1.5 py-0.5 text-[10px] text-amber-800">{{ $reason['field'] }}</code>
+                        <div>
+                            <p class="mb-3 text-xs font-semibold text-slate-500">موارد ناقص بر اساس بخش فرم</p>
+                            <div class="space-y-3">
+                                @foreach($reasonsBySection as $sectionLabel => $sectionReasons)
+                                    <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+                                        <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+                                            <h4 class="text-sm font-bold text-slate-700">{{ $sectionLabel }}</h4>
+                                            <span class="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                                                {{ number_format($sectionReasons->count()) }} فیلد ناقص
+                                            </span>
                                         </div>
-                                        <p class="mt-1 leading-5 text-amber-800">{{ $reason['basis'] }}</p>
+
+                                        <div class="space-y-2">
+                                            @foreach($sectionReasons as $reason)
+                                                <div class="rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-3 text-[11px] text-amber-900">
+                                                    <div class="flex flex-wrap items-center gap-2">
+                                                        <span class="font-bold">{{ $reason['label'] }}</span>
+                                                        <span class="rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-slate-700">
+                                                            {{ $requirementTypeLabels[$reason['requirement_type']] ?? $reason['requirement_type'] }}
+                                                        </span>
+                                                        <span class="rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+                                                            شدت فیلد: {{ $severityLabels[$reason['severity']] ?? $reason['severity'] }}
+                                                        </span>
+                                                        <code class="rounded bg-white/80 px-1.5 py-0.5 text-[10px] text-amber-800">{{ $reason['field'] }}</code>
+                                                    </div>
+                                                    <p class="mt-2 leading-5 text-amber-800">{{ $reason['basis'] }}</p>
+                                                </div>
+                                            @endforeach
+                                        </div>
                                     </div>
                                 @endforeach
                             </div>
+                        </div>
 
-                            <div class="mt-4 flex flex-wrap gap-2">
+                        <div class="flex flex-wrap gap-2">
+                            <button
+                                type="button"
+                                wire:click="$dispatch('open-dashboard-section', { section: 'beneficiary-case-file', id: {{ $person->id }} })"
+                                class="inline-flex items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                            >
+                                مشاهده پرونده مددجو
+                            </button>
+
+                            @can('people-edit')
                                 <button
                                     type="button"
-                                    wire:click="$dispatch('open-dashboard-section', { section: 'beneficiary-case-file', id: {{ $person->id }} })"
-                                    class="inline-flex items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                                    wire:click="$dispatch('open-dashboard-section', { section: 'person-edit', id: {{ $person->id }} })"
+                                    class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100"
                                 >
-                                    مشاهده پرونده مددجو
+                                    ویرایش اطلاعات
                                 </button>
-
-                                @can('people-edit')
-                                    <button
-                                        type="button"
-                                        wire:click="$dispatch('open-dashboard-section', { section: 'person-edit', id: {{ $person->id }} })"
-                                        class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100"
-                                    >
-                                        ویرایش اطلاعات
-                                    </button>
-                                @endcan
-                            </div>
+                            @endcan
                         </div>
                     </div>
                 </article>
             @empty
                 <div class="px-5 py-10 text-center">
                     <p class="text-sm font-semibold text-emerald-700">در حال حاضر پرونده ناقصی در صف دیده نمی‌شود.</p>
-                    <p class="mt-2 text-xs text-slate-500">با تکمیل‌نشدن اطلاعات پایه، پرونده‌ها در این بخش ظاهر خواهند شد.</p>
+                    <p class="mt-2 text-xs text-slate-500">با ناقص شدن فیلدهای فرم کامل ثبت‌نام، پرونده‌ها در این بخش ظاهر خواهند شد.</p>
                 </div>
             @endforelse
         </div>
