@@ -43,6 +43,8 @@ class DashboardHome extends Component
 
     public ?int $serviceReportServiceId = null;
 
+    public ?int $caseFilePersonId = null;
+
     public bool $showDeletedUsers = false;
 
     public string $newReminderTitle = '';
@@ -154,6 +156,7 @@ class DashboardHome extends Component
         $this->editingSponsorId = $this->activeSection === 'child-supporter-sponsor-edit' ? $id : null;
         $this->editingServiceId = $this->activeSection === 'service-definition' ? $id : null;
         $this->serviceReportServiceId = $this->activeSection === 'advanced-service-report' ? $id : null;
+        $this->caseFilePersonId = $this->activeSection === 'beneficiary-case-file' ? $id : null;
     }
 
     private function sectionUsesContextId(string $section): bool
@@ -166,6 +169,7 @@ class DashboardHome extends Component
             'child-supporter-sponsor-edit',
             'service-definition',
             'advanced-service-report',
+            'beneficiary-case-file',
         ], true);
     }
 
@@ -346,6 +350,7 @@ class DashboardHome extends Component
             'editingGuardian' => $this->editingGuardianId ? Guardian::find($this->editingGuardianId) : null,
             'editingSponsor' => $this->editingSponsorId ? SponsorProfile::find($this->editingSponsorId) : null,
             'serviceReportServiceId' => $this->serviceReportServiceId,
+            'caseFilePersonId' => $this->caseFilePersonId,
         ]);
     }
 }

@@ -247,7 +247,7 @@
                         @break
 
                     @case('beneficiary-case-file')
-                        <livewire:people.beneficiary-case-file :key="'beneficiary-case-file'" />
+                        <livewire:people.beneficiary-case-file :person-id="$caseFilePersonId" :key="'beneficiary-case-file-'.($caseFilePersonId ?? 'search')" />
                         @break
 
                     @case('person-create')
