@@ -149,6 +149,23 @@ class IncompleteCasesQueueTest extends TestCase
             ->assertDontSee('16012');
     }
 
+    public function test_queue_empty_state_distinguishes_filtered_no_results_from_no_incomplete_cases(): void
+    {
+        $this->actingAs($this->admin());
+
+        $this->createCatalogCompletePerson([
+            'person_code' => '16013',
+            'national_id' => '2234567894',
+            'profile_photo' => null,
+        ]);
+
+        Livewire::test(IncompleteCasesQueue::class)
+            ->set('search', 'بدون نتیجه')
+            ->assertSee('با فیلترهای فعلی، پرونده‌ای پیدا نشد.')
+            ->assertSee('1 پرونده ناقص در صف وجود دارد')
+            ->assertDontSee('در حال حاضر پرونده ناقصی در صف دیده نمی‌شود.');
+    }
+
     public function test_queue_search_matches_beneficiary_guardian_and_social_worker_fields(): void
     {
         $this->actingAs($this->admin());

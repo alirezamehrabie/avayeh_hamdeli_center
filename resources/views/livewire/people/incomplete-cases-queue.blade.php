@@ -3,6 +3,7 @@
     $reasonLabels = $this->reasonOptions();
     $severityLabels = $this->severityOptions();
     $sortLabels = $this->sortOptions();
+    $hasActiveFilters = $search !== '' || $selectedReason !== 'all' || $selectedSeverity !== 'all';
     $requirementTypeLabels = [
         'required' => 'الزامی',
         'conditional' => 'مشروط',
@@ -419,8 +420,26 @@
                 </article>
             @empty
                 <div class="px-5 py-10 text-center">
-                    <p class="text-sm font-semibold text-emerald-700">در حال حاضر پرونده ناقصی در صف دیده نمی‌شود.</p>
-                    <p class="mt-2 text-xs text-slate-500">با ناقص شدن فیلدهای فرم کامل ثبت‌نام، پرونده‌ها در این بخش ظاهر خواهند شد.</p>
+                    @if($summary['incomplete_count'] === 0)
+                        <p class="text-sm font-semibold text-emerald-700">در حال حاضر پرونده ناقصی در صف دیده نمی‌شود.</p>
+                        <p class="mt-2 text-xs text-slate-500">با ناقص شدن فیلدهای فرم کامل ثبت‌نام، پرونده‌ها در این بخش ظاهر خواهند شد.</p>
+                    @else
+                        <p class="text-sm font-semibold text-amber-700">با فیلترهای فعلی، پرونده‌ای پیدا نشد.</p>
+                        <p class="mt-2 text-xs text-slate-500">
+                            در حال حاضر {{ number_format($summary['incomplete_count']) }} پرونده ناقص در صف وجود دارد، اما هیچ‌کدام با جستجو یا فیلترهای فعلی منطبق نیست.
+                        </p>
+                        @if($hasActiveFilters)
+                            <div class="mt-4">
+                                <button
+                                    type="button"
+                                    wire:click="clearFilters"
+                                    class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                                >
+                                    پاک کردن فیلترها
+                                </button>
+                            </div>
+                        @endif
+                    @endif
                 </div>
             @endforelse
         </div>
