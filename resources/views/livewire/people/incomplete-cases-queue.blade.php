@@ -73,7 +73,6 @@
     <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-                <p class="text-xs font-semibold tracking-[0.16em] text-slate-400">Management Queue</p>
                 <h1 class="mt-1 text-xl font-bold text-slate-800">صف پرونده‌های ناقص</h1>
                 <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
                     این بخش تمام فیلدهای الزامی، مشروط و مدیریتی فرم کامل ثبت‌نام مددجو را پایش می‌کند تا نقص هر پرونده
