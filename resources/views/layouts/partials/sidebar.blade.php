@@ -85,7 +85,7 @@
         $user = auth()->user();
         $dashboardMenuItems = [
             'people' => [
-                ['section' => 'people-list', 'label' => 'لیست مددجویان', 'icon' => 'fa fa-users', 'active' => ['people-list', 'person-edit']],
+                ['section' => 'people-list', 'label' => 'لیست مددجویان', 'icon' => 'fa fa-users', 'active' => ['people-list', 'person-edit'], 'visible' => $user?->can('manage-people')],
                 ['section' => 'people-incomplete-cases', 'label' => 'پرونده‌های ناقص', 'icon' => 'fa fa-exclamation-triangle', 'visible' => $user?->can('access-admin-panel')],
                 ['section' => 'person-create', 'label' => 'فرم کامل ثبت نام', 'icon' => 'fa fa-user-plus', 'visible' => $user?->can('people-register')],
                 ['section' => 'people-fast-create', 'label' => 'ثبت سریع مددجو', 'icon' => 'fa fa-bolt', 'visible' => $user?->can('people-register')],
@@ -155,7 +155,7 @@
             </a>
         @endif
 
-        @can('manage-people')
+        @if($dashboardMode ? ($user?->can('manage-people') || $user?->can('access-admin-panel')) : $user?->can('manage-people'))
             <div>
                 <button type="button" @click="openMenu = openMenu === 'people' ? '' : 'people'"
                         class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $peopleOpen ? 'bg-indigo-700' : '' }}">
@@ -208,7 +208,7 @@
                     @endif
                 </div>
             </div>
-        @endcan
+        @endif
 
         @can('manage-social-workers')
             @if($dashboardMode)

@@ -188,7 +188,6 @@ class DashboardHome extends Component
 
         if ($user?->can('manage-people')) {
             $validSections[] = 'people-list';
-            $validSections[] = 'people-incomplete-cases';
         }
 
         if ($user?->can('people-register')) {
@@ -205,6 +204,7 @@ class DashboardHome extends Component
         }
 
         if ($user?->can('access-admin-panel')) {
+            $validSections[] = 'people-incomplete-cases';
             $validSections[] = 'beneficiary-case-file';
             $validSections[] = 'advanced-service-report';
             $validSections[] = 'advanced-operator-report';

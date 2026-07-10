@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Livewire\Activities\ActivityList;
 use App\Livewire\Admin\DashboardHome;
+use App\Livewire\People\IncompleteCasesQueue;
 use App\Livewire\Services\ServiceArchive;
 use App\Livewire\Services\ServiceReports;
 use App\Models\Activity;
@@ -225,6 +226,15 @@ class DashboardHomeNavigationTest extends TestCase
         $this->get('/admin/dashboard?section=advanced-service-report&id='.$service->id)
             ->assertOk()
             ->assertSeeLivewire(ServiceReports::class);
+    }
+
+    public function test_dashboard_query_can_open_incomplete_cases_section(): void
+    {
+        $this->actingAs($this->manager());
+
+        $this->get('/admin/dashboard?section=people-incomplete-cases')
+            ->assertOk()
+            ->assertSeeLivewire(IncompleteCasesQueue::class);
     }
 
     public function test_beneficiary_case_file_route_with_id_deep_links_to_selected_person(): void
