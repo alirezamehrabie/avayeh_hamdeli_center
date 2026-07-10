@@ -625,6 +625,7 @@ class IncompleteCasesQueue extends Component
             ->keyBy('id');
 
         $this->primeContactCachesForPeople($people);
+        $this->syncSocialWorkerRelations($people);
 
         return new EloquentCollection(
             collect($personIds)
@@ -803,6 +804,8 @@ class IncompleteCasesQueue extends Component
             $this->primeContactCachesForPeople(collect([$person]));
         }
 
+        $this->syncSocialWorkerRelations(collect([$person]));
+
         return $person;
     }
 
@@ -834,11 +837,28 @@ class IncompleteCasesQueue extends Component
 
         $this->socialWorkersCache = $socialWorkerIds->isEmpty()
             ? collect()
-            : SocialWorker::query()
+            : SocialWorker::withoutGlobalScope('active')
                 ->select(['id', 'first_name', 'last_name'])
                 ->whereIn('id', $socialWorkerIds)
                 ->get()
                 ->keyBy('id');
+    }
+
+    protected function syncSocialWorkerRelations(Collection $people): void
+    {
+        foreach ($people as $person) {
+            $guardian = $person->guardian;
+
+            if (! $guardian || ! $guardian->social_worker_id) {
+                continue;
+            }
+
+            $worker = $this->socialWorkersCache?->get($guardian->social_worker_id);
+
+            if ($worker instanceof SocialWorker) {
+                $guardian->setRelation('socialWorker', $worker);
+            }
+        }
     }
 
     protected function flushContactCaches(): void

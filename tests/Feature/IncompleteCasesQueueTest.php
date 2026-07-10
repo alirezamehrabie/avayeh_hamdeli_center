@@ -202,6 +202,31 @@ class IncompleteCasesQueueTest extends TestCase
             ->assertDontSee('16111');
     }
 
+    public function test_queue_keeps_inactive_assigned_social_worker_visible_and_searchable(): void
+    {
+        $this->actingAs($this->admin());
+
+        $this->createCatalogCompletePerson([
+            'person_code' => '16113',
+            'national_id' => '3311111114',
+            'profile_photo' => null,
+        ], [
+            'socialWorker' => [
+                'first_name' => 'مددکار',
+                'last_name' => 'غیرفعال',
+                'is_active' => false,
+            ],
+        ]);
+
+        Livewire::test(IncompleteCasesQueue::class)
+            ->assertSee('16113')
+            ->assertSee('مددکار غیرفعال');
+
+        Livewire::test(IncompleteCasesQueue::class)
+            ->set('search', 'مددکار غیرفعال')
+            ->assertSee('16113');
+    }
+
     public function test_queue_sort_can_prioritize_severity_and_missing_count(): void
     {
         $this->actingAs($this->admin());
