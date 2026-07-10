@@ -7,11 +7,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class Service extends Model
 {
+    use SoftDeletes;
+
     public const TYPE_DISPLAY_META = [
         'individual' => [
             'label' => 'شخصی',
@@ -22,6 +25,7 @@ class Service extends Model
             'icon' => 'family',
         ],
     ];
+
     public const TYPE_OPTIONS = [
         'individual' => 'شخصی (مددجو)',
         'family' => 'خانوادگی (سرپرست)',
@@ -109,6 +113,7 @@ class Service extends Model
             'quantity_delivered' => 'decimal:2',
             'total_service_value' => 'integer',
             'created_by' => 'integer',
+            'deleted_at' => 'datetime',
         ];
     }
 
@@ -129,6 +134,35 @@ class Service extends Model
 
             if ($service->supports_activity_delivery === null) {
                 $service->supports_activity_delivery = false;
+            }
+        });
+
+        static::deleting(function (self $service): void {
+            if ($service->isForceDeleting()) {
+                return;
+            }
+
+            $service->categories()
+                ->whereNull('deleted_at')
+                ->get()
+                ->each(function (ServiceCategory $category): void {
+                    $category->deleteQuietly();
+                });
+        });
+
+        static::restoring(function (self $service): void {
+            $service->categories()
+                ->withTrashed()
+                ->whereNotNull('deleted_at')
+                ->get()
+                ->each(function (ServiceCategory $category): void {
+                    $category->restoreQuietly();
+                });
+        });
+
+        static::forceDeleting(function (self $service): void {
+            if (app()->isProduction()) {
+                throw new \RuntimeException('Services cannot be permanently deleted in production.');
             }
         });
     }
@@ -204,12 +238,12 @@ class Service extends Model
 
     public static function generateNextCode(): string
     {
-        $lastSequence = (int) static::query()
+        $lastSequence = (int) static::withTrashed()
             ->selectRaw('MAX(CAST(SUBSTRING_INDEX(code, "-", -1) AS UNSIGNED)) as sequence')
             ->value('sequence');
 
         if ($lastSequence <= 0) {
-            $lastSequence = (int) static::query()
+            $lastSequence = (int) static::withTrashed()
                 ->selectRaw('MAX(id) as sequence')
                 ->value('sequence');
         }

@@ -56,6 +56,12 @@
         </div>
 
         <div class="space-y-4 px-4 py-4">
+            @if (session()->has('service-list-success'))
+                <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+                    {{ session('service-list-success') }}
+                </div>
+            @endif
+
             <div class="flex flex-col gap-3 rounded-[26px] border border-slate-200 bg-slate-50/80 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-3.5">
                 <div class="flex flex-col gap-3 sm:flex-1 sm:flex-row sm:items-center">
                     <div class="relative flex-1">
@@ -233,9 +239,22 @@
                                 class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-600 transition hover:bg-slate-100 hover:text-slate-800"
                                 title="جزئیات"
                                 aria-label="جزئیات"
-                            >
+                                >
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13.5 6H18m0 0v4.5M18 6l-6 6m-6 6h4.5M6 18v-4.5M6 18l6-6"/>
+                                </svg>
+                            </button>
+
+                            <button
+                                type="button"
+                                @click.stop
+                                wire:click="openDeleteServiceConfirmation({{ $service->id }})"
+                                class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700 transition hover:bg-rose-100"
+                                title="حذف خدمت"
+                                aria-label="حذف خدمت"
+                            >
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m14.74 9-.35 9m-4.78 0L9.26 9m9.97-3.21c.34.05.68.11 1.02.17M18.16 19.67A2.25 2.25 0 0 1 15.92 21H8.08a2.25 2.25 0 0 1-2.24-1.96L4.77 5.79m14.46 0A48.23 48.23 0 0 0 12 5.25c-2.43 0-4.82.18-7.23.54m14.46 0L18.16 19.67M4.77 5.79c.34-.06.68-.11 1.02-.17m0 0L5.25 4.5A2.25 2.25 0 0 1 7.5 2.25h9A2.25 2.25 0 0 1 18.75 4.5l-.54 1.12"/>
                                 </svg>
                             </button>
                         </div>

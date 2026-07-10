@@ -4,11 +4,14 @@ namespace App\Livewire\Services;
 
 use App\Livewire\Services\Concerns\SummarizesServiceDeliveries;
 use App\Models\Service;
+use App\Traits\InteractsWithNotificationModal;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class ServiceList extends Component
 {
+    use InteractsWithNotificationModal;
     use SummarizesServiceDeliveries;
 
     public string $search = '';
@@ -28,6 +31,56 @@ class ServiceList extends Component
     public function createService(): void
     {
         $this->dispatch('open-dashboard-section', section: 'service-definition');
+    }
+
+    public function openDeleteServiceConfirmation(int $serviceId): void
+    {
+        $service = Service::query()
+            ->with('serviceName')
+            ->withCount([
+                'categories',
+                'workerAllocations',
+                'deliveries' => fn ($query) => $query->withTrashed(),
+            ])
+            ->findOrFail($serviceId);
+
+        $serviceLabel = $service->serviceName?->name ?: $service->name ?: $service->code;
+        $impactSummary = "این خدمت {$service->categories_count} دسته فعال، {$service->worker_allocations_count} تخصیص مددکار و {$service->deliveries_count} سابقه تحویل دارد.";
+
+        $this->openNotificationModal([
+            'type' => 'warning',
+            'title' => 'حذف خدمت',
+            'message' => "آیا از حذف خدمت «{$serviceLabel}» مطمئن هستید؟\n\n{$impactSummary}\n\nاین عملیات خدمت و دسته‌های وابسته را فقط به آرشیو منتقل می‌کند و سوابق گزارش‌گیری حفظ می‌شوند.",
+            'buttons' => [
+                [
+                    'label' => 'حذف و انتقال به آرشیو',
+                    'action' => 'event',
+                    'event' => 'confirm-service-delete',
+                    'payload' => ['serviceId' => $service->id],
+                    'variant' => 'danger',
+                ],
+                [
+                    'label' => 'انصراف',
+                    'action' => 'close',
+                    'variant' => 'secondary',
+                ],
+            ],
+        ]);
+    }
+
+    #[On('confirm-service-delete')]
+    public function deleteService(int $serviceId): void
+    {
+        $service = Service::query()
+            ->with('serviceName')
+            ->findOrFail($serviceId);
+
+        $serviceLabel = $service->serviceName?->name ?: $service->name ?: $service->code;
+
+        $service->delete();
+
+        $this->closeNotificationModal();
+        session()->flash('service-list-success', "خدمت «{$serviceLabel}» به آرشیو منتقل شد و از فهرست فعال حذف گردید.");
     }
 
     public function formatQuantityForUnit(string|int|float|null $value, string $unit): string

@@ -30,7 +30,7 @@ class ServiceWorkerAllocation extends Model
 
     public function service(): BelongsTo
     {
-        return $this->belongsTo(Service::class);
+        return $this->belongsTo(Service::class)->withTrashed();
     }
 
     public function serviceCategory(): BelongsTo

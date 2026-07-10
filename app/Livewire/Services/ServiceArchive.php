@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Services;
 
+use App\Models\Service;
 use App\Models\ServiceCategoryTemplate;
 use App\Models\ServiceName;
 use App\Traits\InteractsWithNotificationModal;
@@ -141,13 +142,70 @@ class ServiceArchive extends Component
         session()->flash('archive-success', "دسته‌بندی «{$category->name}» بازیابی شد.");
     }
 
+    public function openRestoreServiceConfirmation(int $serviceId): void
+    {
+        $service = Service::onlyTrashed()
+            ->with('serviceName')
+            ->withCount([
+                'categories' => fn ($query) => $query->withTrashed(),
+                'workerAllocations',
+                'deliveries' => fn ($query) => $query->withTrashed(),
+            ])
+            ->findOrFail($serviceId);
+
+        $serviceLabel = $service->serviceName?->name ?: $service->name ?: $service->code;
+
+        $this->openNotificationModal([
+            'type' => 'warning',
+            'title' => 'بازیابی خدمت',
+            'message' => "آیا از بازیابی خدمت «{$serviceLabel}» مطمئن هستید؟\n\nبا این کار خدمت به‌همراه {$service->categories_count} دسته آرشیوشده دوباره به فهرست فعال بازمی‌گردد.",
+            'buttons' => [
+                [
+                    'label' => 'بازیابی خدمت',
+                    'action' => 'event',
+                    'event' => 'confirm-service-restore',
+                    'payload' => ['serviceId' => $service->id],
+                    'variant' => 'primary',
+                ],
+                [
+                    'label' => 'انصراف',
+                    'action' => 'close',
+                    'variant' => 'secondary',
+                ],
+            ],
+        ]);
+    }
+
+    #[On('confirm-service-restore')]
+    public function restoreService(int $serviceId): void
+    {
+        $service = Service::onlyTrashed()
+            ->with('serviceName')
+            ->findOrFail($serviceId);
+
+        $serviceLabel = $service->serviceName?->name ?: $service->name ?: $service->code;
+
+        $service->restore();
+
+        session()->flash('archive-success', "خدمت «{$serviceLabel}» به فهرست فعال بازگردانده شد.");
+    }
+
     public function render()
     {
         return view('livewire.services.service-archive', [
+            'archivedServices' => Service::onlyTrashed()
+                ->with('serviceName')
+                ->withCount([
+                    'categories' => fn ($query) => $query->withTrashed(),
+                    'workerAllocations',
+                    'deliveries' => fn ($query) => $query->withTrashed(),
+                ])
+                ->orderByDesc('deleted_at')
+                ->get(),
             'archivedServiceNames' => ServiceName::onlyTrashed()
                 ->withCount([
-                    'services',
-                    'categories',
+                    'services' => fn ($query) => $query->withTrashed(),
+                    'categories' => fn ($query) => $query->withTrashed(),
                     'categoryTemplates' => fn ($query) => $query->withTrashed(),
                 ])
                 ->orderByDesc('deleted_at')

@@ -146,7 +146,7 @@ class ServiceReports extends Component
 
     public function openService(int $serviceId): void
     {
-        $serviceExists = Service::query()->whereKey($serviceId)->exists();
+        $serviceExists = Service::withTrashed()->whereKey($serviceId)->exists();
 
         if (! $serviceExists) {
             return;
@@ -212,9 +212,10 @@ class ServiceReports extends Component
         }
 
         return Service::query()
+            ->withTrashed()
             ->with([
                 'serviceName',
-                'categories',
+                'categories' => fn ($query) => $query->withTrashed()->ordered(),
                 'district',
                 'socialWorkers',
                 'deliveries.serviceCategory',
