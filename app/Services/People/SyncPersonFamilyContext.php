@@ -30,6 +30,7 @@ class SyncPersonFamilyContext
     {
         $this->syncFamilyStatusAcrossSiblings($person, $familyStatus);
         $this->refreshGuardianHousehold($guardian);
+        app(IncompleteCasesQueueCache::class)->bump();
     }
 
     /**
@@ -38,6 +39,7 @@ class SyncPersonFamilyContext
     public function syncHarmTypesWithFamilyPropagation(Person $person, array $selectedHarmTypes): void
     {
         $this->syncPersonHarmTypesWithFamilyPropagation($person, $selectedHarmTypes);
+        app(IncompleteCasesQueueCache::class)->bump();
     }
 
     public function refreshGuardianHousehold(?Guardian $guardian): void

@@ -12,11 +12,12 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Helpers\Morilog\Jalalian;
+use App\Models\Concerns\InvalidatesIncompleteCasesQueueCache;
 use App\Models\GuardianRelationType;
 
 class SocialWorker extends Model
 {
-    use SoftDeletes;
+    use HasFactory, InvalidatesIncompleteCasesQueueCache, SoftDeletes;
 
     protected $fillable = [
         'worker_code',

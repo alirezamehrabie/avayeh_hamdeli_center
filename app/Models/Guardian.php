@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Helpers\Morilog\Jalalian;
+use App\Models\Concerns\InvalidatesIncompleteCasesQueueCache;
 use App\Services\Guardians\SoftDeleteGuardianFamily;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class Guardian extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, InvalidatesIncompleteCasesQueueCache, SoftDeletes;
 
     public const DIVORCED_CHILD_NONE = 'none';
 

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\InvalidatesIncompleteCasesQueueCache;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Residence extends Model
 {
-    use HasFactory;
+    use HasFactory, InvalidatesIncompleteCasesQueueCache;
 
     public const MONEY_SCALE = 100;
 

@@ -34,6 +34,7 @@ use App\Models\AccountOwnerRelation;
 use App\Models\SupportOrganization;
 use App\Models\Bank;
 use App\Models\EducationLevel;
+use App\Services\People\IncompleteCasesQueueCache;
 use App\Services\People\SyncPersonFamilyContext;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -1770,6 +1771,7 @@ class CreatePerson extends Component
                 $this->syncHarmTypesWithFamilyPropagation($this->person);
 
                 DB::commit();
+                app(IncompleteCasesQueueCache::class)->bump();
 
                 // به‌روزرسانی آمار مددکار اجتماعی
                 if ($this->social_worker_id) {
@@ -1985,6 +1987,7 @@ class CreatePerson extends Component
                 $this->syncHarmTypesWithFamilyPropagation($person);
 
                 DB::commit();
+                app(IncompleteCasesQueueCache::class)->bump();
 
                 if ($this->social_worker_id) {
                     $socialWorker = \App\Models\SocialWorker::find($this->social_worker_id);

@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\InvalidatesIncompleteCasesQueueCache;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Education extends Model
 {
+    use InvalidatesIncompleteCasesQueueCache;
+
     protected $table = 'educations';
 
     protected $fillable = [

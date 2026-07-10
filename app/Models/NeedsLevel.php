@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\InvalidatesIncompleteCasesQueueCache;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class NeedsLevel extends Model
 {
-    use HasFactory;
+    use HasFactory, InvalidatesIncompleteCasesQueueCache;
     protected $table = 'needs_levels';
 
     protected $fillable = [

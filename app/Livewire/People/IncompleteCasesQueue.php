@@ -6,10 +6,10 @@ use App\Models\Contact;
 use App\Models\Person;
 use App\Models\SocialWorker;
 use App\Services\People\BeneficiaryCompletenessCatalog;
+use App\Services\People\IncompleteCasesQueueCache;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator as LengthAwarePaginatorInstance;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
@@ -703,36 +703,8 @@ class IncompleteCasesQueue extends Component
             $this->selectedReason,
             $this->selectedSeverity,
             $this->selectedSort,
-            $this->scanDataFingerprint(),
+            app(IncompleteCasesQueueCache::class)->currentVersion(),
         ]);
-    }
-
-    protected function scanDataFingerprint(): string
-    {
-        $segments = collect([
-            'people',
-            'guardians',
-            'educations',
-            'family_statuses',
-            'residences',
-            'contacts',
-            'support_coverages',
-            'needs_levels',
-            'harm_type_person',
-            'support_organizations',
-        ])->map(function (string $table): string {
-            $aggregate = DB::table($table)
-                ->selectRaw('COUNT(*) as aggregate_count, MAX(updated_at) as aggregate_updated_at')
-                ->first();
-
-            return implode('|', [
-                $table,
-                (string) ($aggregate->aggregate_count ?? 0),
-                (string) ($aggregate->aggregate_updated_at ?? 'null'),
-            ]);
-        });
-
-        return sha1($segments->implode(';'));
     }
 
     protected function personColumns(): array

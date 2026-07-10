@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\InvalidatesIncompleteCasesQueueCache;
 use App\Traits\HasJalaliBirthDate;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Person extends Model
 {
-    use HasFactory, HasJalaliBirthDate, SoftDeletes;
+    use HasFactory, HasJalaliBirthDate, InvalidatesIncompleteCasesQueueCache, SoftDeletes;
 
     /**
      * لیست ماه‌های شمسی
@@ -37,8 +38,6 @@ class Person extends Model
         11 => 'بهمن',
         12 => 'اسفند',
     ];
-
-    use SoftDeletes;
 
     protected $fillable = [
         'guardian_id',

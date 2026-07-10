@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\InvalidatesIncompleteCasesQueueCache;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SupportOrganization extends Model
 {
-    use HasFactory;
+    use HasFactory, InvalidatesIncompleteCasesQueueCache;
 
     // نام جدول به صورت استاندارد لاراول (جمع) است، اما برای اطمینان تعریف می‌کنیم
     protected $table = 'support_organizations';

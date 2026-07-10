@@ -321,6 +321,35 @@ class IncompleteCasesQueueTest extends TestCase
             ->assertDontSee($person->person_code);
     }
 
+    public function test_queue_cache_invalidates_when_social_worker_data_changes(): void
+    {
+        $this->actingAs($this->admin());
+
+        $person = $this->createCatalogCompletePerson([
+            'person_code' => '16022',
+            'national_id' => '1234500000',
+            'profile_photo' => null,
+        ], [
+            'socialWorker' => [
+                'first_name' => 'مددکار',
+                'last_name' => 'قدیمی',
+            ],
+        ]);
+
+        Livewire::test(IncompleteCasesQueue::class)
+            ->set('search', 'مددکار جدید')
+            ->assertDontSee('16022');
+
+        $person->guardian->socialWorker()->withoutGlobalScope('active')->firstOrFail()->update([
+            'first_name' => 'مددکار',
+            'last_name' => 'جدید',
+        ]);
+
+        Livewire::test(IncompleteCasesQueue::class)
+            ->set('search', 'مددکار جدید')
+            ->assertSee('16022');
+    }
+
     public function test_queue_reuses_paginated_people_within_same_request(): void
     {
         $this->actingAs($this->admin());
