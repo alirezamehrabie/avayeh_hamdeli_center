@@ -236,7 +236,7 @@
                                     </div>
                                     <div>
                                         <span class="font-semibold text-slate-600">تاریخ ثبت:</span>
-                                        {{ optional($person->created_at)->format('Y-m-d H:i') ?: '-' }}
+                                        {{ $person->created_at ? \App\Helpers\Morilog\Jalalian::fromDateTime($person->created_at)->format('Y/m/d H:i') : '-' }}
                                     </div>
                                 </div>
                             </div>
