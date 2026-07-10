@@ -25,7 +25,7 @@ class IncompleteCasesQueue extends Component
 
     public string $selectedSeverity = 'all';
 
-    protected ?Collection $incompletePeopleCache = null;
+    protected ?array $scanResultsCache = null;
 
     protected array $incompleteStateCache = [];
 
@@ -63,10 +63,15 @@ class IncompleteCasesQueue extends Component
 
     public function getIncompletePeopleProperty(): LengthAwarePaginator
     {
-        $filteredPeople = $this->filteredIncompletePeopleCollection();
+        $scanResults = $this->scanResults();
         $page = Paginator::resolveCurrentPage() ?: 1;
-        $total = $filteredPeople->count();
-        $items = $filteredPeople->forPage($page, $this->perPage)->values();
+        $total = count($scanResults['filtered_ids']);
+        $pageIds = array_values(array_slice(
+            $scanResults['filtered_ids'],
+            max(0, ($page - 1) * $this->perPage),
+            $this->perPage
+        ));
+        $items = $this->loadPeopleForIds($pageIds);
 
         return new LengthAwarePaginatorInstance(
             $items,
@@ -82,31 +87,13 @@ class IncompleteCasesQueue extends Component
 
     public function getSummaryProperty(): array
     {
-        $reasonCounts = $this->catalogFields()
-            ->pluck('key')
-            ->mapWithKeys(fn (string $key): array => [$key => 0])
-            ->all();
-
-        $severityCounts = array_fill_keys(
-            array_diff(array_keys($this->severityOptions()), ['all']),
-            0
-        );
-
-        foreach ($this->baseIncompletePeopleCollection() as $person) {
-            $state = $this->buildIncompleteState($person);
-
-            foreach (array_keys($state['reasons']) as $reasonKey) {
-                $reasonCounts[$reasonKey]++;
-            }
-
-            $severityCounts[$state['severity']['key']]++;
-        }
+        $scanResults = $this->scanResults();
 
         return [
-            'incomplete_count' => array_sum($severityCounts),
-            'filtered_count' => $this->filteredIncompletePeopleCollection()->count(),
-            'reason_counts' => $reasonCounts,
-            'severity_counts' => $severityCounts,
+            'incomplete_count' => $scanResults['incomplete_count'],
+            'filtered_count' => count($scanResults['filtered_ids']),
+            'reason_counts' => $scanResults['reason_counts'],
+            'severity_counts' => $scanResults['severity_counts'],
         ];
     }
 
@@ -140,58 +127,71 @@ class IncompleteCasesQueue extends Component
         ];
     }
 
-    protected function filteredIncompletePeopleCollection(): Collection
+    protected function scanResults(): array
     {
-        return $this->baseIncompletePeopleCollection()
-            ->filter(function (Person $person): bool {
-                $state = $this->buildIncompleteState($person);
-
-                if ($this->selectedReason !== 'all' && ! array_key_exists($this->selectedReason, $state['reasons'])) {
-                    return false;
-                }
-
-                if ($this->selectedSeverity !== 'all' && $state['severity']['key'] !== $this->selectedSeverity) {
-                    return false;
-                }
-
-                return true;
-            })
-            ->values();
-    }
-
-    protected function baseIncompletePeopleCollection(): Collection
-    {
-        if ($this->incompletePeopleCache instanceof Collection) {
-            return $this->incompletePeopleCache;
+        if ($this->scanResultsCache !== null) {
+            return $this->scanResultsCache;
         }
 
-        $incompletePeople = collect();
+        $reasonCounts = $this->catalogFields()
+            ->pluck('key')
+            ->mapWithKeys(fn (string $key): array => [$key => 0])
+            ->all();
+
+        $severityCounts = array_fill_keys(
+            array_diff(array_keys($this->severityOptions()), ['all']),
+            0
+        );
+
+        $incompleteCount = 0;
+        $filteredReferences = [];
 
         Person::query()
             ->select($this->personColumns())
             ->with($this->completenessRelations())
             ->orderBy('id')
-            ->chunkById(200, function (EloquentCollection $people) use (&$incompletePeople): void {
+            ->chunkById(200, function (EloquentCollection $people) use (&$filteredReferences, &$incompleteCount, &$reasonCounts, &$severityCounts): void {
                 $this->primeContactCachesForPeople($people);
 
                 foreach ($people as $person) {
-                    if (count($this->buildIncompleteState($person)['reasons']) > 0) {
-                        $incompletePeople->push($person);
-                    } else {
+                    $state = $this->buildIncompleteState($person);
+
+                    if (count($state['reasons']) === 0) {
                         unset($this->incompleteStateCache[$person->id]);
+
+                        continue;
+                    }
+
+                    $incompleteCount++;
+
+                    foreach (array_keys($state['reasons']) as $reasonKey) {
+                        $reasonCounts[$reasonKey]++;
+                    }
+
+                    $severityCounts[$state['severity']['key']]++;
+
+                    if ($this->matchesSelectedFilters($state)) {
+                        $filteredReferences[] = [
+                            'id' => $person->id,
+                            'sort' => $this->personSortKey($person),
+                        ];
                     }
                 }
 
                 $this->flushContactCaches();
             });
 
-        return $this->incompletePeopleCache = $incompletePeople
-            ->sortByDesc(fn (Person $person): string => sprintf(
-                '%010d-%010d',
-                $person->created_at?->getTimestamp() ?? 0,
-                $person->id
-            ))
-            ->values();
+        usort(
+            $filteredReferences,
+            fn (array $left, array $right): int => strcmp($right['sort'], $left['sort'])
+        );
+
+        return $this->scanResultsCache = [
+            'incomplete_count' => $incompleteCount,
+            'reason_counts' => $reasonCounts,
+            'severity_counts' => $severityCounts,
+            'filtered_ids' => array_column($filteredReferences, 'id'),
+        ];
     }
 
     protected function buildIncompleteState(Person $person): array
@@ -216,6 +216,19 @@ class IncompleteCasesQueue extends Component
             'reasons' => $reasons,
             'severity' => $this->buildSeverity($reasons),
         ];
+    }
+
+    protected function matchesSelectedFilters(array $state): bool
+    {
+        if ($this->selectedReason !== 'all' && ! array_key_exists($this->selectedReason, $state['reasons'])) {
+            return false;
+        }
+
+        if ($this->selectedSeverity !== 'all' && $state['severity']['key'] !== $this->selectedSeverity) {
+            return false;
+        }
+
+        return true;
     }
 
     protected function evaluateFieldDefect(Person $person, array $field): ?array
@@ -395,6 +408,39 @@ class IncompleteCasesQueue extends Component
     protected function catalogFields(): Collection
     {
         return collect(app(BeneficiaryCompletenessCatalog::class)->fields());
+    }
+
+    protected function loadPeopleForIds(array $personIds): EloquentCollection
+    {
+        if ($personIds === []) {
+            return new EloquentCollection();
+        }
+
+        $people = Person::query()
+            ->select($this->personColumns())
+            ->with($this->completenessRelations())
+            ->whereIn('id', $personIds)
+            ->get()
+            ->keyBy('id');
+
+        $this->primeContactCachesForPeople($people);
+
+        return new EloquentCollection(
+            collect($personIds)
+                ->map(fn (int $id) => $people->get($id))
+                ->filter()
+                ->values()
+                ->all()
+        );
+    }
+
+    protected function personSortKey(Person $person): string
+    {
+        return sprintf(
+            '%010d-%010d',
+            $person->created_at?->getTimestamp() ?? 0,
+            $person->id
+        );
     }
 
     protected function personColumns(): array
