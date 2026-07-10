@@ -8,6 +8,7 @@ use App\Livewire\Services\ServiceArchive;
 use App\Livewire\Services\ServiceReports;
 use App\Models\Activity;
 use App\Models\Guardian;
+use App\Models\Person;
 use App\Models\Service;
 use App\Models\ServiceName;
 use App\Models\User;
@@ -224,6 +225,28 @@ class DashboardHomeNavigationTest extends TestCase
         $this->get('/admin/dashboard?section=advanced-service-report&id='.$service->id)
             ->assertOk()
             ->assertSeeLivewire(ServiceReports::class);
+    }
+
+    public function test_beneficiary_case_file_route_with_id_deep_links_to_selected_person(): void
+    {
+        $this->actingAs($this->manager());
+        $person = Person::query()->create([
+            'first_name' => 'Case',
+            'last_name' => 'Target',
+            'national_id' => '5554443332',
+            'person_code' => '16666',
+            'birth_year' => 1390,
+            'birth_month' => 1,
+            'birth_day' => 1,
+        ]);
+
+        Livewire::withQueryParams([
+            'section' => 'beneficiary-case-file',
+            'id' => $person->id,
+        ])
+            ->test(DashboardHome::class)
+            ->assertSet('activeSection', 'beneficiary-case-file')
+            ->assertSet('caseFilePersonId', $person->id);
     }
 
     private function manager(): User

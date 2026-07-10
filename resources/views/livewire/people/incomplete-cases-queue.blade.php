@@ -174,11 +174,15 @@
 
                         <div class="xl:max-w-xl">
                             <p class="mb-2 text-xs font-semibold text-slate-500">موارد ناقص</p>
-                            <div class="flex flex-wrap gap-2">
+                            <div class="space-y-2">
                                 @foreach($reasons as $reason)
-                                    <span class="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-semibold text-amber-800">
-                                        {{ $reason }}
-                                    </span>
+                                    <div class="rounded-xl border border-amber-200 bg-amber-50/70 px-3 py-2 text-[11px] text-amber-900">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <span class="font-bold">{{ $reason['label'] }}</span>
+                                            <code class="rounded bg-white/80 px-1.5 py-0.5 text-[10px] text-amber-800">{{ $reason['field'] }}</code>
+                                        </div>
+                                        <p class="mt-1 leading-5 text-amber-800">{{ $reason['basis'] }}</p>
+                                    </div>
                                 @endforeach
                             </div>
 

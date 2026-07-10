@@ -165,6 +165,7 @@ class IncompleteCasesQueue extends Component
             ])
             ->with([
                 'guardian:id,first_name,last_name,guardian_phone_number,social_worker_id',
+                'guardian.residence:id,guardian_id,person_id',
                 'guardian.socialWorker:id,first_name,last_name',
                 'residenceContact:id,person_id',
                 'supportCoverage:id,person_id',
@@ -191,7 +192,15 @@ class IncompleteCasesQueue extends Component
                                     });
                             });
                     })
-                    ->orWhereDoesntHave('residenceContact')
+                    ->orWhere(function (Builder $residenceQuery): void {
+                        $residenceQuery
+                            ->whereDoesntHave('residenceContact')
+                            ->where(function (Builder $guardianResidenceQuery): void {
+                                $guardianResidenceQuery
+                                    ->whereDoesntHave('guardian')
+                                    ->orWhereDoesntHave('guardian.residence');
+                            });
+                    })
                     ->orWhereDoesntHave('supportCoverage')
                     ->orWhereDoesntHave('needsLevel')
                     ->orWhere(function (Builder $guardianQuery): void {
@@ -213,31 +222,59 @@ class IncompleteCasesQueue extends Component
         $reasons = [];
 
         if (! $person->guardian_id || ! $guardian) {
-            $reasons['missing_guardian'] = 'سرپرست برای این مددجو ثبت نشده است.';
+            $reasons['missing_guardian'] = [
+                'label' => 'سرپرست',
+                'field' => 'people.guardian_id',
+                'basis' => 'فیلد `guardian_id` خالی است یا رکورد سرپرست مرتبط پیدا نشد.',
+            ];
         }
 
         if ($guardian && ! $guardian->social_worker_id) {
-            $reasons['missing_social_worker'] = 'برای سرپرست این پرونده مددکار تعیین نشده است.';
+            $reasons['missing_social_worker'] = [
+                'label' => 'مددکار سرپرست',
+                'field' => 'guardians.social_worker_id',
+                'basis' => 'سرپرست ثبت شده است، اما فیلد `social_worker_id` برای او خالی است.',
+            ];
         }
 
         if (blank($person->national_id)) {
-            $reasons['missing_national_id'] = 'کد ملی مددجو ثبت نشده است.';
+            $reasons['missing_national_id'] = [
+                'label' => 'کد ملی مددجو',
+                'field' => 'people.national_id',
+                'basis' => 'فیلد `national_id` برای خود مددجو خالی است.',
+            ];
         }
 
         if (blank($person->phone_number) && blank($guardian?->guardian_phone_number)) {
-            $reasons['missing_contact_path'] = 'هیچ شماره تماس مستقیمی برای مددجو یا سرپرست ثبت نشده است.';
+            $reasons['missing_contact_path'] = [
+                'label' => 'مسیر تماس',
+                'field' => 'people.phone_number / guardians.guardian_phone_number',
+                'basis' => 'هم `phone_number` مددجو و هم `guardian_phone_number` سرپرست خالی هستند.',
+            ];
         }
 
-        if (! $person->residenceContact) {
-            $reasons['missing_residence'] = 'اطلاعات سکونت ثبت نشده است.';
+        if (! $person->residenceContact && ! $guardian?->residence) {
+            $reasons['missing_residence'] = [
+                'label' => 'اطلاعات سکونت',
+                'field' => 'residences.person_id / residences.guardian_id',
+                'basis' => 'نه برای `person_id` مددجو و نه برای `guardian_id` سرپرست، هیچ رکورد Residence ثبت نشده است.',
+            ];
         }
 
         if (! $person->supportCoverage) {
-            $reasons['missing_support_coverage'] = 'وضعیت پوشش حمایتی ثبت نشده است.';
+            $reasons['missing_support_coverage'] = [
+                'label' => 'پوشش حمایتی',
+                'field' => 'support_coverages.person_id',
+                'basis' => 'هیچ رکورد SupportCoverage مرتبط با `person_id` این مددجو ثبت نشده است.',
+            ];
         }
 
         if (! $person->needsLevel) {
-            $reasons['missing_needs_level'] = 'سطح نیازمندی ثبت نشده است.';
+            $reasons['missing_needs_level'] = [
+                'label' => 'سطح نیازمندی',
+                'field' => 'needs_levels.person_id',
+                'basis' => 'هیچ رکورد NeedsLevel مرتبط با `person_id` این مددجو ثبت نشده است.',
+            ];
         }
 
         return [
