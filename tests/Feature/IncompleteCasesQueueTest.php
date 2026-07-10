@@ -193,6 +193,35 @@ class IncompleteCasesQueueTest extends TestCase
             ->assertDontSee($person->person_code);
     }
 
+    public function test_queue_reuses_paginated_people_within_same_request(): void
+    {
+        $this->actingAs($this->admin());
+
+        $person = $this->createCatalogCompletePerson([
+            'person_code' => '16021',
+            'national_id' => '',
+        ]);
+
+        $component = Livewire::test(IncompleteCasesQueue::class)->instance();
+
+        $component->summary;
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $firstPaginator = $component->incompletePeople;
+        $queriesAfterFirstAccess = DB::getQueryLog();
+
+        $secondPaginator = $component->incompletePeople;
+        $queriesAfterSecondAccess = DB::getQueryLog();
+
+        $this->assertSame($firstPaginator, $secondPaginator);
+        $this->assertCount(count($queriesAfterFirstAccess), $queriesAfterSecondAccess);
+        $this->assertSame('16021', $secondPaginator->first()?->person_code);
+
+        DB::disableQueryLog();
+    }
+
     private function admin(): User
     {
         return User::factory()->create([

@@ -29,6 +29,8 @@ class IncompleteCasesQueue extends Component
 
     protected ?array $scanResultsCache = null;
 
+    protected ?LengthAwarePaginator $incompletePeoplePaginatorCache = null;
+
     protected array $incompleteStateCache = [];
 
     protected ?Collection $personContactsCache = null;
@@ -65,6 +67,10 @@ class IncompleteCasesQueue extends Component
 
     public function getIncompletePeopleProperty(): LengthAwarePaginator
     {
+        if ($this->incompletePeoplePaginatorCache instanceof LengthAwarePaginator) {
+            return $this->incompletePeoplePaginatorCache;
+        }
+
         $scanResults = $this->scanResults();
         $page = Paginator::resolveCurrentPage() ?: 1;
         $total = count($scanResults['filtered_ids']);
@@ -75,7 +81,7 @@ class IncompleteCasesQueue extends Component
         ));
         $items = $this->loadPeopleForIds($pageIds);
 
-        return new LengthAwarePaginatorInstance(
+        return $this->incompletePeoplePaginatorCache = new LengthAwarePaginatorInstance(
             $items,
             $total,
             $this->perPage,
