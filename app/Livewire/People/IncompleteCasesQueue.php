@@ -166,7 +166,7 @@ class IncompleteCasesQueue extends Component
 
         Person::query()
             ->select($this->personColumns())
-            ->with($this->completenessRelations())
+            ->with($this->scanRelations())
             ->orderBy('id')
             ->chunkById(200, function (EloquentCollection $people) use (&$filteredReferences, &$incompleteCount, &$reasonCounts, &$severityCounts): void {
                 $this->primeContactCachesForPeople($people);
@@ -464,7 +464,7 @@ class IncompleteCasesQueue extends Component
 
         $people = Person::query()
             ->select($this->personColumns())
-            ->with($this->completenessRelations())
+            ->with($this->pageRelations())
             ->whereIn('id', $personIds)
             ->get()
             ->keyBy('id');
@@ -562,11 +562,10 @@ class IncompleteCasesQueue extends Component
         ];
     }
 
-    protected function completenessRelations(): array
+    protected function scanRelations(): array
     {
         return [
             'guardian:id,social_worker_id,national_code,first_name,last_name,guardian_phone_number,insurance_status,insurance_type_id',
-            'guardian.socialWorker:id,first_name,last_name',
             'guardian.residence:id,guardian_id,residence_status_id,district_id,address',
             'education:id,person_id,is_studying,reason_for_not_studying,education_degree',
             'familyStatus:id,person_id,guardian_relation_type_id,has_parent_disability,parent_disability_description',
@@ -578,9 +577,17 @@ class IncompleteCasesQueue extends Component
         ];
     }
 
+    protected function pageRelations(): array
+    {
+        return array_merge(
+            $this->scanRelations(),
+            ['guardian.socialWorker:id,first_name,last_name']
+        );
+    }
+
     protected function hydrateCompletenessContext(Person $person): Person
     {
-        $person->loadMissing($this->completenessRelations());
+        $person->loadMissing($this->pageRelations());
 
         if (
             ! ($this->personContactsCache?->has($person->id) ?? false)

@@ -222,6 +222,19 @@ class IncompleteCasesQueueTest extends TestCase
         DB::disableQueryLog();
     }
 
+    public function test_queue_uses_lighter_relations_for_scan_than_for_page_rows(): void
+    {
+        $this->actingAs($this->admin());
+
+        $component = Livewire::test(IncompleteCasesQueue::class)->instance();
+
+        $scanRelations = $this->invokeProtectedMethod($component, 'scanRelations');
+        $pageRelations = $this->invokeProtectedMethod($component, 'pageRelations');
+
+        $this->assertNotContains('guardian.socialWorker:id,first_name,last_name', $scanRelations);
+        $this->assertContains('guardian.socialWorker:id,first_name,last_name', $pageRelations);
+    }
+
     private function admin(): User
     {
         return User::factory()->create([
