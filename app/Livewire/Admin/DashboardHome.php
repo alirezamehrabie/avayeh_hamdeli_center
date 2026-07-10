@@ -184,6 +184,7 @@ class DashboardHome extends Component
 
         if ($user?->can('manage-people')) {
             $validSections[] = 'people-list';
+            $validSections[] = 'people-incomplete-cases';
         }
 
         if ($user?->can('people-register')) {
