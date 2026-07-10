@@ -1,4 +1,9 @@
-<div class="mx-auto max-w-[1680px] space-y-6 px-0 2xl:max-w-[1760px]">
+<div
+    x-data="{
+        categoryImagesOpen: false,
+    }"
+    class="mx-auto max-w-[1680px] space-y-6 px-0 2xl:max-w-[1760px]"
+>
     <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div class="bg-gradient-to-l from-teal-600 via-cyan-600 to-sky-700 px-4 py-4 text-white sm:px-6 sm:py-6">
             <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between sm:gap-5">
@@ -10,6 +15,19 @@
                 </div>
 
                 <div class="flex flex-wrap gap-2 sm:gap-3">
+                    @if($this->categoryImagePreviews !== [])
+                        <button
+                            type="button"
+                            @click="categoryImagesOpen = true"
+                            class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white/95 backdrop-blur transition hover:bg-white/20 focus:outline-none focus:ring-4 focus:ring-white/20"
+                            aria-label="مشاهده تصاویر دسته‌بندی‌ها"
+                            title="مشاهده تصاویر دسته‌بندی‌ها"
+                        >
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16l4.586-4.586a2 2 0 0 1 2.828 0L16 16m-2-2 1.586-1.586a2 2 0 0 1 2.828 0L20 14m-9-8h.01M6 20h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z"/>
+                            </svg>
+                        </button>
+                    @endif
                     <span class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white/95 backdrop-blur">
                         <span class="text-xs text-cyan-100">تعداد کل</span>
                         <span class="font-semibold">{{ number_format($this->totalQuantity, 2) }}</span>
@@ -23,6 +41,8 @@
         </div>
 
         <div class="px-6 py-6 xl:px-8 2xl:px-10">
+            @include('livewire.services.partials.category-image-preview-modal')
+
             @if (session()->has('success'))
                 <div class="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
                     {{ session('success') }}

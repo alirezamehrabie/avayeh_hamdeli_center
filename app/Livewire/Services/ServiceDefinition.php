@@ -11,6 +11,7 @@ use App\Models\ServiceCategoryTemplate;
 use App\Models\ServiceName;
 use App\Traits\InteractsWithNotificationModal;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\On;
@@ -19,6 +20,11 @@ use Livewire\Component;
 class ServiceDefinition extends Component
 {
     use InteractsWithNotificationModal;
+
+    /**
+     * @var array<int, string>
+     */
+    protected array $categoryImagePathsById = [];
 
     public ?int $serviceId = null;
 
@@ -269,6 +275,11 @@ class ServiceDefinition extends Component
             ])
             ->values()
             ->all();
+
+        $this->categoryImagePathsById = $service->categories
+            ->filter(fn (ServiceCategory $category): bool => filled($category->image_path))
+            ->mapWithKeys(fn (ServiceCategory $category): array => [(int) $category->id => (string) $category->image_path])
+            ->all();
     }
 
     public function startNewService(): void
@@ -276,6 +287,7 @@ class ServiceDefinition extends Component
         $this->resetForm();
         $this->bootDefaults();
         $this->resetValidation();
+        $this->categoryImagePathsById = [];
     }
 
     public function getPreviewServiceCodeProperty(): string
@@ -293,6 +305,36 @@ class ServiceDefinition extends Component
     public function getTotalQuantityProperty(): float
     {
         return collect($this->categories)->sum(fn (array $category) => (float) ($category['quantity'] ?? 0));
+    }
+
+    /**
+     * @return array<int, array{id: int, name: string, image_url: ?string, is_available: bool}>
+     */
+    public function getCategoryImagePreviewsProperty(): array
+    {
+        return collect($this->categories)
+            ->map(function (array $category): ?array {
+                $categoryId = (int) ($category['id'] ?? 0);
+                $imagePath = $this->categoryImagePathsById[$categoryId] ?? null;
+
+                if ($categoryId <= 0 || blank($imagePath)) {
+                    return null;
+                }
+
+                $isAvailable = Storage::disk('public')->exists($imagePath);
+
+                $relativeUrl = '/storage/'.ltrim(str_replace('\\', '/', $imagePath), '/');
+
+                return [
+                    'id' => $categoryId,
+                    'name' => trim((string) ($category['name'] ?? '')) ?: 'دسته‌بندی بدون نام',
+                    'image_url' => $isAvailable ? $relativeUrl : null,
+                    'is_available' => $isAvailable,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
     }
 
     public function render()
