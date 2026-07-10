@@ -119,6 +119,11 @@ class IncompleteCasesQueue extends Component
         return $this->buildIncompleteState($person)['severity'];
     }
 
+    public function nextStepFor(Person $person): array
+    {
+        return $this->buildNextStep($this->buildIncompleteState($person)['reasons']);
+    }
+
     public function reasonOptions(): array
     {
         return ['all' => 'همه موارد'] + $this->catalogFields()
@@ -407,6 +412,75 @@ class IncompleteCasesQueue extends Component
             'key' => 'low',
             'label' => 'کم',
             'classes' => 'border-slate-200 bg-slate-50 text-slate-700',
+        ];
+    }
+
+    protected function buildNextStep(array $reasons): array
+    {
+        if ($reasons === []) {
+            return [
+                'section' => 'پرونده',
+                'headline' => 'پرونده کامل است.',
+                'supporting_text' => 'در حال حاضر اقدامی برای تکمیل این پرونده نیاز نیست.',
+                'primary_action_label' => 'مشاهده پرونده مددجو',
+                'focus_label' => null,
+            ];
+        }
+
+        $sectionPriority = [
+            'اطلاعات هویتی مددجو' => 1,
+            'مشخصات سرپرست' => 2,
+            'اطلاعات سکونت و تماس' => 3,
+            'وضعیت تحصیل و خانواده' => 4,
+            'پوشش حمایتی و نیازمندی' => 5,
+            'شرح پرونده و مدارک' => 6,
+        ];
+
+        $severityWeight = [
+            'critical' => 4,
+            'high' => 3,
+            'medium' => 2,
+            'low' => 1,
+        ];
+
+        $sortedReasons = collect($reasons)
+            ->sort(function (array $left, array $right) use ($severityWeight, $sectionPriority): int {
+                $leftSeverity = $severityWeight[$left['severity']] ?? 0;
+                $rightSeverity = $severityWeight[$right['severity']] ?? 0;
+
+                if ($leftSeverity !== $rightSeverity) {
+                    return $rightSeverity <=> $leftSeverity;
+                }
+
+                $leftSection = $sectionPriority[$left['section']] ?? 999;
+                $rightSection = $sectionPriority[$right['section']] ?? 999;
+
+                if ($leftSection !== $rightSection) {
+                    return $leftSection <=> $rightSection;
+                }
+
+                return strcmp($left['label'], $right['label']);
+            })
+            ->values();
+
+        $primaryReason = $sortedReasons->first();
+        $primarySection = (string) ($primaryReason['section'] ?? 'پرونده');
+        $sectionReasons = $sortedReasons->where('section', $primarySection)->values();
+        $sectionCount = $sectionReasons->count();
+        $focusLabel = (string) ($primaryReason['label'] ?? '');
+
+        $headline = 'ابتدا بخش «'.$primarySection.'» را تکمیل کنید.';
+
+        $supportingText = $sectionCount > 1
+            ? 'مهم‌ترین مورد این بخش: «'.$focusLabel.'» و '.$sectionCount.' نقص ثبت‌شده در همین بخش.'
+            : 'مهم‌ترین مورد برای شروع: «'.$focusLabel.'».';
+
+        return [
+            'section' => $primarySection,
+            'headline' => $headline,
+            'supporting_text' => $supportingText,
+            'primary_action_label' => 'تکمیل '.$primarySection,
+            'focus_label' => $focusLabel,
         ];
     }
 
