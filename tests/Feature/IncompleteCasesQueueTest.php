@@ -149,6 +149,109 @@ class IncompleteCasesQueueTest extends TestCase
             ->assertDontSee('16012');
     }
 
+    public function test_queue_search_matches_beneficiary_guardian_and_social_worker_fields(): void
+    {
+        $this->actingAs($this->admin());
+
+        $beneficiaryMatch = $this->createCatalogCompletePerson([
+            'person_code' => '16110',
+            'first_name' => 'رضا',
+            'last_name' => 'جستجو',
+            'national_id' => '3311111111',
+            'profile_photo' => null,
+        ]);
+
+        $guardianMatch = $this->createCatalogCompletePerson([
+            'person_code' => '16111',
+            'national_id' => '3311111112',
+            'profile_photo' => null,
+        ], [
+            'guardian' => [
+                'first_name' => 'سرپرست',
+                'last_name' => 'نمونه',
+            ],
+        ]);
+
+        $workerMatch = $this->createCatalogCompletePerson([
+            'person_code' => '16112',
+            'national_id' => '3311111113',
+            'profile_photo' => null,
+        ], [
+            'socialWorker' => [
+                'first_name' => 'مددکار',
+                'last_name' => 'نمونه',
+            ],
+        ]);
+
+        Livewire::test(IncompleteCasesQueue::class)
+            ->set('search', 'رضا')
+            ->assertSee('16110')
+            ->assertDontSee('16111')
+            ->assertDontSee('16112');
+
+        Livewire::test(IncompleteCasesQueue::class)
+            ->set('search', 'سرپرست نمونه')
+            ->assertSee('16111')
+            ->assertDontSee('16110')
+            ->assertDontSee('16112');
+
+        Livewire::test(IncompleteCasesQueue::class)
+            ->set('search', 'مددکار نمونه')
+            ->assertSee('16112')
+            ->assertDontSee('16110')
+            ->assertDontSee('16111');
+    }
+
+    public function test_queue_sort_can_prioritize_severity_and_missing_count(): void
+    {
+        $this->actingAs($this->admin());
+
+        $criticalPerson = $this->createCatalogCompletePerson([
+            'person_code' => '16120',
+            'national_id' => '3322222221',
+            'profile_photo' => null,
+        ], [
+            'guardian' => [
+                'social_worker_id' => null,
+            ],
+        ]);
+
+        $highCountPerson = $this->createCatalogCompletePerson([
+            'person_code' => '16121',
+            'national_id' => '3322222222',
+            'photo_id_card' => null,
+            'photo_birth_certificate' => null,
+            'profile_photo' => null,
+            'client_case_history' => null,
+        ]);
+
+        $mediumPerson = $this->createCatalogCompletePerson([
+            'person_code' => '16122',
+            'national_id' => '3322222223',
+            'photo_id_card' => null,
+        ]);
+
+        $severitySorted = Livewire::test(IncompleteCasesQueue::class)
+            ->set('selectedSort', 'severity')
+            ->instance()
+            ->incompletePeople;
+
+        $this->assertSame(
+            ['16120', '16121', '16122'],
+            $severitySorted->pluck('person_code')->all()
+        );
+
+        $missingCountSorted = Livewire::test(IncompleteCasesQueue::class)
+            ->set('selectedSort', 'missing_count')
+            ->instance()
+            ->incompletePeople;
+
+        $this->assertSame(
+            ['16121', '16120', '16122'],
+            $missingCountSorted->pluck('person_code')->all()
+        );
+    }
+
     public function test_beneficiary_case_file_context_survives_mount_from_url(): void
     {
         $this->actingAs($this->admin());
@@ -286,7 +389,7 @@ class IncompleteCasesQueueTest extends TestCase
         ]);
 
         $needLevelTypeId = DB::table('need_level_types')->insertGetId([
-            'code' => strtoupper(chr(random_int(65, 90))),
+            'code' => chr(65 + (int) (DB::table('need_level_types')->count() % 26)),
             'title' => 'سطح تست '.random_int(1, 99999),
             'severity_order' => 1,
             'created_at' => now(),
@@ -300,12 +403,12 @@ class IncompleteCasesQueueTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        $socialWorker = SocialWorker::withoutGlobalScope('active')->create([
+        $socialWorker = SocialWorker::withoutGlobalScope('active')->create(array_merge([
             'worker_code' => ((int) (SocialWorker::withoutGlobalScope('active')->max('worker_code') ?? 9)) + 1,
             'first_name' => 'Worker',
             'last_name' => 'Queue',
             'is_active' => true,
-        ]);
+        ], $relationOverrides['socialWorker'] ?? []));
 
         $guardian = Guardian::query()->create(array_merge([
             'guardian_code' => random_int(100000, 999999),
