@@ -104,7 +104,6 @@
             'services' => [
                 ['section' => 'service-list', 'label' => 'مدیریت خدمات'],
                 ['section' => 'service-delivery', 'label' => 'تحویل خدمات'],
-                ['section' => 'service-management', 'label' => 'تنظیمات خدمات'],
                 ['section' => 'service-archive', 'label' => 'بایگانی خدمات'],
             ],
             'activities' => [

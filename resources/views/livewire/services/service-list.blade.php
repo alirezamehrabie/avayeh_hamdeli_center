@@ -38,7 +38,18 @@
                     </p>
                 </div>
 
-                <div class="flex shrink-0 items-center">
+                <div class="flex shrink-0 items-center gap-2">
+                    <a
+                        href="{{ route('admin.service-management') }}"
+                        class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/12 text-cyan-50/90 shadow-sm shadow-cyan-950/10 ring-1 ring-white/10 transition duration-200 hover:-translate-y-0.5 hover:bg-white/18 hover:text-white focus:outline-none focus:ring-4 focus:ring-white/25 active:translate-y-0 active:scale-[0.98] sm:h-10 sm:w-10"
+                        title="تنظیمات خدمات"
+                        aria-label="تنظیمات خدمات"
+                    >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.757.426 1.757 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.757-2.924 1.757-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.757-.426-1.757-2.924 0-3.35A1.724 1.724 0 0 0 5.38 7.753c-.94-1.543.826-3.31 2.37-2.37 1 .608 2.296.07 2.573-1.066Z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                        </svg>
+                    </a>
                     <button
                         type="button"
                         wire:click="createService"
