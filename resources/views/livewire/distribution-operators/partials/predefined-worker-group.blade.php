@@ -73,7 +73,7 @@
                 </span>
                 <div class="min-w-0">
                     <p class="text-sm font-black text-slate-500">مقدارها</p>
-                    <p class="mt-0.5 text-[11px] font-bold leading-5 text-slate-400">ابتدا مددکار را انتخاب کنید تا مقدارهای قابل تخصیص فعال شود.</p>
+                    <p class="mt-0.5 text-[11px] font-bold leading-5 text-slate-400">ابتدا مددکار را انتخاب کنید</p>
                 </div>
             </div>
         @else

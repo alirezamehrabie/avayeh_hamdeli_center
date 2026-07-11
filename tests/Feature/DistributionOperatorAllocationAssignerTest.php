@@ -1638,6 +1638,22 @@ class DistributionOperatorAllocationAssignerTest extends TestCase
         $this->assertCount(1, $component->get('predefinedWorkerGroups'));
     }
 
+    public function test_predefined_mode_guides_first_social_worker_selection_until_chosen(): void
+    {
+        [$operator, $service, $category, $worker] = $this->predefinedServiceWithTwoWorkers();
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceBatchCreator::class)
+            ->set('mode', ServiceBatchCreator::MODE_PREDEFINED)
+            ->set('selectedServiceId', $service->id)
+            ->assertSeeHtml('distribution-operator-guide-border')
+            ->assertSeeHtml('guideSelection: true')
+            ->call('selectPredefinedGroupWorker', 0, $worker->id)
+            ->assertSeeHtml('guideSelection: false')
+            ->assertDontSeeHtml('guideSelection: true');
+    }
+
     private function predefinedServiceWithTwoWorkers(): array
     {
         $operator = User::factory()->create([
