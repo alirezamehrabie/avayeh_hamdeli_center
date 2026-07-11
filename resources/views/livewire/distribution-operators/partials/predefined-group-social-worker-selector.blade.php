@@ -33,8 +33,20 @@
             background-size: 100% 100%, 300% 100%;
             animation: distributionOperatorGuideBorder 2.0s linear infinite;
         }
+        @keyframes distributionOperatorGuideZoom {
+            0% { transform: scale(0.96); }
+            55% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+        .distribution-operator-guide-zoom {
+            /* One-shot reveal so the control draws the eye without a distracting
+               continuous pulse; transform-only keeps it off the layout flow. */
+            animation: distributionOperatorGuideZoom 0.6s ease-out 1;
+            transform-origin: center;
+        }
         @media (prefers-reduced-motion: reduce) {
             .distribution-operator-guide-border { animation: none; }
+            .distribution-operator-guide-zoom { animation: none; }
         }
     </style>
 @endonce
@@ -68,6 +80,30 @@
                 }
 
                 this.$watch('open', (value) => this.syncPageScrollLock(value));
+
+                // When the first-worker section first appears (a service was just
+                // picked and no worker is chosen yet), gently bring it into view and
+                // move keyboard focus to the control that needs the user's action.
+                if (this.guideSelection) {
+                    this.$nextTick(() => this.runSelectionGuide());
+                }
+            },
+            runSelectionGuide() {
+                const section = this.$el.parentElement ?? this.$el;
+                const rect = section.getBoundingClientRect();
+                const margin = 24;
+                const fullyVisible = rect.top >= margin && rect.bottom <= (window.innerHeight - margin);
+
+                if (! fullyVisible) {
+                    section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+
+                // Focus without a second scroll jump; wait for the smooth scroll to
+                // settle first when we actually had to move the viewport.
+                window.setTimeout(
+                    () => this.$refs.trigger?.focus({ preventScroll: true }),
+                    fullyVisible ? 0 : 320
+                );
             },
             destroy() {
                 if (this.popStateHandler) {
@@ -198,10 +234,11 @@
     >
         <button
             type="button"
+            x-ref="trigger"
             @click="guideSelection = false; toggleSelector()"
             :aria-expanded="open.toString()"
             aria-haspopup="dialog"
-            x-bind:class="guideSelection ? 'distribution-operator-guide-border bg-white' : 'border-slate-300 bg-white {{ $accentClasses['hoverBorder'] }}'"
+            x-bind:class="guideSelection ? 'distribution-operator-guide-border distribution-operator-guide-zoom bg-white' : 'border-slate-300 bg-white {{ $accentClasses['hoverBorder'] }}'"
             class="flex min-h-12 w-full items-center justify-between rounded-2xl border py-3 ps-4 {{ $groupWorkerId ? 'pe-16' : 'pe-4' }} text-right shadow-sm transition focus:outline-none focus:ring-4"
         >
             <span class="min-w-0 flex-1">
