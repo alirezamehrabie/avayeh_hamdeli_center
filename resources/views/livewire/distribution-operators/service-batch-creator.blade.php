@@ -498,102 +498,63 @@
                     </div>
                 </div>
 
-                <div class="grid gap-3 p-3 sm:p-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
-                    @if($workerStepUnlocked)
-                        @include('livewire.distribution-operators.partials.social-worker-selector', [
-                            'accent' => 'cyan',
-                            'selectorId' => 'predefined-social-worker-selector',
-                        ])
-                    @else
-                        <div class="lg:col-span-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
-                            <p class="text-sm font-black text-slate-500">۲. انتخاب مددکار</p>
-                            <p class="mt-1 text-xs font-bold leading-5 text-slate-400">ابتدا خدمت را انتخاب کنید تا انتخاب مددکار فعال شود.</p>
+                @if(! $selectedService)
+                    <div class="p-3 sm:p-4">
+                        <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-center">
+                            <p class="text-sm font-black text-slate-500">۲. انتخاب مددکار و مقدارها</p>
+                            <p class="mt-1 text-xs font-bold leading-5 text-slate-400">ابتدا خدمت را انتخاب کنید تا افزودن مددکار و ثبت مقدارها فعال شود.</p>
                         </div>
-                    @endif
+                    </div>
+                @else
+                    <div
+                        x-data="{
+                            scrollToNewGroup(event) {
+                                const index = event.detail?.index;
 
-                    @if($selectedService && ! $quantityStepUnlocked)
-                        <div class="lg:col-span-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-center">
-                            <p class="text-sm font-black text-slate-600">۳. ثبت مقدارها</p>
-                            <p class="mt-1 text-xs font-bold leading-5 text-slate-400">پس از انتخاب مددکار، مقدارهای قابل تخصیص نمایش داده می‌شود.</p>
-                        </div>
-                    @elseif($selectedService)
-                        <div class="lg:col-span-2 rounded-xl border border-slate-200 bg-slate-50/80 p-2.5">
-                            <div class="mb-2 flex items-center justify-between gap-2 px-1">
-                                <div class="min-w-0">
-                                    <p class="truncate text-[11px] font-bold text-slate-500">{{ $selectedService->code }} · موجودی کل: {{ number_format((float) $selectedService->total_quantity, 2) }}</p>
-                                </div>
-                                <span class="shrink-0 rounded-full bg-cyan-100 px-2 py-0.5 text-[10px] font-bold text-cyan-700">{{ count($selectedServiceCategories) }} دسته</span>
-                            </div>
+                                this.$nextTick(() => {
+                                    const selector = Number.isInteger(index)
+                                        ? `[data-predefined-worker-group-index='${index}']`
+                                        : '[data-predefined-worker-group-index]:last-of-type';
+                                    const group = this.$el.querySelector(selector);
 
-                            <div class="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                                @foreach($selectedServiceCategories as $category)
-                                    @php
-                                        $categoryMetrics = $selectedServiceCategoryMetrics[(int) $category->id] ?? ['quantity' => (float) $category->quantity, 'allocated' => 0.0, 'assignable' => 0.0];
-                                        $totalStockQuantity = (float) $categoryMetrics['quantity'];
-                                        $assignableQuantity = (float) $categoryMetrics['assignable'];
-                                        $allocatedPreview = $this->predefinedAllocationForCategory((int) $category->id);
-                                        $remainingPreview = max(0, $assignableQuantity - $allocatedPreview);
-                                        $isOverAllocated = $allocatedPreview > $assignableQuantity;
-                                        $usesDecimalQuantity = in_array((string) $category->unit, ['kilogram', 'gram', 'kg', 'g'], true);
-                                        $formatCategoryQuantity = fn (float|int $quantity) => number_format((float) $quantity, $usesDecimalQuantity ? 2 : 0);
-                                        $assignableQuantityLabel = $formatCategoryQuantity($assignableQuantity);
-                                        $allocatedPreviewLabel = $formatCategoryQuantity($allocatedPreview);
-                                        $quantityInputStep = $usesDecimalQuantity ? '0.01' : '1';
-                                        $quantityInputMode = $usesDecimalQuantity ? 'decimal' : 'numeric';
-                                        $categoryUnitLabel = $unitOptions[$category->unit] ?? $category->unit;
-                                    @endphp
-                                    <div class="rounded-xl border {{ $isOverAllocated ? 'border-rose-200 bg-rose-50/70' : 'border-slate-200 bg-white' }} p-2.5 shadow-sm shadow-slate-900/[0.02]">
-                                        <div class="flex items-start justify-between gap-2">
-                                            <p class="min-w-0 truncate text-sm font-black text-slate-900">{{ $category->name }}</p>
-                                            <span class="inline-flex shrink-0 items-center gap-1 rounded-lg border border-cyan-100/70 bg-cyan-50/60 px-2 py-0.5 text-[11px]">
-                                                <span class="font-bold tabular-nums text-slate-700" dir="ltr">{{ $assignableQuantityLabel }}</span>
-                                                <span class="text-[10px] font-semibold text-slate-400">{{ $categoryUnitLabel }}</span>
-                                            </span>
-                                        </div>
-
-                                        <div class="mt-2 grid grid-cols-[minmax(0,1fr)_auto_auto] gap-1.5">
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                step="{{ $quantityInputStep }}"
-                                                max="{{ $assignableQuantity }}"
-                                                wire:model.live.debounce.250ms="predefinedAllocations.{{ $category->id }}"
-                                                inputmode="{{ $quantityInputMode }}"
-                                                class="min-w-0 rounded-lg border {{ $isOverAllocated ? 'border-rose-300 bg-rose-50 text-rose-900 focus:border-rose-400 focus:ring-rose-100' : 'border-slate-200 bg-slate-50 text-slate-900 focus:border-cyan-400 focus:ring-cyan-100' }} px-2.5 py-2 text-center text-sm font-black outline-none transition focus:ring-2"
-                                                placeholder="۰"
-                                                aria-invalid="{{ $isOverAllocated ? 'true' : 'false' }}"
-                                            >
-                                            <button
-                                                type="button"
-                                                wire:click="useMaxPredefinedAllocation({{ $category->id }})"
-                                                @disabled($assignableQuantity <= 0)
-                                                class="rounded-lg border border-cyan-100 bg-cyan-50 px-2 py-2 text-[11px] font-bold text-cyan-700 transition hover:bg-cyan-100 disabled:opacity-40"
-                                            >
-                                                حداکثر
-                                            </button>
-                                            <button
-                                                type="button"
-                                                wire:click="clearPredefinedAllocation({{ $category->id }})"
-                                                @disabled($allocatedPreview <= 0)
-                                                class="rounded-lg border border-slate-200 bg-white px-2 py-2 text-[11px] font-bold text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-40"
-                                            >
-                                                پاک
-                                            </button>
-                                        </div>
-
-                                        @if($isOverAllocated)
-                                            <p class="mt-1.5 text-[11px] font-bold text-rose-600">بیشتر از موجودی قابل تخصیص</p>
-                                        @elseif($allocatedPreview > 0)
-                                            <p class="mt-1.5 text-[11px] font-semibold text-slate-400">{{ $allocatedPreviewLabel }} از {{ $assignableQuantityLabel }}</p>
-                                        @endif
-
-                                        @error('predefinedAllocations.' . $category->id) <p class="mt-1 text-[11px] text-rose-600">{{ $message }}</p> @enderror
-                                    </div>
-                                @endforeach
+                                    group?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                });
+                            }
+                        }"
+                        x-on:predefined-worker-group-added.window="scrollToNewGroup($event)"
+                        class="space-y-3 p-3 sm:p-4"
+                    >
+                        <div class="flex items-center justify-between gap-3 px-1">
+                            <p class="truncate text-[11px] font-bold text-slate-500">{{ $selectedService->code }} · موجودی کل: {{ number_format((float) $selectedService->total_quantity, 2) }}</p>
+                            <div class="flex shrink-0 items-center gap-1.5">
+                                <span class="rounded-full bg-cyan-100 px-2 py-0.5 text-[10px] font-bold text-cyan-700">{{ count($selectedServiceCategories) }} دسته</span>
+                                <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ count($predefinedWorkerGroups) }} مددکار</span>
                             </div>
                         </div>
-                    @endif
-                </div>
+
+                        @foreach($predefinedWorkerGroups as $groupIndex => $workerGroup)
+                            @include('livewire.distribution-operators.partials.predefined-worker-group', [
+                                'groupIndex' => $groupIndex,
+                                'workerGroup' => $workerGroup,
+                            ])
+                        @endforeach
+
+                        <button
+                            type="button"
+                            wire:click="addPredefinedWorkerGroup"
+                            wire:loading.attr="disabled"
+                            wire:target="addPredefinedWorkerGroup"
+                            class="flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-600 bg-gradient-to-b from-cyan-500 to-cyan-600 px-3 py-3.5 text-sm font-bold text-white shadow-sm transition hover:from-cyan-600 hover:to-cyan-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-85"
+                        >
+                            <i class="bi bi-person-plus-fill text-base" wire:loading.remove wire:target="addPredefinedWorkerGroup"></i>
+                            <svg wire:loading wire:target="addPredefinedWorkerGroup" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+                                <path d="M12 2a10 10 0 0110 10" stroke-linecap="round"></path>
+                            </svg>
+                            افزودن مددکار
+                        </button>
+                    </div>
+                @endif
             </section>
         @else
             <section wire:key="misc-service-batch-section" class="overflow-visible rounded-xl border border-emerald-100/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
@@ -1084,7 +1045,7 @@
         <div x-bind:style="reviewPanelSpacerStyle()" aria-hidden="true"></div>
         <div x-ref="reviewPanel" class="rounded-2xl border px-3 py-2.5 {{ $reviewCardClasses }}">
             <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                <div class="min-w-0 flex-1" @if($isEditing && $reviewWorkerCount > 1) x-data="{ showBreakdown: false }" @endif>
+                <div class="min-w-0 flex-1" @if($reviewWorkerCount > 1) x-data="{ showBreakdown: false }" @endif>
                     <div class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
 {{--                        <span class="inline-flex h-6 items-center rounded-lg {{ $reviewStepUnlocked ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100' : 'bg-slate-100 text-slate-500 ring-1 ring-slate-200' }} px-2.5 text-[11px] font-black">۴</span>--}}
                         <span
@@ -1100,8 +1061,8 @@
                             <span class="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500">{{ $reviewSummary['service_code'] }}</span>
                         @endif
                     </div>
-                    @if($isEditing && $reviewWorkerCount > 1)
-                        {{-- Multi-worker edit: one-line total that expands into a per-worker breakdown. --}}
+                    @if($reviewWorkerCount > 1)
+                        {{-- Multi-worker: one-line total that expands into a per-worker breakdown. --}}
                         <button
                             type="button"
                             @click="showBreakdown = ! showBreakdown"

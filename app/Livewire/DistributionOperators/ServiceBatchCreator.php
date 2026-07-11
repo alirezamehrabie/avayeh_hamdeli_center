@@ -58,9 +58,19 @@ class ServiceBatchCreator extends Component
     public bool $hasUnsavedChanges = false;
 
     /**
-     * @var array<int, string|int|float|null>
+     * Predefined mode: one repeatable group per social worker, each carrying its
+     * own category allocations so the same service can be assigned to several
+     * workers at once with independent quantities.
+     *
+     * @var array<int, array<string, mixed>>
      */
-    public array $predefinedAllocations = [];
+    public array $predefinedWorkerGroups = [];
+
+    /**
+     * Predefined mode: index of the worker group whose search sheet is open, so
+     * the shared suggestions property knows which group's query to honor.
+     */
+    public ?int $activePredefinedGroupIndex = null;
 
     /**
      * @var array<int, array<string, mixed>>
@@ -144,6 +154,7 @@ class ServiceBatchCreator extends Component
 
         $this->date = Jalalian::now()->format('Y/m/d');
         $this->miscCategories = [$this->makeMiscCategory()];
+        $this->predefinedWorkerGroups = [$this->makePredefinedWorkerGroup()];
 
         if ($this->editingServiceId) {
             $this->loadEditableMiscService($this->resolveEditableService($this->editingServiceId));
@@ -245,7 +256,7 @@ class ServiceBatchCreator extends Component
 
     public function updatedSelectedServiceId(): void
     {
-        $this->predefinedAllocations = [];
+        $this->resetPredefinedGroupAllocations();
         $this->selectedPredefinedServiceCache = null;
         $this->flushSelectedPredefinedServiceMetrics();
         $this->flushPredefinedServiceOptions();
@@ -260,23 +271,38 @@ class ServiceBatchCreator extends Component
         $this->flushPredefinedServiceOptions();
     }
 
-    public function updatedPredefinedAllocations(mixed $value, ?string $key = null): void
+    public function updatedPredefinedWorkerGroups(mixed $value = null, ?string $key = null): void
     {
+        $this->confirmingBatchSave = false;
+
         if ($key === null) {
             return;
         }
 
-        $categoryId = (int) str($key)->before('.')->toString();
+        $segments = explode('.', $key);
+        $groupIndex = (int) ($segments[0] ?? -1);
 
-        if ($categoryId <= 0) {
-            $categoryId = (int) $key;
-        }
-
-        if ($categoryId <= 0) {
+        if (! isset($this->predefinedWorkerGroups[$groupIndex])) {
             return;
         }
 
-        $this->validatePredefinedAllocationField($categoryId);
+        // The group's search field drives the shared suggestions property, so
+        // point it at the active group instead of validating an allocation.
+        if (($segments[1] ?? null) === 'worker_search') {
+            $this->activePredefinedGroupIndex = $groupIndex;
+            $this->showSocialWorkerSuggestions = true;
+            $this->flushSocialWorkerSuggestions();
+
+            return;
+        }
+
+        if (($segments[1] ?? null) === 'allocations' && isset($segments[2])) {
+            $categoryId = (int) $segments[2];
+
+            if ($categoryId > 0) {
+                $this->validatePredefinedGroupAllocationField($groupIndex, $categoryId);
+            }
+        }
     }
 
     public function selectPredefinedService(int $serviceId): void
@@ -284,7 +310,7 @@ class ServiceBatchCreator extends Component
         $service = $this->resolvePredefinedService($serviceId);
 
         $this->selectedServiceId = $service->id;
-        $this->predefinedAllocations = [];
+        $this->resetPredefinedGroupAllocations();
         $this->serviceSearch = '';
         $this->selectedPredefinedServiceCache = $service;
         $this->flushSelectedPredefinedServiceMetrics();
@@ -297,7 +323,7 @@ class ServiceBatchCreator extends Component
     public function clearPredefinedServiceSelection(): void
     {
         $this->selectedServiceId = null;
-        $this->predefinedAllocations = [];
+        $this->resetPredefinedGroupAllocations();
         $this->serviceSearch = '';
         $this->selectedPredefinedServiceCache = null;
         $this->flushSelectedPredefinedServiceMetrics();
@@ -432,20 +458,119 @@ class ServiceBatchCreator extends Component
         $this->confirmingBatchSave = false;
     }
 
-    public function useMaxPredefinedAllocation(int $categoryId): void
+    public function addPredefinedWorkerGroup(): void
     {
-        $assignableQuantity = $this->predefinedAssignableForCategory($categoryId);
-
-        $this->predefinedAllocations[$categoryId] = $this->formatPredefinedCategoryQuantity($categoryId, max(0, $assignableQuantity));
+        $this->predefinedWorkerGroups[] = $this->makePredefinedWorkerGroup();
         $this->confirmingBatchSave = false;
-        $this->resetValidation('predefinedAllocations.'.$categoryId);
+        $this->resetValidation('predefinedWorkerGroups');
+
+        $newIndex = array_key_last($this->predefinedWorkerGroups);
+        $this->activePredefinedGroupIndex = $newIndex;
+
+        $this->dispatch('predefined-worker-group-added', index: $newIndex);
     }
 
-    public function clearPredefinedAllocation(int $categoryId): void
+    public function removePredefinedWorkerGroup(int $index): void
     {
-        unset($this->predefinedAllocations[$categoryId]);
+        if (count($this->predefinedWorkerGroups) <= 1) {
+            return;
+        }
+
+        unset($this->predefinedWorkerGroups[$index]);
+        $this->predefinedWorkerGroups = array_values($this->predefinedWorkerGroups);
+        $this->activePredefinedGroupIndex = null;
         $this->confirmingBatchSave = false;
-        $this->resetValidation('predefinedAllocations.'.$categoryId);
+        $this->resetValidation('predefinedWorkerGroups');
+    }
+
+    #[On('confirm-predefined-worker-group-delete')]
+    public function confirmPredefinedWorkerGroupDelete(int $index): void
+    {
+        $this->removePredefinedWorkerGroup($index);
+    }
+
+    public function openPredefinedGroupWorkerSearch(int $index): void
+    {
+        if (! isset($this->predefinedWorkerGroups[$index])) {
+            return;
+        }
+
+        $this->activePredefinedGroupIndex = $index;
+        $this->showSocialWorkerSuggestions = true;
+        $this->flushSocialWorkerSuggestions();
+        $this->confirmingBatchSave = false;
+    }
+
+    public function selectPredefinedGroupWorker(int $index, int $socialWorkerId): void
+    {
+        if (! isset($this->predefinedWorkerGroups[$index])) {
+            return;
+        }
+
+        if ($this->assignedPredefinedWorkerIdsExceptGroup($index)->contains((int) $socialWorkerId)) {
+            throw ValidationException::withMessages([
+                "predefinedWorkerGroups.{$index}.social_worker_id" => 'این مددکار قبلاً در همین خدمت انتخاب شده است.',
+            ]);
+        }
+
+        $worker = SocialWorker::query()
+            ->with('district:id,name')
+            ->select(['id', 'first_name', 'last_name', 'worker_code', 'district_id'])
+            ->findOrFail($socialWorkerId);
+
+        $this->predefinedWorkerGroups[$index]['social_worker_id'] = (int) $worker->id;
+        $this->predefinedWorkerGroups[$index]['worker_query'] = trim($worker->full_name.' - کد '.$worker->worker_code);
+        $this->predefinedWorkerGroups[$index]['worker_search'] = '';
+        $this->predefinedWorkerGroups[$index]['worker_code'] = $worker->worker_code ? (string) $worker->worker_code : '-';
+        $this->predefinedWorkerGroups[$index]['worker_display'] = $this->formatSelectedSocialWorkerDisplay($worker);
+
+        $this->showSocialWorkerSuggestions = false;
+        $this->activePredefinedGroupIndex = null;
+        $this->flushSocialWorkerSuggestions();
+        $this->confirmingBatchSave = false;
+        $this->resetValidation("predefinedWorkerGroups.{$index}.social_worker_id");
+    }
+
+    public function clearPredefinedGroupWorker(int $index): void
+    {
+        if (! isset($this->predefinedWorkerGroups[$index])) {
+            return;
+        }
+
+        $this->predefinedWorkerGroups[$index]['social_worker_id'] = null;
+        $this->predefinedWorkerGroups[$index]['worker_query'] = '';
+        $this->predefinedWorkerGroups[$index]['worker_search'] = '';
+        $this->predefinedWorkerGroups[$index]['worker_code'] = '';
+        $this->predefinedWorkerGroups[$index]['worker_display'] = '';
+        $this->showSocialWorkerSuggestions = true;
+        $this->activePredefinedGroupIndex = $index;
+        $this->flushSocialWorkerSuggestions();
+        $this->confirmingBatchSave = false;
+        $this->resetValidation("predefinedWorkerGroups.{$index}.social_worker_id");
+    }
+
+    public function useMaxPredefinedGroupAllocation(int $index, int $categoryId): void
+    {
+        if (! isset($this->predefinedWorkerGroups[$index])) {
+            return;
+        }
+
+        $assignableQuantity = $this->predefinedGroupAssignableForCategory($index, $categoryId);
+
+        $this->predefinedWorkerGroups[$index]['allocations'][$categoryId] = $this->formatPredefinedCategoryQuantity($categoryId, max(0, $assignableQuantity));
+        $this->confirmingBatchSave = false;
+        $this->resetValidation("predefinedWorkerGroups.{$index}.allocations.{$categoryId}");
+    }
+
+    public function clearPredefinedGroupAllocation(int $index, int $categoryId): void
+    {
+        if (! isset($this->predefinedWorkerGroups[$index])) {
+            return;
+        }
+
+        unset($this->predefinedWorkerGroups[$index]['allocations'][$categoryId]);
+        $this->confirmingBatchSave = false;
+        $this->resetValidation("predefinedWorkerGroups.{$index}.allocations.{$categoryId}");
     }
 
     public function addCategory(): void
@@ -727,115 +852,202 @@ class ServiceBatchCreator extends Component
     protected function savePredefinedAllocation()
     {
         $validated = $this->validate($this->predefinedRules(), [], $this->validationAttributes());
+        $this->validateDistinctPredefinedWorkerGroups();
         $service = $this->resolvePredefinedService((int) $validated['selectedServiceId']);
 
-        $rows = collect($validated['predefinedAllocations'] ?? [])
-            ->map(fn ($quantity, $categoryId): array => [
-                'category_id' => (int) $categoryId,
-                'quantity' => (float) $quantity,
-            ])
-            ->filter(fn (array $row): bool => $row['quantity'] > 0)
+        // Flatten the groups into (worker, category, quantity) rows, dropping any
+        // zero/blank allocation. Each surviving group must contribute at least one
+        // positive row so no worker is assigned an empty allocation.
+        $groups = collect($validated['predefinedWorkerGroups'] ?? [])
+            ->map(function (array $group, int $groupIndex): array {
+                $workerId = (int) ($group['social_worker_id'] ?? 0);
+                $rows = collect($group['allocations'] ?? [])
+                    ->map(fn ($quantity, $categoryId): array => [
+                        'category_id' => (int) $categoryId,
+                        'quantity' => (float) $quantity,
+                    ])
+                    ->filter(fn (array $row): bool => $row['quantity'] > 0)
+                    ->values();
+
+                return [
+                    'index' => $groupIndex,
+                    'worker_id' => $workerId,
+                    'rows' => $rows,
+                ];
+            })
             ->values();
 
-        if ($rows->isEmpty()) {
+        foreach ($groups as $group) {
+            if ($group['rows']->isEmpty()) {
+                throw ValidationException::withMessages([
+                    "predefinedWorkerGroups.{$group['index']}.allocations" => 'حداقل برای یک دسته‌بندی مقدار تخصیص وارد کنید.',
+                ]);
+            }
+        }
+
+        if ($groups->every(fn (array $group): bool => $group['rows']->isEmpty())) {
             throw ValidationException::withMessages([
-                'predefinedAllocations' => 'حداقل برای یک دسته‌بندی مقدار تخصیص وارد کنید.',
+                'predefinedWorkerGroups' => 'حداقل برای یک دسته‌بندی مقدار تخصیص وارد کنید.',
             ]);
         }
 
-        DB::transaction(function () use ($service, $rows, $validated): void {
+        $categoryIds = $groups
+            ->flatMap(fn (array $group) => $group['rows']->pluck('category_id'))
+            ->unique()
+            ->values();
+
+        DB::transaction(function () use ($service, $groups, $categoryIds): void {
             $categories = $service->categories()->lockForUpdate()->get()->keyBy('id');
             $lockedAllocations = ServiceWorkerAllocation::query()
                 ->where('service_id', $service->id)
-                ->whereIn('service_category_id', $rows->pluck('category_id')->all())
+                ->whereIn('service_category_id', $categoryIds->all())
                 ->lockForUpdate()
                 ->get();
-            $allocatedByCategory = $lockedAllocations
+            // Base stock already consumed per category by allocations that belong
+            // to workers NOT part of this submit; the submitted workers share the
+            // remaining stock, so their own current rows are excluded here.
+            $submittedWorkerIds = $groups->pluck('worker_id')->map(fn ($id): int => (int) $id)->all();
+            $baseAllocatedByCategory = $lockedAllocations
+                ->whereNotIn('social_worker_id', $submittedWorkerIds)
                 ->groupBy('service_category_id')
                 ->map(fn (Collection $allocations): float => (float) $allocations->sum(fn (ServiceWorkerAllocation $allocation) => (float) $allocation->allocated_quantity));
-            $existingWorkerAllocations = $lockedAllocations
-                ->where('social_worker_id', (int) $validated['socialWorkerId'])
-                ->keyBy('service_category_id');
+            $existingByWorkerAndCategory = $lockedAllocations
+                ->keyBy(fn (ServiceWorkerAllocation $allocation): string => $allocation->service_category_id.':'.$allocation->social_worker_id);
 
-            foreach ($rows as $row) {
-                $category = $categories->get($row['category_id']);
+            // Running total of what the submitted workers claim per category, so
+            // the shared pool can never be over-drawn across several workers.
+            $claimedByCategory = [];
 
-                if (! $category) {
-                    throw ValidationException::withMessages([
-                        'predefinedAllocations' => 'دسته‌بندی انتخاب‌شده متعلق به خدمت انتخاب‌شده نیست.',
-                    ]);
-                }
+            foreach ($groups as $group) {
+                $workerId = $group['worker_id'];
 
-                $allocation = $existingWorkerAllocations->get($category->id);
+                foreach ($group['rows'] as $row) {
+                    $category = $categories->get($row['category_id']);
 
-                if ($allocation && (int) $allocation->assigned_by_user_id !== (int) auth()->id()) {
-                    throw ValidationException::withMessages([
-                        'socialWorkerId' => 'This worker is already allocated to the selected category by another operator.',
-                    ]);
-                }
+                    if (! $category) {
+                        throw ValidationException::withMessages([
+                            "predefinedWorkerGroups.{$group['index']}.allocations" => 'دسته‌بندی انتخاب‌شده متعلق به خدمت انتخاب‌شده نیست.',
+                        ]);
+                    }
 
-                $currentWorkerQuantity = $allocation ? (float) $allocation->allocated_quantity : 0.0;
-                $remainingAssignable = max(
-                    0,
-                    (float) $category->quantity - max(0, (float) ($allocatedByCategory[$category->id] ?? 0) - $currentWorkerQuantity)
-                );
+                    $allocation = $existingByWorkerAndCategory->get($category->id.':'.$workerId);
 
-                if ($row['quantity'] > $remainingAssignable) {
-                    throw ValidationException::withMessages([
-                        'predefinedAllocations.'.$category->id => 'مقدار تخصیص نمی‌تواند از موجودی دسته‌بندی بیشتر باشد.',
-                    ]);
-                }
+                    if ($allocation && (int) $allocation->assigned_by_user_id !== (int) auth()->id()) {
+                        throw ValidationException::withMessages([
+                            "predefinedWorkerGroups.{$group['index']}.social_worker_id" => 'این مددکار قبلاً توسط اپراتور دیگری برای این دسته‌بندی تخصیص یافته است.',
+                        ]);
+                    }
 
-                if (! $allocation) {
-                    $allocation = new ServiceWorkerAllocation;
+                    $alreadyClaimed = (float) ($claimedByCategory[$category->id] ?? 0);
+                    $remainingAssignable = max(
+                        0,
+                        (float) $category->quantity
+                            - (float) ($baseAllocatedByCategory[$category->id] ?? 0)
+                            - $alreadyClaimed
+                    );
+
+                    if ($row['quantity'] > $remainingAssignable) {
+                        throw ValidationException::withMessages([
+                            "predefinedWorkerGroups.{$group['index']}.allocations.{$category->id}" => 'مقدار تخصیص نمی‌تواند از موجودی دسته‌بندی بیشتر باشد.',
+                        ]);
+                    }
+
+                    $claimedByCategory[$category->id] = $alreadyClaimed + $row['quantity'];
+
+                    if (! $allocation) {
+                        $allocation = new ServiceWorkerAllocation;
+                        $allocation->fill([
+                            'service_id' => $service->id,
+                            'service_category_id' => $category->id,
+                            'social_worker_id' => $workerId,
+                        ]);
+                    }
+
                     $allocation->fill([
-                        'service_id' => $service->id,
-                        'service_category_id' => $category->id,
-                        'social_worker_id' => (int) $validated['socialWorkerId'],
-                    ]);
+                        'allocated_quantity' => $row['quantity'],
+                        'assigned_by_user_id' => auth()->id(),
+                    ])->save();
                 }
-
-                $allocation->fill([
-                    'allocated_quantity' => $row['quantity'],
-                    'assigned_by_user_id' => auth()->id(),
-                ])->save();
-
             }
         });
+
+        $workerCount = $groups->count();
 
         return redirect()
             ->route('distribution-operator.service-list')
             ->with('distribution-operator-notification', $this->serviceSavedNotification(
                 'تخصیص خدمت ثبت شد',
-                'تخصیص خدمت انتخاب‌شده برای مددکار ذخیره شد. می‌توانید از همین صفحه وضعیت خدمت را دنبال کنید.',
+                $workerCount > 1
+                    ? 'تخصیص خدمت انتخاب‌شده برای '.$workerCount.' مددکار ذخیره شد. می‌توانید از همین صفحه وضعیت خدمت را دنبال کنید.'
+                    : 'تخصیص خدمت انتخاب‌شده برای مددکار ذخیره شد. می‌توانید از همین صفحه وضعیت خدمت را دنبال کنید.',
                 'مشاهده فهرست'
             ));
     }
 
     protected function validatePredefinedAllocationRowsForConfirmation(): void
     {
-        $rows = collect($this->predefinedAllocations)
-            ->map(fn ($quantity, $categoryId): array => [
-                'category_id' => (int) $categoryId,
-                'quantity' => (float) $quantity,
-            ])
-            ->filter(fn (array $row): bool => $row['quantity'] > 0)
-            ->values();
+        $this->validateDistinctPredefinedWorkerGroups();
 
-        if ($rows->isEmpty()) {
-            throw ValidationException::withMessages([
-                'predefinedAllocations' => 'حداقل برای یک دسته‌بندی مقدار تخصیص وارد کنید.',
-            ]);
-        }
+        $groups = collect($this->predefinedWorkerGroups)->values();
+        $hasAnyRow = false;
+        $claimedByCategory = [];
 
-        foreach ($rows as $row) {
-            $assignableQuantity = $this->predefinedAssignableForCategory((int) $row['category_id']);
+        foreach ($groups as $groupIndex => $group) {
+            $rows = collect($group['allocations'] ?? [])
+                ->map(fn ($quantity, $categoryId): array => [
+                    'category_id' => (int) $categoryId,
+                    'quantity' => (float) $quantity,
+                ])
+                ->filter(fn (array $row): bool => $row['quantity'] > 0)
+                ->values();
 
-            if ((float) $row['quantity'] > $assignableQuantity) {
+            if ($rows->isEmpty()) {
                 throw ValidationException::withMessages([
-                    'predefinedAllocations.'.$row['category_id'] => 'مقدار واردشده از موجودی قابل تخصیص این دسته‌بندی بیشتر است.',
+                    "predefinedWorkerGroups.{$groupIndex}.allocations" => 'حداقل برای یک دسته‌بندی مقدار تخصیص وارد کنید.',
                 ]);
             }
+
+            $hasAnyRow = true;
+
+            foreach ($rows as $row) {
+                $baseAssignable = $this->predefinedBaseAssignableForCategory((int) $row['category_id']);
+                $alreadyClaimed = (float) ($claimedByCategory[$row['category_id']] ?? 0);
+
+                if ((float) $row['quantity'] > max(0, $baseAssignable - $alreadyClaimed)) {
+                    throw ValidationException::withMessages([
+                        "predefinedWorkerGroups.{$groupIndex}.allocations.{$row['category_id']}" => 'مقدار واردشده از موجودی قابل تخصیص این دسته‌بندی بیشتر است.',
+                    ]);
+                }
+
+                $claimedByCategory[$row['category_id']] = $alreadyClaimed + (float) $row['quantity'];
+            }
+        }
+
+        if (! $hasAnyRow) {
+            throw ValidationException::withMessages([
+                'predefinedWorkerGroups' => 'حداقل برای یک دسته‌بندی مقدار تخصیص وارد کنید.',
+            ]);
+        }
+    }
+
+    protected function validateDistinctPredefinedWorkerGroups(): void
+    {
+        $seenWorkerIndexes = [];
+
+        foreach ($this->predefinedWorkerGroups as $groupIndex => $group) {
+            $workerId = (int) ($group['social_worker_id'] ?? 0);
+
+            if ($workerId <= 0) {
+                continue;
+            }
+
+            if (array_key_exists($workerId, $seenWorkerIndexes)) {
+                throw ValidationException::withMessages([
+                    "predefinedWorkerGroups.{$groupIndex}.social_worker_id" => 'هر مددکار فقط می‌تواند یک‌بار در این خدمت انتخاب شود؛ مددکار تکراری را حذف کنید.',
+                ]);
+            }
+
+            $seenWorkerIndexes[$workerId] = $groupIndex;
         }
     }
 
@@ -1132,9 +1344,10 @@ class ServiceBatchCreator extends Component
                 'integer',
                 Rule::exists('services', 'id')->where(fn ($query) => $query->whereIn('status', ['approved', 'in_distribution'])),
             ],
-            'socialWorkerId' => ['required', 'integer', 'exists:social_workers,id'],
-            'predefinedAllocations' => ['array'],
-            'predefinedAllocations.*' => ['nullable', 'numeric', 'min:0'],
+            'predefinedWorkerGroups' => ['required', 'array', 'min:1'],
+            'predefinedWorkerGroups.*.social_worker_id' => ['required', 'integer', 'exists:social_workers,id'],
+            'predefinedWorkerGroups.*.allocations' => ['array'],
+            'predefinedWorkerGroups.*.allocations.*' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 
@@ -1479,7 +1692,8 @@ class ServiceBatchCreator extends Component
         return [
             'selectedServiceId' => 'خدمت / پویش',
             'socialWorkerId' => 'مددکار',
-            'predefinedAllocations.*' => 'مقدار تخصیص',
+            'predefinedWorkerGroups.*.social_worker_id' => 'مددکار',
+            'predefinedWorkerGroups.*.allocations.*' => 'مقدار تخصیص',
             'miscServiceName' => 'نام خدمت',
             'miscServiceType' => 'نوع خدمت',
             'miscDescription' => 'توضیحات',
@@ -2064,9 +2278,59 @@ class ServiceBatchCreator extends Component
         return $this->selectedPredefinedService?->categories?->values() ?? collect();
     }
 
-    public function predefinedAllocationForCategory(int $categoryId): float
+    public function predefinedGroupAllocationForCategory(int $index, int $categoryId): float
     {
-        return max(0, (float) ($this->predefinedAllocations[$categoryId] ?? 0));
+        return max(0, (float) ($this->predefinedWorkerGroups[$index]['allocations'][$categoryId] ?? 0));
+    }
+
+    /**
+     * Base assignable stock for a category (service quantity minus already-saved
+     * allocations), shared as a single pool across every worker group.
+     */
+    public function predefinedBaseAssignableForCategory(int $categoryId): float
+    {
+        return $this->selectedPredefinedCategoryMetrics()[$categoryId]['assignable'] ?? 0.0;
+    }
+
+    /**
+     * Sum of what every OTHER group has currently entered for a category, so the
+     * shared pool is split between concurrently-assigned workers.
+     */
+    public function predefinedOtherGroupsAllocatedForCategory(int $index, int $categoryId): float
+    {
+        $total = 0.0;
+
+        foreach ($this->predefinedWorkerGroups as $groupIndex => $group) {
+            if ((int) $groupIndex === $index) {
+                continue;
+            }
+
+            $total += max(0, (float) ($group['allocations'][$categoryId] ?? 0));
+        }
+
+        return $total;
+    }
+
+    /**
+     * Assignable stock left for this specific group after the other groups take
+     * their entered share of the shared pool.
+     */
+    public function predefinedGroupAssignableForCategory(int $index, int $categoryId): float
+    {
+        return max(
+            0,
+            $this->predefinedBaseAssignableForCategory($categoryId)
+                - $this->predefinedOtherGroupsAllocatedForCategory($index, $categoryId)
+        );
+    }
+
+    public function predefinedGroupRemainingForCategory(int $index, int $categoryId): float
+    {
+        return max(
+            0,
+            $this->predefinedGroupAssignableForCategory($index, $categoryId)
+                - $this->predefinedGroupAllocationForCategory($index, $categoryId)
+        );
     }
 
     public function hasPredefinedOverAllocation(?array $metrics = null): bool
@@ -2075,8 +2339,16 @@ class ServiceBatchCreator extends Component
             return false;
         }
 
-        foreach (($metrics ?? $this->selectedPredefinedCategoryMetrics()) as $categoryId => $categoryMetrics) {
-            if ($this->predefinedAllocationForCategory((int) $categoryId) > (float) $categoryMetrics['assignable']) {
+        $metrics ??= $this->selectedPredefinedCategoryMetrics();
+
+        foreach ($metrics as $categoryId => $categoryMetrics) {
+            $totalForCategory = 0.0;
+
+            foreach (array_keys($this->predefinedWorkerGroups) as $groupIndex) {
+                $totalForCategory += $this->predefinedGroupAllocationForCategory((int) $groupIndex, (int) $categoryId);
+            }
+
+            if ($totalForCategory > (float) $categoryMetrics['assignable']) {
                 return true;
             }
         }
@@ -2084,24 +2356,81 @@ class ServiceBatchCreator extends Component
         return false;
     }
 
-    public function predefinedAssignableForCategory(int $categoryId): float
-    {
-        return $this->selectedPredefinedCategoryMetrics()[$categoryId]['assignable'] ?? 0.0;
-    }
-
-    public function predefinedRemainingForCategory(int $categoryId): float
-    {
-        return max(
-            0,
-            $this->predefinedAssignableForCategory($categoryId)
-                - $this->predefinedAllocationForCategory($categoryId)
-        );
-    }
-
     public function hasPositivePredefinedAllocation(): bool
     {
-        return collect($this->predefinedAllocations)
-            ->contains(fn ($quantity): bool => (float) $quantity > 0);
+        return collect($this->predefinedWorkerGroups)
+            ->contains(fn (array $group): bool => collect($group['allocations'] ?? [])
+                ->contains(fn ($quantity): bool => (float) $quantity > 0));
+    }
+
+    /**
+     * Every group that has a worker selected must also carry at least one
+     * positive allocation, otherwise that worker would be assigned nothing.
+     */
+    public function hasValidPredefinedWorkerGroups(): bool
+    {
+        if (empty($this->predefinedWorkerGroups)) {
+            return false;
+        }
+
+        foreach ($this->predefinedWorkerGroups as $group) {
+            if ((int) ($group['social_worker_id'] ?? 0) <= 0) {
+                return false;
+            }
+
+            $hasPositive = collect($group['allocations'] ?? [])
+                ->contains(fn ($quantity): bool => (float) $quantity > 0);
+
+            if (! $hasPositive) {
+                return false;
+            }
+        }
+
+        return ! $this->hasDuplicatePredefinedWorkerGroups();
+    }
+
+    protected function hasDuplicatePredefinedWorkerGroups(): bool
+    {
+        $workerIds = collect($this->predefinedWorkerGroups)
+            ->pluck('social_worker_id')
+            ->filter(fn ($id): bool => (int) $id > 0)
+            ->map(fn ($id): int => (int) $id);
+
+        return $workerIds->count() !== $workerIds->unique()->count();
+    }
+
+    protected function assignedPredefinedWorkerIdsExceptGroup(?int $groupIndex): Collection
+    {
+        return collect($this->predefinedWorkerGroups)
+            ->reject(fn (array $group, int $index): bool => $groupIndex !== null && $index === $groupIndex)
+            ->pluck('social_worker_id')
+            ->filter(fn ($id): bool => (int) $id > 0)
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->values();
+    }
+
+    protected function resetPredefinedGroupAllocations(): void
+    {
+        foreach (array_keys($this->predefinedWorkerGroups) as $groupIndex) {
+            $this->predefinedWorkerGroups[$groupIndex]['allocations'] = [];
+        }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function makePredefinedWorkerGroup(): array
+    {
+        return [
+            'uid' => 'predefined-group-'.\Illuminate\Support\Str::random(8),
+            'social_worker_id' => null,
+            'worker_query' => '',
+            'worker_search' => '',
+            'worker_code' => '',
+            'worker_display' => '',
+            'allocations' => [],
+        ];
     }
 
     public function getMiscCategoryIndexBadgeClassesProperty(): array
@@ -2245,8 +2574,7 @@ class ServiceBatchCreator extends Component
 
         if ($this->mode === self::MODE_PREDEFINED) {
             return $this->selectedServiceId !== null
-                && $this->socialWorkerId !== null
-                && $this->hasPositivePredefinedAllocation()
+                && $this->hasValidPredefinedWorkerGroups()
                 && ! $this->hasPredefinedOverAllocation($predefinedMetrics);
         }
 
@@ -2318,12 +2646,23 @@ class ServiceBatchCreator extends Component
                 $messages[] = 'ابتدا خدمت تاییدشده را انتخاب کنید.';
             }
 
-            if (! $this->socialWorkerId) {
-                $messages[] = 'مددکار دریافت‌کننده را انتخاب کنید.';
+            $hasWorkerlessGroup = collect($this->predefinedWorkerGroups)
+                ->contains(fn ($group): bool => (int) ($group['social_worker_id'] ?? 0) <= 0);
+
+            if (empty($this->predefinedWorkerGroups) || $hasWorkerlessGroup) {
+                $messages[] = 'برای هر بخش، مددکار دریافت‌کننده را انتخاب کنید.';
             }
 
-            if (! $this->hasPositivePredefinedAllocation()) {
-                $messages[] = 'برای حداقل یک دسته‌بندی مقدار تخصیص وارد کنید.';
+            $hasWorkerWithoutAllocation = collect($this->predefinedWorkerGroups)
+                ->contains(fn ($group): bool => (int) ($group['social_worker_id'] ?? 0) > 0
+                    && ! collect($group['allocations'] ?? [])->contains(fn ($quantity): bool => (float) $quantity > 0));
+
+            if (! $this->hasPositivePredefinedAllocation() || $hasWorkerWithoutAllocation) {
+                $messages[] = 'برای هر مددکار حداقل یک دسته‌بندی مقدار تخصیص وارد کنید.';
+            }
+
+            if ($this->hasDuplicatePredefinedWorkerGroups()) {
+                $messages[] = 'یک مددکار بیش از یک‌بار انتخاب شده است؛ مددکار تکراری را حذف کنید.';
             }
 
             if ($this->hasPredefinedOverAllocation($predefinedMetrics)) {
@@ -2381,11 +2720,11 @@ class ServiceBatchCreator extends Component
         return max(0, (float) $category->quantity - $allocatedQuantity);
     }
 
-    protected function validatePredefinedAllocationField(int $categoryId): void
+    protected function validatePredefinedGroupAllocationField(int $index, int $categoryId): void
     {
-        $field = 'predefinedAllocations.'.$categoryId;
-        $quantity = $this->predefinedAllocationForCategory($categoryId);
-        $assignableQuantity = $this->predefinedAssignableForCategory($categoryId);
+        $field = "predefinedWorkerGroups.{$index}.allocations.{$categoryId}";
+        $quantity = $this->predefinedGroupAllocationForCategory($index, $categoryId);
+        $assignableQuantity = $this->predefinedGroupAssignableForCategory($index, $categoryId);
 
         if ($quantity > $assignableQuantity) {
             $this->addError($field, 'مقدار واردشده از موجودی قابل تخصیص این دسته‌بندی بیشتر است.');
@@ -2474,46 +2813,75 @@ class ServiceBatchCreator extends Component
     protected function predefinedConfirmationSummary(): array
     {
         $service = $this->selectedPredefinedService;
-        $worker = $this->selectedSocialWorker();
         $metrics = $this->selectedPredefinedCategoryMetrics();
-        $rows = $this->selectedPredefinedServiceCategories
-            ->map(function (ServiceCategory $category) use ($metrics): ?array {
-                $quantity = $this->predefinedAllocationForCategory((int) $category->id);
+        $categories = $this->selectedPredefinedServiceCategories->keyBy('id');
 
-                if ($quantity <= 0) {
-                    return null;
+        // Track stock claimed by earlier workers so each worker's "remaining after
+        // save" reflects the shared pool being drawn down across the whole submit.
+        $claimedByCategory = [];
+        $groups = [];
+
+        foreach (array_values($this->predefinedWorkerGroups) as $group) {
+            $rows = [];
+
+            foreach ($group['allocations'] ?? [] as $categoryId => $rawQuantity) {
+                $categoryId = (int) $categoryId;
+                $quantity = max(0, (float) $rawQuantity);
+                $category = $categories->get($categoryId);
+
+                if ($quantity <= 0 || ! $category) {
+                    continue;
                 }
 
-                $assignable = (float) ($metrics[$category->id]['assignable'] ?? 0);
+                $baseAssignable = (float) ($metrics[$categoryId]['assignable'] ?? 0);
+                $alreadyClaimed = (float) ($claimedByCategory[$categoryId] ?? 0);
+                $remainingAfter = max(0, $baseAssignable - $alreadyClaimed - $quantity);
+                $claimedByCategory[$categoryId] = $alreadyClaimed + $quantity;
 
-                return [
+                $rows[] = [
                     'name' => $category->name,
                     'unit' => $category->unit,
                     'unit_label' => Service::unitOptions()[$category->unit] ?? $category->unit,
                     'quantity' => $quantity,
                     'quantity_label' => $this->formatQuantityForUnit($quantity, (string) $category->unit),
-                    'remaining_label' => $this->formatQuantityForUnit(max(0, $assignable - $quantity), (string) $category->unit),
-                    'consumes_all_remaining' => $assignable > 0 && max(0, $assignable - $quantity) <= 0.00001,
+                    'remaining_label' => $this->formatQuantityForUnit($remainingAfter, (string) $category->unit),
+                    'consumes_all_remaining' => $baseAssignable > 0 && $remainingAfter <= 0.00001,
                 ];
-            })
-            ->filter()
-            ->values()
-            ->all();
+            }
 
-        $depletingRowsCount = collect($rows)
+            if ($rows === []) {
+                continue;
+            }
+
+            $groups[] = [
+                'worker_name' => trim((string) ($group['worker_display'] ?? '')) ?: (trim((string) ($group['worker_query'] ?? '')) ?: 'مددکار'),
+                'worker_code' => (string) ($group['worker_code'] ?? ''),
+                'rows' => $rows,
+                'total_quantity_label' => number_format(collect($rows)->sum('quantity'), 2),
+            ];
+        }
+
+        $allRows = collect($groups)->flatMap(fn (array $group): array => $group['rows'])->values()->all();
+        $depletingRowsCount = collect($allRows)
             ->filter(fn (array $row): bool => (bool) ($row['consumes_all_remaining'] ?? false))
             ->count();
+        $workerCount = count($groups);
 
         return [
             'mode' => self::MODE_PREDEFINED,
             'title' => 'تأیید تخصیص خدمت موجود',
             'service_name' => $service?->name ?: ($service?->serviceName?->name ?? 'خدمت انتخاب‌شده'),
             'service_code' => (string) ($service?->code ?? ''),
-            'worker_name' => $worker?->full_name ?? $this->socialWorkerQuery,
-            'worker_code' => $worker?->worker_code ? (string) $worker->worker_code : '',
+            'worker_name' => $workerCount === 1
+                ? ($groups[0]['worker_name'] ?? '-')
+                : ($workerCount.' مددکار'),
+            'worker_code' => $workerCount === 1 ? ($groups[0]['worker_code'] ?? '') : '',
             'date_label' => 'ثبت تخصیص پس از تأیید نهایی انجام می‌شود',
-            'total_quantity_label' => number_format(collect($rows)->sum('quantity'), 2),
-            'rows' => $rows,
+            'total_quantity_label' => number_format(collect($allRows)->sum('quantity'), 2),
+            'rows' => $allRows,
+            // Per-worker cards only when more than one worker is being assigned; a
+            // single worker keeps the flat rows view with its remaining column.
+            'groups' => $workerCount > 1 ? $groups : [],
             'depleting_rows_count' => $depletingRowsCount,
         ];
     }
@@ -2705,20 +3073,42 @@ class ServiceBatchCreator extends Component
 
     public function getSocialWorkerSuggestionsProperty(): Collection
     {
-        $activeGroupIndex = $this->editingServiceId ? $this->activeWorkerGroupIndex : null;
-        $query = trim($this->editingServiceId && $activeGroupIndex !== null
-            ? (string) ($this->miscWorkerGroups[$activeGroupIndex]['worker_search'] ?? '')
+        // Predefined mode (non-edit) drives the suggestions from a per-worker
+        // group; misc edit does the same with its own groups; every other flow
+        // falls back to the single shared search field.
+        $isPredefinedGroups = $this->mode === self::MODE_PREDEFINED && ! $this->editingServiceId;
+
+        if ($this->editingServiceId) {
+            $activeGroupIndex = $this->activeWorkerGroupIndex;
+            $groups = $this->miscWorkerGroups;
+            $usesGroups = true;
+        } elseif ($isPredefinedGroups) {
+            $activeGroupIndex = $this->activePredefinedGroupIndex;
+            $groups = $this->predefinedWorkerGroups;
+            $usesGroups = true;
+        } else {
+            $activeGroupIndex = null;
+            $groups = [];
+            $usesGroups = false;
+        }
+
+        $query = trim($usesGroups && $activeGroupIndex !== null
+            ? (string) ($groups[$activeGroupIndex]['worker_search'] ?? '')
             : $this->socialWorkerQuery);
 
         if (! $this->showSocialWorkerSuggestions || mb_strlen($query) < 2) {
             return collect();
         }
 
-        $excludedWorkerIds = $this->assignedWorkerIdsExceptGroup($activeGroupIndex);
-        $selectedWorkerId = $this->editingServiceId && $activeGroupIndex !== null
-            ? (int) ($this->miscWorkerGroups[$activeGroupIndex]['social_worker_id'] ?? 0)
+        $excludedWorkerIds = $this->editingServiceId
+            ? $this->assignedWorkerIdsExceptGroup($activeGroupIndex)
+            : ($isPredefinedGroups
+                ? $this->assignedPredefinedWorkerIdsExceptGroup($activeGroupIndex)
+                : collect());
+        $selectedWorkerId = $usesGroups && $activeGroupIndex !== null
+            ? (int) ($groups[$activeGroupIndex]['social_worker_id'] ?? 0)
             : (int) $this->socialWorkerId;
-        $cacheKey = mb_strtolower($query).'|'.$selectedWorkerId.'|'.($activeGroupIndex ?? 'main').'|'.$excludedWorkerIds->implode(',');
+        $cacheKey = ($isPredefinedGroups ? 'predefined' : 'misc').'|'.mb_strtolower($query).'|'.$selectedWorkerId.'|'.($activeGroupIndex ?? 'main').'|'.$excludedWorkerIds->implode(',');
 
         if ($this->socialWorkerSuggestionsCacheKey === $cacheKey && $this->socialWorkerSuggestionsCache instanceof Collection) {
             return $this->socialWorkerSuggestionsCache;
