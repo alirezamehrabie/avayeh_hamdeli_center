@@ -28,6 +28,21 @@ class ServiceWorkerAllocation extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::created(function (self $allocation): void {
+            $allocation->service?->refreshDeliveryProgress();
+        });
+
+        static::updated(function (self $allocation): void {
+            $allocation->service?->refreshDeliveryProgress();
+        });
+
+        static::deleted(function (self $allocation): void {
+            $allocation->service?->refreshDeliveryProgress();
+        });
+    }
+
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class)->withTrashed();
