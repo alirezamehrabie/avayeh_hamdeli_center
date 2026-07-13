@@ -428,17 +428,44 @@ class Service extends Model
     public function refreshDeliveryProgress(): void
     {
         $deliveredQuantity = (float) $this->deliveries()->sum('delivered_quantity');
+        $allocatedQuantities = $this->workerAllocations()
+            ->select('social_worker_id', 'service_category_id')
+            ->selectRaw('COALESCE(SUM(allocated_quantity), 0) as allocated_quantity')
+            ->groupBy('social_worker_id', 'service_category_id')
+            ->havingRaw('COALESCE(SUM(allocated_quantity), 0) > 0')
+            ->get();
 
         $payload = [
             'quantity_delivered' => $deliveredQuantity,
         ];
 
-        if ($deliveredQuantity >= (float) $this->total_quantity && (float) $this->total_quantity > 0) {
-            $payload['status'] = 'completed';
-        } elseif ($deliveredQuantity > 0) {
-            $payload['status'] = 'in_distribution';
-        } elseif (in_array($this->status, ['in_distribution', 'completed'], true)) {
-            $payload['status'] = 'approved';
+        if ($allocatedQuantities->isNotEmpty()) {
+            $deliveredByAllocation = $this->deliveries()
+                ->select('social_worker_id', 'service_category_id')
+                ->selectRaw('COALESCE(SUM(delivered_quantity), 0) as delivered_quantity')
+                ->whereIn('social_worker_id', $allocatedQuantities->pluck('social_worker_id')->unique()->all())
+                ->whereIn('service_category_id', $allocatedQuantities->pluck('service_category_id')->unique()->all())
+                ->groupBy('social_worker_id', 'service_category_id')
+                ->get()
+                ->mapWithKeys(fn ($delivery): array => [
+                    $delivery->social_worker_id.':'.$delivery->service_category_id => (float) $delivery->delivered_quantity,
+                ]);
+
+            $allAllocationsCompleted = $allocatedQuantities->every(function ($allocation) use ($deliveredByAllocation): bool {
+                $key = $allocation->social_worker_id.':'.$allocation->service_category_id;
+
+                return (float) ($deliveredByAllocation->get($key) ?? 0) >= (float) $allocation->allocated_quantity;
+            });
+
+            $payload['status'] = $allAllocationsCompleted ? 'completed' : 'in_distribution';
+        } else {
+            if ($deliveredQuantity >= (float) $this->total_quantity && (float) $this->total_quantity > 0) {
+                $payload['status'] = 'completed';
+            } elseif ($deliveredQuantity > 0) {
+                $payload['status'] = 'in_distribution';
+            } elseif (in_array($this->status, ['in_distribution', 'completed'], true)) {
+                $payload['status'] = 'approved';
+            }
         }
 
         $this->forceFill($payload)->saveQuietly();

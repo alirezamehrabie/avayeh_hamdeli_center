@@ -326,6 +326,8 @@ class ServiceAllocationEditor extends Component
                 ->delete();
         });
 
+        $this->service?->refreshDeliveryProgress();
+
         if ($errorMessage) {
             $this->addError('allocationQuantities', $errorMessage);
         }

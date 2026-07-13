@@ -971,6 +971,8 @@ class ServiceBatchCreator extends Component
             }
         });
 
+        $service->refreshDeliveryProgress();
+
         $workerCount = $groups->count();
 
         return redirect()
@@ -1126,6 +1128,7 @@ class ServiceBatchCreator extends Component
                 }
 
                 $service->refreshFinancialTotals();
+                $service->refreshDeliveryProgress();
             });
         } catch (\Throwable $e) {
             $this->cleanupMiscCategoryImages($storedImagePaths);
@@ -1304,6 +1307,7 @@ class ServiceBatchCreator extends Component
             ])->save();
 
             $service->refreshFinancialTotals();
+            $service->refreshDeliveryProgress();
             $this->editingServiceVersion = $service->fresh()->updated_at?->toISOString();
         });
 

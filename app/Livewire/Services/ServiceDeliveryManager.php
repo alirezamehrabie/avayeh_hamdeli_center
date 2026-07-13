@@ -159,6 +159,8 @@ class ServiceDeliveryManager extends Component
             }
         });
 
+        $service->refreshDeliveryProgress();
+
         $this->resetAfterSuccessfulSave();
         $this->dispatch('quota-assigned-success', message: 'سهمیه‌ها با موفقیت برای مددکاران ثبت شد.');
     }
