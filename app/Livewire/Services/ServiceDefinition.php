@@ -138,6 +138,12 @@ class ServiceDefinition extends Component
                 ]);
                 $service->save();
 
+                if ($this->editingServiceId) {
+                    $service->categories()
+                        ->withTrashed()
+                        ->update(['service_name_id' => $serviceName->id]);
+                }
+
                 $service->categories()->withTrashed()->whereNotNull('deleted_at')->restore();
 
                 $existingCategoryIds = collect($validated['categories'])
@@ -536,6 +542,36 @@ class ServiceDefinition extends Component
 
             if ($serviceName && $serviceName->name === $name) {
                 return $serviceName;
+            }
+        }
+
+        if ($this->editingServiceId) {
+            $currentServiceNameId = Service::query()
+                ->whereKey($this->editingServiceId)
+                ->value('service_name_id');
+            $currentServiceName = ServiceName::withTrashed()->find($currentServiceNameId);
+
+            if ($currentServiceName?->name === $name) {
+                return $currentServiceName;
+            }
+
+            $matchingServiceName = ServiceName::query()
+                ->where('name', $name)
+                ->first();
+
+            if ($matchingServiceName) {
+                return $matchingServiceName;
+            }
+
+            $isShared = $currentServiceName?->services()
+                ->withTrashed()
+                ->whereKeyNot($this->editingServiceId)
+                ->exists() ?? false;
+
+            if ($currentServiceName && ! $isShared) {
+                $currentServiceName->update(['name' => $name]);
+
+                return $currentServiceName;
             }
         }
 

@@ -139,6 +139,74 @@ class ServiceDefinitionTest extends TestCase
         $this->assertSame(0, $service->fresh()->total_service_value);
     }
 
+    public function test_editing_service_name_updates_its_exclusive_catalog_name(): void
+    {
+        $user = $this->manager();
+        $service = $this->serviceWithCategory($user, 'Original Service Name', true);
+        $serviceNameId = $service->service_name_id;
+
+        $this->actingAs($user);
+
+        Livewire::test(ServiceDefinition::class, ['serviceId' => $service->id])
+            ->set('selectedServiceNameId', null)
+            ->set('serviceName', 'Updated Service Name')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('service_names', [
+            'id' => $serviceNameId,
+            'name' => 'Updated Service Name',
+        ]);
+        $this->assertDatabaseHas('services', [
+            'id' => $service->id,
+            'service_name_id' => $serviceNameId,
+            'name' => 'Updated Service Name',
+        ]);
+        $this->assertDatabaseHas('service_categories', [
+            'service_id' => $service->id,
+            'service_name_id' => $serviceNameId,
+        ]);
+    }
+
+    public function test_editing_service_with_shared_catalog_name_does_not_rename_other_services(): void
+    {
+        $user = $this->manager();
+        $service = $this->serviceWithCategory($user, 'Shared Service Name', true);
+        $sharedServiceName = $service->serviceName;
+        $otherService = Service::query()->create([
+            'service_name_id' => $sharedServiceName->id,
+            'name' => 'Another Service Using Shared Catalog',
+            'service_type' => 'individual',
+            'supports_gate_delivery' => true,
+            'supports_home_delivery' => true,
+            'total_quantity' => 1,
+            'total_service_value' => 0,
+            'distribution_start_date' => now()->toDateString(),
+            'status' => 'approved',
+            'quantity_delivered' => 0,
+            'created_by' => $user->id,
+        ]);
+
+        $this->actingAs($user);
+
+        Livewire::test(ServiceDefinition::class, ['serviceId' => $service->id])
+            ->set('selectedServiceNameId', null)
+            ->set('serviceName', 'Independent Service Name')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $service->refresh();
+
+        $this->assertSame('Shared Service Name', $sharedServiceName->fresh()->name);
+        $this->assertSame($sharedServiceName->id, $otherService->fresh()->service_name_id);
+        $this->assertNotSame($sharedServiceName->id, $service->service_name_id);
+        $this->assertSame('Independent Service Name', $service->serviceName->name);
+        $this->assertSame(
+            $service->service_name_id,
+            $service->categories()->withTrashed()->firstOrFail()->service_name_id
+        );
+    }
+
     public function test_new_category_is_auto_created_as_template_when_saving_service_definition(): void
     {
         $user = $this->manager();
