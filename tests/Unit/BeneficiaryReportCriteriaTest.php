@@ -96,4 +96,42 @@ class BeneficiaryReportCriteriaTest extends TestCase
         $this->assertSame('related_description', $registry->normalizeSortColumn('related_description'));
         $this->assertNull($registry->normalizeSortColumn('disability_description'));
     }
+
+    public function test_operational_filters_are_normalized_and_restrict_date_modes(): void
+    {
+        $criteria = BeneficiaryReportCriteria::fromLegacyState(
+            globalSearch: '',
+            filters: [
+                [
+                    'field' => 'service_delivery_date',
+                    'type' => 'date',
+                    'mode' => 'month',
+                    'month' => '4',
+                    'exact' => '1405/04/24',
+                ],
+                [
+                    'field' => 'service_delivery_quantity',
+                    'type' => 'text',
+                    'operator' => 'gte',
+                    'value' => '2.5',
+                ],
+                [
+                    'field' => 'worker_assignment_status',
+                    'type' => 'text',
+                    'value' => 'unassigned',
+                ],
+            ],
+            columnFilters: [],
+            sortColumn: null,
+            sortDirection: 'desc',
+            fieldRegistry: new BeneficiaryReportFieldRegistry,
+            columnRegistry: new BeneficiaryReportColumnRegistry,
+        );
+
+        $this->assertSame(3, $criteria->version);
+        $this->assertSame('exact', $criteria->filters[0]['mode']);
+        $this->assertSame('2.5', $criteria->filters[1]['value']);
+        $this->assertSame('gte', $criteria->filters[1]['operator']);
+        $this->assertSame('unassigned', $criteria->filters[2]['value']);
+    }
 }

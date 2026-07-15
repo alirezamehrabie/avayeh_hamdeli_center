@@ -16,6 +16,7 @@ final class BeneficiaryReportQuery
     public function __construct(
         private readonly BeneficiaryReportColumnRegistry $columnRegistry,
         private readonly BeneficiaryReportSemantics $semantics,
+        private readonly BeneficiaryOperationalFilters $operationalFilters,
     ) {}
 
     public function build(BeneficiaryReportCriteria $criteria): Builder
@@ -25,9 +26,14 @@ final class BeneficiaryReportQuery
         $this->applyGlobalSearch($query, $criteria->globalSearch);
 
         foreach ($criteria->filters as $filter) {
+            if ($this->operationalFilters->handles((string) ($filter['field'] ?? ''))) {
+                continue;
+            }
+
             $this->applyFilter($query, $filter);
         }
 
+        $this->operationalFilters->apply($query, $criteria->filters);
         $this->applyColumnFilters($query, $criteria->columnFilters);
         $this->applySorting($query, $criteria->sortColumn, $criteria->sortDirection);
 

@@ -6,6 +6,9 @@ use App\Contracts\Ai\GeneratesBeneficiarySearchFilters;
 use App\Exceptions\AiBeneficiarySearchException;
 use App\Exports\PeopleExport;
 use App\Helpers\Morilog\Jalalian;
+use App\Models\Activity;
+use App\Models\ActivityAttendance;
+use App\Models\BeneficiaryCaseRecord;
 use App\Models\BeneficiarySavedFilter;
 use App\Models\DisabilityType;
 use App\Models\District;
@@ -18,6 +21,8 @@ use App\Models\NeedLevelType;
 use App\Models\Occupation;
 use App\Models\Person;
 use App\Models\ResidenceStatusType;
+use App\Models\Service;
+use App\Models\ServiceCategory;
 use App\Models\Skill;
 use App\Models\SocialWorker;
 use App\Models\SupportOrganization;
@@ -164,6 +169,8 @@ class AdvancedFilterBuilder extends Component
             ->orderBy('title')
             ->pluck('title', 'id')
             ->toArray();
+
+        $this->loadOperationalFilterOptions();
 
         $this->columnFilterDefinitions = $columnRegistry->filterDefinitions(
             $this->filterableFields['gender']['options'],
@@ -628,13 +635,62 @@ class AdvancedFilterBuilder extends Component
     protected function aiFilterCatalog(): array
     {
         return collect($this->filterableFields)
-            ->except(['caseworker'])
+            // Dynamic service/category lists can be large and are selected explicitly in the UI.
+            ->except(['caseworker', 'service_id', 'service_category_id'])
             ->map(fn (array $definition): array => [
                 'label' => $definition['label'],
                 'type' => $definition['type'],
                 'options' => $definition['options'] ?? [],
             ])
             ->all();
+    }
+
+    protected function loadOperationalFilterOptions(): void
+    {
+        $services = Service::query()
+            ->withTrashed()
+            ->with('serviceName')
+            ->orderByDesc('id')
+            ->get(['id', 'code', 'name', 'service_name_id', 'deleted_at']);
+
+        $this->filterableFields['service_id']['options'] = $services
+            ->mapWithKeys(function (Service $service): array {
+                $label = trim(implode(' - ', array_filter([$service->code, $service->name])));
+
+                if ($service->trashed()) {
+                    $label .= ' (بایگانی‌شده)';
+                }
+
+                return [(string) $service->id => $label];
+            })
+            ->all();
+
+        $this->filterableFields['service_category_id']['options'] = ServiceCategory::query()
+            ->withTrashed()
+            ->with('service')
+            ->orderByDesc('service_id')
+            ->orderByDesc('sort_id')
+            ->get(['id', 'service_id', 'name', 'deleted_at'])
+            ->mapWithKeys(function (ServiceCategory $category): array {
+                $service = $category->service;
+                $label = trim(($service?->name ? $service->name.' - ' : '').$category->name);
+
+                if ($category->trashed() || $service?->trashed()) {
+                    $label .= ' (بایگانی‌شده)';
+                }
+
+                return [(string) $category->id => $label];
+            })
+            ->all();
+
+        $this->filterableFields['service_type']['options'] = Service::TYPE_OPTIONS;
+        $this->filterableFields['service_status']['options'] = Service::STATUS_OPTIONS;
+        $this->filterableFields['service_priority']['options'] = Service::PRIORITY_OPTIONS;
+        $this->filterableFields['delivery_channel']['options'] = Service::DELIVERY_CHANNEL_OPTIONS;
+        $this->filterableFields['case_record_type']['options'] = BeneficiaryCaseRecord::TYPE_OPTIONS;
+        $this->filterableFields['activity_type']['options'] = Activity::TYPE_OPTIONS;
+        $this->filterableFields['activity_attendance_status']['options'] = ActivityAttendance::STATUS_OPTIONS;
+        $this->filterableFields['activity_registration_method']['options'] = ActivityAttendance::METHOD_OPTIONS;
     }
 
     protected function normalizeCaseworkerFilters(): void

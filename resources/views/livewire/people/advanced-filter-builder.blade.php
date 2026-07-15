@@ -44,7 +44,7 @@
                 <div class="min-w-0 flex-1">
                     <label for="ai-beneficiary-search" class="mb-2 flex items-center gap-2 text-sm font-bold text-slate-800">
                         <i class="bi bi-stars text-emerald-700" aria-hidden="true"></i>
-                        جستجوی هوشمند مددجویان  (هوش مصنوعی)
+                        جستجوی مددجویان (هوش مصنوعی)
                     </label>
                     <textarea
                         id="ai-beneficiary-search"
@@ -280,12 +280,21 @@
                         @endif
 
                         @if(($filter['type'] ?? null) === 'date')
+                            @php($dateModes = $filterableFields[$filter['field']]['date_modes'] ?? ['exact', 'range', 'month', 'year'])
                             <div class="space-y-2">
                                 <select wire:model.live="filters.{{ $index }}.mode" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs">
-                                    <option value="exact">تاریخ دقیق</option>
-                                    <option value="range">بازه تاریخ</option>
-                                    <option value="month">ماه خاص</option>
-                                    <option value="year">سال خاص</option>
+                                    @if(in_array('exact', $dateModes, true))
+                                        <option value="exact">تاریخ دقیق</option>
+                                    @endif
+                                    @if(in_array('range', $dateModes, true))
+                                        <option value="range">بازه تاریخ</option>
+                                    @endif
+                                    @if(in_array('month', $dateModes, true))
+                                        <option value="month">ماه خاص</option>
+                                    @endif
+                                    @if(in_array('year', $dateModes, true))
+                                        <option value="year">سال خاص</option>
+                                    @endif
                                 </select>
 
                                 @if(($filter['mode'] ?? 'exact') === 'exact')
@@ -327,7 +336,13 @@
                                     <option value="lte">&lt;= کوچک‌تر یا مساوی</option>
                                     @endif
                                 </select>
-                                <input type="number" wire:model.live.debounce.300ms="filters.{{ $index }}.value" class="md:col-span-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs" placeholder="مقدار عددی">
+                                <input
+                                    type="number"
+                                    @if(in_array(($filter['field'] ?? ''), ['service_delivery_quantity'], true)) step="any" @endif
+                                    wire:model.live.debounce.300ms="filters.{{ $index }}.value"
+                                    class="md:col-span-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"
+                                    placeholder="مقدار عددی"
+                                >
                             </div>
                         @endif
                     </div>

@@ -65,6 +65,53 @@ final class BeneficiaryReportFieldRegistry
             'support_organization' => ['label' => 'نوع نهاد حمایتی', 'type' => 'select', 'options' => []],
             'need_level' => ['label' => 'سطح نیازمندی', 'type' => 'select', 'options' => []],
             'months_without_service' => ['label' => 'حداقل ماه‌های کامل بدون خدمت مستقیم یا خانوادگی', 'type' => 'number'],
+            'service_id' => ['label' => 'خدمت دریافت‌شده', 'type' => 'select', 'options' => []],
+            'service_category_id' => ['label' => 'دسته‌بندی خدمت دریافت‌شده', 'type' => 'select', 'options' => []],
+            'service_type' => ['label' => 'نوع خدمت دریافت‌شده', 'type' => 'select', 'options' => []],
+            'service_status' => ['label' => 'وضعیت خدمت دریافت‌شده', 'type' => 'select', 'options' => []],
+            'service_priority' => ['label' => 'اولویت خدمت دریافت‌شده', 'type' => 'select', 'options' => []],
+            'delivery_channel' => ['label' => 'کانال تحویل خدمت', 'type' => 'select', 'options' => []],
+            'service_recipient_scope' => ['label' => 'دامنه گیرنده خدمت', 'type' => 'select', 'options' => [
+                'either' => 'مددجو یا خانوار فعلی',
+                'direct' => 'فقط خود مددجو',
+                'household' => 'فقط خانوار فعلی',
+            ]],
+            'service_delivery_date' => [
+                'label' => 'تاریخ تحویل خدمت',
+                'type' => 'date',
+                'date_modes' => ['exact', 'range'],
+            ],
+            'service_delivery_count' => ['label' => 'تعداد تحویل‌های منطبق', 'type' => 'number'],
+            'service_delivery_quantity' => ['label' => 'مجموع مقدار تحویل منطبق', 'type' => 'number'],
+            'service_delivery_value' => ['label' => 'مجموع ارزش تحویل منطبق (ریال)', 'type' => 'number'],
+            'case_record_type' => ['label' => 'نوع سابقه پرونده', 'type' => 'select', 'options' => []],
+            'case_record_date' => [
+                'label' => 'تاریخ سابقه پرونده',
+                'type' => 'date',
+                'date_modes' => ['exact', 'range'],
+            ],
+            'case_record_count' => ['label' => 'تعداد سوابق پرونده منطبق', 'type' => 'number'],
+            'case_record_amount' => ['label' => 'مجموع مبلغ سوابق منطبق (ریال)', 'type' => 'number'],
+            'activity_type' => ['label' => 'نوع فعالیت', 'type' => 'select', 'options' => []],
+            'activity_attendance_status' => ['label' => 'وضعیت حضور در فعالیت', 'type' => 'select', 'options' => []],
+            'activity_registration_method' => ['label' => 'روش ثبت حضور در فعالیت', 'type' => 'select', 'options' => []],
+            'activity_attendance_date' => [
+                'label' => 'تاریخ ثبت حضور در فعالیت',
+                'type' => 'date',
+                'date_modes' => ['exact', 'range'],
+            ],
+            'activity_attendance_count' => ['label' => 'تعداد حضورهای منطبق', 'type' => 'number'],
+            'worker_assignment_status' => ['label' => 'وضعیت تخصیص مددکار فعلی خانوار', 'type' => 'select', 'options' => [
+                'assigned_active' => 'دارای مددکار فعال',
+                'assigned_inactive' => 'دارای مددکار غیرفعال یا حذف‌شده',
+                'unassigned' => 'بدون مددکار',
+            ]],
+            'worker_allocation_status' => ['label' => 'وضعیت سهمیه خدمت مددکار فعلی خانوار', 'type' => 'select', 'options' => [
+                'has_allocation' => 'دارای سهمیه مثبت',
+                'pending_allocation' => 'دارای سهمیه تحویل‌نشده',
+                'completed_allocation' => 'همه سهمیه‌های منطبق تکمیل‌شده',
+                'no_allocation' => 'بدون سهمیه مثبت',
+            ]],
         ];
     }
 
@@ -108,7 +155,11 @@ final class BeneficiaryReportFieldRegistry
                 'date' => [
                     'field' => $field,
                     'type' => 'date',
-                    'mode' => in_array(($filter['mode'] ?? null), ['exact', 'range', 'month', 'year'], true)
+                    'mode' => in_array(
+                        ($filter['mode'] ?? null),
+                        $this->definitions()[$field]['date_modes'] ?? ['exact', 'range', 'month', 'year'],
+                        true
+                    )
                         ? $filter['mode']
                         : 'exact',
                     'exact' => $this->scalarString($filter['exact'] ?? ''),
