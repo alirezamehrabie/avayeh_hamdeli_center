@@ -11,6 +11,19 @@ use PHPUnit\Framework\TestCase;
 
 class BeneficiaryCaseContextBuilderTest extends TestCase
 {
+    public function test_it_preserves_nullable_boolean_states_for_ai_analysis(): void
+    {
+        $builder = new BeneficiaryCaseContextBuilder;
+
+        $unknown = $builder->build(new Person, new Collection, new Collection, new Collection);
+        $negative = $builder->build(new Person(['has_disability' => false]), new Collection, new Collection, new Collection);
+        $positive = $builder->build(new Person(['has_disability' => true]), new Collection, new Collection, new Collection);
+
+        $this->assertSame('unknown', $unknown['profile']['has_disability']);
+        $this->assertSame('no', $negative['profile']['has_disability']);
+        $this->assertSame('yes', $positive['profile']['has_disability']);
+    }
+
     public function test_it_excludes_direct_identifiers_and_redacts_them_from_free_text(): void
     {
         $guardian = new Guardian([

@@ -17,14 +17,15 @@ class BeneficiaryCaseContextBuilder
         Collection $activityAttendances,
         Collection $caseRecords,
     ): array {
+        $guardian = $person->relationLoaded('guardian') ? $person->getRelation('guardian') : null;
         $redactions = collect([
             $person->first_name,
             $person->last_name,
             $person->full_name,
             $person->father_name,
-            $person->guardian?->first_name,
-            $person->guardian?->last_name,
-            $person->guardian?->full_name,
+            $guardian?->first_name,
+            $guardian?->last_name,
+            $guardian?->full_name,
         ])->filter(fn (mixed $value): bool => mb_strlen(trim((string) $value)) >= 3)
             ->map(fn (mixed $value): string => trim((string) $value))
             ->unique()
@@ -35,7 +36,7 @@ class BeneficiaryCaseContextBuilder
             'profile' => array_filter([
                 'age' => $person->exact_age,
                 'gender' => $person->gender,
-                'has_disability' => (bool) $person->has_disability,
+                'has_disability' => $this->triState($person->has_disability),
                 'disability_description' => $this->text($person->disability_description, 500, $redactions),
                 'skills' => $this->text($person->skills_description, 700, $redactions),
                 'case_history' => $this->text($person->client_case_history, 1500, $redactions),
@@ -78,5 +79,14 @@ class BeneficiaryCaseContextBuilder
         $value = str_ireplace($redactions, '[نام حذف شد]', $value);
 
         return Str::limit($value, $limit, '...');
+    }
+
+    private function triState(?bool $value): string
+    {
+        return match ($value) {
+            true => 'yes',
+            false => 'no',
+            null => 'unknown',
+        };
     }
 }
