@@ -7,6 +7,7 @@ use App\Helpers\Morilog\Jalalian;
 use App\Livewire\People\AdvancedFilterBuilder;
 use App\Models\Person;
 use App\Models\User;
+use App\Reports\People\BeneficiaryReportCriteria;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -90,6 +91,20 @@ class AdvancedBeneficiaryAiSearchTest extends TestCase
 
         $this->assertTrue($ids->contains($child->id));
         $this->assertFalse($ids->contains($adult->id));
+    }
+
+    public function test_saved_filters_persist_the_current_criteria_version(): void
+    {
+        $this->actingAs($this->manager());
+
+        Livewire::test(AdvancedFilterBuilder::class)
+            ->set('saveFilterName', 'Versioned report')
+            ->call('saveCurrentFilters');
+
+        $this->assertDatabaseHas('beneficiary_saved_filters', [
+            'name' => 'Versioned report',
+            'criteria_version' => BeneficiaryReportCriteria::VERSION,
+        ]);
     }
 
     private function manager(): User

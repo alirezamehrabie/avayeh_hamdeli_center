@@ -4,7 +4,7 @@ namespace App\Reports\People;
 
 final class BeneficiaryReportCriteria
 {
-    public const VERSION = 1;
+    public const VERSION = 2;
 
     /**
      * @param  list<array<string, mixed>>  $filters

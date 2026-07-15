@@ -11,6 +11,7 @@ class BeneficiarySavedFilter extends Model
 
     protected $fillable = [
         'user_id',
+        'criteria_version',
         'name',
         'filters',
         'global_search',
@@ -18,6 +19,7 @@ class BeneficiarySavedFilter extends Model
     ];
 
     protected $casts = [
+        'criteria_version' => 'integer',
         'filters' => 'array',
         'visible_columns' => 'array',
     ];

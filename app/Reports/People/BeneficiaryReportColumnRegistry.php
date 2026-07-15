@@ -130,7 +130,7 @@ final class BeneficiaryReportColumnRegistry
     }
 
     /**
-     * @return array<string, string|array<int, string>>
+     * @return array<string, mixed>
      */
     public function eagerLoads(): array
     {
@@ -138,7 +138,9 @@ final class BeneficiaryReportColumnRegistry
             'disabilityType:id,name',
             'harmTypes:id,title',
             'guardian:id,social_worker_id,guardian_code,first_name,last_name',
-            'guardian.socialWorker:id,first_name,last_name',
+            'guardian.socialWorker' => fn ($query) => app(BeneficiaryReportSemantics::class)
+                ->includeHistoricalWorkers($query)
+                ->select(['social_workers.id', 'first_name', 'last_name', 'is_active', 'deleted_at']),
         ];
     }
 
@@ -147,7 +149,8 @@ final class BeneficiaryReportColumnRegistry
         return match ($column) {
             'person_code' => $person->person_code,
             'full_name' => $person->full_name,
-            'responsible_social_worker' => $person->guardian?->socialWorker?->full_name ?: '-',
+            'responsible_social_worker' => app(BeneficiaryReportSemantics::class)
+                ->workerLabel($person->guardian?->socialWorker),
             'guardian_beneficiary_with_code' => $person->guardian_beneficiary_with_code,
             'first_name' => $person->first_name,
             'last_name' => $person->last_name,

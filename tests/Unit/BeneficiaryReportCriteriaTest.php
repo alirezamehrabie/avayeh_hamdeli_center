@@ -72,7 +72,7 @@ class BeneficiaryReportCriteriaTest extends TestCase
             ],
         ], $criteria->filters);
         $this->assertSame(['national_id' => '1234'], $criteria->columnFilters);
-        $this->assertSame(1, $criteria->toArray()['version']);
+        $this->assertSame(BeneficiaryReportCriteria::VERSION, $criteria->toArray()['version']);
     }
 
     public function test_visible_columns_and_sorting_are_restricted_to_the_registry(): void

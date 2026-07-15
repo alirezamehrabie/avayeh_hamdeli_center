@@ -8,12 +8,14 @@ use App\Models\Person;
 use App\Models\SocialWorker;
 use App\Reports\People\BeneficiaryReportColumnRegistry;
 use App\Reports\People\BeneficiaryReportCriteria;
+use App\Reports\People\BeneficiaryReportSemantics;
 use Illuminate\Database\Eloquent\Builder;
 
 final class BeneficiaryReportQuery
 {
     public function __construct(
         private readonly BeneficiaryReportColumnRegistry $columnRegistry,
+        private readonly BeneficiaryReportSemantics $semantics,
     ) {}
 
     public function build(BeneficiaryReportCriteria $criteria): Builder
@@ -78,16 +80,21 @@ final class BeneficiaryReportQuery
                 ->values();
 
             if ($selectedWorkerIds->isNotEmpty()) {
-                $query->whereHas('guardian.socialWorker', function (Builder $workerQuery) use ($selectedWorkerIds): void {
-                    $workerQuery->whereIn('social_workers.id', $selectedWorkerIds->all());
+                $query->whereHas('guardian', function (Builder $guardianQuery) use ($selectedWorkerIds): void {
+                    $guardianQuery->whereIn('social_worker_id', $selectedWorkerIds->all());
                 });
 
                 return;
             }
 
             if ($value !== '') {
-                $query->whereHas('guardian.socialWorker', function (Builder $workerQuery) use ($value): void {
-                    $workerQuery->autocompleteSearch($value);
+                $workerIds = $this->semantics
+                    ->historicalWorkerQuery()
+                    ->autocompleteSearch($value)
+                    ->select('social_workers.id');
+
+                $query->whereHas('guardian', function (Builder $guardianQuery) use ($workerIds): void {
+                    $guardianQuery->whereIn('social_worker_id', $workerIds);
                 });
             }
 
@@ -280,29 +287,54 @@ final class BeneficiaryReportQuery
         $mode = $filter['mode'] ?? 'exact';
 
         if ($mode === 'exact') {
-            $date = $this->parseJalaliDate((string) ($filter['exact'] ?? ''));
-
-            if ($date === null) {
+            $value = trim((string) ($filter['exact'] ?? ''));
+            if ($value === '') {
                 return;
             }
 
-            [$year, $month, $day] = $date;
-            $query->where('birth_year', $year)
-                ->where('birth_month', $month)
-                ->where('birth_day', $day);
+            $date = $this->parseJalaliDate($value);
+            if ($date === null) {
+                $this->rejectInvalidCriteria($query);
+
+                return;
+            }
+
+            $query->where('birth_date_full', $this->semantics->formatJalaliDate($date));
 
             return;
         }
 
         if ($mode === 'range') {
-            $from = $this->parseJalaliDate((string) ($filter['from'] ?? ''));
-            $to = $this->parseJalaliDate((string) ($filter['to'] ?? ''));
+            $fromValue = trim((string) ($filter['from'] ?? ''));
+            $toValue = trim((string) ($filter['to'] ?? ''));
+            if ($fromValue === '' && $toValue === '') {
+                return;
+            }
 
-            if ($from !== null && $to !== null) {
-                $query->whereRaw("CONCAT(birth_year, '-', LPAD(birth_month,2,'0'), '-', LPAD(birth_day,2,'0')) BETWEEN ? AND ?", [
-                    sprintf('%04d-%02d-%02d', ...$from),
-                    sprintf('%04d-%02d-%02d', ...$to),
-                ]);
+            $from = $fromValue === '' ? null : $this->parseJalaliDate($fromValue);
+            $to = $toValue === '' ? null : $this->parseJalaliDate($toValue);
+
+            if (($fromValue !== '' && $from === null) || ($toValue !== '' && $to === null)) {
+                $this->rejectInvalidCriteria($query);
+
+                return;
+            }
+
+            $fromDate = $from === null ? null : $this->semantics->formatJalaliDate($from);
+            $toDate = $to === null ? null : $this->semantics->formatJalaliDate($to);
+
+            if ($fromDate !== null && $toDate !== null && $fromDate > $toDate) {
+                $this->rejectInvalidCriteria($query);
+
+                return;
+            }
+
+            if ($fromDate !== null && $toDate !== null) {
+                $query->whereBetween('birth_date_full', [$fromDate, $toDate]);
+            } elseif ($fromDate !== null) {
+                $query->where('birth_date_full', '>=', $fromDate);
+            } elseif ($toDate !== null) {
+                $query->where('birth_date_full', '<=', $toDate);
             }
 
             return;
@@ -335,7 +367,7 @@ final class BeneficiaryReportQuery
         $month = (int) $matches[2];
         $day = (int) $matches[3];
 
-        if ($month < 1 || $month > 12 || $day < 1 || $day > 31) {
+        if (! $this->semantics->isValidJalaliDate($year, $month, $day)) {
             return null;
         }
 
@@ -373,7 +405,7 @@ final class BeneficiaryReportQuery
                 fn (Builder $guardianQuery): Builder => $guardianQuery->where('average_income', $operator, $numericValue)
             ),
             'age' => $this->applyAgeFilter($query, $operator, $numericValue),
-            'months_without_service' => $this->applyMonthsWithoutServiceFilter($query, $operator, $numericValue),
+            'months_without_service' => $this->applyMonthsWithoutServiceFilter($query, $numericValue),
             default => null,
         };
     }
@@ -426,20 +458,20 @@ final class BeneficiaryReportQuery
         };
     }
 
-    private function applyMonthsWithoutServiceFilter(Builder $query, string $operator, int $months): void
+    private function applyMonthsWithoutServiceFilter(Builder $query, int $months): void
     {
-        if ($months < 1 || ! in_array($operator, ['=', '>', '>='], true)) {
+        if ($months < 1) {
             return;
         }
 
-        $threshold = now()->subMonths($months)->toDateString();
+        $threshold = $this->semantics->serviceRecencyCutoff($months);
 
         $query->whereDoesntHave(
             'serviceDeliveries',
-            fn (Builder $deliveryQuery): Builder => $deliveryQuery->where('delivered_at', '>=', $threshold)
+            fn (Builder $deliveryQuery): Builder => $deliveryQuery->where('delivered_at', '>', $threshold)
         )->whereDoesntHave(
             'guardian.serviceDeliveries',
-            fn (Builder $deliveryQuery): Builder => $deliveryQuery->where('delivered_at', '>=', $threshold)
+            fn (Builder $deliveryQuery): Builder => $deliveryQuery->where('delivered_at', '>', $threshold)
         );
     }
 
@@ -491,8 +523,14 @@ final class BeneficiaryReportQuery
                     fn (Builder $disabilityQuery): Builder => $disabilityQuery->where('name', 'like', "%{$value}%")
                 ),
                 'responsible_social_worker' => $query->whereHas(
-                    'guardian.socialWorker',
-                    fn (Builder $workerQuery): Builder => $workerQuery->autocompleteSearch((string) $value)
+                    'guardian',
+                    fn (Builder $guardianQuery): Builder => $guardianQuery->whereIn(
+                        'social_worker_id',
+                        $this->semantics
+                            ->historicalWorkerQuery()
+                            ->autocompleteSearch((string) $value)
+                            ->select('social_workers.id')
+                    )
                 ),
                 'guardian_beneficiary_with_code' => $query->whereHas(
                     'guardian',
@@ -555,6 +593,8 @@ final class BeneficiaryReportQuery
     {
         $query->orderBy(
             SocialWorker::query()
+                ->withoutGlobalScope('active')
+                ->withTrashed()
                 ->select('last_name')
                 ->join('guardians', 'guardians.social_worker_id', '=', 'social_workers.id')
                 ->whereColumn('guardians.id', 'people.guardian_id')
@@ -562,6 +602,8 @@ final class BeneficiaryReportQuery
             $direction
         )->orderBy(
             SocialWorker::query()
+                ->withoutGlobalScope('active')
+                ->withTrashed()
                 ->select('first_name')
                 ->join('guardians', 'guardians.social_worker_id', '=', 'social_workers.id')
                 ->whereColumn('guardians.id', 'people.guardian_id')
@@ -591,5 +633,10 @@ final class BeneficiaryReportQuery
                 ->limit(1),
             $direction
         );
+    }
+
+    private function rejectInvalidCriteria(Builder $query): void
+    {
+        $query->whereRaw('1 = 0');
     }
 }

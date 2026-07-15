@@ -26,6 +26,7 @@ use App\Queries\People\BeneficiaryReportQuery;
 use App\Reports\People\BeneficiaryReportColumnRegistry;
 use App\Reports\People\BeneficiaryReportCriteria;
 use App\Reports\People\BeneficiaryReportFieldRegistry;
+use App\Reports\People\BeneficiaryReportSemantics;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
@@ -326,8 +327,9 @@ class AdvancedFilterBuilder extends Component
             return;
         }
 
-        $worker = SocialWorker::query()
-            ->select(['id', 'first_name', 'last_name', 'worker_code'])
+        $worker = app(BeneficiaryReportSemantics::class)
+            ->historicalWorkerQuery()
+            ->select(['id', 'first_name', 'last_name', 'worker_code', 'is_active', 'deleted_at'])
             ->find($workerId);
 
         if (! $worker) {
@@ -344,7 +346,7 @@ class AdvancedFilterBuilder extends Component
 
         $selected->push([
             'id' => $worker->id,
-            'name' => $worker->full_name,
+            'name' => app(BeneficiaryReportSemantics::class)->workerLabel($worker),
             'code' => (string) $worker->worker_code,
         ]);
 
@@ -430,6 +432,7 @@ class AdvancedFilterBuilder extends Component
 
         BeneficiarySavedFilter::create([
             'user_id' => auth()->id(),
+            'criteria_version' => $criteria->version,
             'name' => $this->saveFilterName,
             'filters' => $criteria->filters,
             'global_search' => $criteria->globalSearch,
@@ -566,7 +569,8 @@ class AdvancedFilterBuilder extends Component
             'guardian.occupation',
             'guardian.jobType',
             'guardian.residence',
-            'guardian.socialWorker',
+            'guardian.socialWorker' => fn ($query) => app(BeneficiaryReportSemantics::class)
+                ->includeHistoricalWorkers($query),
             'education.educationLevel',
             'education.educationDegreeLevel',
             'supportCoverage.organization',
@@ -668,8 +672,9 @@ class AdvancedFilterBuilder extends Component
     {
         $limit = $append ? count($this->socialWorkerOptions[$index] ?? []) + 25 : 25;
 
-        $workers = SocialWorker::query()
-            ->select(['id', 'first_name', 'last_name', 'worker_code'])
+        $workers = app(BeneficiaryReportSemantics::class)
+            ->historicalWorkerQuery()
+            ->select(['id', 'first_name', 'last_name', 'worker_code', 'is_active', 'deleted_at'])
             ->autocompleteSearch($term)
             ->orderBy('first_name')
             ->orderBy('last_name')
@@ -686,12 +691,16 @@ class AdvancedFilterBuilder extends Component
         $this->socialWorkerOptions[$index] = $workers
             ->take($limit)
             ->reject(fn (SocialWorker $worker) => in_array($worker->id, $selectedIds, true))
-            ->map(fn (SocialWorker $worker) => [
-                'id' => $worker->id,
-                'name' => $worker->full_name,
-                'code' => (string) $worker->worker_code,
-                'label' => sprintf('%s - ID: %s', $worker->full_name, $worker->worker_code),
-            ])
+            ->map(function (SocialWorker $worker): array {
+                $workerLabel = app(BeneficiaryReportSemantics::class)->workerLabel($worker);
+
+                return [
+                    'id' => $worker->id,
+                    'name' => $workerLabel,
+                    'code' => (string) $worker->worker_code,
+                    'label' => sprintf('%s - ID: %s', $workerLabel, $worker->worker_code),
+                ];
+            })
             ->values()
             ->all();
 

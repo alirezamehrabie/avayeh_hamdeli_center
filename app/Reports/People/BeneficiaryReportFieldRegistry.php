@@ -4,6 +4,10 @@ namespace App\Reports\People;
 
 final class BeneficiaryReportFieldRegistry
 {
+    public function __construct(
+        private readonly BeneficiaryReportSemantics $semantics = new BeneficiaryReportSemantics,
+    ) {}
+
     /**
      * @return array<string, array<string, mixed>>
      */
@@ -44,7 +48,7 @@ final class BeneficiaryReportFieldRegistry
             ]],
             'guardian_full_name' => ['label' => 'نام و نام خانوادگی سرپرست', 'type' => 'text'],
             'guardian_mobile' => ['label' => 'موبایل سرپرست', 'type' => 'text'],
-            'caseworker' => ['label' => 'مددکار (نام یا کد)', 'type' => 'text'],
+            'caseworker' => ['label' => 'مددکار فعلی خانوار (نام یا کد)', 'type' => 'text'],
             'economic_decile' => ['label' => 'دهک اقتصادی', 'type' => 'select', 'options' => []],
             'guardian_occupation' => ['label' => 'شغل سرپرست', 'type' => 'select', 'options' => []],
             'guardian_job_type' => ['label' => 'نوع شغل سرپرست', 'type' => 'select', 'options' => []],
@@ -60,7 +64,7 @@ final class BeneficiaryReportFieldRegistry
             ]],
             'support_organization' => ['label' => 'نوع نهاد حمایتی', 'type' => 'select', 'options' => []],
             'need_level' => ['label' => 'سطح نیازمندی', 'type' => 'select', 'options' => []],
-            'months_without_service' => ['label' => 'ماه‌های بدون دریافت خدمت', 'type' => 'number'],
+            'months_without_service' => ['label' => 'حداقل ماه‌های کامل بدون خدمت مستقیم یا خانوادگی', 'type' => 'number'],
         ];
     }
 
@@ -113,14 +117,7 @@ final class BeneficiaryReportFieldRegistry
                     'month' => $this->scalarString($filter['month'] ?? ''),
                     'year' => $this->scalarString($filter['year'] ?? ''),
                 ],
-                'number' => [
-                    'field' => $field,
-                    'type' => 'number',
-                    'operator' => in_array(($filter['operator'] ?? null), ['eq', 'gt', 'gte', 'lt', 'lte'], true)
-                        ? $filter['operator']
-                        : ($field === 'months_without_service' ? 'gte' : 'eq'),
-                    'value' => $this->scalarString($filter['value'] ?? ''),
-                ],
+                'number' => $this->normalizeNumberFilter($field, $filter),
                 default => null,
             };
 
@@ -166,5 +163,29 @@ final class BeneficiaryReportFieldRegistry
     private function scalarString(mixed $value): string
     {
         return is_scalar($value) || $value === null ? (string) $value : '';
+    }
+
+    /**
+     * @param  array<string, mixed>  $filter
+     * @return array<string, mixed>
+     */
+    private function normalizeNumberFilter(string $field, array $filter): array
+    {
+        $allowedOperators = $field === 'months_without_service'
+            ? [$this->semantics::MONTHS_WITHOUT_SERVICE_OPERATOR]
+            : ['eq', 'gt', 'gte', 'lt', 'lte'];
+        $defaultOperator = $field === 'months_without_service'
+            ? $this->semantics::MONTHS_WITHOUT_SERVICE_OPERATOR
+            : 'eq';
+        $operator = (string) ($filter['operator'] ?? '');
+
+        return [
+            'field' => $field,
+            'type' => 'number',
+            'operator' => in_array($operator, $allowedOperators, true)
+                ? $operator
+                : $defaultOperator,
+            'value' => $this->scalarString($filter['value'] ?? ''),
+        ];
     }
 }
