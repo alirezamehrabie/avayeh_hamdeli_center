@@ -39,6 +39,90 @@
 
         </div>
 
+        <section class="mb-4 border-y border-emerald-200 bg-emerald-50/60 px-4 py-4 sm:px-5">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
+                <div class="min-w-0 flex-1">
+                    <label for="ai-beneficiary-search" class="mb-2 flex items-center gap-2 text-sm font-bold text-slate-800">
+                        <i class="bi bi-stars text-emerald-700" aria-hidden="true"></i>
+                        جستجوی هوشمند مددجویان  (هوش مصنوعی)
+                    </label>
+                    <textarea
+                        id="ai-beneficiary-search"
+                        wire:model.defer="aiSearchQuery"
+                        wire:keydown.ctrl.enter="interpretAiSearch"
+                        rows="2"
+                        maxlength="1000"
+                        class="w-full resize-y rounded-lg border border-emerald-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-emerald-400 focus:ring focus:ring-emerald-100"
+                        placeholder="مثال: کودکان دارای معلولیت که در شش ماه گذشته هیچ خدمتی دریافت نکرده‌اند"
+                    ></textarea>
+                    @error('aiSearchQuery')
+                        <p class="mt-1 text-xs font-medium text-rose-700">{{ $message }}</p>
+                    @enderror
+                </div>
+                <button
+                    type="button"
+                    wire:click="interpretAiSearch"
+                    wire:loading.attr="disabled"
+                    wire:target="interpretAiSearch"
+                    class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-800 disabled:cursor-wait disabled:opacity-60 lg:w-auto lg:shrink-0"
+                >
+                    <i wire:loading.remove wire:target="interpretAiSearch" class="bi bi-stars" aria-hidden="true"></i>
+                    <span wire:loading.remove wire:target="interpretAiSearch">تفسیر درخواست</span>
+                    <span wire:loading wire:target="interpretAiSearch">در حال تفسیر...</span>
+                </button>
+            </div>
+
+            @if($aiSearchError)
+                <div class="mt-3 border-r-4 border-rose-500 bg-white px-3 py-2 text-xs font-semibold text-rose-700" role="alert">
+                    {{ $aiSearchError }}
+                </div>
+            @endif
+
+            @if($pendingAiSearch)
+                <div class="mt-4 border border-emerald-200 bg-white p-4" aria-live="polite">
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div class="min-w-0">
+                            <h2 class="text-sm font-bold text-slate-800">فیلترهای برداشت‌شده برای تأیید</h2>
+                            @if(filled($pendingAiSearch['interpretation'] ?? null))
+                                <p class="mt-1 text-xs leading-6 text-slate-600">{{ $pendingAiSearch['interpretation'] }}</p>
+                            @endif
+                        </div>
+                        <span class="shrink-0 text-xs font-semibold text-emerald-700">
+                            {{ count($pendingAiSearch['filters'] ?? []) }} شرط
+                        </span>
+                    </div>
+
+                    <div class="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                        @foreach(($pendingAiSearch['summaries'] ?? []) as $summary)
+                            <div class="flex min-h-10 items-center gap-2 border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+                                <i class="bi bi-funnel text-emerald-700" aria-hidden="true"></i>
+                                <span class="break-words">{{ $summary }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    @if(!empty($pendingAiSearch['unresolved']))
+                        <div class="mt-3 border-r-4 border-amber-400 bg-amber-50 px-3 py-2">
+                            <p class="text-xs font-bold text-amber-800">مواردی که نیاز به بررسی دارند</p>
+                            @foreach($pendingAiSearch['unresolved'] as $item)
+                                <p class="mt-1 text-xs text-amber-800">{{ $item }}</p>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    <div class="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                        <button type="button" wire:click="cancelAiSearch" class="min-h-10 rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">
+                            انصراف
+                        </button>
+                        <button type="button" wire:click="confirmAiSearch" class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-800">
+                            <i class="bi bi-check2" aria-hidden="true"></i>
+                            تأیید و اجرای جستجو
+                        </button>
+                    </div>
+                </div>
+            @endif
+        </section>
+
 
         <div class="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
             <label class="mb-2 block text-sm font-semibold text-slate-700">جستجوی سراسری</label>
@@ -233,11 +317,15 @@
                         @if(($filter['type'] ?? null) === 'number')
                             <div class="grid gap-2 md:grid-cols-3">
                                 <select wire:model.live="filters.{{ $index }}.operator" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs">
+                                    @if(($filter['field'] ?? null) === 'months_without_service')
+                                        <option value="gte">حداقل</option>
+                                    @else
                                     <option value="eq">= برابر</option>
                                     <option value="gt">&gt; بزرگ‌تر</option>
                                     <option value="gte">&gt;= بزرگ‌تر یا مساوی</option>
                                     <option value="lt">&lt; کوچک‌تر</option>
                                     <option value="lte">&lt;= کوچک‌تر یا مساوی</option>
+                                    @endif
                                 </select>
                                 <input type="number" wire:model.live.debounce.300ms="filters.{{ $index }}.value" class="md:col-span-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs" placeholder="مقدار عددی">
                             </div>

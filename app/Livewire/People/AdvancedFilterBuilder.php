@@ -2,6 +2,8 @@
 
 namespace App\Livewire\People;
 
+use App\Contracts\Ai\GeneratesBeneficiarySearchFilters;
+use App\Exceptions\AiBeneficiarySearchException;
 use App\Helpers\Morilog\Jalalian;
 use App\Models\BeneficiarySavedFilter;
 use App\Models\DisabilityType;
@@ -22,6 +24,7 @@ use App\Models\SupportOrganization;
 use App\Models\VehicleType;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
+use Throwable;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -45,6 +48,9 @@ class AdvancedFilterBuilder extends Component
     public ?string $sortColumn = null;
     public string $sortDirection = 'desc';
     public array $columnFilterDefinitions = [];
+    public string $aiSearchQuery = '';
+    public ?array $pendingAiSearch = null;
+    public ?string $aiSearchError = null;
 
     public array $visibleColumns = [
         'person_code',
@@ -79,6 +85,7 @@ class AdvancedFilterBuilder extends Component
         'first_name' => ['label' => 'نام', 'type' => 'text'],
         'last_name' => ['label' => 'نام خانوادگی', 'type' => 'text'],
         'birth_date' => ['label' => 'تاریخ تولد', 'type' => 'date'],
+        'age' => ['label' => 'سن (سال)', 'type' => 'number'],
         'national_id' => ['label' => 'کد ملی', 'type' => 'text'],
         'phone_number' => ['label' => 'موبایل', 'type' => 'text'],
         'sadaat_status' => ['label' => 'سادات', 'type' => 'select', 'options' => [
@@ -125,6 +132,7 @@ class AdvancedFilterBuilder extends Component
         ]],
         'support_organization' => ['label' => 'نوع نهاد حمایتی', 'type' => 'select', 'options' => []],
         'need_level' => ['label' => 'سطح نیازمندی', 'type' => 'select', 'options' => []],
+        'months_without_service' => ['label' => 'ماه‌های بدون دریافت خدمت', 'type' => 'number'],
     ];
 
     public function mount(): void
@@ -246,7 +254,12 @@ class AdvancedFilterBuilder extends Component
                 'text' => ['field' => $field, 'type' => $type, 'operator' => 'contains', 'value' => ''],
                 'select' => ['field' => $field, 'type' => $type, 'value' => ''],
                 'date' => ['field' => $field, 'type' => $type, 'mode' => 'exact', 'exact' => '', 'from' => '', 'to' => '', 'month' => '', 'year' => ''],
-                'number' => ['field' => $field, 'type' => $type, 'operator' => 'eq', 'value' => ''],
+                'number' => [
+                    'field' => $field,
+                    'type' => $type,
+                    'operator' => $field === 'months_without_service' ? 'gte' : 'eq',
+                    'value' => '',
+                ],
                 default => ['field' => $field, 'type' => $type],
             };
         }
@@ -280,7 +293,71 @@ class AdvancedFilterBuilder extends Component
         $this->socialWorkerSearch = [];
         $this->socialWorkerOptions = [];
         $this->socialWorkerHasMore = [];
+        $this->pendingAiSearch = null;
+        $this->aiSearchError = null;
         $this->resetPage();
+    }
+
+    public function interpretAiSearch(GeneratesBeneficiarySearchFilters $generator): void
+    {
+        $this->validate([
+            'aiSearchQuery' => ['required', 'string', 'min:3', 'max:1000'],
+        ], [
+            'aiSearchQuery.required' => 'درخواست جستجو را وارد کنید.',
+            'aiSearchQuery.min' => 'درخواست جستجو باید حداقل ۳ نویسه باشد.',
+            'aiSearchQuery.max' => 'درخواست جستجو بیش از حد طولانی است.',
+        ]);
+
+        $this->pendingAiSearch = null;
+        $this->aiSearchError = null;
+
+        try {
+            $interpretation = $generator->generate($this->aiSearchQuery, $this->aiFilterCatalog());
+        } catch (AiBeneficiarySearchException $exception) {
+            report($exception);
+            $this->aiSearchError = 'تفسیر هوشمند جستجو انجام نشد. پیکربندی سرویس را بررسی کنید یا دوباره تلاش کنید.';
+
+            return;
+        } catch (Throwable $exception) {
+            report($exception);
+            $this->aiSearchError = 'تفسیر جستجو با خطا روبه‌رو شد. دوباره تلاش کنید.';
+
+            return;
+        }
+
+        if ($interpretation['filters'] === []) {
+            $this->aiSearchError = $interpretation['unresolved'][0] ?? 'هیچ فیلتر قابل اجرایی از این درخواست استخراج نشد.';
+
+            return;
+        }
+
+        $this->pendingAiSearch = $interpretation;
+    }
+
+    public function confirmAiSearch(): void
+    {
+        if (! is_array($this->pendingAiSearch) || ! is_array($this->pendingAiSearch['filters'] ?? null)) {
+            return;
+        }
+
+        $this->filters = array_values($this->pendingAiSearch['filters']);
+        $this->globalSearch = '';
+        $this->columnFilters = [];
+        $this->socialWorkerSearch = [];
+        $this->socialWorkerOptions = [];
+        $this->socialWorkerHasMore = [];
+        $this->normalizeCaseworkerFilters();
+        $this->pendingAiSearch = null;
+        $this->aiSearchError = null;
+        $this->resetPage();
+
+        session()->flash('success', 'فیلترهای جستجوی هوشمند اعمال شدند.');
+    }
+
+    public function cancelAiSearch(): void
+    {
+        $this->pendingAiSearch = null;
+        $this->aiSearchError = null;
     }
 
     public function updatedColumnFilters(): void
@@ -853,6 +930,16 @@ class AdvancedFilterBuilder extends Component
                     });
                     continue;
                 }
+
+                if ($field === 'age') {
+                    $this->applyAgeFilter($query, $sqlOperator, $numericValue);
+                    continue;
+                }
+
+                if ($field === 'months_without_service') {
+                    $this->applyMonthsWithoutServiceFilter($query, $sqlOperator, $numericValue);
+                    continue;
+                }
             }
 
         }
@@ -886,6 +973,75 @@ class AdvancedFilterBuilder extends Component
     public function render()
     {
         return view('livewire.people.advanced-filter-builder');
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    protected function aiFilterCatalog(): array
+    {
+        return collect($this->filterableFields)
+            ->except(['caseworker'])
+            ->map(fn (array $definition): array => [
+                'label' => $definition['label'],
+                'type' => $definition['type'],
+                'options' => $definition['options'] ?? [],
+            ])
+            ->all();
+    }
+
+    protected function applyAgeFilter(Builder $query, string $operator, int $age): void
+    {
+        $now = Jalalian::now();
+        $month = $now->getMonth();
+        $day = $now->getDay();
+
+        match ($operator) {
+            '=' => $query
+                ->where(fn (Builder $ageQuery) => $this->whereBirthDateAfter($ageQuery, $now->getYear() - $age - 1, $month, $day))
+                ->where(fn (Builder $ageQuery) => $this->whereBirthDateOnOrBefore($ageQuery, $now->getYear() - $age, $month, $day)),
+            '>' => $query->where(fn (Builder $ageQuery) => $this->whereBirthDateOnOrBefore($ageQuery, $now->getYear() - $age - 1, $month, $day)),
+            '>=' => $query->where(fn (Builder $ageQuery) => $this->whereBirthDateOnOrBefore($ageQuery, $now->getYear() - $age, $month, $day)),
+            '<' => $query->where(fn (Builder $ageQuery) => $this->whereBirthDateAfter($ageQuery, $now->getYear() - $age, $month, $day)),
+            '<=' => $query->where(fn (Builder $ageQuery) => $this->whereBirthDateAfter($ageQuery, $now->getYear() - $age - 1, $month, $day)),
+            default => null,
+        };
+    }
+
+    protected function applyMonthsWithoutServiceFilter(Builder $query, string $operator, int $months): void
+    {
+        if ($months < 1 || ! in_array($operator, ['=', '>', '>='], true)) {
+            return;
+        }
+
+        $threshold = now()->subMonths($months)->toDateString();
+
+        $query->whereDoesntHave('serviceDeliveries', fn (Builder $deliveryQuery) => $deliveryQuery->where('delivered_at', '>=', $threshold))
+            ->whereDoesntHave('guardian.serviceDeliveries', fn (Builder $deliveryQuery) => $deliveryQuery->where('delivered_at', '>=', $threshold));
+    }
+
+    protected function whereBirthDateOnOrBefore(Builder $query, int $year, int $month, int $day): void
+    {
+        $query->where('birth_year', '<', $year)
+            ->orWhere(function (Builder $sameYear) use ($year, $month, $day) {
+                $sameYear->where('birth_year', $year)
+                    ->where(function (Builder $birthday) use ($month, $day) {
+                        $birthday->where('birth_month', '<', $month)
+                            ->orWhere(fn (Builder $sameMonth) => $sameMonth->where('birth_month', $month)->where('birth_day', '<=', $day));
+                    });
+            });
+    }
+
+    protected function whereBirthDateAfter(Builder $query, int $year, int $month, int $day): void
+    {
+        $query->where('birth_year', '>', $year)
+            ->orWhere(function (Builder $sameYear) use ($year, $month, $day) {
+                $sameYear->where('birth_year', $year)
+                    ->where(function (Builder $birthday) use ($month, $day) {
+                        $birthday->where('birth_month', '>', $month)
+                            ->orWhere(fn (Builder $sameMonth) => $sameMonth->where('birth_month', $month)->where('birth_day', '>', $day));
+                    });
+            });
     }
 
     protected function normalizeCaseworkerFilters(): void
