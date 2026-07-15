@@ -418,6 +418,7 @@ class BeneficiaryCaseFile extends Component
                 $this->serviceDeliveries,
                 $this->activityAttendances,
                 $this->caseRecords,
+                $this->caseFileTotals,
             );
         } catch (AiCaseAssistantException $exception) {
             report($exception);

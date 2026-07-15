@@ -16,6 +16,7 @@ class BeneficiaryCaseContextBuilder
         Collection $serviceDeliveries,
         Collection $activityAttendances,
         Collection $caseRecords,
+        array $metrics = [],
     ): array {
         $guardian = $person->relationLoaded('guardian') ? $person->getRelation('guardian') : null;
         $redactions = collect([
@@ -33,6 +34,7 @@ class BeneficiaryCaseContextBuilder
             ->all();
 
         return [
+            'metrics' => $metrics,
             'profile' => array_filter([
                 'age' => $person->exact_age,
                 'gender' => $person->gender,

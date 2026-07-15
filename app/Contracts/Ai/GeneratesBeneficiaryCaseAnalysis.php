@@ -15,5 +15,6 @@ interface GeneratesBeneficiaryCaseAnalysis
         Collection $serviceDeliveries,
         Collection $activityAttendances,
         Collection $caseRecords,
+        array $caseFileTotals,
     ): array;
 }
