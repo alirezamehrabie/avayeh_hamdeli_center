@@ -480,43 +480,7 @@
                         <tr wire:key="advanced-person-row-{{ $person->id }}" wire:click="showPersonInfo({{ $person->id }})" class="cursor-pointer transition hover:bg-slate-50">
                             @foreach($visibleColumns as $columnKey)
                                 <td class="whitespace-nowrap px-4 py-3 text-xs text-slate-700">
-                                    @switch($columnKey)
-                                        @case('full_name')
-                                            {{ $person->full_name }}
-                                            @break
-                                        @case('responsible_social_worker')
-                                            {{ $person->guardian?->socialWorker?->full_name ?? '-' }}
-                                            @break
-                                        @case('guardian_beneficiary_with_code')
-                                            {{ $person->guardian_beneficiary_with_code }}
-                                            @break
-                                        @case('birth_date')
-                                            {{ $person->birth_date ?? '-' }}
-                                            @break
-                                        @case('sadaat_status')
-                                            {{ $person->sadaat_status_label ?? '-' }}
-                                            @break
-                                        @case('gender')
-                                            {{ $person->gender_label ?? '-' }}
-                                            @break
-                                        @case('beneficiary_injury_disability_type')
-                                            {{ collect([$person->harmTypes->pluck('title')->filter()->implode('، '), $person->disabilityType?->name])->filter()->implode(' - ') ?: '-' }}
-                                            @break
-                                        @case('related_description')
-                                            {{ $person->disability_description ?: '-' }}
-                                            @break
-                                        @case('disability_description')
-                                            {{ $person->disability_description ?: '-' }}
-                                            @break
-                                        @case('client_case_history')
-                                            {{ $person->client_case_history ?: '-' }}
-                                            @break
-                                        @case('created_at')
-                                            {{ optional($person->created_at)->format('Y/m/d') }}
-                                            @break
-                                        @default
-                                            {{ data_get($person, $columnKey) ?? '-' }}
-                                    @endswitch
+                                    {{ $reportColumnRegistry->value($person, $columnKey) }}
                                 </td>
                             @endforeach
                         </tr>
