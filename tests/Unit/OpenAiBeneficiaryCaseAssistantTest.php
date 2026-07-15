@@ -68,6 +68,7 @@ class OpenAiBeneficiaryCaseAssistantTest extends TestCase
             return $request->url() === 'https://api.openai.test/v1/responses'
                 && $request->hasHeader('Authorization', 'Bearer test-key')
                 && ($payload['model'] ?? null) === 'test-model'
+                && ($payload['store'] ?? null) === false
                 && ($payload['text']['format']['type'] ?? null) === 'json_schema'
                 && ($payload['text']['format']['strict'] ?? null) === true
                 && ($context['metrics']['services']['total_count'] ?? null) === 5

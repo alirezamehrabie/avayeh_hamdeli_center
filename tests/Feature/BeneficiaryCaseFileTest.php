@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Contracts\Ai\GeneratesBeneficiaryCaseAnalysis;
+use App\Contracts\Ai\GeneratesFollowUpMessage;
 use App\Helpers\Morilog\Jalalian;
 use App\Livewire\People\BeneficiaryCaseFile;
 use App\Models\Activity;
@@ -93,6 +94,137 @@ class BeneficiaryCaseFileTest extends TestCase
             ->assertHasErrors(['aiReminderSuggestions']);
 
         $this->assertSame(0, DashboardReminder::query()->count());
+    }
+
+    public function test_admin_can_generate_and_edit_a_follow_up_message_draft(): void
+    {
+        $admin = $this->admin();
+        $person = $this->person();
+
+        $this->app->instance(GeneratesFollowUpMessage::class, new class implements GeneratesFollowUpMessage
+        {
+            public function generate(
+                Person $person,
+                string $recipient,
+                string $channel,
+                string $purpose,
+                string $tone,
+                string $details,
+            ): array {
+                return [
+                    'can_generate' => true,
+                    'message' => 'سلام، لطفا برای پیگیری پرونده در زمان اعلام‌شده مراجعه کنید.',
+                    'review_note' => 'زمان مراجعه را پیش از ارسال بررسی کنید.',
+                ];
+            }
+        });
+
+        $this->actingAs($admin);
+
+        Livewire::test(BeneficiaryCaseFile::class, ['personId' => $person->id])
+            ->set('followUpRecipient', 'guardian')
+            ->set('followUpChannel', 'whatsapp')
+            ->set('followUpPurpose', 'appointment_reminder')
+            ->set('followUpTone', 'formal')
+            ->set('followUpDetails', 'برای پیگیری پرونده، زمان مراجعه یادآوری شود.')
+            ->call('generateFollowUpMessage')
+            ->assertHasNoErrors()
+            ->assertSet('followUpDraft', 'سلام، لطفا برای پیگیری پرونده در زمان اعلام‌شده مراجعه کنید.')
+            ->assertSet('followUpReviewNote', 'زمان مراجعه را پیش از ارسال بررسی کنید.')
+            ->set('followUpDraft', 'نسخه ویرایش‌شده توسط کاربر')
+            ->assertSet('followUpDraft', 'نسخه ویرایش‌شده توسط کاربر');
+
+        $this->assertDatabaseCount('dashboard_reminders', 0);
+        $this->assertDatabaseCount('beneficiary_case_records', 0);
+    }
+
+    public function test_follow_up_message_requires_valid_controlled_input(): void
+    {
+        $this->app->instance(GeneratesFollowUpMessage::class, new class implements GeneratesFollowUpMessage
+        {
+            public function generate(
+                Person $person,
+                string $recipient,
+                string $channel,
+                string $purpose,
+                string $tone,
+                string $details,
+            ): array {
+                throw new RuntimeException('The generator must not be called for invalid input.');
+            }
+        });
+
+        $this->actingAs($this->admin());
+
+        Livewire::test(BeneficiaryCaseFile::class, ['personId' => $this->person()->id])
+            ->set('followUpRecipient', 'invalid-recipient')
+            ->set('followUpDetails', 'کم')
+            ->call('generateFollowUpMessage')
+            ->assertHasErrors([
+                'followUpRecipient',
+                'followUpDetails',
+            ])
+            ->assertSet('followUpDraft', '');
+    }
+
+    public function test_follow_up_draft_is_cleared_when_generation_inputs_change(): void
+    {
+        $this->app->instance(GeneratesFollowUpMessage::class, new class implements GeneratesFollowUpMessage
+        {
+            public function generate(
+                Person $person,
+                string $recipient,
+                string $channel,
+                string $purpose,
+                string $tone,
+                string $details,
+            ): array {
+                return [
+                    'can_generate' => true,
+                    'message' => 'پیش‌نویس اولیه',
+                    'review_note' => '',
+                ];
+            }
+        });
+
+        $this->actingAs($this->admin());
+
+        Livewire::test(BeneficiaryCaseFile::class, ['personId' => $this->person()->id])
+            ->set('followUpDetails', 'برای پیگیری پرونده درخواست مراجعه شود.')
+            ->call('generateFollowUpMessage')
+            ->assertSet('followUpDraft', 'پیش‌نویس اولیه')
+            ->set('followUpPurpose', 'document_request')
+            ->assertSet('followUpDraft', '')
+            ->assertSet('followUpGeneratedAt', null);
+    }
+
+    public function test_insufficient_follow_up_details_are_shown_without_a_draft(): void
+    {
+        $this->app->instance(GeneratesFollowUpMessage::class, new class implements GeneratesFollowUpMessage
+        {
+            public function generate(
+                Person $person,
+                string $recipient,
+                string $channel,
+                string $purpose,
+                string $tone,
+                string $details,
+            ): array {
+                return [
+                    'can_generate' => false,
+                    'message' => '',
+                    'review_note' => 'زمان یا موضوع پیگیری را مشخص کنید.',
+                ];
+            }
+        });
+
+        $this->actingAs($this->admin());
+
+        Livewire::test(BeneficiaryCaseFile::class, ['personId' => $this->person()->id])
+            ->set('followUpDetails', 'لطفا یک پیام پیگیری بنویسید.')
+            ->call('generateFollowUpMessage')
+            ->assertSet('followUpDraft', '')
+            ->assertSet('followUpError', 'زمان یا موضوع پیگیری را مشخص کنید.');
     }
 
     public function test_admin_can_create_manual_case_record_for_selected_beneficiary(): void

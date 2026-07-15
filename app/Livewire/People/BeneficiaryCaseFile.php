@@ -3,6 +3,7 @@
 namespace App\Livewire\People;
 
 use App\Contracts\Ai\GeneratesBeneficiaryCaseAnalysis;
+use App\Contracts\Ai\GeneratesFollowUpMessage;
 use App\Exceptions\AiCaseAssistantException;
 use App\Exports\BeneficiaryCaseFileExport;
 use App\Helpers\Morilog\CalendarUtils;
@@ -81,6 +82,24 @@ class BeneficiaryCaseFile extends Component
 
     public ?string $aiGeneratedAt = null;
 
+    public string $followUpRecipient = 'beneficiary';
+
+    public string $followUpChannel = 'sms';
+
+    public string $followUpPurpose = 'case_follow_up';
+
+    public string $followUpTone = 'respectful';
+
+    public string $followUpDetails = '';
+
+    public string $followUpDraft = '';
+
+    public string $followUpReviewNote = '';
+
+    public string $followUpError = '';
+
+    public ?string $followUpGeneratedAt = null;
+
     protected ?Collection $searchResultsCache = null;
 
     protected ?Person $selectedPersonCache = null;
@@ -111,6 +130,31 @@ class BeneficiaryCaseFile extends Component
         $this->searchResultsCache = null;
     }
 
+    public function updatedFollowUpRecipient(): void
+    {
+        $this->resetFollowUpDraft();
+    }
+
+    public function updatedFollowUpChannel(): void
+    {
+        $this->resetFollowUpDraft();
+    }
+
+    public function updatedFollowUpPurpose(): void
+    {
+        $this->resetFollowUpDraft();
+    }
+
+    public function updatedFollowUpTone(): void
+    {
+        $this->resetFollowUpDraft();
+    }
+
+    public function updatedFollowUpDetails(): void
+    {
+        $this->resetFollowUpDraft();
+    }
+
     public function selectPerson(int $personId): void
     {
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
@@ -119,6 +163,7 @@ class BeneficiaryCaseFile extends Component
         $this->resetLoadedCaseFileData();
         $this->resetEditRecordForm();
         $this->resetAiAnalysis();
+        $this->resetFollowUpMessage();
     }
 
     public function clearSelection(): void
@@ -128,6 +173,7 @@ class BeneficiaryCaseFile extends Component
         $this->resetRecordForm();
         $this->resetEditRecordForm();
         $this->resetAiAnalysis();
+        $this->resetFollowUpMessage();
     }
 
     public function resolveScannedBeneficiaryQr(string $payload): array
@@ -442,6 +488,77 @@ class BeneficiaryCaseFile extends Component
             ->values()
             ->all();
         $this->aiGeneratedAt = Jalalian::now()->format('Y/m/d H:i');
+    }
+
+    public function generateFollowUpMessage(GeneratesFollowUpMessage $generator): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+
+        $person = $this->selectedPerson;
+        abort_unless((bool) $person, 404);
+
+        $validated = $this->validate([
+            'followUpRecipient' => ['required', Rule::in([
+                'beneficiary',
+                'guardian',
+                'social_worker',
+                'sponsor',
+                'other',
+            ])],
+            'followUpChannel' => ['required', Rule::in(['sms', 'whatsapp'])],
+            'followUpPurpose' => ['required', Rule::in([
+                'appointment_reminder',
+                'document_request',
+                'case_follow_up',
+                'service_notification',
+                'payment_reminder',
+                'custom',
+            ])],
+            'followUpTone' => ['required', Rule::in(['respectful', 'warm', 'formal'])],
+            'followUpDetails' => ['required', 'string', 'min:5', 'max:1200'],
+        ], [], [
+            'followUpRecipient' => 'گیرنده',
+            'followUpChannel' => 'کانال پیام',
+            'followUpPurpose' => 'هدف پیام',
+            'followUpTone' => 'لحن پیام',
+            'followUpDetails' => 'جزئیات پیام',
+        ]);
+
+        $this->resetFollowUpDraft();
+
+        try {
+            $draft = $generator->generate(
+                $person,
+                $validated['followUpRecipient'],
+                $validated['followUpChannel'],
+                $validated['followUpPurpose'],
+                $validated['followUpTone'],
+                $validated['followUpDetails'],
+            );
+        } catch (AiCaseAssistantException $exception) {
+            report($exception);
+            $this->followUpError = 'سرویس هوش مصنوعی در حال حاضر پاسخ‌گو نیست. پیکربندی سرویس را بررسی کنید یا دوباره تلاش کنید.';
+
+            return;
+        } catch (Throwable $exception) {
+            report($exception);
+            $this->followUpError = 'پیش‌نویس پیام ایجاد نشد. لطفا دوباره تلاش کنید.';
+
+            return;
+        }
+
+        $this->followUpReviewNote = trim($draft['review_note']);
+
+        if (! $draft['can_generate']) {
+            $this->followUpError = $this->followUpReviewNote !== ''
+                ? $this->followUpReviewNote
+                : 'برای ایجاد پیام، جزئیات دقیق‌تر و قابل بررسی وارد کنید.';
+
+            return;
+        }
+
+        $this->followUpDraft = trim($draft['message']);
+        $this->followUpGeneratedAt = Jalalian::now()->format('Y/m/d H:i');
     }
 
     public function saveSelectedAiReminders(): void
@@ -882,6 +999,31 @@ class BeneficiaryCaseFile extends Component
         $this->aiAssistantError = '';
         $this->aiGeneratedAt = null;
         $this->resetValidation('aiReminderSuggestions');
+    }
+
+    protected function resetFollowUpMessage(): void
+    {
+        $this->followUpRecipient = 'beneficiary';
+        $this->followUpChannel = 'sms';
+        $this->followUpPurpose = 'case_follow_up';
+        $this->followUpTone = 'respectful';
+        $this->followUpDetails = '';
+        $this->resetFollowUpDraft();
+        $this->resetValidation([
+            'followUpRecipient',
+            'followUpChannel',
+            'followUpPurpose',
+            'followUpTone',
+            'followUpDetails',
+        ]);
+    }
+
+    protected function resetFollowUpDraft(): void
+    {
+        $this->followUpDraft = '';
+        $this->followUpReviewNote = '';
+        $this->followUpError = '';
+        $this->followUpGeneratedAt = null;
     }
 
     protected function createRecordRules(): array

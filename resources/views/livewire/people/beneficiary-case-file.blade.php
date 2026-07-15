@@ -566,6 +566,183 @@
                     @endif
                 </section>
 
+                <section
+                    class="rounded-2xl border border-emerald-200 bg-white p-4 shadow-sm"
+                    aria-labelledby="ai-follow-up-message-title"
+                    x-data="{
+                        copied: false,
+                        async copyDraft() {
+                            const text = this.$refs.draft?.value || '';
+
+                            if (!text) {
+                                return;
+                            }
+
+                            try {
+                                await navigator.clipboard.writeText(text);
+                            } catch (error) {
+                                this.$refs.draft.focus();
+                                this.$refs.draft.select();
+                                document.execCommand('copy');
+                            }
+
+                            this.copied = true;
+                            window.setTimeout(() => this.copied = false, 1800);
+                        }
+                    }"
+                >
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <p class="text-[11px] font-bold text-emerald-600">دستیار پیام</p>
+                            <h2 id="ai-follow-up-message-title" class="mt-1 text-base font-black text-slate-900">پیش‌نویس پیگیری</h2>
+                        </div>
+                        <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700" aria-hidden="true">
+                            <i class="bi bi-chat-square-text"></i>
+                        </span>
+                    </div>
+
+                    <div class="mt-4 grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="follow-up-recipient" class="mb-1.5 block text-xs font-bold text-slate-700">گیرنده</label>
+                            <select
+                                id="follow-up-recipient"
+                                wire:model.live="followUpRecipient"
+                                class="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2.5 text-xs font-semibold text-slate-700 focus:border-emerald-300 focus:outline-none focus:ring-4 focus:ring-emerald-100"
+                            >
+                                <option value="beneficiary">مددجو</option>
+                                <option value="guardian">سرپرست</option>
+                                <option value="social_worker">مددکار اجتماعی</option>
+                                <option value="sponsor">حامی</option>
+                                <option value="other">سایر</option>
+                            </select>
+                            @error('followUpRecipient')
+                                <p class="mt-1 text-[11px] font-bold text-rose-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="follow-up-purpose" class="mb-1.5 block text-xs font-bold text-slate-700">هدف</label>
+                            <select
+                                id="follow-up-purpose"
+                                wire:model.live="followUpPurpose"
+                                class="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2.5 text-xs font-semibold text-slate-700 focus:border-emerald-300 focus:outline-none focus:ring-4 focus:ring-emerald-100"
+                            >
+                                <option value="case_follow_up">پیگیری پرونده</option>
+                                <option value="appointment_reminder">یادآوری مراجعه</option>
+                                <option value="document_request">درخواست مدارک</option>
+                                <option value="service_notification">اطلاع‌رسانی خدمت</option>
+                                <option value="payment_reminder">یادآوری پرداخت</option>
+                                <option value="custom">موضوع دیگر</option>
+                            </select>
+                            @error('followUpPurpose')
+                                <p class="mt-1 text-[11px] font-bold text-rose-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="follow-up-channel" class="mb-1.5 block text-xs font-bold text-slate-700">کانال</label>
+                            <select
+                                id="follow-up-channel"
+                                wire:model.live="followUpChannel"
+                                class="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2.5 text-xs font-semibold text-slate-700 focus:border-emerald-300 focus:outline-none focus:ring-4 focus:ring-emerald-100"
+                            >
+                                <option value="sms">پیامک</option>
+                                <option value="whatsapp">واتساپ</option>
+                            </select>
+                            @error('followUpChannel')
+                                <p class="mt-1 text-[11px] font-bold text-rose-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="follow-up-tone" class="mb-1.5 block text-xs font-bold text-slate-700">لحن</label>
+                            <select
+                                id="follow-up-tone"
+                                wire:model.live="followUpTone"
+                                class="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2.5 text-xs font-semibold text-slate-700 focus:border-emerald-300 focus:outline-none focus:ring-4 focus:ring-emerald-100"
+                            >
+                                <option value="respectful">محترمانه</option>
+                                <option value="warm">صمیمی و محترمانه</option>
+                                <option value="formal">رسمی</option>
+                            </select>
+                            @error('followUpTone')
+                                <p class="mt-1 text-[11px] font-bold text-rose-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <label for="follow-up-details" class="mb-1.5 block text-xs font-bold text-slate-700">جزئیات لازم</label>
+                        <textarea
+                            id="follow-up-details"
+                            wire:model.live.debounce.400ms="followUpDetails"
+                            rows="4"
+                            maxlength="1200"
+                            class="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm leading-6 text-slate-700 placeholder:text-slate-400 focus:border-emerald-300 focus:outline-none focus:ring-4 focus:ring-emerald-100"
+                            placeholder="برای نمونه: لطفا یادآوری شود مدارک تحصیلی تا پایان هفته تحویل داده شود."
+                        ></textarea>
+                        @error('followUpDetails')
+                            <p class="mt-1 text-[11px] font-bold text-rose-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <button
+                        type="button"
+                        wire:click="generateFollowUpMessage"
+                        wire:loading.attr="disabled"
+                        wire:target="generateFollowUpMessage"
+                        class="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 text-xs font-black text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:cursor-wait disabled:opacity-60"
+                    >
+                        <i wire:loading.remove wire:target="generateFollowUpMessage" class="bi bi-stars"></i>
+                        <i wire:loading wire:target="generateFollowUpMessage" class="bi bi-arrow-repeat animate-spin"></i>
+                        <span wire:loading.remove wire:target="generateFollowUpMessage">{{ $followUpDraft !== '' ? 'ایجاد دوباره' : 'ایجاد پیش‌نویس' }}</span>
+                        <span wire:loading wire:target="generateFollowUpMessage">در حال نگارش</span>
+                    </button>
+
+                    @if($followUpError !== '')
+                        <div class="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2.5 text-xs font-bold leading-6 text-rose-700" role="alert">
+                            {{ $followUpError }}
+                        </div>
+                    @endif
+
+                    @if($followUpDraft !== '')
+                        <div class="mt-4 border-t border-slate-100 pt-4">
+                            <div class="flex items-center justify-between gap-3">
+                                <label for="follow-up-draft" class="text-xs font-black text-slate-800">متن قابل ویرایش</label>
+                                @if($followUpGeneratedAt)
+                                    <span class="text-[10px] font-semibold text-slate-400">{{ $followUpGeneratedAt }}</span>
+                                @endif
+                            </div>
+
+                            <textarea
+                                id="follow-up-draft"
+                                x-ref="draft"
+                                wire:model.live.debounce.500ms="followUpDraft"
+                                rows="6"
+                                maxlength="900"
+                                class="mt-2 w-full resize-y rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm leading-7 text-slate-700 focus:border-emerald-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-100"
+                            ></textarea>
+
+                            @if($followUpReviewNote !== '')
+                                <p class="mt-2 text-[11px] font-semibold leading-5 text-amber-700">{{ $followUpReviewNote }}</p>
+                            @endif
+
+                            <button
+                                type="button"
+                                x-on:click="copyDraft()"
+                                class="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-black text-emerald-700 transition hover:bg-emerald-100 focus:outline-none focus:ring-4 focus:ring-emerald-100"
+                            >
+                                <i class="bi" x-bind:class="copied ? 'bi-check2' : 'bi-copy'"></i>
+                                <span x-text="copied ? 'کپی شد' : 'کپی متن'"></span>
+                            </button>
+                        </div>
+                    @endif
+
+                    <p class="mt-4 border-t border-slate-100 pt-3 text-[11px] leading-5 text-amber-700">
+                        متن فقط پیش‌نویس است؛ پیش از ارسال، اطلاعات و لحن آن را بررسی کنید.
+                    </p>
+                </section>
+
                 <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <h2 class="text-base font-black text-slate-900">خلاصه پرونده</h2>
                     <div class="mt-4 space-y-2">

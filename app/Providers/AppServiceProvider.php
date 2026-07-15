@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Contracts\Ai\GeneratesBeneficiaryCaseAnalysis;
+use App\Contracts\Ai\GeneratesFollowUpMessage;
 use App\Models\AcademicLevel;
 use App\Models\AccountOwnerRelation;
 use App\Models\Bank;
@@ -28,6 +29,7 @@ use App\Models\VehicleType;
 use App\Observers\GuardianObserver;
 use App\Observers\PersonObserver;
 use App\Services\Ai\OpenAiBeneficiaryCaseAssistant;
+use App\Services\Ai\OpenAiFollowUpMessageGenerator;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -40,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(GeneratesBeneficiaryCaseAnalysis::class, OpenAiBeneficiaryCaseAssistant::class);
+        $this->app->bind(GeneratesFollowUpMessage::class, OpenAiFollowUpMessageGenerator::class);
     }
 
     /**

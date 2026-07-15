@@ -60,6 +60,7 @@ class OpenAiBeneficiaryCaseAssistant implements GeneratesBeneficiaryCaseAnalysis
                 ->retry(2, 300, throw: false)
                 ->post('/responses', [
                     'model' => config('services.openai.model'),
+                    'store' => false,
                     'instructions' => $this->instructions(),
                     'input' => json_encode($context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
                     'text' => [
@@ -130,6 +131,10 @@ PROMPT;
 
         foreach ($payload['output'] ?? [] as $output) {
             foreach ($output['content'] ?? [] as $content) {
+                if (($content['type'] ?? null) === 'refusal') {
+                    throw new AiCaseAssistantException('The AI service refused to analyze this case.');
+                }
+
                 if (($content['type'] ?? null) === 'output_text' && is_string($content['text'] ?? null)) {
                     return $content['text'];
                 }
