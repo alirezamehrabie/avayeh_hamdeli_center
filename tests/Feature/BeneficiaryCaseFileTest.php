@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Contracts\Ai\GeneratesBeneficiaryCaseAnalysis;
 use App\Helpers\Morilog\Jalalian;
 use App\Livewire\People\BeneficiaryCaseFile;
 use App\Models\Activity;
 use App\Models\ActivityAttendance;
 use App\Models\BeneficiaryCaseRecord;
 use App\Models\BeneficiaryCaseRecordAttachment;
+use App\Models\DashboardReminder;
 use App\Models\Guardian;
 use App\Models\Person;
 use App\Models\Service;
@@ -16,6 +18,7 @@ use App\Models\ServiceName;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Maatwebsite\Excel\Facades\Excel;
@@ -25,6 +28,71 @@ use Tests\TestCase;
 class BeneficiaryCaseFileTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_admin_can_generate_ai_case_summary_and_explicitly_save_selected_reminders(): void
+    {
+        $admin = $this->admin();
+        $person = $this->person();
+
+        $this->app->instance(GeneratesBeneficiaryCaseAnalysis::class, new class implements GeneratesBeneficiaryCaseAnalysis
+        {
+            public function generate(
+                Person $person,
+                Collection $serviceDeliveries,
+                Collection $activityAttendances,
+                Collection $caseRecords,
+            ): array {
+                return [
+                    'summary' => 'خلاصه آزمایشی پرونده',
+                    'reminders' => [
+                        ['title' => 'پیگیری وضعیت درمان', 'category' => 'today_tasks'],
+                        ['title' => 'تهیه گزارش مددکاری', 'category' => 'required_reports'],
+                    ],
+                ];
+            }
+        });
+
+        $this->actingAs($admin);
+
+        Livewire::test(BeneficiaryCaseFile::class, ['personId' => $person->id])
+            ->call('generateAiCaseAnalysis')
+            ->assertSet('aiCaseSummary', 'خلاصه آزمایشی پرونده')
+            ->assertSet('aiReminderSuggestions.0.selected', false)
+            ->assertSet('aiReminderSuggestions.1.selected', false)
+            ->set('aiReminderSuggestions.1.selected', true)
+            ->call('saveSelectedAiReminders')
+            ->assertHasNoErrors()
+            ->assertCount('aiReminderSuggestions', 1);
+
+        $this->assertDatabaseHas('dashboard_reminders', [
+            'user_id' => $admin->id,
+            'title' => 'تهیه گزارش مددکاری',
+            'category' => 'required_reports',
+            'is_done' => false,
+        ]);
+        $this->assertDatabaseMissing('dashboard_reminders', [
+            'user_id' => $admin->id,
+            'title' => 'پیگیری وضعیت درمان',
+        ]);
+    }
+
+    public function test_ai_reminders_are_not_saved_without_explicit_selection(): void
+    {
+        $admin = $this->admin();
+        $person = $this->person();
+
+        $this->actingAs($admin);
+
+        Livewire::test(BeneficiaryCaseFile::class, ['personId' => $person->id])
+            ->set('aiCaseSummary', 'خلاصه')
+            ->set('aiReminderSuggestions', [
+                ['title' => 'پیگیری پرونده', 'category' => 'today_tasks', 'selected' => false],
+            ])
+            ->call('saveSelectedAiReminders')
+            ->assertHasErrors(['aiReminderSuggestions']);
+
+        $this->assertSame(0, DashboardReminder::query()->count());
+    }
 
     public function test_admin_can_create_manual_case_record_for_selected_beneficiary(): void
     {

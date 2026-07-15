@@ -33,6 +33,13 @@ return [
         'phone_label' => env('SUPPORT_PHONE_LABEL', env('SUPPORT_PHONE')),
     ],
 
+    'openai' => [
+        'api_key' => env('AI_CASE_ASSISTANT_API_KEY'),
+        'model' => env('OPENAI_MODEL', 'gpt-5-mini'),
+        'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
+        'timeout' => (int) env('OPENAI_TIMEOUT', 45),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

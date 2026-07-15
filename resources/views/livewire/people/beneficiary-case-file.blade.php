@@ -469,6 +469,103 @@
             </div>
 
             <aside class="space-y-4">
+                <section class="rounded-2xl border border-indigo-200 bg-white p-4 shadow-sm" aria-labelledby="ai-case-assistant-title">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <p class="text-[11px] font-bold text-indigo-500">دستیار هوشمند</p>
+                            <h2 id="ai-case-assistant-title" class="mt-1 text-base font-black text-slate-900">تحلیل پرونده</h2>
+                        </div>
+                        <button
+                            type="button"
+                            wire:click="generateAiCaseAnalysis"
+                            wire:loading.attr="disabled"
+                            wire:target="generateAiCaseAnalysis"
+                            class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-3 text-xs font-black text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100 disabled:cursor-wait disabled:opacity-60"
+                        >
+                            <i wire:loading.remove wire:target="generateAiCaseAnalysis" class="bi bi-stars"></i>
+                            <i wire:loading wire:target="generateAiCaseAnalysis" class="bi bi-arrow-repeat animate-spin"></i>
+                            <span wire:loading.remove wire:target="generateAiCaseAnalysis">{{ $aiCaseSummary ? 'تحلیل دوباره' : 'ایجاد تحلیل' }}</span>
+                            <span wire:loading wire:target="generateAiCaseAnalysis">در حال تحلیل</span>
+                        </button>
+                    </div>
+
+                    @if($aiAssistantError !== '')
+                        <div class="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-3 text-xs font-bold leading-6 text-rose-700" role="alert">
+                            {{ $aiAssistantError }}
+                        </div>
+                    @endif
+
+                    @if($aiCaseSummary)
+                        <div class="mt-4 border-t border-slate-100 pt-4">
+                            <div class="flex items-center justify-between gap-3">
+                                <h3 class="text-sm font-black text-slate-800">خلاصه پیشنهادی</h3>
+                                @if($aiGeneratedAt)
+                                    <span class="text-[10px] font-semibold text-slate-400">{{ $aiGeneratedAt }}</span>
+                                @endif
+                            </div>
+                            <p class="mt-2 whitespace-pre-line text-sm leading-7 text-slate-700">{{ $aiCaseSummary }}</p>
+                        </div>
+
+                        <div class="mt-4 border-t border-slate-100 pt-4">
+                            <h3 class="text-sm font-black text-slate-800">یادآوری‌های پیشنهادی</h3>
+
+                            @if(session()->has('ai-reminder-success'))
+                                <div class="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
+                                    {{ session('ai-reminder-success') }}
+                                </div>
+                            @endif
+
+                            @if(count($aiReminderSuggestions) > 0)
+                                <div class="mt-3 space-y-2">
+                                    @foreach($aiReminderSuggestions as $index => $suggestion)
+                                        @php
+                                            $categoryLabel = match($suggestion['category']) {
+                                                'today_tasks' => 'کارهای امروز',
+                                                'pending_approvals' => 'تاییدهای در انتظار',
+                                                'contract_deadlines' => 'موعدها',
+                                                'required_reports' => 'گزارش‌های ضروری',
+                                                default => 'پیگیری',
+                                            };
+                                        @endphp
+                                        <label wire:key="ai-reminder-{{ $index }}-{{ md5($suggestion['title']) }}" class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 transition hover:border-indigo-200 hover:bg-indigo-50/50">
+                                            <input
+                                                type="checkbox"
+                                                wire:model="aiReminderSuggestions.{{ $index }}.selected"
+                                                class="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                            >
+                                            <span class="min-w-0 flex-1">
+                                                <span class="block text-xs font-bold leading-5 text-slate-700">{{ $suggestion['title'] }}</span>
+                                                <span class="mt-1 block text-[10px] font-semibold text-indigo-600">{{ $categoryLabel }}</span>
+                                            </span>
+                                        </label>
+                                    @endforeach
+                                </div>
+
+                                @error('aiReminderSuggestions')
+                                    <p class="mt-2 text-xs font-bold text-rose-600">{{ $message }}</p>
+                                @enderror
+
+                                <button
+                                    type="button"
+                                    wire:click="saveSelectedAiReminders"
+                                    wire:loading.attr="disabled"
+                                    wire:target="saveSelectedAiReminders"
+                                    class="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 text-xs font-black text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus:ring-4 focus:ring-indigo-100 disabled:cursor-wait disabled:opacity-60"
+                                >
+                                    <i class="bi bi-check2-square"></i>
+                                    <span>ذخیره موارد انتخاب‌شده</span>
+                                </button>
+                            @else
+                                <p class="mt-2 text-xs leading-6 text-slate-500">پیگیری مشخصی از سوابق فعلی پیشنهاد نشد.</p>
+                            @endif
+                        </div>
+
+                        <p class="mt-4 border-t border-slate-100 pt-3 text-[11px] leading-5 text-amber-700">
+                            خروجی هوش مصنوعی پیشنهادی است و پیش از استفاده باید بررسی شود.
+                        </p>
+                    @endif
+                </section>
+
                 <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <h2 class="text-base font-black text-slate-900">خلاصه پرونده</h2>
                     <div class="mt-4 space-y-2">

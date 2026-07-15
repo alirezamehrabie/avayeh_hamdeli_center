@@ -2,14 +2,17 @@
 
 namespace App\Livewire\People;
 
-use App\Helpers\Morilog\CalendarUtils;
+use App\Contracts\Ai\GeneratesBeneficiaryCaseAnalysis;
+use App\Exceptions\AiCaseAssistantException;
 use App\Exports\BeneficiaryCaseFileExport;
+use App\Helpers\Morilog\CalendarUtils;
 use App\Helpers\Morilog\Jalalian;
 use App\Models\ActivityAttendance;
 use App\Models\BeneficiaryCaseRecord;
 use App\Models\BeneficiaryCaseRecordAttachment;
-use App\Models\QrIdentity;
+use App\Models\DashboardReminder;
 use App\Models\Person;
+use App\Models\QrIdentity;
 use App\Models\ServiceDelivery;
 use App\Queries\People\PeopleIndexSearchQuery;
 use App\Services\People\BeneficiaryCaseFileTimeline;
@@ -70,6 +73,14 @@ class BeneficiaryCaseFile extends Component
 
     public bool $editAttachmentRemovalConfirmed = false;
 
+    public ?string $aiCaseSummary = null;
+
+    public array $aiReminderSuggestions = [];
+
+    public string $aiAssistantError = '';
+
+    public ?string $aiGeneratedAt = null;
+
     protected ?Collection $searchResultsCache = null;
 
     protected ?Person $selectedPersonCache = null;
@@ -107,6 +118,7 @@ class BeneficiaryCaseFile extends Component
         $this->selectedPersonId = $personId;
         $this->resetLoadedCaseFileData();
         $this->resetEditRecordForm();
+        $this->resetAiAnalysis();
     }
 
     public function clearSelection(): void
@@ -115,6 +127,7 @@ class BeneficiaryCaseFile extends Component
         $this->resetLoadedCaseFileData();
         $this->resetRecordForm();
         $this->resetEditRecordForm();
+        $this->resetAiAnalysis();
     }
 
     public function resolveScannedBeneficiaryQr(string $payload): array
@@ -229,6 +242,7 @@ class BeneficiaryCaseFile extends Component
 
         $this->resetLoadedCaseFileData();
         $this->resetRecordForm();
+        $this->resetAiAnalysis();
         session()->flash('case-record-success', 'رکورد پرونده با موفقیت ثبت شد.');
     }
 
@@ -385,7 +399,102 @@ class BeneficiaryCaseFile extends Component
 
         $this->resetLoadedCaseFileData();
         $this->resetEditRecordForm();
+        $this->resetAiAnalysis();
         session()->flash('case-record-edit-success', 'رکورد پرونده به‌روزرسانی شد.');
+    }
+
+    public function generateAiCaseAnalysis(GeneratesBeneficiaryCaseAnalysis $assistant): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+
+        $person = $this->selectedPerson;
+        abort_unless((bool) $person, 404);
+
+        $this->resetAiAnalysis();
+
+        try {
+            $analysis = $assistant->generate(
+                $person,
+                $this->serviceDeliveries,
+                $this->activityAttendances,
+                $this->caseRecords,
+            );
+        } catch (AiCaseAssistantException $exception) {
+            report($exception);
+            $this->aiAssistantError = 'سرویس هوش مصنوعی در حال حاضر پاسخ‌گو نیست. پیکربندی سرویس را بررسی کنید یا دوباره تلاش کنید.';
+
+            return;
+        } catch (Throwable $exception) {
+            report($exception);
+            $this->aiAssistantError = 'تحلیل پرونده انجام نشد. لطفا دوباره تلاش کنید.';
+
+            return;
+        }
+
+        $this->aiCaseSummary = trim($analysis['summary']);
+        $this->aiReminderSuggestions = collect($analysis['reminders'])
+            ->map(fn (array $reminder): array => [
+                'title' => $reminder['title'],
+                'category' => $reminder['category'],
+                'selected' => false,
+            ])
+            ->values()
+            ->all();
+        $this->aiGeneratedAt = Jalalian::now()->format('Y/m/d H:i');
+    }
+
+    public function saveSelectedAiReminders(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless((bool) $this->selectedPerson, 404);
+
+        $allowedCategories = ['today_tasks', 'pending_approvals', 'contract_deadlines', 'required_reports'];
+        $selectedIndexes = collect($this->aiReminderSuggestions)
+            ->keys()
+            ->filter(fn (int|string $index): bool => (bool) ($this->aiReminderSuggestions[$index]['selected'] ?? false))
+            ->values();
+
+        if ($selectedIndexes->isEmpty()) {
+            $this->addError('aiReminderSuggestions', 'حداقل یک یادآوری پیشنهادی را انتخاب کنید.');
+
+            return;
+        }
+
+        $savedIndexes = [];
+
+        DB::transaction(function () use ($selectedIndexes, $allowedCategories, &$savedIndexes): void {
+            foreach ($selectedIndexes as $index) {
+                $suggestion = $this->aiReminderSuggestions[$index] ?? [];
+                $title = mb_substr(trim((string) ($suggestion['title'] ?? '')), 0, 255);
+                $category = (string) ($suggestion['category'] ?? '');
+
+                if ($title === '' || ! in_array($category, $allowedCategories, true)) {
+                    continue;
+                }
+
+                DashboardReminder::query()->create([
+                    'user_id' => auth()->id(),
+                    'title' => $title,
+                    'category' => $category,
+                    'is_done' => false,
+                ]);
+
+                $savedIndexes[] = (int) $index;
+            }
+        });
+
+        if ($savedIndexes === []) {
+            $this->addError('aiReminderSuggestions', 'یادآوری معتبری برای ذخیره وجود ندارد.');
+
+            return;
+        }
+
+        $this->aiReminderSuggestions = collect($this->aiReminderSuggestions)
+            ->reject(fn (array $suggestion, int $index): bool => in_array($index, $savedIndexes, true))
+            ->values()
+            ->all();
+        $this->resetValidation('aiReminderSuggestions');
+        session()->flash('ai-reminder-success', number_format(count($savedIndexes)).' یادآوری با تایید شما ذخیره شد.');
     }
 
     public function getSearchResultsProperty(): Collection
@@ -763,6 +872,15 @@ class BeneficiaryCaseFile extends Component
         $this->caseRecordsCache = null;
         $this->timelineCache = null;
         $this->caseFileTotalsCache = null;
+    }
+
+    protected function resetAiAnalysis(): void
+    {
+        $this->aiCaseSummary = null;
+        $this->aiReminderSuggestions = [];
+        $this->aiAssistantError = '';
+        $this->aiGeneratedAt = null;
+        $this->resetValidation('aiReminderSuggestions');
     }
 
     protected function createRecordRules(): array
