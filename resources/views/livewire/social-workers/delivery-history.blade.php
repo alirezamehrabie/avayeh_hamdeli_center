@@ -85,43 +85,59 @@
                         @endforelse
                     </div>
 
-                    <dl class="mt-2 grid grid-cols-3 overflow-hidden rounded-2xl border border-slate-100 bg-slate-50/70 text-center">
-                            <div class="min-w-0 px-1.5 py-2">
-                                <dt class="flex items-center justify-center gap-1 text-[10px] font-bold text-slate-400">
-                                    <svg class="h-3.5 w-3.5 text-cyan-500" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                        <path d="M8 7h8M8 12h8M8 17h5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    <dl class="mt-4 grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-white sm:flex sm:items-center sm:gap-4 sm:px-4 sm:py-3">
+                        <div class="flex items-center justify-center gap-2 border-b border-slate-200 px-3 py-2 sm:border-b-0 sm:px-0 sm:py-0">
+                            <dt class="flex items-center gap-1 text-[9px] font-bold text-slate-400">
+                                <svg class="h-3.5 w-3.5 text-cyan-500" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M8 7h8M8 12h8M8 17h5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                </svg>
+                                <span>تعداد</span>
+                            </dt>
+                            <dd class="text-xs font-bold text-slate-800">{{ $this->persianNumber(number_format((int) ($selectedService->worker_deliveries_count ?? 0))) }}</dd>
+                        </div>
+                        <div class="flex items-center justify-center gap-2 border-b border-slate-200 px-3 py-2 sm:border-b-0 sm:border-r sm:px-0 sm:py-0 sm:pr-4">
+                            <dt class="flex items-center gap-1 text-[9px] font-bold text-slate-400">
+                                <svg class="h-3.5 w-3.5 text-emerald-500" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M4 16h16M7 16V8m5 8V5m5 11v-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                </svg>
+                                <span>مقدار</span>
+                            </dt>
+                            <dd class="text-xs font-bold text-slate-800">{{ $this->formatQuantity($selectedService->worker_delivered_quantity ?? 0) }}</dd>
+                        </div>
+                        <div class="flex items-center justify-center gap-2 border-b border-slate-200 px-3 py-2 sm:border-b-0 sm:border-r sm:px-0 sm:py-0 sm:pr-4">
+                            <dt class="flex items-center gap-1 text-[9px] font-bold text-slate-400">
+                                @if($selectedService->service_type === 'family')
+                                    <svg class="h-3.5 w-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                        <path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM16 10a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM3.5 19c.6-3 2.4-5 4.5-5s3.9 2 4.5 5M12.5 18c.5-2.4 1.8-4 3.5-4 1.8 0 3.2 1.6 3.7 4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
                                     </svg>
-                                    <span>تعداد</span>
-                                </dt>
-                                <dd class="mt-0.5 truncate text-xs font-black text-slate-800 sm:text-sm">{{ $this->persianNumber(number_format((int) ($selectedService->worker_deliveries_count ?? 0))) }}</dd>
-                            </div>
-                            <div class="min-w-0 border-s border-slate-100 px-1.5 py-2">
-                                <dt class="flex items-center justify-center gap-1 text-[10px] font-bold text-slate-400">
-                                    <svg class="h-3.5 w-3.5 text-emerald-500" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                        <path d="M4 16h16M7 16V8m5 8V5m5 11v-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                                @else
+                                    <svg class="h-3.5 w-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                        <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM5 20c.8-4 3.3-6 7-6s6.2 2 7 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                     </svg>
-                                    <span>مقدار</span>
-                                </dt>
-                                <dd class="mt-0.5 truncate text-xs font-black text-slate-800 sm:text-sm">{{ $this->formatQuantity($selectedService->worker_delivered_quantity ?? 0) }}</dd>
-                            </div>
-                            <div class="min-w-0 border-s border-slate-100 px-1.5 py-2">
-                                <dt class="flex items-center justify-center gap-1 text-[10px] font-bold text-slate-400">
-                                    @if($selectedService->service_type === 'family')
-                                        <svg class="h-3.5 w-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                            <path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM16 10a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM3.5 19c.6-3 2.4-5 4.5-5s3.9 2 4.5 5M12.5 18c.5-2.4 1.8-4 3.5-4 1.8 0 3.2 1.6 3.7 4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
-                                        </svg>
-                                    @else
-                                        <svg class="h-3.5 w-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                            <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM5 20c.8-4 3.3-6 7-6s6.2 2 7 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                        </svg>
+                                @endif
+                                <span>نوع</span>
+                            </dt>
+                            <dd class="text-xs font-bold text-slate-800">{{ $selectedService->service_type === 'family' ? 'خانوادگی' : ($selectedService->service_type === 'individual' ? 'شخصی' : '-') }}</dd>
+                        </div>
+                        <div class="flex items-center justify-center gap-2 px-3 py-2 sm:border-r sm:px-0 sm:py-0 sm:pr-4">
+                            <dt class="flex items-center gap-1 text-[9px] font-bold text-slate-400">
+                                <svg class="h-3.5 w-3.5 text-amber-500" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M12 3v9l5 3M21 12a9 9 0 1 1-9-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <span>سهمیه باقی</span>
+                            </dt>
+                            <dd class="text-xs font-bold text-slate-800">
+                                @if($workerRemainingAllocation === null)
+                                    <span class="text-slate-400">—</span>
+                                @else
+                                    {{ $this->formatQuantityForUnit($workerRemainingAllocation['total'], $workerRemainingAllocation['unit']) }}
+                                    @if($workerRemainingAllocation['unit'])
+                                        <span class="ml-1 text-[10px] font-medium text-slate-400">{{ $this->formatUnitLabel($workerRemainingAllocation['unit']) }}</span>
                                     @endif
-                                    <span>نوع</span>
-                                </dt>
-                                <dd class="mt-0.5 truncate text-xs font-black text-slate-800 sm:text-sm">
-                                    {{ $selectedService->service_type === 'family' ? 'خانوادگی' : ($selectedService->service_type === 'individual' ? 'شخصی' : '-') }}
-                                </dd>
-                            </div>
-                        </dl>
+                                @endif
+                            </dd>
+                        </div>
+                    </dl>
                 </div>
             </div>
 
@@ -304,7 +320,7 @@
                                     <div wire:key="delivery-history-item-{{ $deliveryItem->id }}" class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4 sm:py-2.5">
                                         <span class="min-w-0 truncate text-[11px] font-bold text-slate-700 sm:text-xs">{{ $deliveryItem->serviceCategory?->name ?: '-' }}</span>
                                         <span class="shrink-0 text-[11px] sm:text-xs">
-                                            <span class="font-black text-slate-900">{{ $this->formatQuantity($deliveryItem->delivered_quantity) }}</span>
+                                            <span class="font-black text-slate-900">{{ $this->formatQuantityForUnit($deliveryItem->delivered_quantity, $deliveryItem->serviceCategory?->unit) }}</span>
                                             @if($deliveryItem->serviceCategory?->unit)
                                                 <span class="mr-0.5 text-[10px] font-medium text-slate-400">{{ $this->formatUnitLabel($deliveryItem->serviceCategory->unit) }}</span>
                                             @endif

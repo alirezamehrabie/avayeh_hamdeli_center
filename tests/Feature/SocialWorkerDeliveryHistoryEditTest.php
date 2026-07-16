@@ -19,6 +19,16 @@ class SocialWorkerDeliveryHistoryEditTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_delivery_quantities_are_formatted_according_to_category_unit(): void
+    {
+        $this->assertSame('2', Service::formatQuantityForUnit('2.00', 'count'));
+        $this->assertSame('2', Service::formatQuantityForUnit('2.00', 'pack'));
+        $this->assertSame('2', Service::formatQuantityForUnit('2.00', 'portion'));
+        $this->assertSame('2.5', Service::formatQuantityForUnit('2.50', 'pack'));
+        $this->assertSame('2.00', Service::formatQuantityForUnit('2.00', 'kilogram'));
+        $this->assertSame('2.50', Service::formatQuantityForUnit('2.50', 'gram'));
+    }
+
     public function test_dashboard_creates_one_delivery_batch_per_recipient(): void
     {
         [$user, $worker] = $this->socialWorkerUser();

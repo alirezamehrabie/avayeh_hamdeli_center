@@ -79,6 +79,13 @@ class Service extends Model
         'pair',
     ];
 
+    public const DECIMAL_QUANTITY_UNIT_KEYS = [
+        'kilogram',
+        'gram',
+        'kg',
+        'g',
+    ];
+
     protected $fillable = [
         'code',
         'activity_id',
@@ -270,6 +277,22 @@ class Service extends Model
     public static function unitKeys(): array
     {
         return array_keys(static::unitOptions());
+    }
+
+    public static function formatQuantityForUnit(string|int|float|null $value, ?string $unit): string
+    {
+        $formatted = number_format((float) ($value ?? 0), 2, '.', '');
+
+        if (static::unitUsesDecimalPrecision($unit)) {
+            return $formatted;
+        }
+
+        return rtrim(rtrim($formatted, '0'), '.');
+    }
+
+    public static function unitUsesDecimalPrecision(?string $unit): bool
+    {
+        return in_array(strtolower(trim((string) $unit)), static::DECIMAL_QUANTITY_UNIT_KEYS, true);
     }
 
     public static function typeDisplayMeta(?string $type): array

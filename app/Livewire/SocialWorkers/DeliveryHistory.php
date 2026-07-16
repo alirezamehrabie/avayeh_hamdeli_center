@@ -110,6 +110,9 @@ class DeliveryHistory extends Component
         return view('livewire.social-workers.delivery-history', [
             'services' => $this->services($socialWorkerId),
             'selectedService' => $selectedService,
+            'workerRemainingAllocation' => $selectedService
+                ? $this->workerRemainingAllocation($socialWorkerId, $selectedService->id)
+                : null,
             'deliveries' => $deliveries,
             'deliveryGroups' => $deliveryGroups,
             'recipientGroups' => $this->recipientGroups($deliveryGroups),
@@ -306,6 +309,45 @@ class DeliveryHistory extends Component
             ->whereKey($selectedServiceId)
             ->whereHas('deliveries', fn ($query) => $query->where('social_worker_id', $socialWorkerId))
             ->first();
+    }
+
+    protected function workerRemainingAllocation(int $socialWorkerId, int $serviceId): ?array
+    {
+        $allocations = ServiceWorkerAllocation::query()
+            ->where('service_id', $serviceId)
+            ->where('social_worker_id', $socialWorkerId)
+            ->get()
+            ->groupBy('service_category_id')
+            ->map(fn (Collection $rows): float => (float) $rows->sum('allocated_quantity'));
+
+        if ($allocations->isEmpty()) {
+            return null;
+        }
+
+        $delivered = ServiceDelivery::query()
+            ->where('service_id', $serviceId)
+            ->where('social_worker_id', $socialWorkerId)
+            ->whereIn('service_category_id', $allocations->keys())
+            ->groupBy('service_category_id')
+            ->selectRaw('service_category_id, SUM(delivered_quantity) as total_delivered')
+            ->pluck('total_delivered', 'service_category_id');
+
+        $remaining = $allocations->map(
+            fn (float $allocated, $categoryId): float => max(
+                $allocated - (float) ($delivered[$categoryId] ?? 0),
+                0
+            )
+        );
+
+        $units = ServiceCategory::query()
+            ->whereIn('id', $allocations->keys())
+            ->pluck('unit', 'id')
+            ->map(fn ($unit): string => trim((string) $unit));
+
+        return [
+            'total' => (float) $remaining->sum(),
+            'unit' => $units->unique()->count() === 1 ? $units->first() : null,
+        ];
     }
 
     protected function normalizedSelectedServiceId(): ?int
@@ -579,6 +621,11 @@ class DeliveryHistory extends Component
     public function formatQuantity(mixed $value): string
     {
         return $this->persianNumber(number_format((float) $value, 2));
+    }
+
+    public function formatQuantityForUnit(mixed $value, mixed $unit): string
+    {
+        return $this->persianNumber(Service::formatQuantityForUnit($value, (string) $unit));
     }
 
     public function formatCurrency(mixed $value): string
