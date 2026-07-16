@@ -264,6 +264,7 @@
                                 @click="toggleSelector()"
                                 :aria-expanded="open.toString()"
                                 aria-haspopup="dialog"
+                                :class="{ 'service-selector-highlight': !selectedId }"
                                 class="flex w-full items-center justify-between rounded-xl border border-slate-300
                                    bg-white px-3 py-2.5 text-right text-sm font-bold text-slate-700 shadow-sm
                                    transition hover:border-cyan-300 hover:bg-cyan-50/50 hover:text-cyan-800 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/10 active:scale-[0.98]"

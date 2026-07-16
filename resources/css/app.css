@@ -141,3 +141,54 @@ body {
 #id-card-scanner-reader__header_message {
     display: none !important;
 }
+
+/*
+ * Animated attention border for the initial service-selection trigger.
+ * Rendered on a masked pseudo-element so it never shifts layout or resizes
+ * the field. Uses the dashboard's cyan primary accent. Applied only while no
+ * service is selected (class is removed once a selection is made).
+ */
+.service-selector-highlight {
+    position: relative;
+}
+
+.service-selector-highlight::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    z-index: 0;
+    border-radius: 0.875rem; /* rounded-xl (0.75rem) + 2px inset */
+    padding: 2px;
+    background: linear-gradient(120deg, #0e7490, #06b6d4, #67e8f9, #06b6d4, #0e7490);
+    background-size: 300% 300%;
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+    animation: service-selector-border-flow 4s ease-in-out infinite;
+}
+
+@keyframes service-selector-border-flow {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .service-selector-highlight::before {
+        animation: none;
+        /* Keep a static cyan border so the field still reads as highlighted. */
+        background: #06b6d4;
+    }
+}
