@@ -657,8 +657,10 @@
                             </div>
                             @if($selectedService)
                                 <button type="button" wire:click="addRecipientField"
-                                        class="hidden min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-cyan-700 bg-cyan-600 px-4 text-sm font-black text-white shadow-sm shadow-cyan-200 transition hover:border-cyan-600 hover:bg-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/20 active:scale-[0.98] md:inline-flex">
-                                    <i class="bi bi-plus-lg text-base"></i>
+                                        class="group hidden min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-cyan-500/60 bg-gradient-to-b from-cyan-500 to-cyan-600 px-4 text-sm font-black text-white shadow-lg shadow-cyan-600/25 ring-1 ring-inset ring-white/15 transition-all duration-200 hover:-translate-y-0.5 hover:from-cyan-400 hover:to-cyan-500 hover:shadow-xl hover:shadow-cyan-600/30 focus:outline-none focus:ring-4 focus:ring-cyan-500/25 active:translate-y-0 active:scale-[0.98] md:inline-flex">
+                                    <span class="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 transition group-hover:bg-white/30">
+                                        <i class="bi bi-plus-lg text-xs"></i>
+                                    </span>
                                     <span>افزودن گیرنده</span>
                                 </button>
                             @endif
@@ -727,12 +729,15 @@
                                         <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                                             <div class="min-w-0 flex-1">
                                                 @if($recipientDisplayName !== '' || $recipientNationalId !== '')
-                                                    <div class="flex min-w-0 flex-col gap-1">
+                                                    <div class="flex min-w-0 flex-col items-start gap-1">
                                                         @if($recipientDisplayName !== '')
                                                             <p class="truncate text-sm font-extrabold text-slate-900">{{ $recipientDisplayName }}</p>
                                                         @endif
                                                         @if($recipientNationalId !== '')
-                                                            <p class="text-xs font-bold text-slate-500" dir="ltr">{{ $this->persianNumber($recipientNationalId) }}</p>
+                                                            <span class="inline-flex max-w-full items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-bold leading-none text-slate-500" dir="ltr">
+                                                                <i class="bi bi-person-vcard text-[10px] text-slate-400"></i>
+                                                                <span class="truncate">{{ $this->persianNumber($recipientNationalId) }}</span>
+                                                            </span>
                                                         @endif
                                                     </div>
                                                 @else
@@ -977,10 +982,6 @@
                                                                         @endif
                                                                     </p>
                                                                 </div>
-                                                                <span class="inline-flex w-fit items-center gap-1 text-[10px] font-black text-emerald-700">
-                                                                    <i class="bi bi-check2-circle text-xs"></i>
-                                                                    تایید شده
-                                                                </span>
                                                             </div>
                                                         @endif
 
@@ -1370,8 +1371,10 @@
                         </div>
 
                         <button type="button" wire:click="addRecipientField"
-                                class="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-cyan-700 bg-cyan-600 px-4 py-3 text-sm font-black text-white shadow-sm shadow-cyan-200 transition hover:border-cyan-600 hover:bg-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 md:hidden">
-                            <i class="bi bi-plus-lg text-base"></i>
+                                class="group mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-cyan-500/60 bg-gradient-to-b from-cyan-500 to-cyan-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-cyan-600/25 ring-1 ring-inset ring-white/15 transition-all duration-200 hover:from-cyan-400 hover:to-cyan-500 hover:shadow-xl hover:shadow-cyan-600/30 focus:outline-none focus:ring-4 focus:ring-cyan-500/25 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none md:hidden">
+                            <span class="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 transition group-hover:bg-white/30">
+                                <i class="bi bi-plus-lg text-xs"></i>
+                            </span>
                             <span>افزودن گیرنده</span>
                         </button>
 
