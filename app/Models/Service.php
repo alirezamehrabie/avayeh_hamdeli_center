@@ -290,6 +290,13 @@ class Service extends Model
         return rtrim(rtrim($formatted, '0'), '.');
     }
 
+    public static function unitLabel(?string $unit): string
+    {
+        $key = strtolower(trim((string) $unit));
+
+        return static::FALLBACK_UNIT_OPTIONS[$key] ?? ($unit !== null ? (string) $unit : '');
+    }
+
     public static function unitUsesDecimalPrecision(?string $unit): bool
     {
         return in_array(strtolower(trim((string) $unit)), static::DECIMAL_QUANTITY_UNIT_KEYS, true);

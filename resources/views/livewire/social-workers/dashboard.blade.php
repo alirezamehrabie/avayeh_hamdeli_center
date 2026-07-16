@@ -1855,7 +1855,7 @@
 
                                     return [
                                         'name' => $category->name,
-                                        'unit' => $unitOptions[$category->unit] ?? $category->unit,
+                                        'unit' => \App\Models\Service::unitLabel($category->unit),
                                         'quantity' => $quantity,
                                         'quantity_display' => \App\Models\Service::formatQuantityForUnit($quantity, $category->unit),
                                     ];
@@ -1890,7 +1890,7 @@
 
                                     return [
                                         'name' => $category->name,
-                                        'unit' => $unitOptions[$category->unit] ?? $category->unit,
+                                        'unit' => \App\Models\Service::unitLabel($category->unit),
                                         'pending' => $pending,
                                         'remaining' => $liveRemaining,
                                         'remaining_display' => \App\Models\Service::formatQuantityForUnit($liveRemaining, $category->unit),
