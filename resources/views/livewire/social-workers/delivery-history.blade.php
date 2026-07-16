@@ -286,60 +286,76 @@
 
             <div class="bg-slate-50/60 px-3 py-3 sm:px-5 sm:py-5">
                 <div class="mx-auto max-w-4xl space-y-2 sm:space-y-3">
-                    @forelse($deliveryGroups as $deliveryGroup)
-                        @php($recipientDelivery = $deliveryGroup['recipient'])
-                        <article wire:key="delivery-history-group-{{ $deliveryGroup['batch_key'] }}" class="rounded-2xl border border-t-[3px] border-slate-200/70 border-r-cyan-200 border-t-cyan-100 bg-white px-3 py-2.5 shadow-sm sm:px-4 sm:py-3.5">
-                            <div class="flex items-start justify-between gap-3">
-                                <div class="min-w-0">
-                                    <h3 class="truncate text-[15px] font-black leading-5 tracking-tight text-slate-900 sm:text-base">{{ $recipientDelivery->recipient_name ?: '-' }}</h3>
-                                    <p class="mt-0.5 truncate text-[11px] font-medium leading-4 text-slate-400 sm:text-xs">
-                                        @if($recipientDelivery->person_id)
-                                            <span class="mr-1 rounded-full bg-cyan-50 px-1.5 py-0.5 text-[10px] font-bold text-cyan-700">مددجو</span>
-                                        @elseif($recipientDelivery->guardian_id)
-                                            <span class="mr-1 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">سرپرست خانوار</span>
-                                        @else
-                                            <span class="mr-1 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">ثبت دستی</span>
-                                        @endif
-                                        <span class="text-slate-300">کد ملی</span>
-                                        <span>{{ $this->persianNumber($recipientDelivery->recipient_national_id ?: '-') }}</span>
-                                    </p>
-                                </div>
-                                <div class="flex shrink-0 items-center gap-1.5">
-                                    <time class="rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-bold leading-4 text-slate-500 ring-1 ring-inset ring-slate-100 sm:px-2.5 sm:py-1 sm:text-[11px]">
-                                        {{ $this->formatLastDeliveryDate($recipientDelivery->delivered_at) }}
-                                    </time>
-                                    @if($deliveryGroup['can_edit'])
-                                        <button
-                                            type="button"
-                                            wire:click="editDeliveryBatch('{{ $deliveryGroup['batch_key'] }}')"
-                                            wire:loading.attr="disabled"
-                                            class="inline-flex items-center gap-1 rounded-lg border border-cyan-200 bg-cyan-50 px-2 py-1 text-[10px] font-bold text-cyan-700 transition hover:bg-cyan-100 focus:outline-none focus:ring-4 focus:ring-cyan-100 disabled:opacity-50 sm:px-2.5 sm:text-[11px]"
-                                            title="ویرایش مقادیر تحویل"
-                                        >
-                                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                                <path d="m16.5 4.5 3 3M5 19l3.5-.8L19 7.7a2.1 2.1 0 0 0-3-3L5.5 15.2 5 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                            </svg>
-                                            <span>ویرایش</span>
-                                        </button>
+                    @forelse($recipientGroups as $recipientGroup)
+                        @php($recipientDelivery = $recipientGroup['recipient'])
+                        <article wire:key="delivery-history-recipient-{{ $recipientGroup['recipient_key'] }}" class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+                            <header class="border-b border-slate-100 bg-gradient-to-l from-cyan-50/80 via-white to-white px-3 py-3 sm:px-4 sm:py-4">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="min-w-0">
+                                        <p class="text-[10px] font-black tracking-wider text-cyan-600">گیرنده خدمت</p>
+                                        <h3 class="mt-0.5 truncate text-[15px] font-black leading-5 tracking-tight text-slate-900 sm:text-base">{{ $recipientDelivery->recipient_name ?: '-' }}</h3>
+                                    </div>
+                                    @if($recipientDelivery->person_id)
+                                        <span class="shrink-0 rounded-full bg-cyan-100 px-2 py-1 text-[10px] font-bold text-cyan-700">مددجو</span>
+                                    @elseif($recipientDelivery->guardian_id)
+                                        <span class="shrink-0 rounded-full bg-amber-100 px-2 py-1 text-[10px] font-bold text-amber-700">سرپرست خانوار</span>
                                     @else
-                                        <span class="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-bold text-slate-400" title="این رکورد از منبع دیگری همگام شده و از اینجا قابل ویرایش نیست">
-                                            قفل
-                                        </span>
+                                        <span class="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600">ثبت دستی</span>
                                     @endif
                                 </div>
-                            </div>
+                                <p class="mt-1 truncate text-[11px] font-medium leading-4 text-slate-400 sm:text-xs">
+                                    <span>کد ملی</span>
+                                    <span class="mr-1 font-bold text-slate-600">{{ $this->persianNumber($recipientDelivery->recipient_national_id ?: '-') }}</span>
+                                </p>
+                            </header>
 
-                            <div class="mt-2 overflow-hidden rounded-xl border border-slate-100 bg-slate-50/80 text-[11px] sm:mt-3 sm:text-xs">
-                                @foreach($deliveryGroup['items'] as $deliveryItem)
-                                    <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-2.5 py-2 sm:px-3 sm:py-2.5 {{ $loop->first ? '' : 'border-t border-slate-100' }}">
-                                        <span class="truncate font-semibold text-slate-600">{{ $deliveryItem->serviceCategory?->name ?: '-' }}</span>
-                                        <span class="shrink-0">
-                                            <span class="font-black text-slate-900">{{ $this->formatQuantity($deliveryItem->delivered_quantity) }}</span>
-                                            @if($deliveryItem->serviceCategory?->unit)
-                                                <span class="mr-0.5 text-[10px] font-medium text-slate-400">{{ $this->formatUnitLabel($deliveryItem->serviceCategory->unit) }}</span>
-                                            @endif
-                                        </span>
-                                    </div>
+                            <div class="divide-y divide-slate-100">
+                                @foreach($recipientGroup['delivery_groups'] as $deliveryGroup)
+                                    <section wire:key="delivery-history-group-{{ $deliveryGroup['batch_key'] }}" class="px-3 py-3 sm:px-4 sm:py-4">
+                                        <div class="mb-2 flex items-center gap-2">
+                                            <span class="h-px flex-1 bg-slate-100"></span>
+                                            <time class="shrink-0 rounded-full bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-500 ring-1 ring-inset ring-slate-100 sm:text-[11px]">
+                                                {{ $this->formatLastDeliveryDate($deliveryGroup['recipient']->delivered_at) }}
+                                            </time>
+                                        </div>
+
+                                        <div class="overflow-hidden rounded-xl border border-slate-100 bg-slate-50/70">
+                                            @foreach($deliveryGroup['items'] as $deliveryItem)
+                                                <div wire:key="delivery-history-item-{{ $deliveryItem->id }}" class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 px-2.5 py-2.5 sm:gap-3 sm:px-3 {{ $loop->first ? '' : 'border-t border-slate-100' }}">
+                                                    <span class="min-w-0 truncate text-[11px] font-bold text-slate-700 sm:text-xs">{{ $deliveryItem->serviceCategory?->name ?: '-' }}</span>
+                                                    <span class="shrink-0 text-[11px] sm:text-xs">
+                                                        <span class="font-black text-slate-900">{{ $this->formatQuantity($deliveryItem->delivered_quantity) }}</span>
+                                                        @if($deliveryItem->serviceCategory?->unit)
+                                                            <span class="mr-0.5 text-[10px] font-medium text-slate-400">{{ $this->formatUnitLabel($deliveryItem->serviceCategory->unit) }}</span>
+                                                        @endif
+                                                    </span>
+
+                                                    @if(in_array((int) $deliveryItem->id, $deliveryGroup['editable_item_ids'], true))
+                                                        <button
+                                                            type="button"
+                                                            wire:click="editDeliveryItem({{ $deliveryItem->id }})"
+                                                            wire:loading.attr="disabled"
+                                                            wire:target="editDeliveryItem({{ $deliveryItem->id }})"
+                                                            class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-cyan-200 bg-white text-cyan-700 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50 focus:outline-none focus:ring-4 focus:ring-cyan-100 disabled:opacity-50"
+                                                            title="ویرایش {{ $deliveryItem->serviceCategory?->name ?: 'مقدار تحویل' }}"
+                                                            aria-label="ویرایش {{ $deliveryItem->serviceCategory?->name ?: 'مقدار تحویل' }}"
+                                                        >
+                                                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                                <path d="m16.5 4.5 3 3M5 19l3.5-.8L19 7.7a2.1 2.1 0 0 0-3-3L5.5 15.2 5 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                            </svg>
+                                                        </button>
+                                                    @else
+                                                        <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-400" title="این رکورد از اینجا قابل ویرایش نیست">
+                                                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                                <rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2"/>
+                                                                <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                                            </svg>
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </section>
                                 @endforeach
                             </div>
                         </article>

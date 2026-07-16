@@ -124,6 +124,45 @@ class SocialWorkerDeliveryHistoryEditTest extends TestCase
         $this->assertSame(2500, $second->fresh()->value_per_unit_snapshot);
     }
 
+    public function test_social_worker_can_edit_one_category_without_changing_other_batch_items(): void
+    {
+        [$user, $worker] = $this->socialWorkerUser();
+        $service = $this->serviceWithCategories();
+        $categories = $service->categories()->orderBy('id')->get();
+        $batchId = (string) Str::uuid();
+
+        foreach ($categories as $category) {
+            $service->workerAllocations()->create([
+                'social_worker_id' => $worker->id,
+                'service_category_id' => $category->id,
+                'allocated_quantity' => 10,
+            ]);
+        }
+
+        $first = $this->delivery($service, $categories[0]->id, $worker, $user, [
+            'delivery_batch_id' => $batchId,
+            'delivered_quantity' => 1,
+        ]);
+        $second = $this->delivery($service, $categories[1]->id, $worker, $user, [
+            'delivery_batch_id' => $batchId,
+            'delivered_quantity' => 2,
+        ]);
+
+        $this->actingAs($user);
+
+        Livewire::test(DeliveryHistory::class)
+            ->set('selectedServiceId', $service->id)
+            ->call('editDeliveryItem', $first->id)
+            ->assertSet('showEditDeliveryModal', true)
+            ->assertCount('editItems', 1)
+            ->set('editItems.0.quantity', '3')
+            ->call('saveDeliveryBatch')
+            ->assertHasNoErrors();
+
+        $this->assertSame('3.00', $first->fresh()->delivered_quantity);
+        $this->assertSame('2.00', $second->fresh()->delivered_quantity);
+    }
+
     public function test_edit_rejects_quantity_above_worker_category_allocation_without_partial_update(): void
     {
         [$user, $worker] = $this->socialWorkerUser();
@@ -220,7 +259,9 @@ class SocialWorkerDeliveryHistoryEditTest extends TestCase
         Livewire::test(DeliveryHistory::class)
             ->set('selectedServiceId', $service->id)
             ->assertViewHas('deliveryGroups', fn ($groups): bool => $groups->count() === 2
-                && $groups->every(fn (array $group): bool => str_starts_with($group['batch_key'], 'legacy-')));
+                && $groups->every(fn (array $group): bool => str_starts_with($group['batch_key'], 'legacy-')))
+            ->assertViewHas('recipientGroups', fn ($groups): bool => $groups->count() === 1
+                && $groups->first()['delivery_groups']->count() === 2);
     }
 
     private function socialWorkerUser(int $workerCode = 201): array

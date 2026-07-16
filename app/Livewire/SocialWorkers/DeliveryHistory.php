@@ -103,14 +103,22 @@ class DeliveryHistory extends Component
             ? $this->deliveries($socialWorkerId, $selectedService->id)
             : null;
 
+        $deliveryGroups = $deliveries
+            ? $this->deliveryGroups($deliveries->getCollection(), $socialWorkerId, $selectedService->id)
+            : collect();
+
         return view('livewire.social-workers.delivery-history', [
             'services' => $this->services($socialWorkerId),
             'selectedService' => $selectedService,
             'deliveries' => $deliveries,
-            'deliveryGroups' => $deliveries
-                ? $this->deliveryGroups($deliveries->getCollection(), $socialWorkerId, $selectedService->id)
-                : collect(),
+            'deliveryGroups' => $deliveryGroups,
+            'recipientGroups' => $this->recipientGroups($deliveryGroups),
         ]);
+    }
+
+    public function editDeliveryItem(int $deliveryId): void
+    {
+        $this->editDeliveryBatch('item-'.$deliveryId);
     }
 
     public function editDeliveryBatch(string $batchKey): void
@@ -404,8 +412,27 @@ class DeliveryHistory extends Component
                 'recipient' => $anchor,
                 'items' => $batchItems,
                 'can_edit' => $this->deliveryRowsAreEditable($batchItems),
+                'editable_item_ids' => $batchItems
+                    ->filter(fn (ServiceDelivery $delivery): bool => $this->deliveryRowsAreEditable(collect([$delivery])))
+                    ->pluck('id')
+                    ->map(fn ($id): int => (int) $id)
+                    ->all(),
             ];
         });
+    }
+
+    protected function recipientGroups(Collection $deliveryGroups): Collection
+    {
+        return $deliveryGroups
+            ->groupBy(fn (array $group): string => $this->recipientKey($group['recipient']))
+            ->map(function (Collection $groups, string $recipientKey): array {
+                return [
+                    'recipient_key' => $recipientKey,
+                    'recipient' => $groups->first()['recipient'],
+                    'delivery_groups' => $groups->values(),
+                ];
+            })
+            ->values();
     }
 
     protected function deliveryBatchRows(string $batchKey, bool $lockForUpdate = false): Collection
@@ -419,6 +446,8 @@ class DeliveryHistory extends Component
             $query->where('delivery_batch_id', substr($batchKey, 6));
         } elseif (preg_match('/^legacy-(\d+)$/', $batchKey, $matches) === 1) {
             $query->whereKey((int) $matches[1])->whereNull('delivery_batch_id');
+        } elseif (preg_match('/^item-(\d+)$/', $batchKey, $matches) === 1) {
+            $query->whereKey((int) $matches[1]);
         } else {
             return collect();
         }
