@@ -4,8 +4,15 @@ namespace App\Livewire\SocialWorkers;
 
 use App\Helpers\Morilog\Jalalian;
 use App\Models\Service;
+use App\Models\ServiceCategory;
 use App\Models\ServiceDelivery;
+use App\Models\ServiceWorkerAllocation;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -16,10 +23,31 @@ class DeliveryHistory extends Component
     use WithPagination;
 
     public string $activeSection = 'delivery-history';
+
     public mixed $selectedServiceId = null;
+
     public string $deliverySearch = '';
+
     public string $deliveryDateFrom = '';
+
     public string $deliveryDateTo = '';
+
+    public bool $showEditDeliveryModal = false;
+
+    public string $editingDeliveryBatchKey = '';
+
+    public string $editRecipientName = '';
+
+    public string $editRecipientNationalId = '';
+
+    public string $editRecipientType = '';
+
+    public string $editDeliveredAt = '';
+
+    public array $editItems = [];
+
+    public string $deliveryUpdateMessage = '';
+
     protected ?array $unitOptionsCache = null;
 
     protected $queryString = [
@@ -71,13 +99,168 @@ class DeliveryHistory extends Component
             $this->selectedServiceId = null;
         }
 
+        $deliveries = $selectedService
+            ? $this->deliveries($socialWorkerId, $selectedService->id)
+            : null;
+
         return view('livewire.social-workers.delivery-history', [
             'services' => $this->services($socialWorkerId),
             'selectedService' => $selectedService,
-            'deliveries' => $selectedService
-                ? $this->deliveries($socialWorkerId, $selectedService->id)
-                : null,
+            'deliveries' => $deliveries,
+            'deliveryGroups' => $deliveries
+                ? $this->deliveryGroups($deliveries->getCollection(), $socialWorkerId, $selectedService->id)
+                : collect(),
         ]);
+    }
+
+    public function editDeliveryBatch(string $batchKey): void
+    {
+        $rows = $this->deliveryBatchRows($batchKey);
+
+        abort_if($rows->isEmpty(), 404);
+        abort_unless($this->deliveryRowsAreEditable($rows), 403);
+
+        $recipient = $rows->first();
+
+        $this->editingDeliveryBatchKey = $batchKey;
+        $this->editRecipientName = $recipient->recipient_name;
+        $this->editRecipientNationalId = $recipient->recipient_national_id;
+        $this->editRecipientType = $recipient->person_id
+            ? 'مددجو'
+            : ($recipient->guardian_id ? 'سرپرست خانوار' : 'گیرنده ثبت‌نشده');
+        $this->editDeliveredAt = $this->formatLastDeliveryDate($recipient->delivered_at);
+        $this->editItems = $rows
+            ->map(fn (ServiceDelivery $delivery): array => [
+                'id' => $delivery->id,
+                'category' => $delivery->serviceCategory?->name ?: '-',
+                'unit' => $this->formatUnitLabel($delivery->serviceCategory?->unit),
+                'quantity' => $this->formatEditableQuantity($delivery->delivered_quantity),
+                'value_per_unit' => (int) $delivery->value_per_unit_snapshot,
+            ])
+            ->values()
+            ->all();
+        $this->deliveryUpdateMessage = '';
+        $this->resetValidation();
+        $this->showEditDeliveryModal = true;
+    }
+
+    public function saveDeliveryBatch(): void
+    {
+        $validated = $this->validate([
+            'editItems' => ['required', 'array', 'min:1'],
+            'editItems.*.id' => ['required', 'integer'],
+            'editItems.*.quantity' => [
+                'required',
+                'numeric',
+                'decimal:0,2',
+                'min:0.01',
+                'max:9999999999.99',
+            ],
+        ], [], [
+            'editItems.*.quantity' => 'مقدار تحویل',
+        ]);
+
+        $submittedItems = collect($validated['editItems'])
+            ->mapWithKeys(fn (array $item): array => [(int) $item['id'] => (float) $item['quantity']]);
+
+        DB::transaction(function () use ($submittedItems): void {
+            $rows = $this->deliveryBatchRows($this->editingDeliveryBatchKey, true);
+
+            abort_if($rows->isEmpty(), 404);
+            abort_unless($this->deliveryRowsAreEditable($rows), 403);
+
+            $expectedIds = $rows->pluck('id')->map(fn ($id) => (int) $id)->sort()->values();
+            $submittedIds = $submittedItems->keys()->map(fn ($id) => (int) $id)->sort()->values();
+
+            abort_unless($expectedIds->all() === $submittedIds->all(), 422);
+
+            $categoryIds = $rows->pluck('service_category_id')
+                ->map(fn ($id) => (int) $id)
+                ->unique()
+                ->values();
+            $categories = ServiceCategory::query()
+                ->where('service_id', (int) $rows->first()->service_id)
+                ->whereIn('id', $categoryIds)
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+            $allocations = ServiceWorkerAllocation::query()
+                ->where('service_id', (int) $rows->first()->service_id)
+                ->where('social_worker_id', $this->currentSocialWorkerId())
+                ->whereIn('service_category_id', $categoryIds)
+                ->lockForUpdate()
+                ->get()
+                ->groupBy('service_category_id');
+
+            foreach ($rows->groupBy('service_category_id') as $categoryId => $categoryRows) {
+                $categoryId = (int) $categoryId;
+                $category = $categories->get($categoryId);
+
+                if (! $category) {
+                    throw ValidationException::withMessages([
+                        'editItems' => 'یکی از دسته‌بندی‌های این تحویل دیگر در دسترس نیست.',
+                    ]);
+                }
+
+                $newBatchQuantity = $categoryRows->sum(
+                    fn (ServiceDelivery $row): float => (float) $submittedItems[(int) $row->id]
+                );
+                $otherDeliveredQuantity = (float) ServiceDelivery::query()
+                    ->where('service_id', (int) $rows->first()->service_id)
+                    ->where('service_category_id', $categoryId)
+                    ->whereNotIn('id', $rows->pluck('id'))
+                    ->sum('delivered_quantity');
+
+                if ($otherDeliveredQuantity + $newBatchQuantity > (float) $category->quantity) {
+                    throw ValidationException::withMessages([
+                        'editItems' => "مقدار جدید «{$category->name}» از موجودی این دسته‌بندی بیشتر است.",
+                    ]);
+                }
+
+                $allocatedQuantity = (float) ($allocations->get($categoryId)?->sum('allocated_quantity') ?? 0);
+                $otherWorkerDeliveredQuantity = (float) ServiceDelivery::query()
+                    ->where('service_id', (int) $rows->first()->service_id)
+                    ->where('service_category_id', $categoryId)
+                    ->where('social_worker_id', $this->currentSocialWorkerId())
+                    ->whereNotIn('id', $rows->pluck('id'))
+                    ->sum('delivered_quantity');
+
+                if ($otherWorkerDeliveredQuantity + $newBatchQuantity > $allocatedQuantity) {
+                    throw ValidationException::withMessages([
+                        'editItems' => "مقدار جدید «{$category->name}» از سهمیه تخصیص‌یافته شما بیشتر است.",
+                    ]);
+                }
+            }
+
+            foreach ($rows as $row) {
+                $quantity = (float) $submittedItems[(int) $row->id];
+
+                $row->forceFill([
+                    'delivered_quantity' => $quantity,
+                    'delivered_total_value' => (int) round($quantity * (int) $row->value_per_unit_snapshot),
+                    'updated_by' => auth()->id(),
+                    'corrected_at' => now(),
+                ])->saveQuietly();
+            }
+
+            $rows->first()->service?->refreshDeliveryProgress();
+        });
+
+        $this->closeEditDeliveryModal();
+        $this->deliveryUpdateMessage = 'مقادیر تحویل با موفقیت اصلاح شد.';
+        $this->dispatch('delivery-history-updated');
+    }
+
+    public function closeEditDeliveryModal(): void
+    {
+        $this->showEditDeliveryModal = false;
+        $this->editingDeliveryBatchKey = '';
+        $this->editRecipientName = '';
+        $this->editRecipientNationalId = '';
+        $this->editRecipientType = '';
+        $this->editDeliveredAt = '';
+        $this->editItems = [];
+        $this->resetValidation();
     }
 
     protected function services(int $socialWorkerId)
@@ -132,6 +315,26 @@ class DeliveryHistory extends Component
 
     protected function deliveries(int $socialWorkerId, int $serviceId)
     {
+        $batchAnchorIds = ServiceDelivery::query()
+            ->selectRaw('MIN(id)')
+            ->where('social_worker_id', $socialWorkerId)
+            ->where('service_id', $serviceId)
+            ->whereNotNull('delivery_batch_id')
+            ->groupBy('delivery_batch_id');
+
+        return $this->deliveryQuery($socialWorkerId, $serviceId)
+            ->where(function (Builder $query) use ($batchAnchorIds): void {
+                $query
+                    ->whereNull('delivery_batch_id')
+                    ->orWhereIn('id', $batchAnchorIds);
+            })
+            ->latest('delivered_at')
+            ->latest('id')
+            ->paginate(25);
+    }
+
+    protected function deliveryQuery(int $socialWorkerId, int $serviceId): Builder
+    {
         $search = trim($this->deliverySearch);
         $dateFrom = $this->normalizedDateInput($this->deliveryDateFrom);
         $dateTo = $this->normalizedDateInput($this->deliveryDateTo);
@@ -160,10 +363,118 @@ class DeliveryHistory extends Component
                 });
             })
             ->when($dateFrom, fn ($query) => $query->whereDate('delivered_at', '>=', $dateFrom))
-            ->when($dateTo, fn ($query) => $query->whereDate('delivered_at', '<=', $dateTo))
-            ->latest('delivered_at')
-            ->latest('id')
-            ->paginate(25);
+            ->when($dateTo, fn ($query) => $query->whereDate('delivered_at', '<=', $dateTo));
+    }
+
+    protected function deliveryGroups(
+        Collection $anchors,
+        int $socialWorkerId,
+        int $serviceId
+    ): Collection {
+        if ($anchors->isEmpty()) {
+            return collect();
+        }
+
+        $batchIds = $anchors->pluck('delivery_batch_id')->filter()->unique()->values();
+        $legacyIds = $anchors->whereNull('delivery_batch_id')->pluck('id')->values();
+        $items = ServiceDelivery::query()
+            ->with(['serviceCategory', 'person', 'guardian'])
+            ->where('social_worker_id', $socialWorkerId)
+            ->where('service_id', $serviceId)
+            ->where(function (Builder $query) use ($batchIds, $legacyIds): void {
+                if ($batchIds->isNotEmpty()) {
+                    $query->whereIn('delivery_batch_id', $batchIds);
+                }
+
+                if ($legacyIds->isNotEmpty()) {
+                    $method = $batchIds->isNotEmpty() ? 'orWhereIn' : 'whereIn';
+                    $query->{$method}('id', $legacyIds);
+                }
+            })
+            ->orderBy('id')
+            ->get()
+            ->groupBy(fn (ServiceDelivery $delivery): string => $this->deliveryBatchKey($delivery));
+
+        return $anchors->map(function (ServiceDelivery $anchor) use ($items): array {
+            $batchKey = $this->deliveryBatchKey($anchor);
+            $batchItems = $items->get($batchKey, collect());
+
+            return [
+                'batch_key' => $batchKey,
+                'recipient' => $anchor,
+                'items' => $batchItems,
+                'can_edit' => $this->deliveryRowsAreEditable($batchItems),
+            ];
+        });
+    }
+
+    protected function deliveryBatchRows(string $batchKey, bool $lockForUpdate = false): Collection
+    {
+        $query = ServiceDelivery::query()
+            ->with(['serviceCategory', 'person', 'guardian', 'service'])
+            ->where('social_worker_id', $this->currentSocialWorkerId())
+            ->where('service_id', (int) $this->normalizedSelectedServiceId());
+
+        if (str_starts_with($batchKey, 'batch-')) {
+            $query->where('delivery_batch_id', substr($batchKey, 6));
+        } elseif (preg_match('/^legacy-(\d+)$/', $batchKey, $matches) === 1) {
+            $query->whereKey((int) $matches[1])->whereNull('delivery_batch_id');
+        } else {
+            return collect();
+        }
+
+        if ($lockForUpdate) {
+            $query->lockForUpdate();
+        }
+
+        return $query->orderBy('id')->get();
+    }
+
+    protected function deliveryRowsAreEditable(Collection $rows): bool
+    {
+        return $rows->isNotEmpty()
+            && Gate::allows('edit-social-worker-deliveries')
+            && $rows->pluck('service_id')->unique()->count() === 1
+            && $rows->map(fn (ServiceDelivery $delivery): string => $this->recipientKey($delivery))->unique()->count() === 1
+            && $rows->map(fn (ServiceDelivery $delivery): string => $delivery->delivered_at?->toDateString() ?? '')->unique()->count() === 1
+            && $rows->every(fn (ServiceDelivery $delivery): bool => (
+                (int) $delivery->social_worker_id === $this->currentSocialWorkerId()
+                && ($delivery->delivery_channel ?: Service::DELIVERY_CHANNEL_HOME) === Service::DELIVERY_CHANNEL_HOME
+                && ! $delivery->gate_entry_assignment_id
+                && ! $delivery->activity_attendance_id
+            ));
+    }
+
+    protected function recipientKey(ServiceDelivery $delivery): string
+    {
+        if ($delivery->person_id) {
+            return 'person-'.$delivery->person_id;
+        }
+
+        if ($delivery->guardian_id) {
+            return 'guardian-'.$delivery->guardian_id;
+        }
+
+        return 'national-'.$delivery->recipient_national_id;
+    }
+
+    protected function deliveryBatchKey(ServiceDelivery $delivery): string
+    {
+        return $delivery->delivery_batch_id
+            ? 'batch-'.$delivery->delivery_batch_id
+            : 'legacy-'.$delivery->id;
+    }
+
+    protected function currentSocialWorkerId(): int
+    {
+        return (int) auth()->user()?->social_worker_id;
+    }
+
+    protected function formatEditableQuantity(mixed $value): string
+    {
+        $quantity = number_format((float) $value, 2, '.', '');
+
+        return rtrim(rtrim($quantity, '0'), '.');
     }
 
     protected function normalizedDateInput(string $date): ?string

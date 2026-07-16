@@ -390,6 +390,10 @@ class Dashboard extends Component
 
         try {
             DB::transaction(function () use ($service, $validated, $deliveryEntries): void {
+                $deliveryBatchIds = collect($deliveryEntries)
+                    ->pluck('_recipient_index')
+                    ->unique()
+                    ->mapWithKeys(fn ($index) => [(int) $index => (string) Str::uuid()]);
                 $categoryQuantities = collect($deliveryEntries)
                     ->groupBy(fn (array $entry) => (int) $entry['service_category_id'])
                     ->map(fn ($entries) => $entries->sum(fn (array $entry) => (float) $entry['quantity']));
@@ -487,6 +491,7 @@ class Dashboard extends Component
                     }
 
                     ServiceDelivery::query()->create([
+                        'delivery_batch_id' => $deliveryBatchIds[(int) $entry['_recipient_index']],
                         'service_id' => $service->id,
                         'social_worker_id' => $this->currentSocialWorkerId(),
                         'person_id' => $personId,
@@ -857,6 +862,7 @@ class Dashboard extends Component
 
             foreach ($rowDeliveries as $categoryId => $quantity) {
                 $deliveryEntries[] = array_merge($entry, [
+                    '_recipient_index' => $index,
                     'service_category_id' => (int) $categoryId,
                     'quantity' => (float) $quantity,
                 ]);

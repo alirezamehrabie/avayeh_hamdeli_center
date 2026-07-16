@@ -12,6 +12,7 @@ class ServiceDelivery extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'delivery_batch_id',
         'service_id',
         'service_category_id',
         'gate_entry_assignment_id',
@@ -29,6 +30,8 @@ class ServiceDelivery extends Model
         'delivered_at',
         'notes',
         'created_by',
+        'updated_by',
+        'corrected_at',
     ];
 
     protected function casts(): array
@@ -39,6 +42,8 @@ class ServiceDelivery extends Model
             'delivered_total_value' => 'integer',
             'delivered_at' => 'date',
             'created_by' => 'integer',
+            'updated_by' => 'integer',
+            'corrected_at' => 'datetime',
             'service_category_id' => 'integer',
             'gate_entry_assignment_id' => 'integer',
             'activity_attendance_id' => 'integer',
@@ -105,6 +110,11 @@ class ServiceDelivery extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function updater(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 
     public function getRecipientNameAttribute(): string

@@ -83,6 +83,12 @@
 
             </div>
         @else
+            @if($deliveryUpdateMessage !== '')
+                <div class="border-b border-emerald-100 bg-emerald-50 px-4 py-3 text-center text-xs font-bold text-emerald-700 sm:text-sm">
+                    {{ $deliveryUpdateMessage }}
+                </div>
+            @endif
+
             <div class="border-b border-slate-200 px-3 py-2.5 sm:px-5 sm:py-4">
                 <div class="mx-auto max-w-3xl">
                     <div class="mt-1 flex flex-wrap justify-center gap-1.5">
@@ -278,36 +284,49 @@
                 </div>
             </div>
 
-            @php
-                $deliveryGroups = $deliveries->getCollection()
-                    ->groupBy(fn ($delivery) => $delivery->person_id
-                        ? 'person-'.$delivery->person_id
-                        : ($delivery->guardian_id ? 'guardian-'.$delivery->guardian_id : 'national-'.$delivery->recipient_national_id)
-                    )
-                    ->map(function ($group) {
-                        return [
-                            'recipient' => $group->first(),
-                            'items' => $group,
-                        ];
-                    });
-            @endphp
-
             <div class="bg-slate-50/60 px-3 py-3 sm:px-5 sm:py-5">
                 <div class="mx-auto max-w-4xl space-y-2 sm:space-y-3">
                     @forelse($deliveryGroups as $deliveryGroup)
                         @php($recipientDelivery = $deliveryGroup['recipient'])
-                        <article class="rounded-2xl border border-t-[3px] border-slate-200/70 border-r-cyan-200 border-t-cyan-100 bg-white px-3 py-2.5 shadow-sm sm:px-4 sm:py-3.5">
+                        <article wire:key="delivery-history-group-{{ $deliveryGroup['batch_key'] }}" class="rounded-2xl border border-t-[3px] border-slate-200/70 border-r-cyan-200 border-t-cyan-100 bg-white px-3 py-2.5 shadow-sm sm:px-4 sm:py-3.5">
                             <div class="flex items-start justify-between gap-3">
                                 <div class="min-w-0">
                                     <h3 class="truncate text-[15px] font-black leading-5 tracking-tight text-slate-900 sm:text-base">{{ $recipientDelivery->recipient_name ?: '-' }}</h3>
                                     <p class="mt-0.5 truncate text-[11px] font-medium leading-4 text-slate-400 sm:text-xs">
+                                        @if($recipientDelivery->person_id)
+                                            <span class="mr-1 rounded-full bg-cyan-50 px-1.5 py-0.5 text-[10px] font-bold text-cyan-700">مددجو</span>
+                                        @elseif($recipientDelivery->guardian_id)
+                                            <span class="mr-1 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">سرپرست خانوار</span>
+                                        @else
+                                            <span class="mr-1 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">ثبت دستی</span>
+                                        @endif
                                         <span class="text-slate-300">کد ملی</span>
                                         <span>{{ $this->persianNumber($recipientDelivery->recipient_national_id ?: '-') }}</span>
                                     </p>
                                 </div>
-                                <time class="shrink-0 rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-bold leading-4 text-slate-500 ring-1 ring-inset ring-slate-100 sm:px-2.5 sm:py-1 sm:text-[11px]">
-                                    {{ $this->formatLastDeliveryDate($recipientDelivery->delivered_at) }}
-                                </time>
+                                <div class="flex shrink-0 items-center gap-1.5">
+                                    <time class="rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-bold leading-4 text-slate-500 ring-1 ring-inset ring-slate-100 sm:px-2.5 sm:py-1 sm:text-[11px]">
+                                        {{ $this->formatLastDeliveryDate($recipientDelivery->delivered_at) }}
+                                    </time>
+                                    @if($deliveryGroup['can_edit'])
+                                        <button
+                                            type="button"
+                                            wire:click="editDeliveryBatch('{{ $deliveryGroup['batch_key'] }}')"
+                                            wire:loading.attr="disabled"
+                                            class="inline-flex items-center gap-1 rounded-lg border border-cyan-200 bg-cyan-50 px-2 py-1 text-[10px] font-bold text-cyan-700 transition hover:bg-cyan-100 focus:outline-none focus:ring-4 focus:ring-cyan-100 disabled:opacity-50 sm:px-2.5 sm:text-[11px]"
+                                            title="ویرایش مقادیر تحویل"
+                                        >
+                                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                <path d="m16.5 4.5 3 3M5 19l3.5-.8L19 7.7a2.1 2.1 0 0 0-3-3L5.5 15.2 5 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                            <span>ویرایش</span>
+                                        </button>
+                                    @else
+                                        <span class="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-bold text-slate-400" title="این رکورد از منبع دیگری همگام شده و از اینجا قابل ویرایش نیست">
+                                            قفل
+                                        </span>
+                                    @endif
+                                </div>
                             </div>
 
                             <div class="mt-2 overflow-hidden rounded-xl border border-slate-100 bg-slate-50/80 text-[11px] sm:mt-3 sm:text-xs">
@@ -348,4 +367,109 @@
             </div>
         @endif
     </div>
+
+    @if($showEditDeliveryModal)
+        <div
+            x-data="{
+                dirty: false,
+                closeRequested() {
+                    if (!this.dirty || window.confirm('تغییرات ذخیره‌نشده حذف شود؟')) {
+                        $wire.closeEditDeliveryModal()
+                    }
+                }
+            }"
+            x-on:keydown.escape.window="closeRequested()"
+            x-on:click.self="closeRequested()"
+            class="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6"
+        >
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="delivery-edit-title"
+                class="max-h-[95vh] w-full overflow-y-auto rounded-t-[28px] bg-white shadow-2xl sm:max-w-xl sm:rounded-[28px]"
+            >
+                <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
+                    <div class="min-w-0">
+                        <h2 id="delivery-edit-title" class="text-lg font-extrabold text-slate-900">ویرایش مقادیر تحویل</h2>
+                        <p class="mt-1 text-xs text-slate-500">فقط مقدار هر دسته‌بندی اصلاح می‌شود؛ گیرنده و تاریخ تحویل ثابت می‌ماند.</p>
+                    </div>
+                    <button type="button" x-on:click="closeRequested()" class="shrink-0 rounded-full border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-100" aria-label="بستن">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <form wire:submit="saveDeliveryBatch" class="space-y-5 px-4 py-5 sm:px-6">
+                    <div class="rounded-2xl border border-cyan-100 bg-cyan-50/60 px-4 py-3">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="truncate text-sm font-black text-slate-900">{{ $editRecipientName ?: '-' }}</p>
+                                <p class="mt-1 text-xs text-slate-500">کد ملی: {{ $this->persianNumber($editRecipientNationalId ?: '-') }}</p>
+                            </div>
+                            <span class="shrink-0 rounded-full bg-white px-2 py-1 text-[10px] font-bold text-cyan-700 ring-1 ring-cyan-100">{{ $editRecipientType }}</span>
+                        </div>
+                        <div class="mt-3 flex flex-wrap gap-2 text-[11px] font-bold text-slate-600">
+                            <span class="rounded-full bg-white px-2 py-1 ring-1 ring-slate-100">تاریخ: {{ $editDeliveredAt }}</span>
+                            <span class="rounded-full bg-white px-2 py-1 ring-1 ring-slate-100">ارزش کل خودکار محاسبه می‌شود</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        @foreach($editItems as $index => $item)
+                            <div wire:key="delivery-edit-item-{{ $item['id'] }}" class="rounded-2xl border border-slate-200 bg-slate-50/70 px-3 py-3 sm:px-4">
+                                <div class="flex items-center justify-between gap-3">
+                                    <div class="min-w-0">
+                                        <p class="truncate text-sm font-bold text-slate-800">{{ $item['category'] }}</p>
+                                        <p class="mt-1 text-[11px] text-slate-400">
+                                            واحد: {{ $item['unit'] ?: '-' }}
+                                            <span class="mx-1 text-slate-300">|</span>
+                                            ارزش واحد: {{ $this->formatCurrency($item['value_per_unit']) }}
+                                        </p>
+                                    </div>
+                                    <div class="w-32 shrink-0">
+                                        <label class="sr-only" for="edit-quantity-{{ $item['id'] }}">مقدار {{ $item['category'] }}</label>
+                                        <input
+                                            id="edit-quantity-{{ $item['id'] }}"
+                                            type="number"
+                                            min="0.01"
+                                            max="9999999999.99"
+                                            step="0.01"
+                                            inputmode="decimal"
+                                            wire:model.defer="editItems.{{ $index }}.quantity"
+                                            x-on:input="dirty = true"
+                                            class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-center text-sm font-black text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                                        >
+                                    </div>
+                                </div>
+                                @error('editItems.'.$index.'.quantity')
+                                    <p class="mt-1 text-xs font-bold text-rose-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        @endforeach
+                    </div>
+
+                    @error('editItems')
+                        <p class="rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{{ $message }}</p>
+                    @enderror
+
+                    <div class="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end">
+                        <button type="button" x-on:click="closeRequested()" class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-100">
+                            انصراف
+                        </button>
+                        <button
+                            type="submit"
+                            x-bind:disabled="!dirty"
+                            wire:loading.attr="disabled"
+                            wire:target="saveDeliveryBatch"
+                            class="rounded-xl bg-cyan-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            <span wire:loading.remove wire:target="saveDeliveryBatch">ذخیره اصلاحات</span>
+                            <span wire:loading wire:target="saveDeliveryBatch">در حال ذخیره...</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
 </div>
