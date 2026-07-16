@@ -426,10 +426,18 @@ class DeliveryHistory extends Component
         return $deliveryGroups
             ->groupBy(fn (array $group): string => $this->recipientKey($group['recipient']))
             ->map(function (Collection $groups, string $recipientKey): array {
+                $items = $groups->flatMap(function (array $group): Collection {
+                    return $group['items']->map(fn (ServiceDelivery $delivery): array => [
+                        'delivery' => $delivery,
+                        'can_edit' => in_array((int) $delivery->id, $group['editable_item_ids'], true),
+                    ]);
+                })->values();
+
                 return [
                     'recipient_key' => $recipientKey,
                     'recipient' => $groups->first()['recipient'],
                     'delivery_groups' => $groups->values(),
+                    'items' => $items,
                 ];
             })
             ->values();

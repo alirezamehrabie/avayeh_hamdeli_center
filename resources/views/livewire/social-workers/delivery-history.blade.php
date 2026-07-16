@@ -18,60 +18,44 @@
         </div>
 
         @if(!$selectedService)
-            <div class="p-6">
-                <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div class="p-3 sm:p-5">
+                <div class="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                     @forelse($services as $service)
                         <button
                             type="button"
                             wire:click="selectService({{ $service->id }})"
-                            class="group relative w-full overflow-hidden rounded-2xl border border-slate-100 bg-white text-right shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-100 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                            class="group relative w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-3 text-right shadow-sm transition-all duration-200 hover:border-cyan-200 hover:bg-cyan-50/30 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-cyan-100 sm:p-3.5"
                             aria-label="مشاهده تحویل‌های خدمت {{ $this->persianNumber($service->code) }}"
                         >
+                            <span class="absolute inset-y-0 right-0 w-1 bg-gradient-to-b from-cyan-400 to-blue-500"></span>
+                            <div class="flex items-center gap-3">
+                                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-50 text-cyan-700 ring-1 ring-inset ring-cyan-100 transition group-hover:bg-cyan-100">
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                        <path d="M5 8.5 12 4l7 4.5v7L12 20l-7-4.5v-7Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                                        <path d="m5.5 8.5 6.5 4 6.5-4M12 12.5V20" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                                    </svg>
+                                </span>
 
-                            {{-- رنگ‌بار بالای کارت --}}
-                            <div class="h-1 bg-gradient-to-r from-cyan-400 to-blue-500"></div>
-
-                            <div class="p-4">
-                                {{-- هدر کارت --}}
-                                <div class="flex items-start justify-between gap-2">
-                                    <div class="min-w-0">
-                                        <span class="inline-block text-[10px] font-bold tracking-widest text-cyan-500 uppercase">خدمت</span>
-                                        <h2 class="mt-0.5 truncate text-base font-black text-slate-800">{{ $this->persianNumber($service->code) }}</h2>
-                                        <p class="truncate text-xs text-slate-400">{{ $service->serviceName?->name ?: '—' }}</p>
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex items-center gap-1.5">
+                                        <h2 class="truncate text-sm font-black text-slate-800">{{ $service->serviceName?->name ?: 'خدمت نامشخص' }}</h2>
+                                        <span class="shrink-0 rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-black text-slate-500">{{ $this->persianNumber($service->code) }}</span>
                                     </div>
-                                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-50 text-cyan-600 transition group-hover:bg-cyan-100">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                                        </svg>
-                                    </span>
+                                    <div class="mt-1 flex min-w-0 items-center gap-1.5 text-[10px] font-semibold text-slate-500">
+                                        <span class="shrink-0">{{ \App\Models\Service::TYPE_OPTIONS[$service->service_type] ?? '—' }}</span>
+                                        <span class="text-slate-300">•</span>
+                                        <span class="truncate">{{ $service->categories->pluck('name')->filter()->take(2)->implode('، ') ?: ($service->serviceCategory?->name ?: 'بدون دسته‌بندی') }}</span>
+                                        @if($service->categories->count() > 2)
+                                            <span class="shrink-0 text-cyan-700">+{{ $this->persianNumber($service->categories->count() - 2) }}</span>
+                                        @endif
+                                    </div>
                                 </div>
 
-                                {{-- جداکننده --}}
-                                <div class="my-3 border-t border-slate-50"></div>
-
-                                {{-- اطلاعات --}}
-                                <dl class="space-y-2 text-xs">
-                                    <div class="flex justify-between gap-2">
-                                        <dt class="text-slate-400">دسته‌بندی</dt>
-                                        <dd class="font-semibold text-slate-700 text-left">{{ $service->serviceCategory?->name ?: '—' }}</dd>
-                                    </div>
-                                    <div class="flex justify-between gap-2">
-                                        <dt class="text-slate-400">نوع خدمت</dt>
-                                        <dd class="font-semibold text-slate-700">{{ \App\Models\Service::TYPE_OPTIONS[$service->service_type] ?? '—' }}</dd>
-                                    </div>
-                                    @if($service->description)
-                                        <div class="flex justify-between gap-2">
-                                            <dt class="text-slate-400">توضیحات</dt>
-                                            <dd class="font-semibold text-slate-700 truncate max-w-[55%] text-left">{{ $service->description }}</dd>
-                                        </div>
-                                    @endif
-                                </dl>
-
-                                {{-- آخرین تحویل --}}
-                                <div class="mt-3 flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2">
-                                    <span class="text-[11px] text-slate-400">آخرین تحویل</span>
-                                    <span class="text-[11px] font-bold text-slate-700">{{ $this->formatLastDeliveryDate($service->last_delivery_at) }}</span>
-                                </div>
+                                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-300 transition group-hover:-translate-x-0.5 group-hover:bg-white group-hover:text-cyan-600">
+                                    <svg class="h-4 w-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                                    </svg>
+                                </span>
                             </div>
                         </button>
                     @empty
@@ -289,19 +273,24 @@
                     @forelse($recipientGroups as $recipientGroup)
                         @php($recipientDelivery = $recipientGroup['recipient'])
                         <article wire:key="delivery-history-recipient-{{ $recipientGroup['recipient_key'] }}" class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
-                            <header class="border-b border-slate-100 bg-gradient-to-l from-cyan-50/80 via-white to-white px-3 py-3 sm:px-4 sm:py-4">
+                            <header class="border-b border-slate-100 bg-gradient-to-l from-cyan-50/80 via-white to-white px-3 py-3 sm:px-4">
                                 <div class="flex items-start justify-between gap-3">
                                     <div class="min-w-0">
                                         <p class="text-[10px] font-black tracking-wider text-cyan-600">گیرنده خدمت</p>
                                         <h3 class="mt-0.5 truncate text-[15px] font-black leading-5 tracking-tight text-slate-900 sm:text-base">{{ $recipientDelivery->recipient_name ?: '-' }}</h3>
                                     </div>
-                                    @if($recipientDelivery->person_id)
-                                        <span class="shrink-0 rounded-full bg-cyan-100 px-2 py-1 text-[10px] font-bold text-cyan-700">مددجو</span>
-                                    @elseif($recipientDelivery->guardian_id)
-                                        <span class="shrink-0 rounded-full bg-amber-100 px-2 py-1 text-[10px] font-bold text-amber-700">سرپرست خانوار</span>
-                                    @else
-                                        <span class="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600">ثبت دستی</span>
-                                    @endif
+                                    <div class="flex shrink-0 items-center gap-1.5">
+                                        <time class="rounded-full bg-white px-2 py-1 text-[9px] font-bold text-slate-500 ring-1 ring-inset ring-slate-200/80">
+                                            {{ $this->formatLastDeliveryDate($recipientDelivery->delivered_at) }}
+                                        </time>
+                                        @if($recipientDelivery->person_id)
+                                            <span class="rounded-full bg-cyan-100 px-2 py-1 text-[9px] font-bold text-cyan-700">مددجو</span>
+                                        @elseif($recipientDelivery->guardian_id)
+                                            <span class="rounded-full bg-amber-100 px-2 py-1 text-[9px] font-bold text-amber-700">سرپرست</span>
+                                        @else
+                                            <span class="rounded-full bg-slate-100 px-2 py-1 text-[9px] font-bold text-slate-600">ثبت دستی</span>
+                                        @endif
+                                    </div>
                                 </div>
                                 <p class="mt-1 truncate text-[11px] font-medium leading-4 text-slate-400 sm:text-xs">
                                     <span>کد ملی</span>
@@ -310,52 +299,40 @@
                             </header>
 
                             <div class="divide-y divide-slate-100">
-                                @foreach($recipientGroup['delivery_groups'] as $deliveryGroup)
-                                    <section wire:key="delivery-history-group-{{ $deliveryGroup['batch_key'] }}" class="px-3 py-3 sm:px-4 sm:py-4">
-                                        <div class="mb-2 flex items-center gap-2">
-                                            <span class="h-px flex-1 bg-slate-100"></span>
-                                            <time class="shrink-0 rounded-full bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-500 ring-1 ring-inset ring-slate-100 sm:text-[11px]">
-                                                {{ $this->formatLastDeliveryDate($deliveryGroup['recipient']->delivered_at) }}
-                                            </time>
-                                        </div>
+                                @foreach($recipientGroup['items'] as $recipientItem)
+                                    @php($deliveryItem = $recipientItem['delivery'])
+                                    <div wire:key="delivery-history-item-{{ $deliveryItem->id }}" class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4 sm:py-2.5">
+                                        <span class="min-w-0 truncate text-[11px] font-bold text-slate-700 sm:text-xs">{{ $deliveryItem->serviceCategory?->name ?: '-' }}</span>
+                                        <span class="shrink-0 text-[11px] sm:text-xs">
+                                            <span class="font-black text-slate-900">{{ $this->formatQuantity($deliveryItem->delivered_quantity) }}</span>
+                                            @if($deliveryItem->serviceCategory?->unit)
+                                                <span class="mr-0.5 text-[10px] font-medium text-slate-400">{{ $this->formatUnitLabel($deliveryItem->serviceCategory->unit) }}</span>
+                                            @endif
+                                        </span>
 
-                                        <div class="overflow-hidden rounded-xl border border-slate-100 bg-slate-50/70">
-                                            @foreach($deliveryGroup['items'] as $deliveryItem)
-                                                <div wire:key="delivery-history-item-{{ $deliveryItem->id }}" class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 px-2.5 py-2.5 sm:gap-3 sm:px-3 {{ $loop->first ? '' : 'border-t border-slate-100' }}">
-                                                    <span class="min-w-0 truncate text-[11px] font-bold text-slate-700 sm:text-xs">{{ $deliveryItem->serviceCategory?->name ?: '-' }}</span>
-                                                    <span class="shrink-0 text-[11px] sm:text-xs">
-                                                        <span class="font-black text-slate-900">{{ $this->formatQuantity($deliveryItem->delivered_quantity) }}</span>
-                                                        @if($deliveryItem->serviceCategory?->unit)
-                                                            <span class="mr-0.5 text-[10px] font-medium text-slate-400">{{ $this->formatUnitLabel($deliveryItem->serviceCategory->unit) }}</span>
-                                                        @endif
-                                                    </span>
-
-                                                    @if(in_array((int) $deliveryItem->id, $deliveryGroup['editable_item_ids'], true))
-                                                        <button
-                                                            type="button"
-                                                            wire:click="editDeliveryItem({{ $deliveryItem->id }})"
-                                                            wire:loading.attr="disabled"
-                                                            wire:target="editDeliveryItem({{ $deliveryItem->id }})"
-                                                            class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-cyan-200 bg-white text-cyan-700 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50 focus:outline-none focus:ring-4 focus:ring-cyan-100 disabled:opacity-50"
-                                                            title="ویرایش {{ $deliveryItem->serviceCategory?->name ?: 'مقدار تحویل' }}"
-                                                            aria-label="ویرایش {{ $deliveryItem->serviceCategory?->name ?: 'مقدار تحویل' }}"
-                                                        >
-                                                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                                                <path d="m16.5 4.5 3 3M5 19l3.5-.8L19 7.7a2.1 2.1 0 0 0-3-3L5.5 15.2 5 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                            </svg>
-                                                        </button>
-                                                    @else
-                                                        <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-400" title="این رکورد از اینجا قابل ویرایش نیست">
-                                                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                                                <rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2"/>
-                                                                <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                                            </svg>
-                                                        </span>
-                                                    @endif
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </section>
+                                        @if($recipientItem['can_edit'])
+                                            <button
+                                                type="button"
+                                                wire:click="editDeliveryItem({{ $deliveryItem->id }})"
+                                                wire:loading.attr="disabled"
+                                                wire:target="editDeliveryItem({{ $deliveryItem->id }})"
+                                                class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-cyan-200 bg-white text-cyan-700 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50 focus:outline-none focus:ring-4 focus:ring-cyan-100 disabled:opacity-50"
+                                                title="ویرایش {{ $deliveryItem->serviceCategory?->name ?: 'مقدار تحویل' }}"
+                                                aria-label="ویرایش {{ $deliveryItem->serviceCategory?->name ?: 'مقدار تحویل' }}"
+                                            >
+                                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                    <path d="m16.5 4.5 3 3M5 19l3.5-.8L19 7.7a2.1 2.1 0 0 0-3-3L5.5 15.2 5 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                </svg>
+                                            </button>
+                                        @else
+                                            <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-400" title="این رکورد از اینجا قابل ویرایش نیست">
+                                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                    <rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2"/>
+                                                    <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                                </svg>
+                                            </span>
+                                        @endif
+                                    </div>
                                 @endforeach
                             </div>
                         </article>

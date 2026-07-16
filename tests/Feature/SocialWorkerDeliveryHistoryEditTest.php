@@ -261,7 +261,8 @@ class SocialWorkerDeliveryHistoryEditTest extends TestCase
             ->assertViewHas('deliveryGroups', fn ($groups): bool => $groups->count() === 2
                 && $groups->every(fn (array $group): bool => str_starts_with($group['batch_key'], 'legacy-')))
             ->assertViewHas('recipientGroups', fn ($groups): bool => $groups->count() === 1
-                && $groups->first()['delivery_groups']->count() === 2);
+                && $groups->first()['delivery_groups']->count() === 2
+                && $groups->first()['items']->count() === 2);
     }
 
     private function socialWorkerUser(int $workerCode = 201): array
