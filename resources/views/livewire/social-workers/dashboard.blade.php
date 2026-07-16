@@ -13,6 +13,11 @@
         formatDecimal(value) {
             return Math.max(0, this.toNumber(value)).toFixed(2);
         },
+        formatQuantity(value, decimalUnit) {
+            const fixed = Math.max(0, this.toNumber(value)).toFixed(2);
+
+            return decimalUnit ? fixed : String(parseFloat(fixed));
+        },
         setCategoryQuantity(rowIndex, categoryId, value) {
             if (!this.quotaEntries[rowIndex]) {
                 this.quotaEntries[rowIndex] = {};
@@ -119,7 +124,7 @@
                                             @endif
                                         </div>
                                         <p class="mt-1.5 text-xs font-medium leading-5 text-slate-500 sm:text-sm">
-                                            برای شروع ثبت تحویل، یکی از خدمات تخصیص‌یافته را انتخاب کنید.
+                                            خدمت مورد نظر را انتخاب کنید
                                         </p>
                                     </div>
                                 </div>
@@ -546,14 +551,14 @@
                                             <div class="min-w-0">
                                                 <span class="block text-[9px] font-bold leading-4 text-slate-400">باقی‌مانده</span>
                                                 <span class="block truncate text-base font-extrabold leading-6 {{ $quotaState['value'] }}">
-                                                    {{ $this->persianNumber($formatQuotaValue($remaining)) }}
+                                                    {{ $this->persianNumber(\App\Models\Service::formatQuantityForUnit($remaining, $category->unit)) }}
                                                     <span class="text-[10px] font-bold text-slate-400">{{ $unitLabel }}</span>
                                                 </span>
                                             </div>
 
                                             <div class="shrink-0 text-left text-[10px] font-bold leading-4 text-slate-500">
-                                                <span class="block">تحویل {{ $this->persianNumber($formatQuotaValue($delivered)) }}</span>
-                                                <span class="block text-slate-400">از {{ $this->persianNumber($formatQuotaValue($allocated)) }}</span>
+                                                <span class="block">تحویل {{ $this->persianNumber(\App\Models\Service::formatQuantityForUnit($delivered, $category->unit)) }}</span>
+                                                <span class="block text-slate-400">از {{ $this->persianNumber(\App\Models\Service::formatQuantityForUnit($allocated, $category->unit)) }}</span>
                                             </div>
                                         </div>
 
@@ -1225,7 +1230,7 @@
                                                         <div class="flex shrink-0 items-center gap-2">
                                                             @if($rowTotalQuantity > 0)
                                                                 <span class="rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
-                                                                    جمع: {{ $this->persianNumber(number_format($rowTotalQuantity, 2)) }}
+                                                                    جمع: {{ $this->persianNumber(\App\Models\Service::formatQuantityForUnit($rowTotalQuantity, null)) }}
                                                                 </span>
                                                             @endif
                                                         </div>
@@ -1246,6 +1251,7 @@
                                                                     ));
                                                                     $exceedsRemainingQuota = $currentQuantity > 0 && $currentQuantity > $availableForCurrentInput;
                                                                     $isUnavailable = $remainingStock <= 0;
+                                                                    $categoryUsesDecimals = \App\Models\Service::unitUsesDecimalPrecision($category->unit);
                                                                 @endphp
 
                                                                 <div class="grid grid-cols-[minmax(0,1fr)_7.5rem] items-center gap-2 border-b border-slate-200 bg-white px-3 py-2.5 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_9rem]"
@@ -1254,6 +1260,7 @@
                                                                         categoryId: '{{ (int) $category->id }}',
                                                                         remainingStock: {{ json_encode(number_format($remainingStock, 2, '.', '')) }},
                                                                         remainingAllocation: {{ json_encode(number_format((float) $metrics['remaining_allocation'], 2, '.', '')) }},
+                                                                        decimalUnit: {{ $categoryUsesDecimals ? 'true' : 'false' }},
                                                                         get available() {
                                                                             return availableForInput(this.rowIndex, this.categoryId, this.remainingStock, this.remainingAllocation);
                                                                         },
@@ -1270,7 +1277,7 @@
                                                                         </div>
                                                                         <p class="mt-1 flex flex-wrap items-center gap-1 text-[10px] font-bold text-slate-400">
                                                                             <span>باقی‌مانده:</span>
-                                                                            <span x-text="persianNumber(formatDecimal(available))">{{ $this->persianNumber(number_format($availableForCurrentInput, 2)) }}</span>
+                                                                            <span x-text="persianNumber(formatQuantity(available, decimalUnit))">{{ $this->persianNumber(\App\Models\Service::formatQuantityForUnit($availableForCurrentInput, $category->unit)) }}</span>
                                                                             <span>{{ $unitOptions[$category->unit] ?? $category->unit }}</span>
                                                                         </p>
                                                                     </div>
@@ -1762,6 +1769,7 @@
                                         'name' => $category->name,
                                         'unit' => $unitOptions[$category->unit] ?? $category->unit,
                                         'quantity' => $quantity,
+                                        'quantity_display' => \App\Models\Service::formatQuantityForUnit($quantity, $category->unit),
                                     ];
                                 })
                                 ->filter(fn ($row) => (float) $row['quantity'] > 0)
@@ -1771,13 +1779,13 @@
                             // Live remaining quota per category = allocation left minus what is
                             // pending in the current form, capped by remaining stock. Kept visible
                             // while quantities are entered so over-allocation is caught early.
-                            // Whole quantities (e.g. عدد) render without decimals; only fractional
-                            // values (e.g. کیلوگرم) keep two decimals, to avoid visual noise.
+                            // Decimal units (e.g. کیلوگرم) keep two decimals; discrete units
+                            // (e.g. عدد، بسته، پرس) drop trailing zeros, to avoid visual noise.
                             $formatQuota = fn (float $value): string => round($value, 2) == round($value)
                                 ? number_format($value, 0)
                                 : number_format($value, 2);
                             $quotaStripCategories = $assignableCategories
-                                ->map(function ($category) use ($recipientEntries, $categoryMetrics, $unitOptions, $formatQuota) {
+                                ->map(function ($category) use ($recipientEntries, $categoryMetrics, $unitOptions) {
                                     $metrics = $categoryMetrics[$category->id] ?? ['remaining_stock' => 0, 'remaining_allocation' => 0];
                                     $pending = collect($recipientEntries)
                                         ->sum(fn ($entry) => (float) data_get($entry, 'category_quantities.' . (int) $category->id, 0));
@@ -1797,7 +1805,7 @@
                                         'unit' => $unitOptions[$category->unit] ?? $category->unit,
                                         'pending' => $pending,
                                         'remaining' => $liveRemaining,
-                                        'remaining_display' => $formatQuota($liveRemaining),
+                                        'remaining_display' => \App\Models\Service::formatQuantityForUnit($liveRemaining, $category->unit),
                                         'state' => $state,
                                     ];
                                 })
@@ -1890,7 +1898,7 @@
                                             <div class="flex items-center justify-between gap-3 rounded-xl bg-white px-2.5 py-2">
                                                 <span class="min-w-0 truncate text-xs font-bold text-slate-700">{{ $row['name'] }}</span>
                                                 <span class="shrink-0 text-xs font-extrabold text-slate-800">
-                                                    {{ $this->persianNumber(number_format((float) $row['quantity'], 2)) }}
+                                                    {{ $this->persianNumber($row['quantity_display'] ?? number_format((float) $row['quantity'], 2)) }}
                                                     <span class="text-[10px] text-slate-400">{{ $row['unit'] }}</span>
                                                 </span>
                                             </div>
