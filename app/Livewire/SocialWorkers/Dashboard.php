@@ -123,6 +123,9 @@ class Dashboard extends Component
     public function addRecipientField(): void
     {
         $this->recipientEntries[] = $this->blankEntry($this->defaultServiceCategoryId($this->selectedService));
+
+        // Tell the accordion to collapse the previous boxes and open the new one.
+        $this->dispatch('recipient-added', index: array_key_last($this->recipientEntries));
     }
 
     public function removeRecipientField(int $index): void
@@ -133,6 +136,10 @@ class Dashboard extends Component
         if ($this->recipientEntries === []) {
             $this->recipientEntries = [$this->blankEntry($this->defaultServiceCategoryId($this->selectedService))];
         }
+
+        // Focus the box that now sits at the removed position (or the last one).
+        $focusIndex = min($index, array_key_last($this->recipientEntries));
+        $this->dispatch('recipient-removed', index: $focusIndex);
     }
 
     public function updatedRecipientEntries($value, ?string $key = null): void

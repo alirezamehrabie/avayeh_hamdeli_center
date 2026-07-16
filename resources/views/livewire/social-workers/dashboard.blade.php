@@ -690,7 +690,30 @@
                             </div>
                         @else
                         <!-- Recipients List -->
-                        <div class="space-y-3">
+                        <div
+                            class="space-y-3"
+                            x-data="{
+                                activeRecipient: {{ max(count($recipientEntries) - 1, 0) }},
+                                isOpen(index) {
+                                    return this.activeRecipient === index;
+                                },
+                                open(index) {
+                                    this.activeRecipient = index;
+                                },
+                                toggle(index) {
+                                    this.activeRecipient = this.activeRecipient === index ? null : index;
+                                },
+                            }"
+                            x-on:recipient-added.window="open($event.detail.index)"
+                            x-on:recipient-removed.window="open($event.detail.index)"
+                            x-on:social-worker-delivery-validation-failed.window="
+                                const field = $event.detail?.field ?? '';
+                                const parts = field.split('.');
+                                if (parts[0] === 'recipientEntries' && parts[1] !== undefined && !Number.isNaN(parseInt(parts[1], 10))) {
+                                    open(parseInt(parts[1], 10));
+                                }
+                            "
+                        >
                             @foreach($recipientEntries as $index => $entry)
                                     @php
                                         $rowCategoryQuantitiesForHeader = collect($entry['category_quantities'] ?? []);
@@ -725,43 +748,71 @@
                                 <article class="relative overflow-hidden rounded-2xl border bg-white shadow-sm transition-all {{ $hasRowErrors ? 'border-rose-300 ring-4 ring-rose-100' : 'border-slate-200' }}">
                                     <div class="h-1 w-full {{ $hasRowErrors ? 'bg-rose-200' : ($recipientEditorOpen ? 'bg-cyan-500/70' : 'bg-slate-200') }}"></div>
                                     <div class="p-3 sm:p-4">
-                                    <div class="mb-3 border-b border-slate-100 pb-1 md:mb-4 md:pb-4">
-                                        <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                                            <div class="min-w-0 flex-1">
-                                                @if($recipientDisplayName !== '' || $recipientNationalId !== '')
-                                                    <div class="flex min-w-0 flex-col items-start gap-1">
-                                                        @if($recipientDisplayName !== '')
-                                                            <p class="truncate text-sm font-extrabold text-slate-900">{{ $recipientDisplayName }}</p>
-                                                        @endif
-                                                        @if($recipientNationalId !== '')
-                                                            <span class="inline-flex max-w-full items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-bold leading-none text-slate-500" dir="ltr">
-                                                                <i class="bi bi-person-vcard text-[10px] text-slate-400"></i>
-                                                                <span class="truncate">{{ $this->persianNumber($recipientNationalId) }}</span>
-                                                            </span>
-                                                        @endif
-                                                    </div>
-                                                @else
-                                                    <p class="text-sm font-bold text-slate-500">گیرنده انتخاب نشده است.</p>
-                                                @endif
-                                            </div>
+                                    @php
+                                        $recipientStatus = $hasRowErrors
+                                            ? ['label' => 'دارای خطا', 'chip' => 'border-rose-200 bg-rose-50 text-rose-700', 'badge' => 'bg-rose-100 text-rose-700', 'icon' => 'bi-exclamation-triangle-fill']
+                                            : ($rowNeedsInput
+                                                ? ['label' => 'ناتمام', 'chip' => 'border-amber-200 bg-amber-50 text-amber-700', 'badge' => 'bg-amber-100 text-amber-700', 'icon' => 'bi-hourglass-split']
+                                                : ['label' => 'تکمیل شده', 'chip' => 'border-emerald-200 bg-emerald-50 text-emerald-700', 'badge' => 'bg-emerald-100 text-emerald-700', 'icon' => 'bi-check-circle-fill']);
+                                    @endphp
+                                    <div class="flex items-center gap-2">
+                                        <button type="button"
+                                                @click="toggle({{ $index }})"
+                                                :aria-expanded="isOpen({{ $index }}).toString()"
+                                                aria-controls="recipient-body-{{ $index }}"
+                                                class="group flex min-w-0 flex-1 items-center gap-3 rounded-xl p-2 text-right transition hover:bg-slate-50/80 focus:outline-none focus:ring-4 focus:ring-cyan-500/10">
+                                            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-black {{ $recipientStatus['badge'] }}">
+                                                {{ $this->persianNumber($index + 1) }}
+                                            </span>
+                                            <span class="min-w-0 flex-1">
+                                                <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                                    <span class="text-xs font-black text-slate-400">گیرنده {{ $this->persianNumber($index + 1) }}</span>
+                                                    @if($recipientDisplayName !== '')
+                                                        <span class="truncate text-sm font-extrabold text-slate-900">{{ $recipientDisplayName }}</span>
+                                                    @endif
+                                                    @if($recipientNationalId !== '')
+                                                        <span class="inline-flex max-w-full items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-bold leading-none text-slate-500" dir="ltr">
+                                                            <i class="bi bi-person-vcard text-[10px] text-slate-400"></i>
+                                                            <span class="truncate">{{ $this->persianNumber($recipientNationalId) }}</span>
+                                                        </span>
+                                                    @endif
+                                                </span>
+                                                <span class="mt-1 flex flex-wrap items-center gap-2">
+                                                    <span class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-black {{ $recipientStatus['chip'] }}">
+                                                        <i class="bi {{ $recipientStatus['icon'] }} text-[10px]"></i>
+                                                        {{ $recipientStatus['label'] }}
+                                                    </span>
+                                                    @if($rowEnteredCategoryCountForHeader > 0)
+                                                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500">
+                                                            <i class="bi bi-box-seam text-[10px] text-slate-400"></i>
+                                                            {{ $this->persianNumber($rowEnteredCategoryCountForHeader) }} قلم
+                                                        </span>
+                                                    @endif
+                                                </span>
+                                            </span>
+                                            <svg class="h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200"
+                                                 :class="{ 'rotate-180': isOpen({{ $index }}) }"
+                                                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                            </svg>
+                                        </button>
 
-                                            <div class="flex flex-col gap-2 md:w-44">
-                                                @if(count($recipientEntries) > 1)
-                                                    <button type="button"
-                                                            wire:click="removeRecipientField({{ $index }})"
-                                                            @if($rowHasEnteredData)
-                                                                wire:confirm="اطلاعات واردشده برای این گیرنده حذف می‌شود. ادامه می‌دهید؟"
-                                                            @endif
-                                                            class="inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-black text-rose-600 transition hover:border-rose-200 hover:bg-rose-50 focus:outline-none focus:ring-4 focus:ring-rose-100">
-                                                        <i class="bi bi-trash3 text-sm"></i>
-                                                        حذف گیرنده
-                                                    </button>
-                                                @endif
-                                            </div>
-                                        </div>
-
+                                        @if(count($recipientEntries) > 1)
+                                            <button type="button"
+                                                    wire:click="removeRecipientField({{ $index }})"
+                                                    @if($rowHasEnteredData)
+                                                        wire:confirm="اطلاعات واردشده برای این گیرنده حذف می‌شود. ادامه می‌دهید؟"
+                                                    @endif
+                                                    class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-rose-600 transition hover:border-rose-200 hover:bg-rose-50 focus:outline-none focus:ring-4 focus:ring-rose-100"
+                                                    aria-label="حذف گیرنده">
+                                                <i class="bi bi-trash3 text-sm"></i>
+                                            </button>
+                                        @endif
                                     </div>
 
+                                    <div id="recipient-body-{{ $index }}"
+                                         x-show="isOpen({{ $index }})"
+                                         x-collapse.duration.250ms>
                                     <div class="mt-3 space-y-3 md:space-y-4">
                                         <div class="border-b border-slate-100 pb-3">
                                             <div class="mb-3 flex items-center gap-2">
@@ -1364,6 +1415,7 @@
                                     @error('recipientEntries.' . $index . '.national_id') <p class="mt-2 rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{{ $message }}</p> @enderror
                                     @error('recipientEntries.' . $index . '.quantity') <p class="mt-2 rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{{ $message }}</p> @enderror
                                     @error('recipientEntries') <p class="mt-2 rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{{ $message }}</p> @enderror
+                                    </div>
 
                                     </div>
                                 </article>
