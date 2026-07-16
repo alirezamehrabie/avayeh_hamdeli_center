@@ -482,7 +482,10 @@
                             @endif
 
                             @php
-                                $serviceCategories = $selectedService->categories?->sortBy('sort_id') ?? collect();
+                                $serviceCategories = ($selectedService->categories ?? collect())
+                                    ->filter(fn ($category) => (float) ($categoryMetrics[$category->id]['allocated'] ?? 0) > 0)
+                                    ->sortBy('sort_id')
+                                    ->values();
                             @endphp
 
                             <div class="mt-2.5 grid gap-2 sm:grid-cols-2">
