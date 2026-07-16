@@ -100,6 +100,38 @@
 
         <div class="px-3 py-4 sm:px-4 sm:py-6">
             <form wire:submit.prevent="saveDelivery"
+                  x-data="{
+                      focusRecipientSection() {
+                          // Mobile/small screens only — leave tablet/desktop layouts untouched.
+                          if (!window.matchMedia('(max-width: 767px)').matches) {
+                              return;
+                          }
+
+                          // Wait for Livewire to morph the recipient section into the DOM.
+                          this.$nextTick(() => {
+                              window.setTimeout(() => {
+                                  const section = document.getElementById('recipient-selection-section');
+                                  if (!section) {
+                                      return;
+                                  }
+
+                                  // Only skip if the section is already scrolled to the top of the
+                                  // viewport (its heading is right there). Otherwise, guide the user to it.
+                                  const rect = section.getBoundingClientRect();
+                                  if (rect.top >= 0 && rect.top <= 96) {
+                                      return;
+                                  }
+
+                                  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                                  section.scrollIntoView({
+                                      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+                                      block: 'start',
+                                  });
+                              }, 50);
+                          });
+                      },
+                  }"
+                  x-on:service-selected.window="focusRecipientSection()"
                   class="space-y-5 {{ $selectedService ? 'pb-20 md:pb-0' : 'pb-0' }}">
                 <div class="{{ $selectedService ? 'grid gap-4 xl:gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] xl:items-start' : 'mx-auto grid max-w-2xl gap-4' }}">
                     <div class="space-y-5">
@@ -606,7 +638,7 @@
 
 
                     @if($selectedService)
-                    <section class="rounded-2xl border border-cyan-100 bg-white p-3 shadow-sm shadow-slate-100 sm:p-4">
+                    <section id="recipient-selection-section" data-recipient-section class="rounded-2xl border border-cyan-100 bg-white p-3 shadow-sm shadow-slate-100 sm:p-4">
                         <!-- Header Section -->
                         <div class="mb-4 flex items-center justify-between gap-4">
                             <div class="flex min-w-0 items-start gap-3">

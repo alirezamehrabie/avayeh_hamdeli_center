@@ -80,6 +80,11 @@ class Dashboard extends Component
         $this->serviceSelectionWarning = '';
         $this->closeNotificationModal();
         $this->resetValidation();
+
+        // Guide the user (on mobile) to the recipient step once a service is chosen.
+        if ($service) {
+            $this->dispatch('service-selected');
+        }
     }
 
     public function requireServiceSelection(): void
