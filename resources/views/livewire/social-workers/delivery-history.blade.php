@@ -278,96 +278,69 @@
                 </div>
             </div>
 
-            <div class="space-y-2 bg-slate-50/60 px-3 py-3 sm:hidden">
-                @php
-                    $mobileDeliveryGroups = $deliveries->getCollection()
-                        ->groupBy(fn ($delivery) => $delivery->person_id
-                            ? 'person-'.$delivery->person_id
-                            : ($delivery->guardian_id ? 'guardian-'.$delivery->guardian_id : 'national-'.$delivery->recipient_national_id)
-                        )
-                        ->map(function ($group) {
-                            return [
-                                'recipient' => $group->first(),
-                                'items' => $group,
-                            ];
-                        });
-                @endphp
+            @php
+                $deliveryGroups = $deliveries->getCollection()
+                    ->groupBy(fn ($delivery) => $delivery->person_id
+                        ? 'person-'.$delivery->person_id
+                        : ($delivery->guardian_id ? 'guardian-'.$delivery->guardian_id : 'national-'.$delivery->recipient_national_id)
+                    )
+                    ->map(function ($group) {
+                        return [
+                            'recipient' => $group->first(),
+                            'items' => $group,
+                        ];
+                    });
+            @endphp
 
-                @forelse($mobileDeliveryGroups as $deliveryGroup)
-                    @php($recipientDelivery = $deliveryGroup['recipient'])
-                    <article class="rounded-2xl border border-t-[3px] border-slate-200/70 border-r-cyan-200 border-t-cyan-100 bg-white px-3 py-2.5 shadow-sm">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="min-w-0">
-                                <h3 class="truncate text-[15px] font-black leading-5 tracking-tight text-slate-900">{{ $recipientDelivery->recipient_name ?: '-' }}</h3>
-                                <p class="mt-0.5 truncate text-[11px] font-medium leading-4 text-slate-400">
-                                    <span class="text-slate-300">کد ملی</span>
-                                    <span>{{ $this->persianNumber($recipientDelivery->recipient_national_id ?: '-') }}</span>
-                                </p>
-                            </div>
-                            <time class="shrink-0 rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-bold leading-4 text-slate-500 ring-1 ring-inset ring-slate-100">
-                                {{ $this->formatLastDeliveryDate($recipientDelivery->delivered_at) }}
-                            </time>
-                        </div>
-
-                        <div class="mt-2 overflow-hidden rounded-xl border border-slate-100 bg-slate-50/80 text-[11px]">
-                            @foreach($deliveryGroup['items'] as $deliveryItem)
-                                <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-2.5 py-2 {{ $loop->first ? '' : 'border-t border-slate-100' }}">
-                                    <span class="truncate font-semibold text-slate-600">{{ $deliveryItem->serviceCategory?->name ?: '-' }}</span>
-                                    <span class="shrink-0">
-                                        <span class="font-black text-slate-900">{{ $this->formatQuantity($deliveryItem->delivered_quantity) }}</span>
-                                        @if($deliveryItem->serviceCategory?->unit)
-                                            <span class="mr-0.5 text-[10px] font-medium text-slate-400">{{ $this->formatUnitLabel($deliveryItem->serviceCategory->unit) }}</span>
-                                        @endif
-                                    </span>
+            <div class="bg-slate-50/60 px-3 py-3 sm:px-5 sm:py-5">
+                <div class="mx-auto max-w-4xl space-y-2 sm:space-y-3">
+                    @forelse($deliveryGroups as $deliveryGroup)
+                        @php($recipientDelivery = $deliveryGroup['recipient'])
+                        <article class="rounded-2xl border border-t-[3px] border-slate-200/70 border-r-cyan-200 border-t-cyan-100 bg-white px-3 py-2.5 shadow-sm sm:px-4 sm:py-3.5">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <h3 class="truncate text-[15px] font-black leading-5 tracking-tight text-slate-900 sm:text-base">{{ $recipientDelivery->recipient_name ?: '-' }}</h3>
+                                    <p class="mt-0.5 truncate text-[11px] font-medium leading-4 text-slate-400 sm:text-xs">
+                                        <span class="text-slate-300">کد ملی</span>
+                                        <span>{{ $this->persianNumber($recipientDelivery->recipient_national_id ?: '-') }}</span>
+                                    </p>
                                 </div>
-                            @endforeach
-                        </div>
-                    </article>
-                @empty
-                    <div class="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">
-                        @if($deliverySearch !== '' || $deliveryDateFrom !== '' || $deliveryDateTo !== '')
-                            <p class="font-bold text-slate-700">نتیجه‌ای برای فیلترهای فعلی یافت نشد.</p>
-                            <button
-                                type="button"
-                                wire:click="clearDeliveryFilters"
-                                class="mt-3 inline-flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-100 focus:outline-none focus:ring-4 focus:ring-cyan-100"
-                            >
-                                حذف فیلتر
-                            </button>
-                        @else
-                            <p>هیچ سابقه تحویلی برای این خدمت یافت نشد.</p>
-                        @endif
-                    </div>
-                @endforelse
-            </div>
+                                <time class="shrink-0 rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-bold leading-4 text-slate-500 ring-1 ring-inset ring-slate-100 sm:px-2.5 sm:py-1 sm:text-[11px]">
+                                    {{ $this->formatLastDeliveryDate($recipientDelivery->delivered_at) }}
+                                </time>
+                            </div>
 
-            <div class="hidden overflow-x-auto sm:block">
-                <table class="min-w-full text-sm">
-                    <thead class="bg-slate-950 text-white">
-                    <tr>
-                        <th class="px-4 py-4 text-right font-bold">گیرنده</th>
-                        <th class="px-4 py-4 text-center font-bold">کد ملی</th>
-                        <th class="px-4 py-4 text-center font-bold">مقدار</th>
-                        <th class="px-4 py-4 text-center font-bold">ارزش</th>
-                        <th class="px-4 py-4 text-center font-bold">تاریخ</th>
-                    </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                    @forelse($deliveries as $delivery)
-                        <tr class="transition hover:bg-slate-50">
-                            <td class="px-4 py-4 text-slate-700">{{ $delivery->recipient_name }}</td>
-                            <td class="px-4 py-4 text-center text-slate-700">{{ $this->persianNumber($delivery->recipient_national_id) }}</td>
-                            <td class="px-4 py-4 text-center font-bold text-slate-800">{{ $this->formatQuantity($delivery->delivered_quantity) }}</td>
-                            <td class="px-4 py-4 text-center font-bold text-emerald-700">{{ $this->formatCurrency($delivery->delivered_total_value) }}</td>
-                            <td class="px-4 py-4 text-center text-slate-700">{{ $this->formatLastDeliveryDate($delivery->delivered_at) }}</td>
-                        </tr>
+                            <div class="mt-2 overflow-hidden rounded-xl border border-slate-100 bg-slate-50/80 text-[11px] sm:mt-3 sm:text-xs">
+                                @foreach($deliveryGroup['items'] as $deliveryItem)
+                                    <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-2.5 py-2 sm:px-3 sm:py-2.5 {{ $loop->first ? '' : 'border-t border-slate-100' }}">
+                                        <span class="truncate font-semibold text-slate-600">{{ $deliveryItem->serviceCategory?->name ?: '-' }}</span>
+                                        <span class="shrink-0">
+                                            <span class="font-black text-slate-900">{{ $this->formatQuantity($deliveryItem->delivered_quantity) }}</span>
+                                            @if($deliveryItem->serviceCategory?->unit)
+                                                <span class="mr-0.5 text-[10px] font-medium text-slate-400">{{ $this->formatUnitLabel($deliveryItem->serviceCategory->unit) }}</span>
+                                            @endif
+                                        </span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </article>
                     @empty
-                        <tr>
-                            <td colspan="5" class="px-4 py-10 text-center text-slate-500">هیچ سابقه تحویلی برای این خدمت یافت نشد.</td>
-                        </tr>
+                        <div class="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">
+                            @if($deliverySearch !== '' || $deliveryDateFrom !== '' || $deliveryDateTo !== '')
+                                <p class="font-bold text-slate-700">نتیجه‌ای برای فیلترهای فعلی یافت نشد.</p>
+                                <button
+                                    type="button"
+                                    wire:click="clearDeliveryFilters"
+                                    class="mt-3 inline-flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-100 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                                >
+                                    حذف فیلتر
+                                </button>
+                            @else
+                                <p>هیچ سابقه تحویلی برای این خدمت یافت نشد.</p>
+                            @endif
+                        </div>
                     @endforelse
-                    </tbody>
-                </table>
+                </div>
             </div>
 
             <div class="border-t border-slate-200 px-6 py-4">
