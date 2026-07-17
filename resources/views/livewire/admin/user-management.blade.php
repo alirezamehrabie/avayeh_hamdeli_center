@@ -589,19 +589,6 @@
                                     <input type="text" wire:model.blur="edit_username" class="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm leading-5 focus:border-amber-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-100">
                                     @error('edit_username') <span class="mt-1 block text-[11px] text-red-600">{{ $message }}</span> @enderror
                                 </div>
-                                <div class="sm:col-span-2 xl:col-span-4">
-                                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">رمز عبور فعلی</label>
-                                    <div x-data="{ showPassword: false }" class="relative">
-                                        <input x-bind:type="showPassword ? 'text' : 'password'" value="{{ $edit_current_password !== '' ? $edit_current_password : 'رمز عبور قبلی در سیستم قابل نمایش نیست' }}" readonly class="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 pr-10 pl-3 text-sm leading-5 text-slate-700 focus:border-amber-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-100">
-                                        <button type="button" x-on:click="showPassword = !showPassword" class="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-600" aria-label="نمایش یا مخفی کردن رمز عبور فعلی">
-                                            <svg x-show="!showPassword" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                                            <svg x-show="showPassword" x-cloak xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.956 9.956 0 012.042-3.368M6.223 6.223A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.97 9.97 0 01-4.294 5.225M15 12a3 3 0 00-4.243-4.243M9.88 9.88A3 3 0 0014.12 14.12M3 3l18 18" /></svg>
-                                        </button>
-                                    </div>
-                                    @if($edit_current_password === '')
-                                        <p class="mt-1 text-[11px] text-slate-500">برای کاربران قدیمی فقط رمزهای ثبت‌شده یا تغییر یافته از این بخش قابل نمایش هستند.</p>
-                                    @endif
-                                </div>
                                 <div class="sm:col-span-1 xl:col-span-2">
                                     <label class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">رمز عبور جدید</label>
                                     <div x-data="{ showPassword: false }" class="relative">

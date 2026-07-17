@@ -76,7 +76,6 @@ class User extends Authenticatable
         'last_name',
         'email',
         'password',
-        'manager_visible_password',
         'profile_photo_path',
         'mobile',
         'is_admin',
@@ -92,7 +91,6 @@ class User extends Authenticatable
      */
     protected $hidden = [
         'password',
-        'manager_visible_password',
         'remember_token',
     ];
 
@@ -106,7 +104,6 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'manager_visible_password' => 'encrypted',
             'is_admin' => 'boolean',
             'permissions' => 'array',
             'social_worker_id' => 'integer',

@@ -50,8 +50,6 @@ class UserManagement extends Component
 
     public string $edit_password_confirmation = '';
 
-    public string $edit_current_password = '';
-
     public string $edit_access_level = User::ACCESS_LEVEL_REGULAR;
 
     public array $edit_permissions = [];
@@ -159,7 +157,6 @@ class UserManagement extends Component
             'last_name' => trim($validated['last_name']),
             'email' => $username.'@local.system',
             'password' => $validated['password'],
-            'manager_visible_password' => $validated['password'],
             'access_level' => $validated['access_level'],
         ], $validated['permissions'] ?? []);
 
@@ -189,7 +186,6 @@ class UserManagement extends Component
             'edit_username',
             'edit_password',
             'edit_password_confirmation',
-            'edit_current_password',
             'edit_access_level',
             'edit_permissions',
         ]);
@@ -200,7 +196,6 @@ class UserManagement extends Component
         $this->edit_username = (string) $user->name;
         $this->edit_password = '';
         $this->edit_password_confirmation = '';
-        $this->edit_current_password = (string) ($user->manager_visible_password ?? '');
         $this->edit_access_level = (string) ($user->access_level ?? User::ACCESS_LEVEL_REGULAR);
         $this->edit_permissions = User::normalizePermissionKeysForAccessLevel(
             $user->getPermissionKeys(),
@@ -218,7 +213,6 @@ class UserManagement extends Component
         $this->edit_username = '';
         $this->edit_password = '';
         $this->edit_password_confirmation = '';
-        $this->edit_current_password = '';
         $this->edit_access_level = User::ACCESS_LEVEL_REGULAR;
         $this->edit_permissions = [];
         $this->showEditModal = false;
@@ -228,7 +222,6 @@ class UserManagement extends Component
             'edit_username',
             'edit_password',
             'edit_password_confirmation',
-            'edit_current_password',
             'edit_access_level',
             'edit_permissions',
         ]);
@@ -364,7 +357,6 @@ class UserManagement extends Component
 
         if (filled($validated['edit_password'] ?? null)) {
             $payload['password'] = $validated['edit_password'];
-            $payload['manager_visible_password'] = $validated['edit_password'];
         }
 
         $user->update($payload);

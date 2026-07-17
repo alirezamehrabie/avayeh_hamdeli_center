@@ -7,6 +7,7 @@ use App\Models\SocialWorker;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -14,7 +15,7 @@ class AdminUserManagementPasswordVisibilityTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_manager_defined_password_is_available_in_edit_modal(): void
+    public function test_manager_defined_password_is_only_stored_as_a_hash(): void
     {
         $this->actingAs($this->manager());
 
@@ -31,16 +32,16 @@ class AdminUserManagementPasswordVisibilityTest extends TestCase
         $user = User::query()->where('name', 'defined-user')->firstOrFail();
 
         $this->assertTrue(Hash::check('defined-password', $user->password));
-        $this->assertSame('defined-password', $user->manager_visible_password);
+        $this->assertFalse(Schema::hasColumn('users', 'manager_visible_password'));
+        $this->assertArrayNotHasKey('manager_visible_password', $user->getAttributes());
 
         Livewire::test(UserManagement::class, ['listOnly' => true])
             ->call('startEditingUser', $user->id)
             ->assertSet('showEditModal', true)
-            ->assertSet('edit_current_password', 'defined-password')
-            ->assertSee('رمز عبور فعلی');
+            ->assertDontSee('رمز عبور فعلی');
     }
 
-    public function test_updating_user_password_refreshes_manager_visible_password(): void
+    public function test_updating_user_password_only_replaces_the_hash(): void
     {
         $this->actingAs($this->manager());
 
@@ -51,7 +52,6 @@ class AdminUserManagementPasswordVisibilityTest extends TestCase
             'email' => 'editable-user@local.system',
             'access_level' => User::ACCESS_LEVEL_REGULAR,
             'permissions' => [],
-            'manager_visible_password' => 'old-password',
         ]);
 
         Livewire::test(UserManagement::class, ['listOnly' => true])
@@ -69,7 +69,7 @@ class AdminUserManagementPasswordVisibilityTest extends TestCase
         $user->refresh();
 
         $this->assertTrue(Hash::check('new-password', $user->password));
-        $this->assertSame('new-password', $user->manager_visible_password);
+        $this->assertArrayNotHasKey('manager_visible_password', $user->getAttributes());
     }
 
     public function test_social_worker_user_can_be_saved_from_admin_edit_modal(): void
