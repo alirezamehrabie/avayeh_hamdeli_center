@@ -1943,25 +1943,65 @@
                             @endif
                         </section>
 
-                        <section class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-100 sm:p-4">
-                            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                                <div class="flex min-w-0 items-start gap-3">
+                        <section
+                            class="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-100"
+                            x-data="{ finalReviewOpen: false }"
+                        >
+                            <button
+                                type="button"
+                                class="group flex w-full items-center justify-between gap-3 rounded-2xl p-3 text-right transition duration-200 hover:bg-cyan-50/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 sm:p-4"
+                                x-on:click="finalReviewOpen = ! finalReviewOpen"
+                                x-bind:aria-expanded="finalReviewOpen.toString()"
+                                aria-controls="social-worker-final-review-details"
+                            >
+                                <span class="flex min-w-0 items-start gap-3">
                                     <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-600 text-sm font-black text-white">۴</span>
-                                    <div class="min-w-0">
-                                    <h2 class="text-sm font-black text-slate-800">مرور نهایی تحویل</h2>
-                                    <p class="mt-1 truncate text-xs font-bold text-slate-500">
-                                        {{ $selectedService->serviceName?->name }}
-                                        <span class="text-slate-300">|</span>
-                                        {{ $this->persianNumber($selectedService->code) }}
-                                    </p>
-                                    </div>
-                                </div>
+                                    <span class="min-w-0">
+                                        <span class="block text-sm font-black text-slate-800">مرور نهایی تحویل</span>
+                                        <span class="mt-1 block truncate text-xs font-bold text-slate-500">
+                                            {{ $selectedService->serviceName?->name }}
+                                            <span class="text-slate-300">|</span>
+                                            {{ $this->persianNumber($selectedService->code) }}
+                                        </span>
+                                    </span>
+                                </span>
+
+                                <span class="flex shrink-0 items-center gap-2">
+                                    <span class="hidden rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black text-slate-600 sm:inline-flex">
+                                        تاریخ: {{ $deliveredAt !== '' ? $this->persianNumber($deliveredAt) : '-' }}
+                                    </span>
+                                    <span class="inline-flex items-center gap-1.5 text-[10px] font-black text-cyan-700">
+                                        <span class="hidden sm:inline" x-text="finalReviewOpen ? 'بستن جزئیات' : 'نمایش جزئیات'"></span>
+                                        <span class="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-100 bg-cyan-50 shadow-sm transition duration-200 group-hover:border-cyan-200 group-hover:bg-cyan-100">
+                                            <svg
+                                                class="h-4 w-4 transition-transform duration-[250ms] ease-out motion-reduce:transition-none"
+                                                x-bind:class="{ 'rotate-180': finalReviewOpen }"
+                                                viewBox="0 0 20 20"
+                                                fill="none"
+                                                aria-hidden="true"
+                                            >
+                                                <path d="m5 7.5 5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                        </span>
+                                    </span>
+                                </span>
+                            </button>
+
+                            <div
+                                id="social-worker-final-review-details"
+                                class="overflow-hidden border-t border-slate-100"
+                                x-cloak
+                                x-show="finalReviewOpen"
+                                x-collapse.duration.250ms
+                            >
+                            <div class="p-3 pt-3 sm:p-4 sm:pt-4">
+                            <div class="mb-3 sm:hidden">
                                 <span class="inline-flex w-fit items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black text-slate-600">
                                     تاریخ: {{ $deliveredAt !== '' ? $this->persianNumber($deliveredAt) : '-' }}
                                 </span>
                             </div>
 
-                            <div class="mt-4 grid grid-cols-3 gap-2">
+                            <div class="grid grid-cols-3 gap-2">
                                 <div class="rounded-2xl bg-slate-50 px-2.5 py-2.5">
                                     <span class="block text-[9px] font-bold text-slate-400">گیرندگان</span>
                                     <span class="mt-1 block text-sm font-extrabold text-slate-800">{{ $this->persianNumber($filledRecipientCount) }}</span>
@@ -2009,6 +2049,8 @@
                                     @endif
                                 </div>
                             @endif
+                            </div>
+                            </div>
                         </section>
 
                         <div class="fixed inset-x-0 bottom-0 z-30 rounded-t-3xl border-t border-slate-200 bg-white/95 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 shadow-[0_-10px_24px_rgba(15,23,42,0.10)] backdrop-blur md:hidden">

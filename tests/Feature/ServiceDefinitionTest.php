@@ -338,6 +338,41 @@ class ServiceDefinitionTest extends TestCase
             ->assertDontSee($stationOnlyService->code);
     }
 
+    public function test_social_worker_final_review_is_collapsed_by_default_and_expandable(): void
+    {
+        $manager = $this->manager();
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 79,
+            'first_name' => 'Review',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+        $socialWorkerUser = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_SOCIAL_WORKER,
+            'is_admin' => false,
+            'social_worker_id' => $worker->id,
+        ]);
+        $service = $this->serviceWithCategory($manager, 'Review Service', true);
+
+        $service->workerAllocations()->create([
+            'social_worker_id' => $worker->id,
+            'service_category_id' => $service->categories()->firstOrFail()->id,
+            'allocated_quantity' => 5,
+        ]);
+
+        $this->actingAs($socialWorkerUser);
+
+        Livewire::test(SocialWorkerDashboard::class)
+            ->set('selectedServiceId', $service->id)
+            ->assertSee('مرور نهایی تحویل')
+            ->assertSeeHtml('x-data="{ finalReviewOpen: false }"')
+            ->assertSeeHtml('x-bind:aria-expanded="finalReviewOpen.toString()"')
+            ->assertSeeHtml('aria-controls="social-worker-final-review-details"')
+            ->assertSeeHtml('x-show="finalReviewOpen"')
+            ->assertSeeHtml('x-collapse.duration.250ms')
+            ->assertSeeHtml('x-bind:class="{ \'rotate-180\': finalReviewOpen }"');
+    }
+
     public function test_social_worker_delivery_rechecks_worker_category_quota_when_saving(): void
     {
         $manager = $this->manager();
