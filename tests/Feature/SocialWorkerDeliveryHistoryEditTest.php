@@ -75,6 +75,27 @@ class SocialWorkerDeliveryHistoryEditTest extends TestCase
         );
     }
 
+    public function test_recipient_selector_highlight_is_removed_after_a_recipient_is_selected(): void
+    {
+        [$user, $worker] = $this->socialWorkerUser();
+        $service = $this->serviceWithCategories();
+        $category = $service->categories()->firstOrFail();
+
+        $service->workerAllocations()->create([
+            'social_worker_id' => $worker->id,
+            'service_category_id' => $category->id,
+            'allocated_quantity' => 10,
+        ]);
+
+        $this->actingAs($user);
+
+        Livewire::test(Dashboard::class)
+            ->set('selectedServiceId', $service->id)
+            ->assertSeeHtml('recipient-selector-highlight')
+            ->set('recipientEntries.0.person_id', 123)
+            ->assertDontSeeHtml('recipient-selector-highlight');
+    }
+
     public function test_social_worker_can_edit_all_category_quantities_in_owned_home_delivery_batch(): void
     {
         [$user, $worker] = $this->socialWorkerUser();

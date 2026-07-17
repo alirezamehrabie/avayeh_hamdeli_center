@@ -690,6 +690,12 @@
                             </div>
                         @else
                         <!-- Recipients List -->
+                        @php
+                            $hasSelectedRecipient = collect($recipientEntries)->contains(
+                                fn ($recipientEntry) => filled($recipientEntry['person_id'] ?? null)
+                                    || filled($recipientEntry['guardian_id'] ?? null)
+                            );
+                        @endphp
                         <div
                             class="space-y-3"
                             x-data="{
@@ -982,7 +988,10 @@
                                                             </div>
                                                         </div>
 
-                                                        <div class="relative">
+                                                        <div
+                                                            class="relative {{ ! $hasSelectedRecipient && $loop->first ? 'recipient-selector-highlight' : '' }}"
+                                                            data-recipient-selector-trigger
+                                                        >
                                                         <input
                                                             type="text"
                                                             data-error-field="recipientEntries.{{ $index }}.national_id"

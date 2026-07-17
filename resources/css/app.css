@@ -192,3 +192,49 @@ body {
         background: #06b6d4;
     }
 }
+
+/*
+ * Subtle next-step cue for recipient selection after a service is chosen.
+ * The masked overlay sits inside the existing trigger edge, so it does not
+ * affect sizing or the bottom-sheet interaction area.
+ */
+.recipient-selector-highlight::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: 0.75rem;
+    padding: 1.3px;
+    background: linear-gradient(120deg, #0e7490, #0891b2, #22d3ee, #06b6d4, #0e7490);
+    background-size: 260% 260%;
+    opacity: 0.8;
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+    animation: recipient-selector-border-flow 6s ease-in-out infinite;
+}
+
+@keyframes recipient-selector-border-flow {
+    0%, 100% {
+        background-position: 0% 50%;
+        opacity: 0.65;
+    }
+    50% {
+        background-position: 100% 50%;
+        opacity: 0.9;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .recipient-selector-highlight::before {
+        animation: none;
+        background: #0891b2;
+        opacity: 0.75;
+    }
+}
