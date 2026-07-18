@@ -558,6 +558,14 @@
                         <livewire:admin.activity-operator-assignment :key="'activity-operator-assignments'" />
                         @break
 
+                    @case('notifications-center')
+                        <livewire:admin.notifications.notification-center :key="'notifications-center'" />
+                        @break
+
+                    @case('notifications-settings')
+                        <livewire:admin.notifications.notification-settings :key="'notifications-settings'" />
+                        @break
+
                     @case('system-settings-user-definition')
                         <livewire:admin.user-management :key="'system-settings-user-definition'" />
                         @break

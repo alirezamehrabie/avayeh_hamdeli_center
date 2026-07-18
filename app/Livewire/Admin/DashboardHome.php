@@ -256,6 +256,11 @@ class DashboardHome extends Component
             );
         }
 
+        if ($user?->can('manage-notifications')) {
+            $validSections[] = 'notifications-center';
+            $validSections[] = 'notifications-settings';
+        }
+
         if (! in_array($this->activeSection, $validSections, true)) {
             $this->activeSection = 'overview';
         }

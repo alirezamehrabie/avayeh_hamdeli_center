@@ -29,6 +29,7 @@ use App\Models\User;
 use App\Models\VehicleType;
 use App\Observers\GuardianObserver;
 use App\Observers\PersonObserver;
+use App\Observers\ServiceNotificationObserver;
 use App\Services\Ai\OpenAiBeneficiaryCaseAssistant;
 use App\Services\Ai\OpenAiBeneficiarySearchFilterGenerator;
 use App\Services\Ai\OpenAiFollowUpMessageGenerator;
@@ -55,6 +56,9 @@ class AppServiceProvider extends ServiceProvider
     {
         Guardian::observe(GuardianObserver::class);
         Person::observe(PersonObserver::class);
+        Service::observe(ServiceNotificationObserver::class);
+
+        // NotifyManagersOfUserLogin در app/Listeners به‌صورت خودکار کشف می‌شود.
 
         Relation::enforceMorphMap([
             'person' => Person::class,
@@ -77,6 +81,8 @@ class AppServiceProvider extends ServiceProvider
             'need_level_type' => NeedLevelType::class,
             'harm_type' => HarmType::class,
             'support_organization' => SupportOrganization::class,
+            'service' => Service::class,
+            'user' => User::class,
         ]);
 
         Gate::define('manage-people', function (User $user) {
@@ -102,6 +108,11 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::define('full-access', function (User $user) {
             return $user->hasFullAccess();
+        });
+
+        // مدیریت و مشاهده اعلان‌های داشبورد مدیریت
+        Gate::define('manage-notifications', function (User $user) {
+            return $user->isManager();
         });
 
         Gate::define('manage-social-workers', function (User $user) {

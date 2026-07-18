@@ -19,11 +19,15 @@
         </div>
     </div>
 
-    <div class="flex items-center">
+    <div class="flex items-center gap-3">
         <!-- نمایش تاریخ امروز شمسی (با کمک پکیج‌های تاریخ یا به صورت دستی) -->
         <div class="text-sm text-gray-500 ml-4">
 
         </div>
+
+        @can('manage-notifications')
+            <livewire:admin.notifications.notification-bell :key="'manager-notification-bell'" />
+        @endcan
 
         <div class="relative">
             <div class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white ring-1 ring-amber-50">

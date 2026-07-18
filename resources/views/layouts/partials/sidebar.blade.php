@@ -60,6 +60,7 @@
         $activitiesOpen = $dashboardMode ? $isActive(['activity-definition', 'activity-list', 'activity-scanner', 'activity-operator-assignments']) : false;
         $childSupporterOpen = $dashboardMode ? $isActive(['child-supporter-sponsor-registration', 'child-supporter-sponsor-edit', 'child-supporter-sponsor-list']) : false;
         $specialFeaturesOpen = $dashboardMode ? $isActive(['special-features-id-card-scanner']) : false;
+        $notificationsOpen = $dashboardMode ? $isActive(['notifications-center', 'notifications-settings']) : false;
         $systemSettingsOpen = $dashboardMode ? $isActive(['system-settings-user-definition', 'system-settings-user-list', 'system-settings-user-account']) : request()->routeIs('admin.user-definition') || request()->routeIs('admin.user-management') || request()->routeIs('admin.user-list') || request()->routeIs('admin.user-account');
         $dashboardReportsLinkActive = ! $dashboardMode && request()->routeIs('admin.dashboard') && request()->query('section') && in_array(request()->query('section'), ['advanced-reports', 'advanced-operator-report'], true);
         $defaultOpenMenu = '';
@@ -78,6 +79,8 @@
             $defaultOpenMenu = 'child-supporter';
         } elseif ($specialFeaturesOpen) {
             $defaultOpenMenu = 'special-features';
+        } elseif ($notificationsOpen) {
+            $defaultOpenMenu = 'notifications';
         } elseif ($systemSettingsOpen) {
             $defaultOpenMenu = 'system-settings';
         }
@@ -115,6 +118,10 @@
             ],
             'special-features' => [
                 ['section' => 'special-features-id-card-scanner', 'label' => 'اسکن کارت شناسایی'],
+            ],
+            'notifications' => [
+                ['section' => 'notifications-center', 'label' => 'مرکز اعلان‌ها'],
+                ['section' => 'notifications-settings', 'label' => 'تنظیمات اعلان‌ها'],
             ],
             'reports' => [
                 ['section' => 'advanced-beneficiary-report', 'label' => 'گزارش مددجویان', 'visible' => $user?->can('full-access')],
@@ -441,6 +448,36 @@
                     @endforeach
                 </div>
             </div>
+
+            @can('manage-notifications')
+                <div>
+                    <button type="button" @click="openMenu = openMenu === 'notifications' ? '' : 'notifications'"
+                            class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $notificationsOpen ? 'bg-indigo-700' : '' }}">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 ml-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                            </svg>
+                            <span>اعلان‌ها</span>
+                        </div>
+                        <svg :class="openMenu === 'notifications' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <div x-show="openMenu === 'notifications'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
+                        @foreach($dashboardMenuItems['notifications'] as $item)
+                            <x-sidebar.dashboard-section-button
+                                :section="$item['section']"
+                                :active="$isActive($item['active'] ?? $item['section'])"
+                            >
+                                {{ $item['label'] }}
+                            </x-sidebar.dashboard-section-button>
+                        @endforeach
+                    </div>
+                </div>
+            @endcan
         @endif
 
 
