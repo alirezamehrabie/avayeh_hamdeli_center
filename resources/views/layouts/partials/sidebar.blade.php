@@ -86,6 +86,9 @@
         }
 
         $user = auth()->user();
+        $unreadNotificationsCount = ($dashboardMode && $user?->can('manage-notifications'))
+            ? \App\Models\ManagerNotification::query()->forManager($user->id)->unread()->count()
+            : 0;
         $dashboardMenuItems = [
             'people' => [
                 ['section' => 'people-list', 'label' => 'لیست مددجویان', 'icon' => 'fa fa-users', 'active' => ['people-list', 'person-edit'], 'visible' => $user?->can('manage-people')],
@@ -120,7 +123,7 @@
                 ['section' => 'special-features-id-card-scanner', 'label' => 'اسکن کارت شناسایی'],
             ],
             'notifications' => [
-                ['section' => 'notifications-center', 'label' => 'مرکز اعلان‌ها'],
+                ['section' => 'notifications-center', 'label' => 'مرکز اعلان‌ها', 'badge' => $unreadNotificationsCount],
                 ['section' => 'notifications-settings', 'label' => 'تنظیمات اعلان‌ها'],
             ],
             'reports' => [
@@ -460,6 +463,12 @@
                                 <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                             </svg>
                             <span>اعلان‌ها</span>
+                            @if($unreadNotificationsCount > 0)
+                                <span class="mr-2 inline-flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-rose-500/90 px-1.5 text-[10px] font-bold leading-none text-white shadow-sm shadow-rose-900/30"
+                                      aria-label="{{ $unreadNotificationsCount }} اعلان خوانده‌نشده">
+                                    {{ $unreadNotificationsCount > 99 ? '۹۹+' : \App\Helpers\Morilog\CalendarUtils::convertNumbers((string) $unreadNotificationsCount) }}
+                                </span>
+                            @endif
                         </div>
                         <svg :class="openMenu === 'notifications' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform"
                              fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -471,6 +480,7 @@
                             <x-sidebar.dashboard-section-button
                                 :section="$item['section']"
                                 :active="$isActive($item['active'] ?? $item['section'])"
+                                :badge="$item['badge'] ?? null"
                             >
                                 {{ $item['label'] }}
                             </x-sidebar.dashboard-section-button>

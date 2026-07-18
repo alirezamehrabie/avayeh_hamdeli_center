@@ -26,6 +26,12 @@ class DashboardSidebar extends Component
         $this->activeSection = $section;
     }
 
+    #[On('manager-notifications-updated')]
+    public function refreshNotificationBadge(): void
+    {
+        // شمارنده اعلان‌های خوانده‌نشده در رندر مجدد سایدبار به‌روز می‌شود.
+    }
+
     public function render()
     {
         return view('livewire.admin.dashboard-sidebar');
