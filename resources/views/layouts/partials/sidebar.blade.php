@@ -61,7 +61,8 @@
         $childSupporterOpen = $dashboardMode ? $isActive(['child-supporter-sponsor-registration', 'child-supporter-sponsor-edit', 'child-supporter-sponsor-list']) : false;
         $specialFeaturesOpen = $dashboardMode ? $isActive(['special-features-id-card-scanner']) : false;
         $notificationsOpen = $dashboardMode ? $isActive(['notifications-center', 'notifications-settings']) : false;
-        $systemSettingsOpen = $dashboardMode ? $isActive(['system-settings-user-definition', 'system-settings-user-list', 'system-settings-user-account']) : request()->routeIs('admin.user-definition') || request()->routeIs('admin.user-management') || request()->routeIs('admin.user-list') || request()->routeIs('admin.user-account');
+        $userManagementOpen = $dashboardMode ? $isActive(['system-settings-user-definition', 'system-settings-user-list']) : request()->routeIs('admin.user-definition') || request()->routeIs('admin.user-management') || request()->routeIs('admin.user-list');
+        $systemSettingsOpen = $dashboardMode ? $isActive(['system-settings-user-account']) : request()->routeIs('admin.user-account');
         $dashboardReportsLinkActive = ! $dashboardMode && request()->routeIs('admin.dashboard') && request()->query('section') && in_array(request()->query('section'), ['advanced-reports', 'advanced-operator-report'], true);
         $defaultOpenMenu = '';
 
@@ -81,6 +82,8 @@
             $defaultOpenMenu = 'special-features';
         } elseif ($notificationsOpen) {
             $defaultOpenMenu = 'notifications';
+        } elseif ($userManagementOpen) {
+            $defaultOpenMenu = 'user-management';
         } elseif ($systemSettingsOpen) {
             $defaultOpenMenu = 'system-settings';
         }
@@ -134,9 +137,11 @@
                 ['section' => 'advanced-operator-report', 'label' => 'گزارش اپراتورها'],
                 ['section' => 'advanced-gate-report', 'label' => 'گزارش گیت‌ها'],
             ],
+            'user-management' => [
+                ['section' => 'system-settings-user-definition', 'label' => 'تعریف کاربر'],
+                ['section' => 'system-settings-user-list', 'label' => 'لیست کاربران'],
+            ],
             'system-settings' => [
-                ['section' => 'system-settings-user-definition', 'label' => 'تعریف کاربر', 'visible' => $user?->can('full-access')],
-                ['section' => 'system-settings-user-list', 'label' => 'لیست کاربران', 'visible' => $user?->can('full-access')],
                 ['section' => 'system-settings-user-account', 'label' => 'حساب کاربری'],
             ],
         ];
@@ -533,9 +538,41 @@
         @endif
 
         @if($dashboardMode)
+            @can('full-access')
+                <div>
+                    <button type="button" @click="openMenu = openMenu === 'user-management' ? '' : 'user-management'"
+                            class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $userManagementOpen ? 'bg-indigo-700' : '' }}">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 ml-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M19 8v6"/>
+                                <path d="M22 11h-6"/>
+                            </svg>
+                            <span>مدیریت کاربران</span>
+                        </div>
+                        <svg :class="openMenu === 'user-management' ? 'rotate-180' : ''"
+                             class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <div x-show="openMenu === 'user-management'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
+                        @foreach($dashboardMenuItems['user-management'] as $item)
+                            <x-sidebar.dashboard-section-button
+                                :section="$item['section']"
+                                :active="$isActive($item['active'] ?? $item['section'])"
+                            >
+                                {{ $item['label'] }}
+                            </x-sidebar.dashboard-section-button>
+                        @endforeach
+                    </div>
+                </div>
+            @endcan
+
             <div>
                 <button type="button" @click="openMenu = openMenu === 'system-settings' ? '' : 'system-settings'"
-                        class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $isActive(['system-settings-user-definition', 'system-settings-user-list', 'system-settings-user-account']) ? 'bg-indigo-700' : '' }}">
+                        class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $isActive(['system-settings-user-account']) ? 'bg-indigo-700' : '' }}">
                     <div class="flex items-center">
                         <svg class="w-5 h-5 ml-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                              stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -564,9 +601,41 @@
                 </div>
             </div>
         @else
+            @can('full-access')
+                <div>
+                    <button type="button" @click="openMenu = openMenu === 'user-management' ? '' : 'user-management'"
+                            class="flex items-center justify-between w-full px-4 py-3 rounded-lg hover:bg-indigo-800 {{ request()->routeIs('admin.user-definition') || request()->routeIs('admin.user-management*') || request()->routeIs('admin.user-list*') ? 'bg-indigo-700' : '' }}">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 ml-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M19 8v6"/>
+                                <path d="M22 11h-6"/>
+                            </svg>
+                            <span>مدیریت کاربران</span>
+                        </div>
+                        <svg :class="openMenu === 'user-management' ? 'rotate-180' : ''"
+                             class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <div x-show="openMenu === 'user-management'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
+                        <a href="{{ route('admin.user-definition') }}"
+                           class="block px-4 py-2 text-sm {{ request()->routeIs('admin.user-definition') || request()->routeIs('admin.user-management') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
+                            تعریف کاربر
+                        </a>
+                        <a href="{{ route('admin.user-list') }}"
+                           class="block px-4 py-2 text-sm {{ request()->routeIs('admin.user-list*') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
+                            لیست کاربران
+                        </a>
+                    </div>
+                </div>
+            @endcan
+
             <div>
                 <button type="button" @click="openMenu = openMenu === 'system-settings' ? '' : 'system-settings'"
-                        class="flex items-center justify-between w-full px-4 py-3 rounded-lg hover:bg-indigo-800 {{ request()->routeIs('admin.user-definition') || request()->routeIs('admin.user-management*') || request()->routeIs('admin.user-list*') || request()->routeIs('admin.user-account') ? 'bg-indigo-700' : '' }}">
+                        class="flex items-center justify-between w-full px-4 py-3 rounded-lg hover:bg-indigo-800 {{ request()->routeIs('admin.user-account') ? 'bg-indigo-700' : '' }}">
                     <div class="flex items-center">
                         <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -582,16 +651,6 @@
                     </svg>
                 </button>
                 <div x-show="openMenu === 'system-settings'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
-                    @can('full-access')
-                        <a href="{{ route('admin.user-definition') }}"
-                           class="block px-4 py-2 text-sm {{ request()->routeIs('admin.user-definition') || request()->routeIs('admin.user-management') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            تعریف کاربر
-                        </a>
-                        <a href="{{ route('admin.user-list') }}"
-                           class="block px-4 py-2 text-sm {{ request()->routeIs('admin.user-list*') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
-                            لیست کاربران
-                        </a>
-                    @endcan
                     <a href="{{ route('admin.user-account') }}"
                        class="block px-4 py-2 text-sm {{ request()->routeIs('admin.user-account') ? 'text-white bg-indigo-800 rounded' : 'text-indigo-200 hover:text-white' }}">
                         حساب کاربری
