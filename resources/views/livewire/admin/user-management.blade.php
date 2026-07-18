@@ -115,10 +115,10 @@
 
                             <div class="grid grid-cols-1 gap-3 lg:grid-cols-3">
                                 @foreach ($roleDefinitions as $roleValue => $roleMeta)
-                                    <label class="min-w-0 cursor-pointer">
+                                    <label class="relative min-w-0 cursor-pointer">
                                         <input
                                             type="radio"
-                                            class="peer sr-only"
+                                            class="peer absolute inset-0 z-10 h-full w-full cursor-pointer appearance-none rounded-2xl focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200 disabled:cursor-not-allowed"
                                             wire:model.live="access_level"
                                             value="{{ $roleValue }}"
                                             @disabled(($roleMeta['disabled'] ?? false) || ($roleValue === 'admin' && ! $actorCanCreateAdmin))
@@ -213,8 +213,8 @@
                             @if(count($availablePermissionOptions) > 0)
                                 <div class="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
                                     @foreach($availablePermissionOptions as $permissionKey => $permissionLabel)
-                                        <label class="cursor-pointer">
-                                            <input type="checkbox" value="{{ $permissionKey }}" wire:model.live="permissions" class="peer sr-only">
+                                        <label class="relative cursor-pointer">
+                                            <input type="checkbox" value="{{ $permissionKey }}" wire:model.live="permissions" class="peer absolute inset-0 z-10 h-full w-full cursor-pointer appearance-none rounded-2xl focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200">
                                             <div class="flex min-h-24 flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4 transition peer-checked:border-indigo-300 peer-checked:bg-indigo-50 peer-checked:ring-4 peer-checked:ring-indigo-100">
                                                 <div class="flex items-start justify-between gap-3">
                                                     <div class="text-sm font-bold text-slate-900">{{ $permissionLabel }}</div>
@@ -530,10 +530,10 @@
                             <div class="grid grid-cols-1 gap-3 lg:grid-cols-3">
                                 @foreach ($roleDefinitions as $roleValue => $roleMeta)
                                     @continue($roleValue === 'manager')
-                                    <label class="min-w-0 cursor-pointer">
+                                    <label class="relative min-w-0 cursor-pointer">
                                         <input
                                             type="radio"
-                                            class="peer sr-only"
+                                            class="peer absolute inset-0 z-10 h-full w-full cursor-pointer appearance-none rounded-2xl focus:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 disabled:cursor-not-allowed"
                                             wire:model.live="edit_access_level"
                                             value="{{ $roleValue }}"
                                             @disabled(($roleMeta['disabled'] ?? false) || ($roleValue === 'admin' && ! $actorCanCreateAdmin))
@@ -628,8 +628,8 @@
                             @if(count($availableEditPermissionOptions) > 0)
                                 <div class="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
                                     @foreach($availableEditPermissionOptions as $permissionKey => $permissionLabel)
-                                        <label class="cursor-pointer">
-                                            <input type="checkbox" value="{{ $permissionKey }}" wire:model.live="edit_permissions" class="peer sr-only">
+                                        <label class="relative cursor-pointer">
+                                            <input type="checkbox" value="{{ $permissionKey }}" wire:model.live="edit_permissions" class="peer absolute inset-0 z-10 h-full w-full cursor-pointer appearance-none rounded-2xl focus:outline-none focus-visible:ring-4 focus-visible:ring-amber-200">
                                             <div class="flex min-h-24 flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4 transition peer-checked:border-amber-300 peer-checked:bg-amber-50 peer-checked:ring-4 peer-checked:ring-amber-100">
                                                 <div class="flex items-start justify-between gap-3">
                                                     <div class="text-sm font-bold text-slate-900">{{ $permissionLabel }}</div>
