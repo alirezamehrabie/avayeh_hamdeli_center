@@ -8,8 +8,8 @@
         ];
     @endphp
 
-    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-        <div class="min-h-[104px] border-b border-blue-700/30 bg-[#2563EB] px-4 py-4 text-white sm:px-6 sm:py-6">
+    <div class="rounded-2xl border border-slate-200 bg-white">
+        <div class="min-h-[104px] rounded-t-2xl border-b border-blue-700/30 bg-[#2563EB] px-4 py-4 text-white sm:px-6 sm:py-6">
             <div class="flex flex-col gap-3 sm:gap-5 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                     <h1 class="text-lg font-extrabold leading-tight text-white sm:mt-2 sm:text-2xl">مدیریت فعالیت‌ها</h1>
@@ -23,7 +23,7 @@
 
         <div class="space-y-4 p-4">
             @if (session('activity-success'))
-                <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">{{ session('activity-success') }}</div>
+                <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700" role="status">{{ session('activity-success') }}</div>
             @endif
 
             @error('status')
@@ -39,7 +39,7 @@
                 <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{{ $message }}</div>
             @enderror
 
-            <div class="sticky top-0 z-20 space-y-3 rounded-2xl border border-slate-100 bg-slate-50/40 shadow-sm transition-all duration-200">
+            <div class="{{ $filtersPanelOpen ? '' : 'sticky top-2 z-20' }} space-y-3 rounded-2xl border border-slate-100 bg-slate-50 shadow-sm transition-all duration-200">
                 <div class="space-y-3 px-3 pt-3">
                     <div class="relative" x-data="{ helpOpen: false }">
                             <input type="text" wire:model.live.debounce.300ms="search" placeholder="جستجو در کد، نام، مکان یا نام ثبت‌کننده..." class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
@@ -50,12 +50,12 @@
 
                             <div class="absolute inset-y-0 left-0 flex items-center pl-2">
                                 @if($search)
-                                    <button type="button" wire:click="$set('search', '')" class="inline-flex items-center justify-center rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 focus:outline-none">
+                                    <button type="button" wire:click="$set('search', '')" aria-label="پاک کردن جستجو" class="inline-flex items-center justify-center rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-200">
                                         <i class="bi bi-x-lg text-sm"></i>
                                     </button>
                                 @else
                                     <div class="relative">
-                                        <button type="button" @click="helpOpen = !helpOpen" class="inline-flex items-center justify-center rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 focus:outline-none">
+                                        <button type="button" @click="helpOpen = !helpOpen" aria-label="راهنمای جستجو" :aria-expanded="helpOpen.toString()" class="inline-flex items-center justify-center rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-200">
                                             <i class="bi bi-question-circle text-sm"></i>
                                         </button>
 
@@ -99,14 +99,14 @@
                                         {{ Str::limit($search, 30, '...') }}
                                     </span>
                                 </div>
-                                <button type="button" wire:click="$set('search', '')" class="inline-flex items-center justify-center shrink-0 rounded-full text-slate-400 transition hover:text-slate-600 hover:bg-slate-100 p-1">
+                                <button type="button" wire:click="$set('search', '')" aria-label="پاک کردن جستجو" class="inline-flex items-center justify-center shrink-0 rounded-full text-slate-400 transition hover:text-slate-600 hover:bg-slate-100 p-1">
                                     <i class="bi bi-x-lg text-sm"></i>
                                 </button>
                             </div>
                         @endif
                     </div>
 
-                <button type="button" wire:click="$toggle('filtersPanelOpen')" class="flex w-full items-center justify-between border-t border-slate-200 px-3 py-3 hover:bg-slate-100/40 transition">
+                <button type="button" wire:click="$toggle('filtersPanelOpen')" aria-expanded="{{ $filtersPanelOpen ? 'true' : 'false' }}" aria-controls="activity-filters-panel" class="flex w-full items-center justify-between border-t border-slate-200 px-3 py-3 hover:bg-slate-100/40 transition">
                     <div class="flex items-center gap-2">
                         <span class="text-sm font-semibold text-slate-700">فیلترهای بیشتر</span>
                         @if($this->getActiveFilterCount() > 0)
@@ -119,12 +119,12 @@
                 </button>
 
                 @if($filtersPanelOpen)
-                    <div class="space-y-3 border-t border-slate-200 px-3 pb-3 max-h-[500px] overflow-y-auto animate-slideDown">
+                    <div id="activity-filters-panel" class="space-y-3 border-t border-slate-200 px-3 pb-3 max-h-[500px] overflow-y-auto animate-slideDown">
                         <div class="space-y-2">
                             <label class="block text-xs font-semibold text-slate-600">وضعیت فعالیت:</label>
                             <div class="flex flex-wrap gap-2">
                                 @php
-                                    $badgeClasses = [
+                                    $statusChipClasses = [
                                         'draft' => 'bg-slate-100 text-slate-700 ring-slate-300',
                                         'ongoing' => 'bg-amber-100 text-amber-700 ring-amber-300',
                                         'closed' => 'bg-emerald-100 text-emerald-700 ring-emerald-300',
@@ -141,7 +141,7 @@
                                     </span>
                                 </button>
                                 @foreach($statusOptions as $value => $label)
-                                    <button type="button" wire:click="$set('statusFilter', '{{ $value }}')" class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition {{ $statusFilter === $value ? 'ring-2 ring-offset-2 ' . $badgeClasses[$value] : 'ring-1 ' . $badgeClasses[$value] }} {{ $statusFilter === $value ? $badgeClasses[$value] . ' ring-offset-slate-50 shadow-sm' : 'hover:shadow-sm' }}">
+                                    <button type="button" wire:click="$set('statusFilter', '{{ $value }}')" class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition {{ $statusFilter === $value ? 'ring-2 ring-offset-2 ' . $statusChipClasses[$value] : 'ring-1 ' . $statusChipClasses[$value] }} {{ $statusFilter === $value ? $statusChipClasses[$value] . ' ring-offset-slate-50 shadow-sm' : 'hover:shadow-sm' }}">
                                         {{ $label }}
                                         <span class="inline-flex items-center justify-center min-w-5 rounded-full {{ $statusFilter === $value ? 'bg-white/30' : 'bg-black/10' }} px-1.5 text-[10px] font-bold">
                                             {{ $statusCounts[$value] ?? 0 }}
@@ -161,19 +161,21 @@
                                     <option value="{{ $value }}">{{ $label }}</option>
                                 @endforeach
                             </select>
-                            <div class="relative">
-                                <select wire:model="sortBy" wire:change="updateSort($event.target.value)" class="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 pr-8 text-sm text-slate-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
+                            <div class="flex items-stretch gap-2">
+                                <select wire:model.live="sortBy" aria-label="مرتب‌سازی بر اساس" class="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100">
                                     @foreach($this->getSortOptions() as $value => $label)
-                                        <option value="{{ $value }}" {{ $sortBy === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                        <option value="{{ $value }}">{{ $label }}</option>
                                     @endforeach
                                 </select>
-                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                    @if($sortDirection === 'asc')
-                                        <i class="bi bi-arrow-up text-slate-500 text-sm"></i>
-                                    @else
-                                        <i class="bi bi-arrow-down text-slate-500 text-sm"></i>
-                                    @endif
-                                </div>
+                                <button
+                                    type="button"
+                                    wire:click="toggleSortDirection"
+                                    aria-label="{{ $sortDirection === 'asc' ? 'ترتیب صعودی — برای نزولی کلیک کنید' : 'ترتیب نزولی — برای صعودی کلیک کنید' }}"
+                                    title="{{ $sortDirection === 'asc' ? 'صعودی' : 'نزولی' }}"
+                                    class="inline-flex shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-slate-600 transition hover:bg-slate-50 hover:text-slate-800 focus:outline-none focus:ring-4 focus:ring-violet-100"
+                                >
+                                    <i class="bi {{ $sortDirection === 'asc' ? 'bi-sort-up' : 'bi-sort-down' }} text-sm"></i>
+                                </button>
                             </div>
                         </div>
 
@@ -192,11 +194,11 @@
                             <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2">
                                 <div>
                                     <label class="block text-[11px] font-semibold text-slate-600 mb-1">تاریخ شروع <span class="text-slate-400">(مثال: 1403/01/15)</span></label>
-                                    <input type="text" wire:model.live.debounce.500ms="startsFrom" placeholder="1403/01/15" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-300 focus:ring-4 focus:ring-violet-100" data-jdp>
+                                    <input type="text" wire:model.live.debounce.500ms="startsFrom" placeholder="1403/01/15" inputmode="numeric" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-300 focus:ring-4 focus:ring-violet-100" data-jdp data-jdp-only-date>
                                 </div>
                                 <div>
                                     <label class="block text-[11px] font-semibold text-slate-600 mb-1">تاریخ پایان <span class="text-slate-400">(مثال: 1403/01/20)</span></label>
-                                    <input type="text" wire:model.live.debounce.500ms="startsUntil" placeholder="1403/01/20" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-300 focus:ring-4 focus:ring-violet-100" data-jdp>
+                                    <input type="text" wire:model.live.debounce.500ms="startsUntil" placeholder="1403/01/20" inputmode="numeric" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-300 focus:ring-4 focus:ring-violet-100" data-jdp data-jdp-only-date>
                                 </div>
                             </div>
 
@@ -219,7 +221,7 @@
             </div>
 
             @if($this->hasAnyFiltersApplied())
-                <div class="sticky top-0 z-20 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                <div class="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div class="flex items-center gap-2 min-w-0">
                             <span class="shrink-0 text-sm font-semibold text-slate-700">
@@ -231,7 +233,7 @@
                                     <div class="inline-flex items-center gap-2 rounded-full bg-violet-50 px-3 py-1.5 text-xs font-medium text-violet-700 ring-1 ring-violet-200 shrink-0">
                                         <i class="bi bi-search text-sm"></i>
                                         <span class="truncate max-w-[120px]">{{ Str::limit($search, 15, '...') }}</span>
-                                        <button type="button" wire:click="$set('search', '')" class="ml-1 shrink-0 text-violet-400 hover:text-violet-600 transition">
+                                        <button type="button" wire:click="$set('search', '')" aria-label="حذف فیلتر جستجو" class="ms-1 shrink-0 text-violet-400 hover:text-violet-600 transition">
                                             <i class="bi bi-x-lg text-xs"></i>
                                         </button>
                                     </div>
@@ -241,7 +243,7 @@
                                     <div class="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 ring-1 ring-amber-200 shrink-0">
                                         <i class="bi bi-tag text-sm"></i>
                                         <span>{{ $statusOptions[$statusFilter] ?? $statusFilter }}</span>
-                                        <button type="button" wire:click="$set('statusFilter', 'all')" class="ml-1 shrink-0 text-amber-400 hover:text-amber-600 transition">
+                                        <button type="button" wire:click="$set('statusFilter', 'all')" aria-label="حذف فیلتر وضعیت" class="ms-1 shrink-0 text-amber-400 hover:text-amber-600 transition">
                                             <i class="bi bi-x-lg text-xs"></i>
                                         </button>
                                     </div>
@@ -251,7 +253,7 @@
                                     <div class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 ring-1 ring-blue-200 shrink-0">
                                         <i class="bi bi-folder text-sm"></i>
                                         <span>{{ $typeOptions[$typeFilter] ?? $typeFilter }}</span>
-                                        <button type="button" wire:click="$set('typeFilter', 'all')" class="ml-1 shrink-0 text-blue-400 hover:text-blue-600 transition">
+                                        <button type="button" wire:click="$set('typeFilter', 'all')" aria-label="حذف فیلتر نوع" class="ms-1 shrink-0 text-blue-400 hover:text-blue-600 transition">
                                             <i class="bi bi-x-lg text-xs"></i>
                                         </button>
                                     </div>
@@ -261,7 +263,7 @@
                                     <div class="inline-flex items-center gap-2 rounded-full bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-700 ring-1 ring-rose-200 shrink-0">
                                         <i class="bi bi-calendar-range text-sm"></i>
                                         <span>از: {{ $startsFrom }}</span>
-                                        <button type="button" wire:click="$set('startsFrom', null)" class="ml-1 shrink-0 text-rose-400 hover:text-rose-600 transition">
+                                        <button type="button" wire:click="$set('startsFrom', null)" aria-label="حذف فیلتر تاریخ شروع" class="ms-1 shrink-0 text-rose-400 hover:text-rose-600 transition">
                                             <i class="bi bi-x-lg text-xs"></i>
                                         </button>
                                     </div>
@@ -271,7 +273,7 @@
                                     <div class="inline-flex items-center gap-2 rounded-full bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-700 ring-1 ring-rose-200 shrink-0">
                                         <i class="bi bi-calendar-range text-sm"></i>
                                         <span>تا: {{ $startsUntil }}</span>
-                                        <button type="button" wire:click="$set('startsUntil', null)" class="ml-1 shrink-0 text-rose-400 hover:text-rose-600 transition">
+                                        <button type="button" wire:click="$set('startsUntil', null)" aria-label="حذف فیلتر تاریخ پایان" class="ms-1 shrink-0 text-rose-400 hover:text-rose-600 transition">
                                             <i class="bi bi-x-lg text-xs"></i>
                                         </button>
                                     </div>
@@ -409,15 +411,62 @@
                                         </button>
                                     @endif
 
-                                    <!-- Desktop/tablet: hover dropdown menu -->
-                                    <div class="relative hidden md:block" x-data="{ open: false }">
-                                        <button type="button" @click="open = !open" class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-3 py-2 text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100">
+                                    @php
+                                        $hasCardMenuActions = $activity->status === 'ongoing' || auth()->user()->can('full-access');
+                                    @endphp
+                                    @if($hasCardMenuActions)
+                                    <!-- Desktop/tablet: dropdown menu -->
+                                    <div
+                                        class="relative hidden md:block"
+                                        x-data="{
+                                            open: false,
+                                            menuId: {{ $activity->id }},
+                                            toggle() {
+                                                this.open = ! this.open;
+
+                                                if (this.open) {
+                                                    $dispatch('activity-card-menu-opened', this.menuId);
+                                                }
+                                            },
+                                            close(returnFocus = false) {
+                                                if (! this.open) {
+                                                    return;
+                                                }
+
+                                                this.open = false;
+
+                                                if (returnFocus) {
+                                                    $refs.menuTrigger.focus();
+                                                }
+                                            },
+                                        }"
+                                        @activity-card-menu-opened.window="if ($event.detail !== menuId) close()"
+                                        @keydown.escape.window="close(true)"
+                                    >
+                                        <button
+                                            type="button"
+                                            x-ref="menuTrigger"
+                                            @click="toggle()"
+                                            aria-label="اقدامات بیشتر"
+                                            aria-haspopup="menu"
+                                            :aria-expanded="open.toString()"
+                                            class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-3 py-2 text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100"
+                                        >
                                             <i class="bi bi-list text-lg font-bold"></i>
                                         </button>
 
-                                        <div x-show="open" @click.outside="open = false" x-transition class="absolute left-0 z-10 mt-2 w-48 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg" style="display: none;">
+                                        <div
+                                            x-show="open"
+                                            x-cloak
+                                            @click.outside="close()"
+                                            x-transition
+                                            role="menu"
+                                            aria-label="اقدامات فعالیت {{ $activity->name }}"
+                                            class="absolute left-0 z-[25] mt-2 w-48 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg"
+                                            style="display: none;"
+                                        >
                                             @if($activity->status === 'ongoing')
-                                                <button type="button" wire:click="selectActivity({{ $activity->id }})" class="w-full px-4 py-2.5 text-left text-xs font-medium text-slate-700 transition hover:bg-slate-50" @click="open = false">
+                                                <button type="button" role="menuitem" wire:click="selectActivity({{ $activity->id }})" class="w-full px-4 py-2.5 text-right text-xs font-medium text-slate-700 transition hover:bg-slate-50 focus:bg-slate-50 focus:outline-none" @click="close()">
                                                     <i class="bi bi-info-circle me-2 text-slate-500"></i>
                                                     جزئیات و مدیریت
                                                 </button>
@@ -425,11 +474,11 @@
                                             @endif
 
                                             @can('full-access')
-                                                <button type="button" wire:click="editActivity({{ $activity->id }})" class="w-full px-4 py-2.5 text-left text-xs font-medium text-slate-700 transition hover:bg-slate-50" @click="open = false">
+                                                <button type="button" role="menuitem" wire:click="editActivity({{ $activity->id }})" class="w-full px-4 py-2.5 text-right text-xs font-medium text-slate-700 transition hover:bg-slate-50 focus:bg-slate-50 focus:outline-none" @click="close()">
                                                     <i class="bi bi-pencil me-2 text-slate-500"></i>
                                                     ویرایش فعالیت
                                                 </button>
-                                                <button type="button" wire:click="openOperatorAssignment({{ $activity->id }})" class="w-full px-4 py-2.5 text-left text-xs font-medium text-slate-700 transition hover:bg-slate-50" @click="open = false">
+                                                <button type="button" role="menuitem" wire:click="openOperatorAssignment({{ $activity->id }})" class="w-full px-4 py-2.5 text-right text-xs font-medium text-slate-700 transition hover:bg-slate-50 focus:bg-slate-50 focus:outline-none" @click="close()">
                                                     <i class="bi bi-person-badge me-2 text-slate-500"></i>
                                                     تخصیص اپراتور
                                                 </button>
@@ -500,11 +549,11 @@
                                             x-transition:leave="transition ease-in duration-150"
                                             x-transition:leave-start="translate-y-0 opacity-100"
                                             x-transition:leave-end="translate-y-6 opacity-0"
-                                            class="fixed inset-x-0 bottom-0 z-50 rounded-t-3xl border border-slate-200 bg-white px-4 pb-5 pt-3 shadow-2xl"
+                                            class="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-3xl border border-slate-200 bg-white px-4 pb-5 pt-3 shadow-2xl"
                                             style="display: none;"
                                             role="dialog"
                                             aria-modal="true"
-                                            aria-label="اقدامات فعالیت"
+                                            aria-label="اقدامات فعالیت {{ $activity->name }}"
                                             @click.stop
                                         >
                                             <div class="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-200"></div>
@@ -558,6 +607,7 @@
                                             </button>
                                         </div>
                                     </div>
+                                    @endif
                                 </div>
                             </div>
                         </article>
@@ -724,7 +774,7 @@
                 <div
                     wire:key="activity-drawer-{{ $selectedActivity->id }}"
                     x-data="{ open: false, close() { this.open = false; setTimeout(() => $wire.clearSelectedActivity(), 200); } }"
-                    x-init="$nextTick(() => open = true)"
+                    x-init="$nextTick(() => { open = true; setTimeout(() => $refs.drawerClose?.focus(), 250); })"
                     @keydown.escape.window="close()"
                 >
                     <!-- Backdrop -->
@@ -766,7 +816,7 @@
                                     </span>
                                 </div>
                             </div>
-                            <button type="button" @click="close()" class="shrink-0 rounded-full p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" aria-label="بستن">
+                            <button type="button" x-ref="drawerClose" @click="close()" class="shrink-0 rounded-full p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-violet-200" aria-label="بستن">
                                 <i class="bi bi-x-lg"></i>
                             </button>
                         </div>
@@ -952,10 +1002,26 @@
                                 <!-- Status tab (full-access only) -->
                                 @if($canManage)
                                     <div x-show="tab === 'status'" x-cloak class="space-y-3">
+                                        @if (session('activity-success'))
+                                            <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700" role="status">{{ session('activity-success') }}</div>
+                                        @endif
+                                        @error('status')
+                                            <div class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700" role="alert">{{ $message }}</div>
+                                        @enderror
+                                        @error('starts_at')
+                                            <div class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700" role="alert">{{ $message }}</div>
+                                        @enderror
                                         <textarea wire:model="transitionNotes" rows="2" placeholder="یادداشت تغییر وضعیت (اختیاری)" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs focus:border-violet-300 focus:ring-2 focus:ring-violet-100"></textarea>
                                         <div class="flex flex-col gap-2">
                                             @forelse($this->allowedTransitionTargets($selectedActivity) as $targetStatus)
-                                                <button type="button" wire:click="transitionActivity({{ $selectedActivity->id }}, '{{ $targetStatus }}')" class="inline-flex items-center justify-center rounded-lg bg-slate-800 px-3 py-2 text-xs font-bold text-white transition hover:bg-slate-900">
+                                                <button
+                                                    type="button"
+                                                    wire:click="transitionActivity({{ $selectedActivity->id }}, '{{ $targetStatus }}')"
+                                                    @if($targetStatus === 'cancelled')
+                                                        wire:confirm="آیا از لغو این فعالیت مطمئن هستید؟ این اقدام چرخه برگزاری را متوقف می‌کند."
+                                                    @endif
+                                                    class="inline-flex items-center justify-center rounded-lg px-3 py-2 text-xs font-bold text-white transition {{ $targetStatus === 'cancelled' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-slate-800 hover:bg-slate-900' }}"
+                                                >
                                                     تغییر به {{ $statusOptions[$targetStatus] ?? $targetStatus }}
                                                 </button>
                                             @empty
@@ -1012,38 +1078,3 @@
         }
     </style>
 </div>
-
-<script>
-document.addEventListener('livewire:navigated', initializeDatePickers);
-document.addEventListener('DOMContentLoaded', initializeDatePickers);
-
-function initializeDatePickers() {
-    const datepickers = document.querySelectorAll('[data-jdp]');
-    datepickers.forEach(element => {
-        if (!element._jdpInitialized) {
-            // Prevent manual time input by blocking non-date characters
-            element.addEventListener('input', function(e) {
-                // Allow only digits, forward slashes (for date format)
-                this.value = this.value.replace(/[^\d/]/g, '');
-                // Limit to YYYY/MM/DD format
-                if (this.value.length > 10) {
-                    this.value = this.value.substring(0, 10);
-                }
-            });
-
-            new jalaliDatepicker.JalaliDatePicker(element, {
-                minDate: new Date(1900, 0, 1),
-                maxDate: new Date(),
-                closeAfterSelect: true,
-                format: 'yyyy/MM/dd',
-                altFieldFormat: 'yyyy/MM/dd',
-                buttons: false,
-                showCloseButton: true,
-                timePicker: false,
-                timePickerSeconds: false,
-            });
-            element._jdpInitialized = true;
-        }
-    });
-}
-</script>

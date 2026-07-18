@@ -140,6 +140,18 @@ class ActivityList extends Component
         $this->resetPage();
     }
 
+    public function updatedSortBy(): void
+    {
+        $this->sortDirection = 'desc';
+        $this->resetPage();
+    }
+
+    public function toggleSortDirection(): void
+    {
+        $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        $this->resetPage();
+    }
+
     public function getSortOptions(): array
     {
         return [
