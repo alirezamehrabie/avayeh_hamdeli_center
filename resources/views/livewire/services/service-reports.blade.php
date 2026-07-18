@@ -454,6 +454,14 @@
                             };
                             $guardianLabel = $group->person?->guardian?->full_name
                                 ?: $group->guardian?->full_name;
+
+                            $groupUnitKeys = $group->deliveries
+                                ->map(fn ($delivery) => $delivery->serviceCategory?->unit)
+                                ->filter()
+                                ->unique();
+                            $groupTotalUnitLabel = $groupUnitKeys->count() === 1
+                                ? ($unitOptions[$groupUnitKeys->first()] ?? $groupUnitKeys->first())
+                                : '-';
                         @endphp
 
                         <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white text-sm shadow-sm ring-1 ring-slate-950/[0.02]">
@@ -488,7 +496,7 @@
                                             <p class="text-slate-500">جمع مقدار</p>
                                             <p class="mt-1 font-extrabold text-slate-900">
                                                 {{ number_format($group->totalQuantity, 2) }}
-                                                {{ $unitOptions[$selectedService->service_unit] ?? ($selectedService->service_unit ?? '-') }}
+                                                {{ $groupTotalUnitLabel }}
                                             </p>
                                         </div>
                                         <div class="rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 py-2 text-center shadow-[0_1px_0_rgba(15,23,42,0.03)]">
@@ -523,8 +531,14 @@
                                                 <p class="font-bold text-slate-900">{{ $delivery->serviceCategory?->name ?: '-' }}</p>
                                             </td>
                                             <td class="px-4 py-4 text-center font-bold text-slate-800">
+                                                @php
+                                                    $deliveryUnitKey = $delivery->serviceCategory?->unit;
+                                                    $deliveryUnitLabel = $deliveryUnitKey
+                                                        ? ($unitOptions[$deliveryUnitKey] ?? $deliveryUnitKey)
+                                                        : '-';
+                                                @endphp
                                                 {{ number_format((float) $delivery->delivered_quantity, 2) }}
-                                                {{ $unitOptions[$selectedService->service_unit] ?? ($selectedService->service_unit ?? '-') }}
+                                                {{ $deliveryUnitLabel }}
                                             </td>
                                             <td class="px-4 py-4 text-center font-bold text-emerald-600">
                                                 {{ number_format($delivery->delivered_total_value) }} ریال

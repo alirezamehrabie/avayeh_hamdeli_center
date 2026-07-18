@@ -56,7 +56,6 @@ class ServiceReportExport implements FromArray, ShouldAutoSize, WithHeadings, Wi
 
     public function array(): array
     {
-        $unitLabel = $this->unitOptions[$this->service->service_unit] ?? ($this->service->service_unit ?? '-');
         $rows = [];
 
         foreach ($this->groupedDeliveries as $group) {
@@ -65,6 +64,11 @@ class ServiceReportExport implements FromArray, ShouldAutoSize, WithHeadings, Wi
             $recipientCode = $personCode ?: ($guardianCode ?: '-');
 
             foreach ($group->deliveries as $delivery) {
+                $unitKey = $delivery->serviceCategory?->unit;
+                $unitLabel = $unitKey
+                    ? ($this->unitOptions[$unitKey] ?? $unitKey)
+                    : '-';
+
                 $rows[] = [
                     $group->recipientName ?: '-',
                     $group->recipientType,
