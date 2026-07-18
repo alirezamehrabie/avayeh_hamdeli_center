@@ -494,7 +494,7 @@
                             $guardianLabel = $group->person?->guardian?->full_name
                                 ?: $group->guardian?->full_name;
 
-                            $isRecipientCard = (bool) ($group->person || $group->guardian);
+                            $hasReceipt = $group->deliveries->count() > 0;
                             $relationLabel = $group->guardian
                                 ? ($group->guardian->guardian_code ? 'کد خانوار: '.$group->guardian->guardian_code : null)
                                 : ($guardianLabel ? 'سرپرست مرتبط: '.$guardianLabel : null);
@@ -505,7 +505,7 @@
                                 'nationalId' => $group->recipientNationalId ?: '-',
                                 'recipientCode' => $group->person
                                     ? ($group->person->person_code ?: '-')
-                                    : ($group->guardian?->guardian_code ?: '-'),
+                                    : ($group->guardian ? ($group->guardian->guardian_code ?: '-') : null),
                                 'recipientCodeLabel' => $group->guardian ? 'کد خانوار' : 'کد مددجو',
                                 'relation' => $relationLabel,
                                 'mobile' => $group->mobile ?: null,
@@ -528,7 +528,7 @@
                                             <span class="h-2.5 w-2.5 rounded-full bg-indigo-500"></span>
                                             <h3 class="text-base font-extrabold leading-6 text-slate-950 sm:text-lg">{{ $group->recipientName ?: '-' }}</h3>
                                             <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold ring-1 {{ $typeBadge }}">{{ $group->recipientType }}</span>
-                                            @if($isRecipientCard && $group->deliveries->count() > 0)
+                                            @if($hasReceipt)
                                                 <button
                                                     type="button"
                                                     @click="receiptOpen = true"
@@ -679,7 +679,7 @@
                                 </table>
                             </div>
 
-                            @if($isRecipientCard && $group->deliveries->count() > 0)
+                            @if($hasReceipt)
                                 <template x-teleport="body">
                                     <div
                                         x-show="receiptOpen"
@@ -724,10 +724,12 @@
                                                         <p class="text-slate-400">کد ملی</p>
                                                         <p class="mt-0.5 font-bold text-slate-800">{{ $receiptPayload['nationalId'] }}</p>
                                                     </div>
-                                                    <div>
-                                                        <p class="text-slate-400">{{ $receiptPayload['recipientCodeLabel'] }}</p>
-                                                        <p class="mt-0.5 font-bold text-slate-800">{{ $receiptPayload['recipientCode'] }}</p>
-                                                    </div>
+                                                    @if($receiptPayload['recipientCode'] !== null)
+                                                        <div>
+                                                            <p class="text-slate-400">{{ $receiptPayload['recipientCodeLabel'] }}</p>
+                                                            <p class="mt-0.5 font-bold text-slate-800">{{ $receiptPayload['recipientCode'] }}</p>
+                                                        </div>
+                                                    @endif
                                                     @if($receiptPayload['relation'])
                                                         <div class="col-span-2">
                                                             <p class="text-slate-400">اطلاعات مرتبط</p>
