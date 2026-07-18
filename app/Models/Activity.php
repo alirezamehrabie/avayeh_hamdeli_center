@@ -114,6 +114,8 @@ class Activity extends Model
                 'registration_method',
                 'checked_in_at',
                 'checked_out_at',
+                'check_out_method',
+                'checked_out_by',
                 'notes',
                 'recorded_by',
             ])

@@ -28,6 +28,8 @@ class ActivityAttendance extends Model
         'registration_method',
         'checked_in_at',
         'checked_out_at',
+        'check_out_method',
+        'checked_out_by',
         'notes',
         'recorded_by',
     ];
@@ -40,6 +42,7 @@ class ActivityAttendance extends Model
             'qr_identity_id' => 'integer',
             'checked_in_at' => 'datetime',
             'checked_out_at' => 'datetime',
+            'checked_out_by' => 'integer',
             'recorded_by' => 'integer',
         ];
     }
@@ -62,6 +65,11 @@ class ActivityAttendance extends Model
     public function recorder(): BelongsTo
     {
         return $this->belongsTo(User::class, 'recorded_by');
+    }
+
+    public function checkOutRecorder(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'checked_out_by');
     }
 
     public function serviceDeliveries(): HasMany

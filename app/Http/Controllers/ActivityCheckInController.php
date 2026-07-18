@@ -21,4 +21,17 @@ class ActivityCheckInController extends Controller
 
         return response()->json($result->toArray(), $result->ok ? 200 : 422);
     }
+
+    public function qrCheckOut(Request $request, Activity $activity, ActivityCheckInService $checkInService): JsonResponse
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+
+        $validated = $request->validate([
+            'token' => ['required', 'string', 'max:2048'],
+        ]);
+
+        $result = $checkInService->checkOutByQr($activity, $validated['token'], auth()->user());
+
+        return response()->json($result->toArray(), $result->ok ? 200 : 422);
+    }
 }

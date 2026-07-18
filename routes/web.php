@@ -149,6 +149,10 @@ Route::post('/admin/activities/{activity}/check-in/qr', [ActivityCheckInControll
     ->middleware(['auth', 'can:access-admin-panel'])
     ->name('admin.activities.check-in.qr');
 
+Route::post('/admin/activities/{activity}/check-out/qr', [ActivityCheckInController::class, 'qrCheckOut'])
+    ->middleware(['auth', 'can:access-admin-panel'])
+    ->name('admin.activities.check-out.qr');
+
 Route::get('/admin/system-settings/user-definition', DashboardHome::class)
     ->middleware(['auth', 'can:full-access'])
     ->name('admin.user-definition');

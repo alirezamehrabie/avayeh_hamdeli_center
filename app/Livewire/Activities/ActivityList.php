@@ -32,6 +32,7 @@ class ActivityList extends Component
     public string $attendanceSearch = '';
     public string $attendanceMethodFilter = 'all';
     public string $attendanceStatusFilter = 'all';
+    public string $attendancePresenceFilter = 'all';
     public ?int $assigningOperatorActivityId = null;
     public string $sortBy = 'date';
     public string $sortDirection = 'desc';
@@ -317,6 +318,9 @@ class ActivityList extends Component
                 'attendances as present_attendances_count' => fn ($query) => $query->where('status', 'present'),
                 'attendances as late_attendances_count' => fn ($query) => $query->where('status', 'late'),
                 'attendances as absent_attendances_count' => fn ($query) => $query->where('status', 'absent'),
+                'attendances as checked_in_attendances_count' => fn ($query) => $query->whereNotNull('checked_in_at'),
+                'attendances as checked_out_attendances_count' => fn ($query) => $query->whereNotNull('checked_out_at'),
+                'attendances as still_present_attendances_count' => fn ($query) => $query->whereNotNull('checked_in_at')->whereNull('checked_out_at'),
             ])
             ->find($this->selectedActivityId);
     }
@@ -331,12 +335,16 @@ class ActivityList extends Component
         $search = trim($this->attendanceSearch);
         $method = $this->attendanceMethodFilter;
         $status = $this->attendanceStatusFilter;
+        $presence = $this->attendancePresenceFilter;
 
         return ActivityAttendance::query()
-            ->with(['person', 'recorder'])
+            ->with(['person', 'recorder', 'checkOutRecorder'])
             ->where('activity_id', $this->selectedActivityId)
             ->when($method !== 'all', fn ($query) => $query->where('registration_method', $method))
             ->when($status !== 'all', fn ($query) => $query->where('status', $status))
+            ->when($presence === 'checked_in', fn ($query) => $query->whereNotNull('checked_in_at'))
+            ->when($presence === 'checked_out', fn ($query) => $query->whereNotNull('checked_out_at'))
+            ->when($presence === 'still_present', fn ($query) => $query->whereNotNull('checked_in_at')->whereNull('checked_out_at'))
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($nestedQuery) use ($search): void {
                     $nestedQuery
@@ -505,6 +513,11 @@ class ActivityList extends Component
             'typeOptions' => Activity::TYPE_OPTIONS,
             'attendanceStatusOptions' => ActivityAttendance::STATUS_OPTIONS,
             'attendanceMethodOptions' => ActivityAttendance::METHOD_OPTIONS,
+            'attendancePresenceOptions' => [
+                'checked_in' => 'ورود ثبت‌شده',
+                'checked_out' => 'خروج ثبت‌شده',
+                'still_present' => 'حاضر در فعالیت (بدون خروج)',
+            ],
             'statusCounts' => $this->getStatusCounts($search, $type, $startsFrom, $startsUntil),
         ]);
     }
@@ -582,6 +595,7 @@ class ActivityList extends Component
         $this->attendanceSearch = '';
         $this->attendanceMethodFilter = 'all';
         $this->attendanceStatusFilter = 'all';
+        $this->attendancePresenceFilter = 'all';
     }
 
     protected function parseJalaliDateFilter(?string $date, string $field): mixed

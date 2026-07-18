@@ -21,7 +21,7 @@ class ActivityAttendancesExport implements FromQuery, WithHeadings, WithMapping,
     public function query(): Builder
     {
         return ActivityAttendance::query()
-            ->with(['person', 'recorder'])
+            ->with(['person', 'recorder', 'checkOutRecorder'])
             ->where('activity_id', $this->activity->id)
             ->orderBy('checked_in_at')
             ->orderBy('id');
@@ -34,10 +34,12 @@ class ActivityAttendancesExport implements FromQuery, WithHeadings, WithMapping,
             'کد مددجو',
             'کد ملی',
             'وضعیت حضور',
-            'روش ثبت',
+            'روش ثبت ورود',
             'زمان ورود',
+            'روش ثبت خروج',
             'زمان خروج',
-            'ثبت‌کننده',
+            'ثبت‌کننده ورود',
+            'ثبت‌کننده خروج',
             'یادداشت',
         ];
     }
@@ -51,8 +53,10 @@ class ActivityAttendancesExport implements FromQuery, WithHeadings, WithMapping,
             ActivityAttendance::STATUS_OPTIONS[$row->status] ?? $row->status,
             ActivityAttendance::METHOD_OPTIONS[$row->registration_method] ?? $row->registration_method,
             $row->checked_in_at ? Jalalian::fromDateTime($row->checked_in_at)->format('Y/m/d H:i') : '-',
+            $row->check_out_method ? (ActivityAttendance::METHOD_OPTIONS[$row->check_out_method] ?? $row->check_out_method) : '-',
             $row->checked_out_at ? Jalalian::fromDateTime($row->checked_out_at)->format('Y/m/d H:i') : '-',
             $row->recorder?->full_name ?: $row->recorder?->name ?: '-',
+            $row->checkOutRecorder?->full_name ?: $row->checkOutRecorder?->name ?: '-',
             $row->notes ?: '-',
         ];
     }

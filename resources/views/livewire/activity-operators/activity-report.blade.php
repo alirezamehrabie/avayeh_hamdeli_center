@@ -73,12 +73,18 @@
                     <div class="flex items-center justify-between px-6 py-4 hover:bg-slate-50">
                         <div>
                             <p class="font-bold text-slate-900">{{ $attendance->person->full_name }}</p>
-                            <p class="text-xs text-slate-600">{{ $attendance->person->person_code }} • {{ $attendance->checked_in_at?->format('Y/m/d H:i') }}</p>
+                            <p class="text-xs text-slate-600">{{ $attendance->person->person_code }} • ورود: {{ $attendance->checked_in_at?->format('Y/m/d H:i') ?? '—' }}</p>
+                            <p class="text-xs text-slate-600">خروج: {{ $attendance->checked_out_at?->format('Y/m/d H:i') ?? 'ثبت نشده' }}</p>
                         </div>
-                        <div class="text-right">
+                        <div class="flex flex-col items-end gap-1 text-right">
                             <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $attendance->status === 'present' ? 'bg-emerald-100 text-emerald-700' : ($attendance->status === 'late' ? 'bg-amber-100 text-amber-700' : ($attendance->status === 'absent' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-700')) }}">
                                 {{ $attendanceStatusOptions[$attendance->status] ?? $attendance->status }}
                             </span>
+                            @if($attendance->checked_out_at)
+                                <span class="inline-flex rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-700">خارج شده</span>
+                            @elseif($attendance->checked_in_at)
+                                <span class="inline-flex rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">حاضر</span>
+                            @endif
                         </div>
                     </div>
                 @empty

@@ -17,13 +17,17 @@ export function attendanceResultBanner() {
             }
 
             const variant = this.resultBannerVariant(result);
+            const isCheckOutResult = ['checked_out', 'already_checked_out', 'not_checked_in'].includes(result?.code);
 
             this.successBanner = {
                 visible: true,
                 variant,
                 message: this.resultBannerMessage(result, fallbackMessage),
                 name: result?.person?.name || '',
-                time: this.toPersianDigits(result?.attendance?.checked_in_time || this.currentDisplayTime()),
+                time: this.toPersianDigits(
+                    (isCheckOutResult ? result?.attendance?.checked_out_time : result?.attendance?.checked_in_time)
+                        || this.currentDisplayTime()
+                ),
                 activityName: result?.activity?.name || this.activityName || '',
             };
 
@@ -41,7 +45,7 @@ export function attendanceResultBanner() {
             this.successBanner.visible = false;
         },
         resultBannerVariant(result = {}) {
-            if (result?.code === 'duplicate') {
+            if (result?.code === 'duplicate' || result?.code === 'already_checked_out') {
                 return 'warning';
             }
 
@@ -50,6 +54,14 @@ export function attendanceResultBanner() {
         resultBannerMessage(result = {}, fallbackMessage = '') {
             if (result?.code === 'duplicate') {
                 return 'حضور این مددجو قبلاً ثبت شده است';
+            }
+
+            if (result?.code === 'already_checked_out') {
+                return 'خروج این مددجو قبلاً ثبت شده است';
+            }
+
+            if (result?.code === 'checked_out') {
+                return 'خروج ثبت شد';
             }
 
             if (result?.ok) {
@@ -66,6 +78,7 @@ export function attendanceResultBanner() {
                 activity_unavailable: 'فعالیت پیدا نشد',
                 activity_not_active: 'این کد برای فعالیت فعلی فعال نیست',
                 capacity_full: 'ظرفیت فعالیت تکمیل شده است',
+                not_checked_in: 'برای این مددجو ورودی ثبت نشده است',
                 processing_failed: 'خطا در پردازش کد',
             };
 

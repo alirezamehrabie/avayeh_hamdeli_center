@@ -109,6 +109,79 @@ class ActivityCheckInService
         });
     }
 
+    public function checkOutByQr(Activity $activity, string $payload, User $operator): ActivityCheckInResult
+    {
+        $token = $this->extractQrToken($payload);
+
+        if (! $token) {
+            return new ActivityCheckInResult(false, 'invalid_qr', 'QR خوانده‌شده معتبر نیست.', $activity);
+        }
+
+        $identity = app(QrIdentityService::class)->resolveToken($token, 'activity-check-out');
+
+        if (! $identity) {
+            $identity = $this->resolvePublicCode($token);
+        }
+
+        if (! $identity) {
+            return new ActivityCheckInResult(false, 'invalid_qr', 'QR نامعتبر، غیرفعال یا ابطال‌شده است.', $activity);
+        }
+
+        if ($identity->subject_type !== QrIdentity::SUBJECT_PERSON) {
+            return new ActivityCheckInResult(false, 'not_beneficiary', 'این QR متعلق به مددجو نیست.', $activity);
+        }
+
+        $person = $identity->subject instanceof Person
+            ? $identity->subject
+            : Person::query()->find((int) $identity->subject_id);
+
+        return $this->checkOutPerson($activity, $person, $operator, 'qr');
+    }
+
+    public function checkOutPerson(Activity $activity, ?Person $person, User $operator, string $method = 'manual'): ActivityCheckInResult
+    {
+        if (! $person || (method_exists($person, 'trashed') && $person->trashed())) {
+            return new ActivityCheckInResult(false, 'beneficiary_unavailable', 'مددجوی انتخاب‌شده در دسترس نیست.', $activity);
+        }
+
+        return DB::transaction(function () use ($activity, $person, $operator, $method): ActivityCheckInResult {
+            $lockedActivity = Activity::query()
+                ->whereKey($activity->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $lockedActivity) {
+                return new ActivityCheckInResult(false, 'activity_unavailable', 'فعالیت پیدا نشد.');
+            }
+
+            if ($lockedActivity->status !== 'ongoing') {
+                return new ActivityCheckInResult(false, 'activity_not_active', 'ثبت خروج فقط برای فعالیت آماده برگزاری مجاز است.', $lockedActivity, $person);
+            }
+
+            $attendance = ActivityAttendance::query()
+                ->where('activity_id', $lockedActivity->id)
+                ->where('person_id', $person->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $attendance || ! $attendance->checked_in_at) {
+                return new ActivityCheckInResult(false, 'not_checked_in', 'برای این مددجو ورودی در این فعالیت ثبت نشده است.', $lockedActivity, $person, $attendance);
+            }
+
+            if ($attendance->checked_out_at) {
+                return new ActivityCheckInResult(true, 'already_checked_out', 'خروج این مددجو قبلاً ثبت شده است.', $lockedActivity, $person, $attendance);
+            }
+
+            $attendance->forceFill([
+                'checked_out_at' => now(),
+                'check_out_method' => $method,
+                'checked_out_by' => $operator->id,
+            ])->save();
+
+            return new ActivityCheckInResult(true, 'checked_out', 'خروج مددجو با موفقیت ثبت شد.', $lockedActivity, $person, $attendance);
+        });
+    }
+
     private function recordActivityServiceDeliveries(Activity $activity, Person $person, User $operator, ActivityAttendance $attendance): void
     {
         $services = $activity->services()

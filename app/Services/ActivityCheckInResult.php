@@ -38,9 +38,15 @@ class ActivityCheckInResult
                 'checked_in_time' => $this->attendance->checked_in_at
                     ? \App\Helpers\Morilog\Jalalian::fromDateTime($this->attendance->checked_in_at)->format('H:i')
                     : null,
+                'check_out_method' => $this->attendance->check_out_method,
+                'checked_out_at' => $this->attendance->checked_out_at?->toISOString(),
+                'checked_out_time' => $this->attendance->checked_out_at
+                    ? \App\Helpers\Morilog\Jalalian::fromDateTime($this->attendance->checked_out_at)->format('H:i')
+                    : null,
             ] : null,
             'stats' => $this->activity ? [
                 'checked_in_count' => $this->activity->attendances()->where('status', 'present')->count(),
+                'checked_out_count' => $this->activity->attendances()->whereNotNull('checked_out_at')->count(),
                 'capacity' => $this->activity->capacity,
             ] : null,
         ];

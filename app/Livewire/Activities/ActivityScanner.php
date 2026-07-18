@@ -12,6 +12,7 @@ use Livewire\Component;
 class ActivityScanner extends Component
 {
     public int $activityId;
+    public string $mode = 'check-in';
     public string $scanStatus = 'initializing';
     public string $scanMessage = '';
     public ?array $lastScanResult = null;
@@ -32,6 +33,29 @@ class ActivityScanner extends Component
             : 'ثبت حضور فقط زمانی فعال است که فعالیت در وضعیت آماده برگزاری باشد.';
     }
 
+    public function setMode(string $mode): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+
+        if (! in_array($mode, ['check-in', 'check-out'], true) || $mode === $this->mode) {
+            return;
+        }
+
+        $this->mode = $mode;
+        $this->lastScanResult = null;
+        $this->selectedPersonId = null;
+        $this->manualSearch = '';
+
+        if ($this->activity?->status === 'ongoing') {
+            $this->scanStatus = 'ready';
+            $this->scanMessage = $mode === 'check-out'
+                ? 'حالت ثبت خروج فعال شد. QR مددجو را برای ثبت خروج اسکن کنید.'
+                : 'حالت ثبت ورود فعال شد. QR مددجو را برای ثبت ورود اسکن کنید.';
+        }
+
+        $this->dispatch('activity-scanner-mode-changed', mode: $mode);
+    }
+
     public function resolveScannedQr(string $payload): array
     {
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
@@ -39,7 +63,10 @@ class ActivityScanner extends Component
         $activity = $this->activity;
         abort_unless($activity, 404);
 
-        $result = app(ActivityCheckInService::class)->checkInByQr($activity, $payload, auth()->user());
+        $service = app(ActivityCheckInService::class);
+        $result = $this->mode === 'check-out'
+            ? $service->checkOutByQr($activity, $payload, auth()->user())
+            : $service->checkInByQr($activity, $payload, auth()->user());
 
         $this->applyResult($result->toArray());
 
@@ -54,7 +81,10 @@ class ActivityScanner extends Component
         abort_unless($activity, 404);
 
         $person = $this->selectedPersonId ? Person::query()->find($this->selectedPersonId) : null;
-        $result = app(ActivityCheckInService::class)->checkInPerson($activity, $person, auth()->user(), 'manual');
+        $service = app(ActivityCheckInService::class);
+        $result = $this->mode === 'check-out'
+            ? $service->checkOutPerson($activity, $person, auth()->user(), 'manual')
+            : $service->checkInPerson($activity, $person, auth()->user(), 'manual');
 
         $this->applyResult($result->toArray());
         $this->selectedPersonId = null;
@@ -79,7 +109,9 @@ class ActivityScanner extends Component
         }
 
         $this->scanStatus = 'scanning';
-        $this->scanMessage = 'اسکن دوباره فعال شد. QR مددجو را مقابل دوربین نگه دارید.';
+        $this->scanMessage = $this->mode === 'check-out'
+            ? 'اسکن دوباره فعال شد. QR مددجو را برای ثبت خروج مقابل دوربین نگه دارید.'
+            : 'اسکن دوباره فعال شد. QR مددجو را مقابل دوربین نگه دارید.';
         $this->dispatch('id-card-scanner-resume');
     }
 
@@ -95,6 +127,7 @@ class ActivityScanner extends Component
             ->withCount([
                 'attendances',
                 'attendances as present_attendances_count' => fn ($query) => $query->where('status', 'present'),
+                'attendances as checked_out_attendances_count' => fn ($query) => $query->whereNotNull('checked_out_at'),
             ])
             ->find($this->activityId);
     }
@@ -114,6 +147,14 @@ class ActivityScanner extends Component
         $escapedDigits = $this->escapeLike($digits);
         return Person::query()
             ->select(['id', 'first_name', 'last_name', 'full_name', 'person_code', 'national_id'])
+            ->when($this->mode === 'check-out', function ($query): void {
+                $query->whereHas('activityAttendances', function ($attendanceQuery): void {
+                    $attendanceQuery
+                        ->where('activity_id', $this->activityId)
+                        ->whereNotNull('checked_in_at')
+                        ->whereNull('checked_out_at');
+                });
+            })
             ->where(function ($query) use ($escapedSearch, $escapedNormalizedSearch, $escapedDigits, $normalizedSearch): void {
                 if ($escapedDigits !== '') {
                     $query->where('person_code', 'like', "{$escapedDigits}%")
@@ -148,9 +189,13 @@ class ActivityScanner extends Component
             'manualCandidates' => $this->manualCandidates,
             'selectedPerson' => $this->selectedPersonId ? Person::query()->find($this->selectedPersonId) : null,
             'recentAttendances' => ActivityAttendance::query()
-                ->with(['person', 'recorder'])
+                ->with(['person', 'recorder', 'checkOutRecorder'])
                 ->where('activity_id', $this->activityId)
-                ->latest('checked_in_at')
+                ->when(
+                    $this->mode === 'check-out',
+                    fn ($query) => $query->whereNotNull('checked_out_at')->latest('checked_out_at'),
+                    fn ($query) => $query->latest('checked_in_at'),
+                )
                 ->limit(8)
                 ->get(),
         ]);

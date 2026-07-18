@@ -1,3 +1,6 @@
+@php
+    $isCheckOut = ($mode ?? 'check-in') === 'check-out';
+@endphp
 <div
     x-data="{
         ...idCardScanner({
@@ -35,6 +38,24 @@
             }
         }
 
+        @keyframes activity-scanner-frame-pulse-out {
+            0%, 100% {
+                border-color: rgba(125, 211, 252, 0.82);
+                box-shadow:
+                    0 0 0 1px rgba(255, 255, 255, 0.16),
+                    0 0 22px rgba(14, 165, 233, 0.18),
+                    0 0 0 9999px rgba(15, 23, 42, 0.28);
+            }
+
+            50% {
+                border-color: rgba(129, 140, 248, 1);
+                box-shadow:
+                    0 0 0 1px rgba(255, 255, 255, 0.22),
+                    0 0 34px rgba(99, 102, 241, 0.34),
+                    0 0 0 9999px rgba(15, 23, 42, 0.28);
+            }
+        }
+
         @keyframes activity-scanner-corner-pulse {
             0%, 100% {
                 opacity: 0.7;
@@ -49,6 +70,10 @@
 
         .activity-scanner-frame {
             animation: activity-scanner-frame-pulse 1.8s ease-in-out infinite;
+        }
+
+        .activity-scanner-frame--check-out {
+            animation-name: activity-scanner-frame-pulse-out;
         }
 
         .activity-scanner-frame-corner {
@@ -150,11 +175,11 @@
     </div>
 
     <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="rounded-t-3xl bg-gradient-to-l from-emerald-500 via-teal-500 to-cyan-500 px-4 py-3 text-white sm:px-5 sm:py-4">
+        <div class="rounded-t-3xl bg-gradient-to-l {{ $isCheckOut ? 'from-sky-600 via-indigo-500 to-violet-500' : 'from-emerald-500 via-teal-500 to-cyan-500' }} px-4 py-3 text-white sm:px-5 sm:py-4">
             <div class="flex items-start justify-between gap-3 lg:hidden">
                 <div class="min-w-0 flex-1">
-                    <h1 class="text-lg font-extrabold leading-6 sm:text-xl">ثبت حضور فعالیت</h1>
-                    <div class="mt-2 inline-flex max-w-full items-center rounded-full bg-white/14 px-3 py-1 text-xs font-bold text-emerald-50 ring-1 ring-white/15">
+                    <h1 class="text-lg font-extrabold leading-6 sm:text-xl">{{ $isCheckOut ? 'ثبت خروج فعالیت' : 'ثبت ورود فعالیت' }}</h1>
+                    <div class="mt-2 inline-flex max-w-full items-center rounded-full bg-white/14 px-3 py-1 text-xs font-bold {{ $isCheckOut ? 'text-sky-50' : 'text-emerald-50' }} ring-1 ring-white/15">
                         <span class="truncate">{{ $activity?->name ?? '-' }}</span>
                     </div>
                 </div>
@@ -186,12 +211,16 @@
             >
                 <div class="rounded-2xl border border-white/15 bg-white/10 p-3 text-xs font-bold backdrop-blur-sm">
                     <div class="flex items-center justify-between gap-3">
-                        <span class="text-emerald-100">وضعیت</span>
+                        <span class="{{ $isCheckOut ? 'text-sky-100' : 'text-emerald-100' }}">وضعیت</span>
                         <span>{{ \App\Models\Activity::STATUS_OPTIONS[$activity?->status] ?? $activity?->status }}</span>
                     </div>
                     <div class="mt-2 flex items-center justify-between gap-3">
-                        <span class="text-emerald-100">حضور</span>
+                        <span class="{{ $isCheckOut ? 'text-sky-100' : 'text-emerald-100' }}">ورود</span>
                         <span>{{ $activity?->present_attendances_count ?? 0 }} / {{ $activity?->capacity ?: '∞' }}</span>
+                    </div>
+                    <div class="mt-2 flex items-center justify-between gap-3">
+                        <span class="{{ $isCheckOut ? 'text-sky-100' : 'text-emerald-100' }}">خروج</span>
+                        <span>{{ $activity?->checked_out_attendances_count ?? 0 }}</span>
                     </div>
                     <button type="button" wire:click="backToActivities" class="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-bold transition hover:bg-white/20">
                         بازگشت
@@ -201,14 +230,43 @@
 
             <div class="hidden flex-col gap-3 lg:flex lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                    <h1 class="text-2xl font-extrabold">ثبت حضور فعالیت</h1>
-                    <p class="mt-1 text-sm text-emerald-50">{{ $activity?->name ?? '-' }}</p>
+                    <h1 class="text-2xl font-extrabold">{{ $isCheckOut ? 'ثبت خروج فعالیت' : 'ثبت ورود فعالیت' }}</h1>
+                    <p class="mt-1 text-sm {{ $isCheckOut ? 'text-sky-50' : 'text-emerald-50' }}">{{ $activity?->name ?? '-' }}</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2 text-xs font-bold">
                     <span class="rounded-full bg-white/15 px-3 py-1.5">وضعیت: {{ \App\Models\Activity::STATUS_OPTIONS[$activity?->status] ?? $activity?->status }}</span>
-                    <span class="rounded-full bg-white/15 px-3 py-1.5">حضور: {{ $activity?->present_attendances_count ?? 0 }} / {{ $activity?->capacity ?: '∞' }}</span>
+                    <span class="rounded-full bg-white/15 px-3 py-1.5">ورود: {{ $activity?->present_attendances_count ?? 0 }} / {{ $activity?->capacity ?: '∞' }}</span>
+                    <span class="rounded-full bg-white/15 px-3 py-1.5">خروج: {{ $activity?->checked_out_attendances_count ?? 0 }}</span>
                     <button type="button" wire:click="backToActivities" class="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 hover:bg-white/20">بازگشت</button>
                 </div>
+            </div>
+
+            <div class="mt-3" role="tablist" aria-label="انتخاب حالت ثبت ورود یا خروج">
+                <div class="grid grid-cols-2 gap-1 rounded-2xl border border-white/20 bg-slate-950/20 p-1 backdrop-blur-sm sm:max-w-sm">
+                    <button
+                        type="button"
+                        wire:click="setMode('check-in')"
+                        role="tab"
+                        aria-selected="{{ $isCheckOut ? 'false' : 'true' }}"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-extrabold transition focus:outline-none focus:ring-4 focus:ring-white/30 {{ $isCheckOut ? 'text-white/75 hover:bg-white/10' : 'bg-white text-emerald-700 shadow-md' }}"
+                    >
+                        <i class="bi bi-box-arrow-in-left text-base" aria-hidden="true"></i>
+                        <span>ثبت ورود</span>
+                    </button>
+                    <button
+                        type="button"
+                        wire:click="setMode('check-out')"
+                        role="tab"
+                        aria-selected="{{ $isCheckOut ? 'true' : 'false' }}"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-extrabold transition focus:outline-none focus:ring-4 focus:ring-white/30 {{ $isCheckOut ? 'bg-white text-indigo-700 shadow-md' : 'text-white/75 hover:bg-white/10' }}"
+                    >
+                        <i class="bi bi-box-arrow-left text-base" aria-hidden="true"></i>
+                        <span>ثبت خروج</span>
+                    </button>
+                </div>
+                <p class="mt-2 text-[11px] font-bold {{ $isCheckOut ? 'text-sky-100' : 'text-emerald-50' }}" aria-live="polite">
+                    {{ $isCheckOut ? 'حالت فعال: ثبت خروج — اسکن یا ثبت دستی، خروج مددجو را ثبت می‌کند.' : 'حالت فعال: ثبت ورود — اسکن یا ثبت دستی، ورود مددجو را ثبت می‌کند.' }}
+                </p>
             </div>
         </div>
 
@@ -217,15 +275,15 @@
                 <div class="relative h-[clamp(320px,65svh,560px)] overflow-hidden rounded-2xl border border-slate-200 bg-slate-950">
                     <div wire:ignore x-ref="scanner" id="activity-scanner-reader-{{ $activityId }}" class="qr-scanner-reader h-full w-full"></div>
                     <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
-                        <div class="activity-scanner-frame relative aspect-square w-[min(72%,420px)] rounded-3xl border-2 border-emerald-300/90">
-                            <span class="activity-scanner-frame-corner absolute right-0 top-0 h-12 w-12 rounded-tr-3xl border-r-4 border-t-4 border-teal-200"></span>
-                            <span class="activity-scanner-frame-corner absolute left-0 top-0 h-12 w-12 rounded-tl-3xl border-l-4 border-t-4 border-teal-200"></span>
-                            <span class="activity-scanner-frame-corner absolute bottom-0 right-0 h-12 w-12 rounded-br-3xl border-b-4 border-r-4 border-teal-200"></span>
-                            <span class="activity-scanner-frame-corner absolute bottom-0 left-0 h-12 w-12 rounded-bl-3xl border-b-4 border-l-4 border-teal-200"></span>
+                        <div class="activity-scanner-frame {{ $isCheckOut ? 'activity-scanner-frame--check-out' : '' }} relative aspect-square w-[min(72%,420px)] rounded-3xl border-2 {{ $isCheckOut ? 'border-sky-300/90' : 'border-emerald-300/90' }}">
+                            <span class="activity-scanner-frame-corner absolute right-0 top-0 h-12 w-12 rounded-tr-3xl border-r-4 border-t-4 {{ $isCheckOut ? 'border-indigo-200' : 'border-teal-200' }}"></span>
+                            <span class="activity-scanner-frame-corner absolute left-0 top-0 h-12 w-12 rounded-tl-3xl border-l-4 border-t-4 {{ $isCheckOut ? 'border-indigo-200' : 'border-teal-200' }}"></span>
+                            <span class="activity-scanner-frame-corner absolute bottom-0 right-0 h-12 w-12 rounded-br-3xl border-b-4 border-r-4 {{ $isCheckOut ? 'border-indigo-200' : 'border-teal-200' }}"></span>
+                            <span class="activity-scanner-frame-corner absolute bottom-0 left-0 h-12 w-12 rounded-bl-3xl border-b-4 border-l-4 {{ $isCheckOut ? 'border-indigo-200' : 'border-teal-200' }}"></span>
                         </div>
                     </div>
                     <div class="absolute bottom-4 right-4 rounded-full border border-white/20 bg-slate-950/55 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-slate-950/25 backdrop-blur-md ring-1 ring-white/10">
-                        QR مددجو را داخل قاب قرار دهید
+                        {{ $isCheckOut ? 'اسکن QR برای خروج — QR مددجو را داخل قاب قرار دهید' : 'اسکن QR برای ورود — QR مددجو را داخل قاب قرار دهید' }}
                     </div>
                 </div>
 
@@ -260,7 +318,7 @@
                         type="button"
                         @click="startCamera()"
                         :disabled="startingCamera || status === 'unsupported'"
-                        class="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-700/20 transition hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none md:min-w-36"
+                        class="rounded-xl {{ $isCheckOut ? 'bg-indigo-600 shadow-indigo-700/20 hover:bg-indigo-700 focus:ring-indigo-100' : 'bg-emerald-600 shadow-emerald-700/20 hover:bg-emerald-700 focus:ring-emerald-100' }} px-5 py-3 text-sm font-bold text-white shadow-lg transition focus:outline-none focus:ring-4 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none md:min-w-36"
                     >
                         <span x-cloak x-show="startingCamera">در حال فعال‌سازی...</span>
                         <span x-cloak x-show="!startingCamera && cameraActive">راه‌اندازی مجدد</span>
@@ -270,7 +328,7 @@
                         type="button"
                         wire:click="resumeScanning"
                         :disabled="startingCamera || scanning || resolvingScan || ['camera_denied', 'unsupported'].includes(status)"
-                        class="rounded-xl border border-emerald-300 bg-white px-5 py-3 text-sm font-bold text-emerald-700 transition hover:border-emerald-400 hover:bg-emerald-50 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 md:min-w-32"
+                        class="rounded-xl border {{ $isCheckOut ? 'border-indigo-300 text-indigo-700 hover:border-indigo-400 hover:bg-indigo-50 focus:ring-indigo-100' : 'border-emerald-300 text-emerald-700 hover:border-emerald-400 hover:bg-emerald-50 focus:ring-emerald-100' }} bg-white px-5 py-3 text-sm font-bold transition focus:outline-none focus:ring-4 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 md:min-w-32"
                     >
                         <span x-cloak x-show="resolvingScan">در حال بررسی...</span>
                         <span x-cloak x-show="!resolvingScan && scanning">اسکن فعال است</span>
@@ -284,18 +342,43 @@
                     <h2 class="text-sm font-extrabold text-slate-800">وضعیت اسکن</h2>
                     <p class="mt-2 text-sm leading-7 text-slate-600" x-text="message"></p>
                     @if($lastScanResult)
-                        <div class="mt-3 rounded-2xl border px-4 py-3 text-sm {{ ($lastScanResult['ok'] ?? false) ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-rose-200 bg-rose-50 text-rose-700' }}">
+                        @php
+                            $lastResultIsWarning = in_array($lastScanResult['code'] ?? '', ['duplicate', 'already_checked_out'], true);
+                        @endphp
+                        <div class="mt-3 rounded-2xl border px-4 py-3 text-sm {{ ($lastScanResult['ok'] ?? false) ? ($lastResultIsWarning ? 'border-amber-200 bg-amber-50 text-amber-700' : ($isCheckOut ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700')) : 'border-rose-200 bg-rose-50 text-rose-700' }}" role="status" aria-live="polite">
                             <p class="font-black">{{ $lastScanResult['message'] ?? '-' }}</p>
                             @if($lastScanResult['person'] ?? null)
                                 <p class="mt-1">{{ $lastScanResult['person']['name'] ?? '-' }}</p>
                                 <p class="text-xs" dir="ltr">{{ $lastScanResult['person']['person_code'] ?? '-' }}</p>
+                                @if($lastScanResult['person']['national_id'] ?? null)
+                                    <p class="text-xs" dir="ltr">{{ $lastScanResult['person']['national_id'] }}</p>
+                                @endif
+                            @endif
+                            @if($lastScanResult['attendance'] ?? null)
+                                <div class="mt-2 flex flex-wrap gap-2 text-[11px] font-bold">
+                                    @if($lastScanResult['attendance']['checked_in_time'] ?? null)
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-white/70 px-2 py-1 text-emerald-700">
+                                            <i class="bi bi-box-arrow-in-left" aria-hidden="true"></i>
+                                            ورود: {{ $lastScanResult['attendance']['checked_in_time'] }}
+                                        </span>
+                                    @endif
+                                    @if($lastScanResult['attendance']['checked_out_time'] ?? null)
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-white/70 px-2 py-1 text-indigo-700">
+                                            <i class="bi bi-box-arrow-left" aria-hidden="true"></i>
+                                            خروج: {{ $lastScanResult['attendance']['checked_out_time'] }}
+                                        </span>
+                                    @endif
+                                </div>
                             @endif
                         </div>
                     @endif
                 </div>
 
                 <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_32px_rgba(15,23,42,0.06)] ring-1 ring-slate-100/70">
-                    <h2 class="text-sm font-extrabold text-slate-800">ثبت دستی</h2>
+                    <h2 class="text-sm font-extrabold text-slate-800">{{ $isCheckOut ? 'ثبت خروج دستی' : 'ثبت ورود دستی' }}</h2>
+                    @if($isCheckOut)
+                        <p class="mt-1 text-[11px] font-semibold text-slate-500">فقط مددجویانی که ورودشان ثبت شده و هنوز خارج نشده‌اند نمایش داده می‌شوند.</p>
+                    @endif
                     <div class="relative mt-3">
                         <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400">
                             <svg class="size-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -303,36 +386,51 @@
                                 <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.8" />
                             </svg>
                         </span>
-                        <input type="text" wire:model.live.debounce.300ms="manualSearch" placeholder="جستجو با نام، کد مددجو یا کد ملی" class="w-full rounded-2xl border border-slate-200 bg-slate-50/70 py-2 pl-4 pr-11 text-sm text-slate-800 shadow-sm transition focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-100">
+                        <input type="text" wire:model.live.debounce.300ms="manualSearch" placeholder="جستجو با نام، کد مددجو یا کد ملی" aria-label="{{ $isCheckOut ? 'جستجوی مددجو برای ثبت خروج' : 'جستجوی مددجو برای ثبت ورود' }}" class="w-full rounded-2xl border border-slate-200 bg-slate-50/70 py-2 pl-4 pr-11 text-sm text-slate-800 shadow-sm transition focus:bg-white focus:outline-none focus:ring-4 {{ $isCheckOut ? 'focus:border-indigo-500 focus:ring-indigo-100' : 'focus:border-emerald-500 focus:ring-emerald-100' }}">
                     </div>
 
                     <div class="mt-3 space-y-2">
-                        @foreach($manualCandidates as $candidate)
-                            <button type="button" wire:click="selectManualPerson({{ $candidate->id }})" class="block w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-right text-xs hover:bg-emerald-50">
+                        @forelse($manualCandidates as $candidate)
+                            <button type="button" wire:click="selectManualPerson({{ $candidate->id }})" class="block w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-right text-xs {{ $isCheckOut ? 'hover:bg-indigo-50' : 'hover:bg-emerald-50' }}">
                                 <span class="font-bold text-slate-800">{{ $candidate->full_name ?: trim($candidate->first_name . ' ' . $candidate->last_name) }}</span>
                                 <span class="block text-slate-500">{{ $candidate->person_code }} · {{ $candidate->national_id }}</span>
                             </button>
-                        @endforeach
+                        @empty
+                            @if(mb_strlen(trim($manualSearch)) >= 2)
+                                <p class="rounded-2xl bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                                    {{ $isCheckOut ? 'مددجوی واجد شرایط خروج با این مشخصات پیدا نشد.' : 'مددجویی با این مشخصات پیدا نشد.' }}
+                                </p>
+                            @endif
+                        @endforelse
                     </div>
 
                     @if($selectedPerson)
-                        <div class="mt-3 rounded-2xl bg-emerald-50 p-3 text-xs text-emerald-800">
+                        <div class="mt-3 rounded-2xl p-3 text-xs {{ $isCheckOut ? 'bg-indigo-50 text-indigo-800' : 'bg-emerald-50 text-emerald-800' }}">
                             مددجوی انتخاب‌شده: <strong>{{ $selectedPerson->full_name ?: trim($selectedPerson->first_name . ' ' . $selectedPerson->last_name) }}</strong>
+                            @if($isCheckOut)
+                                <span class="mt-1 block">با تأیید، خروج این مددجو از فعالیت ثبت می‌شود.</span>
+                            @endif
                         </div>
-                        <button type="button" wire:click="manualCheckIn" class="mt-3 w-full rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700">ثبت حضور دستی</button>
+                        <button type="button" wire:click="manualCheckIn" class="mt-3 w-full rounded-2xl px-4 py-2 text-sm font-bold text-white {{ $isCheckOut ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700' }}">
+                            {{ $isCheckOut ? 'تأیید و ثبت خروج دستی' : 'ثبت ورود دستی' }}
+                        </button>
                     @endif
                 </div>
 
                 <div class="rounded-2xl border border-slate-200 bg-white p-4">
-                    <h2 class="text-sm font-extrabold text-slate-800">آخرین ثبت‌ها</h2>
+                    <h2 class="text-sm font-extrabold text-slate-800">{{ $isCheckOut ? 'آخرین خروج‌ها' : 'آخرین ثبت‌ها' }}</h2>
                     <div class="mt-3 space-y-2">
                         @forelse($recentAttendances as $attendance)
                             <div class="rounded-2xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
                                 <p class="font-bold text-slate-800">{{ $attendance->person?->full_name ?: '-' }}</p>
-                                <p>{{ $attendance->registration_method === 'qr' ? 'QR' : 'دستی' }} · {{ $attendance->checked_in_at ? \App\Helpers\Morilog\Jalalian::fromDateTime($attendance->checked_in_at)->format('H:i:s') : '-' }} · {{ $attendance->recorder?->full_name ?: $attendance->recorder?->name ?: '-' }}</p>
+                                @if($isCheckOut)
+                                    <p>{{ $attendance->check_out_method === 'qr' ? 'QR' : 'دستی' }} · {{ $attendance->checked_out_at ? \App\Helpers\Morilog\Jalalian::fromDateTime($attendance->checked_out_at)->format('H:i:s') : '-' }} · {{ $attendance->checkOutRecorder?->full_name ?: $attendance->checkOutRecorder?->name ?: '-' }}</p>
+                                @else
+                                    <p>{{ $attendance->registration_method === 'qr' ? 'QR' : 'دستی' }} · {{ $attendance->checked_in_at ? \App\Helpers\Morilog\Jalalian::fromDateTime($attendance->checked_in_at)->format('H:i:s') : '-' }} · {{ $attendance->recorder?->full_name ?: $attendance->recorder?->name ?: '-' }}</p>
+                                @endif
                             </div>
                         @empty
-                            <p class="text-xs text-slate-400">هنوز حضوری ثبت نشده است.</p>
+                            <p class="text-xs text-slate-400">{{ $isCheckOut ? 'هنوز خروجی ثبت نشده است.' : 'هنوز حضوری ثبت نشده است.' }}</p>
                         @endforelse
                     </div>
                 </div>

@@ -400,7 +400,7 @@
                                     @if($activity->status === 'ongoing')
                                         <button type="button" wire:click="openScanner({{ $activity->id }})" class="inline-flex items-center justify-center gap-1.5 rounded-full bg-cyan-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-cyan-700">
                                             <i class="bi bi-qr-code text-sm"></i>
-                                            <span>ثبت حضور</span>
+                                            <span>ثبت ورود / خروج</span>
                                         </button>
                                     @else
                                         <button type="button" wire:click="selectActivity({{ $activity->id }})" class="inline-flex items-center justify-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-4 py-2 text-xs font-bold text-violet-700 transition hover:bg-violet-100">
@@ -776,7 +776,7 @@
                             @if($selectedActivity->status === 'ongoing')
                                 <button type="button" wire:click="openScanner({{ $selectedActivity->id }})" class="inline-flex items-center gap-1.5 rounded-full bg-cyan-600 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-cyan-700">
                                     <i class="bi bi-qr-code text-sm"></i>
-                                    ثبت حضور
+                                    ثبت ورود / خروج
                                 </button>
                             @endif
                             <button type="button" wire:click="exportAttendances" class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50">
@@ -855,6 +855,28 @@
                                         </div>
                                     </div>
 
+                                    <!-- Entry/exit breakdown -->
+                                    <div class="rounded-lg bg-slate-50 p-3 ring-1 ring-slate-200">
+                                        <p class="mb-2.5 text-[10px] font-semibold text-slate-500">آمار ورود و خروج</p>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <div class="flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2 py-1.5 ring-1 ring-emerald-100">
+                                                <i class="bi bi-box-arrow-in-left text-sm text-emerald-600"></i>
+                                                <span class="text-[11px] text-slate-600">ورود</span>
+                                                <span class="ms-auto text-xs font-bold text-emerald-700">{{ $selectedActivity->checked_in_attendances_count ?? 0 }}</span>
+                                            </div>
+                                            <div class="flex items-center gap-1.5 rounded-lg bg-indigo-50 px-2 py-1.5 ring-1 ring-indigo-100">
+                                                <i class="bi bi-box-arrow-left text-sm text-indigo-600"></i>
+                                                <span class="text-[11px] text-slate-600">خروج</span>
+                                                <span class="ms-auto text-xs font-bold text-indigo-700">{{ $selectedActivity->checked_out_attendances_count ?? 0 }}</span>
+                                            </div>
+                                            <div class="col-span-2 flex items-center gap-1.5 rounded-lg bg-sky-50 px-2 py-1.5 ring-1 ring-sky-100">
+                                                <i class="bi bi-person-check text-sm text-sky-600"></i>
+                                                <span class="text-[11px] text-slate-600">حاضر در فعالیت (بدون ثبت خروج)</span>
+                                                <span class="ms-auto text-xs font-bold text-sky-700">{{ $selectedActivity->still_present_attendances_count ?? 0 }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <!-- Event details -->
                                     <div class="space-y-2 rounded-lg bg-slate-50 p-3 text-xs leading-relaxed text-slate-600 ring-1 ring-slate-200">
                                         <p><strong class="text-slate-700">شروع:</strong> {{ $this->formatJalaliDateTime($selectedActivity->starts_at) }}</p>
@@ -883,14 +905,43 @@
                                                 <option value="{{ $value }}">{{ $label }}</option>
                                             @endforeach
                                         </select>
+                                        <select wire:model.live="attendancePresenceFilter" class="col-span-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs" aria-label="فیلتر ورود و خروج">
+                                            <option value="all">ورود و خروج: همه</option>
+                                            @foreach($attendancePresenceOptions as $value => $label)
+                                                <option value="{{ $value }}">{{ $label }}</option>
+                                            @endforeach
+                                        </select>
                                     </div>
                                     <div class="space-y-2">
                                         @forelse($filteredAttendances as $attendance)
                                             <div class="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600 transition hover:bg-slate-100">
-                                                <p class="font-bold text-slate-800">{{ $attendance->person?->full_name ?: '—' }}</p>
+                                                <div class="flex items-start justify-between gap-2">
+                                                    <p class="font-bold text-slate-800">{{ $attendance->person?->full_name ?: '—' }}</p>
+                                                    @if($attendance->checked_out_at)
+                                                        <span class="inline-flex shrink-0 items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
+                                                            <i class="bi bi-box-arrow-left"></i>
+                                                            خارج شده
+                                                        </span>
+                                                    @elseif($attendance->checked_in_at)
+                                                        <span class="inline-flex shrink-0 items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold text-sky-700">
+                                                            <i class="bi bi-person-check"></i>
+                                                            حاضر
+                                                        </span>
+                                                    @endif
+                                                </div>
                                                 <p class="text-[11px]">{{ $attendance->person?->person_code ?: '—' }} · {{ $attendance->person?->national_id ?: '—' }}</p>
                                                 <p class="mt-1 text-[11px]">{{ $attendanceMethodOptions[$attendance->registration_method] ?? $attendance->registration_method }} · {{ $attendanceStatusOptions[$attendance->status] ?? $attendance->status }}</p>
-                                                <p class="text-[11px] text-slate-500">{{ $this->formatJalaliDateTime($attendance->checked_in_at) }}</p>
+                                                <p class="text-[11px] text-slate-500">
+                                                    <span class="font-semibold text-emerald-600">ورود:</span>
+                                                    {{ $this->formatJalaliDateTime($attendance->checked_in_at) }}
+                                                </p>
+                                                <p class="text-[11px] text-slate-500">
+                                                    <span class="font-semibold text-indigo-600">خروج:</span>
+                                                    {{ $attendance->checked_out_at ? $this->formatJalaliDateTime($attendance->checked_out_at) : 'ثبت نشده' }}
+                                                    @if($attendance->check_out_method)
+                                                        · {{ $attendanceMethodOptions[$attendance->check_out_method] ?? $attendance->check_out_method }}
+                                                    @endif
+                                                </p>
                                             </div>
                                         @empty
                                             <p class="rounded-lg border border-dashed border-slate-200 p-4 text-center text-xs text-slate-400">هنوز حضوری ثبت نشده</p>
