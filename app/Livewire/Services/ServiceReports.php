@@ -550,11 +550,6 @@ class ServiceReports extends Component
         }
     }
 
-    public function printReceipt(int $deliveryId): void
-    {
-        $this->dispatch('open-delivery-receipt', deliveryId: $deliveryId);
-    }
-
     protected function deliveryEditRules(): array
     {
         return [
