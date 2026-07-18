@@ -62,10 +62,13 @@ class Service extends Model
 
     public const DELIVERY_CHANNEL_ACTIVITY = 'activity';
 
+    public const DELIVERY_CHANNEL_DIRECT = 'direct';
+
     public const DELIVERY_CHANNEL_OPTIONS = [
         self::DELIVERY_CHANNEL_GATE => 'ایستگاه توزیع',
         self::DELIVERY_CHANNEL_HOME => 'تحویل در منزل',
         self::DELIVERY_CHANNEL_ACTIVITY => 'تحویل در فعالیت',
+        self::DELIVERY_CHANNEL_DIRECT => 'تحویل مستقیم (بدون مددکار)',
     ];
 
     public const UNIT_OPTION_ORDER = [

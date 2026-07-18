@@ -446,9 +446,9 @@
                                     <span class="absolute inset-y-0 right-0 w-1 bg-cyan-500"></span>
                                     <div class="flex items-start justify-between">
                                         <div>
-                                            <p class="text-xs font-semibold text-cyan-600 mb-2">Service Delivery</p>
+                                            <p class="text-xs font-semibold text-cyan-600 mb-2">تحویل خدمت</p>
                                             <h2 class="text-base font-bold text-gray-800">تحویل خدمت به مددکار اجتماعی</h2>
-                                            <p class="text-xs text-gray-500 mt-2">تخصیص سهمیه خدمات به مددکاران اجتماعی برای توزیع بین خانوارهای تحت پوشش</p>
+                                            <p class="text-xs text-gray-500 mt-2">تخصیص سهمیه خدمات به مددکاران اجتماعی برای توزیع</p>
                                         </div>
                                         <div class="rounded-lg bg-cyan-100 p-2 text-cyan-600">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -467,15 +467,15 @@
                                 <button
                                     type="button"
                                     wire:click="selectSection('service-delivery-beneficiary')"
-                                    aria-label="تحویل خدمت به مددجو / سرپرست"
+                                    aria-label="تحویل مستقیم خدمت به مددجو / سرپرست"
                                     class="group relative block w-full text-right overflow-hidden rounded-xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-emerald-100"
                                 >
                                     <span class="absolute inset-y-0 right-0 w-1 bg-emerald-500"></span>
                                     <div class="flex items-start justify-between">
                                         <div>
-                                            <p class="text-xs font-semibold text-emerald-600 mb-2">Service Delivery</p>
-                                            <h2 class="text-base font-bold text-gray-800">تحویل خدمت به مددجو / سرپرست</h2>
-                                            <p class="text-xs text-gray-500 mt-2">ثبت مستقیم تحویل خدمت برای مددجو یا سرپرست خانوار</p>
+                                            <p class="text-xs font-semibold text-emerald-600 mb-2">تحویل خدمت</p>
+                                            <h2 class="text-base font-bold text-gray-800">تحویل مستقیم خدمت به مددجو / سرپرست</h2>
+                                            <p class="text-xs text-gray-500 mt-2">ثبت مستقیم و نهایی تحویل خدمت برای مددجو یا سرپرست خانوار</p>
                                         </div>
                                         <div class="rounded-lg bg-emerald-100 p-2 text-emerald-600">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
