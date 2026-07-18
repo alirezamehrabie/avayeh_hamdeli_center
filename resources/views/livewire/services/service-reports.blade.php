@@ -368,22 +368,29 @@
 
                             <div class="grid grid-cols-1 gap-3">
                             <div
-                                class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur"
                                 x-data="{ deliveredOpen: false }"
                                 @keydown.escape.window="deliveredOpen = false"
                             >
-                                <p class="text-[10px] text-slate-300">تحویل شده</p>
                                 <button
                                     type="button"
                                     @click="deliveredOpen = true"
                                     :aria-expanded="deliveredOpen ? 'true' : 'false'"
                                     aria-haspopup="dialog"
-                                    class="mt-1 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-3 py-1 text-xs font-bold text-white transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40"
+                                    aria-label="مشاهده جزئیات تحویل"
+                                    class="group flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-right backdrop-blur transition hover:border-emerald-300/40 hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-emerald-300/50"
                                 >
-                                    <svg class="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h10M4 17h7"/>
+                                    <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-400/20 text-emerald-200 ring-1 ring-emerald-300/30 transition group-hover:bg-emerald-400/30">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                                        </svg>
+                                    </span>
+                                    <span class="min-w-0 flex-1">
+                                        <span class="block text-[10px] text-slate-300">تحویل شده</span>
+                                        <span class="mt-0.5 block text-sm font-bold text-white">مشاهده جزئیات تحویل</span>
+                                    </span>
+                                    <svg class="h-4 w-4 shrink-0 text-slate-300 transition group-hover:-translate-x-0.5 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                                     </svg>
-                                    <span>مشاهده جزئیات تحویل</span>
                                 </button>
 
                                 <template x-teleport="body">
@@ -391,42 +398,83 @@
                                         x-show="deliveredOpen"
                                         x-cloak
                                         x-transition.opacity
-                                        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4 backdrop-blur-sm"
+                                        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4 backdrop-blur-md"
                                         style="display: none;"
                                     >
                                         <div
+                                            x-show="deliveredOpen"
+                                            x-transition:enter="transition ease-out duration-200"
+                                            x-transition:enter-start="opacity-0 translate-y-3 scale-95"
+                                            x-transition:enter-end="opacity-100 translate-y-0 scale-100"
                                             @click.outside="deliveredOpen = false"
                                             role="dialog"
                                             aria-modal="true"
                                             aria-label="جزئیات تحویل بر اساس دسته‌بندی"
-                                            class="w-full max-w-md rounded-[24px] border border-slate-200 bg-white text-right text-slate-800 shadow-2xl"
+                                            class="flex max-h-[82vh] w-full max-w-md flex-col overflow-hidden rounded-[28px] bg-white text-right text-slate-800 shadow-2xl ring-1 ring-slate-900/5"
                                         >
-                                            <div class="flex items-center justify-between gap-2 border-b border-slate-200 px-5 py-4">
-                                                <div class="min-w-0">
-                                                    <h3 class="text-base font-black text-slate-800">تحویل بر اساس دسته‌بندی</h3>
-                                                    <p class="mt-0.5 truncate text-xs text-slate-500">{{ $selectedService->serviceName?->name ?: 'خدمت' }}</p>
+                                            {{-- Header --}}
+                                            <div class="relative overflow-hidden bg-gradient-to-l from-indigo-600 via-indigo-600 to-violet-600 px-5 py-5 text-white">
+                                                <div class="absolute -left-6 -top-8 h-24 w-24 rounded-full bg-white/10"></div>
+                                                <div class="absolute -bottom-10 right-10 h-20 w-20 rounded-full bg-white/10"></div>
+                                                <div class="relative flex items-start justify-between gap-3">
+                                                    <div class="flex min-w-0 items-center gap-3">
+                                                        <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/25 backdrop-blur">
+                                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-6 0h.01M12 16h3m-6 0h.01"/>
+                                                            </svg>
+                                                        </span>
+                                                        <div class="min-w-0">
+                                                            <p class="text-[11px] font-medium text-indigo-100">تحویل بر اساس دسته‌بندی</p>
+                                                            <h3 class="mt-0.5 truncate text-lg font-black">{{ $selectedService->serviceName?->name ?: 'خدمت' }}</h3>
+                                                        </div>
+                                                    </div>
+                                                    <button type="button" @click="deliveredOpen = false" class="shrink-0 rounded-full bg-white/10 p-2 text-white/80 ring-1 ring-white/20 transition hover:bg-white/20 hover:text-white" aria-label="بستن">
+                                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 6l12 12M18 6L6 18"/>
+                                                        </svg>
+                                                    </button>
                                                 </div>
-                                                <button type="button" @click="deliveredOpen = false" class="rounded-full border border-slate-200 p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="بستن">
-                                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 6l12 12M18 6L6 18"/>
-                                                    </svg>
-                                                </button>
                                             </div>
 
-                                            <div class="max-h-[60vh] space-y-2 overflow-y-auto px-5 py-4">
-                                                @forelse($this->deliveredCategoryBreakdown as $row)
-                                                    <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-2.5 text-sm">
-                                                        <span class="min-w-0 truncate font-bold text-slate-800">{{ $row['category'] }}</span>
-                                                        <span class="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-700 ring-1 ring-slate-200">
-                                                            {{ $row['total'] }} {{ $row['unitLabel'] }}
+                                            {{-- Body --}}
+                                            <div class="flex-1 space-y-2.5 overflow-y-auto bg-slate-50/60 px-4 py-4">
+                                                @forelse($this->deliveredCategoryBreakdown as $index => $row)
+                                                    <div class="group flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white px-3.5 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition hover:border-indigo-200 hover:shadow-md">
+                                                        <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-xs font-black text-indigo-600 transition group-hover:bg-indigo-100">
+                                                            {{ $index + 1 }}
+                                                        </span>
+                                                        <div class="min-w-0 flex-1">
+                                                            <p class="truncate text-sm font-bold text-slate-800">{{ $row['category'] }}</p>
+                                                            @if(($row['recordCount'] ?? 1) > 1)
+                                                                <p class="mt-0.5 text-[11px] text-slate-400">{{ $row['recordCount'] }} رکورد تحویل</p>
+                                                            @endif
+                                                        </div>
+                                                        <span class="shrink-0 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-black text-indigo-700">
+                                                            {{ $row['total'] }}
+                                                            <span class="font-bold text-indigo-400">{{ $row['unitLabel'] }}</span>
                                                         </span>
                                                     </div>
                                                 @empty
-                                                    <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
-                                                        هنوز هیچ تحویلی برای این خدمت ثبت نشده است.
+                                                    <div class="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center">
+                                                        <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                                                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                                                            </svg>
+                                                        </span>
+                                                        <p class="text-sm font-medium text-slate-500">هنوز هیچ تحویلی برای این خدمت ثبت نشده است.</p>
                                                     </div>
                                                 @endforelse
                                             </div>
+
+                                            {{-- Footer summary --}}
+                                            @if($this->deliveredCategoryBreakdown->isNotEmpty())
+                                                <div class="flex items-center justify-between gap-3 border-t border-slate-200 bg-white px-5 py-3">
+                                                    <span class="text-xs font-medium text-slate-500">مجموع دسته‌بندی‌ها</span>
+                                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-3 py-1 text-xs font-black text-white">
+                                                        {{ $this->deliveredCategoryBreakdown->count() }} دسته‌بندی
+                                                    </span>
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </template>

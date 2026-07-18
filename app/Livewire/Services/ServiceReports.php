@@ -209,6 +209,7 @@ class ServiceReports extends Component
                     'category' => $first->serviceCategory?->name ?: '-',
                     'unitLabel' => $unitKey ? (Service::unitOptions()[$unitKey] ?? $unitKey) : '-',
                     'total' => Service::formatQuantityForUnit($total, $unitKey),
+                    'recordCount' => $deliveries->count(),
                 ];
             })
             ->values();
