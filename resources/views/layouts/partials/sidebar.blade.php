@@ -3,7 +3,6 @@
     x-ref="sidebarPanel"
     x-show="sidebarOpen"
     tabindex="-1"
-    role="navigation"
     aria-label="منوی اصلی"
     @keydown.escape.stop="closeSidebarOnMobile()"
     x-transition:enter="transition ease-out duration-300"
