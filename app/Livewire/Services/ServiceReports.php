@@ -300,6 +300,7 @@ class ServiceReports extends Component
                 'deliveries.guardian',
                 'deliveries.socialWorker',
                 'deliveries.creator',
+                'deliveries.updater',
             ])
             ->find($this->selectedServiceId);
     }
