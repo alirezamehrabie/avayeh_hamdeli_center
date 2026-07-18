@@ -4,6 +4,7 @@ import * as bootstrap from 'bootstrap';
 import '@majidh1/jalalidatepicker/dist/jalalidatepicker.min.css';
 import '@majidh1/jalalidatepicker';
 import { attendanceResultBanner, createAttendanceResultBannerState } from './attendance-result-banner';
+import { deliveryReceipt } from './delivery-receipt';
 import { Livewire, Alpine } from '../../vendor/livewire/livewire/dist/livewire.esm';
 
 window.Alpine = Alpine;
@@ -28,6 +29,8 @@ const loadQrScannerDependencies = async () => {
 
     return qrScannerDependencies;
 };
+
+Alpine.data('deliveryReceipt', deliveryReceipt);
 
 Alpine.data('rialAmountInput', (model) => ({
     model,

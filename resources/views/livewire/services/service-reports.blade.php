@@ -513,11 +513,12 @@
                                 'serviceCode' => $selectedService->code,
                                 'date' => $group->receiptDate,
                                 'items' => $group->receiptItems,
+                                'unitTotals' => $group->unitTotals,
                             ];
                         @endphp
 
                         <section
-                            x-data="{ receiptOpen: false }"
+                            x-data="deliveryReceipt(@js($receiptPayload))"
                             @keydown.escape.window="receiptOpen = false"
                             class="overflow-hidden rounded-2xl border border-slate-200 bg-white text-sm shadow-sm ring-1 ring-slate-950/[0.02]"
                         >
@@ -702,12 +703,33 @@
                                                     <h3 class="mt-1 truncate text-lg font-black text-slate-900">{{ $receiptPayload['serviceName'] }}</h3>
                                                     <p class="mt-0.5 text-xs text-slate-500">کد خدمت: {{ $receiptPayload['serviceCode'] ?: '-' }}</p>
                                                 </div>
-                                                <button type="button" @click="receiptOpen = false" class="shrink-0 rounded-full border border-slate-200 bg-white p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="بستن">
-                                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 6l12 12M18 6L6 18" />
-                                                    </svg>
-                                                </button>
+                                                <div class="flex shrink-0 items-center gap-1.5">
+                                                    <button
+                                                        type="button"
+                                                        @click="downloadImage()"
+                                                        :disabled="downloading"
+                                                        class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                                        title="دانلود تصویر رسید"
+                                                        aria-label="دانلود تصویر رسید"
+                                                    >
+                                                        <svg x-show="!downloading" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                                                        </svg>
+                                                        <svg x-show="downloading" x-cloak class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                                        </svg>
+                                                        <span x-text="downloading ? 'در حال ساخت…' : 'دانلود تصویر'"></span>
+                                                    </button>
+                                                    <button type="button" @click="receiptOpen = false" class="rounded-full border border-slate-200 bg-white p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="بستن">
+                                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 6l12 12M18 6L6 18" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
                                             </div>
+
+                                            <p x-show="downloadError" x-cloak class="border-b border-rose-100 bg-rose-50 px-5 py-2 text-xs font-semibold text-rose-700" x-text="downloadError"></p>
 
                                             <div class="flex-1 overflow-y-auto px-5 py-4">
                                                 {{-- Recipient info --}}
