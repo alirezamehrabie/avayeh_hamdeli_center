@@ -154,6 +154,7 @@
                                             'name' => $category->name,
                                             'quantity' => $this->formatQuantityForUnit($category->quantity, (string) $category->unit),
                                             'unit' => $unitOptions[$category->unit] ?? ($category->unit ?? '-'),
+                                            'value' => (int) $category->value ? number_format((int) $category->value) : null,
                                         ])->values()); categoriesOpen = true"
                                         class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
                                     >
@@ -241,6 +242,7 @@
                                         'name' => $category->name,
                                         'quantity' => $this->formatQuantityForUnit($category->quantity, (string) $category->unit),
                                         'unit' => $unitOptions[$category->unit] ?? ($category->unit ?? '-'),
+                                        'value' => (int) $category->value ? number_format((int) $category->value) : null,
                                     ])->values()); categoriesOpen = true"
                                     class="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
                                 >
@@ -330,6 +332,7 @@
                                             'name' => $category->name,
                                             'quantity' => $this->formatQuantityForUnit($category->quantity, (string) $category->unit),
                                             'unit' => $unitOptions[$category->unit] ?? ($category->unit ?? '-'),
+                                            'value' => (int) $category->value ? number_format((int) $category->value) : null,
                                         ])->values()); categoriesOpen = true"
                                         class="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-xs font-semibold text-white transition hover:bg-white/20"
                                     >
@@ -453,10 +456,6 @@
                     <div class="flex items-center gap-2">
                         <span class="text-xs font-medium text-slate-500">نوع:</span>
                         <x-service-type-badge :type="$selectedService->service_type" />
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-medium text-slate-500">واحد:</span>
-                        <span class="text-xs font-bold text-slate-800">{{ $unitOptions[$selectedService->service_unit] ?? ($selectedService->service_unit ?? '-') }}</span>
                     </div>
                 </div>
 
@@ -969,42 +968,73 @@
     @include('livewire.services.partials.delivery-summary-modal')
 
     {{-- Categories Modal --}}
+    <template x-teleport="body">
     <div
         x-show="categoriesOpen"
         x-cloak
         x-transition.opacity
-        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 px-4"
+        @keydown.escape.window="categoriesOpen = false"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4 py-6 backdrop-blur-sm"
         style="display: none;"
     >
-        <div @click.outside="categoriesOpen = false" class="w-full max-w-xl rounded-[28px] border border-slate-200 bg-white shadow-2xl">
-            <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-                <div class="min-w-0">
-                    <h3 class="text-lg font-black text-slate-800">دسته‌بندی‌های خدمت</h3>
-                    <p class="mt-1 truncate text-sm text-slate-500" x-text="categoryTitle"></p>
+        <div
+            @click.outside="categoriesOpen = false"
+            role="dialog"
+            aria-modal="true"
+            aria-label="دسته‌بندی‌های خدمت"
+            class="flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white text-right text-slate-800 shadow-2xl"
+        >
+            {{-- Header --}}
+            <div class="flex items-start justify-between gap-3 border-b border-dashed border-slate-300 bg-slate-50 px-5 py-4">
+                <div class="flex min-w-0 items-center gap-3">
+                    <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-600">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h10M4 17h7"/>
+                        </svg>
+                    </span>
+                    <div class="min-w-0">
+                        <p class="text-[11px] font-bold uppercase tracking-wide text-indigo-600">دسته‌بندی‌های خدمت</p>
+                        <h3 class="mt-0.5 truncate text-lg font-black text-slate-900" x-text="categoryTitle"></h3>
+                        <p class="mt-0.5 text-xs text-slate-500">
+                            <span x-text="categories.length"></span> دسته‌بندی
+                        </p>
+                    </div>
                 </div>
-                <button type="button" @click="categoriesOpen = false" class="rounded-full border border-slate-200 p-2 text-slate-400 transition hover:text-slate-700" aria-label="بستن">
+                <button type="button" @click="categoriesOpen = false" class="shrink-0 rounded-full border border-slate-200 bg-white p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="بستن">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 6l12 12M18 6L6 18"/>
                     </svg>
                 </button>
             </div>
 
-            <div class="max-h-[70vh] overflow-y-auto px-5 py-5">
+            <div class="flex-1 overflow-y-auto px-5 py-4">
                 <template x-if="categories.length">
-                    <div class="space-y-3">
-                        <template x-for="(category, index) in categories" :key="`${category.name}-${index}`">
-                            <div class="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                                <div class="min-w-0">
-                                    <p class="text-xs text-slate-400">نام دسته</p>
-                                    <p class="mt-1 truncate text-sm font-bold text-slate-800" x-text="category.name"></p>
+                    <div class="overflow-hidden rounded-2xl border border-slate-200">
+                        <div class="grid grid-cols-[1fr_auto] gap-3 bg-slate-100 px-4 py-2.5 text-[11px] font-bold text-slate-500">
+                            <span>نام دسته</span>
+                            <span class="text-left">مقدار / ارزش واحد</span>
+                        </div>
+                        <div class="divide-y divide-slate-100">
+                            <template x-for="(category, index) in categories" :key="`${category.name}-${index}`">
+                                <div class="grid grid-cols-[1fr_auto] items-center gap-3 px-4 py-3 transition odd:bg-white even:bg-slate-50/70 hover:bg-indigo-50/40">
+                                    <div class="flex min-w-0 items-center gap-2.5">
+                                        <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-[11px] font-black text-indigo-600" x-text="index + 1"></span>
+                                        <p class="truncate text-sm font-bold text-slate-800" x-text="category.name"></p>
+                                    </div>
+                                    <div class="flex shrink-0 flex-col items-end gap-1">
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-700 ring-1 ring-slate-200">
+                                            <span class="text-slate-900" x-text="category.quantity"></span>
+                                            <span class="text-slate-400" x-text="category.unit"></span>
+                                        </span>
+                                        <template x-if="category.value">
+                                            <span class="text-[11px] font-semibold text-emerald-600">
+                                                <span x-text="category.value"></span> ریال
+                                            </span>
+                                        </template>
+                                    </div>
                                 </div>
-                                <div class="flex items-center gap-2 self-start rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 sm:self-center">
-                                    <span x-text="category.quantity"></span>
-                                    <span class="text-slate-300">|</span>
-                                    <span x-text="category.unit"></span>
-                                </div>
-                            </div>
-                        </template>
+                            </template>
+                        </div>
                     </div>
                 </template>
 
@@ -1014,6 +1044,13 @@
                     </div>
                 </template>
             </div>
+
+            <div class="border-t border-slate-200 px-5 py-3 text-left">
+                <button type="button" @click="categoriesOpen = false" class="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100">
+                    بستن
+                </button>
+            </div>
         </div>
     </div>
+    </template>
 </div>
