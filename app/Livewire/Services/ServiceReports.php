@@ -122,6 +122,20 @@ class ServiceReports extends Component
             ->map(function ($deliveries) {
                 $first = $deliveries->first();
 
+                $unitTotals = $deliveries
+                    ->groupBy(fn ($d) => $d->serviceCategory?->unit ?: '__none__')
+                    ->map(function ($unitDeliveries, $unitKey) {
+                        $hasUnit = $unitKey !== '__none__';
+                        $total = $unitDeliveries->sum(fn ($d) => (float) $d->delivered_quantity);
+
+                        return [
+                            'unitKey' => $hasUnit ? $unitKey : null,
+                            'label' => $hasUnit ? (Service::unitOptions()[$unitKey] ?? $unitKey) : '-',
+                            'total' => Service::formatQuantityForUnit($total, $hasUnit ? $unitKey : null),
+                        ];
+                    })
+                    ->values();
+
                 return (object) [
                     'recipientName' => $first->recipient_name,
                     'recipientNationalId' => $first->recipient_national_id,
@@ -130,6 +144,7 @@ class ServiceReports extends Component
                     'guardian' => $first->guardian,
                     'mobile' => $deliveries->pluck('mobile')->filter()->first(),
                     'totalQuantity' => $deliveries->sum(fn ($d) => (float) $d->delivered_quantity),
+                    'unitTotals' => $unitTotals,
                     'totalValue' => $deliveries->sum('delivered_total_value'),
                     'deliveries' => $deliveries->values(),
                 ];

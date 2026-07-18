@@ -454,14 +454,6 @@
                             };
                             $guardianLabel = $group->person?->guardian?->full_name
                                 ?: $group->guardian?->full_name;
-
-                            $groupUnitKeys = $group->deliveries
-                                ->map(fn ($delivery) => $delivery->serviceCategory?->unit)
-                                ->filter()
-                                ->unique();
-                            $groupTotalUnitLabel = $groupUnitKeys->count() === 1
-                                ? ($unitOptions[$groupUnitKeys->first()] ?? $groupUnitKeys->first())
-                                : '-';
                         @endphp
 
                         <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white text-sm shadow-sm ring-1 ring-slate-950/[0.02]">
@@ -494,10 +486,16 @@
                                     <div class="grid grid-cols-2 gap-2 text-xs sm:min-w-72">
                                         <div class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-center shadow-[0_1px_0_rgba(15,23,42,0.03)]">
                                             <p class="text-slate-500">جمع مقدار</p>
-                                            <p class="mt-1 font-extrabold text-slate-900">
-                                                {{ number_format($group->totalQuantity, 2) }}
-                                                {{ $groupTotalUnitLabel }}
-                                            </p>
+                                            <div class="mt-1 flex flex-wrap items-center justify-center gap-1">
+                                                @forelse($group->unitTotals as $unitTotal)
+                                                    <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-700 ring-1 ring-slate-200">
+                                                        <span class="text-slate-500">{{ $unitTotal['label'] }}:</span>
+                                                        <span class="text-slate-900">{{ $unitTotal['total'] }}</span>
+                                                    </span>
+                                                @empty
+                                                    <span class="font-extrabold text-slate-900">-</span>
+                                                @endforelse
+                                            </div>
                                         </div>
                                         <div class="rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 py-2 text-center shadow-[0_1px_0_rgba(15,23,42,0.03)]">
                                             <p class="text-emerald-700/80">جمع ارزش</p>
@@ -537,7 +535,7 @@
                                                         ? ($unitOptions[$deliveryUnitKey] ?? $deliveryUnitKey)
                                                         : '-';
                                                 @endphp
-                                                {{ number_format((float) $delivery->delivered_quantity, 2) }}
+                                                {{ \App\Models\Service::formatQuantityForUnit($delivery->delivered_quantity, $deliveryUnitKey) }}
                                                 {{ $deliveryUnitLabel }}
                                             </td>
                                             <td class="px-4 py-4 text-center font-bold text-emerald-600">
