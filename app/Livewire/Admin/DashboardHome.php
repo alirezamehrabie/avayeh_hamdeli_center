@@ -71,6 +71,10 @@ class DashboardHome extends Component
             $this->activeSection = 'service-list';
         } elseif (! request()->has('section') && request()->routeIs('admin.service-delivery')) {
             $this->activeSection = 'service-delivery';
+        } elseif (! request()->has('section') && request()->routeIs('admin.service-delivery.social-worker')) {
+            $this->activeSection = 'service-delivery-social-worker';
+        } elseif (! request()->has('section') && request()->routeIs('admin.service-delivery.beneficiary')) {
+            $this->activeSection = 'service-delivery-beneficiary';
         } elseif (! request()->has('section') && request()->routeIs('admin.service-reports')) {
             $this->activeSection = 'advanced-service-report';
         } elseif (! request()->has('section') && request()->routeIs('admin.activity-definition')) {
@@ -239,6 +243,8 @@ class DashboardHome extends Component
                 'service-definition',
                 'service-list',
                 'service-delivery',
+                'service-delivery-social-worker',
+                'service-delivery-beneficiary',
                 'service-management',
                 'service-archive',
                 'activity-definition',

@@ -121,6 +121,14 @@ Route::get('/admin/services/service-delivery', DashboardHome::class)
     ->middleware(['auth', 'can:full-access'])
     ->name('admin.service-delivery');
 
+Route::get('/admin/services/service-delivery/social-worker', DashboardHome::class)
+    ->middleware(['auth', 'can:full-access'])
+    ->name('admin.service-delivery.social-worker');
+
+Route::get('/admin/services/service-delivery/beneficiary', DashboardHome::class)
+    ->middleware(['auth', 'can:full-access'])
+    ->name('admin.service-delivery.beneficiary');
+
 Route::get('/admin/reports/services', DashboardHome::class)
     ->middleware(['auth', 'can:access-admin-panel'])
     ->name('admin.service-reports');

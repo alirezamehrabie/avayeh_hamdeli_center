@@ -56,7 +56,7 @@
         $socialWorkersOpen = $dashboardMode ? $isActive(['social-workers-list', 'social-workers-block-list', 'social-worker-create', 'social-worker-edit']) : request()->routeIs('social-workers.*');
         $guardiansOpen = $dashboardMode ? $isActive(['guardians-list', 'guardians-block-list']) : request()->routeIs('guardians.*');
         $reportsOpen = $dashboardMode ? $isActive(['advanced-reports', 'advanced-service-report', 'advanced-beneficiary-report', 'advanced-operator-report', 'advanced-supervisor-report', 'advanced-social-worker-report', 'advanced-gate-report']) : false;
-        $servicesOpen = $dashboardMode ? $isActive(['service-definition', 'service-management', 'service-list', 'service-delivery', 'service-archive']) : false;
+        $servicesOpen = $dashboardMode ? $isActive(['service-definition', 'service-management', 'service-list', 'service-delivery', 'service-delivery-social-worker', 'service-delivery-beneficiary', 'service-archive']) : false;
         $activitiesOpen = $dashboardMode ? $isActive(['activity-definition', 'activity-list', 'activity-scanner', 'activity-operator-assignments']) : false;
         $childSupporterOpen = $dashboardMode ? $isActive(['child-supporter-sponsor-registration', 'child-supporter-sponsor-edit', 'child-supporter-sponsor-list']) : false;
         $specialFeaturesOpen = $dashboardMode ? $isActive(['special-features-id-card-scanner']) : false;
@@ -103,7 +103,7 @@
             ],
             'services' => [
                 ['section' => 'service-list', 'label' => 'مدیریت خدمات'],
-                ['section' => 'service-delivery', 'label' => 'تحویل خدمات'],
+                ['section' => 'service-delivery', 'label' => 'تحویل خدمات', 'active' => ['service-delivery', 'service-delivery-social-worker', 'service-delivery-beneficiary']],
             ],
             'activities' => [
                 ['section' => 'activity-list', 'label' => 'مدیریت فعالیت‌ها'],
@@ -325,7 +325,7 @@
             @if($dashboardMode)
                 <div>
                     <button type="button" @click="openMenu = openMenu === 'services' ? '' : 'services'"
-                            class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $isActive(['service-definition', 'service-management', 'service-list', 'service-delivery', 'service-archive']) ? 'bg-indigo-700' : '' }}">
+                            class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $isActive(['service-definition', 'service-management', 'service-list', 'service-delivery', 'service-delivery-social-worker', 'service-delivery-beneficiary', 'service-archive']) ? 'bg-indigo-700' : '' }}">
                         <div class="flex items-center">
                             <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
