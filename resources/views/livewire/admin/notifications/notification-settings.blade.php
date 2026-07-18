@@ -41,12 +41,13 @@
                                 </div>
 
                                 {{-- Enable toggle --}}
-                                <label class="inline-flex cursor-pointer items-center gap-2">
+                                <label class="relative inline-flex cursor-pointer items-center gap-2">
                                     <span class="text-xs font-semibold {{ ($preferences[$formKey]['enabled'] ?? false) ? 'text-emerald-600' : 'text-gray-400' }}">
                                         {{ ($preferences[$formKey]['enabled'] ?? false) ? 'فعال' : 'غیرفعال' }}
                                     </span>
-                                    <input type="checkbox" wire:model.live="preferences.{{ $formKey }}.enabled" class="peer sr-only">
-                                    <span class="relative h-6 w-11 rounded-full bg-gray-200 transition peer-checked:bg-emerald-500 peer-focus-visible:ring-4 peer-focus-visible:ring-emerald-100 after:absolute after:right-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:-translate-x-5"></span>
+                                    {{-- ورودی روی خود کنترل قرار می‌گیرد (نه sr-only) تا فوکوس مجدد Livewire باعث اسکرول ناخواسته صفحه نشود. --}}
+                                    <input type="checkbox" wire:model.live="preferences.{{ $formKey }}.enabled" class="peer absolute inset-0 h-full w-full cursor-pointer appearance-none rounded-lg focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-100">
+                                    <span class="relative h-6 w-11 rounded-full bg-gray-200 transition peer-checked:bg-emerald-500 after:absolute after:right-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:-translate-x-5"></span>
                                 </label>
                             </div>
 
@@ -56,8 +57,8 @@
                                         <legend class="mb-2 text-xs font-bold text-gray-600">اعلان برای:</legend>
                                         <div class="flex flex-wrap gap-2">
                                             @foreach($targetTypeLabels as $targetType => $targetLabel)
-                                                <label class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition {{ ($preferences[$formKey]['target_type'] ?? 'all') === $targetType ? 'border-indigo-300 bg-indigo-100 text-indigo-700' : 'border-gray-200 bg-white text-gray-500 hover:border-indigo-200' }}">
-                                                    <input type="radio" wire:model.live="preferences.{{ $formKey }}.target_type" value="{{ $targetType }}" class="sr-only">
+                                                <label class="relative inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition {{ ($preferences[$formKey]['target_type'] ?? 'all') === $targetType ? 'border-indigo-300 bg-indigo-100 text-indigo-700' : 'border-gray-200 bg-white text-gray-500 hover:border-indigo-200' }}">
+                                                    <input type="radio" wire:model.live="preferences.{{ $formKey }}.target_type" value="{{ $targetType }}" class="absolute inset-0 h-full w-full cursor-pointer appearance-none rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300">
                                                     {{ $targetLabel }}
                                                 </label>
                                             @endforeach
