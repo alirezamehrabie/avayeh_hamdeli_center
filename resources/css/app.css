@@ -238,3 +238,69 @@ body {
         opacity: 0.75;
     }
 }
+
+/*
+ * Automatic report layout (Advanced Service Report)
+ * -------------------------------------------------
+ * The report container decides between table and card presentation based on
+ * its own available width (container queries), so the layout adapts to the
+ * dashboard section it is rendered in — not the device or user agent.
+ *
+ * .report-cq          → measured container
+ * .rpt-lg-table/cards → wide table needs ~56rem (services overview, 9 columns)
+ * .rpt-md-table/cards → medium table needs ~48rem (per-recipient deliveries)
+ *
+ * Mobile-first: cards are shown by default, tables appear once there is room.
+ */
+.report-cq {
+    container-type: inline-size;
+}
+
+.rpt-lg-table,
+.rpt-md-table {
+    display: none;
+}
+
+@container (min-width: 56rem) {
+    .rpt-lg-table {
+        display: block;
+    }
+
+    .rpt-lg-cards {
+        display: none;
+    }
+}
+
+@container (min-width: 48rem) {
+    .rpt-md-table {
+        display: block;
+    }
+
+    .rpt-md-cards {
+        display: none;
+    }
+}
+
+/* Fallback for browsers without container-query support: approximate with
+   viewport media queries (dashboard content ≈ viewport minus sidebar). */
+@supports not (container-type: inline-size) {
+    @media (min-width: 1280px) {
+        .rpt-lg-table {
+            display: block;
+        }
+
+        .rpt-lg-cards {
+            display: none;
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .rpt-md-table {
+            display: block;
+        }
+
+        .rpt-md-cards {
+            display: none;
+        }
+    }
+}

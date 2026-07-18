@@ -32,8 +32,6 @@ class ServiceReports extends Component
 
     public string $selectedServiceName = 'all';
 
-    public string $displayMode = 'list';
-
     public string $deliverySearch = '';
 
     public string $selectedDeliveryEntryType = 'all';
@@ -365,7 +363,6 @@ class ServiceReports extends Component
             'unitOptions' => Service::unitOptions(),
             'categoryOptions' => $categories,
             'serviceNames' => $serviceNames,
-            'displayMode' => $this->displayMode,
             'jalaliDateTime' => fn ($dateTime) => $dateTime ? Jalalian::fromDateTime($dateTime)->format('Y/m/d H:i') : '-',
         ]);
     }
