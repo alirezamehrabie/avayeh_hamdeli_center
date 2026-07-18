@@ -136,6 +136,41 @@ class ServiceReports extends Component
                     })
                     ->values();
 
+                $receiptItems = $deliveries
+                    ->groupBy(function ($d) {
+                        $categoryId = $d->service_category_id ?: 'none';
+                        $unitKey = $d->serviceCategory?->unit ?: '__none__';
+
+                        return $categoryId.'|'.$unitKey;
+                    })
+                    ->map(function ($categoryDeliveries) {
+                        $sample = $categoryDeliveries->first();
+                        $unitKey = $sample->serviceCategory?->unit ?: null;
+                        $total = $categoryDeliveries->sum(fn ($d) => (float) $d->delivered_quantity);
+                        $lastDeliveredAt = $categoryDeliveries
+                            ->map(fn ($d) => $d->delivered_at)
+                            ->filter()
+                            ->sortDesc()
+                            ->first();
+
+                        return [
+                            'category' => $sample->serviceCategory?->name ?: '-',
+                            'quantity' => Service::formatQuantityForUnit($total, $unitKey),
+                            'unitLabel' => $unitKey ? (Service::unitOptions()[$unitKey] ?? $unitKey) : '-',
+                            'recordCount' => $categoryDeliveries->count(),
+                            'date' => $lastDeliveredAt
+                                ? Jalalian::fromDateTime($lastDeliveredAt)->format('Y/m/d')
+                                : '-',
+                        ];
+                    })
+                    ->values();
+
+                $lastDeliveredAt = $deliveries
+                    ->map(fn ($d) => $d->delivered_at)
+                    ->filter()
+                    ->sortDesc()
+                    ->first();
+
                 return (object) [
                     'recipientName' => $first->recipient_name,
                     'recipientNationalId' => $first->recipient_national_id,
@@ -145,6 +180,10 @@ class ServiceReports extends Component
                     'mobile' => $deliveries->pluck('mobile')->filter()->first(),
                     'totalQuantity' => $deliveries->sum(fn ($d) => (float) $d->delivered_quantity),
                     'unitTotals' => $unitTotals,
+                    'receiptItems' => $receiptItems,
+                    'receiptDate' => $lastDeliveredAt
+                        ? Jalalian::fromDateTime($lastDeliveredAt)->format('Y/m/d')
+                        : '-',
                     'totalValue' => $deliveries->sum('delivered_total_value'),
                     'deliveries' => $deliveries->values(),
                 ];

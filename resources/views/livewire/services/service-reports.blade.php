@@ -493,9 +493,34 @@
                             };
                             $guardianLabel = $group->person?->guardian?->full_name
                                 ?: $group->guardian?->full_name;
+
+                            $isRecipientCard = (bool) ($group->person || $group->guardian);
+                            $relationLabel = $group->guardian
+                                ? ($group->guardian->guardian_code ? 'کد خانوار: '.$group->guardian->guardian_code : null)
+                                : ($guardianLabel ? 'سرپرست مرتبط: '.$guardianLabel : null);
+
+                            $receiptPayload = [
+                                'recipientName' => $group->recipientName ?: '-',
+                                'recipientType' => $group->recipientType,
+                                'nationalId' => $group->recipientNationalId ?: '-',
+                                'recipientCode' => $group->person
+                                    ? ($group->person->person_code ?: '-')
+                                    : ($group->guardian?->guardian_code ?: '-'),
+                                'recipientCodeLabel' => $group->guardian ? 'کد خانوار' : 'کد مددجو',
+                                'relation' => $relationLabel,
+                                'mobile' => $group->mobile ?: null,
+                                'serviceName' => $selectedService->serviceName?->name ?: 'خدمت',
+                                'serviceCode' => $selectedService->code,
+                                'date' => $group->receiptDate,
+                                'items' => $group->receiptItems,
+                            ];
                         @endphp
 
-                        <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white text-sm shadow-sm ring-1 ring-slate-950/[0.02]">
+                        <section
+                            x-data="{ receiptOpen: false }"
+                            @keydown.escape.window="receiptOpen = false"
+                            class="overflow-hidden rounded-2xl border border-slate-200 bg-white text-sm shadow-sm ring-1 ring-slate-950/[0.02]"
+                        >
                             <div class="border-b border-slate-200 bg-gradient-to-l from-white via-slate-50 to-slate-100 px-4 py-4 sm:px-5">
                                 <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                     <div class="min-w-0">
@@ -503,6 +528,22 @@
                                             <span class="h-2.5 w-2.5 rounded-full bg-indigo-500"></span>
                                             <h3 class="text-base font-extrabold leading-6 text-slate-950 sm:text-lg">{{ $group->recipientName ?: '-' }}</h3>
                                             <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold ring-1 {{ $typeBadge }}">{{ $group->recipientType }}</span>
+                                            @if($isRecipientCard && $group->deliveries->count() > 0)
+                                                <button
+                                                    type="button"
+                                                    @click="receiptOpen = true"
+                                                    :aria-expanded="receiptOpen ? 'true' : 'false'"
+                                                    aria-haspopup="dialog"
+                                                    title="مشاهده رسید تحویل"
+                                                    aria-label="مشاهده رسید تحویل"
+                                                    class="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-[11px] font-bold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                                                >
+                                                    <svg class="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                    </svg>
+                                                    <span>رسید تحویل</span>
+                                                </button>
+                                            @endif
                                         </div>
 
                                         <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-600">
@@ -637,6 +678,131 @@
                                     </tbody>
                                 </table>
                             </div>
+
+                            @if($isRecipientCard && $group->deliveries->count() > 0)
+                                <template x-teleport="body">
+                                    <div
+                                        x-show="receiptOpen"
+                                        x-cloak
+                                        x-transition.opacity
+                                        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4 py-6 backdrop-blur-sm"
+                                        style="display: none;"
+                                    >
+                                        <div
+                                            @click.outside="receiptOpen = false"
+                                            role="dialog"
+                                            aria-modal="true"
+                                            aria-label="رسید تحویل خدمت"
+                                            class="flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white text-right text-slate-800 shadow-2xl"
+                                        >
+                                            {{-- Header --}}
+                                            <div class="flex items-start justify-between gap-3 border-b border-dashed border-slate-300 bg-slate-50 px-5 py-4">
+                                                <div class="min-w-0">
+                                                    <p class="text-[11px] font-bold uppercase tracking-wide text-indigo-600">رسید تحویل خدمت</p>
+                                                    <h3 class="mt-1 truncate text-lg font-black text-slate-900">{{ $receiptPayload['serviceName'] }}</h3>
+                                                    <p class="mt-0.5 text-xs text-slate-500">کد خدمت: {{ $receiptPayload['serviceCode'] ?: '-' }}</p>
+                                                </div>
+                                                <button type="button" @click="receiptOpen = false" class="shrink-0 rounded-full border border-slate-200 bg-white p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="بستن">
+                                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 6l12 12M18 6L6 18" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+
+                                            <div class="flex-1 overflow-y-auto px-5 py-4">
+                                                {{-- Recipient info --}}
+                                                <div class="grid grid-cols-2 gap-x-4 gap-y-3 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-xs">
+                                                    <div>
+                                                        <p class="text-slate-400">نوع گیرنده</p>
+                                                        <p class="mt-0.5 font-bold text-slate-800">{{ $receiptPayload['recipientType'] }}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p class="text-slate-400">نام گیرنده</p>
+                                                        <p class="mt-0.5 font-bold text-slate-800">{{ $receiptPayload['recipientName'] }}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p class="text-slate-400">کد ملی</p>
+                                                        <p class="mt-0.5 font-bold text-slate-800">{{ $receiptPayload['nationalId'] }}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p class="text-slate-400">{{ $receiptPayload['recipientCodeLabel'] }}</p>
+                                                        <p class="mt-0.5 font-bold text-slate-800">{{ $receiptPayload['recipientCode'] }}</p>
+                                                    </div>
+                                                    @if($receiptPayload['relation'])
+                                                        <div class="col-span-2">
+                                                            <p class="text-slate-400">اطلاعات مرتبط</p>
+                                                            <p class="mt-0.5 font-bold text-slate-800">{{ $receiptPayload['relation'] }}</p>
+                                                        </div>
+                                                    @endif
+                                                    @if($receiptPayload['mobile'])
+                                                        <div>
+                                                            <p class="text-slate-400">موبایل</p>
+                                                            <p class="mt-0.5 font-bold text-slate-800">{{ $receiptPayload['mobile'] }}</p>
+                                                        </div>
+                                                    @endif
+                                                    <div>
+                                                        <p class="text-slate-400">تاریخ تحویل</p>
+                                                        <p class="mt-0.5 font-bold text-slate-800">{{ $receiptPayload['date'] }}</p>
+                                                    </div>
+                                                </div>
+
+                                                {{-- Delivered items (receipt/invoice style) --}}
+                                                <div class="mt-4">
+                                                    <p class="mb-2 text-xs font-black text-slate-700">اقلام تحویل‌شده</p>
+                                                    <div class="overflow-hidden rounded-2xl border border-slate-200">
+                                                        <table class="w-full text-xs">
+                                                            <thead>
+                                                                <tr class="bg-slate-100 text-slate-500">
+                                                                    <th class="px-3 py-2 text-right font-bold">دسته‌بندی</th>
+                                                                    <th class="px-3 py-2 text-center font-bold">مقدار</th>
+                                                                    <th class="px-3 py-2 text-center font-bold">تاریخ</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody class="divide-y divide-slate-100">
+                                                                @foreach($receiptPayload['items'] as $item)
+                                                                    <tr class="bg-white">
+                                                                        <td class="px-3 py-2 text-right font-semibold text-slate-800">
+                                                                            {{ $item['category'] }}
+                                                                            @if(($item['recordCount'] ?? 1) > 1)
+                                                                                <span class="mr-1 text-[10px] font-medium text-slate-400">({{ $item['recordCount'] }} رکورد)</span>
+                                                                            @endif
+                                                                        </td>
+                                                                        <td class="px-3 py-2 text-center font-bold text-slate-900">
+                                                                            {{ $item['quantity'] }} {{ $item['unitLabel'] }}
+                                                                        </td>
+                                                                        <td class="px-3 py-2 text-center text-slate-500">{{ $item['date'] }}</td>
+                                                                    </tr>
+                                                                @endforeach
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+
+                                                {{-- Totals --}}
+                                                <div class="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3">
+                                                    <span class="text-xs font-bold text-slate-500">جمع مقدار</span>
+                                                    <div class="flex flex-wrap items-center justify-end gap-1">
+                                                        @forelse($group->unitTotals as $unitTotal)
+                                                            <span class="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-0.5 text-[11px] font-bold text-slate-700 ring-1 ring-slate-200">
+                                                                <span class="text-slate-500">{{ $unitTotal['label'] }}:</span>
+                                                                <span class="text-slate-900">{{ $unitTotal['total'] }}</span>
+                                                            </span>
+                                                        @empty
+                                                            <span class="font-bold text-slate-900">-</span>
+                                                        @endforelse
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="border-t border-slate-200 px-5 py-3 text-left">
+                                                <button type="button" @click="receiptOpen = false" class="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100">
+                                                    بستن
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            @endif
                         </section>
                     @empty
                         <div class="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-12 text-center text-slate-500">
