@@ -363,31 +363,70 @@
                                 <span wire:loading wire:target="exportToExcel">در حال آماده‌سازی…</span>
                             </button>
 
-                            <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                            <div class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur">
-                                <p class="text-[10px] text-slate-300">نوع خدمت</p>
-                                <div class="mt-1">
-                                    <x-service-type-badge
-                                        :type="$selectedService->service_type"
-                                        text-class="text-white"
-                                        icon-wrap-class="bg-white/10 ring-white/15 text-white"
-                                    />
-                                </div>
-                            </div>
-                            <div class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur">
-                                <p class="text-[10px] text-slate-300">کل مقدار</p>
-                                <p class="mt-1 text-sm font-bold">
-                                    {{ number_format((float) $selectedService->total_quantity, 2) }}
-                                    {{ $unitOptions[$selectedService->service_unit] ?? ($selectedService->service_unit ?? '-') }}
-                                </p>
-                            </div>
-                            <div class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur">
+                            <div class="grid grid-cols-1 gap-3">
+                            <div
+                                class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur"
+                                x-data="{ deliveredOpen: false }"
+                                @keydown.escape.window="deliveredOpen = false"
+                            >
                                 <p class="text-[10px] text-slate-300">تحویل شده</p>
-                                <p class="mt-1 text-sm font-bold">{{ number_format((float) $selectedService->quantity_delivered, 2) }}</p>
-                            </div>
-                            <div class="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur">
-                                <p class="text-[10px] text-slate-300">تعداد تحویل‌ها</p>
-                                <p class="mt-1 text-sm font-bold">{{ $selectedService->deliveries->count() }} مورد</p>
+                                <button
+                                    type="button"
+                                    @click="deliveredOpen = true"
+                                    :aria-expanded="deliveredOpen ? 'true' : 'false'"
+                                    aria-haspopup="dialog"
+                                    class="mt-1 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-3 py-1 text-xs font-bold text-white transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40"
+                                >
+                                    <svg class="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h10M4 17h7"/>
+                                    </svg>
+                                    <span>مشاهده جزئیات تحویل</span>
+                                </button>
+
+                                <template x-teleport="body">
+                                    <div
+                                        x-show="deliveredOpen"
+                                        x-cloak
+                                        x-transition.opacity
+                                        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4 backdrop-blur-sm"
+                                        style="display: none;"
+                                    >
+                                        <div
+                                            @click.outside="deliveredOpen = false"
+                                            role="dialog"
+                                            aria-modal="true"
+                                            aria-label="جزئیات تحویل بر اساس دسته‌بندی"
+                                            class="w-full max-w-md rounded-[24px] border border-slate-200 bg-white text-right text-slate-800 shadow-2xl"
+                                        >
+                                            <div class="flex items-center justify-between gap-2 border-b border-slate-200 px-5 py-4">
+                                                <div class="min-w-0">
+                                                    <h3 class="text-base font-black text-slate-800">تحویل بر اساس دسته‌بندی</h3>
+                                                    <p class="mt-0.5 truncate text-xs text-slate-500">{{ $selectedService->serviceName?->name ?: 'خدمت' }}</p>
+                                                </div>
+                                                <button type="button" @click="deliveredOpen = false" class="rounded-full border border-slate-200 p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="بستن">
+                                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 6l12 12M18 6L6 18"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+
+                                            <div class="max-h-[60vh] space-y-2 overflow-y-auto px-5 py-4">
+                                                @forelse($this->deliveredCategoryBreakdown as $row)
+                                                    <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-2.5 text-sm">
+                                                        <span class="min-w-0 truncate font-bold text-slate-800">{{ $row['category'] }}</span>
+                                                        <span class="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-700 ring-1 ring-slate-200">
+                                                            {{ $row['total'] }} {{ $row['unitLabel'] }}
+                                                        </span>
+                                                    </div>
+                                                @empty
+                                                    <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
+                                                        هنوز هیچ تحویلی برای این خدمت ثبت نشده است.
+                                                    </div>
+                                                @endforelse
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
                             </div>
                         </div>
                     </div>

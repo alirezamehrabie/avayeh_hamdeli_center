@@ -152,6 +152,29 @@ class ServiceReports extends Component
             ->values();
     }
 
+    public function getDeliveredCategoryBreakdownProperty()
+    {
+        return $this->filteredDeliveries
+            ->groupBy(function ($delivery) {
+                $categoryId = $delivery->service_category_id ?: 'none';
+                $unitKey = $delivery->serviceCategory?->unit ?: '__none__';
+
+                return $categoryId.'|'.$unitKey;
+            })
+            ->map(function ($deliveries) {
+                $first = $deliveries->first();
+                $unitKey = $first->serviceCategory?->unit ?: null;
+                $total = $deliveries->sum(fn ($d) => (float) $d->delivered_quantity);
+
+                return [
+                    'category' => $first->serviceCategory?->name ?: '-',
+                    'unitLabel' => $unitKey ? (Service::unitOptions()[$unitKey] ?? $unitKey) : '-',
+                    'total' => Service::formatQuantityForUnit($total, $unitKey),
+                ];
+            })
+            ->values();
+    }
+
     public function mount(?int $selectedServiceId = null): void
     {
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
