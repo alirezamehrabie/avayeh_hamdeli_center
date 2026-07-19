@@ -3,22 +3,24 @@
 namespace App\Livewire\Auth;
 
 use App\Services\LoginRedirector;
-use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
-use Livewire\Attributes\Title;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
+use Livewire\Component;
 
 #[Layout('layouts.auth')]
 #[Title('ورود به سامانه آوای همدلی')]
 class Login extends Component
 {
     public string $email = '';
+
     public string $password = '';
+
     public bool $remember = false;
 
     protected $rules = [
@@ -50,7 +52,7 @@ class Login extends Component
 
             $this->addError('auth', 'در حال بررسی اطلاعات ورود هستیم. لطفا چند لحظه دیگر دوباره تلاش کنید.');
 
-            return;
+            return null;
         }
 
         try {
@@ -69,7 +71,7 @@ class Login extends Component
 
                     $this->addError('auth', 'حساب کاربری شما هنوز به پنل فعال متصل نشده است. لطفا با پشتیبانی تماس بگیرید.');
 
-                    return;
+                    return null;
                 }
 
                 session()->regenerate();
@@ -97,6 +99,8 @@ class Login extends Component
         } finally {
             Cache::forget($this->loginAttemptKey());
         }
+
+        return null;
     }
 
     public function updatedEmail(): void
