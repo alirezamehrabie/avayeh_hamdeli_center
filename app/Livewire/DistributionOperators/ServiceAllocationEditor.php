@@ -2,6 +2,7 @@
 
 namespace App\Livewire\DistributionOperators;
 
+use App\Livewire\DistributionOperators\Concerns\FormatsServiceQuantities;
 use App\Models\Service;
 use App\Models\ServiceDelivery;
 use App\Models\ServiceWorkerAllocation;
@@ -16,6 +17,7 @@ use Livewire\Component;
 
 class ServiceAllocationEditor extends Component
 {
+    use FormatsServiceQuantities;
     use InteractsWithNotificationModal;
 
     public ?int $editingServiceId = null;
@@ -581,17 +583,5 @@ class ServiceAllocationEditor extends Component
         $district = trim((string) ($worker->district?->name ?? ''));
 
         return $district !== '' ? $name.' - '.$district : $name;
-    }
-
-    protected function formatQuantityForUnit(string|int|float|null $value, string $unit): string
-    {
-        $number = (float) ($value ?? 0);
-
-        return number_format($number, $this->isDecimalQuantityUnit($unit) ? 2 : 0, '.', '');
-    }
-
-    protected function isDecimalQuantityUnit(string $unit): bool
-    {
-        return in_array($unit, ['kilogram', 'gram', 'kg', 'g'], true);
     }
 }

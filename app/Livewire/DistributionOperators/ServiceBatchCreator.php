@@ -3,6 +3,8 @@
 namespace App\Livewire\DistributionOperators;
 
 use App\Helpers\Morilog\Jalalian;
+use App\Livewire\DistributionOperators\Concerns\ConvertsJalaliDates;
+use App\Livewire\DistributionOperators\Concerns\FormatsServiceQuantities;
 use App\Models\GateEntryAssignment;
 use App\Models\Service;
 use App\Models\ServiceCategory;
@@ -10,6 +12,7 @@ use App\Models\ServiceName;
 use App\Models\ServiceWorkerAllocation;
 use App\Models\SocialWorker;
 use App\Models\User;
+use App\Services\Deliveries\PredefinedServiceAllocator;
 use App\Support\Images\OptimizedImageStorage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\UploadedFile;
@@ -23,6 +26,8 @@ use Livewire\WithFileUploads;
 
 class ServiceBatchCreator extends Component
 {
+    use ConvertsJalaliDates;
+    use FormatsServiceQuantities;
     use WithFileUploads;
 
     protected const MISC_CATEGORY_INDEX_PENDING_CLASS = 'bg-amber-100 text-amber-700';
@@ -855,125 +860,11 @@ class ServiceBatchCreator extends Component
         $this->validateDistinctPredefinedWorkerGroups();
         $service = $this->resolvePredefinedService((int) $validated['selectedServiceId']);
 
-        // Flatten the groups into (worker, category, quantity) rows, dropping any
-        // zero/blank allocation. Each surviving group must contribute at least one
-        // positive row so no worker is assigned an empty allocation.
-        $groups = collect($validated['predefinedWorkerGroups'] ?? [])
-            ->map(function (array $group, int $groupIndex): array {
-                $workerId = (int) ($group['social_worker_id'] ?? 0);
-                $rows = collect($group['allocations'] ?? [])
-                    ->map(fn ($quantity, $categoryId): array => [
-                        'category_id' => (int) $categoryId,
-                        'quantity' => (float) $quantity,
-                    ])
-                    ->filter(fn (array $row): bool => $row['quantity'] > 0)
-                    ->values();
-
-                return [
-                    'index' => $groupIndex,
-                    'worker_id' => $workerId,
-                    'rows' => $rows,
-                ];
-            })
-            ->values();
-
-        foreach ($groups as $group) {
-            if ($group['rows']->isEmpty()) {
-                throw ValidationException::withMessages([
-                    "predefinedWorkerGroups.{$group['index']}.allocations" => 'حداقل برای یک دسته‌بندی مقدار تخصیص وارد کنید.',
-                ]);
-            }
-        }
-
-        if ($groups->every(fn (array $group): bool => $group['rows']->isEmpty())) {
-            throw ValidationException::withMessages([
-                'predefinedWorkerGroups' => 'حداقل برای یک دسته‌بندی مقدار تخصیص وارد کنید.',
-            ]);
-        }
-
-        $categoryIds = $groups
-            ->flatMap(fn (array $group) => $group['rows']->pluck('category_id'))
-            ->unique()
-            ->values();
-
-        DB::transaction(function () use ($service, $groups, $categoryIds): void {
-            $categories = $service->categories()->lockForUpdate()->get()->keyBy('id');
-            $lockedAllocations = ServiceWorkerAllocation::query()
-                ->where('service_id', $service->id)
-                ->whereIn('service_category_id', $categoryIds->all())
-                ->lockForUpdate()
-                ->get();
-            // Base stock already consumed per category by allocations that belong
-            // to workers NOT part of this submit; the submitted workers share the
-            // remaining stock, so their own current rows are excluded here.
-            $submittedWorkerIds = $groups->pluck('worker_id')->map(fn ($id): int => (int) $id)->all();
-            $baseAllocatedByCategory = $lockedAllocations
-                ->whereNotIn('social_worker_id', $submittedWorkerIds)
-                ->groupBy('service_category_id')
-                ->map(fn (Collection $allocations): float => (float) $allocations->sum(fn (ServiceWorkerAllocation $allocation) => (float) $allocation->allocated_quantity));
-            $existingByWorkerAndCategory = $lockedAllocations
-                ->keyBy(fn (ServiceWorkerAllocation $allocation): string => $allocation->service_category_id.':'.$allocation->social_worker_id);
-
-            // Running total of what the submitted workers claim per category, so
-            // the shared pool can never be over-drawn across several workers.
-            $claimedByCategory = [];
-
-            foreach ($groups as $group) {
-                $workerId = $group['worker_id'];
-
-                foreach ($group['rows'] as $row) {
-                    $category = $categories->get($row['category_id']);
-
-                    if (! $category) {
-                        throw ValidationException::withMessages([
-                            "predefinedWorkerGroups.{$group['index']}.allocations" => 'دسته‌بندی انتخاب‌شده متعلق به خدمت انتخاب‌شده نیست.',
-                        ]);
-                    }
-
-                    $allocation = $existingByWorkerAndCategory->get($category->id.':'.$workerId);
-
-                    if ($allocation && (int) $allocation->assigned_by_user_id !== (int) auth()->id()) {
-                        throw ValidationException::withMessages([
-                            "predefinedWorkerGroups.{$group['index']}.social_worker_id" => 'این مددکار قبلاً توسط اپراتور دیگری برای این دسته‌بندی تخصیص یافته است.',
-                        ]);
-                    }
-
-                    $alreadyClaimed = (float) ($claimedByCategory[$category->id] ?? 0);
-                    $remainingAssignable = max(
-                        0,
-                        (float) $category->quantity
-                            - (float) ($baseAllocatedByCategory[$category->id] ?? 0)
-                            - $alreadyClaimed
-                    );
-
-                    if ($row['quantity'] > $remainingAssignable) {
-                        throw ValidationException::withMessages([
-                            "predefinedWorkerGroups.{$group['index']}.allocations.{$category->id}" => 'مقدار تخصیص نمی‌تواند از موجودی دسته‌بندی بیشتر باشد.',
-                        ]);
-                    }
-
-                    $claimedByCategory[$category->id] = $alreadyClaimed + $row['quantity'];
-
-                    if (! $allocation) {
-                        $allocation = new ServiceWorkerAllocation;
-                        $allocation->fill([
-                            'service_id' => $service->id,
-                            'service_category_id' => $category->id,
-                            'social_worker_id' => $workerId,
-                        ]);
-                    }
-
-                    $allocation->fill([
-                        'allocated_quantity' => $row['quantity'],
-                        'assigned_by_user_id' => auth()->id(),
-                    ])->save();
-                }
-            }
-        });
-
-        $service->refreshDeliveryProgress();
-
-        $workerCount = $groups->count();
+        $workerCount = app(PredefinedServiceAllocator::class)->allocate(
+            $service,
+            $validated['predefinedWorkerGroups'] ?? [],
+            (int) auth()->id(),
+        );
 
         return redirect()
             ->route('distribution-operator.service-list')
@@ -3248,63 +3139,11 @@ class ServiceBatchCreator extends Component
         return $district !== '' ? $name.' - '.$district : $name;
     }
 
-    protected function isValidJalaliDate(string $date): bool
-    {
-        $parts = explode('/', $this->normalizeJalaliDate($date));
-
-        if (count($parts) !== 3) {
-            return false;
-        }
-
-        [$year, $month, $day] = array_map('intval', $parts);
-
-        return \App\Helpers\Morilog\CalendarUtils::isValidateJalaliDate($year, $month, $day);
-    }
-
-    protected function jalaliToGregorian(string $date): string
-    {
-        return Jalalian::fromFormat('Y/m/d', $this->normalizeJalaliDate($date))->toCarbon()->toDateString();
-    }
-
-    protected function normalizeJalaliDate(?string $value): string
-    {
-        $normalized = trim((string) $value);
-
-        if ($normalized === '') {
-            return '';
-        }
-
-        return (string) str($normalized)->before(' ')->trim();
-    }
-
-    protected function formatDecimal(string|int|float|null $value): string
-    {
-        $number = (float) ($value ?? 0);
-
-        if (fmod($number, 1.0) === 0.0) {
-            return (string) (int) $number;
-        }
-
-        return number_format($number, 2, '.', '');
-    }
-
     protected function formatPredefinedCategoryQuantity(int $categoryId, string|int|float|null $value): string
     {
         $category = $this->selectedPredefinedServiceCategories
             ->first(fn (ServiceCategory $category): bool => (int) $category->id === $categoryId);
 
         return $this->formatQuantityForUnit($value, (string) ($category?->unit ?? ''));
-    }
-
-    protected function formatQuantityForUnit(string|int|float|null $value, string $unit): string
-    {
-        $number = (float) ($value ?? 0);
-
-        return number_format($number, $this->isDecimalQuantityUnit($unit) ? 2 : 0, '.', '');
-    }
-
-    public function isDecimalQuantityUnit(string $unit): bool
-    {
-        return in_array($unit, ['kilogram', 'gram', 'kg', 'g'], true);
     }
 }
