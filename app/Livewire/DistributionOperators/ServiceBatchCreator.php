@@ -11,6 +11,7 @@ use App\Models\ServiceCategory;
 use App\Models\ServiceWorkerAllocation;
 use App\Models\SocialWorker;
 use App\Models\User;
+use App\Queries\Deliveries\SocialWorkerSuggestionQuery;
 use App\Services\Deliveries\MiscServiceCreator;
 use App\Services\Deliveries\PredefinedServiceAllocator;
 use Illuminate\Database\Eloquent\Builder;
@@ -2906,78 +2907,23 @@ class ServiceBatchCreator extends Component
             return $this->socialWorkerSuggestionsCache;
         }
 
-        $workers = SocialWorker::query()
-            ->with('district:id,name')
-            ->withCount([
-                'workerAllocations as open_allocations_count' => fn (Builder $allocationQuery) => $allocationQuery
-                    ->whereHas('service', fn (Builder $serviceQuery) => $serviceQuery
-                        ->whereIn('status', ['approved', 'in_distribution'])),
-            ])
-            ->select([
-                'id',
-                'first_name',
-                'last_name',
-                'worker_code',
-                'mobile',
-                'district_id',
-                'covered_people_count',
-                'covered_households_count',
-                'covered_children_count',
-            ])
-            ->where(function (Builder $workerQuery) use ($query): void {
-                $workerQuery->where('first_name', 'like', $query.'%')
-                    ->orWhere('last_name', 'like', $query.'%')
-                    ->orWhere('worker_code', 'like', $query.'%')
-                    ->orWhere('mobile', 'like', $query.'%')
-                    ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", [$query.'%'])
-                    ->orWhereRaw("CONCAT_WS(' ', first_name, last_name) like ?", ['%'.$query.'%']);
-            })
-            ->orderBy('worker_code')
-            ->limit(10)
-            ->get();
+        $suggestionQuery = app(SocialWorkerSuggestionQuery::class);
+        $workers = $suggestionQuery->search($query);
 
         $workerIds = $workers->pluck('id')->map(fn ($id): int => (int) $id)->all();
-        $allocatedQuantities = $workerIds === []
-            ? collect()
-            : ServiceWorkerAllocation::query()
-                ->select('social_worker_id')
-                ->selectRaw('COALESCE(SUM(allocated_quantity), 0) as allocated_quantity')
-                ->whereIn('social_worker_id', $workerIds)
-                ->whereHas('service', fn (Builder $serviceQuery) => $serviceQuery
-                    ->whereIn('status', ['approved', 'in_distribution']))
-                ->groupBy('social_worker_id')
-                ->pluck('allocated_quantity', 'social_worker_id');
+        $allocatedQuantities = $suggestionQuery->openAllocatedQuantities($workerIds);
 
         if ($selectedWorkerId > 0 && ! $workers->contains('id', $selectedWorkerId)) {
-            $selectedWorker = SocialWorker::query()
-                ->with('district:id,name')
-                ->withCount([
-                    'workerAllocations as open_allocations_count' => fn (Builder $allocationQuery) => $allocationQuery
-                        ->whereHas('service', fn (Builder $serviceQuery) => $serviceQuery
-                            ->whereIn('status', ['approved', 'in_distribution'])),
-                ])
-                ->select([
-                    'id',
-                    'first_name',
-                    'last_name',
-                    'worker_code',
-                    'mobile',
-                    'district_id',
-                    'covered_people_count',
-                    'covered_households_count',
-                    'covered_children_count',
-                ])
-                ->find($selectedWorkerId);
+            $selectedWorker = $suggestionQuery->find($selectedWorkerId);
 
             if ($selectedWorker) {
                 $workers->prepend($selectedWorker);
 
                 if (! $allocatedQuantities->has($selectedWorker->id)) {
-                    $allocatedQuantities->put($selectedWorker->id, ServiceWorkerAllocation::query()
-                        ->where('social_worker_id', $selectedWorker->id)
-                        ->whereHas('service', fn (Builder $serviceQuery) => $serviceQuery
-                            ->whereIn('status', ['approved', 'in_distribution']))
-                        ->sum('allocated_quantity'));
+                    $allocatedQuantities->put(
+                        $selectedWorker->id,
+                        $suggestionQuery->openAllocatedQuantityFor((int) $selectedWorker->id)
+                    );
                 }
             }
         }
