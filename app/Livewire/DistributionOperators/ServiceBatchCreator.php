@@ -13,6 +13,7 @@ use App\Models\SocialWorker;
 use App\Models\User;
 use App\Queries\Deliveries\SocialWorkerSuggestionQuery;
 use App\Services\Deliveries\MiscServiceCreator;
+use App\Services\Deliveries\MiscServiceEditor;
 use App\Services\Deliveries\PredefinedServiceAllocator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -1015,9 +1016,6 @@ class ServiceBatchCreator extends Component
             $this->validateEditableServiceUsageConstraints($service, $validated['miscWorkerGroups']);
 
             $sortId = 1;
-            $totalQuantity = 0.0;
-            $retainedCategoryIds = [];
-            $retainedWorkerIdsByCategory = [];
             $existingCategoryPool = $this->editableCategoryPool($service);
             $categoryPayloads = [];
             $categoryWorkerAllocations = [];
@@ -1049,91 +1047,18 @@ class ServiceBatchCreator extends Component
                 }
             }
 
-            foreach ($categoryPayloads as $categoryKey => $payload) {
-                $existingCategoryId = (int) ($payload['existing_id'] ?? 0);
-                $category = $existingCategoryId > 0 ? $existingCategories->get($existingCategoryId) : null;
-
-                if (! $category) {
-                    $category = new ServiceCategory;
-                }
-
-                $category->fill([
-                    'service_name_id' => $serviceNameId,
-                    'name' => $payload['name'],
-                    'quantity' => (float) $payload['quantity'],
-                    'unit' => $payload['unit'],
-                    'value' => 0,
-                    'sort_id' => $payload['sort_id'],
-                    'created_by' => auth()->id(),
-                ]);
-
-                $service->categories()->save($category);
-
-                if (method_exists($category, 'trashed') && $category->trashed()) {
-                    $category->restore();
-                }
-
-                $retainedCategoryIds[] = (int) $category->id;
-                $retainedWorkerIdsByCategory[(int) $category->id] = array_map(
-                    'intval',
-                    array_keys($categoryWorkerAllocations[$categoryKey] ?? [])
-                );
-                $totalQuantity += (float) $payload['quantity'];
-
-                foreach (($categoryWorkerAllocations[$categoryKey] ?? []) as $workerId => $allocatedQuantity) {
-                    $allocationKey = $category->id.':'.(int) $workerId;
-                    $existingAllocation = $existingAllocationsByWorkerAndCategory->get($allocationKey);
-
-                    if ($existingAllocation) {
-                        $existingAllocation->fill([
-                            'allocated_quantity' => (float) $allocatedQuantity,
-                        ])->save();
-
-                        continue;
-                    }
-
-                    $allocation = new ServiceWorkerAllocation;
-                    $allocation->fill([
-                        'service_id' => $service->id,
-                        'service_category_id' => $category->id,
-                        'social_worker_id' => (int) $workerId,
-                        'allocated_quantity' => (float) $allocatedQuantity,
-                        'assigned_by_user_id' => auth()->id(),
-                    ])->save();
-
-                    $existingAllocationsByWorkerAndCategory->put($allocationKey, $allocation);
-                }
-            }
-
-            foreach ($retainedWorkerIdsByCategory as $categoryId => $workerIds) {
-                $service->workerAllocations()
-                    ->where('service_category_id', $categoryId)
-                    ->when(
-                        $workerIds !== [],
-                        fn ($query) => $query->whereNotIn('social_worker_id', $workerIds)
-                    )
-                    ->delete();
-            }
-
-            $service->workerAllocations()
-                ->when($retainedCategoryIds !== [], fn ($query) => $query->whereNotIn('service_category_id', $retainedCategoryIds))
-                ->delete();
-
-            $service->categories()
-                ->when($retainedCategoryIds !== [], fn ($query) => $query->whereNotIn('id', $retainedCategoryIds))
-                ->delete();
-
-            $service->fill([
-                'service_type' => $validated['miscServiceType'],
-                'description' => $validated['miscDescription'] ?? null,
-                'total_quantity' => $totalQuantity,
-                'distribution_start_date' => $this->jalaliToGregorian($validated['date']),
-                'distribution_end_date' => $this->jalaliToGregorian($validated['date']),
-            ])->save();
-
-            $service->refreshFinancialTotals();
-            $service->refreshDeliveryProgress();
-            $this->editingServiceVersion = $service->fresh()->updated_at?->toISOString();
+            $this->editingServiceVersion = app(MiscServiceEditor::class)->apply(
+                $service,
+                $existingCategories,
+                $existingAllocationsByWorkerAndCategory,
+                $categoryPayloads,
+                $categoryWorkerAllocations,
+                (int) $serviceNameId,
+                $validated['miscServiceType'],
+                $validated['miscDescription'] ?? null,
+                $this->jalaliToGregorian($validated['date']),
+                (int) auth()->id(),
+            );
         });
 
         $this->flushEditableServiceCaches();
