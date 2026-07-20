@@ -187,7 +187,7 @@ class QrIdentityService
         $prefix = $subjectType === QrIdentity::SUBJECT_GUARDIAN ? 'GQR' : 'PQR';
 
         do {
-            $code = $prefix . '-' . strtoupper(Str::random(8));
+            $code = $prefix.'-'.strtoupper(Str::random(8));
         } while (QrIdentity::query()->where('public_code', $code)->exists());
 
         return $code;
