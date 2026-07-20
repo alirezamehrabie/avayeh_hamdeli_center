@@ -20,6 +20,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Maatwebsite\Excel\Facades\Excel;
@@ -692,6 +693,32 @@ class BeneficiaryCaseFileTest extends TestCase
         $this->assertSame(55000, $totals['direct_services_value']);
     }
 
+    public function test_case_file_read_models_are_cached_within_the_same_component_request(): void
+    {
+        $this->actingAs($this->admin());
+        $person = $this->person();
+        $instance = Livewire::test(BeneficiaryCaseFile::class, ['personId' => $person->id])
+            ->instance();
+
+        $this->invokeProtectedMethod($instance, 'resetLoadedCaseFileData');
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        try {
+            $firstRecords = $instance->getCaseRecordsProperty();
+            $queriesAfterFirstAccess = DB::getQueryLog();
+            $secondRecords = $instance->getCaseRecordsProperty();
+            $queriesAfterSecondAccess = DB::getQueryLog();
+        } finally {
+            DB::disableQueryLog();
+        }
+
+        $this->assertSame($firstRecords, $secondRecords);
+        $this->assertNotEmpty($queriesAfterFirstAccess);
+        $this->assertCount(count($queriesAfterFirstAccess), $queriesAfterSecondAccess);
+    }
+
     public function test_uploaded_case_record_files_are_removed_when_database_save_fails(): void
     {
         Storage::fake('public');
@@ -725,6 +752,68 @@ class BeneficiaryCaseFileTest extends TestCase
         $this->assertSame([], Storage::disk('public')->allFiles('beneficiary-case-records'));
         $this->assertDatabaseCount('beneficiary_case_records', 0);
         $this->assertDatabaseCount('beneficiary_case_record_attachments', 0);
+    }
+
+    public function test_failed_case_record_update_preserves_existing_attachments_and_removes_new_files(): void
+    {
+        Storage::fake('public');
+
+        $admin = $this->admin();
+        $person = $this->person();
+        $record = BeneficiaryCaseRecord::query()->create([
+            'person_id' => $person->id,
+            'created_by' => $admin->id,
+            'record_type' => BeneficiaryCaseRecord::TYPE_NOTE,
+            'title' => 'Original title',
+            'recorded_at' => '2026-07-03',
+        ]);
+
+        $existingPath = "beneficiary-case-records/{$person->id}/{$record->id}/existing.pdf";
+        Storage::disk('public')->put($existingPath, 'existing-file');
+
+        $existingAttachment = BeneficiaryCaseRecordAttachment::query()->create([
+            'beneficiary_case_record_id' => $record->id,
+            'uploaded_by' => $admin->id,
+            'disk' => 'public',
+            'path' => $existingPath,
+            'original_name' => 'existing.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => strlen('existing-file'),
+        ]);
+
+        BeneficiaryCaseRecordAttachment::creating(function (): void {
+            throw new RuntimeException('Forced update attachment failure.');
+        });
+
+        $this->actingAs($admin);
+
+        try {
+            Livewire::test(BeneficiaryCaseFile::class, ['personId' => $person->id])
+                ->call('startEditingCaseRecord', $record->id)
+                ->set('editRecordTitle', 'Changed title')
+                ->call('markEditAttachmentForRemoval', $existingAttachment->id)
+                ->call('confirmEditAttachmentRemoval')
+                ->set('editRecordAttachments', [
+                    UploadedFile::fake()->create('new.pdf', 10, 'application/pdf'),
+                ])
+                ->call('updateCaseRecord');
+
+            $this->fail('Expected forced update attachment failure was not thrown.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('Forced update attachment failure.', $exception->getMessage());
+        } finally {
+            BeneficiaryCaseRecordAttachment::flushEventListeners();
+        }
+
+        $this->assertSame('Original title', $record->fresh()->title);
+        $this->assertDatabaseHas('beneficiary_case_record_attachments', [
+            'id' => $existingAttachment->id,
+        ]);
+        Storage::disk('public')->assertExists($existingPath);
+        $this->assertEqualsCanonicalizing(
+            [$existingPath],
+            Storage::disk('public')->allFiles('beneficiary-case-records')
+        );
     }
 
     public function test_admin_can_open_case_record_attachment_through_authorized_route(): void
@@ -807,6 +896,14 @@ class BeneficiaryCaseFileTest extends TestCase
             'is_admin' => true,
             'permissions' => [User::PERMISSION_FULL_ACCESS],
         ]);
+    }
+
+    private function invokeProtectedMethod(object $target, string $method): mixed
+    {
+        $reflection = new \ReflectionMethod($target, $method);
+        $reflection->setAccessible(true);
+
+        return $reflection->invoke($target);
     }
 
     private function person(array $overrides = []): Person

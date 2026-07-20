@@ -4,24 +4,23 @@ namespace App\Livewire\People;
 
 use App\Contracts\Ai\GeneratesBeneficiaryCaseAnalysis;
 use App\Contracts\Ai\GeneratesFollowUpMessage;
+use App\Data\People\BeneficiaryCaseRecordData;
 use App\Exceptions\AiCaseAssistantException;
 use App\Exports\BeneficiaryCaseFileExport;
 use App\Helpers\Morilog\CalendarUtils;
 use App\Helpers\Morilog\Jalalian;
-use App\Models\ActivityAttendance;
 use App\Models\BeneficiaryCaseRecord;
-use App\Models\BeneficiaryCaseRecordAttachment;
 use App\Models\DashboardReminder;
 use App\Models\Person;
 use App\Models\QrIdentity;
 use App\Models\ServiceDelivery;
-use App\Queries\People\PeopleIndexSearchQuery;
+use App\Queries\People\BeneficiaryCaseFileQuery;
 use App\Services\People\BeneficiaryCaseFileTimeline;
+use App\Services\People\CreateBeneficiaryCaseRecord;
+use App\Services\People\UpdateBeneficiaryCaseRecord;
 use App\Services\QrIdentityService;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Validate;
@@ -199,7 +198,8 @@ class BeneficiaryCaseFile extends Component
             );
         }
 
-        $person = Person::query()->find((int) $identity->subject_id);
+        $person = app(BeneficiaryCaseFileQuery::class)
+            ->findQrPerson((int) $identity->subject_id);
 
         if (! $person) {
             return $this->beneficiaryQrScanResponse(false, 'اطلاعات مددجو برای این QR پیدا نشد.');
@@ -241,50 +241,26 @@ class BeneficiaryCaseFile extends Component
         return Excel::download(new BeneficiaryCaseFileExport($person, $timeline), $fileName);
     }
 
-    public function saveCaseRecord(): void
+    public function saveCaseRecord(CreateBeneficiaryCaseRecord $action): void
     {
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
         abort_unless((bool) $this->selectedPerson, 404);
 
         $validated = $this->validate($this->createRecordRules(), [], $this->recordValidationAttributes());
 
-        $storedAttachmentPaths = [];
-
-        try {
-            DB::transaction(function () use ($validated, &$storedAttachmentPaths): void {
-                $record = BeneficiaryCaseRecord::query()->create([
-                    'person_id' => $this->selectedPerson->id,
-                    'created_by' => auth()->id(),
-                    'record_type' => $validated['recordType'],
-                    'title' => trim($validated['recordTitle']),
-                    'description' => filled($validated['recordDescription']) ? trim($validated['recordDescription']) : null,
-                    'recorded_at' => filled($validated['recordedAt']) ? $this->jalaliToGregorian($validated['recordedAt']) : null,
-                    'amount' => filled($validated['recordAmount']) ? (int) $validated['recordAmount'] : null,
-                    'reference_number' => filled($validated['recordReferenceNumber']) ? trim($validated['recordReferenceNumber']) : null,
-                ]);
-
-                foreach ($this->recordAttachments as $attachment) {
-                    $path = $attachment->store("beneficiary-case-records/{$record->person_id}/{$record->id}", 'public');
-                    $storedAttachmentPaths[] = $path;
-
-                    BeneficiaryCaseRecordAttachment::query()->create([
-                        'beneficiary_case_record_id' => $record->id,
-                        'uploaded_by' => auth()->id(),
-                        'disk' => 'public',
-                        'path' => $path,
-                        'original_name' => $attachment->getClientOriginalName(),
-                        'mime_type' => $attachment->getMimeType(),
-                        'size' => $attachment->getSize(),
-                    ]);
-                }
-            });
-        } catch (Throwable $exception) {
-            if ($storedAttachmentPaths !== []) {
-                Storage::disk('public')->delete($storedAttachmentPaths);
-            }
-
-            throw $exception;
-        }
+        $action->create(
+            $this->selectedPerson,
+            (int) auth()->id(),
+            new BeneficiaryCaseRecordData(
+                recordType: $validated['recordType'],
+                title: $validated['recordTitle'],
+                description: $validated['recordDescription'] ?? null,
+                recordedAt: filled($validated['recordedAt']) ? $this->jalaliToGregorian($validated['recordedAt']) : null,
+                amount: filled($validated['recordAmount']) ? (int) $validated['recordAmount'] : null,
+                referenceNumber: $validated['recordReferenceNumber'] ?? null,
+            ),
+            $this->recordAttachments,
+        );
 
         $this->resetLoadedCaseFileData();
         $this->resetRecordForm();
@@ -329,9 +305,10 @@ class BeneficiaryCaseFile extends Component
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
         abort_unless($this->editingCaseRecordId !== null, 404);
 
-        $attachment = BeneficiaryCaseRecordAttachment::query()
-            ->where('beneficiary_case_record_id', $this->editingCaseRecordId)
-            ->findOrFail($attachmentId);
+        $attachment = app(BeneficiaryCaseFileQuery::class)->findAttachmentForRecordOrFail(
+            $this->editingCaseRecordId,
+            $attachmentId,
+        );
 
         if (! in_array($attachment->id, $this->editRemovedAttachmentIds, true)) {
             $this->editRemovedAttachmentIds[] = (int) $attachment->id;
@@ -378,7 +355,7 @@ class BeneficiaryCaseFile extends Component
         $this->editRecordAttachments = array_values($this->editRecordAttachments);
     }
 
-    public function updateCaseRecord(): void
+    public function updateCaseRecord(UpdateBeneficiaryCaseRecord $action): void
     {
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
         abort_unless((bool) $this->selectedPerson, 404);
@@ -393,55 +370,20 @@ class BeneficiaryCaseFile extends Component
             return;
         }
 
-        $newAttachmentPaths = [];
-        $removedAttachments = $record->attachments()
-            ->whereKey($this->editRemovedAttachmentIds)
-            ->get();
-
-        try {
-            DB::transaction(function () use ($record, $validated, &$newAttachmentPaths): void {
-                $record->update([
-                    'record_type' => $validated['editRecordType'],
-                    'title' => trim($validated['editRecordTitle']),
-                    'description' => filled($validated['editRecordDescription']) ? trim($validated['editRecordDescription']) : null,
-                    'recorded_at' => filled($validated['editRecordedAt']) ? $this->jalaliToGregorian($validated['editRecordedAt']) : null,
-                    'amount' => filled($validated['editRecordAmount']) ? (int) $validated['editRecordAmount'] : null,
-                    'reference_number' => filled($validated['editRecordReferenceNumber']) ? trim($validated['editRecordReferenceNumber']) : null,
-                ]);
-
-                foreach ($this->editRecordAttachments as $attachment) {
-                    $path = $attachment->store("beneficiary-case-records/{$record->person_id}/{$record->id}", 'public');
-                    $newAttachmentPaths[] = $path;
-
-                    BeneficiaryCaseRecordAttachment::query()->create([
-                        'beneficiary_case_record_id' => $record->id,
-                        'uploaded_by' => auth()->id(),
-                        'disk' => 'public',
-                        'path' => $path,
-                        'original_name' => $attachment->getClientOriginalName(),
-                        'mime_type' => $attachment->getMimeType(),
-                        'size' => $attachment->getSize(),
-                    ]);
-                }
-
-                if ($this->editRemovedAttachmentIds !== []) {
-                    BeneficiaryCaseRecordAttachment::query()
-                        ->where('beneficiary_case_record_id', $record->id)
-                        ->whereKey($this->editRemovedAttachmentIds)
-                        ->delete();
-                }
-            });
-        } catch (Throwable $exception) {
-            if ($newAttachmentPaths !== []) {
-                Storage::disk('public')->delete($newAttachmentPaths);
-            }
-
-            throw $exception;
-        }
-
-        foreach ($removedAttachments as $attachment) {
-            Storage::disk($attachment->disk)->delete($attachment->path);
-        }
+        $action->update(
+            $record,
+            new BeneficiaryCaseRecordData(
+                recordType: $validated['editRecordType'],
+                title: $validated['editRecordTitle'],
+                description: $validated['editRecordDescription'] ?? null,
+                recordedAt: filled($validated['editRecordedAt']) ? $this->jalaliToGregorian($validated['editRecordedAt']) : null,
+                amount: filled($validated['editRecordAmount']) ? (int) $validated['editRecordAmount'] : null,
+                referenceNumber: $validated['editRecordReferenceNumber'] ?? null,
+            ),
+            $this->editRecordAttachments,
+            $this->editRemovedAttachmentIds,
+            (int) auth()->id(),
+        );
 
         $this->resetLoadedCaseFileData();
         $this->resetEditRecordForm();
@@ -621,34 +563,8 @@ class BeneficiaryCaseFile extends Component
             return $this->searchResultsCache;
         }
 
-        $search = Person::normalizeSearchText($this->search);
-
-        if (mb_strlen($search) < 2 && ! ctype_digit($search)) {
-            return $this->searchResultsCache = collect();
-        }
-
-        $query = Person::query()
-            ->select([
-                'id',
-                'person_code',
-                'first_name',
-                'last_name',
-                'full_name',
-                'national_id',
-                'birth_day',
-                'birth_month',
-                'birth_year',
-                'guardian_id',
-                'created_at',
-            ])
-            ->with(['guardian:id,first_name,last_name,national_code,social_worker_id'])
-            ->orderByDesc('created_at');
-
-        app(PeopleIndexSearchQuery::class)->applyTo($query, $search);
-
-        return $this->searchResultsCache = $query
-            ->limit(8)
-            ->get();
+        return $this->searchResultsCache = app(BeneficiaryCaseFileQuery::class)
+            ->searchPeople($this->search);
     }
 
     public function getSelectedPersonProperty(): ?Person
@@ -659,16 +575,8 @@ class BeneficiaryCaseFile extends Component
 
         $this->selectedPersonCacheLoaded = true;
 
-        if (! $this->selectedPersonId) {
-            return $this->selectedPersonCache = null;
-        }
-
-        return $this->selectedPersonCache = Person::query()
-            ->with([
-                'guardian:id,first_name,last_name,national_code,guardian_phone_number,social_worker_id',
-                'guardian.socialWorker:id,first_name,last_name,worker_code',
-            ])
-            ->find($this->selectedPersonId);
+        return $this->selectedPersonCache = app(BeneficiaryCaseFileQuery::class)
+            ->findPerson($this->selectedPersonId);
     }
 
     public function getServiceDeliveriesProperty(): Collection
@@ -683,29 +591,8 @@ class BeneficiaryCaseFile extends Component
             return $this->serviceDeliveriesCache = collect();
         }
 
-        return $this->serviceDeliveriesCache = ServiceDelivery::query()
-            ->with([
-                'service:id,code,name,service_name_id,service_type,activity_id',
-                'service.serviceName:id,name',
-                'service.activity:id,code,name,activity_type,starts_at',
-                'serviceCategory:id,service_id,name,unit,value',
-                'socialWorker:id,first_name,last_name,worker_code',
-                'creator:id,name',
-                'gateEntryAssignment:id,status,assigned_at,delivered_at,delivered_by',
-                'activityAttendance:id,activity_id,status,checked_in_at,registration_method',
-                'activityAttendance.activity:id,code,name,activity_type,starts_at',
-            ])
-            ->where(function (Builder $query) use ($person): void {
-                $query->where('person_id', $person->id);
-
-                if ($person->guardian_id) {
-                    $query->orWhere('guardian_id', $person->guardian_id);
-                }
-            })
-            ->latest('delivered_at')
-            ->latest('id')
-            ->limit(50)
-            ->get();
+        return $this->serviceDeliveriesCache = app(BeneficiaryCaseFileQuery::class)
+            ->serviceDeliveries($person);
     }
 
     public function getDirectServiceDeliveriesProperty(): Collection
@@ -732,50 +619,8 @@ class BeneficiaryCaseFile extends Component
             return $this->caseFileTotalsCache;
         }
 
-        $person = $this->selectedPerson;
-
-        if (! $person) {
-            return $this->caseFileTotalsCache = [
-                'direct_services_count' => 0,
-                'direct_services_value' => 0,
-                'family_services_count' => 0,
-                'family_services_value' => 0,
-                'activity_attendances_count' => 0,
-                'manual_records_count' => 0,
-                'manual_records_amount' => 0,
-            ];
-        }
-
-        $directServices = ServiceDelivery::query()
-            ->where('person_id', $person->id);
-
-        $familyServices = ServiceDelivery::query()
-            ->whereRaw('1 = 0');
-
-        if ($person->guardian_id) {
-            $familyServices = ServiceDelivery::query()
-                ->where('guardian_id', $person->guardian_id)
-                ->where(function (Builder $query) use ($person): void {
-                    $query->whereNull('person_id')
-                        ->orWhere('person_id', '!=', $person->id);
-                });
-        }
-
-        return $this->caseFileTotalsCache = [
-            'direct_services_count' => (clone $directServices)->count(),
-            'direct_services_value' => (int) (clone $directServices)->sum('delivered_total_value'),
-            'family_services_count' => (clone $familyServices)->count(),
-            'family_services_value' => (int) (clone $familyServices)->sum('delivered_total_value'),
-            'activity_attendances_count' => ActivityAttendance::query()
-                ->where('person_id', $person->id)
-                ->count(),
-            'manual_records_count' => BeneficiaryCaseRecord::query()
-                ->where('person_id', $person->id)
-                ->count(),
-            'manual_records_amount' => (int) BeneficiaryCaseRecord::query()
-                ->where('person_id', $person->id)
-                ->sum('amount'),
-        ];
+        return $this->caseFileTotalsCache = app(BeneficiaryCaseFileQuery::class)
+            ->totals($this->selectedPerson);
     }
 
     public function getActivityAttendancesProperty(): Collection
@@ -784,25 +629,8 @@ class BeneficiaryCaseFile extends Component
             return $this->activityAttendancesCache;
         }
 
-        if (! $this->selectedPersonId) {
-            return $this->activityAttendancesCache = collect();
-        }
-
-        return $this->activityAttendancesCache = ActivityAttendance::query()
-            ->with([
-                'activity:id,code,name,activity_type,starts_at,ends_at,location',
-                'recorder:id,name',
-                'serviceDeliveries.service:id,code,name,service_name_id,service_type,activity_id',
-                'serviceDeliveries.service.serviceName:id,name',
-                'serviceDeliveries.serviceCategory:id,service_id,name,unit,value',
-                'serviceDeliveries.socialWorker:id,first_name,last_name,worker_code',
-                'serviceDeliveries.creator:id,name',
-            ])
-            ->where('person_id', $this->selectedPersonId)
-            ->latest('checked_in_at')
-            ->latest('id')
-            ->limit(50)
-            ->get();
+        return $this->activityAttendancesCache = app(BeneficiaryCaseFileQuery::class)
+            ->activityAttendances($this->selectedPersonId);
     }
 
     public function getCaseRecordsProperty(): Collection
@@ -811,17 +639,8 @@ class BeneficiaryCaseFile extends Component
             return $this->caseRecordsCache;
         }
 
-        if (! $this->selectedPersonId) {
-            return $this->caseRecordsCache = collect();
-        }
-
-        return $this->caseRecordsCache = BeneficiaryCaseRecord::query()
-            ->with(['creator:id,name', 'attachments:id,beneficiary_case_record_id,disk,path,original_name,mime_type,size'])
-            ->where('person_id', $this->selectedPersonId)
-            ->latest('recorded_at')
-            ->latest('id')
-            ->limit(50)
-            ->get();
+        return $this->caseRecordsCache = app(BeneficiaryCaseFileQuery::class)
+            ->caseRecords($this->selectedPersonId);
     }
 
     public function getTimelineProperty(): Collection
@@ -840,14 +659,10 @@ class BeneficiaryCaseFile extends Component
 
     public function getEditingCaseRecordProperty(): ?BeneficiaryCaseRecord
     {
-        if (! $this->editingCaseRecordId || ! $this->selectedPersonId) {
-            return null;
-        }
-
-        return BeneficiaryCaseRecord::query()
-            ->with(['attachments:id,beneficiary_case_record_id,disk,path,original_name,mime_type,size'])
-            ->where('person_id', $this->selectedPersonId)
-            ->find($this->editingCaseRecordId);
+        return app(BeneficiaryCaseFileQuery::class)->findEditingRecord(
+            $this->selectedPersonId,
+            $this->editingCaseRecordId,
+        );
     }
 
     public function formatDate($date): string
@@ -1053,11 +868,8 @@ class BeneficiaryCaseFile extends Component
                 'array',
                 'max:5',
                 function (string $attribute, mixed $value, \Closure $fail): void {
-                    $existingCount = $this->editingCaseRecordId
-                        ? BeneficiaryCaseRecordAttachment::query()
-                            ->where('beneficiary_case_record_id', $this->editingCaseRecordId)
-                            ->count()
-                        : 0;
+                    $existingCount = app(BeneficiaryCaseFileQuery::class)
+                        ->attachmentCount($this->editingCaseRecordId);
 
                     $remainingCount = max(0, $existingCount - count($this->editRemovedAttachmentIds));
                     $newCount = count((array) $value);
@@ -1112,9 +924,8 @@ class BeneficiaryCaseFile extends Component
 
     protected function resolveEditableCaseRecord(int $recordId): BeneficiaryCaseRecord
     {
-        return BeneficiaryCaseRecord::query()
-            ->where('person_id', $this->selectedPersonId)
-            ->findOrFail($recordId);
+        return app(BeneficiaryCaseFileQuery::class)
+            ->findEditableRecordOrFail($this->selectedPersonId, $recordId);
     }
 
     protected function beneficiaryQrScanResponse(bool $ok, string $message, string $name = ''): array
