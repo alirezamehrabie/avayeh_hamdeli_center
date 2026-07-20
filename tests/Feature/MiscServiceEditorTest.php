@@ -2,21 +2,23 @@
 
 namespace Tests\Feature;
 
+use App\Data\Deliveries\MiscServiceEditData;
 use App\Models\Service;
 use App\Models\ServiceCategory;
+use App\Models\ServiceDelivery;
 use App\Models\ServiceName;
 use App\Models\ServiceWorkerAllocation;
 use App\Models\SocialWorker;
 use App\Models\User;
 use App\Services\Deliveries\MiscServiceEditor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 /**
- * Coverage for the misc-service edit persistence extracted out of the
- * ServiceBatchCreator component. The component still owns validation, locking
- * and the category-resolution caches; this pins the write half (category /
- * allocation upsert + prune + header update) in isolation.
+ * Coverage for the misc-service edit workflow extracted out of the
+ * ServiceBatchCreator component. These tests pin both the complete locked edit
+ * boundary and the lower-level category/allocation persistence behavior.
  *
  * Component-level behavior stays covered by
  * DistributionOperatorAllocationAssignerTest.
@@ -155,11 +157,155 @@ class MiscServiceEditorTest extends TestCase
         $this->assertEqualsWithDelta(9.0, (float) $reused->allocated_quantity, 0.001);
     }
 
+    public function test_edit_executes_the_complete_locked_workflow(): void
+    {
+        $operator = $this->operator();
+        $worker = $this->worker(720);
+        [$service, $serviceNameId] = $this->makeService($operator);
+        $category = $this->category($service, $serviceNameId, 'Editable', 'pack', 4, $operator, sortId: 1);
+        $allocation = $service->workerAllocations()->create([
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'allocated_quantity' => 4,
+            'assigned_by_user_id' => $operator->id,
+        ]);
+
+        $version = app(MiscServiceEditor::class)->edit(
+            new MiscServiceEditData(
+                serviceId: $service->id,
+                expectedVersion: $service->updated_at?->toISOString(),
+                serviceType: 'family',
+                description: 'Updated through locked workflow',
+                distributionDate: '2026-06-26',
+                workerGroups: [[
+                    'social_worker_id' => $worker->id,
+                    'categories' => [[
+                        'id' => $category->id,
+                        'name' => $category->name,
+                        'quantity' => 6,
+                        'unit' => $category->unit,
+                    ]],
+                ]],
+            ),
+            $operator,
+        );
+
+        $this->assertNotNull($version);
+        $this->assertSame('family', $service->fresh()->service_type);
+        $this->assertSame('Updated through locked workflow', $service->fresh()->description);
+        $this->assertSame($allocation->id, ServiceWorkerAllocation::query()->firstOrFail()->id);
+        $this->assertEqualsWithDelta(6.0, (float) $category->fresh()->quantity, 0.001);
+    }
+
+    public function test_edit_rejects_a_stale_version_before_writing(): void
+    {
+        $operator = $this->operator();
+        $worker = $this->worker(721);
+        [$service, $serviceNameId] = $this->makeService($operator);
+        $category = $this->category($service, $serviceNameId, 'Versioned', 'pack', 4, $operator, sortId: 1);
+        $service->workerAllocations()->create([
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'allocated_quantity' => 4,
+            'assigned_by_user_id' => $operator->id,
+        ]);
+
+        try {
+            app(MiscServiceEditor::class)->edit(
+                new MiscServiceEditData(
+                    serviceId: $service->id,
+                    expectedVersion: 'stale-version',
+                    serviceType: 'family',
+                    description: 'Must not persist',
+                    distributionDate: '2026-06-26',
+                    workerGroups: [[
+                        'social_worker_id' => $worker->id,
+                        'categories' => [[
+                            'id' => $category->id,
+                            'name' => $category->name,
+                            'quantity' => 8,
+                            'unit' => $category->unit,
+                        ]],
+                    ]],
+                ),
+                $operator,
+            );
+
+            $this->fail('Expected stale edit validation to fail.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('miscWorkerGroups', $exception->errors());
+        }
+
+        $this->assertSame('individual', $service->fresh()->service_type);
+        $this->assertNull($service->fresh()->description);
+        $this->assertEqualsWithDelta(4.0, (float) $category->fresh()->quantity, 0.001);
+    }
+
+    public function test_edit_rechecks_used_quantity_inside_the_transaction(): void
+    {
+        $operator = $this->operator();
+        $worker = $this->worker(722);
+        [$service, $serviceNameId] = $this->makeService($operator);
+        $category = $this->category($service, $serviceNameId, 'Used', 'pack', 5, $operator, sortId: 1);
+        $service->workerAllocations()->create([
+            'service_category_id' => $category->id,
+            'social_worker_id' => $worker->id,
+            'allocated_quantity' => 5,
+            'assigned_by_user_id' => $operator->id,
+        ]);
+        ServiceDelivery::query()->create([
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'delivery_channel' => Service::DELIVERY_CHANNEL_HOME,
+            'social_worker_id' => $worker->id,
+            'national_id' => '0000000722',
+            'full_name' => 'Locked Recipient',
+            'delivered_quantity' => 3,
+            'value_per_unit_snapshot' => 0,
+            'delivered_total_value' => 0,
+            'delivered_at' => '2026-06-20',
+            'created_by' => $operator->id,
+        ]);
+
+        try {
+            app(MiscServiceEditor::class)->edit(
+                new MiscServiceEditData(
+                    serviceId: $service->id,
+                    expectedVersion: $service->updated_at?->toISOString(),
+                    serviceType: 'individual',
+                    description: 'Invalid reduction',
+                    distributionDate: '2026-06-26',
+                    workerGroups: [[
+                        'social_worker_id' => $worker->id,
+                        'categories' => [[
+                            'id' => $category->id,
+                            'name' => $category->name,
+                            'quantity' => 2,
+                            'unit' => $category->unit,
+                        ]],
+                    ]],
+                ),
+                $operator,
+            );
+
+            $this->fail('Expected used quantity validation to fail.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey(
+                'miscWorkerGroups.0.categories.0.quantity',
+                $exception->errors(),
+            );
+        }
+
+        $this->assertEqualsWithDelta(5.0, (float) $category->fresh()->quantity, 0.001);
+        $this->assertNull($service->fresh()->description);
+    }
+
     private function operator(): User
     {
         return User::factory()->create([
             'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
             'is_admin' => false,
+            'permissions' => [User::PERMISSION_DISTRIBUTION_SERVICE_MANAGE],
         ]);
     }
 

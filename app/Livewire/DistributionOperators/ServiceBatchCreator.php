@@ -2,14 +2,15 @@
 
 namespace App\Livewire\DistributionOperators;
 
+use App\Data\Deliveries\MiscServiceEditData;
 use App\Helpers\Morilog\Jalalian;
 use App\Livewire\DistributionOperators\Concerns\ConvertsJalaliDates;
 use App\Livewire\DistributionOperators\Concerns\FormatsServiceQuantities;
-use App\Models\GateEntryAssignment;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\ServiceWorkerAllocation;
 use App\Models\SocialWorker;
+use App\Queries\Deliveries\MiscServiceEditQuery;
 use App\Queries\Deliveries\PredefinedServiceCatalogQuery;
 use App\Queries\Deliveries\SocialWorkerSuggestionQuery;
 use App\Services\Deliveries\MiscServiceCreator;
@@ -17,7 +18,6 @@ use App\Services\Deliveries\MiscServiceEditor;
 use App\Services\Deliveries\PredefinedServiceAllocator;
 use App\Services\Deliveries\ServiceBatchReviewBuilder;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\On;
@@ -978,88 +978,20 @@ class ServiceBatchCreator extends Component
         $this->validateDistinctWorkerGroups();
         $this->validateDistinctWorkerGroupCategories();
 
-        DB::transaction(function () use ($validated): void {
-            $this->flushEditableServiceCaches();
+        $user = auth()->user();
+        abort_unless($user !== null, 403);
 
-            $service = Service::query()
-                ->createdByDistributionOperator()
-                ->whereKey($this->editingServiceId)
-                ->lockForUpdate()
-                ->firstOrFail();
-            abort_unless(auth()->user()?->can('edit-distribution-operator-service', $service), 403);
-            $this->ensureEditableServiceVersionMatches($service);
-            $serviceNameId = $service->service_name_id;
-
-            $existingCategories = $service->categories()
-                ->withTrashed()
-                ->lockForUpdate()
-                ->get()
-                ->keyBy('id');
-            $this->editableAllCategoriesCache = $existingCategories->values();
-            $this->editableAllCategoriesCacheServiceId = (int) $service->id;
-            $existingAllocations = ServiceWorkerAllocation::query()
-                ->where('service_id', $service->id)
-                ->lockForUpdate()
-                ->get();
-            $service->deliveries()
-                ->lockForUpdate()
-                ->get();
-            GateEntryAssignment::query()
-                ->where('service_id', $service->id)
-                ->lockForUpdate()
-                ->get();
-
-            $service->setRelation('categories', $existingCategories
-                ->filter(fn (ServiceCategory $category): bool => $category->deleted_at === null)
-                ->values());
-
-            $this->validateEditableServiceUsageConstraints($service, $validated['miscWorkerGroups']);
-
-            $sortId = 1;
-            $existingCategoryPool = $this->editableCategoryPool($service);
-            $categoryPayloads = [];
-            $categoryWorkerAllocations = [];
-            $existingAllocationsByWorkerAndCategory = $existingAllocations
-                ->keyBy(fn (ServiceWorkerAllocation $allocation): string => $allocation->service_category_id.':'.$allocation->social_worker_id);
-
-            foreach (array_values($validated['miscWorkerGroups']) as $group) {
-                $workerId = (int) $group['social_worker_id'];
-
-                foreach (array_values($group['categories']) as $categoryRow) {
-                    $categoryId = $this->resolveEditableCategoryId($categoryRow, $existingCategoryPool);
-                    $name = trim((string) $categoryRow['name']);
-                    $unit = (string) $categoryRow['unit'];
-                    $allocatedQuantity = (float) $categoryRow['quantity'];
-                    $categoryKey = $categoryId > 0 ? 'existing:'.$categoryId : 'new:'.ServiceCategory::normalizeName($name);
-
-                    if (! isset($categoryPayloads[$categoryKey])) {
-                        $categoryPayloads[$categoryKey] = [
-                            'existing_id' => $categoryId > 0 ? $categoryId : null,
-                            'name' => $name,
-                            'unit' => $unit,
-                            'quantity' => 0.0,
-                            'sort_id' => $sortId++,
-                        ];
-                    }
-
-                    $categoryPayloads[$categoryKey]['quantity'] += $allocatedQuantity;
-                    $categoryWorkerAllocations[$categoryKey][$workerId] = ($categoryWorkerAllocations[$categoryKey][$workerId] ?? 0.0) + $allocatedQuantity;
-                }
-            }
-
-            $this->editingServiceVersion = app(MiscServiceEditor::class)->apply(
-                $service,
-                $existingCategories,
-                $existingAllocationsByWorkerAndCategory,
-                $categoryPayloads,
-                $categoryWorkerAllocations,
-                (int) $serviceNameId,
-                $validated['miscServiceType'],
-                $validated['miscDescription'] ?? null,
-                $this->jalaliToGregorian($validated['date']),
-                (int) auth()->id(),
-            );
-        });
+        $this->editingServiceVersion = app(MiscServiceEditor::class)->edit(
+            new MiscServiceEditData(
+                serviceId: (int) $this->editingServiceId,
+                expectedVersion: $this->editingServiceVersion,
+                serviceType: $validated['miscServiceType'],
+                description: $validated['miscDescription'] ?? null,
+                distributionDate: $this->jalaliToGregorian($validated['date']),
+                workerGroups: $validated['miscWorkerGroups'],
+            ),
+            $user,
+        );
 
         $this->flushEditableServiceCaches();
         $this->hasUnsavedChanges = false;
@@ -1352,48 +1284,10 @@ class ServiceBatchCreator extends Component
             return $this->editableServiceUsageByCategoryIdCache;
         }
 
-        $allocatedWorkerIds = ServiceWorkerAllocation::query()
-            ->where('service_id', $service->id)
-            ->get(['service_category_id', 'social_worker_id'])
-            ->groupBy('service_category_id')
-            ->map(fn (Collection $allocations): array => $allocations
-                ->pluck('social_worker_id')
-                ->map(fn ($workerId): int => (int) $workerId)
-                ->unique()
-                ->values()
-                ->all())
-            ->all();
-
-        $deliveredByCategory = $service->deliveries()
-            ->select('service_category_id')
-            ->selectRaw('COALESCE(SUM(delivered_quantity), 0) as delivered_quantity')
-            ->groupBy('service_category_id')
-            ->pluck('delivered_quantity', 'service_category_id')
-            ->map(fn ($quantity): float => (float) $quantity);
-
-        $assignedByCategory = GateEntryAssignment::query()
-            ->where('service_id', $service->id)
-            ->select('service_category_id')
-            ->selectRaw('COUNT(*) as assigned_quantity')
-            ->groupBy('service_category_id')
-            ->pluck('assigned_quantity', 'service_category_id')
-            ->map(fn ($quantity): float => (float) $quantity);
-
         $this->editableServiceUsageByCategoryIdCacheServiceId = $serviceId;
 
-        return $this->editableServiceUsageByCategoryIdCache = $deliveredByCategory
-            ->keys()
-            ->merge($assignedByCategory->keys())
-            ->map(fn ($categoryId): int => (int) $categoryId)
-            ->unique()
-            ->mapWithKeys(fn (int $categoryId): array => [
-                $categoryId => [
-                    'social_worker_ids' => $allocatedWorkerIds[$categoryId] ?? [],
-                    'delivered_quantity' => (float) ($deliveredByCategory[$categoryId] ?? 0),
-                    'assigned_quantity' => (float) ($assignedByCategory[$categoryId] ?? 0),
-                ],
-            ])
-            ->all();
+        return $this->editableServiceUsageByCategoryIdCache = app(MiscServiceEditQuery::class)
+            ->usageByCategory($service);
     }
 
     /**
@@ -1412,33 +1306,14 @@ class ServiceBatchCreator extends Component
             return $this->editableUsedCategoryUnitLocksCache;
         }
 
-        $usedCategoryIds = array_map('intval', array_keys($this->editableServiceUsageByCategoryId($service)));
-
-        if ($usedCategoryIds === []) {
-            $this->editableUsedCategoryUnitLocksCacheServiceId = $serviceId;
-
-            return $this->editableUsedCategoryUnitLocksCache = ['ids' => [], 'names' => []];
-        }
-
-        $names = $this->editableAllCategories($service)
-            ->whereIn('id', $usedCategoryIds)
-            ->pluck('name')
-            ->reduce(function (array $carry, $name): array {
-                $normalized = ServiceCategory::normalizeName((string) $name);
-
-                if ($normalized !== '') {
-                    $carry[$normalized] = true;
-                }
-
-                return $carry;
-            }, []);
-
         $this->editableUsedCategoryUnitLocksCacheServiceId = $serviceId;
 
-        return $this->editableUsedCategoryUnitLocksCache = [
-            'ids' => array_values($usedCategoryIds),
-            'names' => $names,
-        ];
+        return $this->editableUsedCategoryUnitLocksCache = app(MiscServiceEditQuery::class)
+            ->usedCategoryUnitLocks(
+                $service,
+                $this->editableAllCategories($service),
+                $this->editableServiceUsageByCategoryId($service),
+            );
     }
 
     protected function validationAttributes(): array
@@ -1488,68 +1363,8 @@ class ServiceBatchCreator extends Component
         $this->date = $jalaliDate->format('Y/m/d');
         $this->editingServiceVersion = $service->updated_at?->toISOString();
 
-        $this->miscWorkerGroups = $this->buildWorkerGroupsFromService($service);
-    }
-
-    /**
-     * Build the edit-mode worker groups from an existing misc service.
-     *
-     * Each group is one social worker plus the category rows allocated to that
-     * worker (resolved through the service worker allocations).
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    protected function buildWorkerGroupsFromService(Service $service): array
-    {
-        $categories = $service->categories()->ordered()->get();
-
-        $allocationsByCategory = $service->workerAllocations()
-            ->with('socialWorker.district:id,name')
-            ->get()
-            ->groupBy('service_category_id');
-
-        $groups = [];
-        $groupIndexByWorker = [];
-
-        foreach ($categories as $category) {
-            foreach ($allocationsByCategory->get($category->id, collect()) as $allocation) {
-                $worker = $allocation->socialWorker;
-
-                if (! $worker) {
-                    continue;
-                }
-
-                $workerId = (int) $worker->id;
-
-                if (! array_key_exists($workerId, $groupIndexByWorker)) {
-                    $groupIndexByWorker[$workerId] = count($groups);
-                    $groups[] = [
-                        'uid' => 'group-'.$workerId,
-                        'social_worker_id' => $workerId,
-                        'worker_query' => trim($worker->full_name.' - کد '.$worker->worker_code),
-                        'worker_search' => '',
-                        'worker_code' => $worker->worker_code ? (string) $worker->worker_code : '-',
-                        'worker_display' => $this->formatSelectedSocialWorkerDisplay($worker),
-                        'locked' => true,
-                        'is_existing' => true,
-                        'categories' => [],
-                    ];
-                }
-
-                $groups[$groupIndexByWorker[$workerId]]['categories'][] = [
-                    'id' => (int) $category->id,
-                    'name' => $category->name,
-                    'quantity' => $this->formatDecimal($allocation->allocated_quantity),
-                    'unit' => $category->unit,
-                ];
-            }
-        }
-
-        if ($groups === []) {
-            return [$this->makeWorkerGroup()];
-        }
-
-        return $groups;
+        $groups = app(MiscServiceEditQuery::class)->workerGroups($service);
+        $this->miscWorkerGroups = $groups !== [] ? $groups : [$this->makeWorkerGroup()];
     }
 
     /**
@@ -1605,67 +1420,23 @@ class ServiceBatchCreator extends Component
             return $this->editableCategoryPoolCache;
         }
 
-        $categories = $this->editableAllCategories($service);
-
-        $usedCategoryIds = ServiceWorkerAllocation::query()
-            ->where('service_id', $service->id)
-            ->pluck('service_category_id')
-            ->merge($service->deliveries()->pluck('service_category_id'))
-            ->merge(GateEntryAssignment::query()
-                ->where('service_id', $service->id)
-                ->pluck('service_category_id'))
-            ->map(fn ($categoryId): int => (int) $categoryId)
-            ->filter()
-            ->unique()
-            ->values()
-            ->all();
-
-        $usedCategoryIdLookup = array_fill_keys($usedCategoryIds, true);
-        $byName = [];
-
-        foreach ($categories as $category) {
-            $normalizedName = $this->normalizeEditableCategoryName((string) $category->name);
-
-            if ($normalizedName === '') {
-                continue;
-            }
-
-            $existing = $byName[$normalizedName] ?? null;
-
-            if (! $existing instanceof ServiceCategory
-                || $this->shouldPreferEditableCategoryCandidate($category, $existing, $usedCategoryIdLookup)) {
-                $byName[$normalizedName] = $category;
-            }
-        }
-
         $this->editableCategoryPoolCacheServiceId = $serviceId;
 
-        return $this->editableCategoryPoolCache = [
-            'by_name' => $byName,
-        ];
+        return $this->editableCategoryPoolCache = app(MiscServiceEditQuery::class)
+            ->categoryPool($service, $this->editableAllCategories($service));
     }
 
     protected function resolveEditableCategoryId(array $category, ?array $categoryPool = null): int
     {
-        $categoryId = (int) ($category['id'] ?? 0);
-
-        if ($categoryId > 0) {
-            return $categoryId;
-        }
-
-        $normalizedName = $this->normalizeEditableCategoryName((string) ($category['name'] ?? ''));
-
-        if ($normalizedName === '') {
-            return 0;
-        }
-
         if ($categoryPool === null && $this->editingServiceId) {
             $categoryPool = $this->editableCategoryPool($this->editableService());
         }
 
-        $resolvedCategory = $categoryPool['by_name'][$normalizedName] ?? null;
+        if ($categoryPool === null) {
+            return (int) ($category['id'] ?? 0);
+        }
 
-        return $resolvedCategory instanceof ServiceCategory ? (int) $resolvedCategory->id : 0;
+        return app(MiscServiceEditQuery::class)->resolveCategoryId($category, $categoryPool);
     }
 
     protected function normalizeEditableCategoryName(string $name): string
@@ -1680,15 +1451,9 @@ class ServiceBatchCreator extends Component
      */
     protected function sharedCategoryKey(array $category, ?array $categoryPool = null): ?string
     {
-        $categoryId = $this->resolveEditableCategoryId($category, $categoryPool);
+        $categoryPool ??= $this->editableCategoryPool($this->editableService());
 
-        if ($categoryId > 0) {
-            return 'id:'.$categoryId;
-        }
-
-        $normalizedName = $this->normalizeEditableCategoryName((string) ($category['name'] ?? ''));
-
-        return $normalizedName === '' ? null : 'name:'.$normalizedName;
+        return app(MiscServiceEditQuery::class)->sharedCategoryKey($category, $categoryPool);
     }
 
     /**
@@ -1802,28 +1567,6 @@ class ServiceBatchCreator extends Component
         $this->miscWorkerGroups[$groupIndex]['categories'][$categoryIndex]['unit'] = $resolvedUnit;
     }
 
-    protected function shouldPreferEditableCategoryCandidate(
-        ServiceCategory $candidate,
-        ServiceCategory $existing,
-        array $usedCategoryIdLookup
-    ): bool {
-        $candidateIsUsed = isset($usedCategoryIdLookup[(int) $candidate->id]);
-        $existingIsUsed = isset($usedCategoryIdLookup[(int) $existing->id]);
-
-        if ($candidateIsUsed !== $existingIsUsed) {
-            return $candidateIsUsed;
-        }
-
-        $candidateIsActive = $candidate->deleted_at === null;
-        $existingIsActive = $existing->deleted_at === null;
-
-        if ($candidateIsActive !== $existingIsActive) {
-            return $candidateIsActive;
-        }
-
-        return (int) $candidate->id > (int) $existing->id;
-    }
-
     /**
      * @return array<string, mixed>
      */
@@ -1853,14 +1596,11 @@ class ServiceBatchCreator extends Component
             return $this->editableServiceCache;
         }
 
-        // Any distribution operator may edit a shared misc service; scope to
-        // operator-defined services and let the gate enforce authorization.
-        $service = Service::query()
-            ->with(['socialWorkers', 'categories'])
-            ->createdByDistributionOperator()
-            ->findOrFail($serviceId);
+        $user = auth()->user();
+        abort_unless($user !== null, 403);
 
-        abort_unless(auth()->user()?->can('edit-distribution-operator-service', $service), 403);
+        $service = app(MiscServiceEditQuery::class)
+            ->findEditableOrFail($serviceId, $user);
 
         $this->editableServiceCache = $service;
         $this->editableServiceCacheId = $serviceId;
@@ -1894,12 +1634,8 @@ class ServiceBatchCreator extends Component
 
         $this->editableAllCategoriesCacheServiceId = $serviceId;
 
-        return $this->editableAllCategoriesCache = $service->categories()
-            ->withTrashed()
-            ->orderByRaw('CASE WHEN deleted_at IS NULL THEN 0 ELSE 1 END')
-            ->orderBy('sort_id')
-            ->orderBy('id')
-            ->get();
+        return $this->editableAllCategoriesCache = app(MiscServiceEditQuery::class)
+            ->allCategories($service);
     }
 
     protected function flushEditableServiceCaches(): void
@@ -1914,17 +1650,6 @@ class ServiceBatchCreator extends Component
         $this->editableServiceUsageByCategoryIdCacheServiceId = null;
         $this->editableUsedCategoryUnitLocksCache = null;
         $this->editableUsedCategoryUnitLocksCacheServiceId = null;
-    }
-
-    protected function ensureEditableServiceVersionMatches(Service $service): void
-    {
-        $currentVersion = $service->updated_at?->toISOString();
-
-        if ($this->editingServiceVersion !== null && $currentVersion !== $this->editingServiceVersion) {
-            throw ValidationException::withMessages([
-                'miscWorkerGroups' => 'این خدمت توسط اپراتور دیگری تغییر کرده است. صفحه را تازه‌سازی کنید و دوباره تلاش کنید.',
-            ]);
-        }
     }
 
     protected function predefinedServices(): Collection
