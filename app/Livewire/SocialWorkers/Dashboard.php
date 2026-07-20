@@ -237,7 +237,7 @@ class Dashboard extends Component
             return;
         }
 
-        $token = $this->extractQrToken($rawToken);
+        $token = app(QrIdentityService::class)->extractToken($rawToken);
         $identity = $this->resolveServiceDeliveryQrIdentity($token);
 
         if (! $identity) {
@@ -1282,55 +1282,10 @@ class Dashboard extends Component
             return null;
         }
 
-        $identity = $this->resolveTokenHashQrIdentity($token)
-            ?: $this->resolvePublicQrCode($token);
+        $qrService = app(QrIdentityService::class);
 
-        if (! $identity) {
-            return null;
-        }
-
-        $identity->forceFill(['last_scanned_at' => now()])->save();
-
-        return $identity;
-    }
-
-    protected function resolveTokenHashQrIdentity(string $token): ?QrIdentity
-    {
-        return QrIdentity::query()
-            ->select(['id', 'subject_type', 'subject_id', 'status', 'last_scanned_at'])
-            ->where('token_hash', app(QrIdentityService::class)->hashToken($token))
-            ->where('status', QrIdentity::STATUS_ACTIVE)
-            ->first();
-    }
-
-    protected function resolvePublicQrCode(string $token): ?QrIdentity
-    {
-        return QrIdentity::query()
-            ->select(['id', 'subject_type', 'subject_id', 'status', 'last_scanned_at'])
-            ->where('public_code', strtoupper(trim($token)))
-            ->where('status', QrIdentity::STATUS_ACTIVE)
-            ->first();
-    }
-
-    protected function extractQrToken(string $value): ?string
-    {
-        $value = trim($value);
-
-        if ($value === '') {
-            return null;
-        }
-
-        if (! Str::contains($value, ['http://', 'https://'])) {
-            return $value;
-        }
-
-        $payloadPath = parse_url($value, PHP_URL_PATH) ?: $value;
-
-        if (! preg_match('/\/qr\/r\/([^\/?#]+)/', (string) $payloadPath, $matches)) {
-            return null;
-        }
-
-        return isset($matches[1]) ? urldecode($matches[1]) : null;
+        return $qrService->resolveToken($token, 'social-worker-dashboard')
+            ?: $qrService->resolvePublicCode($token);
     }
 
     protected function flushServiceMetricCaches(): void
