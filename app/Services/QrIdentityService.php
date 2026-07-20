@@ -117,6 +117,57 @@ class QrIdentityService
         return hash_hmac('sha256', $token, config('app.key'));
     }
 
+    /**
+     * Pull the raw token out of a scanned payload. Cards encode the token either bare or inside
+     * the /qr/r/{token} resolve URL; anything else is not ours.
+     */
+    public function extractToken(string $payload): ?string
+    {
+        $value = trim($payload);
+
+        if ($value === '') {
+            return null;
+        }
+
+        if (! Str::contains($value, ['http://', 'https://'])) {
+            return $value;
+        }
+
+        $payloadPath = parse_url($value, PHP_URL_PATH) ?: $value;
+
+        if (! preg_match('/\/qr\/r\/([^\/?#]+)/', (string) $payloadPath, $matches)) {
+            return null;
+        }
+
+        return isset($matches[1]) ? urldecode($matches[1]) : null;
+    }
+
+    /**
+     * Fallback for hand-typed short codes (PQR-/GQR-…) printed on the card next to the QR.
+     * Mirrors resolveToken(): only an active identity with a live subject resolves.
+     */
+    public function resolvePublicCode(string $token): ?QrIdentity
+    {
+        $identity = QrIdentity::query()
+            ->where('public_code', strtoupper(trim($token)))
+            ->where('status', QrIdentity::STATUS_ACTIVE)
+            ->first();
+
+        if (! $identity) {
+            return null;
+        }
+
+        $subject = $identity->subject;
+
+        if (! $subject || (method_exists($subject, 'trashed') && $subject->trashed())) {
+            return null;
+        }
+
+        $identity->forceFill(['last_scanned_at' => now()])->save();
+
+        return $identity->setRelation('subject', $subject);
+    }
+
     public function subjectTypeFor(Model $subject): string
     {
         return match (true) {
