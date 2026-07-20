@@ -188,10 +188,15 @@ php artisan serve      # Run the Laravel development server
 npm run dev            # Run the Vite development server
 npm run build          # Build production frontend assets
 php artisan migrate    # Run database migrations
-php artisan db:seed    # Seed lookup data and the primary admin account
+php artisan db:seed    # Seed lookup data; first run requires ADMIN_BOOTSTRAP_PASSWORD
 php artisan test       # Run the PHPUnit test suite
 ./vendor/bin/pint      # Format PHP code
 ```
+
+On the first seed of a new database, set `ADMIN_BOOTSTRAP_PASSWORD` to a unique
+secret of at least 16 characters. Store it in the deployment secret manager,
+not in version control. Later seeder runs preserve the primary administrator's
+existing password and do not require the bootstrap secret.
 
 ## Testing
 
