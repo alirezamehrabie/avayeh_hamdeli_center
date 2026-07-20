@@ -10,12 +10,12 @@ use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\ServiceWorkerAllocation;
 use App\Models\SocialWorker;
-use App\Models\User;
+use App\Queries\Deliveries\PredefinedServiceCatalogQuery;
 use App\Queries\Deliveries\SocialWorkerSuggestionQuery;
 use App\Services\Deliveries\MiscServiceCreator;
 use App\Services\Deliveries\MiscServiceEditor;
 use App\Services\Deliveries\PredefinedServiceAllocator;
-use Illuminate\Database\Eloquent\Builder;
+use App\Services\Deliveries\ServiceBatchReviewBuilder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -1844,15 +1844,7 @@ class ServiceBatchCreator extends Component
 
     protected function resolvePredefinedService(int $serviceId): Service
     {
-        return Service::query()
-            ->with(['categories' => fn ($query) => $query->orderBy('sort_id')->orderBy('id')])
-            ->whereIn('status', ['approved', 'in_distribution'])
-            ->where(function (Builder $query): void {
-                $query->whereNull('created_by')
-                    ->orWhereDoesntHave('creator', fn (Builder $creatorQuery) => $creatorQuery
-                        ->where('access_level', User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR));
-            })
-            ->findOrFail($serviceId);
+        return app(PredefinedServiceCatalogQuery::class)->findSelectableOrFail($serviceId);
     }
 
     protected function resolveEditableService(int $serviceId): Service
@@ -1941,40 +1933,8 @@ class ServiceBatchCreator extends Component
             return $this->predefinedServicesCache;
         }
 
-        $search = trim($this->serviceSearch);
-
-        $services = Service::query()
-            ->with(['serviceName', 'categories' => fn ($query) => $query->orderBy('sort_id')->orderBy('id')])
-            ->whereIn('status', ['approved', 'in_distribution'])
-            ->where(function (Builder $query): void {
-                $query->whereNull('created_by')
-                    ->orWhereDoesntHave('creator', fn (Builder $creatorQuery) => $creatorQuery
-                        ->where('access_level', User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR));
-            })
-            ->whereRaw('(select coalesce(sum(quantity), 0) from service_categories where service_categories.service_id = services.id and service_categories.deleted_at is null) > (select coalesce(sum(allocated_quantity), 0) from service_social_worker where service_social_worker.service_id = services.id)')
-            ->when($search !== '', function (Builder $query) use ($search): void {
-                $query->where(function (Builder $searchQuery) use ($search): void {
-                    $searchQuery->where('code', 'like', '%'.$search.'%')
-                        ->orWhere('name', 'like', '%'.$search.'%')
-                        ->orWhereHas('serviceName', fn (Builder $serviceNameQuery) => $serviceNameQuery
-                            ->where('name', 'like', '%'.$search.'%'))
-                        ->orWhereHas('categories', fn (Builder $categoryQuery) => $categoryQuery
-                            ->where('name', 'like', '%'.$search.'%'));
-                });
-            })
-            ->latest()
-            ->limit(25)
-            ->get();
-
-        if ($this->selectedServiceId && ! $services->contains('id', (int) $this->selectedServiceId)) {
-            $selectedService = $this->selectedPredefinedService;
-
-            if ($selectedService) {
-                $services->prepend($selectedService);
-            }
-        }
-
-        return $this->predefinedServicesCache = $services->unique('id')->values();
+        return $this->predefinedServicesCache = app(PredefinedServiceCatalogQuery::class)
+            ->search($this->serviceSearch, $this->selectedServiceId);
     }
 
     public function getSelectedPredefinedServiceProperty(): ?Service
@@ -2455,196 +2415,45 @@ class ServiceBatchCreator extends Component
 
     protected function confirmationSummary(): array
     {
+        $reviewBuilder = app(ServiceBatchReviewBuilder::class);
+
         if ($this->editingServiceId) {
-            return $this->miscEditConfirmationSummary();
+            return $reviewBuilder->buildMiscEdit(
+                workerGroups: $this->miscWorkerGroups,
+                unitOptions: Service::unitOptions(),
+                serviceName: $this->editingServiceName,
+                serviceType: Service::TYPE_OPTIONS[$this->miscServiceType] ?? $this->miscServiceType,
+                date: $this->date,
+                description: $this->miscDescription,
+                fallbackWorkerName: 'مددکار',
+                title: 'تأیید ویرایش خدمت متفرقه',
+            );
         }
 
         return $this->mode === self::MODE_MISC
-            ? $this->miscConfirmationSummary()
-            : $this->predefinedConfirmationSummary();
-    }
-
-    protected function miscEditConfirmationSummary(): array
-    {
-        $groups = collect($this->miscWorkerGroups)
-            ->map(function (array $group): ?array {
-                $workerId = (int) ($group['social_worker_id'] ?? 0);
-
-                $rows = collect($group['categories'] ?? [])
-                    ->map(function (array $category): array {
-                        $quantity = (float) ($category['quantity'] ?? 0);
-                        $unit = (string) ($category['unit'] ?? '');
-
-                        return [
-                            'name' => trim((string) ($category['name'] ?? '')),
-                            'unit' => $unit,
-                            'unit_label' => Service::unitOptions()[$unit] ?? $unit,
-                            'quantity' => $quantity,
-                            'quantity_label' => number_format($quantity, 2),
-                            'remaining_label' => '0.00',
-                            'is_large_quantity' => $this->isLargeMiscQuantity($quantity),
-                        ];
-                    })
-                    ->filter(fn (array $row): bool => $row['name'] !== '' && $row['quantity'] > 0)
-                    ->values()
-                    ->all();
-
-                if ($rows === []) {
-                    return null;
-                }
-
-                return [
-                    'worker_name' => trim((string) ($group['worker_display'] ?? '')) ?: (trim((string) ($group['worker_query'] ?? '')) ?: 'مددکار'),
-                    'worker_code' => (string) ($group['worker_code'] ?? ''),
-                    'rows' => $rows,
-                    'total_quantity_label' => number_format(collect($rows)->sum('quantity'), 2),
-                ];
-            })
-            ->filter()
-            ->values()
-            ->all();
-
-        $allRows = collect($groups)->flatMap(fn (array $group): array => $group['rows'])->values()->all();
-        $largeQuantityRowsCount = collect($allRows)
-            ->filter(fn (array $row): bool => (bool) ($row['is_large_quantity'] ?? false))
-            ->count();
-
-        return [
-            'mode' => self::MODE_MISC,
-            'is_edit' => true,
-            'title' => 'تأیید ویرایش خدمت متفرقه',
-            'service_name' => $this->editingServiceName,
-            'service_code' => '',
-            'service_type' => Service::TYPE_OPTIONS[$this->miscServiceType] ?? $this->miscServiceType,
-            'worker_name' => count($groups) === 1 ? ($groups[0]['worker_name'] ?? '-') : (count($groups).' مددکار'),
-            'worker_code' => count($groups) === 1 ? ($groups[0]['worker_code'] ?? '') : '',
-            'date_label' => $this->date,
-            'description' => trim($this->miscDescription),
-            'total_quantity_label' => number_format(collect($allRows)->sum('quantity'), 2),
-            'rows' => $allRows,
-            'groups' => $groups,
-            'large_quantity_rows_count' => $largeQuantityRowsCount,
-            'has_empty_description_warning' => trim($this->miscDescription) === '',
-        ];
-    }
-
-    protected function predefinedConfirmationSummary(): array
-    {
-        $service = $this->selectedPredefinedService;
-        $metrics = $this->selectedPredefinedCategoryMetrics();
-        $categories = $this->selectedPredefinedServiceCategories->keyBy('id');
-
-        // Track stock claimed by earlier workers so each worker's "remaining after
-        // save" reflects the shared pool being drawn down across the whole submit.
-        $claimedByCategory = [];
-        $groups = [];
-
-        foreach (array_values($this->predefinedWorkerGroups) as $group) {
-            $rows = [];
-
-            foreach ($group['allocations'] ?? [] as $categoryId => $rawQuantity) {
-                $categoryId = (int) $categoryId;
-                $quantity = max(0, (float) $rawQuantity);
-                $category = $categories->get($categoryId);
-
-                if ($quantity <= 0 || ! $category) {
-                    continue;
-                }
-
-                $baseAssignable = (float) ($metrics[$categoryId]['assignable'] ?? 0);
-                $alreadyClaimed = (float) ($claimedByCategory[$categoryId] ?? 0);
-                $remainingAfter = max(0, $baseAssignable - $alreadyClaimed - $quantity);
-                $claimedByCategory[$categoryId] = $alreadyClaimed + $quantity;
-
-                $rows[] = [
-                    'name' => $category->name,
-                    'unit' => $category->unit,
-                    'unit_label' => Service::unitOptions()[$category->unit] ?? $category->unit,
-                    'quantity' => $quantity,
-                    'quantity_label' => $this->formatQuantityForUnit($quantity, (string) $category->unit),
-                    'remaining_label' => $this->formatQuantityForUnit($remainingAfter, (string) $category->unit),
-                    'consumes_all_remaining' => $baseAssignable > 0 && $remainingAfter <= 0.00001,
-                ];
-            }
-
-            if ($rows === []) {
-                continue;
-            }
-
-            $groups[] = [
-                'worker_name' => trim((string) ($group['worker_display'] ?? '')) ?: (trim((string) ($group['worker_query'] ?? '')) ?: 'مددکار'),
-                'worker_code' => (string) ($group['worker_code'] ?? ''),
-                'rows' => $rows,
-                'total_quantity_label' => number_format(collect($rows)->sum('quantity'), 2),
-            ];
-        }
-
-        $allRows = collect($groups)->flatMap(fn (array $group): array => $group['rows'])->values()->all();
-        $depletingRowsCount = collect($allRows)
-            ->filter(fn (array $row): bool => (bool) ($row['consumes_all_remaining'] ?? false))
-            ->count();
-        $workerCount = count($groups);
-
-        return [
-            'mode' => self::MODE_PREDEFINED,
-            'title' => 'تأیید تخصیص خدمت موجود',
-            'service_name' => $service?->name ?: ($service?->serviceName?->name ?? 'خدمت انتخاب‌شده'),
-            'service_code' => (string) ($service?->code ?? ''),
-            'worker_name' => $workerCount === 1
-                ? ($groups[0]['worker_name'] ?? '-')
-                : ($workerCount.' مددکار'),
-            'worker_code' => $workerCount === 1 ? ($groups[0]['worker_code'] ?? '') : '',
-            'date_label' => 'ثبت تخصیص پس از تأیید نهایی انجام می‌شود',
-            'total_quantity_label' => number_format(collect($allRows)->sum('quantity'), 2),
-            'rows' => $allRows,
-            // Per-worker cards only when more than one worker is being assigned; a
-            // single worker keeps the flat rows view with its remaining column.
-            'groups' => $workerCount > 1 ? $groups : [],
-            'depleting_rows_count' => $depletingRowsCount,
-        ];
-    }
-
-    protected function miscConfirmationSummary(): array
-    {
-        $worker = $this->selectedSocialWorker();
-        $rows = collect($this->miscCategories)
-            ->map(function (array $category): array {
-                $quantity = (float) ($category['quantity'] ?? 0);
-                $unit = (string) ($category['unit'] ?? '');
-
-                return [
-                    'name' => trim((string) ($category['name'] ?? '')),
-                    'unit' => $unit,
-                    'unit_label' => Service::unitOptions()[$unit] ?? $unit,
-                    'quantity' => $quantity,
-                    'quantity_label' => number_format($quantity, 2),
-                    'remaining_label' => '0.00',
-                    'is_large_quantity' => $this->isLargeMiscQuantity($quantity),
-                ];
-            })
-            ->filter(fn (array $row): bool => $row['name'] !== '' && $row['quantity'] > 0)
-            ->values()
-            ->all();
-
-        $largeQuantityRowsCount = collect($rows)
-            ->filter(fn (array $row): bool => (bool) ($row['is_large_quantity'] ?? false))
-            ->count();
-
-        return [
-            'mode' => self::MODE_MISC,
-            'title' => $this->editingServiceId ? 'تأیید ویرایش خدمت متفرقه' : 'تأیید ایجاد خدمت متفرقه',
-            'service_name' => $this->editingServiceId ? $this->editingServiceName : trim($this->miscServiceName),
-            'service_code' => '',
-            'service_type' => Service::TYPE_OPTIONS[$this->miscServiceType] ?? $this->miscServiceType,
-            'worker_name' => $worker?->full_name ?? $this->socialWorkerQuery,
-            'worker_code' => $worker?->worker_code ? (string) $worker->worker_code : '',
-            'date_label' => $this->date,
-            'description' => trim($this->miscDescription),
-            'total_quantity_label' => number_format(collect($rows)->sum('quantity'), 2),
-            'rows' => $rows,
-            'large_quantity_rows_count' => $largeQuantityRowsCount,
-            'has_empty_description_warning' => trim($this->miscDescription) === '',
-        ];
+            ? $reviewBuilder->buildMisc(
+                categories: $this->miscCategories,
+                unitOptions: Service::unitOptions(),
+                worker: $this->selectedSocialWorker(),
+                workerQuery: $this->socialWorkerQuery,
+                serviceName: trim($this->miscServiceName),
+                serviceType: Service::TYPE_OPTIONS[$this->miscServiceType] ?? $this->miscServiceType,
+                date: $this->date,
+                description: $this->miscDescription,
+                title: 'تأیید ایجاد خدمت متفرقه',
+            )
+            : $reviewBuilder->buildPredefined(
+                service: $this->selectedPredefinedService,
+                categories: $this->selectedPredefinedServiceCategories,
+                metrics: $this->selectedPredefinedCategoryMetrics(),
+                workerGroups: $this->predefinedWorkerGroups,
+                unitOptions: Service::unitOptions(),
+                formatQuantity: fn (float $quantity, string $unit): string => $this->formatQuantityForUnit($quantity, $unit),
+                fallbackServiceName: 'خدمت انتخاب‌شده',
+                fallbackWorkerName: 'مددکار',
+                dateLabel: 'ثبت تخصیص پس از تأیید نهایی انجام می‌شود',
+                title: 'تأیید تخصیص خدمت موجود',
+            );
     }
 
     protected function selectedSocialWorker(): ?SocialWorker
@@ -2656,11 +2465,6 @@ class ServiceBatchCreator extends Component
         return SocialWorker::query()
             ->select(['id', 'first_name', 'last_name', 'worker_code'])
             ->find($this->socialWorkerId);
-    }
-
-    protected function isLargeMiscQuantity(float $quantity): bool
-    {
-        return $quantity >= 1000;
     }
 
     /**
@@ -2711,14 +2515,8 @@ class ServiceBatchCreator extends Component
 
         $this->selectedPredefinedAllocatedByCategoryCacheServiceId = (int) $service->id;
 
-        return $this->selectedPredefinedAllocatedByCategoryCache = ServiceWorkerAllocation::query()
-            ->select('service_category_id')
-            ->selectRaw('COALESCE(SUM(allocated_quantity), 0) as allocated_quantity')
-            ->where('service_id', $service->id)
-            ->groupBy('service_category_id')
-            ->pluck('allocated_quantity', 'service_category_id')
-            ->map(fn ($quantity): float => (float) $quantity)
-            ->all();
+        return $this->selectedPredefinedAllocatedByCategoryCache = app(PredefinedServiceCatalogQuery::class)
+            ->allocatedQuantitiesByCategory($service);
     }
 
     protected function flushSelectedPredefinedServiceMetrics(): void
@@ -2741,46 +2539,10 @@ class ServiceBatchCreator extends Component
             return $this->predefinedServiceOptionsCache;
         }
 
-        $categoryIds = $services
-            ->flatMap(fn (Service $service) => $service->categories->pluck('id'))
-            ->map(fn ($categoryId) => (int) $categoryId)
-            ->filter()
-            ->values();
-
-        $allocatedByCategory = $categoryIds->isEmpty()
-            ? collect()
-            : ServiceWorkerAllocation::query()
-                ->select('service_category_id')
-                ->selectRaw('COALESCE(SUM(allocated_quantity), 0) as allocated_quantity')
-                ->whereIn('service_category_id', $categoryIds->all())
-                ->groupBy('service_category_id')
-                ->pluck('allocated_quantity', 'service_category_id');
-
         $this->predefinedServiceOptionsCacheKey = $cacheKey;
 
-        return $this->predefinedServiceOptionsCache = $services
-            ->map(function (Service $service) use ($allocatedByCategory): array {
-                $categories = $service->categories->values();
-                $remainingAssignable = $categories->sum(function (ServiceCategory $category) use ($allocatedByCategory): float {
-                    $allocated = (float) ($allocatedByCategory[$category->id] ?? 0);
-
-                    return max(0, (float) $category->quantity - $allocated);
-                });
-
-                return [
-                    'id' => (int) $service->id,
-                    'code' => (string) $service->code,
-                    'name' => $service->name ?: ($service->serviceName?->name ?? 'بدون عنوان'),
-                    'status' => Service::STATUS_OPTIONS[$service->status] ?? $service->status,
-                    'remaining' => $remainingAssignable,
-                    'remainingLabel' => number_format($remainingAssignable, 2),
-                    'categoriesCount' => $categories->count(),
-                    'categorySummary' => $categories->pluck('name')->filter()->take(4)->implode('، '),
-                ];
-            })
-            ->filter(fn (array $service): bool => $service['remaining'] > 0 || (int) $service['id'] === (int) $this->selectedServiceId)
-            ->values()
-            ->all();
+        return $this->predefinedServiceOptionsCache = app(PredefinedServiceCatalogQuery::class)
+            ->options($services, $this->selectedServiceId);
     }
 
     protected function flushPredefinedServiceOptions(): void
