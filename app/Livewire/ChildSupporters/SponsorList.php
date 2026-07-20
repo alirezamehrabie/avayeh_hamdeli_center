@@ -15,6 +15,11 @@ class SponsorList extends Component
 {
     use WithPagination;
 
+    public function boot(): void
+    {
+        $this->authorizeAccess();
+    }
+
     #[Url(as: 'q', history: true)]
     public string $search = '';
 
@@ -238,7 +243,7 @@ class SponsorList extends Component
     {
         abort_unless(
             auth()->check()
-            && auth()->user()->can('access-admin-panel'),
+            && auth()->user()->can('full-access'),
             403
         );
     }

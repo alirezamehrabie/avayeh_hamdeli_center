@@ -56,42 +56,11 @@ class ActivityListTest extends TestCase
             ->assertDontSee('Older Workshop');
     }
 
-    public function test_admin_panel_user_can_view_list_and_open_scanner_without_full_access(): void
+    public function test_admin_panel_user_without_full_access_cannot_open_activity_list(): void
     {
         $this->actingAs($this->adminPanelUserWithoutFullAccess());
-        $activity = Activity::query()->create([
-            'name' => 'Scanner Activity',
-            'activity_type' => 'workshop',
-            'starts_at' => '2026-06-18 09:00:00',
-            'status' => 'ongoing',
-        ]);
 
         Livewire::test(ActivityList::class)
-            ->assertSee('Scanner Activity')
-            ->call('openScanner', $activity->id)
-            ->assertDispatched('open-dashboard-section', section: 'activity-scanner', id: $activity->id);
-    }
-
-    public function test_admin_panel_user_without_full_access_cannot_manage_activities(): void
-    {
-        $this->actingAs($this->adminPanelUserWithoutFullAccess());
-        $activity = Activity::query()->create([
-            'name' => 'Restricted Activity',
-            'activity_type' => 'workshop',
-            'starts_at' => '2026-06-18 09:00:00',
-            'status' => 'ongoing',
-        ]);
-
-        Livewire::test(ActivityList::class)
-            ->call('createActivity')
-            ->assertForbidden();
-
-        Livewire::test(ActivityList::class)
-            ->call('editActivity', $activity->id)
-            ->assertForbidden();
-
-        Livewire::test(ActivityList::class)
-            ->call('transitionActivity', $activity->id, 'closed')
             ->assertForbidden();
     }
 

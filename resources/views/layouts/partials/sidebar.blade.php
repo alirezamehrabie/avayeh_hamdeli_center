@@ -132,9 +132,9 @@
                 ['section' => 'advanced-beneficiary-report', 'label' => 'گزارش مددجویان', 'visible' => $user?->can('full-access')],
                 ['section' => 'advanced-supervisor-report', 'label' => 'گزارش سرپرستان', 'visible' => $user?->can('full-access')],
                 ['section' => 'advanced-social-worker-report', 'label' => 'گزارش مددکاران', 'visible' => $user?->can('full-access')],
-                ['section' => 'advanced-service-report', 'label' => 'گزارش خدمات'],
+                ['section' => 'advanced-service-report', 'label' => 'گزارش خدمات', 'visible' => $user?->can('full-access')],
                 ['section' => 'advanced-operator-report', 'label' => 'گزارش اپراتورها'],
-                ['section' => 'advanced-gate-report', 'label' => 'گزارش گیت‌ها'],
+                ['section' => 'advanced-gate-report', 'label' => 'گزارش گیت‌ها', 'visible' => $user?->can('full-access')],
             ],
             'user-management' => [
                 ['section' => 'system-settings-user-definition', 'label' => 'تعریف کاربر'],
@@ -367,7 +367,7 @@
         @endcan
 
 
-        @can('access-admin-panel')
+        @can('full-access')
             @if($dashboardMode)
                 <div>
                     <button type="button" @click="openMenu = openMenu === 'activities' ? '' : 'activities'"
@@ -399,6 +399,7 @@
         @endcan
 
         @if($dashboardMode)
+            @can('full-access')
             <div>
                 <button type="button" @click="openMenu = openMenu === 'child-supporter' ? '' : 'child-supporter'"
                         class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $childSupporterOpen ? 'bg-indigo-700' : '' }}">
@@ -425,6 +426,7 @@
                     @endforeach
                 </div>
             </div>
+            @endcan
 
             <div>
                 <button type="button" @click="openMenu = openMenu === 'special-features' ? '' : 'special-features'"

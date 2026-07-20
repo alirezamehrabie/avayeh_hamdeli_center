@@ -17,6 +17,11 @@ class SponsorRegistration extends Component
 {
     use InteractsWithNotificationModal;
 
+    public function boot(): void
+    {
+        $this->authorizeAccess();
+    }
+
     public bool $embedded = false;
 
     #[Url(as: 'sponsor')]
@@ -303,7 +308,7 @@ class SponsorRegistration extends Component
     {
         abort_unless(
             auth()->check()
-            && auth()->user()->can('access-admin-panel'),
+            && auth()->user()->can('full-access'),
             403
         );
     }

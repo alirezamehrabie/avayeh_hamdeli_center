@@ -18,6 +18,18 @@ use Livewire\Component;
 #[Layout('layouts.admin')] // متصل کردن به لایوت ساخته شده
 class DashboardHome extends Component
 {
+    private const FULL_ACCESS_SECTIONS = [
+        'advanced-service-report',
+        'advanced-gate-report',
+        'activity-definition',
+        'activity-list',
+        'activity-scanner',
+        'activity-operator-assignments',
+        'child-supporter-sponsor-registration',
+        'child-supporter-sponsor-edit',
+        'child-supporter-sponsor-list',
+    ];
+
     #[Url(as: 'section', history: true)]
     public string $activeSection = 'overview';
 
@@ -188,6 +200,13 @@ class DashboardHome extends Component
         }
 
         $user = auth()->user();
+
+        abort_if(
+            in_array($this->activeSection, self::FULL_ACCESS_SECTIONS, true)
+            && ! $user?->can('full-access'),
+            403
+        );
+
         $validSections = ['overview', 'system-settings-user-account'];
 
         if ($user?->can('manage-people')) {
@@ -210,15 +229,8 @@ class DashboardHome extends Component
         if ($user?->can('access-admin-panel')) {
             $validSections[] = 'people-incomplete-cases';
             $validSections[] = 'beneficiary-case-file';
-            $validSections[] = 'advanced-service-report';
             $validSections[] = 'advanced-operator-report';
-            $validSections[] = 'advanced-gate-report';
-            $validSections[] = 'child-supporter-sponsor-registration';
-            $validSections[] = 'child-supporter-sponsor-edit';
-            $validSections[] = 'child-supporter-sponsor-list';
             $validSections[] = 'special-features-id-card-scanner';
-            $validSections[] = 'activity-list';
-            $validSections[] = 'activity-scanner';
         }
 
         if ($user?->can('full-access')) {
@@ -248,6 +260,8 @@ class DashboardHome extends Component
                 'service-management',
                 'service-archive',
                 'activity-definition',
+                'activity-list',
+                'activity-scanner',
                 'activity-operator-assignments',
                 'child-supporter-sponsor-registration',
                 'child-supporter-sponsor-edit',

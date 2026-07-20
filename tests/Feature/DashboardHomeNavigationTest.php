@@ -30,13 +30,12 @@ class DashboardHomeNavigationTest extends TestCase
             ->assertSeeLivewire(ActivityList::class);
     }
 
-    public function test_admin_panel_user_without_full_access_can_open_activity_list_route(): void
+    public function test_admin_panel_user_without_full_access_cannot_open_activity_list_route(): void
     {
         $this->actingAs($this->adminPanelUserWithoutFullAccess());
 
-        $this->get('/admin/activities/activity-list')
-            ->assertOk()
-            ->assertSeeLivewire(ActivityList::class);
+        $this->getJson('/admin/activities/activity-list')
+            ->assertForbidden();
     }
 
     public function test_service_archive_route_opens_archive_section(): void
@@ -168,13 +167,12 @@ class DashboardHomeNavigationTest extends TestCase
             ->assertSet('editingGuardianId', null);
     }
 
-    public function test_service_reports_route_opens_service_reports_section(): void
+    public function test_admin_panel_user_without_full_access_cannot_open_service_reports_route(): void
     {
         $this->actingAs($this->adminPanelUserWithoutFullAccess());
 
-        $this->get('/admin/reports/services')
-            ->assertOk()
-            ->assertSeeLivewire(ServiceReports::class);
+        $this->getJson('/admin/reports/services')
+            ->assertForbidden();
     }
 
     public function test_service_reports_route_with_id_deep_links_to_selected_service(): void

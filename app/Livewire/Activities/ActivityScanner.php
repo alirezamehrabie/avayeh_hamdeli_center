@@ -11,6 +11,11 @@ use Livewire\Component;
 
 class ActivityScanner extends Component
 {
+    public function boot(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
+    }
+
     public int $activityId;
     public string $mode = 'check-in';
     public string $scanStatus = 'initializing';
@@ -22,7 +27,7 @@ class ActivityScanner extends Component
 
     public function mount(int $activityId): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         $this->activityId = $activityId;
         abort_unless((bool) $this->activity, 404);
@@ -35,7 +40,7 @@ class ActivityScanner extends Component
 
     public function setMode(string $mode): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         if (! in_array($mode, ['check-in', 'check-out'], true) || $mode === $this->mode) {
             return;
@@ -58,7 +63,7 @@ class ActivityScanner extends Component
 
     public function resolveScannedQr(string $payload): array
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         $activity = $this->activity;
         abort_unless($activity, 404);
@@ -75,7 +80,7 @@ class ActivityScanner extends Component
 
     public function manualCheckIn(): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         $activity = $this->activity;
         abort_unless($activity, 404);
@@ -93,14 +98,14 @@ class ActivityScanner extends Component
 
     public function selectManualPerson(int $personId): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         $this->selectedPersonId = $personId;
     }
 
     public function resumeScanning(): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         if ($this->activity?->status !== 'ongoing') {
             $this->scanStatus = 'paused';

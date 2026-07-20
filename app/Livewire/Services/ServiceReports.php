@@ -20,6 +20,11 @@ class ServiceReports extends Component
 {
     use SummarizesServiceDeliveries;
 
+    public function boot(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
+    }
+
     public ?int $selectedServiceId = null;
 
     public string $search = '';
@@ -215,7 +220,7 @@ class ServiceReports extends Component
 
     public function mount(?int $selectedServiceId = null): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         $this->selectedServiceId = $selectedServiceId;
     }
@@ -246,7 +251,7 @@ class ServiceReports extends Component
 
     public function exportToExcel()
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         $service = $this->selectedService;
 

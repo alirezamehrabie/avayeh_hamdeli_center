@@ -22,6 +22,11 @@ class GateReport extends Component
 {
     use WithPagination;
 
+    public function boot(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
+    }
+
     public ?int $selectedServiceId = null;
 
     public string $serviceSearch = '';
@@ -46,7 +51,7 @@ class GateReport extends Component
 
     public function mount(): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
     }
 
     public function selectService(int $serviceId): void

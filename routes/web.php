@@ -130,7 +130,7 @@ Route::get('/admin/services/service-delivery/beneficiary', DashboardHome::class)
     ->name('admin.service-delivery.beneficiary');
 
 Route::get('/admin/reports/services', DashboardHome::class)
-    ->middleware(['auth', 'can:access-admin-panel'])
+    ->middleware(['auth', 'can:full-access'])
     ->name('admin.service-reports');
 
 Route::get('/admin/activities/activity-definition', DashboardHome::class)
@@ -138,7 +138,7 @@ Route::get('/admin/activities/activity-definition', DashboardHome::class)
     ->name('admin.activity-definition');
 
 Route::get('/admin/activities/activity-list', DashboardHome::class)
-    ->middleware(['auth', 'can:access-admin-panel'])
+    ->middleware(['auth', 'can:full-access'])
     ->name('admin.activity-list');
 
 Route::get('/admin/activities/activity-operator-assignments', DashboardHome::class)
@@ -146,11 +146,11 @@ Route::get('/admin/activities/activity-operator-assignments', DashboardHome::cla
     ->name('admin.activity-operator-assignments');
 
 Route::post('/admin/activities/{activity}/check-in/qr', [ActivityCheckInController::class, 'qr'])
-    ->middleware(['auth', 'can:access-admin-panel'])
+    ->middleware(['auth', 'can:full-access'])
     ->name('admin.activities.check-in.qr');
 
 Route::post('/admin/activities/{activity}/check-out/qr', [ActivityCheckInController::class, 'qrCheckOut'])
-    ->middleware(['auth', 'can:access-admin-panel'])
+    ->middleware(['auth', 'can:full-access'])
     ->name('admin.activities.check-out.qr');
 
 Route::get('/admin/system-settings/user-definition', DashboardHome::class)
@@ -230,11 +230,11 @@ Route::get('/child-supporter/dashboard', ChildSupporterDashboard::class)
     ->name('child-supporter.dashboard');
 
 Route::get('/admin/child-supporters/sponsor-registration', SponsorRegistration::class)
-    ->middleware(['auth', 'can:access-admin-panel'])
+    ->middleware(['auth', 'can:full-access'])
     ->name('admin.child-supporters.sponsor-registration');
 
 Route::get('/admin/child-supporters/sponsors', SponsorList::class)
-    ->middleware(['auth', 'can:access-admin-panel'])
+    ->middleware(['auth', 'can:full-access'])
     ->name('admin.child-supporters.sponsor-list');
 
 Route::get('/child-supporter/system-settings/user-account', ChildSupporterUserAccount::class)

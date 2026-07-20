@@ -11,7 +11,7 @@ class ActivityCheckInController extends Controller
 {
     public function qr(Request $request, Activity $activity, ActivityCheckInService $checkInService): JsonResponse
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         $validated = $request->validate([
             'token' => ['required', 'string', 'max:2048'],
@@ -24,7 +24,7 @@ class ActivityCheckInController extends Controller
 
     public function qrCheckOut(Request $request, Activity $activity, ActivityCheckInService $checkInService): JsonResponse
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         $validated = $request->validate([
             'token' => ['required', 'string', 'max:2048'],

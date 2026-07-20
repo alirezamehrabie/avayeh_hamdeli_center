@@ -19,6 +19,11 @@ class ActivityList extends Component
 {
     use WithPagination;
 
+    public function boot(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
+    }
+
     private const ACTIVITIES_PER_PAGE = 12;
     private const ATTENDANCES_DISPLAY_LIMIT = 75;
 
@@ -40,7 +45,7 @@ class ActivityList extends Component
 
     public function mount(): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
     }
 
     public function createActivity(): void
@@ -67,7 +72,7 @@ class ActivityList extends Component
 
     public function openScanner(int $activityId): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         $this->dispatch('open-dashboard-section', section: 'activity-scanner', id: $activityId);
     }
@@ -384,7 +389,7 @@ class ActivityList extends Component
 
     public function exportAttendances(): mixed
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
         abort_unless($this->selectedActivity, 404);
 
         $activity = $this->selectedActivity;

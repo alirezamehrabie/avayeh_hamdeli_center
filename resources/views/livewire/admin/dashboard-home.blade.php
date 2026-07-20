@@ -380,6 +380,7 @@
                                     </div>
                                 </button>
 
+                                @can('full-access')
                                 <button type="button" wire:click="selectSection('advanced-gate-report')" class="group relative text-right overflow-hidden rounded-xl border border-rose-100 bg-gradient-to-br from-rose-50 to-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-rose-100">
                                     <span class="absolute inset-y-0 right-0 w-1 bg-rose-500"></span>
                                     <div class="flex items-start justify-between">
@@ -395,6 +396,7 @@
                                         </div>
                                     </div>
                                 </button>
+                                @endcan
                             </div>
                         </div>
                         @break
@@ -681,6 +683,7 @@
                                         </span>
                                     </button>
 
+                                    @can('full-access')
                                     <button
                                         type="button"
                                         wire:click="selectSection('activity-definition')"
@@ -696,7 +699,9 @@
                                             </svg>
                                         </span>
                                     </button>
+                                    @endcan
 
+                                    @can('full-access')
                                     <button
                                         type="button"
                                         wire:click="selectSection('child-supporter-sponsor-registration')"
@@ -712,6 +717,7 @@
                                             </svg>
                                         </span>
                                     </button>
+                                    @endcan
 
                                     <button
                                         type="button"
