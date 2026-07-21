@@ -165,6 +165,7 @@
                             <button
                                 type="button"
                                 x-on:click="dropdownOpen ? closeDropdown() : openDropdown()"
+                                x-bind:class="{ 'service-selector-highlight service-selector-highlight--2xl': ! selectedServiceId }"
                                 class="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-right text-slate-700 shadow-sm transition hover:border-slate-400 focus:border-cyan-400 focus:outline-none focus:ring-4 focus:ring-cyan-100"
                             >
                                 <span class="min-w-0 text-right">

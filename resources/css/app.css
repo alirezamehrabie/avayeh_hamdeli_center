@@ -193,6 +193,12 @@ body {
     }
 }
 
+/* Radius variant for rounded-2xl (1rem) triggers, e.g. the quota manager's
+   service/campaign selector. */
+.service-selector-highlight--2xl::before {
+    border-radius: 1.125rem; /* rounded-2xl (1rem) + 2px inset */
+}
+
 /*
  * Subtle next-step cue for recipient selection after a service is chosen.
  * The masked overlay sits inside the existing trigger edge, so it does not
