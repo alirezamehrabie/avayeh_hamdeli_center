@@ -561,7 +561,13 @@
                                                 this.socialWorkerOptions[this.activeSocialWorkerIndex]?.click();
                                             },
                                             selectSocialWorkerOption(workerId) {
-                                                $wire.addSocialWorker(workerId);
+                                                $wire.addSocialWorker(workerId).then(() => {
+                                                    requestAnimationFrame(() => {
+                                                        window.dispatchEvent(new CustomEvent('service-worker-added', {
+                                                            detail: { workerId: Number(workerId) },
+                                                        }));
+                                                    });
+                                                });
                                                 this.$dispatch('mark-unsaved-changes');
                                                 this.closeSocialWorkerDropdown();
                                                 this.$nextTick(() => this.$refs.socialWorkerSearch?.focus());
@@ -720,7 +726,16 @@
                                         <div
                                             class="rounded-2xl border border-slate-200 bg-slate-50 p-3"
                                             wire:key="selected-worker-{{ $worker->id }}"
-                                            x-data="{ workerOpen: false }"
+                                            x-data="{ workerOpen: {{ $errors->has('allocations.'.$worker->id.'.*') ? 'true' : 'false' }} }"
+                                            x-on:service-worker-added.window="
+                                                if (Number($event.detail?.workerId) === {{ $worker->id }}) {
+                                                    workerOpen = true;
+                                                    $nextTick(() => {
+                                                        $el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                        $el.querySelector('input')?.focus({ preventScroll: true });
+                                                    });
+                                                }
+                                            "
                                         >
                                             <div class="flex items-center justify-between gap-2">
                                                 <button
