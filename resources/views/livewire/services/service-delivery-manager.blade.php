@@ -65,10 +65,10 @@
     class="space-y-4"
 >
     <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="bg-gradient-to-l from-indigo-700 via-sky-700 to-cyan-700 px-5 py-4 text-white">
+        <div class="bg-gradient-to-l from-indigo-700 via-sky-700 to-cyan-700 px-4 py-3.5 text-white sm:px-5 sm:py-4">
             <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
                 <div class="min-w-0">
-                    <h1 class="mt-1 truncate text-2xl font-extrabold leading-7 text-white">مدیریت سهمیه خدمات</h1>
+                    <h1 class="mt-1 truncate text-xl font-extrabold leading-7 text-white sm:text-2xl">مدیریت سهمیه خدمات</h1>
                     <p class="mt-1.5 hidden max-w-2xl text-xs leading-6 text-sky-50/90 lg:block">
                         در این بخش فقط سهمیه مددکاران برای هر آیتم خدمت یا پویش مشخص می‌شود.
                     </p>
@@ -101,7 +101,7 @@
             </div>
         </div>
 
-        <div class="space-y-4 px-4 py-4">
+        <div class="space-y-4 px-3 py-3 sm:px-4 sm:py-4">
             @if ($errors->any())
                 <div class="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                     <p class="font-bold">لطفا خطاهای فرم را بررسی کنید.</p>
@@ -153,8 +153,8 @@
                 </div>
             </div>
 
-            <div class="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
-                <aside class="space-y-4">
+            <div class="grid gap-4 xl:grid-cols-[340px_minmax(0,1fr)] xl:gap-5">
+                <aside class="space-y-3 xl:sticky xl:top-4 xl:self-start">
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                         <label class="mb-2 block text-sm font-black text-slate-800">انتخاب خدمت / پویش</label>
                         <div
@@ -229,50 +229,67 @@
                         </div>
                     </div>
 
-                    <div class="rounded-2xl border border-slate-200 bg-white p-4">
-                        <div class="mb-3 flex items-center justify-between gap-3">
-                            <h2 class="text-sm font-black text-slate-800">خدمات آماده تخصیص</h2>
-                            <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">{{ $services->count() }}</span>
-                        </div>
+                    <div
+                        class="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4"
+                        x-data="{ serviceListOpen: false }"
+                    >
+                        <button
+                            type="button"
+                            x-on:click="serviceListOpen = ! serviceListOpen"
+                            x-bind:aria-expanded="serviceListOpen.toString()"
+                            aria-controls="assignable-service-list"
+                            class="flex w-full items-center justify-between gap-3 rounded-xl text-right focus:outline-none focus:ring-2 focus:ring-cyan-100"
+                        >
+                            <span class="flex items-center gap-2">
+                                <span class="text-sm font-black text-slate-800">خدمات آماده تخصیص</span>
+                                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">{{ $services->count() }}</span>
+                            </span>
+                            <svg class="h-4 w-4 shrink-0 text-slate-400 transition" x-bind:class="serviceListOpen ? 'rotate-180' : ''" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.51a.75.75 0 0 1-1.08 0l-4.25-4.51a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
 
-                        <div class="max-h-[520px] space-y-2 overflow-y-auto pr-1">
-                            @forelse($services as $service)
-                                @php
-                                    $allocated = (float) $service->allocated_quantity;
-                                    $total = (float) $service->total_quantity;
-                                    $percent = $total > 0 ? min(100, ($allocated / $total) * 100) : 0;
-                                @endphp
+                        <div id="assignable-service-list" x-show="serviceListOpen" x-collapse.duration.250ms x-cloak>
+                            <div class="mt-3 max-h-[300px] space-y-2 overflow-y-auto overscroll-contain pl-1 xl:max-h-[420px]">
+                                @forelse($services as $service)
+                                    @php
+                                        $allocated = (float) $service->allocated_quantity;
+                                        $total = (float) $service->total_quantity;
+                                        $percent = $total > 0 ? min(100, ($allocated / $total) * 100) : 0;
+                                    @endphp
 
-                                <button
-                                    type="button"
-                                    wire:click="$set('selectedServiceId', {{ $service->id }})"
-                                    class="w-full rounded-2xl border px-4 py-3 text-right transition hover:border-cyan-300 hover:bg-cyan-50/60 {{ (int) $selectedServiceId === (int) $service->id ? 'border-cyan-400 bg-cyan-50' : 'border-slate-200 bg-white' }}"
-                                >
-                                    <div class="flex items-start justify-between gap-3">
-                                        <div class="min-w-0">
-                                            <p class="truncate text-sm font-black text-slate-800">{{ $service->name ?: ($service->serviceName?->name ?? '-') }}</p>
-                                            <p class="mt-1 text-[11px] font-bold text-slate-500">{{ $service->code }} - {{ $service->categories->count() }} آیتم</p>
+                                    <button
+                                        type="button"
+                                        wire:key="assignable-service-{{ $service->id }}"
+                                        wire:click="$set('selectedServiceId', {{ $service->id }})"
+                                        class="w-full rounded-xl border px-3 py-2.5 text-right transition hover:border-cyan-300 hover:bg-cyan-50/60 {{ (int) $selectedServiceId === (int) $service->id ? 'border-cyan-400 bg-cyan-50' : 'border-slate-200 bg-white' }}"
+                                    >
+                                        <div class="flex items-center justify-between gap-3">
+                                            <div class="min-w-0">
+                                                <p class="truncate text-sm font-black text-slate-800">{{ $service->name ?: ($service->serviceName?->name ?? '-') }}</p>
+                                                <p class="mt-0.5 text-[11px] font-bold text-slate-500">{{ $service->code }} - {{ $service->categories->count() }} آیتم</p>
+                                            </div>
+                                            <span class="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600">
+                                                {{ number_format($allocated, 2) }}
+                                            </span>
                                         </div>
-                                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">
-                                            {{ number_format($allocated, 2) }}
-                                        </span>
+                                        <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                                            <div class="h-full rounded-full bg-cyan-500" style="width: {{ $percent }}%"></div>
+                                        </div>
+                                    </button>
+                                @empty
+                                    <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                                        هنوز خدمتی برای تخصیص وجود ندارد.
                                     </div>
-                                    <div class="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
-                                        <div class="h-full rounded-full bg-cyan-500" style="width: {{ $percent }}%"></div>
-                                    </div>
-                                </button>
-                            @empty
-                                <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-                                    هنوز خدمتی برای تخصیص وجود ندارد.
-                                </div>
-                            @endforelse
+                                @endforelse
+                            </div>
                         </div>
                     </div>
                 </aside>
 
                 <main class="min-w-0">
                     @if(! $this->selectedService)
-                        <div class="flex min-h-[520px] items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
+                        <div class="flex min-h-[280px] items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center xl:min-h-[520px]">
                             <div>
                                 <p class="text-lg font-black text-slate-800">یک خدمت را انتخاب کنید</p>
                                 <p class="mt-2 max-w-md text-sm leading-6 text-slate-500">
@@ -284,20 +301,20 @@
                         @php($service = $this->selectedService)
 
                         <form wire:submit.prevent="requestSaveConfirmation" class="space-y-5">
-                            <section class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                            <section class="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
                                 <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                     <div class="min-w-0">
                                         <div class="flex flex-wrap gap-2">
                                             <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{{ $service->code }}</span>
                                             <span class="rounded-full bg-cyan-50 px-3 py-1 text-xs font-bold text-cyan-700">{{ \App\Models\Service::TYPE_OPTIONS[$service->service_type] ?? '-' }}</span>
                                         </div>
-                                        <h2 class="mt-3 text-xl font-black text-slate-900">{{ $service->name ?: ($service->serviceName?->name ?? '-') }}</h2>
+                                        <h2 class="mt-3 text-lg font-black text-slate-900 sm:text-xl">{{ $service->name ?: ($service->serviceName?->name ?? '-') }}</h2>
                                         @if($service->description)
-                                            <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-500">{{ $service->description }}</p>
+                                            <p class="mt-2 hidden max-w-3xl text-sm leading-6 text-slate-500 sm:block">{{ $service->description }}</p>
                                         @endif
                                     </div>
 
-                                    <div class="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:min-w-[520px]">
+                                    <div class="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:w-auto lg:shrink-0">
                                         <div class="rounded-2xl bg-slate-50 px-3 py-2.5">
                                             <p class="text-[11px] font-bold text-slate-500">ظرفیت کل</p>
                                             <p class="mt-1 text-sm font-black text-slate-900">{{ number_format((float) $service->total_quantity, 2) }}</p>
@@ -318,53 +335,68 @@
                                 </div>
                             </section>
 
-                            <section class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-                                <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-                                    <div>
-                                        <h2 class="text-base font-black text-slate-900">ساختار خدمت</h2>
-                                        <p class="mt-1 text-sm text-slate-500">این اطلاعات فقط خواندنی است و از تعریف خدمت می‌آید.</p>
-                                    </div>
-                                    <span class="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
-                                        نام خدمت → آیتم‌ها → مقدار قابل تخصیص
+                            <section
+                                class="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4"
+                                x-data="{ structureOpen: false }"
+                                wire:key="service-structure-{{ $service->id }}"
+                            >
+                                <button
+                                    type="button"
+                                    x-on:click="structureOpen = ! structureOpen"
+                                    x-bind:aria-expanded="structureOpen.toString()"
+                                    aria-controls="service-structure-panel"
+                                    class="flex w-full items-center justify-between gap-3 rounded-xl text-right focus:outline-none focus:ring-2 focus:ring-cyan-100"
+                                >
+                                    <span class="min-w-0">
+                                        <span class="block text-base font-black text-slate-900">ساختار خدمت</span>
+                                        <span class="mt-1 block text-xs text-slate-500 sm:text-sm">این اطلاعات فقط خواندنی است و از تعریف خدمت می‌آید.</span>
                                     </span>
-                                </div>
+                                    <span class="flex shrink-0 items-center gap-2">
+                                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">{{ $this->selectedServiceCategories->count() }} آیتم</span>
+                                        <svg class="h-4 w-4 text-slate-400 transition" x-bind:class="structureOpen ? 'rotate-180' : ''" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.51a.75.75 0 0 1-1.08 0l-4.25-4.51a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd" />
+                                        </svg>
+                                    </span>
+                                </button>
 
-                                <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                                    @foreach($this->selectedServiceCategories as $category)
-                                        @php($allocated = $this->allocationForCategory((int) $category->id))
-                                        @php($remaining = $this->remainingAssignableForCategory((int) $category->id))
-                                        @php($categoryTotal = (float) $category->quantity)
-                                        @php($categoryPercent = $categoryTotal > 0 ? min(100, ($allocated / $categoryTotal) * 100) : 0)
+                                <div id="service-structure-panel" x-show="structureOpen" x-collapse.duration.250ms x-cloak>
+                                    <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                        @foreach($this->selectedServiceCategories as $category)
+                                            @php($allocated = $this->allocationForCategory((int) $category->id))
+                                            @php($remaining = $this->remainingAssignableForCategory((int) $category->id))
+                                            @php($categoryTotal = (float) $category->quantity)
+                                            @php($categoryPercent = $categoryTotal > 0 ? min(100, ($allocated / $categoryTotal) * 100) : 0)
 
-                                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                                            <div class="flex items-start justify-between gap-3">
-                                                <div class="min-w-0">
-                                                    <p class="truncate text-sm font-black text-slate-900">{{ $category->name }}</p>
-                                                    <p class="mt-1 text-[11px] font-bold text-slate-500">{{ $category->code }}</p>
+                                            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3" wire:key="structure-category-{{ $category->id }}">
+                                                <div class="flex items-start justify-between gap-3">
+                                                    <div class="min-w-0">
+                                                        <p class="truncate text-sm font-black text-slate-900">{{ $category->name }}</p>
+                                                        <p class="mt-1 text-[11px] font-bold text-slate-500">{{ $category->code }}</p>
+                                                    </div>
+                                                    <span class="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600">
+                                                        {{ \App\Models\Service::unitOptions()[$category->unit] ?? $category->unit }}
+                                                    </span>
                                                 </div>
-                                                <span class="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600">
-                                                    {{ \App\Models\Service::unitOptions()[$category->unit] ?? $category->unit }}
-                                                </span>
+                                                <div class="mt-3 grid grid-cols-3 gap-2 text-center">
+                                                    <div class="rounded-xl bg-white px-2 py-2">
+                                                        <p class="text-[10px] font-bold text-slate-500">تعریف‌شده</p>
+                                                        <p class="mt-1 text-xs font-black text-slate-900">{{ number_format($categoryTotal, 2) }}</p>
+                                                    </div>
+                                                    <div class="rounded-xl bg-white px-2 py-2">
+                                                        <p class="text-[10px] font-bold text-cyan-700">تخصیص</p>
+                                                        <p class="mt-1 text-xs font-black text-cyan-800">{{ number_format($allocated, 2) }}</p>
+                                                    </div>
+                                                    <div class="rounded-xl bg-white px-2 py-2">
+                                                        <p class="text-[10px] font-bold text-emerald-700">باقی</p>
+                                                        <p class="mt-1 text-xs font-black text-emerald-800">{{ number_format($remaining, 2) }}</p>
+                                                    </div>
+                                                </div>
+                                                <div class="mt-3 h-2 overflow-hidden rounded-full bg-white">
+                                                    <div class="h-full rounded-full bg-cyan-500" style="width: {{ $categoryPercent }}%"></div>
+                                                </div>
                                             </div>
-                                            <div class="mt-3 grid grid-cols-3 gap-2 text-center">
-                                                <div class="rounded-xl bg-white px-2 py-2">
-                                                    <p class="text-[10px] font-bold text-slate-500">تعریف‌شده</p>
-                                                    <p class="mt-1 text-xs font-black text-slate-900">{{ number_format($categoryTotal, 2) }}</p>
-                                                </div>
-                                                <div class="rounded-xl bg-white px-2 py-2">
-                                                    <p class="text-[10px] font-bold text-cyan-700">تخصیص</p>
-                                                    <p class="mt-1 text-xs font-black text-cyan-800">{{ number_format($allocated, 2) }}</p>
-                                                </div>
-                                                <div class="rounded-xl bg-white px-2 py-2">
-                                                    <p class="text-[10px] font-bold text-emerald-700">باقی</p>
-                                                    <p class="mt-1 text-xs font-black text-emerald-800">{{ number_format($remaining, 2) }}</p>
-                                                </div>
-                                            </div>
-                                            <div class="mt-3 h-2 overflow-hidden rounded-full bg-white">
-                                                <div class="h-full rounded-full bg-cyan-500" style="width: {{ $categoryPercent }}%"></div>
-                                            </div>
-                                        </div>
-                                    @endforeach
+                                        @endforeach
+                                    </div>
                                 </div>
                             </section>
 
@@ -592,14 +624,29 @@
 
                                 <div class="space-y-3">
                                     @forelse($selectedWorkers as $worker)
-                                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                                            <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                                <div class="min-w-0">
-                                                    <p class="truncate text-sm font-black text-slate-900">{{ $worker->full_name }}</p>
-                                                    <p class="mt-1 text-xs font-bold text-slate-500">کد مددکاری: {{ $worker->worker_code }}</p>
-                                                </div>
-                                                <div class="flex items-center gap-2">
-                                                    <span class="rounded-full bg-white px-3 py-1 text-xs font-bold text-cyan-700">
+                                        <div
+                                            class="rounded-2xl border border-slate-200 bg-slate-50 p-3"
+                                            wire:key="selected-worker-{{ $worker->id }}"
+                                            x-data="{ workerOpen: false }"
+                                        >
+                                            <div class="flex items-center justify-between gap-2">
+                                                <button
+                                                    type="button"
+                                                    x-on:click="workerOpen = ! workerOpen"
+                                                    x-bind:aria-expanded="workerOpen.toString()"
+                                                    aria-controls="worker-allocation-panel-{{ $worker->id }}"
+                                                    class="flex min-w-0 flex-1 items-center gap-2 rounded-xl text-right focus:outline-none focus:ring-2 focus:ring-cyan-100"
+                                                >
+                                                    <svg class="h-4 w-4 shrink-0 text-slate-400 transition" x-bind:class="workerOpen ? 'rotate-180' : ''" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.51a.75.75 0 0 1-1.08 0l-4.25-4.51a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd" />
+                                                    </svg>
+                                                    <span class="min-w-0">
+                                                        <span class="block truncate text-sm font-black text-slate-900">{{ $worker->full_name }}</span>
+                                                        <span class="mt-0.5 block text-xs font-bold text-slate-500">کد مددکاری: {{ $worker->worker_code }}</span>
+                                                    </span>
+                                                </button>
+                                                <div class="flex shrink-0 items-center gap-2">
+                                                    <span class="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-cyan-700">
                                                         مجموع: {{ number_format($this->allocationForWorker((int) $worker->id), 2) }}
                                                     </span>
                                                     <button
@@ -612,36 +659,38 @@
                                                 </div>
                                             </div>
 
-                                            <div class="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-                                                @foreach($this->selectedServiceCategories as $category)
-                                                    <div class="rounded-2xl border border-slate-200 bg-white p-3">
-                                                        <div class="mb-2 flex items-start justify-between gap-2">
-                                                            <div class="min-w-0">
-                                                                <p class="truncate text-xs font-black text-slate-900">{{ $category->name }}</p>
-                                                                <p class="mt-1 text-[10px] font-bold text-slate-500">ظرفیت باقی: {{ number_format($this->remainingAssignableForCategory((int) $category->id), 2) }}</p>
+                                            <div id="worker-allocation-panel-{{ $worker->id }}" x-show="workerOpen" x-collapse.duration.250ms x-cloak>
+                                                <div class="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                                                    @foreach($this->selectedServiceCategories as $category)
+                                                        <div class="rounded-2xl border border-slate-200 bg-white p-3" wire:key="allocation-cell-{{ $worker->id }}-{{ $category->id }}">
+                                                            <div class="mb-2 flex items-start justify-between gap-2">
+                                                                <div class="min-w-0">
+                                                                    <p class="truncate text-xs font-black text-slate-900">{{ $category->name }}</p>
+                                                                    <p class="mt-1 text-[10px] font-bold text-slate-500">ظرفیت باقی: {{ number_format($this->remainingAssignableForCategory((int) $category->id), 2) }}</p>
+                                                                </div>
+                                                                <span class="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600">
+                                                                    {{ \App\Models\Service::unitOptions()[$category->unit] ?? $category->unit }}
+                                                                </span>
                                                             </div>
-                                                            <span class="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600">
-                                                                {{ \App\Models\Service::unitOptions()[$category->unit] ?? $category->unit }}
-                                                            </span>
+                                                            <label class="sr-only" for="allocation-{{ $worker->id }}-{{ $category->id }}">
+                                                                مقدار سهمیه {{ $worker->full_name }} برای {{ $category->name }}
+                                                            </label>
+                                                            <input
+                                                                id="allocation-{{ $worker->id }}-{{ $category->id }}"
+                                                                type="text"
+                                                                inputmode="decimal"
+                                                                pattern="^\d+(\.\d{1,2})?$"
+                                                                autocomplete="off"
+                                                                wire:model.live.debounce.250ms="allocations.{{ $worker->id }}.{{ $category->id }}"
+                                                                class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-sm font-black text-slate-900 focus:border-cyan-400 focus:outline-none focus:ring-4 focus:ring-cyan-100"
+                                                                placeholder="0"
+                                                            >
+                                                            @error('allocations.' . $worker->id . '.' . $category->id)
+                                                                <p class="mt-1 text-[11px] font-bold text-rose-600">{{ $message }}</p>
+                                                            @enderror
                                                         </div>
-                                                        <label class="sr-only" for="allocation-{{ $worker->id }}-{{ $category->id }}">
-                                                            مقدار سهمیه {{ $worker->full_name }} برای {{ $category->name }}
-                                                        </label>
-                                                        <input
-                                                            id="allocation-{{ $worker->id }}-{{ $category->id }}"
-                                                            type="text"
-                                                            inputmode="decimal"
-                                                            pattern="^\d+(\.\d{1,2})?$"
-                                                            autocomplete="off"
-                                                            wire:model.live.debounce.250ms="allocations.{{ $worker->id }}.{{ $category->id }}"
-                                                            class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-sm font-black text-slate-900 focus:border-cyan-400 focus:outline-none focus:ring-4 focus:ring-cyan-100"
-                                                            placeholder="0"
-                                                        >
-                                                        @error('allocations.' . $worker->id . '.' . $category->id)
-                                                            <p class="mt-1 text-[11px] font-bold text-rose-600">{{ $message }}</p>
-                                                        @enderror
-                                                    </div>
-                                                @endforeach
+                                                    @endforeach
+                                                </div>
                                             </div>
                                         </div>
                                     @empty
@@ -652,21 +701,21 @@
                                 </div>
                             </section>
 
-                            <div class="sticky bottom-3 z-10 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur-sm sm:static">
-                                <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                                    <div class="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-600">
-                                        <span class="rounded-full bg-slate-100 px-3 py-1">
+                            <div class="sticky bottom-3 z-10 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-lg shadow-slate-900/5 backdrop-blur-sm sm:p-4">
+                                <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                                    <div class="flex flex-wrap items-center gap-1.5 text-xs font-medium text-slate-600 sm:gap-2">
+                                        <span class="rounded-full bg-slate-100 px-2.5 py-1 sm:px-3">
                                             مددکاران: <span class="font-black text-slate-900">{{ $selectedWorkers->count() }}</span>
                                         </span>
-                                        <span class="rounded-full bg-slate-100 px-3 py-1">
+                                        <span class="rounded-full bg-slate-100 px-2.5 py-1 sm:px-3">
                                             تخصیص کل: <span class="font-black text-slate-900">{{ number_format($this->currentAllocatedTotal, 2) }}</span>
                                         </span>
-                                        <span class="rounded-full bg-cyan-50 px-3 py-1 text-cyan-700">
+                                        <span class="rounded-full bg-cyan-50 px-2.5 py-1 text-cyan-700 sm:px-3">
                                             باقی قابل تخصیص: <span class="font-black text-cyan-800">{{ number_format($this->remainingAssignableQuantity, 2) }}</span>
                                         </span>
                                     </div>
 
-                                    <div class="flex flex-col gap-2 sm:flex-row">
+                                    <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
                                         @if($showSavedSummary)
                                             <button
                                                 type="button"
@@ -695,9 +744,9 @@
                         </form>
 
                         @if($confirmingAllocationSave)
-                            <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
-                                <div class="w-full max-w-3xl rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl">
-                                    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 p-0 sm:items-center sm:px-4 sm:py-6">
+                                <div class="flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl border border-slate-200 bg-white shadow-2xl sm:max-h-[85dvh] sm:rounded-3xl">
+                                    <div class="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
                                         <div>
                                             <h3 class="text-lg font-black text-slate-900">تایید نهایی تخصیص سهمیه</h3>
                                             <p class="mt-1 text-sm leading-6 text-slate-500">
@@ -707,18 +756,18 @@
                                         <button
                                             type="button"
                                             wire:click="cancelSaveConfirmation"
-                                            class="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-black text-slate-600 transition hover:bg-slate-50"
+                                            class="w-fit rounded-full border border-slate-200 px-3 py-1.5 text-xs font-black text-slate-600 transition hover:bg-slate-50"
                                         >
                                             بستن
                                         </button>
                                     </div>
 
-                                    <div class="mt-4 grid gap-3 md:grid-cols-2">
+                                    <div class="grid gap-3 overflow-y-auto overscroll-contain p-4 sm:p-5 md:grid-cols-2">
                                         <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3">
                                             <p class="mb-2 text-sm font-black text-slate-800">جمع سهمیه مددکاران</p>
                                             <div class="max-h-56 space-y-2 overflow-y-auto">
                                                 @foreach($selectedWorkers as $worker)
-                                                    <div class="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2 text-sm">
+                                                    <div class="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2 text-sm" wire:key="confirm-worker-{{ $worker->id }}">
                                                         <span class="truncate font-bold text-slate-700">{{ $worker->full_name }}</span>
                                                         <span class="font-black text-cyan-700">{{ number_format($this->allocationForWorker((int) $worker->id), 2) }}</span>
                                                     </div>
@@ -730,7 +779,7 @@
                                             <p class="mb-2 text-sm font-black text-slate-800">جمع سهمیه آیتم‌ها</p>
                                             <div class="max-h-56 space-y-2 overflow-y-auto">
                                                 @foreach($this->selectedServiceCategories as $category)
-                                                    <div class="rounded-xl bg-white px-3 py-2 text-sm">
+                                                    <div class="rounded-xl bg-white px-3 py-2 text-sm" wire:key="confirm-category-{{ $category->id }}">
                                                         <div class="flex items-center justify-between gap-3">
                                                             <span class="truncate font-bold text-slate-700">{{ $category->name }}</span>
                                                             <span class="font-black text-cyan-700">{{ number_format($this->allocationForCategory((int) $category->id), 2) }}</span>
@@ -744,7 +793,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                                    <div class="flex flex-col-reverse gap-2 border-t border-slate-100 p-4 sm:flex-row sm:justify-end sm:p-5">
                                         <button
                                             type="button"
                                             wire:click="cancelSaveConfirmation"
