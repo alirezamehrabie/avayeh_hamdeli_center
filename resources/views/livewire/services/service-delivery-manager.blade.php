@@ -303,34 +303,34 @@
 
                         <form wire:submit.prevent="requestSaveConfirmation" class="space-y-5">
                             <section class="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
-                                <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                                <div class="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-start lg:justify-between">
                                     <div class="min-w-0">
-                                        <div class="flex flex-wrap gap-2">
-                                            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{{ $service->code }}</span>
-                                            <span class="rounded-full bg-cyan-50 px-3 py-1 text-xs font-bold text-cyan-700">{{ \App\Models\Service::TYPE_OPTIONS[$service->service_type] ?? '-' }}</span>
+                                        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                            <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 sm:px-3 sm:py-1 sm:text-xs">{{ $service->code }}</span>
+                                            <span class="rounded-full bg-cyan-50 px-2 py-0.5 text-[10px] font-bold text-cyan-700 sm:px-3 sm:py-1 sm:text-xs">{{ \App\Models\Service::TYPE_OPTIONS[$service->service_type] ?? '-' }}</span>
                                         </div>
-                                        <h2 class="mt-3 text-lg font-black text-slate-900 sm:text-xl">{{ $service->name ?: ($service->serviceName?->name ?? '-') }}</h2>
+                                        <h2 class="mt-2 text-base font-black leading-6 text-slate-900 sm:mt-3 sm:text-xl sm:leading-7">{{ $service->name ?: ($service->serviceName?->name ?? '-') }}</h2>
                                         @if($service->description)
                                             <p class="mt-2 hidden max-w-3xl text-sm leading-6 text-slate-500 sm:block">{{ $service->description }}</p>
                                         @endif
                                     </div>
 
-                                    <div class="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:w-auto lg:shrink-0">
-                                        <div class="rounded-2xl bg-slate-50 px-3 py-2.5">
-                                            <p class="text-[11px] font-bold text-slate-500">ظرفیت کل</p>
-                                            <p class="mt-1 text-sm font-black text-slate-900">{{ \App\Models\Service::formatQuantityForUnit((float) $service->total_quantity, null) }}</p>
+                                    <div class="grid grid-cols-4 gap-1.5 sm:gap-2 lg:w-auto lg:shrink-0">
+                                        <div class="rounded-xl bg-slate-50 px-1.5 py-2 text-center sm:rounded-2xl sm:px-3 sm:py-2.5 sm:text-right">
+                                            <p class="text-[10px] font-bold leading-4 text-slate-500 sm:text-[11px]">ظرفیت کل</p>
+                                            <p class="mt-0.5 text-xs font-black text-slate-900 sm:mt-1 sm:text-sm">{{ \App\Models\Service::formatQuantityForUnit((float) $service->total_quantity, null) }}</p>
                                         </div>
-                                        <div class="rounded-2xl bg-slate-50 px-3 py-2.5">
-                                            <p class="text-[11px] font-bold text-slate-500">آیتم‌ها</p>
-                                            <p class="mt-1 text-sm font-black text-slate-900">{{ $this->selectedServiceCategories->count() }}</p>
+                                        <div class="rounded-xl bg-slate-50 px-1.5 py-2 text-center sm:rounded-2xl sm:px-3 sm:py-2.5 sm:text-right">
+                                            <p class="text-[10px] font-bold leading-4 text-slate-500 sm:text-[11px]">آیتم‌ها</p>
+                                            <p class="mt-0.5 text-xs font-black text-slate-900 sm:mt-1 sm:text-sm">{{ $this->selectedServiceCategories->count() }}</p>
                                         </div>
-                                        <div class="rounded-2xl bg-cyan-50 px-3 py-2.5">
-                                            <p class="text-[11px] font-bold text-cyan-700">تخصیص فعلی</p>
-                                            <p class="mt-1 text-sm font-black text-cyan-800">{{ \App\Models\Service::formatQuantityForUnit($this->currentAllocatedTotal, null) }}</p>
+                                        <div class="rounded-xl bg-cyan-50 px-1.5 py-2 text-center sm:rounded-2xl sm:px-3 sm:py-2.5 sm:text-right">
+                                            <p class="text-[10px] font-bold leading-4 text-cyan-700 sm:text-[11px]">تخصیص فعلی</p>
+                                            <p class="mt-0.5 text-xs font-black text-cyan-800 sm:mt-1 sm:text-sm">{{ \App\Models\Service::formatQuantityForUnit($this->currentAllocatedTotal, null) }}</p>
                                         </div>
-                                        <div class="rounded-2xl bg-emerald-50 px-3 py-2.5">
-                                            <p class="text-[11px] font-bold text-emerald-700">باقی‌مانده</p>
-                                            <p class="mt-1 text-sm font-black text-emerald-800">{{ \App\Models\Service::formatQuantityForUnit($this->remainingAssignableQuantity, null) }}</p>
+                                        <div class="rounded-xl bg-emerald-50 px-1.5 py-2 text-center sm:rounded-2xl sm:px-3 sm:py-2.5 sm:text-right">
+                                            <p class="text-[10px] font-bold leading-4 text-emerald-700 sm:text-[11px]">باقی‌مانده</p>
+                                            <p class="mt-0.5 text-xs font-black text-emerald-800 sm:mt-1 sm:text-sm">{{ \App\Models\Service::formatQuantityForUnit($this->remainingAssignableQuantity, null) }}</p>
                                         </div>
                                     </div>
                                 </div>
