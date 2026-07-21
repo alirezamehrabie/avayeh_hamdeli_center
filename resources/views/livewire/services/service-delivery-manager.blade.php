@@ -95,7 +95,7 @@
                             <path d="M12 3v18M7.5 7.5h6.75a2.75 2.75 0 1 1 0 5.5H9.75a2.75 2.75 0 1 0 0 5.5H17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                         <span>سهمیه</span>
-                        <span class="font-black text-white">{{ number_format($this->currentAllocatedTotal, 2) }}</span>
+                        <span class="font-black text-white">{{ \App\Models\Service::formatQuantityForUnit($this->currentAllocatedTotal, null) }}</span>
                     </span>
                 </div>
             </div>
@@ -270,7 +270,7 @@
                                                 <p class="mt-0.5 text-[11px] font-bold text-slate-500">{{ $service->code }} - {{ $service->categories->count() }} آیتم</p>
                                             </div>
                                             <span class="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600">
-                                                {{ number_format($allocated, 2) }}
+                                                {{ \App\Models\Service::formatQuantityForUnit($allocated, null) }}
                                             </span>
                                         </div>
                                         <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
@@ -317,7 +317,7 @@
                                     <div class="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:w-auto lg:shrink-0">
                                         <div class="rounded-2xl bg-slate-50 px-3 py-2.5">
                                             <p class="text-[11px] font-bold text-slate-500">ظرفیت کل</p>
-                                            <p class="mt-1 text-sm font-black text-slate-900">{{ number_format((float) $service->total_quantity, 2) }}</p>
+                                            <p class="mt-1 text-sm font-black text-slate-900">{{ \App\Models\Service::formatQuantityForUnit((float) $service->total_quantity, null) }}</p>
                                         </div>
                                         <div class="rounded-2xl bg-slate-50 px-3 py-2.5">
                                             <p class="text-[11px] font-bold text-slate-500">آیتم‌ها</p>
@@ -325,11 +325,11 @@
                                         </div>
                                         <div class="rounded-2xl bg-cyan-50 px-3 py-2.5">
                                             <p class="text-[11px] font-bold text-cyan-700">تخصیص فعلی</p>
-                                            <p class="mt-1 text-sm font-black text-cyan-800">{{ number_format($this->currentAllocatedTotal, 2) }}</p>
+                                            <p class="mt-1 text-sm font-black text-cyan-800">{{ \App\Models\Service::formatQuantityForUnit($this->currentAllocatedTotal, null) }}</p>
                                         </div>
                                         <div class="rounded-2xl bg-emerald-50 px-3 py-2.5">
                                             <p class="text-[11px] font-bold text-emerald-700">باقی‌مانده</p>
-                                            <p class="mt-1 text-sm font-black text-emerald-800">{{ number_format($this->remainingAssignableQuantity, 2) }}</p>
+                                            <p class="mt-1 text-sm font-black text-emerald-800">{{ \App\Models\Service::formatQuantityForUnit($this->remainingAssignableQuantity, null) }}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -380,15 +380,15 @@
                                                 <div class="mt-3 grid grid-cols-3 gap-2 text-center">
                                                     <div class="rounded-xl bg-white px-2 py-2">
                                                         <p class="text-[10px] font-bold text-slate-500">تعریف‌شده</p>
-                                                        <p class="mt-1 text-xs font-black text-slate-900">{{ number_format($categoryTotal, 2) }}</p>
+                                                        <p class="mt-1 text-xs font-black text-slate-900">{{ \App\Models\Service::formatQuantityForUnit($categoryTotal, (string) $category->unit) }}</p>
                                                     </div>
                                                     <div class="rounded-xl bg-white px-2 py-2">
                                                         <p class="text-[10px] font-bold text-cyan-700">تخصیص</p>
-                                                        <p class="mt-1 text-xs font-black text-cyan-800">{{ number_format($allocated, 2) }}</p>
+                                                        <p class="mt-1 text-xs font-black text-cyan-800">{{ \App\Models\Service::formatQuantityForUnit($allocated, (string) $category->unit) }}</p>
                                                     </div>
                                                     <div class="rounded-xl bg-white px-2 py-2">
                                                         <p class="text-[10px] font-bold text-emerald-700">باقی</p>
-                                                        <p class="mt-1 text-xs font-black text-emerald-800">{{ number_format($remaining, 2) }}</p>
+                                                        <p class="mt-1 text-xs font-black text-emerald-800">{{ \App\Models\Service::formatQuantityForUnit($remaining, (string) $category->unit) }}</p>
                                                     </div>
                                                 </div>
                                                 <div class="mt-3 h-2 overflow-hidden rounded-full bg-white">
@@ -647,7 +647,7 @@
                                                 </button>
                                                 <div class="flex shrink-0 items-center gap-2">
                                                     <span class="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-cyan-700">
-                                                        مجموع: {{ number_format($this->allocationForWorker((int) $worker->id), 2) }}
+                                                        مجموع: {{ \App\Models\Service::formatQuantityForUnit($this->allocationForWorker((int) $worker->id), null) }}
                                                     </span>
                                                     <button
                                                         type="button"
@@ -666,7 +666,7 @@
                                                             <div class="mb-2 flex items-start justify-between gap-2">
                                                                 <div class="min-w-0">
                                                                     <p class="truncate text-xs font-black text-slate-900">{{ $category->name }}</p>
-                                                                    <p class="mt-1 text-[10px] font-bold text-slate-500">ظرفیت باقی: {{ number_format($this->remainingAssignableForCategory((int) $category->id), 2) }}</p>
+                                                                    <p class="mt-1 text-[10px] font-bold text-slate-500">ظرفیت باقی: {{ \App\Models\Service::formatQuantityForUnit($this->remainingAssignableForCategory((int) $category->id), (string) $category->unit) }}</p>
                                                                 </div>
                                                                 <span class="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600">
                                                                     {{ \App\Models\Service::unitOptions()[$category->unit] ?? $category->unit }}
@@ -708,10 +708,10 @@
                                             مددکاران: <span class="font-black text-slate-900">{{ $selectedWorkers->count() }}</span>
                                         </span>
                                         <span class="rounded-full bg-slate-100 px-2.5 py-1 sm:px-3">
-                                            تخصیص کل: <span class="font-black text-slate-900">{{ number_format($this->currentAllocatedTotal, 2) }}</span>
+                                            تخصیص کل: <span class="font-black text-slate-900">{{ \App\Models\Service::formatQuantityForUnit($this->currentAllocatedTotal, null) }}</span>
                                         </span>
                                         <span class="rounded-full bg-cyan-50 px-2.5 py-1 text-cyan-700 sm:px-3">
-                                            باقی قابل تخصیص: <span class="font-black text-cyan-800">{{ number_format($this->remainingAssignableQuantity, 2) }}</span>
+                                            باقی قابل تخصیص: <span class="font-black text-cyan-800">{{ \App\Models\Service::formatQuantityForUnit($this->remainingAssignableQuantity, null) }}</span>
                                         </span>
                                     </div>
 
@@ -769,7 +769,7 @@
                                                 @foreach($selectedWorkers as $worker)
                                                     <div class="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2 text-sm" wire:key="confirm-worker-{{ $worker->id }}">
                                                         <span class="truncate font-bold text-slate-700">{{ $worker->full_name }}</span>
-                                                        <span class="font-black text-cyan-700">{{ number_format($this->allocationForWorker((int) $worker->id), 2) }}</span>
+                                                        <span class="font-black text-cyan-700">{{ \App\Models\Service::formatQuantityForUnit($this->allocationForWorker((int) $worker->id), null) }}</span>
                                                     </div>
                                                 @endforeach
                                             </div>
@@ -782,10 +782,10 @@
                                                     <div class="rounded-xl bg-white px-3 py-2 text-sm" wire:key="confirm-category-{{ $category->id }}">
                                                         <div class="flex items-center justify-between gap-3">
                                                             <span class="truncate font-bold text-slate-700">{{ $category->name }}</span>
-                                                            <span class="font-black text-cyan-700">{{ number_format($this->allocationForCategory((int) $category->id), 2) }}</span>
+                                                            <span class="font-black text-cyan-700">{{ \App\Models\Service::formatQuantityForUnit($this->allocationForCategory((int) $category->id), (string) $category->unit) }}</span>
                                                         </div>
                                                         <p class="mt-1 text-[11px] font-bold text-slate-400">
-                                                            ظرفیت تعریف‌شده: {{ number_format((float) $category->quantity, 2) }}
+                                                            ظرفیت تعریف‌شده: {{ \App\Models\Service::formatQuantityForUnit((float) $category->quantity, (string) $category->unit) }}
                                                         </p>
                                                     </div>
                                                 @endforeach
