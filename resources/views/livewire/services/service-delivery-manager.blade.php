@@ -60,8 +60,99 @@
         closeSuccess() {
             this.successOpen = false;
         },
+        dirty: false,
+        pendingNavigationTrigger: null,
+        beforeUnloadHandler: null,
+        navigationCaptureHandler: null,
+        init() {
+            this.beforeUnloadHandler = (event) => {
+                if (! this.dirty || ! document.contains(this.$el)) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.returnValue = '';
+            };
+            window.addEventListener('beforeunload', this.beforeUnloadHandler);
+
+            this.navigationCaptureHandler = (event) => {
+                if (! this.dirty || ! document.contains(this.$el)) {
+                    return;
+                }
+
+                const trigger = event.target.closest('[wire\\:click]');
+
+                if (! trigger) {
+                    return;
+                }
+
+                const action = trigger.getAttribute('wire:click') || '';
+
+                if (! action.includes('open-dashboard-section') && ! action.includes('selectSection')) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                this.pendingNavigationTrigger = trigger;
+                this.openUnsavedChangesModal();
+            };
+            document.addEventListener('click', this.navigationCaptureHandler, true);
+
+            window.Livewire?.on('confirm-social-worker-remove', () => {
+                this.dirty = true;
+            });
+            window.Livewire?.on('service-delivery-discard-changes', () => this.discardChangesAndLeave());
+
+            this.$watch('selectedServiceId', () => {
+                this.dirty = false;
+            });
+        },
+        destroy() {
+            window.removeEventListener('beforeunload', this.beforeUnloadHandler);
+            document.removeEventListener('click', this.navigationCaptureHandler, true);
+        },
+        markDirty() {
+            this.dirty = true;
+        },
+        openUnsavedChangesModal() {
+            window.dispatchEvent(new CustomEvent('open-notification-modal', {
+                detail: {
+                    config: {
+                        type: 'warning',
+                        icon: 'warning',
+                        title: 'تغییرات ذخیره‌نشده',
+                        message: 'سهمیه‌های این خدمت هنوز ذخیره نشده‌اند. اگر از این بخش خارج شوید، تغییرات واردشده از بین می‌روند.',
+                        buttons: [
+                            {
+                                label: 'خروج بدون ذخیره',
+                                action: 'event',
+                                event: 'service-delivery-discard-changes',
+                                variant: 'danger',
+                            },
+                            {
+                                label: 'ماندن و ادامه ویرایش',
+                                action: 'close',
+                                variant: 'secondary',
+                            },
+                        ],
+                    },
+                },
+            }));
+        },
+        discardChangesAndLeave() {
+            this.dirty = false;
+
+            const trigger = this.pendingNavigationTrigger;
+            this.pendingNavigationTrigger = null;
+
+            if (trigger && document.contains(trigger)) {
+                this.$nextTick(() => trigger.click());
+            }
+        },
     }"
-    x-on:quota-assigned-success.window="openSuccess($event.detail?.message)"
+    x-on:quota-assigned-success.window="dirty = false; openSuccess($event.detail?.message)"
+    x-on:mark-unsaved-changes="markDirty()"
     class="space-y-4"
 >
     <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
@@ -471,6 +562,7 @@
                                             },
                                             selectSocialWorkerOption(workerId) {
                                                 $wire.addSocialWorker(workerId);
+                                                this.$dispatch('mark-unsaved-changes');
                                                 this.closeSocialWorkerDropdown();
                                                 this.$nextTick(() => this.$refs.socialWorkerSearch?.focus());
                                             },
@@ -650,6 +742,12 @@
                                                     <span class="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-cyan-700">
                                                         مجموع: {{ \App\Models\Service::formatQuantityForUnit($this->allocationForWorker((int) $worker->id), null) }}
                                                     </span>
+                                                    <?php
+                                                        $removeWorkerMessage = 'آیا از حذف «'.$worker->full_name.'» '
+                                                            .'(کد مددکاری: '.$worker->worker_code.') '
+                                                            .'از فهرست تخصیص این خدمت مطمئن هستید؟'."\n"
+                                                            .'سهمیه‌های واردشده برای این مددکار پاک می‌شود و پس از ذخیره نهایی، این عملیات ممکن است غیرقابل بازگشت باشد.';
+                                                    ?>
                                                     <button
                                                         type="button"
                                                         x-data="{
@@ -660,7 +758,7 @@
                                                                             type: 'warning',
                                                                             icon: 'warning',
                                                                             title: 'حذف مددکار از تخصیص',
-                                                                            message: @js('آیا از حذف «'.$worker->full_name.'» (کد مددکاری: '.$worker->worker_code.') از فهرست تخصیص این خدمت مطمئن هستید؟'."\n".'سهمیه‌های واردشده برای این مددکار پاک می‌شود و پس از ذخیره نهایی، این عملیات ممکن است غیرقابل بازگشت باشد.'),
+                                                                            message: {{ \Illuminate\Support\Js::from($removeWorkerMessage) }},
                                                                             buttons: [
                                                                                 {
                                                                                     label: 'تایید حذف',
@@ -718,6 +816,7 @@
                                                                 pattern="^\d+(\.\d{1,2})?$"
                                                                 autocomplete="off"
                                                                 wire:model.live.debounce.250ms="allocations.{{ $worker->id }}.{{ $category->id }}"
+                                                                x-on:input="$dispatch('mark-unsaved-changes')"
                                                                 class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-center text-sm font-black text-slate-900 focus:border-cyan-400 focus:outline-none focus:ring-4 focus:ring-cyan-100"
                                                                 placeholder="0"
                                                             >
