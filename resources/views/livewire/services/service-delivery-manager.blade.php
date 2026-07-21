@@ -652,10 +652,45 @@
                                                     </span>
                                                     <button
                                                         type="button"
-                                                        wire:click="removeSocialWorker({{ $worker->id }})"
-                                                        class="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700 transition hover:bg-rose-100"
+                                                        x-data="{
+                                                            confirmRemoveWorker() {
+                                                                window.dispatchEvent(new CustomEvent('open-notification-modal', {
+                                                                    detail: {
+                                                                        config: {
+                                                                            type: 'warning',
+                                                                            icon: 'warning',
+                                                                            title: 'حذف مددکار از تخصیص',
+                                                                            message: @js('آیا از حذف «'.$worker->full_name.'» (کد مددکاری: '.$worker->worker_code.') از فهرست تخصیص این خدمت مطمئن هستید؟'."\n".'سهمیه‌های واردشده برای این مددکار پاک می‌شود و پس از ذخیره نهایی، این عملیات ممکن است غیرقابل بازگشت باشد.'),
+                                                                            buttons: [
+                                                                                {
+                                                                                    label: 'تایید حذف',
+                                                                                    action: 'event',
+                                                                                    event: 'confirm-social-worker-remove',
+                                                                                    payload: { workerId: {{ $worker->id }} },
+                                                                                    variant: 'danger',
+                                                                                },
+                                                                                {
+                                                                                    label: 'انصراف',
+                                                                                    action: 'close',
+                                                                                    variant: 'secondary',
+                                                                                },
+                                                                            ],
+                                                                        },
+                                                                    },
+                                                                }));
+                                                            },
+                                                        }"
+                                                        x-on:click="confirmRemoveWorker()"
+                                                        wire:loading.attr="disabled"
+                                                        wire:target="removeSocialWorkerConfirmed"
+                                                        class="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
                                                     >
-                                                        حذف
+                                                        <svg wire:loading wire:target="removeSocialWorkerConfirmed" class="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                            <circle class="opacity-25" cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"></circle>
+                                                            <path class="opacity-90" d="M21 12a9 9 0 0 1-9 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                                                        </svg>
+                                                        <span wire:loading.remove wire:target="removeSocialWorkerConfirmed">حذف</span>
+                                                        <span wire:loading wire:target="removeSocialWorkerConfirmed">در حال حذف...</span>
                                                     </button>
                                                 </div>
                                             </div>

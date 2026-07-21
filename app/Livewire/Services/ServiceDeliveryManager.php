@@ -8,6 +8,7 @@ use App\Models\ServiceWorkerAllocation;
 use App\Models\SocialWorker;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class ServiceDeliveryManager extends Component
@@ -103,6 +104,12 @@ class ServiceDeliveryManager extends Component
         unset($this->allocations[$workerId]);
         $this->confirmingAllocationSave = false;
         $this->resetValidation();
+    }
+
+    #[On('confirm-social-worker-remove')]
+    public function removeSocialWorkerConfirmed(int $workerId): void
+    {
+        $this->removeSocialWorker($workerId);
     }
 
     public function requestSaveConfirmation(): void
