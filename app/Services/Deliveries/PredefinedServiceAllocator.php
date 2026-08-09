@@ -8,22 +8,6 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
-/**
- * Persists predefined-service worker allocations for the distribution operator
- * batch workflow.
- *
- * Business rules (shared with the batch creator UI, enforced here so they hold
- * regardless of caller):
- *  - each submitted worker group must carry at least one positive allocation row,
- *  - category stock is validated inside a transaction with row locks so several
- *    workers sharing the same pool can never over-draw it,
- *  - an existing allocation may only be overwritten by the operator who created
- *    it — another operator's allocation is protected.
- *
- * The thrown {@see ValidationException} keys mirror the Livewire
- * `predefinedWorkerGroups.*` property paths so the component surfaces field
- * errors without any translation layer.
- */
 class PredefinedServiceAllocator
 {
     /**
@@ -50,9 +34,7 @@ class PredefinedServiceAllocator
                 ->whereIn('service_category_id', $categoryIds->all())
                 ->lockForUpdate()
                 ->get();
-            // Base stock already consumed per category by allocations that belong
-            // to workers NOT part of this submit; the submitted workers share the
-            // remaining stock, so their own current rows are excluded here.
+
             $submittedWorkerIds = $groups->pluck('worker_id')->map(fn ($id): int => (int) $id)->all();
             $baseAllocatedByCategory = $lockedAllocations
                 ->whereNotIn('social_worker_id', $submittedWorkerIds)
@@ -61,8 +43,7 @@ class PredefinedServiceAllocator
             $existingByWorkerAndCategory = $lockedAllocations
                 ->keyBy(fn (ServiceWorkerAllocation $allocation): string => $allocation->service_category_id.':'.$allocation->social_worker_id);
 
-            // Running total of what the submitted workers claim per category, so
-            // the shared pool can never be over-drawn across several workers.
+
             $claimedByCategory = [];
 
             foreach ($groups as $group) {

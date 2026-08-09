@@ -37,10 +37,7 @@ class Guardian extends Model
 
     protected $table = 'guardians';
 
-    /**
-     * فیلدهای قابل پر شدن
-     * ✅ فیلدهای جدید تاریخ تولد شمسی
-     */
+
     protected $fillable = [
         'social_worker_id',
         'guardian_code',
@@ -48,13 +45,13 @@ class Guardian extends Model
         'first_name',
         'last_name',
 
-        // فیلدهای جدید تاریخ تولد شمسی
+
         'guardian_birth_day',
         'guardian_birth_month',
         'guardian_birth_year',
         'guardian_birth_date_full',
 
-        // سایر فیلدها
+
         'occupation_id',
         'job_type_id',
         'guardian_phone_number',
@@ -187,13 +184,7 @@ class Guardian extends Model
         };
     }
 
-    // ═══════════════════════════════════════════════════════════════════
-    // 🔹 Accessors - محاسبه سن سرپرست
-    // ═══════════════════════════════════════════════════════════════════
 
-    /**
-     * محاسبه سن سرپرست (فقط بر اساس سال)
-     */
     public function getGuardianAgeAttribute(): ?int
     {
         if (! $this->guardian_birth_year) {
@@ -205,9 +196,7 @@ class Guardian extends Model
         return $currentJalaliYear - $this->guardian_birth_year;
     }
 
-    /**
-     * محاسبه سن دقیق سرپرست (با در نظر گرفتن روز و ماه)
-     */
+
     public function getGuardianExactAgeAttribute(): ?int
     {
         if (! $this->guardian_birth_year || ! $this->guardian_birth_month || ! $this->guardian_birth_day) {
@@ -268,10 +257,6 @@ class Guardian extends Model
 
         return implode(' - ', array_filter([$fullName, $guardianCode])) ?: '-';
     }
-
-    // ═══════════════════════════════════════════════════════════════════
-    // 🔹 Scopes - برای فیلتر و گزارش‌گیری
-    // ═══════════════════════════════════════════════════════════════════
 
     /**
      * سرپرستانی که امروز تولدشان است
