@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Models\Person;
 use App\Models\QrIdentity;
+use App\Models\SocialWorker;
 use App\Services\QrIdentityService;
 use Livewire\Component;
 use Maatwebsite\Excel\Facades\Excel;
@@ -25,6 +26,14 @@ class PrintClientCard extends Component
     public array $printList = [];
 
     public bool $showSearchResults = false;
+
+    public string $socialWorkerSearch = '';
+
+    public ?int $selectedSocialWorkerId = null;
+
+    public array $socialWorkerOptions = [];
+
+    public bool $loadingSocialWorkerClients = false;
 
     public function mount(): void
     {
@@ -203,6 +212,98 @@ class PrintClientCard extends Component
                 ];
             }
         }, $filename);
+    }
+
+    public function updatedSocialWorkerSearch(): void
+    {
+        $term = trim($this->socialWorkerSearch);
+
+        if (mb_strlen($term) < 2) {
+            $this->socialWorkerOptions = [];
+            return;
+        }
+
+        $normalized = Person::normalizeSearchText($term);
+
+        $this->socialWorkerOptions = SocialWorker::query()
+            ->select(['id', 'first_name', 'last_name', 'worker_code'])
+            ->where(function ($q) use ($term, $normalized) {
+                $q->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$normalized}%"])
+                    ->orWhere('worker_code', 'LIKE', "%{$term}%");
+            })
+            ->orderBy('first_name')
+            ->limit(15)
+            ->get()
+            ->map(fn (SocialWorker $sw) => [
+                'id' => $sw->id,
+                'name' => trim($sw->first_name . ' ' . $sw->last_name),
+                'code' => (string) $sw->worker_code,
+            ])
+            ->toArray();
+    }
+
+    public function selectSocialWorker(int $socialWorkerId): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+
+        $this->selectedSocialWorkerId = $socialWorkerId;
+        $this->socialWorkerSearch = '';
+        $this->socialWorkerOptions = [];
+    }
+
+    public function clearSocialWorkerSelection(): void
+    {
+        $this->selectedSocialWorkerId = null;
+    }
+
+    public function addSocialWorkerClientsToPrintList(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+
+        if (! $this->selectedSocialWorkerId) {
+            session()->flash('error', 'لطفاً ابتدا یک مددکار انتخاب کنید.');
+            return;
+        }
+
+        $this->loadingSocialWorkerClients = true;
+
+        $existingIds = collect($this->printList)->pluck('id')->all();
+
+        $people = Person::query()
+            ->select(['people.id', 'people.first_name', 'people.last_name', 'people.national_id', 'people.person_code'])
+            ->join('guardians', 'people.guardian_id', '=', 'guardians.id')
+            ->where('guardians.social_worker_id', $this->selectedSocialWorkerId)
+            ->whereNotIn('id', $existingIds)
+            ->get();
+
+        $addedCount = 0;
+
+        foreach ($people as $person) {
+            $this->printList[] = [
+                'id' => $person->id,
+                'full_name' => $person->full_name ?: trim($person->first_name . ' ' . $person->last_name) ?: '-',
+                'national_id' => $person->national_id ?: '-',
+                'person_code' => $person->person_code ?: '-',
+            ];
+            $addedCount++;
+        }
+
+        $this->loadingSocialWorkerClients = false;
+
+        if ($addedCount === 0) {
+            session()->flash('error', 'تمام مددجویان این مددکار قبلاً به لیست چاپ اضافه شده‌اند.');
+        } else {
+            session()->flash('success', "{$addedCount} مددجو از مددکار انتخاب‌شده به لیست چاپ اضافه شد.");
+        }
+    }
+
+    public function getSelectedSocialWorkerProperty(): ?SocialWorker
+    {
+        if (! $this->selectedSocialWorkerId) {
+            return null;
+        }
+
+        return SocialWorker::query()->find($this->selectedSocialWorkerId);
     }
 
     public function render()

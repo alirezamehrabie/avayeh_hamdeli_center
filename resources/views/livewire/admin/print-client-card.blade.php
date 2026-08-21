@@ -65,6 +65,67 @@
                         </div>
                     @endif
                 </div>
+
+                {{-- Social Worker Selector --}}
+                <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-5">
+                    <h2 class="text-base font-semibold text-slate-800 mb-4">افزودن مددجویان یک مددکار</h2>
+
+                    @if($selectedSocialWorkerId && $this->selectedSocialWorker)
+                        <div class="mb-3 flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+                            <div>
+                                <p class="text-sm font-semibold text-emerald-800">{{ $this->selectedSocialWorker->first_name }} {{ $this->selectedSocialWorker->last_name }}</p>
+                                <p class="text-xs text-emerald-600">کد مددکار: {{ $this->selectedSocialWorker->worker_code }}</p>
+                            </div>
+                            <button
+                                type="button"
+                                wire:click="clearSocialWorkerSelection"
+                                class="inline-flex items-center justify-center rounded-lg border border-emerald-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 focus:outline-none focus:ring-4 focus:ring-emerald-100"
+                            >
+                                تغییر مددکار
+                            </button>
+                        </div>
+
+                        <button
+                            type="button"
+                            wire:click="addSocialWorkerClientsToPrintList"
+                            wire:loading.attr="disabled"
+                            wire:target="addSocialWorkerClientsToPrintList"
+                            class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100 disabled:opacity-60"
+                        >
+                            <svg wire:loading wire:target="addSocialWorkerClientsToPrintList" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            افزودن تمام مددجویان این مددکار به لیست چاپ
+                        </button>
+                    @else
+                        <input
+                            type="text"
+                            wire:model.live.debounce.300ms="socialWorkerSearch"
+                            placeholder="نام یا کد مددکار را جستجو کنید..."
+                            class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:ring focus:ring-indigo-100"
+                        >
+
+                        @if(!empty($socialWorkerOptions))
+                            <div class="mt-2 max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white">
+                                @foreach($socialWorkerOptions as $sw)
+                                    <button
+                                        type="button"
+                                        wire:click="selectSocialWorker({{ $sw['id'] }})"
+                                        class="flex w-full items-center justify-between border-b border-slate-100 px-3 py-2.5 text-right last:border-b-0 hover:bg-slate-50 transition"
+                                    >
+                                        <span class="text-sm font-medium text-slate-800">{{ $sw['name'] }}</span>
+                                        <span class="text-xs text-slate-500">کد: {{ $sw['code'] }}</span>
+                                    </button>
+                                @endforeach
+                            </div>
+                        @elseif(mb_strlen(trim($socialWorkerSearch)) >= 2 && empty($socialWorkerOptions))
+                            <div class="mt-2 rounded-lg border border-dashed border-slate-200 bg-white p-3 text-center text-sm text-slate-500">
+                                مددکاری یافت نشد.
+                            </div>
+                        @endif
+                    @endif
+                </div>
             </div>
 
             {{-- Print List Section --}}
