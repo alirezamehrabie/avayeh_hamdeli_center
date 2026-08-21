@@ -604,6 +604,9 @@
                         <livewire:admin.id-card-scanner :key="'special-features-id-card-scanner'" />
                         @break
 
+                    @case('special-features-print-client-card')
+                        <livewire:admin.print-client-card :key="'special-features-print-client-card'" />
+                        @break
 
                     @default
                         <div>

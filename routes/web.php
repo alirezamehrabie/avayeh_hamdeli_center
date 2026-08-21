@@ -229,6 +229,10 @@ Route::get('/child-supporter/dashboard', ChildSupporterDashboard::class)
     ->middleware(['auth', 'can:access-child-supporter-panel'])
     ->name('child-supporter.dashboard');
 
+Route::get('/admin/special-features/print-client-card', DashboardHome::class)
+    ->middleware(['auth', 'can:access-admin-panel'])
+    ->name('admin.special-features.print-client-card');
+
 Route::get('/admin/child-supporters/sponsor-registration', SponsorRegistration::class)
     ->middleware(['auth', 'can:full-access'])
     ->name('admin.child-supporters.sponsor-registration');

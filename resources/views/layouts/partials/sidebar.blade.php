@@ -58,7 +58,7 @@
         $servicesOpen = $dashboardMode ? $isActive(['service-definition', 'service-management', 'service-list', 'service-delivery', 'service-delivery-social-worker', 'service-delivery-beneficiary', 'service-archive']) : false;
         $activitiesOpen = $dashboardMode ? $isActive(['activity-definition', 'activity-list', 'activity-scanner', 'activity-operator-assignments']) : false;
         $childSupporterOpen = $dashboardMode ? $isActive(['child-supporter-sponsor-registration', 'child-supporter-sponsor-edit', 'child-supporter-sponsor-list']) : false;
-        $specialFeaturesOpen = $dashboardMode ? $isActive(['special-features-id-card-scanner']) : false;
+        $specialFeaturesOpen = $dashboardMode ? $isActive(['special-features-id-card-scanner', 'special-features-print-client-card']) : false;
         $notificationsOpen = $dashboardMode ? $isActive(['notifications-center', 'notifications-settings']) : false;
         $userManagementOpen = $dashboardMode ? $isActive(['system-settings-user-definition', 'system-settings-user-list']) : request()->routeIs('admin.user-definition') || request()->routeIs('admin.user-management') || request()->routeIs('admin.user-list');
         $systemSettingsOpen = $dashboardMode ? $isActive(['system-settings-user-account']) : request()->routeIs('admin.user-account');
@@ -123,6 +123,7 @@
             ],
             'special-features' => [
                 ['section' => 'special-features-id-card-scanner', 'label' => 'اسکن کارت شناسایی'],
+                ['section' => 'special-features-print-client-card', 'label' => 'چاپ کارت مددجو'],
             ],
             'notifications' => [
                 ['section' => 'notifications-center', 'label' => 'مرکز اعلان‌ها', 'badge' => $unreadNotificationsCount],

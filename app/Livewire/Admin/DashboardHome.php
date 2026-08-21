@@ -97,6 +97,8 @@ class DashboardHome extends Component
             $this->activeSection = 'activity-operator-assignments';
         } elseif (! request()->has('section') && request()->routeIs('admin.special-features.id-card-scanner')) {
             $this->activeSection = 'special-features-id-card-scanner';
+        } elseif (! request()->has('section') && request()->routeIs('admin.special-features.print-client-card')) {
+            $this->activeSection = 'special-features-print-client-card';
         } elseif (! request()->has('section') && request()->routeIs('admin.people.case-file', 'people.case-file')) {
             $this->activeSection = 'beneficiary-case-file';
         }
@@ -266,7 +268,8 @@ class DashboardHome extends Component
                 'child-supporter-sponsor-registration',
                 'child-supporter-sponsor-edit',
                 'child-supporter-sponsor-list',
-                'special-features-id-card-scanner'
+                'special-features-id-card-scanner',
+                'special-features-print-client-card'
             );
         }
 
