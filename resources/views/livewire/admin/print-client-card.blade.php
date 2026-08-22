@@ -826,13 +826,18 @@
                                                         <span class="font-mono font-bold text-slate-900 whitespace-nowrap" style="font-size: {{ $fontSizePt }}pt;">{{ $item['person_code'] }}</span>
                                                     </div>
                                                 @else
+                                                    @php
+                                                        $isLandscape = in_array($qrTextRotationDeg, [90, 270]);
+                                                        $textBlockWidthMm = $isLandscape ? ($labelHeightMm - $topMarginMm - $bottomMarginMm) : ($labelWidthMm - $qrSizeMm - $qrTextGapMm - $edgeMarginMm);
+                                                        $textBlockHeightMm = $isLandscape ? ($qrSizeMm + $qrTextGapMm) : ($labelHeightMm - $topMarginMm - $bottomMarginMm);
+                                                    @endphp
                                                     <div class="absolute flex items-start" style="top: {{ $topMarginMm }}mm; left: {{ $edgeMarginMm }}mm;">
                                                         <div style="width: {{ $qrSizeMm }}mm; height: {{ $qrSizeMm }}mm;" class="shrink-0 [&>svg]:block [&>svg]:w-full [&>svg]:h-full">
                                                             {!! $item['qr_svg'] !!}
                                                         </div>
                                                     </div>
-                                                    <div class="absolute flex items-center" style="top: 0; bottom: 0; left: {{ $edgeMarginMm + $qrSizeMm + $qrTextGapMm }}mm; right: {{ $edgeMarginMm }}mm;">
-                                                        <span class="inline-block origin-center font-mono font-bold text-slate-900 break-all" style="font-size: {{ $fontSizePt }}pt; transform: rotate({{ $qrTextRotationDeg }}deg); transform-origin: center;">
+                                                    <div class="absolute flex items-center justify-center" style="left: {{ $edgeMarginMm + $qrSizeMm + $qrTextGapMm }}mm; width: {{ $textBlockWidthMm }}mm; @if($isLandscape) top: {{ $topMarginMm }}mm; height: {{ $textBlockHeightMm }}mm; @else top: 0; bottom: {{ $bottomMarginMm }}mm; @endif">
+                                                        <span class="inline-block origin-center font-mono font-bold text-slate-900 whitespace-nowrap" style="font-size: {{ $fontSizePt }}pt; transform: rotate({{ $qrTextRotationDeg }}deg); transform-origin: center;">
                                                             {{ $item['person_code'] }}
                                                         </span>
                                                     </div>

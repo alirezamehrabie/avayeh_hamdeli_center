@@ -117,8 +117,11 @@ Alpine.data('labelEditor', (props) => ({
     },
 
     textStyle() {
-        const textW = Math.max(20, this.labelWidthMm * 0.4);
-        const textH = Math.max(6, this.dotsToMm(this.textFontSize) * 1.5);
+        const rawW = Math.max(20, this.labelWidthMm * 0.4);
+        const rawH = Math.max(6, this.dotsToMm(this.textFontSize) * 1.5);
+        const isLandscape = this.qrTextRotationDeg === 90 || this.qrTextRotationDeg === 270;
+        const textW = isLandscape ? rawH : rawW;
+        const textH = isLandscape ? rawW : rawH;
         return `left: ${this.mmToPx(this.textPos.x)}px; top: ${this.mmToPx(this.textPos.y)}px; width: ${this.mmToPx(textW)}px; height: ${this.mmToPx(textH)}px; transform: translate(-50%, -50%);`;
     },
 

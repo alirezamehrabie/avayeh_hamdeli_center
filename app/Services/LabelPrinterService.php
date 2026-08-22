@@ -503,13 +503,41 @@ class LabelPrinterService
         int $topMarginDots,
         int $bottomMarginDots
     ): array {
+        $isLandscape = in_array($this->normalizeRotation(), [90, 270], true);
+
         if ($this->layoutMode === 'horizontal') {
+            if ($isLandscape) {
+                // When text is rotated 90/270°, its visual width spans the label height
+                // and its visual height (thickness) is just the font size.
+                // Position text centered vertically beside the QR code.
+                $availableHeight = $heightDots - $topMarginDots - $bottomMarginDots;
+                return [
+                    'qr_x' => $xOffset,
+                    'qr_y' => $topMarginDots,
+                    'text_x' => $xOffset + $this->qrSizeDots + $qrTextGapDots,
+                    'text_y' => $topMarginDots + intdiv($availableHeight, 2),
+                    'max_text_width' => max(1, $availableHeight),
+                ];
+            }
+
             return [
                 'qr_x' => $xOffset,
                 'qr_y' => $topMarginDots,
                 'text_x' => $xOffset + $this->qrSizeDots + $qrTextGapDots,
                 'text_y' => intdiv($heightDots - $this->textFontSize, 2),
                 'max_text_width' => max(1, $labelWidthDots - $this->qrSizeDots - $qrTextGapDots),
+            ];
+        }
+
+        // Vertical layout
+        if ($isLandscape) {
+            $availableWidth = $labelWidthDots;
+            return [
+                'qr_x' => $xOffset + intdiv(max(0, $labelWidthDots - $this->qrSizeDots), 2),
+                'qr_y' => $topMarginDots,
+                'text_x' => $xOffset + intdiv($availableWidth, 2),
+                'text_y' => $heightDots - $bottomMarginDots,
+                'max_text_width' => max(1, $availableWidth),
             ];
         }
 

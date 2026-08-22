@@ -74,13 +74,21 @@
             display: block;
         }
 
+        .code-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            min-width: 0;
+        }
+
         .code {
             font-size: {{ max(6, round($textFontSize / 2)) }}px;
             font-weight: 700;
             line-height: 1.1;
             text-align: center;
             direction: rtl;
-            word-break: break-word;
+            white-space: nowrap;
             display: inline-block;
             transform: rotate({{ $qrTextRotationDeg }}deg);
             transform-origin: center;
@@ -94,7 +102,7 @@
                 @foreach($row as $item)
                     <div class="label {{ $layoutMode === 'horizontal' ? 'horizontal' : 'vertical' }}">
                         <div class="qr">{!! $item['qr_svg'] !!}</div>
-                        <div class="code">{{ $item['person_code'] }}</div>
+                        <div class="code-wrapper"><div class="code">{{ $item['person_code'] }}</div></div>
                     </div>
                 @endforeach
 
