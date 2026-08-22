@@ -36,6 +36,7 @@ class PrintClientCard extends Component
 
     public bool $loadingSocialWorkerClients = false;
 
+    // Printer connection settings
     public string $printerConnection = '';
 
     public string $printerHost = '';
@@ -48,17 +49,69 @@ class PrintClientCard extends Component
 
     public bool $printingDirectly = false;
 
+    // Advanced label layout settings
+    public float $labelWidthMm = 40;
+
+    public float $labelHeightMm = 30;
+
+    public float $paperWidthMm = 0;
+
+    public float $gapMm = 2;
+
+    public int $dpi = 203;
+
+    public int $columns = 2;
+
+    public int $qrSizeDots = 180;
+
+    public int $qrMagnification = 4;
+
+    public string $qrErrorCorrection = 'M';
+
+    public int $qrTopOffsetDots = 10;
+
+    public int $textFontSize = 24;
+
+    public int $textBottomOffsetDots = 10;
+
+    public int $textLeftOffsetDots = 5;
+
+    public bool $rotate180 = false;
+
     public bool $showPreview = false;
+
+    public bool $showAdvancedLayout = false;
 
     public function mount(): void
     {
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
 
-        $config = config('label-printer.printer');
-        $this->printerConnection = $config['connection'] ?? 'network';
-        $this->printerHost = $config['host'] ?? '192.168.1.100';
-        $this->printerPort = $config['port'] ?? 9100;
-        $this->printerUsbName = $config['usb_printer_name'] ?? '';
+        $config = config('label-printer');
+        $printer = $config['printer'];
+        $label = $config['label'];
+        $qr = $config['qr_code'];
+        $text = $config['text'];
+
+        $this->printerConnection = $printer['connection'] ?? 'network';
+        $this->printerHost = $printer['host'] ?? '192.168.1.100';
+        $this->printerPort = $printer['port'] ?? 9100;
+        $this->printerUsbName = $printer['usb_printer_name'] ?? '';
+
+        $this->labelWidthMm = $label['width_mm'] ?? 40;
+        $this->labelHeightMm = $label['height_mm'] ?? 30;
+        $this->paperWidthMm = $label['paper_width_mm'] ?? 0;
+        $this->gapMm = $label['gap_mm'] ?? 2;
+        $this->dpi = $label['dpi'] ?? 203;
+        $this->columns = $label['columns'] ?? 2;
+
+        $this->qrSizeDots = $qr['size_dots'] ?? 180;
+        $this->qrMagnification = $qr['magnification'] ?? 4;
+        $this->qrErrorCorrection = $qr['error_correction'] ?? 'M';
+        $this->qrTopOffsetDots = $qr['top_offset_dots'] ?? 10;
+
+        $this->textFontSize = $text['font_size'] ?? 24;
+        $this->textBottomOffsetDots = $text['bottom_offset_dots'] ?? 10;
+        $this->textLeftOffsetDots = $text['left_offset_dots'] ?? 5;
     }
 
     public function updatedSearch(): void
@@ -153,7 +206,7 @@ class PrintClientCard extends Component
 
         $items = $this->buildPrintItems();
 
-        $printer = new LabelPrinterService;
+        $printer = new LabelPrinterService($this->getPrinterOverrides());
         $result = $printer->printBatch($items);
 
         $this->printingDirectly = false;
@@ -169,7 +222,7 @@ class PrintClientCard extends Component
     {
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
 
-        $printer = new LabelPrinterService;
+        $printer = new LabelPrinterService($this->getPrinterOverrides());
         $result = $printer->printTestLabel();
 
         if ($result['success']) {
@@ -184,6 +237,11 @@ class PrintClientCard extends Component
         $this->showPrinterSettings = ! $this->showPrinterSettings;
     }
 
+    public function toggleAdvancedLayout(): void
+    {
+        $this->showAdvancedLayout = ! $this->showAdvancedLayout;
+    }
+
     public function togglePreview(): void
     {
         if (empty($this->printList)) {
@@ -192,6 +250,33 @@ class PrintClientCard extends Component
         }
 
         $this->showPreview = ! $this->showPreview;
+    }
+
+    public function resetLayoutDefaults(): void
+    {
+        $config = config('label-printer');
+        $label = $config['label'];
+        $qr = $config['qr_code'];
+        $text = $config['text'];
+
+        $this->labelWidthMm = $label['width_mm'] ?? 40;
+        $this->labelHeightMm = $label['height_mm'] ?? 30;
+        $this->paperWidthMm = $label['paper_width_mm'] ?? 0;
+        $this->gapMm = $label['gap_mm'] ?? 2;
+        $this->dpi = $label['dpi'] ?? 203;
+        $this->columns = $label['columns'] ?? 2;
+
+        $this->qrSizeDots = $qr['size_dots'] ?? 180;
+        $this->qrMagnification = $qr['magnification'] ?? 4;
+        $this->qrErrorCorrection = $qr['error_correction'] ?? 'M';
+        $this->qrTopOffsetDots = $qr['top_offset_dots'] ?? 10;
+
+        $this->textFontSize = $text['font_size'] ?? 24;
+        $this->textBottomOffsetDots = $text['bottom_offset_dots'] ?? 10;
+        $this->textLeftOffsetDots = $text['left_offset_dots'] ?? 5;
+        $this->rotate180 = false;
+
+        session()->flash('success', 'تنظیمات چیدمان به مقادیر پیش‌فرض بازگشت.');
     }
 
     public function getPreviewItemsProperty(): array
@@ -415,6 +500,33 @@ class PrintClientCard extends Component
     public function render()
     {
         return view('livewire.admin.print-client-card');
+    }
+
+    /**
+     * Build runtime overrides array from current UI property values.
+     */
+    private function getPrinterOverrides(): array
+    {
+        return [
+            'connection' => $this->printerConnection,
+            'host' => $this->printerHost,
+            'port' => $this->printerPort,
+            'usb_printer_name' => $this->printerUsbName,
+            'label_width_mm' => $this->labelWidthMm,
+            'label_height_mm' => $this->labelHeightMm,
+            'paper_width_mm' => $this->paperWidthMm,
+            'gap_mm' => $this->gapMm,
+            'dpi' => $this->dpi,
+            'columns' => $this->columns,
+            'qr_size_dots' => $this->qrSizeDots,
+            'qr_magnification' => $this->qrMagnification,
+            'qr_error_correction' => $this->qrErrorCorrection,
+            'qr_top_offset_dots' => $this->qrTopOffsetDots,
+            'text_font_size' => $this->textFontSize,
+            'text_bottom_offset_dots' => $this->textBottomOffsetDots,
+            'text_left_offset_dots' => $this->textLeftOffsetDots,
+            'rotate_180' => $this->rotate180,
+        ];
     }
 
     /**

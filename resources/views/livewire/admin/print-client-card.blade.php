@@ -15,8 +15,8 @@
             </div>
         @endif
 
-        {{-- Printer Settings Panel --}}
-        <div class="mb-6 rounded-xl border border-slate-200 bg-slate-50/80 overflow-hidden">
+        {{-- Printer Connection Settings Panel --}}
+        <div class="mb-4 rounded-xl border border-slate-200 bg-slate-50/80 overflow-hidden">
             <button
                 type="button"
                 wire:click="togglePrinterSettings"
@@ -26,7 +26,7 @@
                     <svg class="h-5 w-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
                     </svg>
-                    <span class="text-base font-semibold text-slate-800">تنظیمات پرینتر لیبل</span>
+                    <span class="text-base font-semibold text-slate-800">تنظیمات اتصال پرینتر</span>
                 </div>
                 <svg class="h-5 w-5 text-slate-400 transition-transform {{ $showPrinterSettings ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -94,9 +94,157 @@
                             </svg>
                             چاپ برچسب تست
                         </button>
-                        <span class="text-xs text-slate-500">
-                            ابعاد برچسب: ۴۰×۳۰ میلی‌متر | ۲ ستون | DPI: 203
-                        </span>
+                    </div>
+                </div>
+            @endif
+        </div>
+
+        {{-- Advanced Label Layout Configuration Panel --}}
+        <div class="mb-6 rounded-xl border border-violet-200 bg-violet-50/50 overflow-hidden">
+            <button
+                type="button"
+                wire:click="toggleAdvancedLayout"
+                class="flex w-full items-center justify-between px-5 py-4 text-right transition hover:bg-violet-100/50"
+            >
+                <div class="flex items-center gap-3">
+                    <svg class="h-5 w-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                    </svg>
+                    <span class="text-base font-semibold text-violet-900">تنظیمات پیشرفته چیدمان برچسب</span>
+                </div>
+                <svg class="h-5 w-5 text-violet-400 transition-transform {{ $showAdvancedLayout ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </button>
+
+            @if($showAdvancedLayout)
+                <div class="border-t border-violet-200 bg-white px-5 py-5 space-y-6">
+
+                    {{-- Paper & Label Dimensions --}}
+                    <div>
+                        <h3 class="text-sm font-bold text-violet-900 mb-3 flex items-center gap-2">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 4h4M4 4l5 5m11-1V4m0 4h-4m4-4l-5 5M4 16v4m0-4h4m-4 4l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+                            ابعاد کاغذ و برچسب
+                        </h3>
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">عرض برچسب (mm)</label>
+                                <input type="number" step="0.5" min="10" max="200" wire:model.live.debounce.500ms="labelWidthMm" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">ارتفاع برچسب (mm)</label>
+                                <input type="number" step="0.5" min="10" max="200" wire:model.live.debounce.500ms="labelHeightMm" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">عرض کاغذ (mm)</label>
+                                <input type="number" step="0.5" min="0" max="300" wire:model.live.debounce.500ms="paperWidthMm" placeholder="0 = خودکار" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
+                                <p class="mt-0.5 text-[10px] text-slate-400">۰ = مطابق عرض برچسب</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">فاصله بین برچسب (mm)</label>
+                                <input type="number" step="0.5" min="0" max="20" wire:model.live.debounce.500ms="gapMm" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">رزولوشن (DPI)</label>
+                                <select wire:model.live="dpi" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100">
+                                    <option value="203">203 DPI</option>
+                                    <option value="300">300 DPI</option>
+                                    <option value="600">600 DPI</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">تعداد ستون</label>
+                                <select wire:model.live="columns" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100">
+                                    <option value="1">۱ ستون</option>
+                                    <option value="2">۲ ستون</option>
+                                    <option value="3">۳ ستون</option>
+                                    <option value="4">۴ ستون</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- QR Code Settings --}}
+                    <div>
+                        <h3 class="text-sm font-bold text-violet-900 mb-3 flex items-center gap-2">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+                            تنظیمات کد QR
+                        </h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">اندازه QR (dots)</label>
+                                <input type="number" step="10" min="50" max="500" wire:model.live.debounce.500ms="qrSizeDots" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">بزرگ‌نمایی (Magnification)</label>
+                                <input type="number" min="1" max="10" wire:model.live.debounce.500ms="qrMagnification" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">سطح تصحیح خطا</label>
+                                <select wire:model.live="qrErrorCorrection" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100">
+                                    <option value="L">L (7%)</option>
+                                    <option value="M">M (15%)</option>
+                                    <option value="Q">Q (25%)</option>
+                                    <option value="H">H (30%)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">فاصله از بالا (dots)</label>
+                                <input type="number" min="0" max="500" wire:model.live.debounce.500ms="qrTopOffsetDots" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Text Settings --}}
+                    <div>
+                        <h3 class="text-sm font-bold text-violet-900 mb-3 flex items-center gap-2">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                            تنظیمات متن کد مددجو
+                        </h3>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">اندازه فونت (dots)</label>
+                                <input type="number" min="8" max="120" wire:model.live.debounce.500ms="textFontSize" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">فاصله از پایین (dots)</label>
+                                <input type="number" min="0" max="500" wire:model.live.debounce.500ms="textBottomOffsetDots" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">فاصله از چپ (dots)</label>
+                                <input type="number" min="0" max="200" wire:model.live.debounce.500ms="textLeftOffsetDots" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Rotation & Actions --}}
+                    <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-violet-100">
+                        <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                            <input type="checkbox" wire:model.live="rotate180" class="rounded border-slate-300 text-violet-600 focus:ring-violet-500">
+                            <span class="text-sm font-medium text-slate-700">چرخش ۱۸۰ درجه (معکوس)</span>
+                        </label>
+
+                        <button
+                            type="button"
+                            wire:click="resetLayoutDefaults"
+                            class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-100"
+                        >
+                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            بازگشت به پیش‌فرض
+                        </button>
+                    </div>
+
+                    {{-- Live Calculated Summary --}}
+                    <div class="rounded-lg bg-violet-50 border border-violet-100 px-4 py-3">
+                        <p class="text-xs text-violet-700 leading-relaxed">
+                            <strong>خلاصه محاسبات:</strong>
+                            عرض هر ستون = {{ number_format($labelWidthMm / max(1, $columns), 1) }} mm
+                            | ارتفاع برچسب = {{ $labelHeightMm }} mm
+                            | اندازه QR ≈ {{ number_format($qrSizeDots * 25.4 / max(1, $dpi), 1) }} mm
+                            | تعداد برچسب برای {{ count($this->printList) }} مددجو = {{ intdiv(count($this->printList) + max(1, $columns) - 1, max(1, $columns)) }}
+                        </p>
                     </div>
                 </div>
             @endif
@@ -270,7 +418,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                 </svg>
-                                پیش‌نمایش
+                                {{ $showPreview ? 'بستن پیش‌نمایش' : 'پیش‌نمایش' }}
                             </button>
 
                             <button
@@ -333,7 +481,10 @@
         @if($showPreview && count($this->printList) > 0)
             <div class="mt-6 rounded-xl border border-indigo-200 bg-white shadow-lg overflow-hidden">
                 <div class="flex items-center justify-between border-b border-indigo-100 bg-indigo-50 px-5 py-3">
-                    <h3 class="text-sm font-bold text-indigo-900">پیش‌نمایش برچسب‌ها ({{ count($this->printList) }} کارت - {{ intdiv(count($this->printList) + 1, 2) }} برچسب)</h3>
+                    <h3 class="text-sm font-bold text-indigo-900">
+                        پیش‌نمایش برچسب‌ها
+                        ({{ count($this->printList) }} کارت - {{ intdiv(count($this->printList) + max(1, $columns) - 1, max(1, $columns)) }} برچسب)
+                    </h3>
                     <button
                         type="button"
                         wire:click="togglePreview"
@@ -347,28 +498,31 @@
 
                 <div class="p-5">
                     <p class="mb-4 text-xs text-slate-500">
-                        هر ردیف معادل یک برچسب فیزیکی ۴۰×۳۰ میلی‌متری است که شامل ۲ کارت در کنار هم می‌باشد.
+                        هر ردیف معادل یک برچسب فیزیکی {{ $labelWidthMm }}×{{ $labelHeightMm }} میلی‌متری با {{ $columns }} ستون است.
+                        @if($rotate180)
+                            <span class="font-semibold text-amber-600">⚠ چرخش ۱۸۰ درجه فعال است.</span>
+                        @endif
                     </p>
 
                     <div class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
-                        @foreach(array_chunk($this->previewItems, 2) as $labelIndex => $pair)
+                        @foreach(array_chunk($this->previewItems, max(1, $columns)) as $labelIndex => $row)
                             <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
                                 <p class="mb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">برچسب {{ $labelIndex + 1 }}</p>
-                                <div class="grid grid-cols-2 gap-3">
-                                    @foreach($pair as $item)
+                                <div class="grid gap-3" style="grid-template-columns: repeat({{ max(1, $columns) }}, minmax(0, 1fr));">
+                                    @foreach($row as $item)
                                         <div class="flex flex-col items-center justify-center rounded-md border border-dashed border-slate-300 bg-white p-3" style="min-height: 120px;">
-                                            <div class="w-16 h-16 mb-2 [&>svg]:w-full [&>svg]:h-full">
+                                            <div class="mb-2 [&>svg]:block [&>svg]:mx-auto [&>svg]:w-full [&>svg]:h-full" style="width: {{ min(80, max(40, $qrSizeDots * 25.4 / max(1, $dpi) * 2)) }}px; height: {{ min(80, max(40, $qrSizeDots * 25.4 / max(1, $dpi) * 2)) }}px;">
                                                 {!! $item['qr_svg'] !!}
                                             </div>
-                                            <p class="text-center text-xs font-bold text-slate-800 font-mono tracking-wide">{{ $item['person_code'] }}</p>
+                                            <p class="text-center text-xs font-bold text-slate-800 font-mono tracking-wide" style="font-size: {{ min(14, max(8, $textFontSize / 2)) }}px;">{{ $item['person_code'] }}</p>
                                         </div>
                                     @endforeach
 
-                                    @if(count($pair) === 1)
+                                    @for($i = count($row); $i < max(1, $columns); $i++)
                                         <div class="flex items-center justify-center rounded-md border border-dashed border-slate-200 bg-slate-50/50 p-3" style="min-height: 120px;">
                                             <span class="text-xs text-slate-300">خالی</span>
                                         </div>
-                                    @endif
+                                    @endfor
                                 </div>
                             </div>
                         @endforeach
@@ -386,9 +540,8 @@
                     <p class="text-sm font-semibold text-blue-800">راهنمای چاپ مستقیم با ZPL</p>
                     <p class="mt-1 text-xs leading-5 text-blue-700">
                         دکمه «چاپ مستقیم» کدهای QR و کد مددجو را به صورت ZPL تولید کرده و مستقیماً به پرینتر TSC ارسال می‌کند.
-                        هر برچسب ۴۰×۳۰ میلی‌متری شامل ۲ کارت در کنار هم (۲ ستون) است.
-                        برای مثال ۳۰ مددجو = ۱۵ برچسب چاپ می‌شود.
-                        ابتدا تنظیمات پرینتر را بررسی کنید و با «چاپ برچسب تست» از اتصال مطمئن شوید.
+                        تنظیمات چیدمان از پنل «تنظیمات پیشرفته» قابل تنظیم دقیق هستند.
+                        ابتدا تنظیمات پرینتر را بررسی کنید و با «چاپ برچسب تست» از اتصال و چیدمان مطمئن شوید.
                     </p>
                 </div>
             </div>
