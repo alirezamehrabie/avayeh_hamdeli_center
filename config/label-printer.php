@@ -7,12 +7,15 @@ return [
     | Label Printer Configuration
     |--------------------------------------------------------------------------
     |
-    | Settings for direct ZPL/TSPL label printing to TSC and compatible
+    | Settings for direct TSPL/ZPL label printing to TSC and compatible
     | label printers. Supports both network (TCP/IP) and USB connections.
     |
     */
 
     'printer' => [
+        // Printer command language: 'tspl' for TSC printers or 'zpl' for Zebra-compatible printers
+        'language' => env('LABEL_PRINTER_LANGUAGE', 'tspl'),
+
         // Connection type: 'network' or 'usb'
         'connection' => env('LABEL_PRINTER_CONNECTION', 'network'),
 

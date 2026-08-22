@@ -48,6 +48,8 @@ class LabelPrinterService
 
     private string $layoutMode = 'vertical';
 
+    private string $language;
+
     /**
      * @param  array<string, mixed>  $overrides  Runtime overrides for any config value
      */
@@ -60,6 +62,7 @@ class LabelPrinterService
         $qr = $config['qr_code'];
         $text = $config['text'];
 
+        $this->language = $overrides['language'] ?? $printer['language'];
         $this->dpi = $overrides['dpi'] ?? $label['dpi'];
         $this->widthMm = $overrides['label_width_mm'] ?? $label['width_mm'];
         $this->heightMm = $overrides['label_height_mm'] ?? $label['height_mm'];
@@ -98,10 +101,10 @@ class LabelPrinterService
             return ['success' => false, 'message' => 'هیچ آیتمی برای چاپ وجود ندارد.'];
         }
 
-        $zpl = $this->buildBatchZpl($items);
+        $data = $this->buildBatchData($items);
 
         try {
-            $this->sendToPrinter($zpl);
+            $this->sendToPrinter($data);
 
             return [
                 'success' => true,
@@ -114,19 +117,60 @@ class LabelPrinterService
     }
 
     /**
+     * Generate raw printer data for a batch without sending it.
+     * Used for file download.
+     *
+     * @param  array<int, array{public_code: string, person_code: string}>  $items
+     */
+    public function generateBatchData(array $items): string
+    {
+        return $this->buildBatchData($items);
+    }
+
+    /**
+     * Get the file extension appropriate for the current printer language.
+     */
+    public function getFileExtension(): string
+    {
+        return $this->language === 'tspl' ? 'prn' : 'zpl';
+    }
+
+    /**
+     * Get the MIME type for the current printer language output.
+     */
+    public function getMimeType(): string
+    {
+        return 'application/octet-stream';
+    }
+
+    /**
      * Test printer connectivity by printing a test label.
      */
     public function printTestLabel(): array
     {
-        $zpl = $this->buildTestLabelZpl();
+        $data = $this->language === 'tspl'
+            ? $this->buildTestLabelTspl()
+            : $this->buildTestLabelZpl();
 
         try {
-            $this->sendToPrinter($zpl);
+            $this->sendToPrinter($data);
 
             return ['success' => true, 'message' => 'برچسب تست با موفقیت به پرینتر ارسال شد.'];
         } catch (RuntimeException $e) {
             return ['success' => false, 'message' => 'خطا در ارتباط با پرینتر: ' . $e->getMessage()];
         }
+    }
+
+    /**
+     * Build printer data for a batch, dispatching by language.
+     *
+     * @param  array<int, array{public_code: string, person_code: string}>  $items
+     */
+    private function buildBatchData(array $items): string
+    {
+        return $this->language === 'tspl'
+            ? $this->buildBatchTspl($items)
+            : $this->buildBatchZpl($items);
     }
 
     /**
@@ -226,23 +270,117 @@ class LabelPrinterService
     }
 
     /**
-     * Send raw ZPL data to the printer via network or USB.
+     * Build TSPL for a batch of labels arranged in columns.
+     * Each physical label contains N client cards side by side.
      */
-    private function sendToPrinter(string $zpl): void
+    private function buildBatchTspl(array $items): string
+    {
+        $widthDots = $this->mmToDots($this->widthMm);
+        $heightDots = $this->mmToDots($this->heightMm);
+        $paperWidthDots = $this->paperWidthMm > 0 ? $this->mmToDots($this->paperWidthMm) : $widthDots;
+        $labelWidthDots = $this->mmToDots($this->widthMm);
+        $gapDots = $this->mmToDots($this->gapMm);
+        $edgeMarginDots = $this->mmToDots($this->edgeMarginMm);
+        $topMarginDots = $this->mmToDots($this->topMarginMm);
+        $bottomMarginDots = $this->mmToDots($this->bottomMarginMm);
+
+        $tspl = '';
+        $chunks = array_chunk($items, $this->columns);
+
+        foreach ($chunks as $chunk) {
+            $tspl .= "SIZE {$paperWidthDots} mm,{$heightDots} mm\r\n";
+            $tspl .= "GAP {$gapDots} mm,0\r\n";
+            $tspl .= "REFERENCE 0,0\r\n";
+            $tspl .= "CLS\r\n";
+
+            if ($this->rotate180) {
+                $tspl .= "DIRECTION 1\r\n";
+            }
+
+            foreach ($chunk as $colIndex => $item) {
+                $xOffset = $edgeMarginDots + ($colIndex * ($labelWidthDots + $gapDots));
+                $ecChar = strtoupper(substr($this->qrErrorCorrection, 0, 1));
+                $effectiveMagnification = max(1, min(10, (int) round($this->qrSizeDots / 25)));
+                $layout = $this->buildLayoutPositions($xOffset, $labelWidthDots, $heightDots, $gapDots, $topMarginDots, $bottomMarginDots);
+
+                $tspl .= "QRCODE {$layout['qr_x']},{$layout['qr_y']},L,{$effectiveMagnification},A,0,M{$ecChar},\"{$item['public_code']}\"\r\n";
+
+                $personCode = mb_strimwidth($item['person_code'], 0, 20);
+                $textX = $layout['text_x'] + intdiv($layout['max_text_width'], 2);
+                $tspl .= "TEXT {$textX},{$layout['text_y']},\"3\",0,1,1,\"{$personCode}\"\r\n";
+            }
+
+            $tspl .= "PRINT 1\r\n";
+        }
+
+        return $tspl;
+    }
+
+    /**
+     * Build a simple test label in TSPL.
+     */
+    private function buildTestLabelTspl(): string
+    {
+        $widthDots = $this->mmToDots($this->widthMm);
+        $heightDots = $this->mmToDots($this->heightMm);
+        $paperWidthDots = $this->paperWidthMm > 0 ? $this->mmToDots($this->paperWidthMm) : $widthDots;
+        $labelWidthDots = $this->mmToDots($this->widthMm);
+        $gapDots = $this->mmToDots($this->gapMm);
+        $edgeMarginDots = $this->mmToDots($this->edgeMarginMm);
+        $topMarginDots = $this->mmToDots($this->topMarginMm);
+        $bottomMarginDots = $this->mmToDots($this->bottomMarginMm);
+
+        $tspl = "SIZE {$paperWidthDots} mm,{$heightDots} mm\r\n";
+        $tspl .= "GAP {$gapDots} mm,0\r\n";
+        $tspl .= "REFERENCE 0,0\r\n";
+        $tspl .= "CLS\r\n";
+
+        if ($this->rotate180) {
+            $tspl .= "DIRECTION 1\r\n";
+        }
+
+        $testItems = [
+            ['public_code' => 'TEST-001', 'person_code' => 'تست-۱'],
+            ['public_code' => 'TEST-002', 'person_code' => 'تست-۲'],
+        ];
+
+        $testItems = array_slice($testItems, 0, $this->columns);
+
+        foreach ($testItems as $colIndex => $item) {
+            $xOffset = $edgeMarginDots + ($colIndex * ($labelWidthDots + $gapDots));
+            $ecChar = strtoupper(substr($this->qrErrorCorrection, 0, 1));
+            $effectiveMagnification = max(1, min(10, (int) round($this->qrSizeDots / 25)));
+            $layout = $this->buildLayoutPositions($xOffset, $labelWidthDots, $heightDots, $gapDots, $topMarginDots, $bottomMarginDots);
+
+            $tspl .= "QRCODE {$layout['qr_x']},{$layout['qr_y']},L,{$effectiveMagnification},A,0,M{$ecChar},\"{$item['public_code']}\"\r\n";
+
+            $textX = $layout['text_x'] + intdiv($layout['max_text_width'], 2);
+            $tspl .= "TEXT {$textX},{$layout['text_y']},\"3\",0,1,1,\"{$item['person_code']}\"\r\n";
+        }
+
+        $tspl .= "PRINT 1\r\n";
+
+        return $tspl;
+    }
+
+    /**
+     * Send raw printer data to the printer via network or USB.
+     */
+    private function sendToPrinter(string $data): void
     {
         if ($this->connection === 'network') {
-            $this->sendViaNetwork($zpl);
+            $this->sendViaNetwork($data);
         } elseif ($this->connection === 'usb') {
-            $this->sendViaUsb($zpl);
+            $this->sendViaUsb($data);
         } else {
             throw new RuntimeException("نوع اتصال نامعتبر: {$this->connection}");
         }
     }
 
     /**
-     * Send ZPL to a network printer via TCP socket.
+     * Send raw data to a network printer via TCP socket.
      */
-    private function sendViaNetwork(string $zpl): void
+    private function sendViaNetwork(string $data): void
     {
         $socket = @fsockopen($this->host, $this->port, $errno, $errstr, $this->timeout);
 
@@ -252,7 +390,7 @@ class LabelPrinterService
 
         stream_set_timeout($socket, $this->timeout);
 
-        $written = fwrite($socket, $zpl);
+        $written = fwrite($socket, $data);
         fclose($socket);
 
         if ($written === false || $written === 0) {
@@ -261,9 +399,9 @@ class LabelPrinterService
     }
 
     /**
-     * Send ZPL to a USB/shared Windows printer.
+     * Send raw data to a USB/shared Windows printer.
      */
-    private function sendViaUsb(string $zpl): void
+    private function sendViaUsb(string $data): void
     {
         if (empty($this->usbPrinterName)) {
             throw new RuntimeException('نام پرینتر USB تنظیم نشده است. لطفاً در تنظیمات، نام پرینتر را وارد کنید.');
@@ -284,7 +422,7 @@ class LabelPrinterService
             throw new RuntimeException("عدم امکان اتصال به پرینتر USB: {$this->usbPrinterName}");
         }
 
-        $written = fwrite($handle, $zpl);
+        $written = fwrite($handle, $data);
         fclose($handle);
 
         if ($written === false || $written === 0) {
@@ -338,6 +476,7 @@ class LabelPrinterService
     public function getConfigSummary(): array
     {
         return [
+            'language' => $this->language,
             'connection' => $this->connection,
             'host' => $this->host,
             'port' => $this->port,
