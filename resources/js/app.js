@@ -220,6 +220,42 @@ Alpine.data('deliveryItems', (initialDelivered = []) => ({
     },
 }));
 
+window.addEventListener('client-card-browser-print', (event) => {
+    const { html, title } = event.detail || {};
+
+    if (!html) {
+        return;
+    }
+
+    const printWindow = window.open('', '_blank', 'width=900,height=700');
+
+    if (!printWindow) {
+        window.alert('مرورگر باز کردن پنجره چاپ را مسدود کرد.');
+        return;
+    }
+
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.document.title = title || 'Print';
+
+    let printed = false;
+
+    const triggerPrint = () => {
+        if (printed) {
+            return;
+        }
+
+        printed = true;
+        printWindow.focus();
+        printWindow.print();
+    };
+
+    printWindow.addEventListener('load', triggerPrint, { once: true });
+    printWindow.addEventListener('afterprint', () => printWindow.close(), { once: true });
+    window.setTimeout(triggerPrint, 600);
+});
+
 Alpine.data('idCardScanner', ({
     resolveScan,
     successSoundUrl = '',

@@ -43,7 +43,8 @@
                                 class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:ring focus:ring-indigo-100"
                             >
                                 <option value="network">شبکه (TCP/IP)</option>
-                                <option value="usb">USB (Windows Share)</option>
+                                <option value="usb">پرینتر ویندوز / محلی</option>
+                                <option value="browser">چاپ از طریق مرورگر</option>
                             </select>
                         </div>
 
@@ -70,15 +71,44 @@
                             </div>
                         @else
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1.5">نام پرینتر اشتراکی</label>
-                                <input
-                                    type="text"
-                                    wire:model.live.debounce.500ms="printerUsbName"
-                                    placeholder="مثال: TSC_TTP-244_Pro"
-                                    class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:ring focus:ring-indigo-100"
-                                    dir="ltr"
-                                >
-                                <p class="mt-1 text-xs text-slate-500">نام پرینتر را از Devices & Printers ویندوز وارد کنید.</p>
+                                @if($printerConnection === 'usb')
+                                    <div class="flex items-center justify-between mb-1.5">
+                                        <label class="block text-sm font-medium text-slate-700">پرینتر شناسایی‌شده روی همین سیستم</label>
+                                        <button
+                                            type="button"
+                                            wire:click="refreshDetectedLocalPrinters"
+                                            class="text-xs font-semibold text-indigo-600 transition hover:text-indigo-800"
+                                        >
+                                            به‌روزرسانی
+                                        </button>
+                                    </div>
+
+                                    @if(!empty($detectedLocalPrinters))
+                                        <select
+                                            wire:model.live="printerUsbName"
+                                            class="mb-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:ring focus:ring-indigo-100"
+                                            dir="ltr"
+                                        >
+                                            <option value="">انتخاب پرینتر</option>
+                                            @foreach($detectedLocalPrinters as $printerName)
+                                                <option value="{{ $printerName }}">{{ $printerName }}</option>
+                                            @endforeach
+                                        </select>
+                                    @endif
+
+                                    <input
+                                        type="text"
+                                        wire:model.live.debounce.500ms="printerUsbName"
+                                        placeholder="مثال: TSC_TTP-244_Pro"
+                                        class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:ring focus:ring-indigo-100"
+                                        dir="ltr"
+                                    >
+                                    <p class="mt-1 text-xs text-slate-500">اگر پرینتر در فهرست نیست، نام آن را دستی وارد کنید.</p>
+                                @else
+                                    <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-600">
+                                        چاپ از طریق مرورگر، پرینترهای نصب‌شده روی همین دستگاه را در پنجره چاپ سیستم نشان می‌دهد.
+                                    </div>
+                                @endif
                             </div>
                         @endif
                     </div>
@@ -92,7 +122,7 @@
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            چاپ برچسب تست
+                            {{ $printerConnection === 'browser' ? 'باز کردن چاپ تست' : 'چاپ برچسب تست' }}
                         </button>
                     </div>
                 </div>
@@ -438,9 +468,9 @@
                                 type="button"
                                 wire:click="printDirectly"
                                 wire:loading.attr="disabled"
-                                @disabled(! $showPreview)
+                                @disabled($printerConnection !== 'browser' && ! $showPreview)
                                 wire:target="printDirectly"
-                                wire:confirm="آیا مطمئن هستید که می‌خواهید {{ count($this->printList) }} کارت را مستقیماً به پرینتر ارسال کنید؟"
+                                wire:confirm="{{ $printerConnection === 'browser' ? 'آیا می‌خواهید پنجره چاپ سیستم باز شود؟' : 'آیا مطمئن هستید که می‌خواهید ' . count($this->printList) . ' کارت را مستقیماً به پرینتر ارسال کنید؟' }}"
                                 class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-violet-700 focus:outline-none focus:ring-4 focus:ring-violet-100 disabled:opacity-60"
                             >
                                 <svg wire:loading wire:target="printDirectly" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -450,7 +480,7 @@
                                 <svg wire:loading.remove wire:target="printDirectly" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
                                 </svg>
-                                چاپ مستقیم ({{ count($this->printList) }} کارت)
+                                {{ $printerConnection === 'browser' ? 'چاپ با مرورگر' : 'چاپ مستقیم' }} ({{ count($this->printList) }} کارت)
                             </button>
                         </div>
 
@@ -512,7 +542,8 @@
 
                 <div class="p-5">
                     <p class="mb-4 text-xs text-slate-500">
-                        هر ردیف معادل یک ردیف چاپی روی رول ۹۶ میلی‌متری با ۲ ستونِ {{ $labelWidthMm }}×{{ $labelHeightMm }} است و QR + کد مددجو با هم جابه‌جا می‌شوند.
+                        هر ردیف چاپی شامل ۲ برچسب است: برچسب ۱ و ۲، سپس ۳ و ۴، بعد ۵ و ۶ و به همین ترتیب.
+                        هر برچسب {{ $labelWidthMm }}×{{ $labelHeightMm }} میلی‌متر است و QR + کد مددجو با هم جابه‌جا می‌شوند.
                         <span class="font-semibold text-slate-700">حالت: {{ $layoutMode === 'horizontal' ? 'افقی' : 'عمودی' }}</span>
                         @if($rotate180)
                             <span class="font-semibold text-amber-600">⚠ چرخش ۱۸۰ درجه فعال است.</span>
@@ -522,7 +553,9 @@
                     <div class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
                         @foreach(array_chunk($this->previewItems, 2) as $labelIndex => $row)
                             <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                                <p class="mb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">برچسب {{ $labelIndex + 1 }}</p>
+                                <p class="mb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                                    ردیف {{ $labelIndex + 1 }}: برچسب {{ ($labelIndex * 2) + 1 }} و {{ ($labelIndex * 2) + 2 }}
+                                </p>
                                 <div class="grid gap-3" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
                                     @foreach($row as $item)
                                         <div class="flex {{ $layoutMode === 'horizontal' ? 'flex-row gap-3' : 'flex-col' }} items-center justify-center rounded-md border border-dashed border-slate-300 bg-white p-3" style="min-height: 120px;">
@@ -555,6 +588,7 @@
                     <p class="text-sm font-semibold text-blue-800">راهنمای چاپ مستقیم با ZPL</p>
                     <p class="mt-1 text-xs leading-5 text-blue-700">
                         دکمه «چاپ مستقیم» کدهای QR و کد مددجو را به صورت ZPL تولید کرده و مستقیماً به پرینتر TSC ارسال می‌کند.
+                        اگر حالت «چاپ از طریق مرورگر» را انتخاب کنید، پنجره چاپ سیستم باز می‌شود و می‌توانید پرینتر نصب‌شده روی همین دستگاه را انتخاب کنید.
                         تنظیمات چیدمان از پنل «تنظیمات پیشرفته» قابل تنظیم دقیق هستند.
                         ابتدا تنظیمات پرینتر را بررسی کنید و با «چاپ برچسب تست» از اتصال و چیدمان مطمئن شوید.
                     </p>

@@ -8,6 +8,7 @@ use App\Models\SocialWorker;
 use App\Services\LabelPrinterService;
 use App\Services\QrIdentityService;
 use Livewire\Component;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -44,6 +45,11 @@ class PrintClientCard extends Component
     public int $printerPort = 9100;
 
     public string $printerUsbName = '';
+
+    /** @var array<int, string> */
+    public array $detectedLocalPrinters = [];
+
+    public bool $canDetectLocalPrinters = false;
 
     public bool $showPrinterSettings = false;
 
@@ -100,6 +106,7 @@ class PrintClientCard extends Component
         $this->printerHost = $printer['host'] ?? '192.168.1.100';
         $this->printerPort = $printer['port'] ?? 9100;
         $this->printerUsbName = $printer['usb_printer_name'] ?? '';
+        $this->canDetectLocalPrinters = $this->isWindowsEnvironment();
 
         $this->paperWidthMm = $label['paper_width_mm'] ?? 96;
         $this->labelWidthMm = $label['width_mm'] ?? 30;
@@ -118,6 +125,8 @@ class PrintClientCard extends Component
 
         $this->textFontSize = $text['font_size'] ?? 24;
         $this->textBottomOffsetDots = $text['bottom_offset_dots'] ?? 10;
+
+        $this->loadDetectedLocalPrinters();
     }
 
     public function updatedSearch(): void
@@ -213,6 +222,11 @@ class PrintClientCard extends Component
             return;
         }
 
+        if ($this->printerConnection === 'browser') {
+            $this->printWithBrowserDialog();
+            return;
+        }
+
         if (! $this->showPreview) {
             session()->flash('error', 'ابتدا پیش‌نمایش چاپ را باز کنید.');
             return;
@@ -238,6 +252,11 @@ class PrintClientCard extends Component
     {
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
 
+        if ($this->printerConnection === 'browser') {
+            $this->printBrowserTestLabel();
+            return;
+        }
+
         $printer = app()->makeWith(LabelPrinterService::class, ['overrides' => $this->getPrinterOverrides()]);
         $result = $printer->printTestLabel();
 
@@ -251,6 +270,20 @@ class PrintClientCard extends Component
     public function togglePrinterSettings(): void
     {
         $this->showPrinterSettings = ! $this->showPrinterSettings;
+    }
+
+    public function refreshDetectedLocalPrinters(): void
+    {
+        $this->loadDetectedLocalPrinters();
+
+        if (empty($this->detectedLocalPrinters)) {
+            session()->flash('error', $this->canDetectLocalPrinters
+                ? 'هیچ پرینتر ویندوزی روی این سیستم شناسایی نشد.'
+                : 'شناسایی خودکار پرینترهای محلی فقط روی ویندوز فعال است.');
+            return;
+        }
+
+        session()->flash('success', count($this->detectedLocalPrinters) . ' پرینتر محلی شناسایی شد.');
     }
 
     public function toggleAdvancedLayout(): void
@@ -612,5 +645,124 @@ class PrintClientCard extends Component
         }
 
         return $rows;
+    }
+
+    private function printWithBrowserDialog(): void
+    {
+        $html = view('livewire.admin.print-client-card-document', [
+            'items' => $this->getPreviewItemsProperty(),
+            'paperWidthMm' => $this->paperWidthMm,
+            'labelWidthMm' => $this->labelWidthMm,
+            'labelHeightMm' => $this->labelHeightMm,
+            'gapMm' => $this->gapMm,
+            'edgeMarginMm' => $this->edgeMarginMm,
+            'topMarginMm' => $this->topMarginMm,
+            'bottomMarginMm' => $this->bottomMarginMm,
+            'dpi' => $this->dpi,
+            'qrSizeDots' => $this->qrSizeDots,
+            'textFontSize' => $this->textFontSize,
+            'layoutMode' => $this->layoutMode,
+            'rotate180' => $this->rotate180,
+            'title' => 'چاپ کارت مددجو',
+            'testMode' => false,
+        ])->render();
+
+        $this->dispatch('client-card-browser-print', html: $html, title: 'چاپ کارت مددجو');
+    }
+
+    private function printBrowserTestLabel(): void
+    {
+        $qrSvg = (string) QrCode::format('svg')
+            ->size(220)
+            ->margin(0)
+            ->generate('TEST-LOCAL');
+
+        $html = view('livewire.admin.print-client-card-document', [
+            'items' => [[
+                'qr_svg' => $qrSvg,
+                'person_code' => 'تست چاپ',
+                'full_name' => 'تست چاپ',
+            ]],
+            'paperWidthMm' => $this->paperWidthMm,
+            'labelWidthMm' => $this->labelWidthMm,
+            'labelHeightMm' => $this->labelHeightMm,
+            'gapMm' => $this->gapMm,
+            'edgeMarginMm' => $this->edgeMarginMm,
+            'topMarginMm' => $this->topMarginMm,
+            'bottomMarginMm' => $this->bottomMarginMm,
+            'dpi' => $this->dpi,
+            'qrSizeDots' => $this->qrSizeDots,
+            'textFontSize' => $this->textFontSize,
+            'layoutMode' => $this->layoutMode,
+            'rotate180' => $this->rotate180,
+            'title' => 'برچسب تست کارت مددجو',
+            'testMode' => true,
+        ])->render();
+
+        $this->dispatch('client-card-browser-print', html: $html, title: 'برچسب تست کارت مددجو');
+    }
+
+    private function loadDetectedLocalPrinters(): void
+    {
+        $this->detectedLocalPrinters = $this->canDetectLocalPrinters
+            ? $this->detectWindowsPrinters()
+            : [];
+
+        if (empty($this->detectedLocalPrinters)) {
+            return;
+        }
+
+        if ($this->printerConnection === 'usb' && $this->printerUsbName === '') {
+            $this->printerUsbName = $this->detectedLocalPrinters[0];
+        }
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function detectWindowsPrinters(): array
+    {
+        if (! function_exists('shell_exec')) {
+            return [];
+        }
+
+        $commands = [
+            'powershell -NoProfile -Command "Get-Printer | Select-Object -ExpandProperty Name"',
+            'wmic printer get name',
+        ];
+
+        $printers = [];
+
+        foreach ($commands as $command) {
+            $output = @shell_exec($command);
+
+            if (! is_string($output) || trim($output) === '') {
+                continue;
+            }
+
+            foreach (preg_split('/\r\n|\r|\n/', $output) as $line) {
+                $printer = trim($line);
+
+                if ($printer === '' || strcasecmp($printer, 'Name') === 0) {
+                    continue;
+                }
+
+                $printers[] = $printer;
+            }
+
+            if (! empty($printers)) {
+                break;
+            }
+        }
+
+        $printers = array_values(array_unique($printers));
+        sort($printers, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return $printers;
+    }
+
+    private function isWindowsEnvironment(): bool
+    {
+        return PHP_OS_FAMILY === 'Windows';
     }
 }
