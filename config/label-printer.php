@@ -31,7 +31,7 @@ return [
     ],
 
     'label' => [
-        // Label dimensions in millimeters
+        // 96 mm roll with two 30x45 mm labels per printed row
         'paper_width_mm' => 96,
         'width_mm' => 30,
         'height_mm' => 45,
@@ -42,7 +42,7 @@ return [
         // Number of columns per label row (for batch printing)
         'columns' => 2,
 
-        // Gap between labels in mm
+        // Space between the two labels in each row
         'gap_mm' => 3,
 
         // Side margin from the roll edges in mm

@@ -63,7 +63,7 @@ class LabelPrinterService
         $this->dpi = $overrides['dpi'] ?? $label['dpi'];
         $this->widthMm = $overrides['label_width_mm'] ?? $label['width_mm'];
         $this->heightMm = $overrides['label_height_mm'] ?? $label['height_mm'];
-        $this->columns = $overrides['columns'] ?? $label['columns'];
+        $this->columns = 2;
         $this->gapMm = $overrides['gap_mm'] ?? $label['gap_mm'];
         $this->edgeMarginMm = $overrides['edge_margin_mm'] ?? ($label['edge_margin_mm'] ?? 0);
         $this->topMarginMm = $overrides['top_margin_mm'] ?? ($label['top_margin_mm'] ?? 0);

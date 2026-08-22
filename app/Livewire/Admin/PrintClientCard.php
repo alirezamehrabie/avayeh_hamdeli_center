@@ -125,6 +125,11 @@ class PrintClientCard extends Component
         $this->showSearchResults = mb_strlen(trim($this->search)) >= 2;
     }
 
+    public function updatedColumns(): void
+    {
+        $this->columns = 2;
+    }
+
     public function getSearchResultsProperty(): array
     {
         $term = trim($this->search);
@@ -530,7 +535,7 @@ class PrintClientCard extends Component
             'paper_width_mm' => $this->paperWidthMm,
             'gap_mm' => $this->gapMm,
             'dpi' => $this->dpi,
-            'columns' => $this->columns,
+            'columns' => 2,
             'qr_size_dots' => $this->qrSizeDots,
             'qr_magnification' => $this->qrMagnification,
             'qr_error_correction' => $this->qrErrorCorrection,

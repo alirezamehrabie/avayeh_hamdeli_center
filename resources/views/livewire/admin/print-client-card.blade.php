@@ -165,12 +165,13 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-slate-600 mb-1">تعداد ستون</label>
-                                <select wire:model.live="columns" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100">
+                                <select wire:model.live="columns" disabled class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 opacity-70 focus:border-violet-300 focus:ring focus:ring-violet-100">
                                     <option value="1">۱ ستون</option>
                                     <option value="2">۲ ستون</option>
                                     <option value="3">۳ ستون</option>
                                     <option value="4">۴ ستون</option>
                                 </select>
+                                <p class="mt-1 text-[10px] text-slate-400">برای این رول، مقدار ثابت ۲ است.</p>
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-slate-600 mb-1">حالت چیدمان</label>
@@ -251,10 +252,11 @@
                         <p class="text-xs text-violet-700 leading-relaxed">
                             <strong>خلاصه محاسبات:</strong>
                             عرض کاغذ = {{ $paperWidthMm }} mm
-                            | برچسب = {{ $labelWidthMm }}×{{ $labelHeightMm }} mm
+                            | هر ستون = {{ $labelWidthMm }}×{{ $labelHeightMm }} mm
+                            | دو ستون در هر ردیف
                             | فاصله ستون = {{ $gapMm }} mm
                             | حالت = {{ $layoutMode === 'horizontal' ? 'افقی' : 'عمودی' }}
-                            | تعداد برچسب برای {{ count($this->printList) }} مددجو = {{ intdiv(count($this->printList) + max(1, $columns) - 1, max(1, $columns)) }}
+                            | تعداد ردیف برای {{ count($this->printList) }} مددجو = {{ intdiv(count($this->printList) + 1, 2) }}
                         </p>
                     </div>
                 </div>
@@ -495,7 +497,7 @@
                 <div class="flex items-center justify-between border-b border-indigo-100 bg-indigo-50 px-5 py-3">
                     <h3 class="text-sm font-bold text-indigo-900">
                         پیش‌نمایش برچسب‌ها
-                        ({{ count($this->printList) }} کارت - {{ intdiv(count($this->printList) + max(1, $columns) - 1, max(1, $columns)) }} برچسب)
+                        ({{ count($this->printList) }} کارت - {{ intdiv(count($this->printList) + 1, 2) }} ردیف)
                     </h3>
                     <button
                         type="button"
@@ -510,7 +512,7 @@
 
                 <div class="p-5">
                     <p class="mb-4 text-xs text-slate-500">
-                        هر ردیف معادل یک برچسب فیزیکی {{ $labelWidthMm }}×{{ $labelHeightMm }} میلی‌متری با {{ $columns }} ستون است.
+                        هر ردیف معادل یک ردیف چاپی روی رول ۹۶ میلی‌متری با ۲ ستونِ {{ $labelWidthMm }}×{{ $labelHeightMm }} است.
                         <span class="font-semibold text-slate-700">حالت: {{ $layoutMode === 'horizontal' ? 'افقی' : 'عمودی' }}</span>
                         @if($rotate180)
                             <span class="font-semibold text-amber-600">⚠ چرخش ۱۸۰ درجه فعال است.</span>
@@ -518,10 +520,10 @@
                     </p>
 
                     <div class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
-                        @foreach(array_chunk($this->previewItems, max(1, $columns)) as $labelIndex => $row)
+                        @foreach(array_chunk($this->previewItems, 2) as $labelIndex => $row)
                             <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
                                 <p class="mb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">برچسب {{ $labelIndex + 1 }}</p>
-                                <div class="grid gap-3" style="grid-template-columns: repeat({{ max(1, $columns) }}, minmax(0, 1fr));">
+                                <div class="grid gap-3" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
                                     @foreach($row as $item)
                                         <div class="flex {{ $layoutMode === 'horizontal' ? 'flex-row gap-3' : 'flex-col' }} items-center justify-center rounded-md border border-dashed border-slate-300 bg-white p-3" style="min-height: 120px;">
                                             <div class="{{ $layoutMode === 'horizontal' ? 'shrink-0' : 'mb-2' }} [&>svg]:block [&>svg]:mx-auto [&>svg]:w-full [&>svg]:h-full" style="width: {{ min(80, max(40, $qrSizeDots * 25.4 / max(1, $dpi) * 2)) }}px; height: {{ min(80, max(40, $qrSizeDots * 25.4 / max(1, $dpi) * 2)) }}px;">
@@ -531,7 +533,7 @@
                                         </div>
                                     @endforeach
 
-                                    @for($i = count($row); $i < max(1, $columns); $i++)
+                                    @for($i = count($row); $i < 2; $i++)
                                         <div class="flex items-center justify-center rounded-md border border-dashed border-slate-200 bg-slate-50/50 p-3" style="min-height: 120px;">
                                             <span class="text-xs text-slate-300">خالی</span>
                                         </div>
