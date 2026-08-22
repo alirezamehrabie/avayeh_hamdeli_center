@@ -175,7 +175,7 @@ class LabelPrinterService
 
     /**
      * Build ZPL for a batch of labels arranged in columns.
-     * Each physical label contains N client cards side by side.
+     * Emits all labels in a single stream so the roll feeds continuously.
      */
     private function buildBatchZpl(array $items): string
     {
@@ -188,8 +188,8 @@ class LabelPrinterService
         $topMarginDots = $this->mmToDots($this->topMarginMm);
         $bottomMarginDots = $this->mmToDots($this->bottomMarginMm);
 
-        $zpl = '';
         $chunks = array_chunk($items, $this->columns);
+        $zpl = '';
 
         foreach ($chunks as $chunk) {
             $zpl .= "^XA\n";
@@ -271,7 +271,7 @@ class LabelPrinterService
 
     /**
      * Build TSPL for a batch of labels arranged in columns.
-     * Each physical label contains N client cards side by side.
+     * Emits a single continuous print job so the roll feeds without blank labels.
      */
     private function buildBatchTspl(array $items): string
     {
@@ -284,18 +284,18 @@ class LabelPrinterService
         $topMarginDots = $this->mmToDots($this->topMarginMm);
         $bottomMarginDots = $this->mmToDots($this->bottomMarginMm);
 
-        $tspl = '';
         $chunks = array_chunk($items, $this->columns);
 
-        foreach ($chunks as $chunk) {
-            $tspl .= "SIZE {$paperWidthDots} mm,{$heightDots} mm\r\n";
-            $tspl .= "GAP {$gapDots} mm,0\r\n";
-            $tspl .= "REFERENCE 0,0\r\n";
-            $tspl .= "CLS\r\n";
+        $tspl = "SIZE {$paperWidthDots} mm,{$heightDots} mm\r\n";
+        $tspl .= "GAP {$gapDots} mm,0\r\n";
+        $tspl .= "REFERENCE 0,0\r\n";
 
-            if ($this->rotate180) {
-                $tspl .= "DIRECTION 1\r\n";
-            }
+        if ($this->rotate180) {
+            $tspl .= "DIRECTION 1\r\n";
+        }
+
+        foreach ($chunks as $chunk) {
+            $tspl .= "CLS\r\n";
 
             foreach ($chunk as $colIndex => $item) {
                 $xOffset = $edgeMarginDots + ($colIndex * ($labelWidthDots + $gapDots));

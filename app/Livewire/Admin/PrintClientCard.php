@@ -361,6 +361,28 @@ class PrintClientCard extends Component
         return $items;
     }
 
+    public function downloadPrintFile(): ?\Symfony\Component\HttpFoundation\Response
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+
+        if (empty($this->printList)) {
+            session()->flash('error', 'لیست چاپ خالی است.');
+            return null;
+        }
+
+        $items = $this->buildPrintItems();
+        $printer = app()->makeWith(LabelPrinterService::class, ['overrides' => $this->getPrinterOverrides()]);
+        $data = $printer->generateBatchData($items);
+        $extension = $printer->getFileExtension();
+        $filename = 'labels-' . now()->format('Y-m-d-His') . '.' . $extension;
+
+        return response()->streamDownload(function () use ($data) {
+            echo $data;
+        }, $filename, [
+            'Content-Type' => $printer->getMimeType(),
+        ]);
+    }
+
     public function exportToCsv(): \Symfony\Component\HttpFoundation\Response
     {
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);

@@ -484,6 +484,20 @@
                             </button>
                         </div>
 
+                        {{-- Download Print File Button --}}
+                        <div class="mt-3">
+                            <button
+                                type="button"
+                                wire:click="downloadPrintFile"
+                                class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 focus:outline-none focus:ring-4 focus:ring-amber-100"
+                            >
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                </svg>
+                                دانلود فایل چاپ ({{ strtoupper(config('label-printer.printer.language', 'tspl')) }})
+                            </button>
+                        </div>
+
                         {{-- Export Buttons --}}
                         <div class="mt-3 flex gap-2">
                             <button
@@ -521,12 +535,16 @@
             </div>
         </div>
 
-        {{-- Label Preview Modal --}}
+        {{-- Accurate Label Preview --}}
         @if($showPreview && count($this->printList) > 0)
+            @php
+                $qrSizeMm = $qrSizeDots * 25.4 / max(1, $dpi);
+                $fontSizePt = $textFontSize * 72 / max(1, $dpi);
+            @endphp
             <div class="mt-6 rounded-xl border border-indigo-200 bg-white shadow-lg overflow-hidden">
                 <div class="flex items-center justify-between border-b border-indigo-100 bg-indigo-50 px-5 py-3">
                     <h3 class="text-sm font-bold text-indigo-900">
-                        پیش‌نمایش برچسب‌ها
+                        پیش‌نمایش دقیق برچسب‌ها
                         ({{ count($this->printList) }} کارت - {{ intdiv(count($this->printList) + 1, 2) }} ردیف)
                     </h3>
                     <button
@@ -541,36 +559,63 @@
                 </div>
 
                 <div class="p-5">
-                    <p class="mb-4 text-xs text-slate-500">
-                        هر ردیف چاپی شامل ۲ برچسب است: برچسب ۱ و ۲، سپس ۳ و ۴، بعد ۵ و ۶ و به همین ترتیب.
-                        هر برچسب {{ $labelWidthMm }}×{{ $labelHeightMm }} میلی‌متر است و QR + کد مددجو با هم جابه‌جا می‌شوند.
-                        <span class="font-semibold text-slate-700">حالت: {{ $layoutMode === 'horizontal' ? 'افقی' : 'عمودی' }}</span>
-                        @if($rotate180)
-                            <span class="font-semibold text-amber-600">⚠ چرخش ۱۸۰ درجه فعال است.</span>
-                        @endif
-                    </p>
+                    <div class="mb-4 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3">
+                        <p class="text-xs text-blue-800 leading-relaxed">
+                            <strong>پیش‌نمایش واقعی:</strong> ابعاد زیر دقیقاً مطابق اندازه واقعی برچسب روی کاغذ {{ $paperWidthMm }} میلی‌متری است.
+                            هر برچسب {{ $labelWidthMm }}×{{ $labelHeightMm }} میلی‌متر | فاصله بین دو برچسب {{ $gapMm }} میلی‌متر |
+                            حاشیه از لبه {{ $edgeMarginMm }} میلی‌متر | QR Code ≈ {{ number_format($qrSizeMm, 1) }} میلی‌متر |
+                            فونت متن ≈ {{ number_format($fontSizePt, 1) }} پوینت
+                            <span class="font-semibold">| حالت: {{ $layoutMode === 'horizontal' ? 'افقی' : 'عمودی' }}</span>
+                            @if($rotate180)
+                                <span class="font-semibold text-amber-600">| ⚠ چرخش ۱۸۰° فعال</span>
+                            @endif
+                        </p>
+                    </div>
 
-                    <div class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                    <div class="space-y-4 max-h-[600px] overflow-y-auto pr-1">
                         @foreach(array_chunk($this->previewItems, 2) as $labelIndex => $row)
-                            <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                                <p class="mb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                                    ردیف {{ $labelIndex + 1 }}: برچسب {{ ($labelIndex * 2) + 1 }} و {{ ($labelIndex * 2) + 2 }}
+                            <div>
+                                <p class="mb-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                                    ردیف {{ $labelIndex + 1 }}
                                 </p>
-                                <div class="grid gap-3" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
-                                    @foreach($row as $item)
-                                        <div class="flex {{ $layoutMode === 'horizontal' ? 'flex-row gap-3' : 'flex-col' }} items-center justify-center rounded-md border border-dashed border-slate-300 bg-white p-3" style="min-height: 120px;">
-                                            <div class="{{ $layoutMode === 'horizontal' ? 'shrink-0' : 'mb-2' }} [&>svg]:block [&>svg]:mx-auto [&>svg]:w-full [&>svg]:h-full" style="width: {{ min(80, max(40, $qrSizeDots * 25.4 / max(1, $dpi) * 2)) }}px; height: {{ min(80, max(40, $qrSizeDots * 25.4 / max(1, $dpi) * 2)) }}px;">
-                                                {!! $item['qr_svg'] !!}
+                                <div class="inline-block rounded border border-slate-300 bg-white shadow-sm" style="width: {{ $paperWidthMm }}mm; padding: 0;">
+                                    <div class="flex" style="gap: {{ $gapMm }}mm; padding: 0 {{ $edgeMarginMm }}mm;">
+                                        @foreach($row as $item)
+                                            <div
+                                                class="relative border border-dashed border-slate-300 bg-white overflow-hidden"
+                                                style="width: {{ $labelWidthMm }}mm; height: {{ $labelHeightMm }}mm; @if($rotate180) transform: rotate(180deg); @endif"
+                                            >
+                                                @if($layoutMode === 'vertical')
+                                                    <div class="absolute flex items-center justify-center" style="top: {{ $topMarginMm }}mm; left: 0; right: 0; height: {{ $qrSizeMm }}mm;">
+                                                        <div style="width: {{ $qrSizeMm }}mm; height: {{ $qrSizeMm }}mm;" class="[&>svg]:block [&>svg]:w-full [&>svg]:h-full">
+                                                            {!! $item['qr_svg'] !!}
+                                                        </div>
+                                                    </div>
+                                                    <div class="absolute flex items-center justify-center" style="bottom: {{ $bottomMarginMm }}mm; left: 0; right: 0;">
+                                                        <span class="font-mono font-bold text-slate-900 whitespace-nowrap" style="font-size: {{ $fontSizePt }}pt;">{{ $item['person_code'] }}</span>
+                                                    </div>
+                                                @else
+                                                    <div class="absolute flex items-start" style="top: {{ $topMarginMm }}mm; left: {{ $edgeMarginMm }}mm;">
+                                                        <div style="width: {{ $qrSizeMm }}mm; height: {{ $qrSizeMm }}mm;" class="shrink-0 [&>svg]:block [&>svg]:w-full [&>svg]:h-full">
+                                                            {!! $item['qr_svg'] !!}
+                                                        </div>
+                                                    </div>
+                                                    <div class="absolute flex items-center" style="top: 0; bottom: 0; left: {{ $edgeMarginMm + $qrSizeMm + $gapMm }}mm; right: {{ $edgeMarginMm }}mm;">
+                                                        <span class="font-mono font-bold text-slate-900 break-all" style="font-size: {{ $fontSizePt }}pt;">{{ $item['person_code'] }}</span>
+                                                    </div>
+                                                @endif
                                             </div>
-                                            <p class="{{ $layoutMode === 'horizontal' ? 'text-right' : 'text-center' }} text-xs font-bold text-slate-800 font-mono tracking-wide" style="font-size: {{ min(14, max(8, $textFontSize / 2)) }}px;">{{ $item['person_code'] }}</p>
-                                        </div>
-                                    @endforeach
+                                        @endforeach
 
-                                    @for($i = count($row); $i < 2; $i++)
-                                        <div class="flex items-center justify-center rounded-md border border-dashed border-slate-200 bg-slate-50/50 p-3" style="min-height: 120px;">
-                                            <span class="text-xs text-slate-300">خالی</span>
-                                        </div>
-                                    @endfor
+                                        @for($i = count($row); $i < 2; $i++)
+                                            <div
+                                                class="border border-dashed border-slate-200 bg-slate-50/50 flex items-center justify-center"
+                                                style="width: {{ $labelWidthMm }}mm; height: {{ $labelHeightMm }}mm;"
+                                            >
+                                                <span class="text-[8px] text-slate-300">خالی</span>
+                                            </div>
+                                        @endfor
+                                    </div>
                                 </div>
                             </div>
                         @endforeach
@@ -585,12 +630,13 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
                 <div>
-                    <p class="text-sm font-semibold text-blue-800">راهنمای چاپ مستقیم با ZPL</p>
+                    <p class="text-sm font-semibold text-blue-800">راهنمای چاپ</p>
                     <p class="mt-1 text-xs leading-5 text-blue-700">
-                        دکمه «چاپ مستقیم» کدهای QR و کد مددجو را به صورت ZPL تولید کرده و مستقیماً به پرینتر TSC ارسال می‌کند.
-                        اگر حالت «چاپ از طریق مرورگر» را انتخاب کنید، پنجره چاپ سیستم باز می‌شود و می‌توانید پرینتر نصب‌شده روی همین دستگاه را انتخاب کنید.
-                        تنظیمات چیدمان از پنل «تنظیمات پیشرفته» قابل تنظیم دقیق هستند.
-                        ابتدا تنظیمات پرینتر را بررسی کنید و با «چاپ برچسب تست» از اتصال و چیدمان مطمئن شوید.
+                        دکمه «چاپ مستقیم» برچسب‌ها را با زبان {{ strtoupper(config('label-printer.printer.language', 'tspl')) }} تولید و به پرینتر ارسال می‌کند.
+                        دکمه «دانلود فایل چاپ» همان فایل را برای چاپ دستی با نرم‌افزار TSC دانلود می‌کند.
+                        پیش‌نمایش بالا ابعاد واقعی برچسب ({{ $labelWidthMm }}×{{ $labelHeightMm }} میلی‌متر) را روی کاغذ {{ $paperWidthMm }} میلی‌متری شبیه‌سازی می‌کند.
+                        اگر حالت «چاپ از طریق مرورگر» را انتخاب کنید، پنجره چاپ سیستم باز می‌شود.
+                        ابتدا با «چاپ برچسب تست» از اتصال و چیدمان مطمئن شوید.
                     </p>
                 </div>
             </div>
