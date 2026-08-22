@@ -161,25 +161,13 @@ class LabelPrinterService
                 $xOffset = $edgeMarginDots + ($colIndex * ($labelWidthDots + $gapDots));
                 $ecChar = strtoupper(substr($this->qrErrorCorrection, 0, 1));
                 $effectiveMagnification = max(1, min(10, (int) round($this->qrSizeDots / 25)));
-                $qrY = $topMarginDots;
+                $layout = $this->buildLayoutPositions($xOffset, $labelWidthDots, $heightDots, $gapDots, $topMarginDots, $bottomMarginDots);
 
-                if ($this->layoutMode === 'horizontal') {
-                    $qrX = $xOffset;
-                    $textX = $xOffset + $this->qrSizeDots + $gapDots;
-                    $textY = intdiv($heightDots - $this->textFontSize, 2);
-                    $maxTextWidth = max(1, $labelWidthDots - $this->qrSizeDots - $gapDots);
-                } else {
-                    $qrX = $xOffset + intdiv(max(0, $labelWidthDots - $this->qrSizeDots), 2);
-                    $textX = $xOffset;
-                    $textY = $heightDots - $this->textFontSize - $bottomMarginDots;
-                    $maxTextWidth = $labelWidthDots;
-                }
-
-                $zpl .= "^FO{$qrX},{$qrY}^BQN,2,{$effectiveMagnification},{$ecChar}\n";
+                $zpl .= "^FO{$layout['qr_x']},{$layout['qr_y']}^BQN,2,{$effectiveMagnification},{$ecChar}\n";
                 $zpl .= "^FDQA,{$item['public_code']}^FS\n";
 
                 $personCode = mb_strimwidth($item['person_code'], 0, 20);
-                $zpl .= "^FO{$textX},{$textY}^A0N,{$this->textFontSize},{$this->textFontSize}^FB{$maxTextWidth},1,0,C\n";
+                $zpl .= "^FO{$layout['text_x']},{$layout['text_y']}^A0N,{$this->textFontSize},{$this->textFontSize}^FB{$layout['max_text_width']},1,0,C\n";
                 $zpl .= "^FD{$personCode}^FS\n";
             }
 
@@ -223,24 +211,12 @@ class LabelPrinterService
             $xOffset = $edgeMarginDots + ($colIndex * ($labelWidthDots + $gapDots));
             $ecChar = strtoupper(substr($this->qrErrorCorrection, 0, 1));
             $effectiveMagnification = max(1, min(10, (int) round($this->qrSizeDots / 25)));
-            $qrY = $topMarginDots;
+            $layout = $this->buildLayoutPositions($xOffset, $labelWidthDots, $heightDots, $gapDots, $topMarginDots, $bottomMarginDots);
 
-            if ($this->layoutMode === 'horizontal') {
-                $qrX = $xOffset;
-                $textX = $xOffset + $this->qrSizeDots + $gapDots;
-                $textY = intdiv($heightDots - $this->textFontSize, 2);
-                $maxTextWidth = max(1, $labelWidthDots - $this->qrSizeDots - $gapDots);
-            } else {
-                $qrX = $xOffset + intdiv(max(0, $labelWidthDots - $this->qrSizeDots), 2);
-                $textX = $xOffset;
-                $textY = $heightDots - $this->textFontSize - $bottomMarginDots;
-                $maxTextWidth = $labelWidthDots;
-            }
-
-            $zpl .= "^FO{$qrX},{$qrY}^BQN,2,{$effectiveMagnification},{$ecChar}\n";
+            $zpl .= "^FO{$layout['qr_x']},{$layout['qr_y']}^BQN,2,{$effectiveMagnification},{$ecChar}\n";
             $zpl .= "^FDQA,{$item['public_code']}^FS\n";
 
-            $zpl .= "^FO{$textX},{$textY}^A0N,{$this->textFontSize},{$this->textFontSize}^FB{$maxTextWidth},1,0,C\n";
+            $zpl .= "^FO{$layout['text_x']},{$layout['text_y']}^A0N,{$this->textFontSize},{$this->textFontSize}^FB{$layout['max_text_width']},1,0,C\n";
             $zpl .= "^FD{$item['person_code']}^FS\n";
         }
 
@@ -322,6 +298,38 @@ class LabelPrinterService
     private function mmToDots(float $mm): int
     {
         return (int) round($mm * $this->dpi / 25.4);
+    }
+
+    /**
+     * Keep the QR and client code aligned as a single layout unit.
+     *
+     * @return array{qr_x: int, qr_y: int, text_x: int, text_y: int, max_text_width: int}
+     */
+    private function buildLayoutPositions(
+        int $xOffset,
+        int $labelWidthDots,
+        int $heightDots,
+        int $gapDots,
+        int $topMarginDots,
+        int $bottomMarginDots
+    ): array {
+        if ($this->layoutMode === 'horizontal') {
+            return [
+                'qr_x' => $xOffset,
+                'qr_y' => $topMarginDots,
+                'text_x' => $xOffset + $this->qrSizeDots + $gapDots,
+                'text_y' => intdiv($heightDots - $this->textFontSize, 2),
+                'max_text_width' => max(1, $labelWidthDots - $this->qrSizeDots - $gapDots),
+            ];
+        }
+
+        return [
+            'qr_x' => $xOffset + intdiv(max(0, $labelWidthDots - $this->qrSizeDots), 2),
+            'qr_y' => $topMarginDots,
+            'text_x' => $xOffset,
+            'text_y' => $heightDots - $this->textFontSize - $bottomMarginDots,
+            'max_text_width' => $labelWidthDots,
+        ];
     }
 
     /**

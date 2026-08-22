@@ -512,7 +512,7 @@
 
                 <div class="p-5">
                     <p class="mb-4 text-xs text-slate-500">
-                        هر ردیف معادل یک ردیف چاپی روی رول ۹۶ میلی‌متری با ۲ ستونِ {{ $labelWidthMm }}×{{ $labelHeightMm }} است.
+                        هر ردیف معادل یک ردیف چاپی روی رول ۹۶ میلی‌متری با ۲ ستونِ {{ $labelWidthMm }}×{{ $labelHeightMm }} است و QR + کد مددجو با هم جابه‌جا می‌شوند.
                         <span class="font-semibold text-slate-700">حالت: {{ $layoutMode === 'horizontal' ? 'افقی' : 'عمودی' }}</span>
                         @if($rotate180)
                             <span class="font-semibold text-amber-600">⚠ چرخش ۱۸۰ درجه فعال است.</span>
