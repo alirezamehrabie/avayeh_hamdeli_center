@@ -458,11 +458,11 @@
                                     <div class="grid grid-cols-2 gap-2">
                                         <div>
                                             <label class="block text-[10px] font-medium text-slate-600 mb-0.5">X (mm)</label>
-                                            <input type="number" step="0.5" min="0" :max="labelWidthMm" x-model.number="textPos.x" class="w-full rounded border border-slate-200 px-1.5 py-1 text-xs text-slate-700 focus:border-amber-300 focus:ring focus:ring-amber-100" dir="ltr">
+                                            <input type="number" step="0.5" x-model.number="textPos.x" class="w-full rounded border border-slate-200 px-1.5 py-1 text-xs text-slate-700 focus:border-amber-300 focus:ring focus:ring-amber-100" dir="ltr">
                                         </div>
                                         <div>
                                             <label class="block text-[10px] font-medium text-slate-600 mb-0.5">Y (mm)</label>
-                                            <input type="number" step="0.5" min="0" :max="labelHeightMm" x-model.number="textPos.y" class="w-full rounded border border-slate-200 px-1.5 py-1 text-xs text-slate-700 focus:border-amber-300 focus:ring focus:ring-amber-100" dir="ltr">
+                                            <input type="number" step="0.5" x-model.number="textPos.y" class="w-full rounded border border-slate-200 px-1.5 py-1 text-xs text-slate-700 focus:border-amber-300 focus:ring focus:ring-amber-100" dir="ltr">
                                         </div>
                                     </div>
                                     <div>

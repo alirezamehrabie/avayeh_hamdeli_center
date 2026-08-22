@@ -103,12 +103,12 @@ Alpine.data('labelEditor', (props) => ({
     updateGapFromTextX() {
         const qrSizeMm = this.dotsToMm(this.qrSizeDots);
         const gap = this.textPos.x - this.edgeMarginMm - qrSizeMm;
-        this.qrTextGapMm = Math.round(this.clamp(gap, 0, 20) * 10) / 10;
+        this.qrTextGapMm = Math.round(gap * 10) / 10;
     },
 
     updateBottomMarginFromTextY() {
         const bottom = this.labelHeightMm - this.textPos.y;
-        this.bottomMarginMm = Math.round(this.clamp(bottom, 0, this.labelHeightMm / 2) * 10) / 10;
+        this.bottomMarginMm = Math.round(bottom * 10) / 10;
     },
 
     qrStyle() {
@@ -154,8 +154,8 @@ Alpine.data('labelEditor', (props) => ({
             this.updateEdgeMarginFromQrX();
             this.updateTopMarginFromQrY();
         } else if (this.dragging === 'text') {
-            this.textPos.x = Math.round(this.clamp(this.dragStartTextX + dx, 0, this.labelWidthMm) * 10) / 10;
-            this.textPos.y = Math.round(this.clamp(this.dragStartTextY + dy, 0, this.labelHeightMm) * 10) / 10;
+            this.textPos.x = Math.round((this.dragStartTextX + dx) * 10) / 10;
+            this.textPos.y = Math.round((this.dragStartTextY + dy) * 10) / 10;
             this.updateGapFromTextX();
             this.updateBottomMarginFromTextY();
         }
