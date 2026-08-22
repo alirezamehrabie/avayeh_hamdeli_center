@@ -18,6 +18,8 @@ class LabelPrinterService
 
     private float $qrTextGapMm;
 
+    private int $qrTextRotationDeg;
+
     private float $edgeMarginMm;
 
     private float $topMarginMm;
@@ -71,6 +73,7 @@ class LabelPrinterService
         $this->columns = 2;
         $this->gapMm = $overrides['gap_mm'] ?? $label['gap_mm'];
         $this->qrTextGapMm = $overrides['qr_text_gap_mm'] ?? ($label['qr_text_gap_mm'] ?? 3);
+        $this->qrTextRotationDeg = $overrides['qr_text_rotation_deg'] ?? ($label['qr_text_rotation_deg'] ?? 0);
         $this->edgeMarginMm = $overrides['edge_margin_mm'] ?? ($label['edge_margin_mm'] ?? 0);
         $this->topMarginMm = $overrides['top_margin_mm'] ?? ($label['top_margin_mm'] ?? 0);
         $this->bottomMarginMm = $overrides['bottom_margin_mm'] ?? ($label['bottom_margin_mm'] ?? 0);
@@ -215,7 +218,7 @@ class LabelPrinterService
                 $zpl .= "^FDQA,{$item['public_code']}^FS\n";
 
                 $personCode = mb_strimwidth($item['person_code'], 0, 20);
-                $zpl .= "^FO{$layout['text_x']},{$layout['text_y']}^A0N,{$this->textFontSize},{$this->textFontSize}^FB{$layout['max_text_width']},1,0,C\n";
+                $zpl .= "^FO{$layout['text_x']},{$layout['text_y']}^A0{$this->zplTextOrientation()},{$this->textFontSize},{$this->textFontSize}^FB{$layout['max_text_width']},1,0,C\n";
                 $zpl .= "^FD{$personCode}^FS\n";
             }
 
@@ -265,7 +268,7 @@ class LabelPrinterService
             $zpl .= "^FO{$layout['qr_x']},{$layout['qr_y']}^BQN,2,{$effectiveMagnification},{$ecChar}\n";
             $zpl .= "^FDQA,{$item['public_code']}^FS\n";
 
-            $zpl .= "^FO{$layout['text_x']},{$layout['text_y']}^A0N,{$this->textFontSize},{$this->textFontSize}^FB{$layout['max_text_width']},1,0,C\n";
+            $zpl .= "^FO{$layout['text_x']},{$layout['text_y']}^A0{$this->zplTextOrientation()},{$this->textFontSize},{$this->textFontSize}^FB{$layout['max_text_width']},1,0,C\n";
             $zpl .= "^FD{$item['person_code']}^FS\n";
         }
 
@@ -311,7 +314,7 @@ class LabelPrinterService
 
                 $personCode = mb_strimwidth($item['person_code'], 0, 20);
                 $textX = $layout['text_x'] + intdiv($layout['max_text_width'], 2);
-                $tspl .= "TEXT {$textX},{$layout['text_y']},\"3\",0,1,1,\"{$personCode}\"\r\n";
+                $tspl .= "TEXT {$textX},{$layout['text_y']},\"3\",{$this->tsplTextRotation()},1,1,\"{$personCode}\"\r\n";
             }
 
             $tspl .= "PRINT 1\r\n";
@@ -358,7 +361,7 @@ class LabelPrinterService
             $tspl .= "QRCODE {$layout['qr_x']},{$layout['qr_y']},L,{$effectiveMagnification},A,0,M{$ecChar},\"{$item['public_code']}\"\r\n";
 
             $textX = $layout['text_x'] + intdiv($layout['max_text_width'], 2);
-            $tspl .= "TEXT {$textX},{$layout['text_y']},\"3\",0,1,1,\"{$item['person_code']}\"\r\n";
+            $tspl .= "TEXT {$textX},{$layout['text_y']},\"3\",{$this->tsplTextRotation()},1,1,\"{$item['person_code']}\"\r\n";
         }
 
         $tspl .= "PRINT 1\r\n";
@@ -452,6 +455,41 @@ class LabelPrinterService
     }
 
     /**
+     * Normalize the configured text rotation.
+     */
+    private function normalizeRotation(): int
+    {
+        $rotation = $this->qrTextRotationDeg % 360;
+
+        if ($rotation < 0) {
+            $rotation += 360;
+        }
+
+        return in_array($rotation, [0, 90, 180, 270], true) ? $rotation : 0;
+    }
+
+    /**
+     * Map rotation to a ZPL field orientation.
+     */
+    private function zplTextOrientation(): string
+    {
+        return match ($this->normalizeRotation()) {
+            90 => 'R',
+            180 => 'I',
+            270 => 'B',
+            default => 'N',
+        };
+    }
+
+    /**
+     * Map rotation to a TSPL rotation value.
+     */
+    private function tsplTextRotation(): int
+    {
+        return $this->normalizeRotation();
+    }
+
+    /**
      * Keep the QR and client code aligned as a single layout unit.
      *
      * @return array{qr_x: int, qr_y: int, text_x: int, text_y: int, max_text_width: int}
@@ -502,6 +540,7 @@ class LabelPrinterService
             'columns' => $this->columns,
             'gap_mm' => $this->gapMm,
             'qr_text_gap_mm' => $this->qrTextGapMm,
+            'qr_text_rotation_deg' => $this->qrTextRotationDeg,
             'edge_margin_mm' => $this->edgeMarginMm,
             'top_margin_mm' => $this->topMarginMm,
             'bottom_margin_mm' => $this->bottomMarginMm,

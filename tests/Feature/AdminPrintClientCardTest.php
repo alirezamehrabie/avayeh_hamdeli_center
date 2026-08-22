@@ -20,6 +20,7 @@ class AdminPrintClientCardTest extends TestCase
             ->assertSet('labelHeightMm', 30)
             ->assertSet('gapMm', 3)
             ->assertSet('qrTextGapMm', 3)
+            ->assertSet('qrTextRotationDeg', 0)
             ->assertSet('edgeMarginMm', 1.5)
             ->assertSet('topMarginMm', 3)
             ->assertSet('bottomMarginMm', 3)

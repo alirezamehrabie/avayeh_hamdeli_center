@@ -81,6 +81,9 @@
             text-align: center;
             direction: rtl;
             word-break: break-word;
+            display: inline-block;
+            transform: rotate({{ $qrTextRotationDeg }}deg);
+            transform-origin: center;
         }
     </style>
 </head>

@@ -66,6 +66,8 @@ class PrintClientCard extends Component
 
     public float $qrTextGapMm = 3;
 
+    public int $qrTextRotationDeg = 0;
+
     public float $edgeMarginMm = 1.5;
 
     public float $topMarginMm = 3;
@@ -115,6 +117,7 @@ class PrintClientCard extends Component
         $this->labelHeightMm = $label['height_mm'] ?? 30;
         $this->gapMm = $label['gap_mm'] ?? 3;
         $this->qrTextGapMm = $label['qr_text_gap_mm'] ?? 3;
+        $this->qrTextRotationDeg = $label['qr_text_rotation_deg'] ?? 0;
         $this->edgeMarginMm = $label['edge_margin_mm'] ?? 1.5;
         $this->topMarginMm = $label['top_margin_mm'] ?? 3;
         $this->bottomMarginMm = $label['bottom_margin_mm'] ?? 3;
@@ -316,6 +319,7 @@ class PrintClientCard extends Component
         $this->labelHeightMm = $label['height_mm'] ?? 30;
         $this->gapMm = $label['gap_mm'] ?? 3;
         $this->qrTextGapMm = $label['qr_text_gap_mm'] ?? 3;
+        $this->qrTextRotationDeg = $label['qr_text_rotation_deg'] ?? 0;
         $this->edgeMarginMm = $label['edge_margin_mm'] ?? 1.5;
         $this->topMarginMm = $label['top_margin_mm'] ?? 3;
         $this->bottomMarginMm = $label['bottom_margin_mm'] ?? 3;
@@ -594,6 +598,7 @@ class PrintClientCard extends Component
             'paper_width_mm' => $this->paperWidthMm,
             'gap_mm' => $this->gapMm,
             'qr_text_gap_mm' => $this->qrTextGapMm,
+            'qr_text_rotation_deg' => $this->qrTextRotationDeg,
             'dpi' => $this->dpi,
             'columns' => 2,
             'qr_size_dots' => $this->qrSizeDots,
@@ -683,6 +688,7 @@ class PrintClientCard extends Component
             'labelHeightMm' => $this->labelHeightMm,
             'gapMm' => $this->gapMm,
             'qrTextGapMm' => $this->qrTextGapMm,
+            'qrTextRotationDeg' => $this->qrTextRotationDeg,
             'edgeMarginMm' => $this->edgeMarginMm,
             'topMarginMm' => $this->topMarginMm,
             'bottomMarginMm' => $this->bottomMarginMm,
@@ -716,6 +722,7 @@ class PrintClientCard extends Component
             'labelHeightMm' => $this->labelHeightMm,
             'gapMm' => $this->gapMm,
             'qrTextGapMm' => $this->qrTextGapMm,
+            'qrTextRotationDeg' => $this->qrTextRotationDeg,
             'edgeMarginMm' => $this->edgeMarginMm,
             'topMarginMm' => $this->topMarginMm,
             'bottomMarginMm' => $this->bottomMarginMm,
