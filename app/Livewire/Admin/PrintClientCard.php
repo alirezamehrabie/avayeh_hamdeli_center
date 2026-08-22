@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Models\Person;
 use App\Models\QrIdentity;
 use App\Models\SocialWorker;
+use App\Services\LabelPrinterService;
 use App\Services\QrIdentityService;
 use Livewire\Component;
 use Maatwebsite\Excel\Facades\Excel;
@@ -35,9 +36,29 @@ class PrintClientCard extends Component
 
     public bool $loadingSocialWorkerClients = false;
 
+    public string $printerConnection = '';
+
+    public string $printerHost = '';
+
+    public int $printerPort = 9100;
+
+    public string $printerUsbName = '';
+
+    public bool $showPrinterSettings = false;
+
+    public bool $printingDirectly = false;
+
+    public bool $showPreview = false;
+
     public function mount(): void
     {
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+
+        $config = config('label-printer.printer');
+        $this->printerConnection = $config['connection'] ?? 'network';
+        $this->printerHost = $config['host'] ?? '192.168.1.100';
+        $this->printerPort = $config['port'] ?? 9100;
+        $this->printerUsbName = $config['usb_printer_name'] ?? '';
     }
 
     public function updatedSearch(): void
@@ -117,6 +138,91 @@ class PrintClientCard extends Component
     public function clearPrintList(): void
     {
         $this->printList = [];
+    }
+
+    public function printDirectly(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+
+        if (empty($this->printList)) {
+            session()->flash('error', 'لیست چاپ خالی است.');
+            return;
+        }
+
+        $this->printingDirectly = true;
+
+        $items = $this->buildPrintItems();
+
+        $printer = new LabelPrinterService;
+        $result = $printer->printBatch($items);
+
+        $this->printingDirectly = false;
+
+        if ($result['success']) {
+            session()->flash('success', $result['message']);
+        } else {
+            session()->flash('error', $result['message']);
+        }
+    }
+
+    public function printTestLabel(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+
+        $printer = new LabelPrinterService;
+        $result = $printer->printTestLabel();
+
+        if ($result['success']) {
+            session()->flash('success', $result['message']);
+        } else {
+            session()->flash('error', $result['message']);
+        }
+    }
+
+    public function togglePrinterSettings(): void
+    {
+        $this->showPrinterSettings = ! $this->showPrinterSettings;
+    }
+
+    public function togglePreview(): void
+    {
+        if (empty($this->printList)) {
+            session()->flash('error', 'لیست چاپ خالی است.');
+            return;
+        }
+
+        $this->showPreview = ! $this->showPreview;
+    }
+
+    public function getPreviewItemsProperty(): array
+    {
+        $service = app(QrIdentityService::class);
+        $items = [];
+
+        foreach ($this->printList as $item) {
+            $identity = QrIdentity::query()
+                ->where('subject_type', QrIdentity::SUBJECT_PERSON)
+                ->where('subject_id', $item['id'])
+                ->where('status', QrIdentity::STATUS_ACTIVE)
+                ->latest('id')
+                ->first();
+
+            if (! $identity) {
+                $issued = $service->ensureActiveFor(
+                    Person::query()->find($item['id']),
+                    auth()->id()
+                );
+                $identity = $issued;
+            }
+
+            $items[] = [
+                'qr_svg' => $identity->qr_svg,
+                'person_code' => $item['person_code'],
+                'full_name' => $item['full_name'],
+            ];
+        }
+
+        return $items;
     }
 
     public function exportToCsv(): \Symfony\Component\HttpFoundation\Response
@@ -309,6 +415,39 @@ class PrintClientCard extends Component
     public function render()
     {
         return view('livewire.admin.print-client-card');
+    }
+
+    /**
+     * Build items array for direct ZPL printing with QR codes.
+     */
+    private function buildPrintItems(): array
+    {
+        $service = app(QrIdentityService::class);
+        $items = [];
+
+        foreach ($this->printList as $item) {
+            $identity = QrIdentity::query()
+                ->where('subject_type', QrIdentity::SUBJECT_PERSON)
+                ->where('subject_id', $item['id'])
+                ->where('status', QrIdentity::STATUS_ACTIVE)
+                ->latest('id')
+                ->first();
+
+            if (! $identity) {
+                $issued = $service->ensureActiveFor(
+                    Person::query()->find($item['id']),
+                    auth()->id()
+                );
+                $identity = $issued;
+            }
+
+            $items[] = [
+                'public_code' => $identity->public_code,
+                'person_code' => $item['person_code'],
+            ];
+        }
+
+        return $items;
     }
 
     private function buildExportRows(): array
