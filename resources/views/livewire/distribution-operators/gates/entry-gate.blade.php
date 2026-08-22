@@ -623,8 +623,8 @@
                                 wire:loading.attr="disabled"
                                 wire:target="confirmPermission"
                                 title="تأیید مجوز و اسکن نفر بعدی (Ctrl + Enter)"
-                                class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-5 py-3.5 text-base font-black text-white shadow-sm transition hover:bg-indigo-700 active:scale-[0.99] disabled:opacity-75 disabled:cursor-not-allowed"
-                                :class="nextScanShortcutActive ? 'ring-2 ring-indigo-300 ring-offset-1' : ''"
+                                class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3.5 text-base font-black text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.99] disabled:opacity-75 disabled:cursor-not-allowed"
+                                :class="nextScanShortcutActive ? 'ring-2 ring-emerald-300 ring-offset-1' : ''"
                             >
                                 {{-- Loading spinner --}}
                                 <svg
