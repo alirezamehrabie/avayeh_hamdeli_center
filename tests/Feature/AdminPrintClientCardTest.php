@@ -16,14 +16,14 @@ class AdminPrintClientCardTest extends TestCase
 
         Livewire::test(PrintClientCard::class)
             ->assertSet('paperWidthMm', 96)
-            ->assertSet('labelWidthMm', 30)
-            ->assertSet('labelHeightMm', 45)
+            ->assertSet('labelWidthMm', 45)
+            ->assertSet('labelHeightMm', 30)
             ->assertSet('gapMm', 3)
-            ->assertSet('edgeMarginMm', 2)
+            ->assertSet('edgeMarginMm', 1.5)
             ->assertSet('topMarginMm', 3)
             ->assertSet('bottomMarginMm', 3)
             ->assertSet('columns', 2)
-            ->assertSet('layoutMode', 'vertical');
+            ->assertSet('layoutMode', 'horizontal');
     }
 
     public function test_direct_print_requires_preview_to_be_open_first(): void

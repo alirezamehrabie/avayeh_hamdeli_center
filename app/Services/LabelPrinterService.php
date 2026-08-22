@@ -46,7 +46,7 @@ class LabelPrinterService
 
     private float $paperWidthMm = 0;
 
-    private string $layoutMode = 'vertical';
+    private string $layoutMode = 'horizontal';
 
     private string $language;
 
@@ -71,7 +71,7 @@ class LabelPrinterService
         $this->edgeMarginMm = $overrides['edge_margin_mm'] ?? ($label['edge_margin_mm'] ?? 0);
         $this->topMarginMm = $overrides['top_margin_mm'] ?? ($label['top_margin_mm'] ?? 0);
         $this->bottomMarginMm = $overrides['bottom_margin_mm'] ?? ($label['bottom_margin_mm'] ?? 0);
-        $this->layoutMode = $overrides['layout_mode'] ?? ($label['layout_mode'] ?? 'vertical');
+        $this->layoutMode = $overrides['layout_mode'] ?? ($label['layout_mode'] ?? 'horizontal');
 
         $this->qrSizeDots = $overrides['qr_size_dots'] ?? $qr['size_dots'];
         $this->qrMagnification = $overrides['qr_magnification'] ?? $qr['magnification'];
@@ -275,9 +275,7 @@ class LabelPrinterService
      */
     private function buildBatchTspl(array $items): string
     {
-        $widthDots = $this->mmToDots($this->widthMm);
         $heightDots = $this->mmToDots($this->heightMm);
-        $paperWidthDots = $this->paperWidthMm > 0 ? $this->mmToDots($this->paperWidthMm) : $widthDots;
         $labelWidthDots = $this->mmToDots($this->widthMm);
         $gapDots = $this->mmToDots($this->gapMm);
         $edgeMarginDots = $this->mmToDots($this->edgeMarginMm);
@@ -286,8 +284,8 @@ class LabelPrinterService
 
         $chunks = array_chunk($items, $this->columns);
 
-        $tspl = "SIZE {$paperWidthDots} mm,{$heightDots} mm\r\n";
-        $tspl .= "GAP {$gapDots} mm,0\r\n";
+        $tspl = 'SIZE ' . $this->formatMm($this->paperWidthMm) . ' mm,' . $this->formatMm($this->heightMm) . " mm\r\n";
+        $tspl .= 'GAP ' . $this->formatMm($this->gapMm) . " mm,0\r\n";
         $tspl .= "REFERENCE 0,0\r\n";
 
         if ($this->rotate180) {
@@ -321,17 +319,15 @@ class LabelPrinterService
      */
     private function buildTestLabelTspl(): string
     {
-        $widthDots = $this->mmToDots($this->widthMm);
         $heightDots = $this->mmToDots($this->heightMm);
-        $paperWidthDots = $this->paperWidthMm > 0 ? $this->mmToDots($this->paperWidthMm) : $widthDots;
         $labelWidthDots = $this->mmToDots($this->widthMm);
         $gapDots = $this->mmToDots($this->gapMm);
         $edgeMarginDots = $this->mmToDots($this->edgeMarginMm);
         $topMarginDots = $this->mmToDots($this->topMarginMm);
         $bottomMarginDots = $this->mmToDots($this->bottomMarginMm);
 
-        $tspl = "SIZE {$paperWidthDots} mm,{$heightDots} mm\r\n";
-        $tspl .= "GAP {$gapDots} mm,0\r\n";
+        $tspl = 'SIZE ' . $this->formatMm($this->paperWidthMm) . ' mm,' . $this->formatMm($this->heightMm) . " mm\r\n";
+        $tspl .= 'GAP ' . $this->formatMm($this->gapMm) . " mm,0\r\n";
         $tspl .= "REFERENCE 0,0\r\n";
         $tspl .= "CLS\r\n";
 
@@ -436,6 +432,16 @@ class LabelPrinterService
     private function mmToDots(float $mm): int
     {
         return (int) round($mm * $this->dpi / 25.4);
+    }
+
+    /**
+     * Format a millimeter value for TSPL commands.
+     */
+    private function formatMm(float $mm): string
+    {
+        $formatted = rtrim(rtrim(number_format($mm, 2, '.', ''), '0'), '.');
+
+        return $formatted === '' ? '0' : $formatted;
     }
 
     /**

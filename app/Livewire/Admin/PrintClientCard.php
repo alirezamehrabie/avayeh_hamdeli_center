@@ -56,15 +56,15 @@ class PrintClientCard extends Component
     public bool $printingDirectly = false;
 
     // Advanced label layout settings
-    public float $labelWidthMm = 30;
+    public float $labelWidthMm = 45;
 
-    public float $labelHeightMm = 45;
+    public float $labelHeightMm = 30;
 
     public float $paperWidthMm = 96;
 
     public float $gapMm = 3;
 
-    public float $edgeMarginMm = 2;
+    public float $edgeMarginMm = 1.5;
 
     public float $topMarginMm = 3;
 
@@ -86,7 +86,7 @@ class PrintClientCard extends Component
 
     public bool $rotate180 = false;
 
-    public string $layoutMode = 'vertical';
+    public string $layoutMode = 'horizontal';
 
     public bool $showPreview = false;
 
@@ -109,15 +109,15 @@ class PrintClientCard extends Component
         $this->canDetectLocalPrinters = $this->isWindowsEnvironment();
 
         $this->paperWidthMm = $label['paper_width_mm'] ?? 96;
-        $this->labelWidthMm = $label['width_mm'] ?? 30;
-        $this->labelHeightMm = $label['height_mm'] ?? 45;
+        $this->labelWidthMm = $label['width_mm'] ?? 45;
+        $this->labelHeightMm = $label['height_mm'] ?? 30;
         $this->gapMm = $label['gap_mm'] ?? 3;
-        $this->edgeMarginMm = $label['edge_margin_mm'] ?? 2;
+        $this->edgeMarginMm = $label['edge_margin_mm'] ?? 1.5;
         $this->topMarginMm = $label['top_margin_mm'] ?? 3;
         $this->bottomMarginMm = $label['bottom_margin_mm'] ?? 3;
         $this->dpi = $label['dpi'] ?? 203;
         $this->columns = $label['columns'] ?? 2;
-        $this->layoutMode = $label['layout_mode'] ?? 'vertical';
+        $this->layoutMode = $label['layout_mode'] ?? 'horizontal';
 
         $this->qrSizeDots = $qr['size_dots'] ?? 180;
         $this->qrMagnification = $qr['magnification'] ?? 4;
@@ -309,15 +309,15 @@ class PrintClientCard extends Component
         $text = $config['text'];
 
         $this->paperWidthMm = $label['paper_width_mm'] ?? 96;
-        $this->labelWidthMm = $label['width_mm'] ?? 30;
-        $this->labelHeightMm = $label['height_mm'] ?? 45;
+        $this->labelWidthMm = $label['width_mm'] ?? 45;
+        $this->labelHeightMm = $label['height_mm'] ?? 30;
         $this->gapMm = $label['gap_mm'] ?? 3;
-        $this->edgeMarginMm = $label['edge_margin_mm'] ?? 2;
+        $this->edgeMarginMm = $label['edge_margin_mm'] ?? 1.5;
         $this->topMarginMm = $label['top_margin_mm'] ?? 3;
         $this->bottomMarginMm = $label['bottom_margin_mm'] ?? 3;
         $this->dpi = $label['dpi'] ?? 203;
         $this->columns = $label['columns'] ?? 2;
-        $this->layoutMode = $label['layout_mode'] ?? 'vertical';
+        $this->layoutMode = $label['layout_mode'] ?? 'horizontal';
 
         $this->qrSizeDots = $qr['size_dots'] ?? 180;
         $this->qrMagnification = $qr['magnification'] ?? 4;

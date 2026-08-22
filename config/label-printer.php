@@ -34,10 +34,10 @@ return [
     ],
 
     'label' => [
-        // 96 mm roll with two 30x45 mm labels per printed row
+        // 96 mm roll with two 45x30 mm labels per printed row
         'paper_width_mm' => 96,
-        'width_mm' => 30,
-        'height_mm' => 45,
+        'width_mm' => 45,
+        'height_mm' => 30,
 
         // Print resolution in DPI (dots per inch)
         'dpi' => 203,
@@ -49,14 +49,14 @@ return [
         'gap_mm' => 3,
 
         // Side margin from the roll edges in mm
-        'edge_margin_mm' => 2,
+        'edge_margin_mm' => 1.5,
 
         // Top and bottom margins inside each label in mm
         'top_margin_mm' => 3,
         'bottom_margin_mm' => 3,
 
         // Default layout for QR + client code content
-        'layout_mode' => 'vertical',
+        'layout_mode' => 'horizontal',
     ],
 
     'qr_code' => [
