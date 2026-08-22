@@ -225,6 +225,10 @@
                                 <input type="number" step="10" min="50" max="500" wire:model.live.debounce.500ms="qrSizeDots" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
                             </div>
                             <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">فاصله QR و متن (mm)</label>
+                                <input type="number" step="0.5" min="0" max="20" wire:model.live.debounce.500ms="qrTextGapMm" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
+                            </div>
+                            <div>
                                 <label class="block text-xs font-medium text-slate-600 mb-1">بزرگ‌نمایی (Magnification)</label>
                                 <input type="number" min="1" max="10" wire:model.live.debounce.500ms="qrMagnification" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
                             </div>
@@ -564,6 +568,7 @@
                             <strong>پیش‌نمایش واقعی:</strong> ابعاد زیر دقیقاً مطابق اندازه واقعی برچسب روی کاغذ {{ $paperWidthMm }} میلی‌متری است.
                             هر برچسب {{ $labelWidthMm }}×{{ $labelHeightMm }} میلی‌متر | فاصله بین دو برچسب {{ $gapMm }} میلی‌متر |
                             حاشیه از لبه {{ $edgeMarginMm }} میلی‌متر | QR Code ≈ {{ number_format($qrSizeMm, 1) }} میلی‌متر |
+                            فاصله QR و متن {{ $qrTextGapMm }} میلی‌متر |
                             فونت متن ≈ {{ number_format($fontSizePt, 1) }} پوینت
                             <span class="font-semibold">| حالت: {{ $layoutMode === 'horizontal' ? 'افقی' : 'عمودی' }}</span>
                             @if($rotate180)
@@ -600,7 +605,7 @@
                                                             {!! $item['qr_svg'] !!}
                                                         </div>
                                                     </div>
-                                                    <div class="absolute flex items-center" style="top: 0; bottom: 0; left: {{ $edgeMarginMm + $qrSizeMm + $gapMm }}mm; right: {{ $edgeMarginMm }}mm;">
+                                                    <div class="absolute flex items-center" style="top: 0; bottom: 0; left: {{ $edgeMarginMm + $qrSizeMm + $qrTextGapMm }}mm; right: {{ $edgeMarginMm }}mm;">
                                                         <span class="font-mono font-bold text-slate-900 break-all" style="font-size: {{ $fontSizePt }}pt;">{{ $item['person_code'] }}</span>
                                                     </div>
                                                 @endif

@@ -59,7 +59,7 @@
 
         .label.horizontal {
             flex-direction: row;
-            gap: 2mm;
+            gap: {{ $qrTextGapMm }}mm;
         }
 
         .qr {

@@ -64,6 +64,8 @@ class PrintClientCard extends Component
 
     public float $gapMm = 3;
 
+    public float $qrTextGapMm = 3;
+
     public float $edgeMarginMm = 1.5;
 
     public float $topMarginMm = 3;
@@ -112,6 +114,7 @@ class PrintClientCard extends Component
         $this->labelWidthMm = $label['width_mm'] ?? 45;
         $this->labelHeightMm = $label['height_mm'] ?? 30;
         $this->gapMm = $label['gap_mm'] ?? 3;
+        $this->qrTextGapMm = $label['qr_text_gap_mm'] ?? 3;
         $this->edgeMarginMm = $label['edge_margin_mm'] ?? 1.5;
         $this->topMarginMm = $label['top_margin_mm'] ?? 3;
         $this->bottomMarginMm = $label['bottom_margin_mm'] ?? 3;
@@ -312,6 +315,7 @@ class PrintClientCard extends Component
         $this->labelWidthMm = $label['width_mm'] ?? 45;
         $this->labelHeightMm = $label['height_mm'] ?? 30;
         $this->gapMm = $label['gap_mm'] ?? 3;
+        $this->qrTextGapMm = $label['qr_text_gap_mm'] ?? 3;
         $this->edgeMarginMm = $label['edge_margin_mm'] ?? 1.5;
         $this->topMarginMm = $label['top_margin_mm'] ?? 3;
         $this->bottomMarginMm = $label['bottom_margin_mm'] ?? 3;
@@ -589,6 +593,7 @@ class PrintClientCard extends Component
             'label_height_mm' => $this->labelHeightMm,
             'paper_width_mm' => $this->paperWidthMm,
             'gap_mm' => $this->gapMm,
+            'qr_text_gap_mm' => $this->qrTextGapMm,
             'dpi' => $this->dpi,
             'columns' => 2,
             'qr_size_dots' => $this->qrSizeDots,
@@ -677,6 +682,7 @@ class PrintClientCard extends Component
             'labelWidthMm' => $this->labelWidthMm,
             'labelHeightMm' => $this->labelHeightMm,
             'gapMm' => $this->gapMm,
+            'qrTextGapMm' => $this->qrTextGapMm,
             'edgeMarginMm' => $this->edgeMarginMm,
             'topMarginMm' => $this->topMarginMm,
             'bottomMarginMm' => $this->bottomMarginMm,
@@ -709,6 +715,7 @@ class PrintClientCard extends Component
             'labelWidthMm' => $this->labelWidthMm,
             'labelHeightMm' => $this->labelHeightMm,
             'gapMm' => $this->gapMm,
+            'qrTextGapMm' => $this->qrTextGapMm,
             'edgeMarginMm' => $this->edgeMarginMm,
             'topMarginMm' => $this->topMarginMm,
             'bottomMarginMm' => $this->bottomMarginMm,

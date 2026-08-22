@@ -14,6 +14,7 @@ class LabelPrinterServiceTest extends TestCase
             'label_height_mm' => 30,
             'paper_width_mm' => 96,
             'gap_mm' => 3,
+            'qr_text_gap_mm' => 4,
             'edge_margin_mm' => 1.5,
             'top_margin_mm' => 3,
             'bottom_margin_mm' => 3,
@@ -30,8 +31,8 @@ class LabelPrinterServiceTest extends TestCase
         $this->assertStringContainsString("GAP 3 mm,0", $data);
         $this->assertStringContainsString("QRCODE 12,24", $data);
         $this->assertStringContainsString("QRCODE 396,24", $data);
-        $this->assertStringContainsString("TEXT 294,108", $data);
-        $this->assertStringContainsString("TEXT 678,108", $data);
+        $this->assertStringContainsString("TEXT 298,108", $data);
+        $this->assertStringContainsString("TEXT 682,108", $data);
         $this->assertSame(1, substr_count($data, 'PRINT 1'));
     }
 }

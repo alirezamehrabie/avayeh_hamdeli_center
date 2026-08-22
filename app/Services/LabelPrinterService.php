@@ -16,6 +16,8 @@ class LabelPrinterService
 
     private float $gapMm;
 
+    private float $qrTextGapMm;
+
     private float $edgeMarginMm;
 
     private float $topMarginMm;
@@ -68,6 +70,7 @@ class LabelPrinterService
         $this->heightMm = $overrides['label_height_mm'] ?? $label['height_mm'];
         $this->columns = 2;
         $this->gapMm = $overrides['gap_mm'] ?? $label['gap_mm'];
+        $this->qrTextGapMm = $overrides['qr_text_gap_mm'] ?? ($label['qr_text_gap_mm'] ?? 3);
         $this->edgeMarginMm = $overrides['edge_margin_mm'] ?? ($label['edge_margin_mm'] ?? 0);
         $this->topMarginMm = $overrides['top_margin_mm'] ?? ($label['top_margin_mm'] ?? 0);
         $this->bottomMarginMm = $overrides['bottom_margin_mm'] ?? ($label['bottom_margin_mm'] ?? 0);
@@ -184,6 +187,7 @@ class LabelPrinterService
         $paperWidthDots = $this->paperWidthMm > 0 ? $this->mmToDots($this->paperWidthMm) : $widthDots;
         $labelWidthDots = $this->mmToDots($this->widthMm);
         $gapDots = $this->mmToDots($this->gapMm);
+        $qrTextGapDots = $this->mmToDots($this->qrTextGapMm);
         $edgeMarginDots = $this->mmToDots($this->edgeMarginMm);
         $topMarginDots = $this->mmToDots($this->topMarginMm);
         $bottomMarginDots = $this->mmToDots($this->bottomMarginMm);
@@ -205,7 +209,7 @@ class LabelPrinterService
                 $xOffset = $edgeMarginDots + ($colIndex * ($labelWidthDots + $gapDots));
                 $ecChar = strtoupper(substr($this->qrErrorCorrection, 0, 1));
                 $effectiveMagnification = max(1, min(10, (int) round($this->qrSizeDots / 25)));
-                $layout = $this->buildLayoutPositions($xOffset, $labelWidthDots, $heightDots, $gapDots, $topMarginDots, $bottomMarginDots);
+                $layout = $this->buildLayoutPositions($xOffset, $labelWidthDots, $heightDots, $gapDots, $qrTextGapDots, $topMarginDots, $bottomMarginDots);
 
                 $zpl .= "^FO{$layout['qr_x']},{$layout['qr_y']}^BQN,2,{$effectiveMagnification},{$ecChar}\n";
                 $zpl .= "^FDQA,{$item['public_code']}^FS\n";
@@ -231,6 +235,7 @@ class LabelPrinterService
         $paperWidthDots = $this->paperWidthMm > 0 ? $this->mmToDots($this->paperWidthMm) : $widthDots;
         $labelWidthDots = $this->mmToDots($this->widthMm);
         $gapDots = $this->mmToDots($this->gapMm);
+        $qrTextGapDots = $this->mmToDots($this->qrTextGapMm);
         $edgeMarginDots = $this->mmToDots($this->edgeMarginMm);
         $topMarginDots = $this->mmToDots($this->topMarginMm);
         $bottomMarginDots = $this->mmToDots($this->bottomMarginMm);
@@ -255,7 +260,7 @@ class LabelPrinterService
             $xOffset = $edgeMarginDots + ($colIndex * ($labelWidthDots + $gapDots));
             $ecChar = strtoupper(substr($this->qrErrorCorrection, 0, 1));
             $effectiveMagnification = max(1, min(10, (int) round($this->qrSizeDots / 25)));
-            $layout = $this->buildLayoutPositions($xOffset, $labelWidthDots, $heightDots, $gapDots, $topMarginDots, $bottomMarginDots);
+            $layout = $this->buildLayoutPositions($xOffset, $labelWidthDots, $heightDots, $gapDots, $qrTextGapDots, $topMarginDots, $bottomMarginDots);
 
             $zpl .= "^FO{$layout['qr_x']},{$layout['qr_y']}^BQN,2,{$effectiveMagnification},{$ecChar}\n";
             $zpl .= "^FDQA,{$item['public_code']}^FS\n";
@@ -278,6 +283,7 @@ class LabelPrinterService
         $heightDots = $this->mmToDots($this->heightMm);
         $labelWidthDots = $this->mmToDots($this->widthMm);
         $gapDots = $this->mmToDots($this->gapMm);
+        $qrTextGapDots = $this->mmToDots($this->qrTextGapMm);
         $edgeMarginDots = $this->mmToDots($this->edgeMarginMm);
         $topMarginDots = $this->mmToDots($this->topMarginMm);
         $bottomMarginDots = $this->mmToDots($this->bottomMarginMm);
@@ -299,7 +305,7 @@ class LabelPrinterService
                 $xOffset = $edgeMarginDots + ($colIndex * ($labelWidthDots + $gapDots));
                 $ecChar = strtoupper(substr($this->qrErrorCorrection, 0, 1));
                 $effectiveMagnification = max(1, min(10, (int) round($this->qrSizeDots / 25)));
-                $layout = $this->buildLayoutPositions($xOffset, $labelWidthDots, $heightDots, $gapDots, $topMarginDots, $bottomMarginDots);
+                $layout = $this->buildLayoutPositions($xOffset, $labelWidthDots, $heightDots, $gapDots, $qrTextGapDots, $topMarginDots, $bottomMarginDots);
 
                 $tspl .= "QRCODE {$layout['qr_x']},{$layout['qr_y']},L,{$effectiveMagnification},A,0,M{$ecChar},\"{$item['public_code']}\"\r\n";
 
@@ -322,6 +328,7 @@ class LabelPrinterService
         $heightDots = $this->mmToDots($this->heightMm);
         $labelWidthDots = $this->mmToDots($this->widthMm);
         $gapDots = $this->mmToDots($this->gapMm);
+        $qrTextGapDots = $this->mmToDots($this->qrTextGapMm);
         $edgeMarginDots = $this->mmToDots($this->edgeMarginMm);
         $topMarginDots = $this->mmToDots($this->topMarginMm);
         $bottomMarginDots = $this->mmToDots($this->bottomMarginMm);
@@ -346,7 +353,7 @@ class LabelPrinterService
             $xOffset = $edgeMarginDots + ($colIndex * ($labelWidthDots + $gapDots));
             $ecChar = strtoupper(substr($this->qrErrorCorrection, 0, 1));
             $effectiveMagnification = max(1, min(10, (int) round($this->qrSizeDots / 25)));
-            $layout = $this->buildLayoutPositions($xOffset, $labelWidthDots, $heightDots, $gapDots, $topMarginDots, $bottomMarginDots);
+            $layout = $this->buildLayoutPositions($xOffset, $labelWidthDots, $heightDots, $gapDots, $qrTextGapDots, $topMarginDots, $bottomMarginDots);
 
             $tspl .= "QRCODE {$layout['qr_x']},{$layout['qr_y']},L,{$effectiveMagnification},A,0,M{$ecChar},\"{$item['public_code']}\"\r\n";
 
@@ -454,6 +461,7 @@ class LabelPrinterService
         int $labelWidthDots,
         int $heightDots,
         int $gapDots,
+        int $qrTextGapDots,
         int $topMarginDots,
         int $bottomMarginDots
     ): array {
@@ -461,9 +469,9 @@ class LabelPrinterService
             return [
                 'qr_x' => $xOffset,
                 'qr_y' => $topMarginDots,
-                'text_x' => $xOffset + $this->qrSizeDots + $gapDots,
+                'text_x' => $xOffset + $this->qrSizeDots + $qrTextGapDots,
                 'text_y' => intdiv($heightDots - $this->textFontSize, 2),
-                'max_text_width' => max(1, $labelWidthDots - $this->qrSizeDots - $gapDots),
+                'max_text_width' => max(1, $labelWidthDots - $this->qrSizeDots - $qrTextGapDots),
             ];
         }
 
@@ -493,6 +501,7 @@ class LabelPrinterService
             'dpi' => $this->dpi,
             'columns' => $this->columns,
             'gap_mm' => $this->gapMm,
+            'qr_text_gap_mm' => $this->qrTextGapMm,
             'edge_margin_mm' => $this->edgeMarginMm,
             'top_margin_mm' => $this->topMarginMm,
             'bottom_margin_mm' => $this->bottomMarginMm,
