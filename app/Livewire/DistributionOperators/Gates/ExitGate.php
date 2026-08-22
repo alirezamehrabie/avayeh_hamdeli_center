@@ -5,8 +5,10 @@ namespace App\Livewire\DistributionOperators\Gates;
 use App\Models\GateEntryAssignment;
 use App\Models\Service;
 use App\Models\ServiceDelivery;
+use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\Layout;
 
 #[Layout('layouts.distribution-operator')]
@@ -14,9 +16,30 @@ class ExitGate extends AbstractGateComponent
 {
     public const ABILITY = 'access-distribution-outbound-gate';
 
+    /** Whether the current subject's finalized exit has been unlocked by a manager. */
+    public bool $exitUnlocked = false;
+
+    /** Manager password typed into the unlock form. */
+    public string $managerPassword = '';
+
+    /** Inline error shown when the manager password is rejected. */
+    public ?string $unlockError = null;
+
     protected function scanContext(): string
     {
         return 'distribution-exit-gate';
+    }
+
+    protected function onSubjectLoaded(): void
+    {
+        $this->lockExit();
+    }
+
+    protected function resetGateSpecificState(): void
+    {
+        $this->exitUnlocked = false;
+        $this->managerPassword = '';
+        $this->unlockError = null;
     }
 
     protected function selectServicePrompt(): string
@@ -112,6 +135,91 @@ class ExitGate extends AbstractGateComponent
         $this->scanMessage = $created > 0
             ? "خروج تأیید و {$created} قلم به‌صورت نهایی ثبت شد."
             : 'قلم تحویل‌شده‌ای برای ثبت نهایی یافت نشد.';
+    }
+
+    /**
+     * Authenticate an override against a manager/admin account's hashed password. On success the
+     * current subject's finalized exit is unlocked so its categories can be individually cancelled.
+     */
+    public function unlockExit(): void
+    {
+        $this->authorizeGate();
+
+        if (! $this->selectedService || ! $this->hasScannedSubject()) {
+            return;
+        }
+
+        $password = trim($this->managerPassword);
+        $this->managerPassword = '';
+        $this->unlockError = null;
+
+        if ($password === '') {
+            $this->unlockError = 'رمز عبور مدیریت را وارد کنید.';
+
+            return;
+        }
+
+        $approvers = User::query()
+            ->whereIn('access_level', [User::ACCESS_LEVEL_MANAGER, User::ACCESS_LEVEL_ADMIN])
+            ->get();
+
+        foreach ($approvers as $approver) {
+            if (Hash::check($password, $approver->password)) {
+                $this->exitUnlocked = true;
+
+                return;
+            }
+        }
+
+        $this->unlockError = 'رمز عبور مدیریت نادرست است.';
+    }
+
+    public function lockExit(): void
+    {
+        $this->authorizeGate();
+
+        $this->exitUnlocked = false;
+        $this->managerPassword = '';
+        $this->unlockError = null;
+    }
+
+    /**
+     * Cancel one already-finalized category: the delivery ledger row is removed and the assignment
+     * returns to "pending" so it can be redelivered from the Delivery Gate. Only reachable while the
+     * subject's exit is unlocked by a manager password (see unlockExit).
+     */
+    public function cancelFinalizedCategory(int $assignmentId): void
+    {
+        $this->authorizeGate();
+
+        if (! $this->exitUnlocked || ! $this->selectedService || ! $this->hasScannedSubject()) {
+            return;
+        }
+
+        $assignment = $this->subjectAssignmentQuery()
+            ->where('id', $assignmentId)
+            ->where('status', GateEntryAssignment::STATUS_FINALIZED)
+            ->first();
+
+        if (! $assignment) {
+            return;
+        }
+
+        DB::transaction(function () use ($assignment): void {
+            // Force-deleting frees the unique gate_entry_assignment_id slot so the category can be
+            // delivered and finalized cleanly again; the model's deleted event refreshes stock.
+            ServiceDelivery::query()
+                ->where('gate_entry_assignment_id', $assignment->id)
+                ->forceDelete();
+
+            $assignment->forceFill([
+                'status' => GateEntryAssignment::STATUS_PENDING,
+                'delivered_at' => null,
+                'delivered_by' => null,
+            ])->save();
+        });
+
+        $this->dispatch('exit-category-cancelled');
     }
 
     /**

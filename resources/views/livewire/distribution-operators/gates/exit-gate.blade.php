@@ -412,29 +412,85 @@
                             <p class="text-sm font-bold text-slate-600">برای مشاهده اقلام تحویل‌شده، ابتدا QR فرد را اسکن کنید.</p>
                         </div>
                     @elseif($deliveredItems->isEmpty() && $finalizedItems->isNotEmpty())
-                        {{-- Already finalized for this service: locked, no action --}}
-                        <div class="rounded-2xl border border-indigo-200 bg-indigo-50/60 px-5 py-4 text-center">
-                            <p class="inline-flex items-center justify-center gap-1.5 text-sm font-bold text-indigo-700">
-                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zM16 11V7a4 4 0 00-8 0v4"/></svg>
-                                این فرد قبلاً از گیت خروج تأیید شده است.
-                            </p>
-                            <p class="mt-1 text-xs font-semibold text-indigo-500">اقلام زیر به‌صورت نهایی ثبت و قفل شده‌اند.</p>
-                        </div>
+                        @if(! $exitUnlocked)
+                            {{-- Locked: manager password required before any category can be unticked --}}
+                            <div x-data="{ showUnlock: false }" class="space-y-3">
+                                <div class="rounded-2xl border border-indigo-200 bg-indigo-50/60 px-5 py-4 text-center">
+                                    <p class="inline-flex items-center justify-center gap-1.5 text-sm font-bold text-indigo-700">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zM16 11V7a4 4 0 00-8 0v4"/></svg>
+                                        این فرد قبلاً از گیت خروج تأیید شده است.
+                                    </p>
+                                    <p class="mt-1 text-xs font-semibold text-indigo-500">اقلام زیر به‌صورت نهایی ثبت و قفل شده‌اند.</p>
+                                    <button
+                                        type="button"
+                                        @click="showUnlock = ! showUnlock"
+                                        class="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-indigo-300 bg-white px-4 py-2 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100"
+                                    >
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0m-4 4v3m-5 7h10a2 2 0 002-2v-6a2 2 0 00-2-2H7a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
+                                        باز کردن قفل برای اصلاح
+                                    </button>
+                                </div>
+
+                                <div x-show="showUnlock" style="display: none;" class="rounded-2xl border border-amber-300 bg-amber-50 p-4">
+                                    <p class="text-xs font-bold text-amber-800">برای باز کردن قفل، رمز عبور حساب مدیریت را وارد کنید.</p>
+                                    <div class="mt-3 flex flex-col gap-2 sm:flex-row">
+                                        <input
+                                            type="password"
+                                            wire:model="managerPassword"
+                                            wire:keydown.enter="unlockExit"
+                                            placeholder="رمز عبور مدیریت"
+                                            class="w-full rounded-xl border border-amber-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-100"
+                                        >
+                                        <button
+                                            type="button"
+                                            wire:click="unlockExit"
+                                            wire:loading.attr="disabled"
+                                            wire:target="unlockExit"
+                                            class="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-amber-700 disabled:opacity-60"
+                                        >
+                                            تأیید و باز کردن قفل
+                                        </button>
+                                    </div>
+                                    @if($unlockError)
+                                        <p class="mt-2 text-xs font-bold text-rose-600">{{ $unlockError }}</p>
+                                    @endif
+                                </div>
+                            </div>
+                        @else
+                            <div class="flex items-center justify-between gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-5 py-4">
+                                <div>
+                                    <p class="inline-flex items-center gap-1.5 text-sm font-bold text-amber-800">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0m-4 4v3m-5 7h10a2 2 0 002-2v-6a2 2 0 00-2-2H7a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
+                                        قفل خروج باز شد
+                                    </p>
+                                    <p class="mt-1 text-xs font-semibold text-amber-700">برای لغو تحویل هر دسته‌بندی، روی «لغو تحویل» همان قلم بزنید.</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    wire:click="lockExit"
+                                    class="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-amber-300 bg-white px-3 py-2 text-xs font-bold text-amber-700 transition hover:bg-amber-100"
+                                >
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zM16 11V7a4 4 0 00-8 0v4"/></svg>
+                                    بستن قفل
+                                </button>
+                            </div>
+                        @endif
+
                         <div class="space-y-2">
                             @foreach($finalizedItems as $item)
                                 @php($category = $item->serviceCategory)
                                 <div
                                     wire:key="exit-gate-finalized-{{ $item->id }}"
-                                    class="flex w-full items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/40 px-4 py-3 text-right"
+                                    class="flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-right {{ $exitUnlocked ? 'border-amber-200 bg-amber-50/40' : 'border-indigo-200 bg-indigo-50/40' }}"
                                 >
-                                    <span class="flex items-center gap-3">
-                                        <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-indigo-600 bg-indigo-600 text-white">
+                                    <span class="flex min-w-0 items-center gap-3">
+                                        <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border {{ $exitUnlocked ? 'border-amber-600 bg-amber-600' : 'border-indigo-600 bg-indigo-600' }} text-white">
                                             <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                                                 <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 111.42-1.42l2.79 2.79 6.79-6.79a1 1 0 011.42 0z" clip-rule="evenodd" />
                                             </svg>
                                         </span>
-                                        <span class="flex flex-col">
-                                            <span class="text-sm font-bold text-slate-800">{{ $category?->name ?? '-' }}</span>
+                                        <span class="flex min-w-0 flex-col">
+                                            <span class="truncate text-sm font-bold text-slate-800">{{ $category?->name ?? '-' }}</span>
                                             <span class="text-[11px] font-semibold text-slate-400" dir="ltr">{{ $category?->code ?? '-' }}</span>
                                         </span>
                                     </span>
@@ -442,10 +498,27 @@
                                         @if($category?->unitLabel)
                                             <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ $category->unitLabel }}</span>
                                         @endif
-                                        <span class="rounded-full bg-indigo-100 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700">ثبت نهایی شد</span>
+                                        @if($exitUnlocked)
+                                            <button
+                                                type="button"
+                                                wire:click="cancelFinalizedCategory({{ $item->id }})"
+                                                wire:confirm="این قلم از تحویل‌های نهایی فرد حذف و برای تحویل مجدد آزاد می‌شود. ادامه می‌دهید؟"
+                                                wire:loading.attr="disabled"
+                                                class="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2.5 py-1 text-[11px] font-bold text-white transition hover:bg-rose-700 disabled:opacity-60"
+                                            >
+                                                لغو تحویل
+                                            </button>
+                                        @else
+                                            <span class="rounded-full bg-indigo-100 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700">ثبت نهایی شد</span>
+                                        @endif
                                     </span>
                                 </div>
                             @endforeach
+                        </div>
+                    @elseif($exitUnlocked && $deliveredItems->isEmpty() && $finalizedItems->isEmpty())
+                        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-8 text-center">
+                            <p class="text-sm font-bold text-emerald-700">همه اقلام نهایی‌شده این فرد لغو و آزاد شدند.</p>
+                            <p class="mt-1 text-xs font-semibold text-emerald-600">اکنون می‌توانید فرد بعدی را اسکن کنید.</p>
                         </div>
                     @elseif($deliveredItems->isEmpty())
                         <div class="rounded-2xl border border-dashed border-amber-300 bg-amber-50 px-5 py-8 text-center">
