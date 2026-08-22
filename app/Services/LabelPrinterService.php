@@ -16,6 +16,12 @@ class LabelPrinterService
 
     private float $gapMm;
 
+    private float $edgeMarginMm;
+
+    private float $topMarginMm;
+
+    private float $bottomMarginMm;
+
     private int $qrSizeDots;
 
     private int $qrMagnification;
@@ -38,11 +44,9 @@ class LabelPrinterService
 
     private bool $rotate180 = false;
 
-    private int $qrTopOffsetDots = 10;
-
-    private int $textLeftOffsetDots = 5;
-
     private float $paperWidthMm = 0;
+
+    private string $layoutMode = 'vertical';
 
     /**
      * @param  array<string, mixed>  $overrides  Runtime overrides for any config value
@@ -61,15 +65,17 @@ class LabelPrinterService
         $this->heightMm = $overrides['label_height_mm'] ?? $label['height_mm'];
         $this->columns = $overrides['columns'] ?? $label['columns'];
         $this->gapMm = $overrides['gap_mm'] ?? $label['gap_mm'];
+        $this->edgeMarginMm = $overrides['edge_margin_mm'] ?? ($label['edge_margin_mm'] ?? 0);
+        $this->topMarginMm = $overrides['top_margin_mm'] ?? ($label['top_margin_mm'] ?? 0);
+        $this->bottomMarginMm = $overrides['bottom_margin_mm'] ?? ($label['bottom_margin_mm'] ?? 0);
+        $this->layoutMode = $overrides['layout_mode'] ?? ($label['layout_mode'] ?? 'vertical');
 
         $this->qrSizeDots = $overrides['qr_size_dots'] ?? $qr['size_dots'];
         $this->qrMagnification = $overrides['qr_magnification'] ?? $qr['magnification'];
         $this->qrErrorCorrection = $overrides['qr_error_correction'] ?? $qr['error_correction'];
-        $this->qrTopOffsetDots = $overrides['qr_top_offset_dots'] ?? ($qr['top_offset_dots'] ?? 10);
 
         $this->textFontSize = $overrides['text_font_size'] ?? $text['font_size'];
         $this->textBottomOffset = $overrides['text_bottom_offset_dots'] ?? $text['bottom_offset_dots'];
-        $this->textLeftOffsetDots = $overrides['text_left_offset_dots'] ?? ($text['left_offset_dots'] ?? 5);
 
         $this->rotate180 = $overrides['rotate_180'] ?? false;
         $this->paperWidthMm = $overrides['paper_width_mm'] ?? 0;
@@ -131,46 +137,46 @@ class LabelPrinterService
     {
         $widthDots = $this->mmToDots($this->widthMm);
         $heightDots = $this->mmToDots($this->heightMm);
-        $columnWidth = intdiv($widthDots, $this->columns);
+        $paperWidthDots = $this->paperWidthMm > 0 ? $this->mmToDots($this->paperWidthMm) : $widthDots;
+        $labelWidthDots = $this->mmToDots($this->widthMm);
+        $gapDots = $this->mmToDots($this->gapMm);
+        $edgeMarginDots = $this->mmToDots($this->edgeMarginMm);
+        $topMarginDots = $this->mmToDots($this->topMarginMm);
+        $bottomMarginDots = $this->mmToDots($this->bottomMarginMm);
 
         $zpl = '';
         $chunks = array_chunk($items, $this->columns);
 
         foreach ($chunks as $chunk) {
             $zpl .= "^XA\n";
-
-            if ($this->paperWidthMm > 0) {
-                $zpl .= '^PW' . $this->mmToDots($this->paperWidthMm) . "\n";
-            } else {
-                $zpl .= "^PW{$widthDots}\n";
-            }
-
+            $zpl .= "^PW{$paperWidthDots}\n";
             $zpl .= "^LL{$heightDots}\n";
             $zpl .= "^CI28\n";
-
-            if ($this->gapMm > 0) {
-                $gapDots = $this->mmToDots($this->gapMm);
-                $zpl .= "^LS{$gapDots}\n";
-            }
 
             if ($this->rotate180) {
                 $zpl .= "^POI\n";
             }
 
             foreach ($chunk as $colIndex => $item) {
-                $xOffset = $colIndex * $columnWidth;
-
-                $qrX = $xOffset + intdiv($columnWidth - $this->qrSizeDots, 2);
-                $qrY = $this->qrTopOffsetDots;
-
+                $xOffset = $edgeMarginDots + ($colIndex * ($labelWidthDots + $gapDots));
                 $ecChar = strtoupper(substr($this->qrErrorCorrection, 0, 1));
                 $effectiveMagnification = max(1, min(10, (int) round($this->qrSizeDots / 25)));
+                $qrY = $topMarginDots;
+
+                if ($this->layoutMode === 'horizontal') {
+                    $qrX = $xOffset;
+                    $textX = $xOffset + $this->qrSizeDots + $gapDots;
+                    $textY = intdiv($heightDots - $this->textFontSize, 2);
+                    $maxTextWidth = max(1, $labelWidthDots - $this->qrSizeDots - $gapDots);
+                } else {
+                    $qrX = $xOffset + intdiv(max(0, $labelWidthDots - $this->qrSizeDots), 2);
+                    $textX = $xOffset;
+                    $textY = $heightDots - $this->textFontSize - $bottomMarginDots;
+                    $maxTextWidth = $labelWidthDots;
+                }
+
                 $zpl .= "^FO{$qrX},{$qrY}^BQN,2,{$effectiveMagnification},{$ecChar}\n";
                 $zpl .= "^FDQA,{$item['public_code']}^FS\n";
-
-                $textY = $heightDots - $this->textFontSize - $this->textBottomOffset;
-                $textX = $xOffset + $this->textLeftOffsetDots;
-                $maxTextWidth = $columnWidth - ($this->textLeftOffsetDots * 2);
 
                 $personCode = mb_strimwidth($item['person_code'], 0, 20);
                 $zpl .= "^FO{$textX},{$textY}^A0N,{$this->textFontSize},{$this->textFontSize}^FB{$maxTextWidth},1,0,C\n";
@@ -190,23 +196,17 @@ class LabelPrinterService
     {
         $widthDots = $this->mmToDots($this->widthMm);
         $heightDots = $this->mmToDots($this->heightMm);
-        $columnWidth = intdiv($widthDots, $this->columns);
+        $paperWidthDots = $this->paperWidthMm > 0 ? $this->mmToDots($this->paperWidthMm) : $widthDots;
+        $labelWidthDots = $this->mmToDots($this->widthMm);
+        $gapDots = $this->mmToDots($this->gapMm);
+        $edgeMarginDots = $this->mmToDots($this->edgeMarginMm);
+        $topMarginDots = $this->mmToDots($this->topMarginMm);
+        $bottomMarginDots = $this->mmToDots($this->bottomMarginMm);
 
         $zpl = "^XA\n";
-
-        if ($this->paperWidthMm > 0) {
-            $zpl .= '^PW' . $this->mmToDots($this->paperWidthMm) . "\n";
-        } else {
-            $zpl .= "^PW{$widthDots}\n";
-        }
-
+        $zpl .= "^PW{$paperWidthDots}\n";
         $zpl .= "^LL{$heightDots}\n";
         $zpl .= "^CI28\n";
-
-        if ($this->gapMm > 0) {
-            $gapDots = $this->mmToDots($this->gapMm);
-            $zpl .= "^LS{$gapDots}\n";
-        }
 
         if ($this->rotate180) {
             $zpl .= "^POI\n";
@@ -220,19 +220,25 @@ class LabelPrinterService
         $testItems = array_slice($testItems, 0, $this->columns);
 
         foreach ($testItems as $colIndex => $item) {
-            $xOffset = $colIndex * $columnWidth;
-
-            $qrX = $xOffset + intdiv($columnWidth - $this->qrSizeDots, 2);
-            $qrY = $this->qrTopOffsetDots;
-
+            $xOffset = $edgeMarginDots + ($colIndex * ($labelWidthDots + $gapDots));
             $ecChar = strtoupper(substr($this->qrErrorCorrection, 0, 1));
             $effectiveMagnification = max(1, min(10, (int) round($this->qrSizeDots / 25)));
+            $qrY = $topMarginDots;
+
+            if ($this->layoutMode === 'horizontal') {
+                $qrX = $xOffset;
+                $textX = $xOffset + $this->qrSizeDots + $gapDots;
+                $textY = intdiv($heightDots - $this->textFontSize, 2);
+                $maxTextWidth = max(1, $labelWidthDots - $this->qrSizeDots - $gapDots);
+            } else {
+                $qrX = $xOffset + intdiv(max(0, $labelWidthDots - $this->qrSizeDots), 2);
+                $textX = $xOffset;
+                $textY = $heightDots - $this->textFontSize - $bottomMarginDots;
+                $maxTextWidth = $labelWidthDots;
+            }
+
             $zpl .= "^FO{$qrX},{$qrY}^BQN,2,{$effectiveMagnification},{$ecChar}\n";
             $zpl .= "^FDQA,{$item['public_code']}^FS\n";
-
-            $textY = $heightDots - $this->textFontSize - $this->textBottomOffset;
-            $textX = $xOffset + $this->textLeftOffsetDots;
-            $maxTextWidth = $columnWidth - ($this->textLeftOffsetDots * 2);
 
             $zpl .= "^FO{$textX},{$textY}^A0N,{$this->textFontSize},{$this->textFontSize}^FB{$maxTextWidth},1,0,C\n";
             $zpl .= "^FD{$item['person_code']}^FS\n";
@@ -334,14 +340,16 @@ class LabelPrinterService
             'dpi' => $this->dpi,
             'columns' => $this->columns,
             'gap_mm' => $this->gapMm,
+            'edge_margin_mm' => $this->edgeMarginMm,
+            'top_margin_mm' => $this->topMarginMm,
+            'bottom_margin_mm' => $this->bottomMarginMm,
             'qr_size_dots' => $this->qrSizeDots,
             'qr_magnification' => $this->qrMagnification,
             'qr_error_correction' => $this->qrErrorCorrection,
-            'qr_top_offset_dots' => $this->qrTopOffsetDots,
             'text_font_size' => $this->textFontSize,
             'text_bottom_offset_dots' => $this->textBottomOffset,
-            'text_left_offset_dots' => $this->textLeftOffsetDots,
             'rotate_180' => $this->rotate180,
+            'layout_mode' => $this->layoutMode,
         ];
     }
 }

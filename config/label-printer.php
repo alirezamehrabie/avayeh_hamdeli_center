@@ -32,8 +32,9 @@ return [
 
     'label' => [
         // Label dimensions in millimeters
-        'width_mm' => 40,
-        'height_mm' => 30,
+        'paper_width_mm' => 96,
+        'width_mm' => 30,
+        'height_mm' => 45,
 
         // Print resolution in DPI (dots per inch)
         'dpi' => 203,
@@ -42,7 +43,17 @@ return [
         'columns' => 2,
 
         // Gap between labels in mm
-        'gap_mm' => 2,
+        'gap_mm' => 3,
+
+        // Side margin from the roll edges in mm
+        'edge_margin_mm' => 2,
+
+        // Top and bottom margins inside each label in mm
+        'top_margin_mm' => 3,
+        'bottom_margin_mm' => 3,
+
+        // Default layout for QR + client code content
+        'layout_mode' => 'vertical',
     ],
 
     'qr_code' => [

@@ -128,6 +128,10 @@
                         </h3>
                         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                             <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">عرض کاغذ (mm)</label>
+                                <input type="number" step="0.5" min="0" max="300" wire:model.live.debounce.500ms="paperWidthMm" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
+                            </div>
+                            <div>
                                 <label class="block text-xs font-medium text-slate-600 mb-1">عرض برچسب (mm)</label>
                                 <input type="number" step="0.5" min="10" max="200" wire:model.live.debounce.500ms="labelWidthMm" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
                             </div>
@@ -136,13 +140,20 @@
                                 <input type="number" step="0.5" min="10" max="200" wire:model.live.debounce.500ms="labelHeightMm" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-slate-600 mb-1">عرض کاغذ (mm)</label>
-                                <input type="number" step="0.5" min="0" max="300" wire:model.live.debounce.500ms="paperWidthMm" placeholder="0 = خودکار" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
-                                <p class="mt-0.5 text-[10px] text-slate-400">۰ = مطابق عرض برچسب</p>
-                            </div>
-                            <div>
                                 <label class="block text-xs font-medium text-slate-600 mb-1">فاصله بین برچسب (mm)</label>
                                 <input type="number" step="0.5" min="0" max="20" wire:model.live.debounce.500ms="gapMm" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">فاصله از لبه رول (mm)</label>
+                                <input type="number" step="0.5" min="0" max="20" wire:model.live.debounce.500ms="edgeMarginMm" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">فاصله از بالا (mm)</label>
+                                <input type="number" step="0.5" min="0" max="20" wire:model.live.debounce.500ms="topMarginMm" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">فاصله از پایین (mm)</label>
+                                <input type="number" step="0.5" min="0" max="20" wire:model.live.debounce.500ms="bottomMarginMm" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-slate-600 mb-1">رزولوشن (DPI)</label>
@@ -159,6 +170,13 @@
                                     <option value="2">۲ ستون</option>
                                     <option value="3">۳ ستون</option>
                                     <option value="4">۴ ستون</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">حالت چیدمان</label>
+                                <select wire:model.live="layoutMode" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100">
+                                    <option value="vertical">عمودی</option>
+                                    <option value="horizontal">افقی</option>
                                 </select>
                             </div>
                         </div>
@@ -188,10 +206,6 @@
                                     <option value="H">H (30%)</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="block text-xs font-medium text-slate-600 mb-1">فاصله از بالا (dots)</label>
-                                <input type="number" min="0" max="500" wire:model.live.debounce.500ms="qrTopOffsetDots" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
-                            </div>
                         </div>
                     </div>
 
@@ -209,10 +223,6 @@
                             <div>
                                 <label class="block text-xs font-medium text-slate-600 mb-1">فاصله از پایین (dots)</label>
                                 <input type="number" min="0" max="500" wire:model.live.debounce.500ms="textBottomOffsetDots" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-slate-600 mb-1">فاصله از چپ (dots)</label>
-                                <input type="number" min="0" max="200" wire:model.live.debounce.500ms="textLeftOffsetDots" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
                             </div>
                         </div>
                     </div>
@@ -240,9 +250,10 @@
                     <div class="rounded-lg bg-violet-50 border border-violet-100 px-4 py-3">
                         <p class="text-xs text-violet-700 leading-relaxed">
                             <strong>خلاصه محاسبات:</strong>
-                            عرض هر ستون = {{ number_format($labelWidthMm / max(1, $columns), 1) }} mm
-                            | ارتفاع برچسب = {{ $labelHeightMm }} mm
-                            | اندازه QR ≈ {{ number_format($qrSizeDots * 25.4 / max(1, $dpi), 1) }} mm
+                            عرض کاغذ = {{ $paperWidthMm }} mm
+                            | برچسب = {{ $labelWidthMm }}×{{ $labelHeightMm }} mm
+                            | فاصله ستون = {{ $gapMm }} mm
+                            | حالت = {{ $layoutMode === 'horizontal' ? 'افقی' : 'عمودی' }}
                             | تعداد برچسب برای {{ count($this->printList) }} مددجو = {{ intdiv(count($this->printList) + max(1, $columns) - 1, max(1, $columns)) }}
                         </p>
                     </div>
@@ -425,6 +436,7 @@
                                 type="button"
                                 wire:click="printDirectly"
                                 wire:loading.attr="disabled"
+                                @disabled(! $showPreview)
                                 wire:target="printDirectly"
                                 wire:confirm="آیا مطمئن هستید که می‌خواهید {{ count($this->printList) }} کارت را مستقیماً به پرینتر ارسال کنید؟"
                                 class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-violet-700 focus:outline-none focus:ring-4 focus:ring-violet-100 disabled:opacity-60"
@@ -499,6 +511,7 @@
                 <div class="p-5">
                     <p class="mb-4 text-xs text-slate-500">
                         هر ردیف معادل یک برچسب فیزیکی {{ $labelWidthMm }}×{{ $labelHeightMm }} میلی‌متری با {{ $columns }} ستون است.
+                        <span class="font-semibold text-slate-700">حالت: {{ $layoutMode === 'horizontal' ? 'افقی' : 'عمودی' }}</span>
                         @if($rotate180)
                             <span class="font-semibold text-amber-600">⚠ چرخش ۱۸۰ درجه فعال است.</span>
                         @endif
@@ -510,11 +523,11 @@
                                 <p class="mb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">برچسب {{ $labelIndex + 1 }}</p>
                                 <div class="grid gap-3" style="grid-template-columns: repeat({{ max(1, $columns) }}, minmax(0, 1fr));">
                                     @foreach($row as $item)
-                                        <div class="flex flex-col items-center justify-center rounded-md border border-dashed border-slate-300 bg-white p-3" style="min-height: 120px;">
-                                            <div class="mb-2 [&>svg]:block [&>svg]:mx-auto [&>svg]:w-full [&>svg]:h-full" style="width: {{ min(80, max(40, $qrSizeDots * 25.4 / max(1, $dpi) * 2)) }}px; height: {{ min(80, max(40, $qrSizeDots * 25.4 / max(1, $dpi) * 2)) }}px;">
+                                        <div class="flex {{ $layoutMode === 'horizontal' ? 'flex-row gap-3' : 'flex-col' }} items-center justify-center rounded-md border border-dashed border-slate-300 bg-white p-3" style="min-height: 120px;">
+                                            <div class="{{ $layoutMode === 'horizontal' ? 'shrink-0' : 'mb-2' }} [&>svg]:block [&>svg]:mx-auto [&>svg]:w-full [&>svg]:h-full" style="width: {{ min(80, max(40, $qrSizeDots * 25.4 / max(1, $dpi) * 2)) }}px; height: {{ min(80, max(40, $qrSizeDots * 25.4 / max(1, $dpi) * 2)) }}px;">
                                                 {!! $item['qr_svg'] !!}
                                             </div>
-                                            <p class="text-center text-xs font-bold text-slate-800 font-mono tracking-wide" style="font-size: {{ min(14, max(8, $textFontSize / 2)) }}px;">{{ $item['person_code'] }}</p>
+                                            <p class="{{ $layoutMode === 'horizontal' ? 'text-right' : 'text-center' }} text-xs font-bold text-slate-800 font-mono tracking-wide" style="font-size: {{ min(14, max(8, $textFontSize / 2)) }}px;">{{ $item['person_code'] }}</p>
                                         </div>
                                     @endforeach
 

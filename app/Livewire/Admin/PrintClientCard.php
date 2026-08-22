@@ -50,13 +50,19 @@ class PrintClientCard extends Component
     public bool $printingDirectly = false;
 
     // Advanced label layout settings
-    public float $labelWidthMm = 40;
+    public float $labelWidthMm = 30;
 
-    public float $labelHeightMm = 30;
+    public float $labelHeightMm = 45;
 
-    public float $paperWidthMm = 0;
+    public float $paperWidthMm = 96;
 
-    public float $gapMm = 2;
+    public float $gapMm = 3;
+
+    public float $edgeMarginMm = 2;
+
+    public float $topMarginMm = 3;
+
+    public float $bottomMarginMm = 3;
 
     public int $dpi = 203;
 
@@ -68,15 +74,13 @@ class PrintClientCard extends Component
 
     public string $qrErrorCorrection = 'M';
 
-    public int $qrTopOffsetDots = 10;
-
     public int $textFontSize = 24;
 
     public int $textBottomOffsetDots = 10;
 
-    public int $textLeftOffsetDots = 5;
-
     public bool $rotate180 = false;
+
+    public string $layoutMode = 'vertical';
 
     public bool $showPreview = false;
 
@@ -97,21 +101,23 @@ class PrintClientCard extends Component
         $this->printerPort = $printer['port'] ?? 9100;
         $this->printerUsbName = $printer['usb_printer_name'] ?? '';
 
-        $this->labelWidthMm = $label['width_mm'] ?? 40;
-        $this->labelHeightMm = $label['height_mm'] ?? 30;
-        $this->paperWidthMm = $label['paper_width_mm'] ?? 0;
-        $this->gapMm = $label['gap_mm'] ?? 2;
+        $this->paperWidthMm = $label['paper_width_mm'] ?? 96;
+        $this->labelWidthMm = $label['width_mm'] ?? 30;
+        $this->labelHeightMm = $label['height_mm'] ?? 45;
+        $this->gapMm = $label['gap_mm'] ?? 3;
+        $this->edgeMarginMm = $label['edge_margin_mm'] ?? 2;
+        $this->topMarginMm = $label['top_margin_mm'] ?? 3;
+        $this->bottomMarginMm = $label['bottom_margin_mm'] ?? 3;
         $this->dpi = $label['dpi'] ?? 203;
         $this->columns = $label['columns'] ?? 2;
+        $this->layoutMode = $label['layout_mode'] ?? 'vertical';
 
         $this->qrSizeDots = $qr['size_dots'] ?? 180;
         $this->qrMagnification = $qr['magnification'] ?? 4;
         $this->qrErrorCorrection = $qr['error_correction'] ?? 'M';
-        $this->qrTopOffsetDots = $qr['top_offset_dots'] ?? 10;
 
         $this->textFontSize = $text['font_size'] ?? 24;
         $this->textBottomOffsetDots = $text['bottom_offset_dots'] ?? 10;
-        $this->textLeftOffsetDots = $text['left_offset_dots'] ?? 5;
     }
 
     public function updatedSearch(): void
@@ -202,11 +208,16 @@ class PrintClientCard extends Component
             return;
         }
 
+        if (! $this->showPreview) {
+            session()->flash('error', 'ابتدا پیش‌نمایش چاپ را باز کنید.');
+            return;
+        }
+
         $this->printingDirectly = true;
 
         $items = $this->buildPrintItems();
 
-        $printer = new LabelPrinterService($this->getPrinterOverrides());
+        $printer = app()->makeWith(LabelPrinterService::class, ['overrides' => $this->getPrinterOverrides()]);
         $result = $printer->printBatch($items);
 
         $this->printingDirectly = false;
@@ -222,7 +233,7 @@ class PrintClientCard extends Component
     {
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
 
-        $printer = new LabelPrinterService($this->getPrinterOverrides());
+        $printer = app()->makeWith(LabelPrinterService::class, ['overrides' => $this->getPrinterOverrides()]);
         $result = $printer->printTestLabel();
 
         if ($result['success']) {
@@ -259,21 +270,23 @@ class PrintClientCard extends Component
         $qr = $config['qr_code'];
         $text = $config['text'];
 
-        $this->labelWidthMm = $label['width_mm'] ?? 40;
-        $this->labelHeightMm = $label['height_mm'] ?? 30;
-        $this->paperWidthMm = $label['paper_width_mm'] ?? 0;
-        $this->gapMm = $label['gap_mm'] ?? 2;
+        $this->paperWidthMm = $label['paper_width_mm'] ?? 96;
+        $this->labelWidthMm = $label['width_mm'] ?? 30;
+        $this->labelHeightMm = $label['height_mm'] ?? 45;
+        $this->gapMm = $label['gap_mm'] ?? 3;
+        $this->edgeMarginMm = $label['edge_margin_mm'] ?? 2;
+        $this->topMarginMm = $label['top_margin_mm'] ?? 3;
+        $this->bottomMarginMm = $label['bottom_margin_mm'] ?? 3;
         $this->dpi = $label['dpi'] ?? 203;
         $this->columns = $label['columns'] ?? 2;
+        $this->layoutMode = $label['layout_mode'] ?? 'vertical';
 
         $this->qrSizeDots = $qr['size_dots'] ?? 180;
         $this->qrMagnification = $qr['magnification'] ?? 4;
         $this->qrErrorCorrection = $qr['error_correction'] ?? 'M';
-        $this->qrTopOffsetDots = $qr['top_offset_dots'] ?? 10;
 
         $this->textFontSize = $text['font_size'] ?? 24;
         $this->textBottomOffsetDots = $text['bottom_offset_dots'] ?? 10;
-        $this->textLeftOffsetDots = $text['left_offset_dots'] ?? 5;
         $this->rotate180 = false;
 
         session()->flash('success', 'تنظیمات چیدمان به مقادیر پیش‌فرض بازگشت.');
@@ -521,11 +534,13 @@ class PrintClientCard extends Component
             'qr_size_dots' => $this->qrSizeDots,
             'qr_magnification' => $this->qrMagnification,
             'qr_error_correction' => $this->qrErrorCorrection,
-            'qr_top_offset_dots' => $this->qrTopOffsetDots,
             'text_font_size' => $this->textFontSize,
             'text_bottom_offset_dots' => $this->textBottomOffsetDots,
-            'text_left_offset_dots' => $this->textLeftOffsetDots,
             'rotate_180' => $this->rotate180,
+            'edge_margin_mm' => $this->edgeMarginMm,
+            'top_margin_mm' => $this->topMarginMm,
+            'bottom_margin_mm' => $this->bottomMarginMm,
+            'layout_mode' => $this->layoutMode,
         ];
     }
 
