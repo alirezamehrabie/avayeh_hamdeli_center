@@ -96,6 +96,8 @@ class PrintClientCard extends Component
 
     public bool $showAdvancedLayout = false;
 
+    public bool $showVisualEditor = false;
+
     public function mount(): void
     {
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
@@ -305,6 +307,11 @@ class PrintClientCard extends Component
         }
 
         $this->showPreview = ! $this->showPreview;
+    }
+
+    public function toggleVisualEditor(): void
+    {
+        $this->showVisualEditor = ! $this->showVisualEditor;
     }
 
     public function resetLayoutDefaults(): void

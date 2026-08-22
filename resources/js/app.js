@@ -30,6 +30,139 @@ const loadQrScannerDependencies = async () => {
     return qrScannerDependencies;
 };
 
+Alpine.data('labelEditor', (props) => ({
+    ...props,
+    scale: 4,
+    dragging: null,
+    dragStartX: 0,
+    dragStartY: 0,
+    dragStartQrX: 0,
+    dragStartQrY: 0,
+    dragStartTextX: 0,
+    dragStartTextY: 0,
+    qrPos: { x: 0, y: 0 },
+    textPos: { x: 0, y: 0 },
+
+    init() {
+        this.syncPositionsFromProps();
+
+        this.$watch('edgeMarginMm', () => this.syncPositionsFromProps());
+        this.$watch('topMarginMm', () => this.syncPositionsFromProps());
+        this.$watch('bottomMarginMm', () => this.syncPositionsFromProps());
+        this.$watch('qrSizeDots', () => this.syncPositionsFromProps());
+        this.$watch('qrTextGapMm', () => this.syncPositionsFromProps());
+        this.$watch('layoutMode', () => this.syncPositionsFromProps());
+        this.$watch('textBottomOffsetDots', () => this.syncPositionsFromProps());
+    },
+
+    dotsToMm(dots) {
+        return dots * 25.4 / Math.max(1, this.dpi);
+    },
+
+    mmToPx(mm) {
+        return mm * this.scale;
+    },
+
+    pxToMm(px) {
+        return px / this.scale;
+    },
+
+    fontSizePx() {
+        const pt = this.textFontSize * 72 / Math.max(1, this.dpi);
+        return pt * this.scale * 0.35;
+    },
+
+    syncPositionsFromProps() {
+        const qrSizeMm = this.dotsToMm(this.qrSizeDots);
+
+        if (this.layoutMode === 'vertical') {
+            this.qrPos.x = (this.labelWidthMm - qrSizeMm) / 2;
+            this.qrPos.y = this.topMarginMm;
+            this.textPos.x = this.labelWidthMm / 2;
+            this.textPos.y = this.labelHeightMm - this.bottomMarginMm - this.dotsToMm(this.textBottomOffsetDots);
+        } else {
+            this.qrPos.x = this.edgeMarginMm;
+            this.qrPos.y = this.topMarginMm;
+            this.textPos.x = this.edgeMarginMm + qrSizeMm + this.qrTextGapMm;
+            this.textPos.y = this.labelHeightMm / 2;
+        }
+    },
+
+    clamp(val, min, max) {
+        return Math.min(max, Math.max(min, val));
+    },
+
+    updateEdgeMarginFromQrX() {
+        this.edgeMarginMm = Math.round(this.clamp(this.qrPos.x, 0, this.labelWidthMm / 2) * 10) / 10;
+    },
+
+    updateTopMarginFromQrY() {
+        this.topMarginMm = Math.round(this.clamp(this.qrPos.y, 0, this.labelHeightMm / 2) * 10) / 10;
+    },
+
+    updateGapFromTextX() {
+        const qrSizeMm = this.dotsToMm(this.qrSizeDots);
+        const gap = this.textPos.x - this.edgeMarginMm - qrSizeMm;
+        this.qrTextGapMm = Math.round(this.clamp(gap, 0, 20) * 10) / 10;
+    },
+
+    updateBottomMarginFromTextY() {
+        const bottom = this.labelHeightMm - this.textPos.y;
+        this.bottomMarginMm = Math.round(this.clamp(bottom, 0, this.labelHeightMm / 2) * 10) / 10;
+    },
+
+    qrStyle() {
+        const sizeMm = this.dotsToMm(this.qrSizeDots);
+        return `left: ${this.mmToPx(this.qrPos.x)}px; top: ${this.mmToPx(this.qrPos.y)}px; width: ${this.mmToPx(sizeMm)}px; height: ${this.mmToPx(sizeMm)}px;`;
+    },
+
+    textStyle() {
+        const textW = Math.max(20, this.labelWidthMm * 0.4);
+        const textH = Math.max(6, this.dotsToMm(this.textFontSize) * 1.5);
+        return `left: ${this.mmToPx(this.textPos.x)}px; top: ${this.mmToPx(this.textPos.y)}px; width: ${this.mmToPx(textW)}px; height: ${this.mmToPx(textH)}px; transform: translate(-50%, -50%);`;
+    },
+
+    startDrag(element, event) {
+        this.dragging = element;
+        this.dragStartX = event.clientX;
+        this.dragStartY = event.clientY;
+        this.dragStartQrX = this.qrPos.x;
+        this.dragStartQrY = this.qrPos.y;
+        this.dragStartTextX = this.textPos.x;
+        this.dragStartTextY = this.textPos.y;
+        event.preventDefault();
+    },
+
+    onCanvasMouseDown(event) {
+        // handled by element-level mousedown
+    },
+
+    onCanvasMouseMove(event) {
+        if (!this.dragging) {
+            return;
+        }
+
+        const dx = this.pxToMm(event.clientX - this.dragStartX);
+        const dy = this.pxToMm(event.clientY - this.dragStartY);
+
+        if (this.dragging === 'qr') {
+            this.qrPos.x = Math.round(this.clamp(this.dragStartQrX + dx, 0, this.labelWidthMm) * 10) / 10;
+            this.qrPos.y = Math.round(this.clamp(this.dragStartQrY + dy, 0, this.labelHeightMm) * 10) / 10;
+            this.updateEdgeMarginFromQrX();
+            this.updateTopMarginFromQrY();
+        } else if (this.dragging === 'text') {
+            this.textPos.x = Math.round(this.clamp(this.dragStartTextX + dx, 0, this.labelWidthMm) * 10) / 10;
+            this.textPos.y = Math.round(this.clamp(this.dragStartTextY + dy, 0, this.labelHeightMm) * 10) / 10;
+            this.updateGapFromTextX();
+            this.updateBottomMarginFromTextY();
+        }
+    },
+
+    onCanvasMouseUp() {
+        this.dragging = null;
+    },
+}));
+
 Alpine.data('deliveryReceipt', deliveryReceipt);
 
 Alpine.data('rialAmountInput', (model) => ({

@@ -306,6 +306,222 @@
             @endif
         </div>
 
+        {{-- Visual Label Editor --}}
+        <div class="mb-6 rounded-xl border border-fuchsia-200 bg-fuchsia-50/50 overflow-hidden">
+            <button
+                type="button"
+                wire:click="toggleVisualEditor"
+                class="flex w-full items-center justify-between px-5 py-4 text-right transition hover:bg-fuchsia-100/50"
+            >
+                <div class="flex items-center gap-3">
+                    <svg class="h-5 w-5 text-fuchsia-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                    </svg>
+                    <span class="text-base font-semibold text-fuchsia-900">ویرایشگر بصری چیدمان برچسب</span>
+                </div>
+                <svg class="h-5 w-5 text-fuchsia-400 transition-transform {{ $showVisualEditor ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </button>
+
+            @if($showVisualEditor)
+                @php
+                    $editorScale = 4;
+                @endphp
+                <div class="border-t border-fuchsia-200 bg-white px-5 py-5" x-data="labelEditor({
+                    labelWidthMm: @entangle('labelWidthMm'),
+                    labelHeightMm: @entangle('labelHeightMm'),
+                    qrSizeDots: @entangle('qrSizeDots'),
+                    qrTextGapMm: @entangle('qrTextGapMm'),
+                    edgeMarginMm: @entangle('edgeMarginMm'),
+                    topMarginMm: @entangle('topMarginMm'),
+                    bottomMarginMm: @entangle('bottomMarginMm'),
+                    textFontSize: @entangle('textFontSize'),
+                    textBottomOffsetDots: @entangle('textBottomOffsetDots'),
+                    qrTextRotationDeg: @entangle('qrTextRotationDeg'),
+                    layoutMode: @entangle('layoutMode'),
+                    dpi: @entangle('dpi'),
+                    rotate180: @entangle('rotate180'),
+                })">
+                    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                        <p class="text-xs text-fuchsia-700 leading-relaxed">
+                            المان‌ها را با ماوس بکشید یا از اسلایدرها و ورودی‌های عددی استفاده کنید. تغییرات فوراً در تنظیمات چیدمان اعمال می‌شوند.
+                        </p>
+                        <div class="flex items-center gap-2">
+                            <label class="text-xs font-medium text-slate-600">بزرگ‌نمایی:</label>
+                            <select x-model.number="scale" class="rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-700 focus:border-fuchsia-300 focus:ring focus:ring-fuchsia-100">
+                                <option value="2">2×</option>
+                                <option value="3">3×</option>
+                                <option value="4">4×</option>
+                                <option value="5">5×</option>
+                                <option value="6">6×</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col lg:flex-row gap-6">
+                        {{-- Canvas Area --}}
+                        <div class="flex-1 flex flex-col items-center">
+                            <div
+                                class="relative bg-white border-2 border-fuchsia-300 shadow-md select-none overflow-hidden cursor-crosshair"
+                                :style="`width: ${labelWidthMm * scale}px; height: ${labelHeightMm * scale}px;`"
+                                @mousedown="onCanvasMouseDown($event)"
+                                @mousemove="onCanvasMouseMove($event)"
+                                @mouseup="onCanvasMouseUp()"
+                                @mouseleave="onCanvasMouseUp()"
+                            >
+                                {{-- Grid lines --}}
+                                <template x-for="gx in Math.floor(labelWidthMm / 5)" :key="'gx'+gx">
+                                    <div class="absolute top-0 bottom-0 border-l border-fuchsia-100 pointer-events-none" :style="`left: ${gx * 5 * scale}px;`"></div>
+                                </template>
+                                <template x-for="gy in Math.floor(labelHeightMm / 5)" :key="'gy'+gy">
+                                    <div class="absolute left-0 right-0 border-t border-fuchsia-100 pointer-events-none" :style="`top: ${gy * 5 * scale}px;`"></div>
+                                </template>
+
+                                {{-- Margin guides --}}
+                                <div class="absolute border border-dashed border-blue-300/50 pointer-events-none" :style="`top: ${topMarginMm * scale}px; left: ${edgeMarginMm * scale}px; right: ${edgeMarginMm * scale}px; bottom: ${bottomMarginMm * scale}px;`"></div>
+
+                                {{-- QR Code element --}}
+                                <div
+                                    class="absolute flex items-center justify-center bg-violet-100/60 border border-violet-400 cursor-move hover:bg-violet-200/70 transition-colors"
+                                    :class="{ 'ring-2 ring-violet-500 z-10': dragging === 'qr' }"
+                                    :style="qrStyle()"
+                                    @mousedown.stop="startDrag('qr', $event)"
+                                >
+                                    <span class="font-bold text-violet-700 pointer-events-none" :style="`font-size: ${Math.max(6, scale * 1.5)}px;`">QR</span>
+                                </div>
+
+                                {{-- Text element --}}
+                                <div
+                                    class="absolute flex items-center justify-center bg-amber-100/60 border border-amber-400 cursor-move hover:bg-amber-200/70 transition-colors"
+                                    :class="{ 'ring-2 ring-amber-500 z-10': dragging === 'text' }"
+                                    :style="textStyle()"
+                                    @mousedown.stop="startDrag('text', $event)"
+                                >
+                                    <span class="font-mono font-bold text-amber-800 pointer-events-none whitespace-nowrap" :style="`font-size: ${Math.max(6, fontSizePx())}px; transform: rotate(${qrTextRotationDeg}deg);`">کد مددجو</span>
+                                </div>
+
+                                {{-- Dimension labels --}}
+                                <div class="absolute -top-5 left-0 text-[9px] text-slate-400 pointer-events-none" :style="`width: ${labelWidthMm * scale}px; text-align: center;`">
+                                    <span x-text="labelWidthMm + ' mm'"></span>
+                                </div>
+                                <div class="absolute -left-12 top-0 text-[9px] text-slate-400 pointer-events-none" :style="`height: ${labelHeightMm * scale}px; display: flex; align-items: center; writing-mode: vertical-rl;`">
+                                    <span x-text="labelHeightMm + ' mm'"></span>
+                                </div>
+                            </div>
+
+                            {{-- Position readout --}}
+                            <div class="mt-3 flex gap-4 text-[10px] text-slate-500">
+                                <span>موقعیت QR: <span class="font-mono text-violet-600" x-text="`X=${qrPos.x.toFixed(1)} Y=${qrPos.y.toFixed(1)} mm`"></span></span>
+                                <span>موقعیت متن: <span class="font-mono text-amber-600" x-text="`X=${textPos.x.toFixed(1)} Y=${textPos.y.toFixed(1)} mm`"></span></span>
+                                <span x-show="dragging" class="text-fuchsia-600 font-semibold">در حال جابجایی...</span>
+                            </div>
+                        </div>
+
+                        {{-- Controls Panel --}}
+                        <div class="w-full lg:w-72 space-y-4">
+                            {{-- QR Code Controls --}}
+                            <div class="rounded-lg border border-violet-200 bg-violet-50/50 p-3">
+                                <h4 class="text-xs font-bold text-violet-800 mb-2 flex items-center gap-1.5">
+                                    <div class="w-3 h-3 rounded bg-violet-400"></div>
+                                    کد QR
+                                </h4>
+                                <div class="space-y-2">
+                                    <div>
+                                        <label class="block text-[10px] font-medium text-slate-600 mb-0.5">اندازه (dots): <span class="font-mono text-violet-700" x-text="qrSizeDots"></span></label>
+                                        <input type="range" min="50" max="500" step="10" x-model.number="qrSizeDots" class="w-full h-1.5 bg-violet-200 rounded-lg appearance-none cursor-pointer accent-violet-600">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="block text-[10px] font-medium text-slate-600 mb-0.5">X (mm)</label>
+                                            <input type="number" step="0.5" min="0" :max="labelWidthMm" x-model.number="qrPos.x" class="w-full rounded border border-slate-200 px-1.5 py-1 text-xs text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-medium text-slate-600 mb-0.5">Y (mm)</label>
+                                            <input type="number" step="0.5" min="0" :max="labelHeightMm" x-model.number="qrPos.y" class="w-full rounded border border-slate-200 px-1.5 py-1 text-xs text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Text Controls --}}
+                            <div class="rounded-lg border border-amber-200 bg-amber-50/50 p-3">
+                                <h4 class="text-xs font-bold text-amber-800 mb-2 flex items-center gap-1.5">
+                                    <div class="w-3 h-3 rounded bg-amber-400"></div>
+                                    متن کد مددجو
+                                </h4>
+                                <div class="space-y-2">
+                                    <div>
+                                        <label class="block text-[10px] font-medium text-slate-600 mb-0.5">اندازه فونت (dots): <span class="font-mono text-amber-700" x-text="textFontSize"></span></label>
+                                        <input type="range" min="8" max="120" step="1" x-model.number="textFontSize" class="w-full h-1.5 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-600">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="block text-[10px] font-medium text-slate-600 mb-0.5">X (mm)</label>
+                                            <input type="number" step="0.5" min="0" :max="labelWidthMm" x-model.number="textPos.x" class="w-full rounded border border-slate-200 px-1.5 py-1 text-xs text-slate-700 focus:border-amber-300 focus:ring focus:ring-amber-100" dir="ltr">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-medium text-slate-600 mb-0.5">Y (mm)</label>
+                                            <input type="number" step="0.5" min="0" :max="labelHeightMm" x-model.number="textPos.y" class="w-full rounded border border-slate-200 px-1.5 py-1 text-xs text-slate-700 focus:border-amber-300 focus:ring focus:ring-amber-100" dir="ltr">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-medium text-slate-600 mb-0.5">چرخش متن</label>
+                                        <select x-model.number="qrTextRotationDeg" class="w-full rounded border border-slate-200 px-1.5 py-1 text-xs text-slate-700 focus:border-amber-300 focus:ring focus:ring-amber-100">
+                                            <option value="0">۰ درجه</option>
+                                            <option value="90">۹۰ درجه</option>
+                                            <option value="180">۱۸۰ درجه</option>
+                                            <option value="270">۲۷۰ درجه</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Spacing Controls --}}
+                            <div class="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                                <h4 class="text-xs font-bold text-slate-700 mb-2">فاصله‌ها و حاشیه‌ها</h4>
+                                <div class="space-y-2">
+                                    <div>
+                                        <label class="block text-[10px] font-medium text-slate-600 mb-0.5">فاصله QR تا متن (mm): <span class="font-mono" x-text="qrTextGapMm"></span></label>
+                                        <input type="range" min="0" max="20" step="0.5" x-model.number="qrTextGapMm" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-600">
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <div>
+                                            <label class="block text-[10px] font-medium text-slate-600 mb-0.5">بالا (mm)</label>
+                                            <input type="number" step="0.5" min="0" max="20" x-model.number="topMarginMm" class="w-full rounded border border-slate-200 px-1.5 py-1 text-xs text-slate-700 focus:border-slate-300 focus:ring focus:ring-slate-100" dir="ltr">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-medium text-slate-600 mb-0.5">پایین (mm)</label>
+                                            <input type="number" step="0.5" min="0" max="20" x-model.number="bottomMarginMm" class="w-full rounded border border-slate-200 px-1.5 py-1 text-xs text-slate-700 focus:border-slate-300 focus:ring focus:ring-slate-100" dir="ltr">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-medium text-slate-600 mb-0.5">لبه (mm)</label>
+                                            <input type="number" step="0.5" min="0" max="20" x-model.number="edgeMarginMm" class="w-full rounded border border-slate-200 px-1.5 py-1 text-xs text-slate-700 focus:border-slate-300 focus:ring focus:ring-slate-100" dir="ltr">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Layout Mode & Rotation --}}
+                            <div class="rounded-lg border border-slate-200 bg-slate-50/50 p-3">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-xs font-medium text-slate-700">حالت چیدمان</label>
+                                    <select x-model="layoutMode" class="rounded border border-slate-200 px-2 py-1 text-xs text-slate-700 focus:border-fuchsia-300 focus:ring focus:ring-fuchsia-100">
+                                        <option value="horizontal">افقی</option>
+                                        <option value="vertical">عمودی</option>
+                                    </select>
+                                </div>
+                                <label class="mt-2 flex items-center gap-2 cursor-pointer select-none">
+                                    <input type="checkbox" x-model="rotate180" class="rounded border-slate-300 text-fuchsia-600 focus:ring-fuchsia-500">
+                                    <span class="text-xs font-medium text-slate-700">چرخش ۱۸۰ درجه</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {{-- Search Section --}}
             <div class="space-y-4">
