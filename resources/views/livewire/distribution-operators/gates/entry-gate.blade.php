@@ -420,9 +420,12 @@
                                         <dt class="font-semibold text-slate-500">کد ملی</dt>
                                         <dd class="font-bold text-slate-800" dir="ltr">{{ $lastScanResult['national_id'] ?? '-' }}</dd>
                                     </div>
-                                    <div class="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 sm:col-span-2">
-                                        <dt class="font-semibold text-slate-500">شماره تماس</dt>
-                                        <dd class="font-bold text-slate-800" dir="ltr">{{ $lastScanResult['mobile'] ?? '-' }}</dd>
+                                    <div class="flex items-center justify-between gap-2 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 sm:col-span-2">
+                                        <dt class="inline-flex shrink-0 items-center gap-1.5 font-bold text-violet-500">
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21a8 8 0 0116 0"/></svg>
+                                            مددکار
+                                        </dt>
+                                        <dd class="min-w-0 truncate text-sm font-black text-violet-700">{{ $lastScanResult['social_worker'] ?: '-' }}</dd>
                                     </div>
                                 </dl>
 

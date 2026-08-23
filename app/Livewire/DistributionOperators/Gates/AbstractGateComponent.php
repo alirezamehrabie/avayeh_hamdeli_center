@@ -359,6 +359,7 @@ abstract class AbstractGateComponent extends Component
             'code' => (string) ($person->formatted_person_code ?: $person->person_code ?: '-'),
             'national_id' => (string) ($person->national_id ?: '-'),
             'mobile' => (string) ($person->phone_number ?: ($person->guardian?->guardian_phone_number ?: '-')),
+            'social_worker' => $this->workerFullName($person->guardian?->socialWorker),
             'details' => $this->personDetails($person),
         ], $this->scanResultExtras());
         $this->onSubjectLoaded();
@@ -382,6 +383,7 @@ abstract class AbstractGateComponent extends Component
             'code' => (string) ($guardian->guardian_code ?: '-'),
             'national_id' => (string) ($guardian->national_code ?: '-'),
             'mobile' => (string) ($guardian->guardian_phone_number ?: '-'),
+            'social_worker' => $this->workerFullName($guardian->socialWorker),
             'details' => $this->guardianDetails($guardian),
         ], $this->scanResultExtras());
         $this->onSubjectLoaded();
@@ -399,7 +401,7 @@ abstract class AbstractGateComponent extends Component
     protected function findPerson(int $subjectId): ?Person
     {
         return Person::query()
-            ->with(['socialWorker', 'guardian:id,guardian_phone_number'])
+            ->with(['guardian:id,guardian_phone_number,social_worker_id', 'guardian.socialWorker'])
             ->find($subjectId);
     }
 
@@ -430,10 +432,6 @@ abstract class AbstractGateComponent extends Component
             $details[] = ['label' => 'نام پدر', 'value' => (string) $person->father_name];
         }
 
-        if ($person->socialWorker) {
-            $details[] = ['label' => 'مددکار', 'value' => $this->workerLabel($person->socialWorker)];
-        }
-
         return $details;
     }
 
@@ -442,10 +440,6 @@ abstract class AbstractGateComponent extends Component
         $details = [
             ['label' => 'اعضای خانوار', 'value' => (string) ($guardian->people_count ?? 0)],
         ];
-
-        if ($guardian->socialWorker) {
-            $details[] = ['label' => 'مددکار', 'value' => $this->workerLabel($guardian->socialWorker)];
-        }
 
         $district = $guardian->residence?->district?->name;
 
@@ -456,16 +450,10 @@ abstract class AbstractGateComponent extends Component
         return $details;
     }
 
-    protected function workerLabel(SocialWorker $worker): string
+    /** Full name of the subject household's assigned social worker, shown prominently on the identity card. */
+    protected function workerFullName(?SocialWorker $worker): string
     {
-        $name = trim($worker->first_name.' '.$worker->last_name);
-        $code = $worker->worker_code ? str_pad((string) $worker->worker_code, 2, '0', STR_PAD_LEFT) : null;
-
-        if ($name === '') {
-            return $code ? "کد {$code}" : '-';
-        }
-
-        return $code ? "{$name} (کد {$code})" : $name;
+        return $worker ? trim($worker->first_name.' '.$worker->last_name) : '';
     }
 
     /**
