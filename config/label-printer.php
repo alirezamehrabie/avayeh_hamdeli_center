@@ -16,8 +16,8 @@ return [
         // Printer command language: 'tspl' for TSC printers or 'zpl' for Zebra-compatible printers
         'language' => env('LABEL_PRINTER_LANGUAGE', 'tspl'),
 
-        // Connection type: 'network' or 'usb'
-        'connection' => env('LABEL_PRINTER_CONNECTION', 'network'),
+        // Connection type: 'network', 'usb', 'bridge' or 'browser'
+        'connection' => env('LABEL_PRINTER_CONNECTION', 'bridge'),
 
         // Network printer IP address (used when connection = 'network')
         'host' => env('LABEL_PRINTER_HOST', '192.168.1.100'),

@@ -114,7 +114,7 @@ class PrintClientCard extends Component
         $qr = $config['qr_code'];
         $text = $config['text'];
 
-        $this->printerConnection = $printer['connection'] ?? 'network';
+        $this->printerConnection = $printer['connection'] ?? 'bridge';
         $this->printerHost = $printer['host'] ?? '192.168.1.100';
         $this->printerPort = $printer['port'] ?? 9100;
         $this->printerUsbName = $printer['usb_printer_name'] ?? '';
