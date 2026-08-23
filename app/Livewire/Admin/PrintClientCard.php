@@ -790,13 +790,14 @@ class PrintClientCard extends Component
 
         $this->loadingSocialWorkerClients = true;
 
-        $existingIds = collect($this->printList)->pluck('id')->all();
+        // Replace mode: clear any previous entries first, then load all
+        // clients of the selected social worker.
+        $this->printList = [];
 
         $people = Person::query()
             ->select(['people.id', 'people.first_name', 'people.last_name', 'people.national_id', 'people.person_code'])
             ->join('guardians', 'people.guardian_id', '=', 'guardians.id')
             ->where('guardians.social_worker_id', $this->selectedSocialWorkerId)
-            ->whereNotIn('id', $existingIds)
             ->get();
 
         $addedCount = 0;
@@ -814,9 +815,9 @@ class PrintClientCard extends Component
         $this->loadingSocialWorkerClients = false;
 
         if ($addedCount === 0) {
-            session()->flash('error', 'تمام مددجویان این مددکار قبلاً به لیست چاپ اضافه شده‌اند.');
+            session()->flash('error', 'هیچ مددجویی برای این مددکار یافت نشد.');
         } else {
-            session()->flash('success', "{$addedCount} مددجو از مددکار انتخاب‌شده به لیست چاپ اضافه شد.");
+            session()->flash('success', "لیست چاپ پاک و {$addedCount} مددجو از مددکار انتخاب‌شده به آن اضافه شد.");
         }
     }
 

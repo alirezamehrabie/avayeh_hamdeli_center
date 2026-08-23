@@ -3,6 +3,9 @@
 namespace Tests\Feature;
 
 use App\Livewire\Admin\PrintClientCard;
+use App\Models\Guardian;
+use App\Models\Person;
+use App\Models\SocialWorker;
 use App\Models\User;
 use App\Services\LabelPrinterService;
 use Illuminate\Http\Testing\File;
@@ -168,6 +171,50 @@ class AdminPrintClientCardTest extends TestCase
             ->call('importLayoutSettings')
             ->assertSet('labelWidthMm', 45)
             ->assertSet('textFontSize', 24);
+    }
+
+    public function test_adding_social_worker_clients_replaces_the_existing_print_list(): void
+    {
+        $this->actingAs($this->adminUser());
+
+        $worker = SocialWorker::query()->create([
+            'worker_code' => random_int(1000000, 9999999),
+            'first_name' => 'Print',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+
+        $guardian = Guardian::query()->create([
+            'social_worker_id' => $worker->id,
+            'guardian_code' => random_int(1000000, 9999999),
+            'first_name' => 'Print',
+            'last_name' => 'Guardian',
+        ]);
+
+        $client = Person::query()->create([
+            'guardian_id' => $guardian->id,
+            'person_code' => (string) random_int(1000000, 9999999),
+            'national_id' => (string) random_int(1000000000, 9999999999),
+            'first_name' => 'Print',
+            'last_name' => 'Client',
+        ]);
+
+        $component = Livewire::test(PrintClientCard::class)
+            ->set('printList', [
+                [
+                    'id' => 987654,
+                    'full_name' => 'Previous Client',
+                    'national_id' => '0000000000',
+                    'person_code' => '14001',
+                ],
+            ])
+            ->set('selectedSocialWorkerId', $worker->id)
+            ->call('addSocialWorkerClientsToPrintList');
+
+        $this->assertSame(
+            [$client->id],
+            collect($component->get('printList'))->pluck('id')->all()
+        );
     }
 
     private function adminUser(): User
