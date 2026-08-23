@@ -11,20 +11,23 @@
     <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         @if($selectedService)
             {{-- Sticky active-gate band: always shows which service is locked while scanning --}}
-            <div class="sticky top-0 z-20 border-b border-indigo-100 bg-indigo-50/95 px-5 py-3 backdrop-blur supports-[backdrop-filter]:bg-indigo-50/80">
-                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div class="flex min-w-0 items-center gap-3">
-                        <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-indigo-600 px-3 py-1 text-[11px] font-black text-white">
+            {{-- Compact single-row band so the sticky header doesn't eat the small mobile viewport --}}
+            <div class="sticky top-0 z-20 border-b border-indigo-100 bg-indigo-50/95 px-3 py-2 backdrop-blur supports-[backdrop-filter]:bg-indigo-50/80 sm:px-5 sm:py-3">
+                <div class="flex items-center justify-between gap-2 sm:gap-3">
+                    <div class="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+                        <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-indigo-600 px-2 py-0.5 text-[10px] font-black text-white sm:px-3 sm:py-1 sm:text-[11px]">
                             <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-300"></span>
-                            گیت تحویل فعال
+                            <span class="sm:hidden">تحویل فعال</span>
+                            <span class="hidden sm:inline">گیت تحویل فعال</span>
                         </span>
-                        <div class="min-w-0">
+                        <div class="min-w-0 flex-1">
                             <p class="truncate text-sm font-black text-slate-900">{{ $selectedService->name }}</p>
-                            <p class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-semibold text-slate-500">
-                                <span dir="ltr">{{ $selectedService->code }}</span>
-                                <span>{{ \App\Models\Service::TYPE_OPTIONS[$selectedService->service_type] ?? $selectedService->service_type }}</span>
+                            <p class="mt-0.5 flex items-center gap-x-2 overflow-hidden whitespace-nowrap text-[11px] font-semibold text-slate-500 sm:gap-x-3">
+                                <span class="hidden sm:inline" dir="ltr">{{ $selectedService->code }}</span>
+                                <span class="hidden sm:inline">{{ \App\Models\Service::TYPE_OPTIONS[$selectedService->service_type] ?? $selectedService->service_type }}</span>
                                 <span class="text-indigo-600">
-                                    باقی‌مانده:
+                                    <span class="sm:hidden">باقی:</span>
+                                    <span class="hidden sm:inline">باقی‌مانده:</span>
                                     <span dir="ltr">{{ rtrim(rtrim(number_format((float) $selectedService->remaining_quantity, 2), '0'), '.') }}</span>
                                     /
                                     <span dir="ltr">{{ rtrim(rtrim(number_format((float) $selectedService->total_quantity, 2), '0'), '.') }}</span>
@@ -36,12 +39,14 @@
                         type="button"
                         wire:click="changeService"
                         wire:confirm="با تغییر خدمت، اسکن جاری پاک می‌شود. ادامه می‌دهید؟"
-                        class="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full border border-indigo-200 bg-white px-3 py-1.5 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100"
+                        title="تغییر خدمت"
+                        aria-label="تغییر خدمت"
+                        class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-indigo-200 bg-white text-indigo-700 transition hover:bg-indigo-100 sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-xs sm:font-bold"
                     >
                         <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M5 9a7 7 0 0111-3.7L20 9M19 15a7 7 0 01-11 3.7L4 15"/>
                         </svg>
-                        تغییر خدمت
+                        <span class="hidden sm:inline">تغییر خدمت</span>
                     </button>
                 </div>
             </div>
