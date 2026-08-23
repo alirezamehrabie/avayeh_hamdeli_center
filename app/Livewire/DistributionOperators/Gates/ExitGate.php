@@ -10,6 +10,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 
 #[Layout('layouts.distribution-operator')]
 class ExitGate extends AbstractGateComponent
@@ -101,6 +102,16 @@ class ExitGate extends AbstractGateComponent
     }
 
     /**
+     * The styled confirmation modal (notification-modal component) dispatches this event instead of
+     * a native confirm() dialog; the checked ids were snapshotted into the payload when it opened.
+     */
+    #[On('exit-gate-confirm-finalize')]
+    public function finalizeExitConfirmed(array $ids = []): void
+    {
+        $this->finalizeExit($ids);
+    }
+
+    /**
      * Commit the official delivery ledger and lock the session: each item marked delivered at the
      * Delivery Gate becomes a permanent ServiceDelivery record and its assignment is locked.
      * The operator's checked assignment ids arrive as a parameter from the client; the property
@@ -185,6 +196,14 @@ class ExitGate extends AbstractGateComponent
             ? "خروج تأیید و {$created} قلم به‌صورت نهایی ثبت شد."
             : 'قلم تحویل‌شده‌ای برای ثبت نهایی یافت نشد.';
         $this->selectedItems = [];
+
+        if ($created > 0) {
+            $this->dispatch('open-notification-toast', config: [
+                'type' => 'success',
+                'title' => 'خروج تأیید شد',
+                'message' => "{$created} قلم به‌صورت نهایی ثبت و قفل شد.",
+            ]);
+        }
     }
 
     /**

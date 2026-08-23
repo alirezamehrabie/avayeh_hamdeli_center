@@ -623,19 +623,41 @@
                                 type="button"
                                 x-bind:disabled="selected.length === 0"
                                 wire:loading.attr="disabled"
-                                wire:target="finalizeExit"
+                                wire:target="finalizeExitConfirmed"
                                 x-on:click="
                                     if (selected.length === 0) return;
-                                    if (! confirm('با تأیید خروج، ' + selected.length + ' قلم انتخاب‌شده به‌صورت نهایی ثبت و قفل می‌شوند و قابل تغییر نخواهند بود. ادامه می‌دهید؟')) return;
-                                    $wire.call('finalizeExit', selected);
+                                    window.dispatchEvent(new CustomEvent('open-notification-modal', {
+                                        detail: {
+                                            config: {
+                                                type: 'warning',
+                                                icon: 'warning',
+                                                title: 'تأیید خروج و ثبت نهایی تحویل',
+                                                message: 'با تأیید خروج، ' + selected.length + ' قلم انتخاب‌شده به‌صورت نهایی ثبت و قفل می‌شوند و قابل تغییر نخواهند بود.',
+                                                buttons: [
+                                                    {
+                                                        label: 'تأیید خروج',
+                                                        action: 'event',
+                                                        event: 'exit-gate-confirm-finalize',
+                                                        payload: { ids: selected },
+                                                        variant: 'success',
+                                                    },
+                                                    {
+                                                        label: 'انصراف',
+                                                        action: 'close',
+                                                        variant: 'secondary',
+                                                    },
+                                                ],
+                                            },
+                                        },
+                                    }))
                                 "
                                 class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3.5 text-base font-black text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300 disabled:opacity-100"
                             >
                                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                <span wire:loading.remove wire:target="finalizeExit">
+                                <span wire:loading.remove wire:target="finalizeExitConfirmed">
                                     <span x-text="selected.length === 0 ? 'تأیید خروج و ثبت نهایی' : 'تأیید خروج و ثبت نهایی (' + selected.length + ' قلم)'"></span>
                                 </span>
-                                <span wire:loading wire:target="finalizeExit">در حال ثبت نهایی…</span>
+                                <span wire:loading wire:target="finalizeExitConfirmed">در حال ثبت نهایی…</span>
                             </button>
                             <p
                                 x-show="selected.length === 0"
