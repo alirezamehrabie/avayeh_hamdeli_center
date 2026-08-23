@@ -25,6 +25,9 @@ class ExitGate extends AbstractGateComponent
     /** Inline error shown when the manager password is rejected. */
     public ?string $unlockError = null;
 
+    /** IDs of delivered items the operator has manually checked for exit finalization. */
+    public array $selectedItems = [];
+
     protected function scanContext(): string
     {
         return 'distribution-exit-gate';
@@ -40,6 +43,35 @@ class ExitGate extends AbstractGateComponent
         $this->exitUnlocked = false;
         $this->managerPassword = '';
         $this->unlockError = null;
+        $this->selectedItems = [];
+    }
+
+    public function toggleSelectedItem(int $itemId): void
+    {
+        $this->authorizeGate();
+
+        $idx = array_search($itemId, $this->selectedItems, true);
+
+        if ($idx !== false) {
+            unset($this->selectedItems[$idx]);
+            $this->selectedItems = array_values($this->selectedItems);
+        } else {
+            $this->selectedItems[] = $itemId;
+        }
+    }
+
+    public function selectAllDeliveredItems(): void
+    {
+        $this->authorizeGate();
+
+        $this->selectedItems = $this->deliveredItems->pluck('id')->values()->all();
+    }
+
+    public function deselectAllDeliveredItems(): void
+    {
+        $this->authorizeGate();
+
+        $this->selectedItems = [];
     }
 
     protected function selectServicePrompt(): string
@@ -71,8 +103,10 @@ class ExitGate extends AbstractGateComponent
     /**
      * Commit the official delivery ledger and lock the session: each item marked delivered at the
      * Delivery Gate becomes a permanent ServiceDelivery record and its assignment is locked.
+     * The operator's checked assignment ids arrive as a parameter from the client; the property
+     * fallback keeps direct wire:click calls working too.
      */
-    public function finalizeExit(): void
+    public function finalizeExit(?array $selectedIds = null): void
     {
         $this->authorizeGate();
 
@@ -80,13 +114,28 @@ class ExitGate extends AbstractGateComponent
             return;
         }
 
+        $ids = collect($selectedIds ?? $this->selectedItems)
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($ids === []) {
+            $this->scanStatus = 'paused';
+            $this->scanMessage = 'برای ثبت نهایی، ابتدا اقلام مورد نظر را انتخاب کنید.';
+
+            return;
+        }
+
         $service = $this->selectedService;
         $operatorId = auth()->id();
 
-        $created = DB::transaction(function () use ($service, $operatorId): int {
+        $created = DB::transaction(function () use ($service, $operatorId, $ids): int {
             // lockForUpdate + the status guard make this idempotent against a double-click or two tabs.
             $assignments = $this->subjectAssignmentQuery()
                 ->where('status', GateEntryAssignment::STATUS_DELIVERED)
+                ->whereIn('id', $ids)
                 ->with('serviceCategory')
                 ->lockForUpdate()
                 ->get();
@@ -135,6 +184,7 @@ class ExitGate extends AbstractGateComponent
         $this->scanMessage = $created > 0
             ? "خروج تأیید و {$created} قلم به‌صورت نهایی ثبت شد."
             : 'قلم تحویل‌شده‌ای برای ثبت نهایی یافت نشد.';
+        $this->selectedItems = [];
     }
 
     /**

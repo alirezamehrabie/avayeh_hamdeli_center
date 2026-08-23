@@ -392,13 +392,57 @@
                 {{-- Right: delivered items to verify + finalize exit --}}
                 @php($deliveredItems = $this->deliveredItems)
                 @php($finalizedItems = $this->finalizedItems)
-                <div class="flex min-h-0 flex-col gap-3">
+                {{-- All selection interactions below are pure Alpine: ticking is instant and never
+                     waits for a Livewire round-trip. selectedItems syncs to the server lazily and is
+                     passed explicitly to finalizeExit so the confirm click costs a single request. --}}
+                <div
+                    class="flex min-h-0 flex-col gap-3"
+                    x-data="{
+                        selected: @entangle('selectedItems'),
+                        toggle(id) {
+                            this.selected.includes(id)
+                                ? this.selected = this.selected.filter(i => i !== id)
+                                : this.selected.push(id);
+                        },
+                        selectAll(ids) { this.selected = ids; },
+                        deselectAll() { this.selected = []; },
+                    }"
+                >
                     <div class="flex items-center justify-between">
                         <h2 class="text-sm font-extrabold text-slate-800">اقلام تحویل‌شده برای تأیید خروج</h2>
                         @if($lastScanResult && $deliveredItems->isNotEmpty())
-                            <span class="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
-                                {{ $deliveredItems->count() }} قلم آماده تأیید
-                            </span>
+                            <div class="flex items-center gap-2">
+                                <template x-if="selected.length === 0">
+                                    <button
+                                        type="button"
+                                        x-on:click="selectAll(@js($deliveredItems->pluck('id')->values()->all()))"
+                                        class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-slate-600 transition hover:bg-emerald-100 hover:text-emerald-700"
+                                    >
+                                        انتخاب همه ({{ $deliveredItems->count() }})
+                                    </button>
+                                </template>
+                                <template x-if="selected.length > 0 && selected.length < {{ $deliveredItems->count() }}">
+                                    <button
+                                        type="button"
+                                        x-on:click="deselectAll()"
+                                        class="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 transition hover:bg-slate-100 hover:text-slate-600"
+                                    >
+                                        لغو انتخاب همه (<span x-text="selected.length"></span>)
+                                    </button>
+                                </template>
+                                <template x-if="selected.length === {{ $deliveredItems->count() }}">
+                                    <button
+                                        type="button"
+                                        x-on:click="deselectAll()"
+                                        class="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 transition hover:bg-slate-100 hover:text-slate-600"
+                                    >
+                                        لغو انتخاب همه
+                                    </button>
+                                </template>
+                                <span class="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
+                                    <span x-text="selected.length"></span>/{{ $deliveredItems->count() }} انتخاب شد
+                                </span>
+                            </div>
                         @elseif($lastScanResult && $finalizedItems->isNotEmpty())
                             <span class="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700">
                                 <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
@@ -526,19 +570,30 @@
                             <p class="mt-1 text-xs font-semibold text-amber-600">فقط اقلام تحویل‌شده در گیت تحویل قابل تأیید خروج هستند.</p>
                         </div>
                     @else
-                        {{-- Read-only verification list of items delivered at the Delivery Gate --}}
+                        {{-- Interactive checklist — operator must manually check each item before finalizing --}}
                         <div class="space-y-2">
                             @foreach($deliveredItems as $item)
                                 @php($category = $item->serviceCategory)
                                 <div
                                     wire:key="exit-gate-item-{{ $item->id }}"
-                                    class="flex w-full items-center justify-between gap-3 rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-right"
+                                    x-on:click="toggle({{ $item->id }})"
+                                    class="flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-right transition"
+                                    :class="selected.includes({{ $item->id }})
+                                        ? 'border-emerald-400 bg-emerald-50'
+                                        : 'border-slate-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/50'"
                                 >
                                     <span class="flex items-center gap-3">
-                                        <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-emerald-600 bg-emerald-600 text-white">
-                                            <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 111.42-1.42l2.79 2.79 6.79-6.79a1 1 0 011.42 0z" clip-rule="evenodd" />
-                                            </svg>
+                                        <span
+                                            class="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition"
+                                            :class="selected.includes({{ $item->id }})
+                                                ? 'border-emerald-500 bg-emerald-500'
+                                                : 'border-slate-300 bg-white'"
+                                        >
+                                            <template x-if="selected.includes({{ $item->id }})">
+                                                <svg class="h-3 w-3 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 111.42-1.42l2.79 2.79 6.79-6.79a1 1 0 011.42 0z" clip-rule="evenodd" />
+                                                </svg>
+                                            </template>
                                         </span>
                                         <span class="flex flex-col">
                                             <span class="text-sm font-bold text-slate-800">{{ $category?->name ?? '-' }}</span>
@@ -549,7 +604,14 @@
                                         @if($category?->unitLabel)
                                             <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ $category->unitLabel }}</span>
                                         @endif
-                                        <span class="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">تحویل شد</span>
+                                        <span
+                                            class="rounded-full px-2.5 py-0.5 text-[11px] font-bold transition"
+                                            :class="selected.includes({{ $item->id }})
+                                                ? 'bg-emerald-100 text-emerald-700'
+                                                : 'bg-slate-100 text-slate-500'"
+                                        >
+                                            <span x-text="selected.includes({{ $item->id }}) ? 'انتخاب شد' : 'تحویل شد'"></span>
+                                        </span>
                                     </span>
                                 </div>
                             @endforeach
@@ -559,16 +621,27 @@
                         <div class="mt-2">
                             <button
                                 type="button"
-                                wire:click="finalizeExit"
-                                wire:confirm="با تأیید خروج، اقلام به‌صورت نهایی ثبت و قفل می‌شوند و قابل تغییر نخواهند بود. ادامه می‌دهید؟"
+                                x-bind:disabled="selected.length === 0"
                                 wire:loading.attr="disabled"
                                 wire:target="finalizeExit"
-                                class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3.5 text-base font-black text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                x-on:click="
+                                    if (selected.length === 0) return;
+                                    if (! confirm('با تأیید خروج، ' + selected.length + ' قلم انتخاب‌شده به‌صورت نهایی ثبت و قفل می‌شوند و قابل تغییر نخواهند بود. ادامه می‌دهید؟')) return;
+                                    $wire.call('finalizeExit', selected);
+                                "
+                                class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3.5 text-base font-black text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300 disabled:opacity-100"
                             >
                                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                <span wire:loading.remove wire:target="finalizeExit">تأیید خروج و ثبت نهایی تحویل</span>
+                                <span wire:loading.remove wire:target="finalizeExit">
+                                    <span x-text="selected.length === 0 ? 'تأیید خروج و ثبت نهایی' : 'تأیید خروج و ثبت نهایی (' + selected.length + ' قلم)'"></span>
+                                </span>
                                 <span wire:loading wire:target="finalizeExit">در حال ثبت نهایی…</span>
                             </button>
+                            <p
+                                x-show="selected.length === 0"
+                                style="display: none;"
+                                class="mt-2 text-center text-xs font-semibold text-slate-400"
+                            >برای ثبت نهایی، ابتدا اقلام مورد نظر را انتخاب کنید.</p>
                         </div>
                     @endif
                 </div>
