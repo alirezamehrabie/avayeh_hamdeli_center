@@ -407,12 +407,19 @@
                     x-data="deliveryItems(@js(array_map('intval', $deliveredCategoryIds)))"
                     wire:key="delivery-column-{{ $scannedPersonId ?? 0 }}-{{ $scannedGuardianId ?? 0 }}"
                 >
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between gap-2">
                         <h2 class="text-sm font-extrabold text-slate-800">اقلام مجاز برای تحویل</h2>
                         @if($lastScanResult && $authorizedItems->isNotEmpty())
-                            <span class="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
-                                <span x-text="deliveredCount">{{ count($deliveredCategoryIds) }}</span> از {{ $authorizedItems->count() }} تحویل شد
-                            </span>
+                            @php($finalizedCount = count($finalizedCategoryIds))
+                            <div class="flex shrink-0 items-center gap-1.5">
+                                <span class="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 ring-1 ring-inset ring-amber-200">
+                                    <span x-text="{{ $authorizedItems->count() }} - deliveredCount - {{ $finalizedCount }}">{{ $authorizedItems->count() - count($deliveredCategoryIds) - $finalizedCount }}</span>
+                                    باقی‌مانده
+                                </span>
+                                <span class="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                                    <span x-text="deliveredCount">{{ count($deliveredCategoryIds) }}</span> از {{ $authorizedItems->count() }} تحویل شد
+                                </span>
+                            </div>
                         @endif
                     </div>
 
@@ -432,60 +439,66 @@
                                 @php($cid = (int) $item->service_category_id)
                                 @php($isFinalized = in_array($item->service_category_id, $finalizedCategoryIds, true))
                                 @if($isFinalized)
-                                    {{-- Locked: already finalized at the Exit Gate, so it's read-only here. --}}
+                                    {{-- Locked: already finalized at the Exit Gate — grayed out and clearly out of play. --}}
                                     <div
                                         wire:key="delivery-gate-item-{{ $item->id }}"
-                                        class="flex w-full cursor-not-allowed items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-right"
+                                        class="flex w-full cursor-not-allowed select-none items-center justify-between gap-2 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-100/60 px-3 py-2.5 text-right opacity-75 sm:gap-3 sm:px-4 sm:py-3"
                                     >
-                                        <span class="flex items-center gap-3">
-                                            <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-indigo-600 bg-indigo-600 text-white">
+                                        <span class="flex min-w-0 items-center gap-2.5 sm:gap-3">
+                                            <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-400">
                                                 <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                                             </span>
-                                            <span class="flex flex-col">
-                                                <span class="text-sm font-bold text-slate-800">{{ $category?->name ?? '-' }}</span>
-                                                <span class="text-[11px] font-semibold text-slate-400" dir="ltr">{{ $category?->code ?? '-' }}</span>
+                                            <span class="flex min-w-0 flex-col">
+                                                <span class="truncate text-sm font-bold text-slate-500">{{ $category?->name ?? '-' }}</span>
+                                                <span class="truncate text-[11px] font-semibold text-slate-400" dir="ltr">{{ $category?->code ?? '-' }}</span>
                                             </span>
                                         </span>
-                                        <span class="flex shrink-0 items-center gap-2">
+                                        <span class="flex shrink-0 items-center gap-1.5 sm:gap-2">
                                             @if($category?->unitLabel)
-                                                <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ $category->unitLabel }}</span>
+                                                <span class="hidden rounded-md bg-white px-2 py-0.5 text-[10px] font-bold text-slate-400 sm:inline-block">{{ $category->unitLabel }}</span>
                                             @endif
-                                            <span class="rounded-full bg-indigo-100 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700">خروج نهایی شده</span>
+                                            <span class="rounded-full bg-slate-200 px-2.5 py-0.5 text-[11px] font-bold text-slate-600">خروج نهایی شده</span>
                                         </span>
                                     </div>
                                 @else
-                                    {{-- Toggleable: state is client-driven for instant feedback; @click persists in the background. --}}
+                                    {{-- Toggleable: the whole row is the only tap target; checkbox + pill are pure state mirrors.
+                                         State is client-driven for instant feedback; @click persists in the background.
+                                         Mobile keeps every row single-line: name truncates and the text pill yields to a dot. --}}
                                     <button
                                         type="button"
                                         @click="toggle({{ $cid }})"
                                         wire:key="delivery-gate-item-{{ $item->id }}"
-                                        class="flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-right transition"
-                                        :class="isDelivered({{ $cid }}) ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-white hover:border-emerald-200 hover:bg-slate-50'"
+                                        class="flex w-full items-center justify-between gap-2 rounded-2xl border-2 px-3 py-2.5 text-right transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-1 sm:gap-3 sm:px-4 sm:py-3"
+                                        :class="isDelivered({{ $cid }}) ? 'border-emerald-500 bg-emerald-50' : 'border-slate-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/40'"
                                         :aria-pressed="isDelivered({{ $cid }})"
                                     >
-                                        <span class="flex items-center gap-3">
+                                        <span class="flex min-w-0 items-center gap-2.5 sm:gap-3">
                                             <span
-                                                class="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition"
-                                                :class="isDelivered({{ $cid }}) ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 bg-white'"
+                                                class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 shadow-sm transition"
+                                                :class="[ isDelivered({{ $cid }}) ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 bg-white', isSaving({{ $cid }}) ? 'animate-pulse' : '' ]"
                                             >
-                                                <svg x-show="isDelivered({{ $cid }})" x-cloak class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                                <svg x-show="isDelivered({{ $cid }})" x-cloak class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                                     <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 111.42-1.42l2.79 2.79 6.79-6.79a1 1 0 011.42 0z" clip-rule="evenodd" />
                                                 </svg>
                                             </span>
-                                            <span class="flex flex-col">
-                                                <span class="text-sm font-bold text-slate-800">{{ $category?->name ?? '-' }}</span>
-                                                <span class="text-[11px] font-semibold text-slate-400" dir="ltr">{{ $category?->code ?? '-' }}</span>
+                                            <span class="flex min-w-0 flex-col">
+                                                <span class="truncate text-sm font-extrabold text-slate-900">{{ $category?->name ?? '-' }}</span>
+                                                <span class="truncate text-[11px] font-semibold text-slate-400" dir="ltr">{{ $category?->code ?? '-' }}</span>
                                             </span>
                                         </span>
-                                        <span class="flex shrink-0 items-center gap-2">
+                                        <span class="flex shrink-0 items-center gap-1.5 sm:gap-2">
                                             @if($category?->unitLabel)
-                                                <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">{{ $category->unitLabel }}</span>
+                                                <span class="hidden rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 sm:inline-block">{{ $category->unitLabel }}</span>
                                             @endif
                                             <span
-                                                class="rounded-full px-2.5 py-0.5 text-[11px] font-bold transition"
-                                                :class="isDelivered({{ $cid }}) ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
-                                                x-text="isDelivered({{ $cid }}) ? 'تحویل شد' : 'ثبت تحویل'"
-                                            >{{ in_array($item->service_category_id, $deliveredCategoryIds, true) ? 'تحویل شد' : 'ثبت تحویل' }}</span>
+                                                class="hidden rounded-full px-3 py-1 text-[11px] font-black transition sm:block"
+                                                :class="isDelivered({{ $cid }}) ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500'"
+                                                x-text="isDelivered({{ $cid }}) ? 'تحویل شد' : 'در انتظار تحویل'"
+                                            >{{ in_array($item->service_category_id, $deliveredCategoryIds, true) ? 'تحویل شد' : 'در انتظار تحویل' }}</span>
+                                            <span
+                                                class="h-2.5 w-2.5 shrink-0 rounded-full transition sm:hidden"
+                                                :class="isDelivered({{ $cid }}) ? 'bg-emerald-600' : 'bg-slate-300'"
+                                            ></span>
                                         </span>
                                     </button>
                                 @endif
