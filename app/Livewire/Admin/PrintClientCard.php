@@ -235,6 +235,17 @@ class PrintClientCard extends Component
             return;
         }
 
+        // The bridge flow never touches the printer from the server: the raw
+        // label data is handed to the browser, which forwards it to the local
+        // print agent running on the operator's own Windows PC. This is what
+        // makes direct printing possible while the site runs on a shared host.
+        if ($this->printerConnection === 'bridge') {
+            $items = $this->buildPrintItems();
+            $printer = app()->makeWith(LabelPrinterService::class, ['overrides' => $this->getPrinterOverrides()]);
+            $this->dispatchBridgePrint($printer->generateBatchData($items));
+            return;
+        }
+
         if (! $this->showPreview) {
             session()->flash('error', 'ابتدا پیش‌نمایش چاپ را باز کنید.');
             return;
@@ -262,6 +273,12 @@ class PrintClientCard extends Component
 
         if ($this->printerConnection === 'browser') {
             $this->printBrowserTestLabel();
+            return;
+        }
+
+        if ($this->printerConnection === 'bridge') {
+            $printer = app()->makeWith(LabelPrinterService::class, ['overrides' => $this->getPrinterOverrides()]);
+            $this->dispatchBridgePrint($printer->generateTestLabel());
             return;
         }
 
@@ -684,6 +701,16 @@ class PrintClientCard extends Component
         }
 
         return $rows;
+    }
+
+    /**
+     * Hand raw label data to the browser so it can be forwarded to the local
+     * print bridge agent (see print-bridge/README.md). The printer name and
+     * bridge address live on the operator's PC, not in server settings.
+     */
+    private function dispatchBridgePrint(string $data): void
+    {
+        $this->dispatch('client-card-bridge-print', payload: base64_encode($data));
     }
 
     private function printWithBrowserDialog(): void

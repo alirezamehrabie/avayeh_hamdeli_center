@@ -154,9 +154,7 @@ class LabelPrinterService
      */
     public function printTestLabel(): array
     {
-        $data = $this->language === 'tspl'
-            ? $this->buildTestLabelTspl()
-            : $this->buildTestLabelZpl();
+        $data = $this->generateTestLabel();
 
         try {
             $this->sendToPrinter($data);
@@ -165,6 +163,18 @@ class LabelPrinterService
         } catch (RuntimeException $e) {
             return ['success' => false, 'message' => 'خطا در ارتباط با پرینتر: ' . $e->getMessage()];
         }
+    }
+
+    /**
+     * Generate raw test label data without sending it to a printer.
+     * Used by the local print bridge flow, where the browser forwards
+     * the payload to the agent running on the operator's PC.
+     */
+    public function generateTestLabel(): string
+    {
+        return $this->language === 'tspl'
+            ? $this->buildTestLabelTspl()
+            : $this->buildTestLabelZpl();
     }
 
     /**

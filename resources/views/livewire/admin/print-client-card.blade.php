@@ -44,6 +44,7 @@
                             >
                                 <option value="network">شبکه (TCP/IP)</option>
                                 <option value="usb">پرینتر ویندوز / محلی</option>
+                                <option value="bridge">پرینتر ویندوزِ همین رایانه (سایت روی هاست اصلی)</option>
                                 <option value="browser">چاپ از طریق مرورگر</option>
                             </select>
                         </div>
@@ -68,6 +69,104 @@
                                     class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:ring focus:ring-indigo-100"
                                     dir="ltr"
                                 >
+                            </div>
+                        @elseif($printerConnection === 'bridge')
+                            <div class="md:col-span-2">
+                                <div x-data="printBridgeSettings" class="rounded-lg border border-slate-200 bg-slate-50/60 p-4 space-y-3">
+                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                        <div class="flex items-center gap-2">
+                                            <span
+                                                class="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                                                :class="{ 'bg-slate-400 animate-pulse': status === 'checking', 'bg-emerald-500': status === 'online', 'bg-red-500': status === 'offline' }"
+                                            ></span>
+                                            <span class="text-sm font-medium text-slate-700" x-text="statusText()"></span>
+                                        </div>
+                                        <div class="flex items-center gap-3">
+                                            <button type="button" @click="refreshStatus()" class="text-xs font-semibold text-indigo-600 transition hover:text-indigo-800">
+                                                بررسی اتصال
+                                            </button>
+                                            <button
+                                                type="button"
+                                                @click="scanPrinters()"
+                                                :disabled="scanning"
+                                                class="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-white px-3 py-1.5 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-50 disabled:opacity-60"
+                                            >
+                                                <svg :class="{ 'animate-spin': scanning }" class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                                </svg>
+                                                شناسایی پرینترهای ویندوز
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div x-show="printers.length > 0">
+                                        <label class="block text-sm font-medium text-slate-700 mb-1.5">پرینتر شناسایی‌شده روی همین رایانه</label>
+                                        <select
+                                            @change="selectPrinter($event.target.value)"
+                                            class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:ring focus:ring-indigo-100"
+                                            dir="ltr"
+                                        >
+                                            <option value="">انتخاب پرینتر</option>
+                                            <template x-for="p in printers" :key="p.name">
+                                                <option :value="p.name" x-text="(p.is_default ? p.name + ' (پیش‌فرض ویندوز)' : p.name)" :selected="selectedPrinter === p.name"></option>
+                                            </template>
+                                        </select>
+                                        <p class="mt-1 text-xs text-slate-500">
+                                            انتخاب شما فقط برای همین رایانه ذخیره می‌شود؛ هر سیستم چاپ خودش را دارد.
+                                            <span x-show="selectedPrinter !== ''" class="font-mono text-slate-600" x-text="'پرینتر فعال: ' + selectedPrinter"></span>
+                                        </p>
+                                    </div>
+
+                                    <p x-show="scanError !== ''" class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700" x-text="scanError"></p>
+
+                                    <p x-show="status === 'offline'" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
+                                        برای چاپ مستقیم از طریق دامنه اصلی، برنامه کوچک «پل چاپ» باید روی همین رایانه (ویندوز) اجرا شود.
+                                        پوشه <span class="font-mono">print-bridge</span> پروژه را روی این سیستم کپی کنید و فایل
+                                        <span class="font-mono">start-bridge.bat</span> را اجرا نمایید؛ سپس «بررسی اتصال» را بزنید.
+                                        این برنامه فقط از داخل همین رایانه قابل دسترسی است.
+                                    </p>
+
+                                    <details class="text-xs text-slate-600">
+                                        <summary class="cursor-pointer select-none font-semibold text-slate-500 hover:text-slate-700">تنظیمات پیشرفته اتصال (آدرس و توکن)</summary>
+                                        <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <div>
+                                                <label class="block font-medium text-slate-600 mb-1">آدرس برنامه پل چاپ</label>
+                                                <input
+                                                    type="text"
+                                                    x-model="urlInput"
+                                                    @change="persistConnection(); refreshStatus()"
+                                                    placeholder="http://127.0.0.1:9235"
+                                                    class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-300 focus:ring focus:ring-indigo-100"
+                                                    dir="ltr"
+                                                >
+                                            </div>
+                                            <div>
+                                                <label class="block font-medium text-slate-600 mb-1">توکن امنیتی (اختیاری)</label>
+                                                <input
+                                                    type="text"
+                                                    x-model="tokenInput"
+                                                    @change="persistConnection(); refreshStatus()"
+                                                    placeholder="اگر در bridge token.txt تنظیم شده باشد"
+                                                    class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-300 focus:ring focus:ring-indigo-100"
+                                                    dir="ltr"
+                                                >
+                                            </div>
+                                        </div>
+                                    </details>
+
+                                    <div>
+                                        <button
+                                            type="button"
+                                            @click="testPrint()"
+                                            class="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-white px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-50 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                                        >
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            چاپ برچسب تست
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         @else
                             <div>
@@ -104,6 +203,12 @@
                                         dir="ltr"
                                     >
                                     <p class="mt-1 text-xs text-slate-500">اگر پرینتر در فهرست نیست، نام آن را دستی وارد کنید.</p>
+                                    @if(! $canDetectLocalPrinters)
+                                        <p class="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
+                                            سایت روی این هاست به پرینترهای ویندوزِ رایانهٔ شما دسترسی ندارد؛ شناسایی خودکار فقط وقتی کار می‌کند که سایت روی همان سیستم ویندوزی اجرا شود.
+                                            برای چاپ از پرینترِ همین رایانه در حالت دامنهٔ اصلی، گزینهٔ «پرینتر ویندوزِ همین رایانه (سایت روی هاست اصلی)» را انتخاب کنید.
+                                        </p>
+                                    @endif
                                 @else
                                     <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-600">
                                         چاپ از طریق مرورگر، پرینترهای نصب‌شده روی همین دستگاه را در پنجره چاپ سیستم نشان می‌دهد.

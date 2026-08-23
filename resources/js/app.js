@@ -392,6 +392,241 @@ window.addEventListener('client-card-browser-print', (event) => {
     window.setTimeout(triggerPrint, 600);
 });
 
+// Local Print Bridge (production mode).
+// When the site runs on a shared host / main domain, no server-side code can
+// reach the Windows printers installed on the operator's PC. Instead, a tiny
+// loopback-only agent (print-bridge/) runs on each PC and exposes a local
+// HTTP API. The *browser* talks to it, so printing keeps working through the
+// public domain exactly like it did under localhost. See print-bridge/README.md.
+const PRINT_BRIDGE_STORAGE_KEY = 'avaye.printBridge';
+const PRINT_BRIDGE_DEFAULT_URL = 'http://127.0.0.1:9235';
+
+const readPrintBridgeSettings = () => {
+    let stored = {};
+
+    try {
+        stored = JSON.parse(window.localStorage.getItem(PRINT_BRIDGE_STORAGE_KEY) || '{}');
+    } catch (error) {
+        stored = {};
+    }
+
+    return {
+        url: typeof stored.url === 'string' && stored.url.trim() !== '' ? stored.url.trim() : PRINT_BRIDGE_DEFAULT_URL,
+        token: typeof stored.token === 'string' ? stored.token : '',
+        printer: typeof stored.printer === 'string' ? stored.printer : '',
+    };
+};
+
+const writePrintBridgeSettings = (patch) => {
+    const next = { ...readPrintBridgeSettings(), ...patch };
+
+    window.localStorage.setItem(PRINT_BRIDGE_STORAGE_KEY, JSON.stringify(next));
+
+    return next;
+};
+
+const normalizePrintBridgeUrl = (value) => {
+    let url = (value || '').trim();
+
+    if (url === '') {
+        url = PRINT_BRIDGE_DEFAULT_URL;
+    }
+
+    if (!/^https?:\/\//i.test(url)) {
+        url = `http://${url}`;
+    }
+
+    return url.replace(/\/+$/, '');
+};
+
+// fetch + manual timeout so we fail fast while scanning for the agent.
+const printBridgeFetch = (url, options = {}, timeoutMs = 2500) => {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+
+    return fetch(url, { ...options, signal: controller.signal }).finally(() => {
+        window.clearTimeout(timer);
+    });
+};
+
+window.printBridge = {
+    async check(baseUrl, token = '') {
+        const response = await printBridgeFetch(
+            `${normalizePrintBridgeUrl(baseUrl)}/ping`,
+            token !== '' ? { headers: { 'X-Bridge-Token': token } } : {}
+        );
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        return response.json();
+    },
+    async listPrinters(baseUrl, token = '') {
+        const response = await printBridgeFetch(
+            `${normalizePrintBridgeUrl(baseUrl)}/api/printers`,
+            token !== '' ? { headers: { 'X-Bridge-Token': token } } : {},
+            8000 // first enumeration after agent start can be slow (WMI)
+        );
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok || !data.ok) {
+            throw new Error(data.message || `HTTP ${response.status}`);
+        }
+
+        return Array.isArray(data.printers) ? data.printers : [];
+    },
+    async print({ baseUrl, token = '', printer = '', dataBase64, jobName = 'Avaye Client Card' }) {
+        const response = await printBridgeFetch(
+            `${normalizePrintBridgeUrl(baseUrl)}/api/print`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token !== '' ? { 'X-Bridge-Token': token } : {}),
+                },
+                body: JSON.stringify({
+                    data_base64: dataBase64,
+                    printer,
+                    job_name: jobName,
+                }),
+            },
+            15000
+        );
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok || !data.ok) {
+            throw new Error(data.message || `HTTP ${response.status}`);
+        }
+
+        return data;
+    },
+};
+
+window.addEventListener('client-card-bridge-print', async (event) => {
+    const { payload } = event.detail || {};
+
+    if (!payload) {
+        return;
+    }
+
+    const settings = readPrintBridgeSettings();
+
+    try {
+        await window.printBridge.check(settings.url, settings.token);
+        await window.printBridge.print({
+            baseUrl: settings.url,
+            token: settings.token,
+            printer: settings.printer,
+            dataBase64: payload,
+        });
+        window.alert('کار چاپ با موفقیت به پرینتر این رایانه ارسال شد.');
+    } catch (error) {
+        if (error instanceof TypeError || error.name === 'AbortError') {
+            window.alert('برنامه «پل چاپ» روی این رایانه در دسترس نیست. لطفاً فایل start-bridge.bat در پوشه print-bridge را اجرا کنید و دوباره تلاش کنید.');
+            return;
+        }
+
+        window.alert(`خطا در چاپ: ${error.message}`);
+    }
+});
+
+Alpine.data('printBridgeSettings', () => ({
+    status: 'checking', // checking | online | offline
+    version: '',
+    urlInput: readPrintBridgeSettings().url,
+    tokenInput: readPrintBridgeSettings().token,
+    printers: [],
+    selectedPrinter: readPrintBridgeSettings().printer,
+    scanning: false,
+    scanError: '',
+
+    async init() {
+        await this.refreshStatus();
+    },
+    async refreshStatus() {
+        this.status = 'checking';
+
+        try {
+            const info = await window.printBridge.check(this.urlInput, this.tokenInput.trim());
+            this.status = 'online';
+            this.version = info?.version ? String(info.version) : '';
+        } catch (error) {
+            this.status = 'offline';
+            this.version = '';
+        }
+    },
+    async scanPrinters() {
+        this.scanning = true;
+        this.scanError = '';
+
+        try {
+            await this.refreshStatus();
+
+            if (this.status !== 'online') {
+                throw Object.assign(new Error('offline'), { offline: true });
+            }
+
+            this.persistConnection();
+
+            const printers = await window.printBridge.listPrinters(this.urlInput, this.tokenInput.trim());
+
+            this.printers = printers;
+
+            // Auto-pick the Windows default printer until the operator saves an explicit choice.
+            if (!this.selectedPrinter) {
+                const fallback = printers.find((p) => p.is_default) || printers[0];
+
+                if (fallback?.name) {
+                    this.selectedPrinter = fallback.name;
+                    writePrintBridgeSettings({ printer: fallback.name });
+                }
+            }
+        } catch (error) {
+            this.scanError = error.offline
+                ? 'اتصال به برنامه پل چاپ برقرار نشد. ابتدا آن را روی این رایانه اجرا کنید.'
+                : `خطا در دریافت فهرست پرینترها: ${error.message}`;
+        } finally {
+            this.scanning = false;
+        }
+    },
+    selectPrinter(name) {
+        this.selectedPrinter = name;
+        writePrintBridgeSettings({ printer: name });
+    },
+    persistConnection() {
+        const next = writePrintBridgeSettings({
+            url: normalizePrintBridgeUrl(this.urlInput),
+            token: this.tokenInput.trim(),
+        });
+
+        this.urlInput = next.url;
+    },
+    testPrint() {
+        if (this.status !== 'online') {
+            window.alert('برنامه پل چاپ در دسترس نیست؛ ابتدا اتصال را بررسی کنید.');
+            return;
+        }
+
+        this.$wire.printTestLabel();
+    },
+    statusText() {
+        if (this.status === 'checking') {
+            return 'در حال بررسی برنامه پل چاپ...';
+        }
+
+        if (this.status === 'online') {
+            return this.version !== ''
+                ? `برنامه پل چاپ فعال است (نسخه ${this.version})`
+                : 'برنامه پل چاپ فعال است.';
+        }
+
+        return 'برنامه پل چاپ روی این رایانه در دسترس نیست.';
+    },
+}));
+
 Alpine.data('idCardScanner', ({
     resolveScan,
     successSoundUrl = '',
