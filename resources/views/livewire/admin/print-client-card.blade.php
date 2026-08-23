@@ -395,6 +395,79 @@
                         </button>
                     </div>
 
+                    {{-- Save / Restore Layout Settings --}}
+                    <div class="rounded-lg border border-violet-100 bg-violet-50 px-4 py-4" x-data>
+                        <h3 class="mb-1 flex items-center gap-2 text-sm font-bold text-violet-900">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                            ذخیره و بازیابی تنظیمات چیدمان
+                        </h3>
+                        <p class="mb-3 text-xs leading-relaxed text-violet-700">
+                            مقادیر فعلی این بخش و ویرایشگر بصری (ابعاد، فاصله‌ها، اندازه فونت و ...) در یک فایل ذخیره می‌شود؛
+                            پس از هر بارگذاری مجدد صفحه یا تغییر رایانه، همان فایل را وارد کنید تا همه تنظیمات به‌صورت خودکار بازگردند.
+                        </p>
+
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button
+                                type="button"
+                                wire:click="exportLayoutSettings"
+                                class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 focus:outline-none focus:ring-4 focus:ring-emerald-100"
+                            >
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                </svg>
+                                دریافت فایل تنظیمات (JSON)
+                            </button>
+
+                            <button
+                                type="button"
+                                @click="$refs.layoutImportPicker.click()"
+                                class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-800"
+                            >
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"></path>
+                                </svg>
+                                انتخاب فایل تنظیمات
+                            </button>
+                            {{-- Hidden on purpose: opened programmatically so the browser never scrolls to it --}}
+                            <input
+                                type="file"
+                                accept=".json,application/json"
+                                wire:model="layoutImportFile"
+                                x-ref="layoutImportPicker"
+                                class="sr-only"
+                                tabindex="-1"
+                                aria-hidden="true"
+                            >
+
+                            <button
+                                type="button"
+                                wire:click="importLayoutSettings"
+                                @disabled(! $layoutImportFile)
+                                wire:loading.attr="disabled"
+                                wire:target="importLayoutSettings"
+                                class="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-violet-700 focus:outline-none focus:ring-4 focus:ring-violet-100 disabled:opacity-60"
+                            >
+                                <svg wire:loading.remove wire:target="importLayoutSettings" class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                                </svg>
+                                <svg wire:loading wire:target="importLayoutSettings" class="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                                بارگذاری تنظیمات از فایل
+                            </button>
+
+                            <span wire:loading wire:target="layoutImportFile" class="text-xs font-medium text-slate-500">در حال آماده‌سازی فایل...</span>
+                        </div>
+
+                        @if($layoutImportFile)
+                            <p class="mt-2 text-xs text-slate-600">
+                                فایل انتخاب‌شده:
+                                <span class="font-mono font-semibold text-slate-800">{{ $layoutImportFile->getClientOriginalName() }}</span>
+                            </p>
+                        @endif
+                    </div>
+
                     {{-- Live Calculated Summary --}}
                     <div class="rounded-lg bg-violet-50 border border-violet-100 px-4 py-3">
                         <p class="text-xs text-violet-700 leading-relaxed">

@@ -8,18 +8,21 @@ use App\Models\SocialWorker;
 use App\Services\LabelPrinterService;
 use App\Services\QrIdentityService;
 use Livewire\Component;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
-use Maatwebsite\Excel\Facades\Excel;
+use Livewire\WithFileUploads;
 use Maatwebsite\Excel\Concerns\FromArray;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Events\AfterSheet;
+use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class PrintClientCard extends Component
 {
+    use WithFileUploads;
+
     public string $search = '';
 
     public string $searchField = 'all';
@@ -98,6 +101,9 @@ class PrintClientCard extends Component
 
     public bool $showVisualEditor = false;
 
+    /** @var \Livewire\Features\SupportFileUploads\TemporaryUploadedFile|null */
+    public $layoutImportFile = null;
+
     public function mount(): void
     {
         abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
@@ -173,7 +179,7 @@ class PrintClientCard extends Component
 
         return $query->limit(20)->get()->map(fn (Person $p) => [
             'id' => $p->id,
-            'full_name' => $p->full_name ?: trim($p->first_name . ' ' . $p->last_name) ?: '-',
+            'full_name' => $p->full_name ?: trim($p->first_name.' '.$p->last_name) ?: '-',
             'national_id' => $p->national_id ?: '-',
             'person_code' => $p->person_code ?: '-',
         ])->toArray();
@@ -186,6 +192,7 @@ class PrintClientCard extends Component
         foreach ($this->printList as $item) {
             if ($item['id'] === $personId) {
                 session()->flash('error', 'این مددجو قبلاً به لیست چاپ اضافه شده است.');
+
                 return;
             }
         }
@@ -194,12 +201,13 @@ class PrintClientCard extends Component
 
         if (! $person) {
             session()->flash('error', 'مددجو یافت نشد.');
+
             return;
         }
 
         $this->printList[] = [
             'id' => $person->id,
-            'full_name' => $person->full_name ?: trim($person->first_name . ' ' . $person->last_name) ?: '-',
+            'full_name' => $person->full_name ?: trim($person->first_name.' '.$person->last_name) ?: '-',
             'national_id' => $person->national_id ?: '-',
             'person_code' => $person->person_code ?: '-',
         ];
@@ -227,11 +235,13 @@ class PrintClientCard extends Component
 
         if (empty($this->printList)) {
             session()->flash('error', 'لیست چاپ خالی است.');
+
             return;
         }
 
         if ($this->printerConnection === 'browser') {
             $this->printWithBrowserDialog();
+
             return;
         }
 
@@ -243,11 +253,13 @@ class PrintClientCard extends Component
             $items = $this->buildPrintItems();
             $printer = app()->makeWith(LabelPrinterService::class, ['overrides' => $this->getPrinterOverrides()]);
             $this->dispatchBridgePrint($printer->generateBatchData($items));
+
             return;
         }
 
         if (! $this->showPreview) {
             session()->flash('error', 'ابتدا پیش‌نمایش چاپ را باز کنید.');
+
             return;
         }
 
@@ -273,12 +285,14 @@ class PrintClientCard extends Component
 
         if ($this->printerConnection === 'browser') {
             $this->printBrowserTestLabel();
+
             return;
         }
 
         if ($this->printerConnection === 'bridge') {
             $printer = app()->makeWith(LabelPrinterService::class, ['overrides' => $this->getPrinterOverrides()]);
             $this->dispatchBridgePrint($printer->generateTestLabel());
+
             return;
         }
 
@@ -305,10 +319,11 @@ class PrintClientCard extends Component
             session()->flash('error', $this->canDetectLocalPrinters
                 ? 'هیچ پرینتر ویندوزی روی این سیستم شناسایی نشد.'
                 : 'شناسایی خودکار پرینترهای محلی فقط روی ویندوز فعال است.');
+
             return;
         }
 
-        session()->flash('success', count($this->detectedLocalPrinters) . ' پرینتر محلی شناسایی شد.');
+        session()->flash('success', count($this->detectedLocalPrinters).' پرینتر محلی شناسایی شد.');
     }
 
     public function toggleAdvancedLayout(): void
@@ -320,6 +335,7 @@ class PrintClientCard extends Component
     {
         if (empty($this->printList)) {
             session()->flash('error', 'لیست چاپ خالی است.');
+
             return;
         }
 
@@ -362,6 +378,211 @@ class PrintClientCard extends Component
         session()->flash('success', 'تنظیمات چیدمان به مقادیر پیش‌فرض بازگشت.');
     }
 
+    public function exportLayoutSettings(): ?\Symfony\Component\HttpFoundation\Response
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+
+        $payload = [
+            'type' => 'avayeh-hamdeli-label-layout',
+            'version' => 1,
+            'exported_at' => now()->toIso8601String(),
+            'settings' => $this->currentLayoutSettings(),
+        ];
+
+        $filename = 'label-layout-settings-'.now()->format('Y-m-d-His').'.json';
+
+        return response()->streamDownload(function () use ($payload) {
+            echo json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }, $filename, [
+            'Content-Type' => 'application/json',
+        ]);
+    }
+
+    public function importLayoutSettings(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+
+        if (! $this->layoutImportFile) {
+            session()->flash('error', 'ابتدا فایل تنظیمات را انتخاب کنید.');
+
+            return;
+        }
+
+        $applied = 0;
+
+        try {
+            if (strtolower((string) $this->layoutImportFile->getClientOriginalExtension()) !== 'json') {
+                session()->flash('error', 'فایل تنظیمات باید با پسوند json. باشد.');
+
+                return;
+            }
+
+            $contents = (string) $this->layoutImportFile->get();
+
+            if (strlen($contents) > 512 * 1024) {
+                session()->flash('error', 'حجم فایل تنظیمات بیش از حد مجاز است.');
+
+                return;
+            }
+
+            $decoded = json_decode($contents, true);
+
+            if (! is_array($decoded)) {
+                session()->flash('error', 'محتوای فایل یک JSON معتبر نیست.');
+
+                return;
+            }
+
+            $incoming = is_array($decoded['settings'] ?? null) ? $decoded['settings'] : $decoded;
+
+            foreach ($this->layoutSettingsMap() as $key => $definition) {
+                if (array_key_exists($key, $incoming)) {
+                    $raw = $incoming[$key];
+                } elseif (array_key_exists($definition['prop'], $incoming)) {
+                    $raw = $incoming[$definition['prop']];
+                } else {
+                    continue;
+                }
+
+                $value = $this->sanitizeLayoutSettingValue($definition, $raw);
+
+                if ($value === null) {
+                    continue;
+                }
+
+                $this->{$definition['prop']} = $value;
+                $applied++;
+            }
+        } catch (\Throwable $exception) {
+            report($exception);
+            session()->flash('error', 'خواندن فایل تنظیمات ممکن نشد.');
+
+            return;
+        } finally {
+            $this->layoutImportFile = null;
+        }
+
+        if ($applied === 0) {
+            session()->flash('error', 'هیچ مقدار معتبری برای چیدمان برچسب در فایل پیدا نشد.');
+
+            return;
+        }
+
+        session()->flash('success', "تنظیمات چیدمان برچسب با موفقیت از فایل بارگذاری شد ({$applied} مورد).");
+    }
+
+    /**
+     * Canonical map of exportable/importable layout settings with their
+     * validation bounds. Numeric values outside the UI input ranges are
+     * clamped; unknown enum values are skipped during import.
+     *
+     * @return array<string, array{prop: string, type: string, min?: float|int, max?: float|int, options?: list<int|string>}>
+     */
+    private function layoutSettingsMap(): array
+    {
+        return [
+            'label_width_mm' => ['prop' => 'labelWidthMm', 'type' => 'float', 'min' => 10, 'max' => 200],
+            'label_height_mm' => ['prop' => 'labelHeightMm', 'type' => 'float', 'min' => 10, 'max' => 200],
+            'paper_width_mm' => ['prop' => 'paperWidthMm', 'type' => 'float', 'min' => 10, 'max' => 300],
+            'gap_mm' => ['prop' => 'gapMm', 'type' => 'float', 'min' => 0, 'max' => 20],
+            'qr_text_gap_mm' => ['prop' => 'qrTextGapMm', 'type' => 'float', 'min' => 0, 'max' => 20],
+            'qr_text_rotation_deg' => ['prop' => 'qrTextRotationDeg', 'type' => 'enum', 'options' => [0, 90, 180, 270]],
+            'edge_margin_mm' => ['prop' => 'edgeMarginMm', 'type' => 'float', 'min' => 0, 'max' => 20],
+            'top_margin_mm' => ['prop' => 'topMarginMm', 'type' => 'float', 'min' => 0, 'max' => 20],
+            'bottom_margin_mm' => ['prop' => 'bottomMarginMm', 'type' => 'float', 'min' => 0, 'max' => 20],
+            'dpi' => ['prop' => 'dpi', 'type' => 'enum', 'options' => [203, 300, 600]],
+            'qr_size_dots' => ['prop' => 'qrSizeDots', 'type' => 'int', 'min' => 50, 'max' => 500],
+            'qr_magnification' => ['prop' => 'qrMagnification', 'type' => 'int', 'min' => 1, 'max' => 10],
+            'qr_error_correction' => ['prop' => 'qrErrorCorrection', 'type' => 'enum', 'options' => ['L', 'M', 'Q', 'H']],
+            'text_font_size' => ['prop' => 'textFontSize', 'type' => 'int', 'min' => 8, 'max' => 120],
+            'text_bottom_offset_dots' => ['prop' => 'textBottomOffsetDots', 'type' => 'int', 'min' => 0, 'max' => 500],
+            'rotate_180' => ['prop' => 'rotate180', 'type' => 'bool'],
+            'layout_mode' => ['prop' => 'layoutMode', 'type' => 'enum', 'options' => ['horizontal', 'vertical']],
+        ];
+    }
+
+    /**
+     * @return array<string, float|int|bool|string>
+     */
+    private function currentLayoutSettings(): array
+    {
+        $settings = [];
+
+        foreach ($this->layoutSettingsMap() as $key => $definition) {
+            $settings[$key] = $this->{$definition['prop']};
+        }
+
+        return $settings;
+    }
+
+    /**
+     * @param  array{prop: string, type: string, min?: float|int, max?: float|int, options?: list<int|string>}  $definition
+     * @return float|int|bool|string|null null when the value is not usable
+     */
+    private function sanitizeLayoutSettingValue(array $definition, mixed $raw): float|int|bool|string|null
+    {
+        switch ($definition['type']) {
+            case 'float':
+                if (! is_numeric($raw)) {
+                    return null;
+                }
+
+                return round(max($definition['min'], min($definition['max'], (float) $raw)), 2);
+
+            case 'int':
+                if (! is_numeric($raw)) {
+                    return null;
+                }
+
+                return (int) round(max($definition['min'], min($definition['max'], (float) $raw)));
+
+            case 'bool':
+                return $this->normalizeBooleanValue($raw);
+
+            case 'enum':
+                foreach ($definition['options'] as $option) {
+                    if (is_int($option)) {
+                        if (is_numeric($raw) && (int) round((float) $raw) === $option) {
+                            return $option;
+                        }
+                    } elseif (is_string($option) && is_scalar($raw)) {
+                        if (strtoupper(trim((string) $raw)) === strtoupper($option)) {
+                            return $option;
+                        }
+                    }
+                }
+
+                return null;
+        }
+
+        return null;
+    }
+
+    private function normalizeBooleanValue(mixed $raw): ?bool
+    {
+        if (is_bool($raw)) {
+            return $raw;
+        }
+
+        if (is_numeric($raw)) {
+            return (int) $raw === 1;
+        }
+
+        if (is_string($raw)) {
+            $normalized = strtolower(trim($raw));
+
+            if (in_array($normalized, ['1', 'true', 'yes', 'on'], true)) {
+                return true;
+            }
+
+            if (in_array($normalized, ['0', 'false', 'no', 'off'], true)) {
+                return false;
+            }
+        }
+
+        return null;
+    }
+
     public function getPreviewItemsProperty(): array
     {
         $service = app(QrIdentityService::class);
@@ -399,6 +620,7 @@ class PrintClientCard extends Component
 
         if (empty($this->printList)) {
             session()->flash('error', 'لیست چاپ خالی است.');
+
             return null;
         }
 
@@ -406,7 +628,7 @@ class PrintClientCard extends Component
         $printer = app()->makeWith(LabelPrinterService::class, ['overrides' => $this->getPrinterOverrides()]);
         $data = $printer->generateBatchData($items);
         $extension = $printer->getFileExtension();
-        $filename = 'labels-' . now()->format('Y-m-d-His') . '.' . $extension;
+        $filename = 'labels-'.now()->format('Y-m-d-His').'.'.$extension;
 
         return response()->streamDownload(function () use ($data) {
             echo $data;
@@ -421,15 +643,16 @@ class PrintClientCard extends Component
 
         if (empty($this->printList)) {
             session()->flash('error', 'لیست چاپ خالی است.');
+
             return redirect()->back();
         }
 
-        $filename = 'client-cards-' . now()->format('Y-m-d-His') . '.csv';
+        $filename = 'client-cards-'.now()->format('Y-m-d-His').'.csv';
         $rows = $this->buildExportRows();
 
         $callback = function () use ($rows) {
             $handle = fopen('php://output', 'w');
-            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
             fputcsv($handle, ['QR Code', 'نام کامل', 'کد ملی', 'کد مددجو'], ',');
 
             foreach ($rows as $row) {
@@ -450,13 +673,15 @@ class PrintClientCard extends Component
 
         if (empty($this->printList)) {
             session()->flash('error', 'لیست چاپ خالی است.');
+
             return null;
         }
 
         $rows = $this->buildExportRows();
-        $filename = 'client-cards-' . now()->format('Y-m-d-His') . '.xlsx';
+        $filename = 'client-cards-'.now()->format('Y-m-d-His').'.xlsx';
 
-        return Excel::download(new class($rows) implements FromArray, WithHeadings, ShouldAutoSize, WithEvents {
+        return Excel::download(new class($rows) implements FromArray, ShouldAutoSize, WithEvents, WithHeadings
+        {
             private array $rows;
 
             public function __construct(array $rows)
@@ -516,6 +741,7 @@ class PrintClientCard extends Component
 
         if (mb_strlen($term) < 2) {
             $this->socialWorkerOptions = [];
+
             return;
         }
 
@@ -532,7 +758,7 @@ class PrintClientCard extends Component
             ->get()
             ->map(fn (SocialWorker $sw) => [
                 'id' => $sw->id,
-                'name' => trim($sw->first_name . ' ' . $sw->last_name),
+                'name' => trim($sw->first_name.' '.$sw->last_name),
                 'code' => (string) $sw->worker_code,
             ])
             ->toArray();
@@ -558,6 +784,7 @@ class PrintClientCard extends Component
 
         if (! $this->selectedSocialWorkerId) {
             session()->flash('error', 'لطفاً ابتدا یک مددکار انتخاب کنید.');
+
             return;
         }
 
@@ -577,7 +804,7 @@ class PrintClientCard extends Component
         foreach ($people as $person) {
             $this->printList[] = [
                 'id' => $person->id,
-                'full_name' => $person->full_name ?: trim($person->first_name . ' ' . $person->last_name) ?: '-',
+                'full_name' => $person->full_name ?: trim($person->first_name.' '.$person->last_name) ?: '-',
                 'national_id' => $person->national_id ?: '-',
                 'person_code' => $person->person_code ?: '-',
             ];
