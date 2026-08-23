@@ -331,7 +331,7 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-slate-600 mb-1">فاصله QR و متن (mm)</label>
-                                <input type="number" step="0.5" min="0" max="20" wire:model.live.debounce.500ms="qrTextGapMm" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
+                                <input type="number" step="0.5" min="-20" max="20" wire:model.live.debounce.500ms="qrTextGapMm" class="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:border-violet-300 focus:ring focus:ring-violet-100" dir="ltr">
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-slate-600 mb-1">چرخش متن (درجه)</label>
@@ -661,7 +661,7 @@
                                 <div class="space-y-2">
                                     <div>
                                         <label class="block text-[10px] font-medium text-slate-600 mb-0.5">فاصله QR تا متن (mm): <span class="font-mono" x-text="qrTextGapMm"></span></label>
-                                        <input type="range" min="0" max="20" step="0.5" x-model.number="qrTextGapMm" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-600">
+                                        <input type="range" min="-20" max="20" step="0.5" x-model.number="qrTextGapMm" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-600">
                                     </div>
                                     <div class="grid grid-cols-3 gap-2">
                                         <div>

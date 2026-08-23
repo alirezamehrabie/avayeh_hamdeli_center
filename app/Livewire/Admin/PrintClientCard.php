@@ -67,7 +67,7 @@ class PrintClientCard extends Component
 
     public float $gapMm = 3;
 
-    public float $qrTextGapMm = 3;
+    public float $qrTextGapMm = -8;
 
     public int $qrTextRotationDeg = 0;
 
@@ -124,7 +124,7 @@ class PrintClientCard extends Component
         $this->labelWidthMm = $label['width_mm'] ?? 45;
         $this->labelHeightMm = $label['height_mm'] ?? 30;
         $this->gapMm = $label['gap_mm'] ?? 3;
-        $this->qrTextGapMm = $label['qr_text_gap_mm'] ?? 3;
+        $this->qrTextGapMm = $label['qr_text_gap_mm'] ?? -8;
         $this->qrTextRotationDeg = $label['qr_text_rotation_deg'] ?? 0;
         $this->edgeMarginMm = $label['edge_margin_mm'] ?? 1.5;
         $this->topMarginMm = $label['top_margin_mm'] ?? 3;
@@ -358,7 +358,7 @@ class PrintClientCard extends Component
         $this->labelWidthMm = $label['width_mm'] ?? 45;
         $this->labelHeightMm = $label['height_mm'] ?? 30;
         $this->gapMm = $label['gap_mm'] ?? 3;
-        $this->qrTextGapMm = $label['qr_text_gap_mm'] ?? 3;
+        $this->qrTextGapMm = $label['qr_text_gap_mm'] ?? -8;
         $this->qrTextRotationDeg = $label['qr_text_rotation_deg'] ?? 0;
         $this->edgeMarginMm = $label['edge_margin_mm'] ?? 1.5;
         $this->topMarginMm = $label['top_margin_mm'] ?? 3;
@@ -485,7 +485,7 @@ class PrintClientCard extends Component
             'label_height_mm' => ['prop' => 'labelHeightMm', 'type' => 'float', 'min' => 10, 'max' => 200],
             'paper_width_mm' => ['prop' => 'paperWidthMm', 'type' => 'float', 'min' => 10, 'max' => 300],
             'gap_mm' => ['prop' => 'gapMm', 'type' => 'float', 'min' => 0, 'max' => 20],
-            'qr_text_gap_mm' => ['prop' => 'qrTextGapMm', 'type' => 'float', 'min' => 0, 'max' => 20],
+            'qr_text_gap_mm' => ['prop' => 'qrTextGapMm', 'type' => 'float', 'min' => -20, 'max' => 20],
             'qr_text_rotation_deg' => ['prop' => 'qrTextRotationDeg', 'type' => 'enum', 'options' => [0, 90, 180, 270]],
             'edge_margin_mm' => ['prop' => 'edgeMarginMm', 'type' => 'float', 'min' => 0, 'max' => 20],
             'top_margin_mm' => ['prop' => 'topMarginMm', 'type' => 'float', 'min' => 0, 'max' => 20],

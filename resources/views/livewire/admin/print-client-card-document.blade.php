@@ -59,8 +59,19 @@
 
         .label.horizontal {
             flex-direction: row;
+@if($qrTextGapMm < 0)
+            gap: 0;
+@else
             gap: {{ $qrTextGapMm }}mm;
+@endif
         }
+
+@if($qrTextGapMm < 0)
+        /* CSS `gap` cannot be negative; pull the text over the QR instead. */
+        .label.horizontal > .code-wrapper {
+            margin-left: {{ $qrTextGapMm }}mm;
+        }
+@endif
 
         .qr {
             width: {{ max(10, round($qrSizeDots * 25.4 / max(1, $dpi), 2)) }}mm;

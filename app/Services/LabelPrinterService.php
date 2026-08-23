@@ -72,7 +72,7 @@ class LabelPrinterService
         $this->heightMm = $overrides['label_height_mm'] ?? $label['height_mm'];
         $this->columns = 2;
         $this->gapMm = $overrides['gap_mm'] ?? $label['gap_mm'];
-        $this->qrTextGapMm = $overrides['qr_text_gap_mm'] ?? ($label['qr_text_gap_mm'] ?? 3);
+        $this->qrTextGapMm = $overrides['qr_text_gap_mm'] ?? ($label['qr_text_gap_mm'] ?? -8);
         $this->qrTextRotationDeg = $overrides['qr_text_rotation_deg'] ?? ($label['qr_text_rotation_deg'] ?? 0);
         $this->edgeMarginMm = $overrides['edge_margin_mm'] ?? ($label['edge_margin_mm'] ?? 0);
         $this->topMarginMm = $overrides['top_margin_mm'] ?? ($label['top_margin_mm'] ?? 0);
@@ -114,11 +114,11 @@ class LabelPrinterService
 
             return [
                 'success' => true,
-                'message' => count($items) . ' کارت با موفقیت به پرینتر ارسال شد.',
+                'message' => count($items).' کارت با موفقیت به پرینتر ارسال شد.',
                 'count' => count($items),
             ];
         } catch (RuntimeException $e) {
-            return ['success' => false, 'message' => 'خطا در ارتباط با پرینتر: ' . $e->getMessage()];
+            return ['success' => false, 'message' => 'خطا در ارتباط با پرینتر: '.$e->getMessage()];
         }
     }
 
@@ -161,7 +161,7 @@ class LabelPrinterService
 
             return ['success' => true, 'message' => 'برچسب تست با موفقیت به پرینتر ارسال شد.'];
         } catch (RuntimeException $e) {
-            return ['success' => false, 'message' => 'خطا در ارتباط با پرینتر: ' . $e->getMessage()];
+            return ['success' => false, 'message' => 'خطا در ارتباط با پرینتر: '.$e->getMessage()];
         }
     }
 
@@ -303,8 +303,8 @@ class LabelPrinterService
 
         $chunks = array_chunk($items, $this->columns);
 
-        $tspl = 'SIZE ' . $this->formatMm($this->paperWidthMm) . ' mm,' . $this->formatMm($this->heightMm) . " mm\r\n";
-        $tspl .= 'GAP ' . $this->formatMm($this->gapMm) . " mm,0\r\n";
+        $tspl = 'SIZE '.$this->formatMm($this->paperWidthMm).' mm,'.$this->formatMm($this->heightMm)." mm\r\n";
+        $tspl .= 'GAP '.$this->formatMm($this->gapMm)." mm,0\r\n";
         $tspl .= "REFERENCE 0,0\r\n";
 
         if ($this->rotate180) {
@@ -346,8 +346,8 @@ class LabelPrinterService
         $topMarginDots = $this->mmToDots($this->topMarginMm);
         $bottomMarginDots = $this->mmToDots($this->bottomMarginMm);
 
-        $tspl = 'SIZE ' . $this->formatMm($this->paperWidthMm) . ' mm,' . $this->formatMm($this->heightMm) . " mm\r\n";
-        $tspl .= 'GAP ' . $this->formatMm($this->gapMm) . " mm,0\r\n";
+        $tspl = 'SIZE '.$this->formatMm($this->paperWidthMm).' mm,'.$this->formatMm($this->heightMm)." mm\r\n";
+        $tspl .= 'GAP '.$this->formatMm($this->gapMm)." mm,0\r\n";
         $tspl .= "REFERENCE 0,0\r\n";
         $tspl .= "CLS\r\n";
 
@@ -429,7 +429,7 @@ class LabelPrinterService
 
         $printerPath = $this->usbPrinterName;
         if (! str_starts_with($printerPath, '\\\\')) {
-            $printerPath = '\\\\localhost\\' . $printerPath;
+            $printerPath = '\\\\localhost\\'.$printerPath;
         }
 
         $handle = @fopen($printerPath, 'w');
@@ -521,10 +521,11 @@ class LabelPrinterService
                 // and its visual height (thickness) is just the font size.
                 // Position text centered vertically beside the QR code.
                 $availableHeight = $heightDots - $topMarginDots - $bottomMarginDots;
+
                 return [
                     'qr_x' => $xOffset,
                     'qr_y' => $topMarginDots,
-                    'text_x' => $xOffset + $this->qrSizeDots + $qrTextGapDots,
+                    'text_x' => max($xOffset, $xOffset + $this->qrSizeDots + $qrTextGapDots),
                     'text_y' => $topMarginDots + intdiv($availableHeight, 2),
                     'max_text_width' => max(1, $availableHeight),
                 ];
@@ -533,7 +534,7 @@ class LabelPrinterService
             return [
                 'qr_x' => $xOffset,
                 'qr_y' => $topMarginDots,
-                'text_x' => $xOffset + $this->qrSizeDots + $qrTextGapDots,
+                'text_x' => max($xOffset, $xOffset + $this->qrSizeDots + $qrTextGapDots),
                 'text_y' => intdiv($heightDots - $this->textFontSize, 2),
                 'max_text_width' => max(1, $labelWidthDots - $this->qrSizeDots - $qrTextGapDots),
             ];
@@ -542,6 +543,7 @@ class LabelPrinterService
         // Vertical layout
         if ($isLandscape) {
             $availableWidth = $labelWidthDots;
+
             return [
                 'qr_x' => $xOffset + intdiv(max(0, $labelWidthDots - $this->qrSizeDots), 2),
                 'qr_y' => $topMarginDots,

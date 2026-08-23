@@ -49,7 +49,7 @@ return [
         'gap_mm' => 3,
 
         // Space between the QR code and the client code in horizontal layout
-        'qr_text_gap_mm' => 3,
+        'qr_text_gap_mm' => -8,
 
         // Rotation for the client code in degrees: 0, 90, 180, 270
         'qr_text_rotation_deg' => 0,
