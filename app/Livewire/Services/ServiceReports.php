@@ -38,6 +38,10 @@ class ServiceReports extends Component
 
     public string $selectedServiceName = 'all';
 
+    public string $serviceDateFrom = '';
+
+    public string $serviceDateTo = '';
+
     public string $deliverySearch = '';
 
     public string $selectedDeliveryEntryType = 'all';
@@ -271,6 +275,17 @@ class ServiceReports extends Component
         $this->dispatch('open-dashboard-section', section: 'advanced-service-report');
     }
 
+    public function clearServiceFilters(): void
+    {
+        $this->search = '';
+        $this->selectedServiceName = 'all';
+        $this->selectedCategory = 'all';
+        $this->selectedStatus = 'all';
+        $this->selectedType = 'all';
+        $this->serviceDateFrom = '';
+        $this->serviceDateTo = '';
+    }
+
     public function clearDeliveryFilters(): void
     {
         $this->deliverySearch = '';
@@ -348,6 +363,9 @@ class ServiceReports extends Component
         $type = ($this->selectedType === 'all') ? null : $this->selectedType;
         $serviceName = ($this->selectedServiceName === 'all') ? null : $this->selectedServiceName;
 
+        $serviceDateFrom = $this->normalizedDateInput($this->serviceDateFrom);
+        $serviceDateTo = $this->normalizedDateInput($this->serviceDateTo);
+
         $categories = ServiceCategory::query()
             ->when($serviceName, fn ($q) => $q->whereHas('serviceName', fn ($sq) => $sq->where('name', $serviceName)))
             ->orderBy('name')
@@ -375,6 +393,10 @@ class ServiceReports extends Component
                 ->when($category, fn ($q) => $q->whereHas('serviceCategory', fn ($q) => $q->where('name', $category)))
                 ->when($type, fn ($q) => $q->where('service_type', $type))
                 ->when($serviceName, fn ($q) => $q->whereHas('serviceName', fn ($q) => $q->where('name', $serviceName)))
+                ->when($serviceDateFrom, fn ($q) => $q->whereHas('deliveries', fn ($delivery) => $delivery
+                    ->whereDate('delivered_at', '>=', $serviceDateFrom)))
+                ->when($serviceDateTo, fn ($q) => $q->whereHas('deliveries', fn ($delivery) => $delivery
+                    ->whereDate('delivered_at', '<=', $serviceDateTo)))
                 ->when($search !== '', fn ($q) => $q->where(function ($inner) use ($search) {
                     if (ctype_digit($search)) {
                         $inner->orWhere('id', (int) $search);

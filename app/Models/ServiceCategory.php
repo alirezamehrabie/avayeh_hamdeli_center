@@ -123,6 +123,11 @@ class ServiceCategory extends Model
         return $nextSortId > 0 ? $nextSortId + 1 : 1;
     }
 
+    public function serviceName(): BelongsTo
+    {
+        return $this->belongsTo(ServiceName::class);
+    }
+
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class)->withTrashed();

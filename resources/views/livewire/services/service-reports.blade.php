@@ -19,6 +19,14 @@
             'in_distribution' => 'bg-amber-100 text-amber-700',
             'completed' => 'bg-green-100 text-green-700',
         ];
+
+        $hasServiceFilters = trim($search ?? '') !== ''
+            || $selectedServiceName !== 'all'
+            || $selectedCategory !== 'all'
+            || $selectedStatus !== 'all'
+            || $selectedType !== 'all'
+            || $serviceDateFrom !== ''
+            || $serviceDateTo !== '';
     @endphp
 
     @if(! $selectedService)
@@ -91,6 +99,59 @@
                                 <option value="{{ $typeValue }}">{{ $typeLabel }}</option>
                             @endforeach
                         </select>
+
+                        {{-- Delivery Date Range Filter --}}
+                        <div x-data="jalaliDateTimeField($wire.entangle('serviceDateFrom').live)">
+                            <input
+                                type="text"
+                                x-ref="input"
+                                x-model="draft"
+                                x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                x-on:jalali-picker-open="handlePickerOpen()"
+                                x-on:jalali-picker-close="handlePickerClose()"
+                                x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                readonly
+                                inputmode="none"
+                                autocomplete="off"
+                                data-jdp-readonly
+                                data-jdp
+                                data-jdp-only-date
+                                placeholder="از تاریخ"
+                                class="w-32 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                            >
+                        </div>
+
+                        <div x-data="jalaliDateTimeField($wire.entangle('serviceDateTo').live)">
+                            <input
+                                type="text"
+                                x-ref="input"
+                                x-model="draft"
+                                x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                x-on:jalali-picker-open="handlePickerOpen()"
+                                x-on:jalali-picker-close="handlePickerClose()"
+                                x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                readonly
+                                inputmode="none"
+                                autocomplete="off"
+                                data-jdp-readonly
+                                data-jdp
+                                data-jdp-only-date
+                                placeholder="تا تاریخ"
+                                class="w-32 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                            >
+                        </div>
+
+                        @if($hasServiceFilters)
+                            <button
+                                type="button"
+                                wire:click="clearServiceFilters"
+                                class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-500 outline-none transition hover:bg-slate-50 focus:ring-2 focus:ring-indigo-100"
+                            >
+                                پاک کردن فیلترها
+                            </button>
+                        @endif
 
                     </div>
                 </div>
@@ -172,7 +233,7 @@
                     @empty
                         <tr>
                             <td colspan="9" class="px-4 py-12 text-center text-slate-500">
-                                {{ trim($search ?? '') !== '' ? 'موردی برای جستجوی فعلی پیدا نشد.' : 'هنوز خدمتی تعریف نشده است.' }}
+                                {{ $hasServiceFilters ? 'موردی برای فیلترهای فعلی پیدا نشد.' : 'هنوز خدمتی تعریف نشده است.' }}
                             </td>
                         </tr>
                     @endforelse
@@ -256,7 +317,7 @@
                     </div>
                 @empty
                     <div class="col-span-full rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-4 py-12 text-center text-slate-500">
-                        {{ trim($search ?? '') !== '' ? 'موردی برای جستجوی فعلی پیدا نشد.' : 'هنوز خدمتی تعریف نشده است.' }}
+                        {{ $hasServiceFilters ? 'موردی برای فیلترهای فعلی پیدا نشد.' : 'هنوز خدمتی تعریف نشده است.' }}
                     </div>
                 @endforelse
             </div>
