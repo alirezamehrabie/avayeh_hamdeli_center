@@ -528,6 +528,7 @@ final class BeneficiaryReportQuery
                     'disabilityType',
                     fn (Builder $disabilityQuery): Builder => $disabilityQuery->where('name', 'like', "%{$value}%")
                 ),
+                'skills_description' => $query->where('skills_description', 'like', "%{$value}%"),
                 'responsible_social_worker' => $query->whereHas(
                     'guardian',
                     fn (Builder $guardianQuery): Builder => $guardianQuery->whereIn(

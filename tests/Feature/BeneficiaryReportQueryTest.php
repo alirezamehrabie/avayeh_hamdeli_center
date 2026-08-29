@@ -258,6 +258,32 @@ class BeneficiaryReportQueryTest extends TestCase
         );
     }
 
+    public function test_skills_description_column_filters_and_exports_talent_notes(): void
+    {
+        $guardian = $this->guardian($this->worker(991008, 'Talent', 'Worker'), 991008);
+        $talentedPerson = $this->person($guardian, 'BRQ016', '9910000016', [
+            'skills_description' => 'نقاشی و خوشنویسی',
+        ]);
+        $this->person($guardian, 'BRQ017', '9910000017', [
+            'skills_description' => 'مهارت ورزشی',
+        ]);
+
+        $criteria = $this->criteria(columnFilters: ['skills_description' => 'خوشنویسی']);
+        $result = app(BeneficiaryReportQuery::class)
+            ->build($criteria)
+            ->with(app(BeneficiaryReportColumnRegistry::class)->eagerLoads())
+            ->firstOrFail();
+
+        $this->assertTrue($result->is($talentedPerson));
+
+        $registry = app(BeneficiaryReportColumnRegistry::class);
+        $export = new PeopleExport(Person::query(), ['skills_description'], $registry);
+
+        $this->assertSame(['نقاشی و خوشنویسی'], $export->map($result));
+        $this->assertSame(['توضیحات استعداد'], $export->headings());
+        $this->assertContains('skills_description', array_keys($registry->labels()));
+    }
+
     public function test_months_without_service_has_an_inclusive_cutoff_and_current_household_scope(): void
     {
         Carbon::setTestNow('2026-07-15 12:00:00');

@@ -36,6 +36,7 @@ final class BeneficiaryReportColumnRegistry
             'beneficiary_injury_disability_type' => 'آسیب / نوع آسیب',
             'related_description' => 'معلولیت / نوع معلولیت',
             'disability_description' => 'شرح معلولیت / بیماری',
+            'skills_description' => 'توضیحات استعداد',
             'client_case_history' => 'سوابق / شرح وضعیت مددجو',
         ];
     }
@@ -59,6 +60,7 @@ final class BeneficiaryReportColumnRegistry
             'birth_year' => ['type' => 'number', 'placeholder' => 'سال تولد'],
             'birth_month' => ['type' => 'select', 'options' => Person::$months],
             'related_description' => ['type' => 'text', 'placeholder' => 'نوع معلولیت'],
+            'skills_description' => ['type' => 'text', 'placeholder' => 'شرح مهارت‌ها و استعدادها'],
         ];
     }
 
@@ -164,6 +166,7 @@ final class BeneficiaryReportColumnRegistry
             'beneficiary_injury_disability_type' => $person->harmTypes->pluck('title')->filter()->implode('، ') ?: '-',
             'related_description' => $person->disabilityType?->name ?: '-',
             'disability_description' => $person->disability_description ?: '-',
+            'skills_description' => $person->skills_description ?: '-',
             'client_case_history' => $person->client_case_history ?: '-',
             'created_at' => $person->created_at?->format('Y/m/d') ?: '-',
             default => '-',
