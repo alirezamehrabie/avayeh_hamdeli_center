@@ -84,55 +84,7 @@ class ServiceReportsDateFilterTest extends TestCase
             ->assertHasNoErrors();
     }
 
-    public function test_service_date_range_filters_the_services_list(): void
-    {
-        $user = $this->adminUser();
-
-        $this->actingAs($user);
-
-        $homeGoods = $this->createServiceWithDeliveries($user, 'Home Goods', ['2026-08-10', '2026-08-12']);
-        $tent = $this->createServiceWithDeliveries($user, 'Tent Distribution', ['2026-08-14']);
-        $outsideRange = $this->createServiceWithDeliveries($user, 'Outside Range', ['2026-09-20']);
-        $withoutDeliveries = $this->createServiceWithDeliveries($user, 'Without Deliveries', []);
-
-        Livewire::test(ServiceReports::class)
-            ->assertViewHas('services', fn ($services): bool => $services->count() === 4)
-            ->set('serviceDateFrom', '2026-08-08')
-            ->set('serviceDateTo', '2026-08-15')
-            ->assertViewHas('services', function ($services) use ($homeGoods, $tent): bool {
-                return $services->count() === 2
-                    && $services->pluck('id')->contains($homeGoods->id)
-                    && $services->pluck('id')->contains($tent->id);
-            })
-            ->set('serviceDateFrom', '')
-            ->set('serviceDateTo', '2026-08-12')
-            ->assertViewHas('services', fn ($services): bool => $services->count() === 1
-                && $services->first()->is($homeGoods))
-            ->set('serviceDateFrom', '')
-            ->set('serviceDateTo', '')
-            ->assertViewHas('services', fn ($services): bool => $services->count() === 4);
-    }
-
-    public function test_jalali_service_date_inputs_filter_the_services_list(): void
-    {
-        $user = $this->adminUser();
-
-        $this->actingAs($user);
-
-        $inRange = $this->createServiceWithDeliveries($user, 'In Range', ['2026-08-14']);
-
-        $jalaliFrom = Jalalian::fromDateTime('2026-08-10 00:00:00')->format('Y/m/d');
-        $jalaliTo = Jalalian::fromDateTime('2026-08-19 00:00:00')->format('Y/m/d');
-
-        Livewire::test(ServiceReports::class)
-            ->set('serviceDateFrom', $jalaliFrom)
-            ->set('serviceDateTo', $jalaliTo)
-            ->assertViewHas('services', fn ($services): bool => $services->count() === 1
-                && $services->first()->is($inRange))
-            ->assertHasNoErrors();
-    }
-
-    public function test_clear_service_filters_resets_search_selects_and_dates(): void
+    public function test_clear_service_filters_resets_search_and_selects(): void
     {
         $user = $this->adminUser();
 
@@ -144,32 +96,13 @@ class ServiceReportsDateFilterTest extends TestCase
             ->set('search', $service->serviceName->name)
             ->set('selectedServiceName', $service->serviceName->name)
             ->set('selectedStatus', 'approved')
-            ->set('serviceDateFrom', '2026-08-10')
-            ->set('serviceDateTo', '2026-08-19')
             ->call('clearServiceFilters')
             ->assertSet('search', '')
             ->assertSet('selectedServiceName', 'all')
             ->assertSet('selectedCategory', 'all')
             ->assertSet('selectedStatus', 'all')
             ->assertSet('selectedType', 'all')
-            ->assertSet('serviceDateFrom', '')
-            ->assertSet('serviceDateTo', '')
             ->assertViewHas('services', fn ($services): bool => $services->count() === 1);
-    }
-
-    public function test_invalid_service_date_input_is_ignored_instead_of_throwing(): void
-    {
-        $user = $this->adminUser();
-
-        $this->actingAs($user);
-
-        $this->createServiceWithDeliveries($user, 'Reported Service', ['2026-08-14']);
-
-        Livewire::test(ServiceReports::class)
-            ->set('serviceDateFrom', 'not-a-date')
-            ->set('serviceDateTo', '1404/13/40')
-            ->assertViewHas('services', fn ($services): bool => $services->count() === 1)
-            ->assertHasNoErrors();
     }
 
     private function adminUser(): User

@@ -16,10 +16,14 @@ use Carbon\Carbon;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class ServiceReports extends Component
 {
     use SummarizesServiceDeliveries;
+    use WithPagination;
+
+    protected const SERVICES_PER_PAGE = 20;
 
     public function boot(): void
     {
@@ -37,10 +41,6 @@ class ServiceReports extends Component
     public string $selectedType = 'all';
 
     public string $selectedServiceName = 'all';
-
-    public string $serviceDateFrom = '';
-
-    public string $serviceDateTo = '';
 
     public string $deliverySearch = '';
 
@@ -282,8 +282,32 @@ class ServiceReports extends Component
         $this->selectedCategory = 'all';
         $this->selectedStatus = 'all';
         $this->selectedType = 'all';
-        $this->serviceDateFrom = '';
-        $this->serviceDateTo = '';
+        $this->resetPage();
+    }
+
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingSelectedServiceName(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingSelectedCategory(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingSelectedStatus(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingSelectedType(): void
+    {
+        $this->resetPage();
     }
 
     public function clearDeliveryFilters(): void
@@ -363,9 +387,6 @@ class ServiceReports extends Component
         $type = ($this->selectedType === 'all') ? null : $this->selectedType;
         $serviceName = ($this->selectedServiceName === 'all') ? null : $this->selectedServiceName;
 
-        $serviceDateFrom = $this->normalizedDateInput($this->serviceDateFrom);
-        $serviceDateTo = $this->normalizedDateInput($this->serviceDateTo);
-
         $categories = ServiceCategory::query()
             ->when($serviceName, fn ($q) => $q->whereHas('serviceName', fn ($sq) => $sq->where('name', $serviceName)))
             ->orderBy('name')
@@ -377,12 +398,15 @@ class ServiceReports extends Component
             ->pluck('name')
             ->toArray();
 
-        return view('livewire.services.service-reports', [
-            'services' => Service::query()
+        // The services list is only rendered on the overview screen; skip it entirely
+        // while a single service (and its deliveries) is being inspected.
+        $services = null;
+
+        if ($this->selectedServiceId === null) {
+            $services = Service::query()
                 ->with([
                     'serviceName',
                     'categories' => fn ($query) => $query->ordered(),
-                    'district',
                     'socialWorkers',
                     'creator',
                     'workerAllocations.socialWorker',
@@ -393,10 +417,6 @@ class ServiceReports extends Component
                 ->when($category, fn ($q) => $q->whereHas('serviceCategory', fn ($q) => $q->where('name', $category)))
                 ->when($type, fn ($q) => $q->where('service_type', $type))
                 ->when($serviceName, fn ($q) => $q->whereHas('serviceName', fn ($q) => $q->where('name', $serviceName)))
-                ->when($serviceDateFrom, fn ($q) => $q->whereHas('deliveries', fn ($delivery) => $delivery
-                    ->whereDate('delivered_at', '>=', $serviceDateFrom)))
-                ->when($serviceDateTo, fn ($q) => $q->whereHas('deliveries', fn ($delivery) => $delivery
-                    ->whereDate('delivered_at', '<=', $serviceDateTo)))
                 ->when($search !== '', fn ($q) => $q->where(function ($inner) use ($search) {
                     if (ctype_digit($search)) {
                         $inner->orWhere('id', (int) $search);
@@ -411,7 +431,11 @@ class ServiceReports extends Component
                             ->orWhere('last_name', 'like', '%'.$search.'%'));
                 }))
                 ->latest()
-                ->get(),
+                ->paginate(self::SERVICES_PER_PAGE);
+        }
+
+        return view('livewire.services.service-reports', [
+            'services' => $services,
             'selectedService' => $this->selectedService,
             'filteredDeliveries' => $this->filteredDeliveries,
             'groupedDeliveries' => $this->groupedDeliveries,

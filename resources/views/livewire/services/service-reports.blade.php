@@ -24,13 +24,11 @@
             || $selectedServiceName !== 'all'
             || $selectedCategory !== 'all'
             || $selectedStatus !== 'all'
-            || $selectedType !== 'all'
-            || $serviceDateFrom !== ''
-            || $serviceDateTo !== '';
+            || $selectedType !== 'all';
     @endphp
 
     @if(! $selectedService)
-        <div class="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
+        <div id="service-report-list" class="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
             {{-- Header --}}
             <div class="bg-gradient-to-l from-violet-600 via-indigo-600 to-sky-600 px-4 py-4 text-white sm:px-6 sm:py-5">
                 <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -38,7 +36,7 @@
                         <div class="flex flex-wrap items-center gap-2">
                             <h1 class="text-xl font-extrabold sm:text-2xl">گزارش خدمات</h1>
                             <span class="inline-flex items-center rounded-full border border-white/20 bg-white/15 px-2.5 py-0.5 text-xs font-semibold backdrop-blur">
-                    {{ $services->count() }} خدمت
+                    {{ $services->total() }} خدمت
                 </span>
                         </div>
                         <p class="mt-1.5 max-w-3xl text-xs text-indigo-50/90 sm:text-sm">
@@ -99,49 +97,6 @@
                                 <option value="{{ $typeValue }}">{{ $typeLabel }}</option>
                             @endforeach
                         </select>
-
-                        {{-- Delivery Date Range Filter --}}
-                        <div x-data="jalaliDateTimeField($wire.entangle('serviceDateFrom').live)">
-                            <input
-                                type="text"
-                                x-ref="input"
-                                x-model="draft"
-                                x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                                x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                                x-on:jalali-picker-open="handlePickerOpen()"
-                                x-on:jalali-picker-close="handlePickerClose()"
-                                x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                                readonly
-                                inputmode="none"
-                                autocomplete="off"
-                                data-jdp-readonly
-                                data-jdp
-                                data-jdp-only-date
-                                placeholder="از تاریخ"
-                                class="w-32 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                            >
-                        </div>
-
-                        <div x-data="jalaliDateTimeField($wire.entangle('serviceDateTo').live)">
-                            <input
-                                type="text"
-                                x-ref="input"
-                                x-model="draft"
-                                x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                                x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                                x-on:jalali-picker-open="handlePickerOpen()"
-                                x-on:jalali-picker-close="handlePickerClose()"
-                                x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                                readonly
-                                inputmode="none"
-                                autocomplete="off"
-                                data-jdp-readonly
-                                data-jdp
-                                data-jdp-only-date
-                                placeholder="تا تاریخ"
-                                class="w-32 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                            >
-                        </div>
 
                         @if($hasServiceFilters)
                             <button
@@ -322,6 +277,12 @@
                 @endforelse
             </div>
         </div>
+
+        @if($services->hasPages())
+            <div class="border-t border-slate-200 px-4 py-3 sm:px-6">
+                {{ $services->onEachSide(1)->links('vendor.livewire.tailwind-mobile-persian', ['scrollTo' => '#service-report-list']) }}
+            </div>
+        @endif
         </div>
     @else
         <div class="space-y-6">
