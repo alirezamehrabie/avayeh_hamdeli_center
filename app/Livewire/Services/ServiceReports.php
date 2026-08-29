@@ -12,6 +12,7 @@ use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\ServiceDelivery;
 use App\Models\ServiceName;
+use Carbon\Carbon;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
@@ -40,6 +41,10 @@ class ServiceReports extends Component
     public string $deliverySearch = '';
 
     public string $selectedDeliveryEntryType = 'all';
+
+    public string $deliveryDateFrom = '';
+
+    public string $deliveryDateTo = '';
 
     public ?int $editingDeliveryId = null;
 
@@ -83,6 +88,19 @@ class ServiceReports extends Component
                     default => true,
                 };
             });
+        }
+
+        $dateFrom = $this->normalizedDateInput($this->deliveryDateFrom);
+        $dateTo = $this->normalizedDateInput($this->deliveryDateTo);
+
+        if ($dateFrom !== null) {
+            $deliveries = $deliveries->filter(fn ($delivery) => $delivery->delivered_at !== null
+                && $delivery->delivered_at->toDateString() >= $dateFrom);
+        }
+
+        if ($dateTo !== null) {
+            $deliveries = $deliveries->filter(fn ($delivery) => $delivery->delivered_at !== null
+                && $delivery->delivered_at->toDateString() <= $dateTo);
         }
 
         if ($search === '') {
@@ -236,6 +254,8 @@ class ServiceReports extends Component
         $this->selectedServiceId = $serviceId;
         $this->deliverySearch = '';
         $this->selectedDeliveryEntryType = 'all';
+        $this->deliveryDateFrom = '';
+        $this->deliveryDateTo = '';
         $this->closeEditDeliveryModal();
         $this->dispatch('open-dashboard-section', section: 'advanced-service-report', id: $serviceId);
     }
@@ -245,8 +265,18 @@ class ServiceReports extends Component
         $this->selectedServiceId = null;
         $this->deliverySearch = '';
         $this->selectedDeliveryEntryType = 'all';
+        $this->deliveryDateFrom = '';
+        $this->deliveryDateTo = '';
         $this->closeEditDeliveryModal();
         $this->dispatch('open-dashboard-section', section: 'advanced-service-report');
+    }
+
+    public function clearDeliveryFilters(): void
+    {
+        $this->deliverySearch = '';
+        $this->selectedDeliveryEntryType = 'all';
+        $this->deliveryDateFrom = '';
+        $this->deliveryDateTo = '';
     }
 
     public function exportToExcel()
@@ -684,5 +714,34 @@ class ServiceReports extends Component
     protected function jalaliToGregorian(string $date): string
     {
         return Jalalian::fromFormat('Y/m/d', trim($date))->toCarbon()->toDateString();
+    }
+
+    protected function normalizedDateInput(string $date): ?string
+    {
+        $date = trim($date);
+
+        if ($date === '') {
+            return null;
+        }
+
+        if (preg_match('/^\d{4}\/\d{1,2}\/\d{1,2}$/', $date) === 1) {
+            [$year, $month, $day] = array_map('intval', explode('/', $date));
+
+            if (! CalendarUtils::isValidateJalaliDate($year, $month, $day)) {
+                return null;
+            }
+
+            try {
+                return Jalalian::fromFormat('Y/m/d', $date)->toCarbon()->toDateString();
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+
+        try {
+            return Carbon::parse($date)->toDateString();
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

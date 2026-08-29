@@ -409,7 +409,7 @@
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
                                                             </svg>
                                                         </span>
-                                                        <p class="text-sm font-medium text-slate-500">هنوز هیچ تحویلی برای این خدمت ثبت نشده است.</p>
+                                                        <p class="text-sm font-medium text-slate-500">{{ (trim($deliverySearch ?? "") !== "" || $selectedDeliveryEntryType !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '') ? "موردی برای فیلترهای فعلی پیدا نشد." : "هنوز هیچ تحویلی برای این خدمت ثبت نشده است." }}</p>
                                                     </div>
                                                 @endforelse
                                             </div>
@@ -475,6 +475,58 @@
                             <option value="individual">شخصی (مددجو)</option>
                             <option value="guardian">خانوادگی (سرپرست)</option>
                         </select>
+
+                        <div x-data="jalaliDateTimeField($wire.entangle('deliveryDateFrom').live)" class="w-full sm:w-40">
+                            <input
+                                type="text"
+                                x-ref="input"
+                                x-model="draft"
+                                x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                x-on:jalali-picker-open="handlePickerOpen()"
+                                x-on:jalali-picker-close="handlePickerClose()"
+                                x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                readonly
+                                inputmode="none"
+                                autocomplete="off"
+                                data-jdp-readonly
+                                data-jdp
+                                data-jdp-only-date
+                                placeholder="از تاریخ"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-600 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                            >
+                        </div>
+
+                        <div x-data="jalaliDateTimeField($wire.entangle('deliveryDateTo').live)" class="w-full sm:w-40">
+                            <input
+                                type="text"
+                                x-ref="input"
+                                x-model="draft"
+                                x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                x-on:jalali-picker-open="handlePickerOpen()"
+                                x-on:jalali-picker-close="handlePickerClose()"
+                                x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                readonly
+                                inputmode="none"
+                                autocomplete="off"
+                                data-jdp-readonly
+                                data-jdp
+                                data-jdp-only-date
+                                placeholder="تا تاریخ"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-600 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                            >
+                        </div>
+
+                        @if(trim($deliverySearch ?? '') !== '' || $selectedDeliveryEntryType !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '')
+                            <button
+                                type="button"
+                                wire:click="clearDeliveryFilters"
+                                class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-500 outline-none transition hover:bg-slate-50 focus:ring-2 focus:ring-indigo-100"
+                            >
+                                پاک کردن فیلترها
+                            </button>
+                        @endif
                     </div>
                 </div>
 
@@ -869,7 +921,7 @@
                         </section>
                     @empty
                         <div class="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-12 text-center text-slate-500">
-                            {{ trim($deliverySearch ?? "") !== "" ? "موردی برای جستجوی فعلی پیدا نشد." : "هنوز هیچ تحویلی برای این خدمت ثبت نشده است." }}
+                            {{ (trim($deliverySearch ?? "") !== "" || $selectedDeliveryEntryType !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '') ? "موردی برای فیلترهای فعلی پیدا نشد." : "هنوز هیچ تحویلی برای این خدمت ثبت نشده است." }}
                         </div>
                     @endforelse
                 </div>
