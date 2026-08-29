@@ -42,6 +42,10 @@ class ServiceReports extends Component
 
     public string $selectedServiceName = 'all';
 
+    public string $serviceDateFrom = '';
+
+    public string $serviceDateTo = '';
+
     public string $deliverySearch = '';
 
     public string $selectedDeliveryEntryType = 'all';
@@ -282,6 +286,8 @@ class ServiceReports extends Component
         $this->selectedCategory = 'all';
         $this->selectedStatus = 'all';
         $this->selectedType = 'all';
+        $this->serviceDateFrom = '';
+        $this->serviceDateTo = '';
         $this->resetPage();
     }
 
@@ -306,6 +312,16 @@ class ServiceReports extends Component
     }
 
     public function updatingSelectedType(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingServiceDateFrom(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingServiceDateTo(): void
     {
         $this->resetPage();
     }
@@ -387,6 +403,10 @@ class ServiceReports extends Component
         $type = ($this->selectedType === 'all') ? null : $this->selectedType;
         $serviceName = ($this->selectedServiceName === 'all') ? null : $this->selectedServiceName;
 
+        // The list's «تاریخ» column shows created_at, so the date range filters that column.
+        $createdFrom = $this->normalizedDateInput($this->serviceDateFrom);
+        $createdTo = $this->normalizedDateInput($this->serviceDateTo);
+
         $categories = ServiceCategory::query()
             ->when($serviceName, fn ($q) => $q->whereHas('serviceName', fn ($sq) => $sq->where('name', $serviceName)))
             ->orderBy('name')
@@ -417,6 +437,8 @@ class ServiceReports extends Component
                 ->when($category, fn ($q) => $q->whereHas('serviceCategory', fn ($q) => $q->where('name', $category)))
                 ->when($type, fn ($q) => $q->where('service_type', $type))
                 ->when($serviceName, fn ($q) => $q->whereHas('serviceName', fn ($q) => $q->where('name', $serviceName)))
+                ->when($createdFrom !== null, fn ($q) => $q->whereDate('created_at', '>=', $createdFrom))
+                ->when($createdTo !== null, fn ($q) => $q->whereDate('created_at', '<=', $createdTo))
                 ->when($search !== '', fn ($q) => $q->where(function ($inner) use ($search) {
                     if (ctype_digit($search)) {
                         $inner->orWhere('id', (int) $search);

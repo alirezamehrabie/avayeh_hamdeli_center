@@ -105,6 +105,83 @@ class ServiceReportsDateFilterTest extends TestCase
             ->assertViewHas('services', fn ($services): bool => $services->count() === 1);
     }
 
+    public function test_creation_date_range_filters_services_list(): void
+    {
+        $user = $this->adminUser();
+
+        $this->actingAs($user);
+
+        $this->createServiceWithDeliveries($user, 'Older Service', [], '2026-07-01 10:00:00');
+        $middle = $this->createServiceWithDeliveries($user, 'Middle Service', [], '2026-08-10 14:30:00');
+        $newer = $this->createServiceWithDeliveries($user, 'Newer Service', [], '2026-08-25 09:00:00');
+
+        Livewire::test(ServiceReports::class)
+            ->assertViewHas('services', fn ($services): bool => $services->count() === 3)
+            ->set('serviceDateFrom', '2026-08-10')
+            ->assertViewHas('services', fn ($services): bool => $services->count() === 2
+                && $services->contains(fn (Service $service): bool => $service->is($middle))
+                && $services->contains(fn (Service $service): bool => $service->is($newer)))
+            ->set('serviceDateTo', '2026-08-10')
+            ->assertViewHas('services', fn ($services): bool => $services->count() === 1
+                && $services->first()->is($middle))
+            ->set('serviceDateFrom', '')
+            ->set('serviceDateTo', '')
+            ->assertViewHas('services', fn ($services): bool => $services->count() === 3);
+    }
+
+    public function test_jalali_creation_date_inputs_are_converted_when_filtering_services_list(): void
+    {
+        $user = $this->adminUser();
+
+        $this->actingAs($user);
+
+        $this->createServiceWithDeliveries($user, 'July Service', [], '2026-07-01 10:00:00');
+        $august = $this->createServiceWithDeliveries($user, 'August Service', [], '2026-08-10 14:30:00');
+
+        $jalaliFrom = Jalalian::fromDateTime('2026-08-01 00:00:00')->format('Y/m/d');
+        $jalaliTo = Jalalian::fromDateTime('2026-08-31 00:00:00')->format('Y/m/d');
+
+        Livewire::test(ServiceReports::class)
+            ->set('serviceDateFrom', $jalaliFrom)
+            ->set('serviceDateTo', $jalaliTo)
+            ->assertViewHas('services', fn ($services): bool => $services->count() === 1
+                && $services->first()->is($august));
+    }
+
+    public function test_invalid_creation_date_input_is_ignored_instead_of_throwing(): void
+    {
+        $user = $this->adminUser();
+
+        $this->actingAs($user);
+
+        $this->createServiceWithDeliveries($user, 'First Service', [], '2026-07-01 10:00:00');
+        $this->createServiceWithDeliveries($user, 'Second Service', [], '2026-08-10 14:30:00');
+
+        Livewire::test(ServiceReports::class)
+            ->set('serviceDateFrom', 'not-a-date')
+            ->set('serviceDateTo', '1404/13/40')
+            ->assertViewHas('services', fn ($services): bool => $services->count() === 2)
+            ->assertHasNoErrors();
+    }
+
+    public function test_clear_service_filters_resets_creation_date_inputs(): void
+    {
+        $user = $this->adminUser();
+
+        $this->actingAs($user);
+
+        $this->createServiceWithDeliveries($user, 'July Service', [], '2026-07-01 10:00:00');
+        $this->createServiceWithDeliveries($user, 'August Service', [], '2026-08-10 14:30:00');
+
+        Livewire::test(ServiceReports::class)
+            ->set('serviceDateFrom', '2026-08-10')
+            ->set('serviceDateTo', '2026-08-31')
+            ->call('clearServiceFilters')
+            ->assertSet('serviceDateFrom', '')
+            ->assertSet('serviceDateTo', '')
+            ->assertViewHas('services', fn ($services): bool => $services->count() === 2);
+    }
+
     private function adminUser(): User
     {
         return User::factory()->create([
@@ -130,7 +207,7 @@ class ServiceReportsDateFilterTest extends TestCase
     /**
      * @param  array<int, string>  $deliveryDates
      */
-    private function createServiceWithDeliveries(User $user, string $label, array $deliveryDates): Service
+    private function createServiceWithDeliveries(User $user, string $label, array $deliveryDates = [], ?string $createdAt = null): Service
     {
         $serviceName = ServiceName::query()->create([
             'name' => $label.' '.Str::random(8),
@@ -152,6 +229,11 @@ class ServiceReportsDateFilterTest extends TestCase
             'quantity_delivered' => 0,
             'created_by' => $user->id,
         ]);
+
+        if ($createdAt !== null) {
+            // $fillable does not include timestamps, so they must be force-filled.
+            $service->forceFill(['created_at' => $createdAt, 'updated_at' => $createdAt])->save();
+        }
 
         if ($deliveryDates !== []) {
             $category = $service->categories()->create([

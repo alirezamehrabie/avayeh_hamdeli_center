@@ -24,7 +24,9 @@
             || $selectedServiceName !== 'all'
             || $selectedCategory !== 'all'
             || $selectedStatus !== 'all'
-            || $selectedType !== 'all';
+            || $selectedType !== 'all'
+            || trim($serviceDateFrom ?? '') !== ''
+            || trim($serviceDateTo ?? '') !== '';
     @endphp
 
     @if(! $selectedService)
@@ -97,6 +99,49 @@
                                 <option value="{{ $typeValue }}">{{ $typeLabel }}</option>
                             @endforeach
                         </select>
+
+                        {{-- Creation Date Range Filter (تاریخ ثبت) --}}
+                        <div x-data="jalaliDateTimeField($wire.entangle('serviceDateFrom').live)" class="w-full sm:w-36">
+                            <input
+                                type="text"
+                                x-ref="input"
+                                x-model="draft"
+                                x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                x-on:jalali-picker-open="handlePickerOpen()"
+                                x-on:jalali-picker-close="handlePickerClose()"
+                                x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                readonly
+                                inputmode="none"
+                                autocomplete="off"
+                                data-jdp-readonly
+                                data-jdp
+                                data-jdp-only-date
+                                placeholder="از تاریخ ثبت"
+                                class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                            >
+                        </div>
+
+                        <div x-data="jalaliDateTimeField($wire.entangle('serviceDateTo').live)" class="w-full sm:w-36">
+                            <input
+                                type="text"
+                                x-ref="input"
+                                x-model="draft"
+                                x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                x-on:jalali-picker-open="handlePickerOpen()"
+                                x-on:jalali-picker-close="handlePickerClose()"
+                                x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                readonly
+                                inputmode="none"
+                                autocomplete="off"
+                                data-jdp-readonly
+                                data-jdp
+                                data-jdp-only-date
+                                placeholder="تا تاریخ ثبت"
+                                class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                            >
+                        </div>
 
                         @if($hasServiceFilters)
                             <button
