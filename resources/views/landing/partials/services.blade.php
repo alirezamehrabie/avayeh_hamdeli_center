@@ -14,7 +14,7 @@
             </p>
         </div>
 
-        <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             @php
                 $services = [
                     ['icon' => 'bi-egg-fried', 'title' => 'تغذیه سالم', 'desc' => 'وعده‌های غذایی مغذی و محرک رشد برای کودکان در نیاز.'],

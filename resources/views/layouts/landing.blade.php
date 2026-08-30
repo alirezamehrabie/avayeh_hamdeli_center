@@ -18,6 +18,11 @@
 
     <style>
         body { font-family: 'iransans', 'Vazir', Tahoma, sans-serif; }
+        /* clip (not hidden) so no scroll container is created and fixed/sticky keep working.
+           html is the sole scroll container here: the global body scrollbar gutter would
+           otherwise reserve a strip that stops full-bleed sections short of the edge. */
+        html { overflow-x: clip; }
+        body { overflow-y: visible; scrollbar-gutter: auto; }
         .landing-section { scroll-margin-top: 5rem; }
         [x-cloak] { display: none !important; }
         [data-reveal] { opacity: 0; transform: translateY(18px); }

@@ -1,7 +1,7 @@
 <!-- بخش درباره ما -->
 <section id="about" class="landing-section bg-[#f8fbff]" aria-labelledby="about-title">
     <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-        <div class="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+        <div class="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16">
             <!-- تصویر -->
             <div class="order-2 lg:order-1" data-reveal>
                 <div class="relative">
@@ -35,7 +35,7 @@
                     آوای همدلی مرکزی نیکوکاریِ تخصصی برای کودکان است؛ باور داریم هر کودک شایسته‌ی آموزش، تغذیه‌ی سالم، لباس گرم و فرصتی برای رشد است. ما کنار کودکان در نیاز می‌ایستیم و با همراهی شما، شرایطی می‌سازیم تا بتوانند کودکی کنند.
                 </p>
 
-                <ul class="mt-7 grid gap-3 sm:grid-cols-2" aria-label="خدمات اصلی">
+                <ul class="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-2" aria-label="خدمات اصلی">
                     @php
                         $aboutList = [
                             ['icon' => 'bi-book', 'label' => 'آموزش و توانمندسازی'],

@@ -1,7 +1,7 @@
 <!-- پابرگ -->
 <footer id="site-footer" class="relative bg-[linear-gradient(145deg,#1e2b4a_0%,#38538C_60%,#5a2a4a_140%)] text-white">
     <div class="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-        <div class="grid gap-10 md:grid-cols-3">
+        <div class="grid grid-cols-1 gap-10 md:grid-cols-3">
             <!-- برند -->
             <div>
                 <div class="flex items-center gap-3">

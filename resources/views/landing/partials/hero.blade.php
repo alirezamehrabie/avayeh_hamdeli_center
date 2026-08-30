@@ -6,7 +6,7 @@
     <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(238,248,253,0.9)_0%,rgba(255,255,255,0.85)_45%,rgba(252,241,246,0.9)_100%)]" aria-hidden="true"></div>
 
     <div class="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
-        <div class="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
+        <div class="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-14">
             <!-- متن -->
             <div class="text-center lg:text-right">
                 <span

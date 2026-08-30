@@ -14,7 +14,7 @@
             </p>
         </div>
 
-        <div class="mt-12 grid gap-5 sm:grid-cols-3">
+        <div class="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-3">
             @php
                 $helpCards = [
                     [

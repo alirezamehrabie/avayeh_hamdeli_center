@@ -1,7 +1,7 @@
 <!-- بخش تماس -->
 <section id="contact" class="landing-section bg-[#f8fbff] py-16 sm:py-24" aria-labelledby="contact-title">
     <div class="mx-auto max-w-6xl px-4 sm:px-6">
-        <div class="grid gap-10 lg:grid-cols-2 lg:gap-16">
+        <div class="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
             <!-- اطلاعات تماس -->
             <div data-reveal>
                 <span class="inline-flex items-center gap-2 rounded-full bg-[#36A9DF]/10 px-4 py-1.5 text-xs font-bold text-[#1572A1]">
