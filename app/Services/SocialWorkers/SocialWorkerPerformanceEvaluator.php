@@ -7,10 +7,10 @@ use App\Helpers\Morilog\Jalalian;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\ServiceDelivery;
-use App\Models\ServiceWorkerAllocation;
 use App\Models\SocialWorker;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * ارزیابی عملکرد مددکار بر پایه داده‌های واقعی تخصیص و تحویل خدمت.
@@ -89,6 +89,82 @@ class SocialWorkerPerformanceEvaluator
         ];
     }
 
+    /**
+     * ارزیابی خلاصهٔ گروهی برای رتبه‌بندی مددکاران.
+     *
+     * امتیازها با همان فرمول {@see self::evaluate()} محاسبه می‌شوند، اما داده‌ها
+     * با چند کوئری تجمیعی برای همهٔ مددکاران یک‌جا خوانده می‌شود تا فهرست رتبه‌بندی
+     * مستقل از تعداد مددکاران سبک بماند.
+     *
+     * @param  array<int, int>  $workerIds
+     * @return array<int, array<string, mixed>> کلید هر ردیف، شناسهٔ مددکار است.
+     */
+    public function rankMany(array $workerIds): array
+    {
+        $workerIds = array_values(array_unique(array_map('intval', $workerIds)));
+
+        if ($workerIds === []) {
+            return [];
+        }
+
+        $allocationsByWorker = $this->allocationRowsForMany($workerIds, withLabels: false);
+        $deliverySummaries = $this->deliverySummariesForMany($workerIds);
+        $punctualityRows = $this->punctualityRowsForMany($workerIds);
+        $monthlyActivities = $this->monthlyActivityForMany($workerIds);
+
+        $result = [];
+
+        foreach ($workerIds as $workerId) {
+            $allocations = $allocationsByWorker[$workerId] ?? collect();
+            $deliverySummary = $deliverySummaries[$workerId] ?? $this->emptyDeliverySummary();
+
+            if ($allocations->isEmpty() && (int) $deliverySummary['count'] === 0) {
+                $result[$workerId] = [
+                    'has_data' => false,
+                    'score' => 0.0,
+                    'stars' => 0.0,
+                    'grade' => ['label' => 'بدون داده', 'accent' => 'slate'],
+                    'metrics' => [],
+                    'delivery_summary' => $deliverySummary,
+                    'allocations_count' => 0,
+                    'response_median_hours' => null,
+                    'same_day_share' => 0.0,
+                    'pending_overdue' => 0,
+                ];
+
+                continue;
+            }
+
+            $response = $this->responseMetric($allocations);
+            $monthly = $monthlyActivities[$workerId] ?? array_values($this->monthlySkeleton());
+
+            $metrics = [
+                'response' => $response,
+                'fulfillment' => $this->fulfillmentMetric($allocations),
+                'coverage' => $this->coverageMetric($allocations),
+                'punctuality' => $this->buildPunctualityMetric($punctualityRows[$workerId] ?? null),
+                'consistency' => $this->consistencyMetric($monthly),
+            ];
+
+            $score = $this->weightedScore($metrics);
+
+            $result[$workerId] = [
+                'has_data' => true,
+                'score' => $score,
+                'stars' => $this->stars($score),
+                'grade' => $this->grade($score),
+                'metrics' => $metrics,
+                'delivery_summary' => $deliverySummary,
+                'allocations_count' => $allocations->count(),
+                'response_median_hours' => $response['stats']['median_hours'],
+                'same_day_share' => $response['stats']['same_day_share'],
+                'pending_overdue' => $response['stats']['pending_overdue'],
+            ];
+        }
+
+        return $result;
+    }
+
     protected function emptyResult(): array
     {
         return [
@@ -99,15 +175,23 @@ class SocialWorkerPerformanceEvaluator
             'metrics' => [],
             'response_distribution' => [],
             'monthly_activity' => [],
-            'delivery_summary' => [
-                'count' => 0,
-                'value' => 0,
-                'first_delivered_at' => null,
-                'last_delivered_at' => null,
-            ],
+            'delivery_summary' => $this->emptyDeliverySummary(),
             'channel_breakdown' => [],
             'open_allocations' => [],
             'weights' => self::WEIGHTS,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function emptyDeliverySummary(): array
+    {
+        return [
+            'count' => 0,
+            'value' => 0,
+            'first_delivered_at' => null,
+            'last_delivered_at' => null,
         ];
     }
 
@@ -117,12 +201,27 @@ class SocialWorkerPerformanceEvaluator
      */
     protected function allocationRows(int $workerId): Collection
     {
-        $allocations = ServiceWorkerAllocation::query()
-            ->where('service_social_worker.social_worker_id', $workerId)
+        return $this->allocationRowsForMany([$workerId])[$workerId] ?? collect();
+    }
+
+    /**
+     * همان ردیف‌های {@see self::allocationRows()} برای چند مددکار، گروه‌بندی‌شده با شناسهٔ مددکار.
+     *
+     * برچسب خدمت و دسته‌بندی فقط برای نمایش جدول «تخصیص‌های نیازمند پیگیری» لازم است؛
+     * فهرست رتبه‌بندی با $withLabels = false دو کوئری و هیدریت مدل کمتری اجرا می‌کند.
+     *
+     * @param  array<int, int>  $workerIds
+     * @return array<int, Collection>
+     */
+    protected function allocationRowsForMany(array $workerIds, bool $withLabels = true): array
+    {
+        // بدون هیدریت مدل: این کوئری در گزارش رتبه‌بندی روی همهٔ تخصیص‌ها اجرا می‌شود.
+        $allocations = DB::table('service_social_worker')
+            ->whereIn('service_social_worker.social_worker_id', $workerIds)
             ->join('services', 'services.id', '=', 'service_social_worker.service_id')
             ->whereNull('services.deleted_at')
             ->select([
-                'service_social_worker.id',
+                'service_social_worker.social_worker_id',
                 'service_social_worker.service_id',
                 'service_social_worker.service_category_id',
                 'service_social_worker.allocated_quantity',
@@ -132,58 +231,71 @@ class SocialWorkerPerformanceEvaluator
             ->get();
 
         if ($allocations->isEmpty()) {
-            return collect();
+            return [];
         }
 
-        $deliveryStats = ServiceDelivery::query()
-            ->where('social_worker_id', $workerId)
-            ->whereIn('service_id', $allocations->pluck('service_id')->unique()->all())
-            ->selectRaw('service_id, service_category_id')
+        $serviceIds = $allocations->pluck('service_id')->unique()->all();
+
+        $deliveryStats = DB::table('service_deliveries')
+            ->whereNull('deleted_at')
+            ->whereIn('social_worker_id', $workerIds)
+            ->whereIn('service_id', $serviceIds)
+            ->selectRaw('social_worker_id, service_id, service_category_id')
             ->selectRaw('count(*) as deliveries_count')
             ->selectRaw('coalesce(sum(delivered_quantity), 0) as delivered_quantity')
             ->selectRaw('min(created_at) as first_registered_at')
-            ->selectRaw('max(delivered_at) as last_delivered_at')
-            ->groupBy('service_id', 'service_category_id')
+            ->groupBy('social_worker_id', 'service_id', 'service_category_id')
             ->get()
-            ->keyBy(fn ($row): string => $row->service_id.':'.$row->service_category_id);
+            ->keyBy(fn ($row): string => $row->social_worker_id.':'.$row->service_id.':'.$row->service_category_id);
 
-        $serviceNames = Service::query()
-            ->withTrashed()
-            ->with('serviceName:id,name')
-            ->whereIn('id', $allocations->pluck('service_id')->unique()->all())
-            ->get(['id', 'name', 'service_name_id'])
-            ->keyBy('id');
+        $serviceNames = $withLabels
+            ? Service::query()
+                ->withTrashed()
+                ->whereIn('id', $serviceIds)
+                ->pluck('name', 'id')
+            : collect();
 
-        $categoryNames = ServiceCategory::query()
-            ->withTrashed()
-            ->whereIn('id', $allocations->pluck('service_category_id')->unique()->all())
-            ->pluck('name', 'id');
+        $categoryNames = $withLabels
+            ? ServiceCategory::query()
+                ->withTrashed()
+                ->whereIn('id', $allocations->pluck('service_category_id')->unique()->all())
+                ->pluck('name', 'id')
+            : collect();
 
         $now = Carbon::now();
 
-        return $allocations->map(function (ServiceWorkerAllocation $allocation) use ($deliveryStats, $serviceNames, $categoryNames, $now): array {
-            $stats = $deliveryStats->get($allocation->service_id.':'.$allocation->service_category_id);
-            $assignedAt = $allocation->created_at ? Carbon::parse($allocation->created_at) : null;
-            $registeredAt = $stats?->first_registered_at ? Carbon::parse($stats->first_registered_at) : null;
+        return $allocations
+            ->map(function (object $allocation) use ($deliveryStats, $serviceNames, $categoryNames, $now, $withLabels): array {
+                $stats = $deliveryStats->get($allocation->social_worker_id.':'.$allocation->service_id.':'.$allocation->service_category_id);
+                $assignedAt = $allocation->created_at ? Carbon::parse($allocation->created_at) : null;
+                $registeredAt = $stats?->first_registered_at ? Carbon::parse($stats->first_registered_at) : null;
 
-            return [
-                'service_id' => (int) $allocation->service_id,
-                'service_category_id' => (int) $allocation->service_category_id,
-                'service_label' => (string) ($serviceNames->get($allocation->service_id)?->name ?: 'خدمت حذف‌شده'),
-                'category_label' => (string) ($categoryNames->get($allocation->service_category_id) ?: '-'),
-                'allocated_quantity' => (float) $allocation->allocated_quantity,
-                'delivered_quantity' => (float) ($stats->delivered_quantity ?? 0),
-                'deliveries_count' => (int) ($stats->deliveries_count ?? 0),
-                'assigned_at' => $assignedAt,
-                'registered_at' => $registeredAt,
-                'response_hours' => $registeredAt && $assignedAt
-                    ? max(0.0, round($assignedAt->diffInRealSeconds($registeredAt, false) / 3600, 2))
-                    : null,
-                'pending_hours' => $registeredAt === null && $assignedAt
-                    ? max(0.0, round($assignedAt->diffInRealSeconds($now, false) / 3600, 2))
-                    : null,
-            ];
-        });
+                return [
+                    'social_worker_id' => (int) $allocation->social_worker_id,
+                    'service_id' => (int) $allocation->service_id,
+                    'service_category_id' => (int) $allocation->service_category_id,
+                    'service_label' => $withLabels
+                        ? (string) ($serviceNames->get($allocation->service_id) ?: 'خدمت حذف‌شده')
+                        : '',
+                    'category_label' => $withLabels
+                        ? (string) ($categoryNames->get($allocation->service_category_id) ?: '-')
+                        : '',
+                    'allocated_quantity' => (float) $allocation->allocated_quantity,
+                    'delivered_quantity' => (float) ($stats->delivered_quantity ?? 0),
+                    'deliveries_count' => (int) ($stats->deliveries_count ?? 0),
+                    'assigned_at' => $assignedAt,
+                    'registered_at' => $registeredAt,
+                    'response_hours' => $registeredAt && $assignedAt
+                        ? max(0.0, round($assignedAt->diffInRealSeconds($registeredAt, false) / 3600, 2))
+                        : null,
+                    'pending_hours' => $registeredAt === null && $assignedAt
+                        ? max(0.0, round($assignedAt->diffInRealSeconds($now, false) / 3600, 2))
+                        : null,
+                ];
+            })
+            ->groupBy('social_worker_id')
+            ->mapWithKeys(fn (Collection $rows, $workerId): array => [(int) $workerId => $rows->values()])
+            ->all();
     }
 
     /**
@@ -336,15 +448,31 @@ class SocialWorkerPerformanceEvaluator
      */
     protected function punctualityMetric(int $workerId): array
     {
-        $row = ServiceDelivery::query()
-            ->where('service_deliveries.social_worker_id', $workerId)
+        return $this->buildPunctualityMetric($this->punctualityRowsForMany([$workerId])[$workerId] ?? null);
+    }
+
+    /**
+     * @param  array<int, int>  $workerIds
+     * @return array<int, object>
+     */
+    protected function punctualityRowsForMany(array $workerIds): array
+    {
+        return ServiceDelivery::query()
+            ->whereIn('service_deliveries.social_worker_id', $workerIds)
             ->join('services', 'services.id', '=', 'service_deliveries.service_id')
             ->whereNotNull('services.distribution_end_date')
+            ->groupBy('service_deliveries.social_worker_id')
+            ->selectRaw('service_deliveries.social_worker_id as worker_id')
             ->selectRaw('count(*) as total')
             ->selectRaw('sum(case when service_deliveries.delivered_at <= services.distribution_end_date then 1 else 0 end) as on_time')
             ->selectRaw('sum(case when service_deliveries.delivered_at < services.distribution_start_date then 1 else 0 end) as early')
-            ->first();
+            ->get()
+            ->keyBy(fn ($row): int => (int) $row->worker_id)
+            ->all();
+    }
 
+    protected function buildPunctualityMetric(?object $row): array
+    {
         $total = (int) ($row->total ?? 0);
         $onTime = (int) ($row->on_time ?? 0);
 
@@ -397,23 +525,21 @@ class SocialWorkerPerformanceEvaluator
      */
     protected function monthlyActivity(int $workerId): array
     {
-        $windowStart = Jalalian::now()
-            ->getFirstDayOfMonth()
-            ->subMonths(self::CHART_MONTHS - 1)
-            ->toCarbon()
-            ->startOfDay();
+        return $this->monthlyActivityForMany([$workerId])[$workerId] ?? array_values($this->monthlySkeleton());
+    }
 
-        $deliveries = ServiceDelivery::query()
-            ->where('social_worker_id', $workerId)
-            ->where('delivered_at', '>=', $windowStart->toDateString())
-            ->get(['delivered_at', 'delivered_total_value']);
-
+    /**
+     * اسکلت ماه‌های شمسی پنجرهٔ نمودار، برای پرکردن با داده‌های تحویل.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    protected function monthlySkeleton(): array
+    {
         $buckets = [];
         $cursor = Jalalian::now()->getFirstDayOfMonth()->subMonths(self::CHART_MONTHS - 1);
 
         for ($index = 0; $index < self::CHART_MONTHS; $index++) {
-            $key = $cursor->getYear().'-'.$cursor->getMonth();
-            $buckets[$key] = [
+            $buckets[$cursor->getYear().'-'.$cursor->getMonth()] = [
                 'label' => CalendarUtils::IRANIAN_MONTHS_NAME[$cursor->getMonth() - 1],
                 'year' => $cursor->getYear(),
                 'count' => 0,
@@ -423,45 +549,100 @@ class SocialWorkerPerformanceEvaluator
             $cursor = $cursor->addMonths(1);
         }
 
-        foreach ($deliveries as $delivery) {
-            if (! $delivery->delivered_at) {
-                continue;
-            }
+        return $buckets;
+    }
 
-            $jalali = Jalalian::fromDateTime($delivery->delivered_at);
-            $key = $jalali->getYear().'-'.$jalali->getMonth();
+    /**
+     * @param  array<int, int>  $workerIds
+     * @return array<int, array<int, array<string, mixed>>>
+     */
+    protected function monthlyActivityForMany(array $workerIds): array
+    {
+        $windowStart = Jalalian::now()
+            ->getFirstDayOfMonth()
+            ->subMonths(self::CHART_MONTHS - 1)
+            ->toCarbon()
+            ->startOfDay();
 
-            if (! isset($buckets[$key])) {
-                continue;
-            }
+        // تجمیع در SQL و سپس یک تبدیل شمسی برای هر تاریخ یگانه؛ هیدریت هزاران مدل تحویل لازم نیست.
+        $rows = DB::table('service_deliveries')
+            ->whereNull('deleted_at')
+            ->whereIn('social_worker_id', $workerIds)
+            ->where('delivered_at', '>=', $windowStart->toDateString())
+            ->groupBy('social_worker_id', 'delivered_at')
+            ->selectRaw('social_worker_id, delivered_at')
+            ->selectRaw('count(*) as deliveries_count')
+            ->selectRaw('coalesce(sum(delivered_total_value), 0) as delivered_value')
+            ->get();
 
-            $buckets[$key]['count']++;
-            $buckets[$key]['value'] += (int) $delivery->delivered_total_value;
+        $skeleton = $this->monthlySkeleton();
+        $buckets = [];
+
+        foreach ($workerIds as $workerId) {
+            $buckets[$workerId] = $skeleton;
         }
 
-        return array_values($buckets);
+        $monthKeys = [];
+
+        foreach ($rows as $row) {
+            if (! $row->delivered_at) {
+                continue;
+            }
+
+            $date = (string) $row->delivered_at;
+
+            if (! isset($monthKeys[$date])) {
+                $jalali = Jalalian::fromDateTime($date);
+                $monthKeys[$date] = $jalali->getYear().'-'.$jalali->getMonth();
+            }
+
+            $workerId = (int) $row->social_worker_id;
+            $key = $monthKeys[$date];
+
+            if (! isset($buckets[$workerId][$key])) {
+                continue;
+            }
+
+            $buckets[$workerId][$key]['count'] += (int) $row->deliveries_count;
+            $buckets[$workerId][$key]['value'] += (int) $row->delivered_value;
+        }
+
+        return array_map('array_values', $buckets);
     }
 
     protected function deliverySummary(int $workerId): array
     {
-        $row = ServiceDelivery::query()
-            ->where('social_worker_id', $workerId)
+        return $this->deliverySummariesForMany([$workerId])[$workerId] ?? $this->emptyDeliverySummary();
+    }
+
+    /**
+     * @param  array<int, int>  $workerIds
+     * @return array<int, array<string, mixed>>
+     */
+    protected function deliverySummariesForMany(array $workerIds): array
+    {
+        return ServiceDelivery::query()
+            ->whereIn('social_worker_id', $workerIds)
+            ->groupBy('social_worker_id')
+            ->selectRaw('social_worker_id')
             ->selectRaw('count(*) as deliveries_count')
             ->selectRaw('coalesce(sum(delivered_total_value), 0) as delivered_value')
             ->selectRaw('min(delivered_at) as first_delivered_at')
             ->selectRaw('max(delivered_at) as last_delivered_at')
-            ->first();
-
-        return [
-            'count' => (int) ($row->deliveries_count ?? 0),
-            'value' => (int) ($row->delivered_value ?? 0),
-            'first_delivered_at' => $row?->first_delivered_at
-                ? Jalalian::fromDateTime($row->first_delivered_at)->format('Y/m/d')
-                : null,
-            'last_delivered_at' => $row?->last_delivered_at
-                ? Jalalian::fromDateTime($row->last_delivered_at)->format('Y/m/d')
-                : null,
-        ];
+            ->get()
+            ->mapWithKeys(fn ($row): array => [
+                (int) $row->social_worker_id => [
+                    'count' => (int) $row->deliveries_count,
+                    'value' => (int) $row->delivered_value,
+                    'first_delivered_at' => $row->first_delivered_at
+                        ? Jalalian::fromDateTime($row->first_delivered_at)->format('Y/m/d')
+                        : null,
+                    'last_delivered_at' => $row->last_delivered_at
+                        ? Jalalian::fromDateTime($row->last_delivered_at)->format('Y/m/d')
+                        : null,
+                ],
+            ])
+            ->all();
     }
 
     /**

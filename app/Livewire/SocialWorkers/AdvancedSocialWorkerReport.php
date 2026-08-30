@@ -27,12 +27,16 @@ class AdvancedSocialWorkerReport extends Component
 {
     use WithPagination;
 
+    /** بیشترین تعداد مددکاری که در فهرست رتبه‌بندی نمایش داده می‌شود. */
+    public const RANKING_LIMIT = 50;
+
     public string $globalSearch = '';
     public array $filters = [];
     public string $saveFilterName = '';
     public ?int $selectedWorkerId = null;
     public bool $showWorkerModal = false;
     public string $workerModalTab = 'profile';
+    public bool $showRankingModal = false;
     public array $columnFilters = [];
     public ?string $sortColumn = null;
     public string $sortDirection = 'desc';
@@ -305,6 +309,92 @@ class AdvancedSocialWorkerReport extends Component
         $this->showWorkerModal = false;
         $this->selectedWorkerId = null;
         $this->workerModalTab = 'profile';
+    }
+
+    public function openRankingModal(): void
+    {
+        $this->showRankingModal = true;
+    }
+
+    public function closeRankingModal(): void
+    {
+        $this->showRankingModal = false;
+    }
+
+    /**
+     * از فهرست رتبه‌بندی به پروندهٔ همان مددکار می‌رویم تا مدیر جزئیات را ببیند.
+     */
+    public function showWorkerFromRanking(int $workerId): void
+    {
+        $this->showRankingModal = false;
+        $this->selectedWorkerId = $workerId;
+        $this->showWorkerModal = true;
+        $this->workerModalTab = 'performance';
+    }
+
+    /**
+     * رتبه‌بندی مددکاران فیلترشده بر پایهٔ امتیاز کل ارزیابی عملکرد.
+     * برای سبک ماندن مودال، فهرست به RANKING_LIMIT مددکار برتر محدود می‌شود.
+     */
+    #[Computed]
+    public function ranking(): array
+    {
+        if (!$this->showRankingModal) {
+            return ['rows' => [], 'evaluated' => 0, 'total' => 0, 'truncated' => false];
+        }
+
+        $workerIds = $this->buildQuery()->reorder()->pluck('social_workers.id')->all();
+        $total = count($workerIds);
+
+        if ($total === 0) {
+            return ['rows' => [], 'evaluated' => 0, 'total' => 0, 'truncated' => false];
+        }
+
+        $evaluations = app(SocialWorkerPerformanceEvaluator::class)->rankMany($workerIds);
+
+        $workers = SocialWorker::query()
+            ->withoutGlobalScope('active')
+            ->withTrashed()
+            ->whereIn('id', $workerIds)
+            // اکسسور full_name از first_name/last_name ساخته می‌شود، پس هر دو باید انتخاب شوند.
+            ->get(['id', 'first_name', 'last_name', 'worker_code', 'is_active'])
+            ->keyBy('id');
+
+        $rows = collect($workerIds)
+            ->map(function (int $workerId) use ($evaluations, $workers): ?array {
+                $worker = $workers->get($workerId);
+
+                if (!$worker) {
+                    return null;
+                }
+
+                $evaluation = $evaluations[$workerId] ?? null;
+
+                return [
+                    'id' => $workerId,
+                    'full_name' => trim((string) $worker->full_name) ?: 'بدون نام',
+                    'worker_code' => $worker->worker_code ?: '-',
+                    'is_active' => (bool) $worker->is_active,
+                    'has_data' => (bool) ($evaluation['has_data'] ?? false),
+                    'score' => (float) ($evaluation['score'] ?? 0.0),
+                    'stars' => (float) ($evaluation['stars'] ?? 0.0),
+                    'grade' => $evaluation['grade'] ?? ['label' => 'بدون داده', 'accent' => 'slate'],
+                    'deliveries' => (int) ($evaluation['delivery_summary']['count'] ?? 0),
+                    'allocations' => (int) ($evaluation['allocations_count'] ?? 0),
+                    'median_hours' => $evaluation['response_median_hours'] ?? null,
+                    'pending_overdue' => (int) ($evaluation['pending_overdue'] ?? 0),
+                ];
+            })
+            ->filter()
+            ->sortByDesc(fn (array $row): array => [$row['has_data'] ? 1 : 0, $row['score'], $row['deliveries']])
+            ->values();
+
+        return [
+            'rows' => $rows->take(self::RANKING_LIMIT)->values()->all(),
+            'evaluated' => $rows->count(),
+            'total' => $total,
+            'truncated' => $rows->count() > self::RANKING_LIMIT,
+        ];
     }
 
     public function getSelectedWorkerProperty(): ?SocialWorker

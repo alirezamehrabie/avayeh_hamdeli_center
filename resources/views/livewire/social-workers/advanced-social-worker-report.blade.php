@@ -8,6 +8,19 @@
             </div>
 
             <div class="flex items-center gap-2 lg:flex-shrink-0">
+                <button wire:click="openRankingModal"
+                        wire:loading.attr="disabled"
+                        wire:target="openRankingModal"
+                        type="button"
+                        title="رتبه‌بندی عملکرد مددکاران"
+                        class="group flex h-11 w-11 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 text-amber-600 transition hover:bg-amber-100 hover:text-amber-700 disabled:cursor-wait disabled:opacity-80">
+                    <i class="bi bi-trophy-fill text-xl" wire:loading.remove wire:target="openRankingModal"></i>
+                    <svg wire:loading wire:target="openRankingModal" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" class="opacity-25"></circle>
+                        <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
+                    </svg>
+                </button>
+
                 <button wire:click="exportToExcel"
                         title="خروجی اکسل"
                         class="group flex h-11 w-11 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100 hover:text-emerald-700">
@@ -405,5 +418,6 @@
         </div>
 
         @include('livewire.social-workers.partials.social-worker-details-modal')
+        @include('livewire.social-workers.partials.social-worker-ranking-modal')
     </div>
 </div>
