@@ -18,9 +18,9 @@
                 <ul class="mt-8 space-y-3">
                     @php
                         $contactItems = [
-                            ['icon' => 'bi-telephone', 'title' => 'تلفن', 'value' => '(۰۲۱) ۱۲۳۴ ۵۶۷۸', 'href' => 'tel:+982112345678', 'ltr' => false],
-                            ['icon' => 'bi-whatsapp', 'title' => 'واتس‌اپ', 'value' => '۰۹۱۲ ۳۴۵ ۶۷۸۹', 'href' => '#', 'ltr' => false],
-                            ['icon' => 'bi-instagram', 'title' => 'اینستاگرام', 'value' => '@avaye_hamdeli', 'href' => '#', 'ltr' => true],
+                            ['icon' => 'bi-telephone', 'title' => 'تلفن', 'value' => '۰۹۱۳ ۶۴۷ ۶۹۴۹', 'href' => 'tel:+989136476949', 'ltr' => false],
+                            ['icon' => 'bi-whatsapp', 'title' => 'واتس‌اپ', 'value' => '۰۹۱۳ ۶۴۷ ۶۹۴۹', 'href' => 'https://wa.me/989136476949', 'ltr' => false],
+                            ['icon' => 'bi-instagram', 'title' => 'اینستاگرام', 'value' => '@avaayeh_hamdely', 'href' => 'https://instagram.com/avaayeh_hamdely', 'ltr' => true],
                             ['icon' => 'bi-geo-alt', 'title' => 'آدرس', 'value' => 'خمینی‌شهر، خیابان منتظری، کوچه ۶۰', 'href' => '#', 'ltr' => false],
                         ];
                     @endphp

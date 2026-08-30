@@ -53,9 +53,9 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#contact" class="inline-flex items-center gap-2 text-sm text-white/70 transition hover:text-white">
+                        <a href="tel:+989136476949" class="inline-flex items-center gap-2 text-sm text-white/70 transition hover:text-white">
                             <i class="bi bi-telephone text-xs" aria-hidden="true"></i>
-                            (۰۲۱) ۱۲۳۴ ۵۶۷۸
+                            ۰۹۱۳ ۶۴۷ ۶۹۴۹
                         </a>
                     </li>
                     <li class="text-sm text-white/70">شنبه تا پنجشنبه، ۸ تا ۱۶</li>
