@@ -10,12 +10,12 @@
 <div class="space-y-6" dir="rtl">
     <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         @if($selectedService)
-            {{-- Sticky active-gate band: always shows which service is locked while scanning --}}
-            <div class="sticky top-0 z-20 border-b border-indigo-100 bg-indigo-50/95 px-5 py-3 backdrop-blur supports-[backdrop-filter]:bg-indigo-50/80">
+            {{-- Sticky active-gate band: red-orange = exit gate --}}
+            <div class="sticky top-0 z-20 border-b border-orange-100 bg-orange-50/95 px-5 py-3 backdrop-blur supports-[backdrop-filter]:bg-orange-50/80">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div class="flex min-w-0 items-center gap-3">
-                        <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-indigo-600 px-3 py-1 text-[11px] font-black text-white">
-                            <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-300"></span>
+                        <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-orange-600 px-3 py-1 text-[11px] font-black text-white">
+                            <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-orange-200"></span>
                             گیت خروج فعال
                         </span>
                         <div class="min-w-0">
@@ -23,7 +23,7 @@
                             <p class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-semibold text-slate-500">
                                 <span dir="ltr">{{ $selectedService->code }}</span>
                                 <span>{{ \App\Models\Service::TYPE_OPTIONS[$selectedService->service_type] ?? $selectedService->service_type }}</span>
-                                <span class="text-indigo-600">
+                                <span class="text-orange-700">
                                     باقی‌مانده:
                                     <span dir="ltr">{{ rtrim(rtrim(number_format((float) $selectedService->remaining_quantity, 2), '0'), '.') }}</span>
                                     /
@@ -36,7 +36,7 @@
                         type="button"
                         wire:click="changeService"
                         wire:confirm="با تغییر خدمت، اسکن جاری پاک می‌شود. ادامه می‌دهید؟"
-                        class="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full border border-indigo-200 bg-white px-3 py-1.5 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100"
+                        class="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full border border-orange-200 bg-white px-3 py-1.5 text-xs font-bold text-orange-700 transition hover:bg-orange-100"
                     >
                         <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M5 9a7 7 0 0111-3.7L20 9M19 15a7 7 0 01-11 3.7L4 15"/>
