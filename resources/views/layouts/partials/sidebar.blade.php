@@ -168,21 +168,6 @@
             </a>
         @endif
 
-        @can('full-access')
-            <a href="{{ route('landing.preview') }}"
-               class="flex items-center px-4 py-2.5 rounded-lg transition-colors bg-indigo-800/40 ring-1 ring-indigo-600/30 hover:bg-indigo-800"
-               title="پیش‌نمایش صفحه‌ی عمومی (لندینگ)">
-                <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="9"></circle>
-                    <path d="M3 12h18M12 3a15 15 0 010 18M12 3a15 15 0 000 18"></path>
-                </svg>
-                <span class="flex-1">پیش‌نمایش صفحه اصلی</span>
-                <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                </svg>
-            </a>
-        @endcan
-
         @if($dashboardMode ? ($user?->can('manage-people') || $user?->can('access-admin-panel')) : $user?->can('manage-people'))
             <div>
                 <button type="button" @click="openMenu = openMenu === 'people' ? '' : 'people'"

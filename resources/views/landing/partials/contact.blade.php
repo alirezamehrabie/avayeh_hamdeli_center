@@ -21,7 +21,7 @@
                             ['icon' => 'bi-telephone', 'title' => 'تلفن', 'value' => '(۰۲۱) ۱۲۳۴ ۵۶۷۸', 'href' => 'tel:+982112345678', 'ltr' => false],
                             ['icon' => 'bi-whatsapp', 'title' => 'واتس‌اپ', 'value' => '۰۹۱۲ ۳۴۵ ۶۷۸۹', 'href' => '#', 'ltr' => false],
                             ['icon' => 'bi-instagram', 'title' => 'اینستاگرام', 'value' => '@avaye_hamdeli', 'href' => '#', 'ltr' => true],
-                            ['icon' => 'bi-geo-alt', 'title' => 'آدرس', 'value' => 'تهران، خیابان امید، کوچه‌ی همدلی، پلاک ۷', 'href' => '#', 'ltr' => false],
+                            ['icon' => 'bi-geo-alt', 'title' => 'آدرس', 'value' => 'خمینی‌شهر، خیابان منتظری، کوچه ۶۰', 'href' => '#', 'ltr' => false],
                         ];
                     @endphp
                     @foreach($contactItems as $item)

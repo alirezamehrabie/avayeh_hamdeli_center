@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" role="img" aria-label="کودکان در حال آموزش">
+  <defs>
+    <linearGradient id="s1bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0d5c85"/>
+      <stop offset="0.55" stop-color="#1572A1"/>
+      <stop offset="1" stop-color="#5964AE"/>
+    </linearGradient>
+    <radialGradient id="s1glow" cx="0.22" cy="0.2" r="0.75">
+      <stop offset="0" stop-color="#8ad4f2" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#8ad4f2" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="s1sun" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffe6a7" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#ffe6a7" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#s1bg)"/>
+  <rect width="1600" height="900" fill="url(#s1glow)"/>
+  <circle cx="1290" cy="190" r="230" fill="url(#s1sun)"/>
+  <circle cx="1290" cy="190" r="86" fill="#ffdf95" opacity="0.9"/>
+
+  <g fill="#ffffff" opacity="0.09">
+    <circle cx="200" cy="150" r="120"/>
+    <circle cx="520" cy="90" r="70"/>
+    <circle cx="1480" cy="640" r="150"/>
+  </g>
+
+  <!-- تپه‌ها -->
+  <path d="M0 690 C 240 590 430 700 660 660 C 900 618 1080 700 1330 650 C 1450 626 1530 640 1600 620 L1600 900 L0 900 Z" fill="#0b4a6b" opacity="0.55"/>
+  <path d="M0 760 C 260 700 470 790 720 752 C 980 712 1180 786 1420 748 C 1500 735 1560 742 1600 736 L1600 900 L0 900 Z" fill="#083b57" opacity="0.65"/>
+
+  <!-- درخت -->
+  <g opacity="0.9">
+    <rect x="184" y="612" width="26" height="150" rx="13" fill="#0a3f5c"/>
+    <circle cx="197" cy="586" r="96" fill="#2f9e7a"/>
+    <circle cx="128" cy="618" r="62" fill="#268a6a"/>
+    <circle cx="264" cy="620" r="58" fill="#33ad86"/>
+  </g>
+
+  <!-- کودکان دست در دست -->
+  <g transform="translate(560 400)">
+    <g>
+      <circle cx="80" cy="70" r="52" fill="#ffd9b8"/>
+      <path d="M28 60 A52 52 0 0 1 132 60 L132 40 A52 52 0 0 0 28 40 Z" fill="#3b2b2b"/>
+      <path d="M20 150 q60 -34 120 0 l16 210 q-76 22 -152 0 Z" fill="#ffb3c7"/>
+      <rect x="150" y="196" width="120" height="26" rx="13" fill="#ffd9b8"/>
+      <rect x="-58" y="196" width="90" height="26" rx="13" fill="#ffd9b8"/>
+      <rect x="42" y="360" width="30" height="112" rx="15" fill="#2d3a66"/>
+      <rect x="90" y="360" width="30" height="112" rx="15" fill="#2d3a66"/>
+    </g>
+    <g transform="translate(268 24)">
+      <circle cx="80" cy="70" r="50" fill="#f6c79a"/>
+      <path d="M30 62 A50 50 0 0 1 130 62 L130 42 A50 50 0 0 0 30 42 Z" fill="#1f1a1a"/>
+      <path d="M22 148 q58 -32 116 0 l14 200 q-72 22 -144 0 Z" fill="#8ad4f2"/>
+      <rect x="146" y="188" width="100" height="26" rx="13" fill="#f6c79a"/>
+      <rect x="-52" y="188" width="86" height="26" rx="13" fill="#f6c79a"/>
+      <rect x="44" y="348" width="30" height="108" rx="15" fill="#233055"/>
+      <rect x="92" y="348" width="30" height="108" rx="15" fill="#233055"/>
+    </g>
+    <g transform="translate(524 52)">
+      <circle cx="78" cy="70" r="48" fill="#e8b489"/>
+      <path d="M30 64 A48 48 0 0 1 126 64 L126 44 A48 48 0 0 0 30 44 Z" fill="#2b1f1f"/>
+      <path d="M22 146 q56 -30 112 0 l12 188 q-68 20 -136 0 Z" fill="#ffe08a"/>
+      <rect x="-48" y="184" width="82" height="26" rx="13" fill="#e8b489"/>
+      <rect x="44" y="334" width="28" height="102" rx="14" fill="#2b3560"/>
+      <rect x="88" y="334" width="28" height="102" rx="14" fill="#2b3560"/>
+    </g>
+  </g>
+
+  <!-- کتاب و مداد شناور -->
+  <g opacity="0.95">
+    <g transform="translate(300 250) rotate(-12)">
+      <rect x="0" y="0" width="150" height="106" rx="10" fill="#ffffff" opacity="0.92"/>
+      <rect x="0" y="0" width="150" height="20" rx="10" fill="#D4205F"/>
+      <rect x="18" y="42" width="114" height="9" rx="4.5" fill="#c9d6e4"/>
+      <rect x="18" y="64" width="86" height="9" rx="4.5" fill="#c9d6e4"/>
+    </g>
+    <g transform="translate(1180 470) rotate(24)">
+      <rect x="0" y="0" width="34" height="180" rx="8" fill="#ffe08a"/>
+      <path d="M0 180 L17 220 L34 180 Z" fill="#f6c79a"/>
+      <path d="M8 208 L17 220 L26 208 Z" fill="#3b2b2b"/>
+      <rect x="0" y="0" width="34" height="26" rx="8" fill="#D4205F"/>
+    </g>
+  </g>
+</svg>

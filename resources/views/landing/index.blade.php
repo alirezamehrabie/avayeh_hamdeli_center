@@ -2,6 +2,7 @@
 
 @section('content')
     @include('landing.partials.header')
+    @include('landing.partials.slider')
     @include('landing.partials.hero')
     @include('landing.partials.trust')
     @include('landing.partials.about')

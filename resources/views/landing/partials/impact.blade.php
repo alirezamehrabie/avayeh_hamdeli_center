@@ -20,7 +20,7 @@
         <div class="mt-12 grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4">
             @php
                 $stats = [
-                    ['counter' => 200, 'suffix' => '+', 'label' => 'کودک تحت پوشش'],
+                    ['counter' => 2000, 'suffix' => '+', 'label' => 'کودک تحت پوشش'],
                     ['counter' => 1200, 'suffix' => '+', 'label' => 'وعده‌ی غذایی', 'suffixLabel' => null],
                     ['counter' => 340, 'suffix' => '+', 'label' => 'بسته‌ی پوشاک'],
                     ['counter' => 80, 'suffix' => '+', 'label' => 'همراه و حامی'],

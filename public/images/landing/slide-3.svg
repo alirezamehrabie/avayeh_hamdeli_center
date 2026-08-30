@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" role="img" aria-label="حمایت و پناه کودکان">
+  <defs>
+    <linearGradient id="s3bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3b3f7d"/>
+      <stop offset="0.5" stop-color="#5964AE"/>
+      <stop offset="1" stop-color="#1572A1"/>
+    </linearGradient>
+    <radialGradient id="s3glow" cx="0.5" cy="0.3" r="0.75">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="s3hand" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd9b8"/>
+      <stop offset="1" stop-color="#e9b088"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#s3bg)"/>
+  <rect width="1600" height="900" fill="url(#s3glow)"/>
+
+  <g fill="#ffffff" opacity="0.08">
+    <circle cx="230" cy="700" r="170"/>
+    <circle cx="1400" cy="200" r="140"/>
+    <circle cx="900" cy="820" r="90"/>
+  </g>
+
+  <!-- دستان محافظ -->
+  <g transform="translate(800 470)">
+    <g transform="translate(-330 0)">
+      <path d="M0 340 q-40 -190 30 -300 q26 -42 60 -22 q26 16 12 66 l-24 96 q46 -104 96 -158 q30 -32 58 -8 q26 22 4 66 l-58 130 q64 -78 116 -110 q34 -20 54 6 q18 24 -12 58 l-92 116 q56 -34 96 -40 q40 -6 44 26 q4 28 -34 48 l-152 88 Z" fill="url(#s3hand)"/>
+    </g>
+    <g transform="translate(330 0) scale(-1 1)">
+      <path d="M0 340 q-40 -190 30 -300 q26 -42 60 -22 q26 16 12 66 l-24 96 q46 -104 96 -158 q30 -32 58 -8 q26 22 4 66 l-58 130 q64 -78 116 -110 q34 -20 54 6 q18 24 -12 58 l-92 116 q56 -34 96 -40 q40 -6 44 26 q4 28 -34 48 l-152 88 Z" fill="url(#s3hand)"/>
+    </g>
+
+    <!-- قلب مرکزی -->
+    <g transform="translate(0 -40)">
+      <path d="M0 176 C -120 96 -176 34 -176 -34 C -176 -110 -108 -152 -54 -128 C -26 -116 -8 -92 0 -70 C 8 -92 26 -116 54 -128 C 108 -152 176 -110 176 -34 C 176 34 120 96 0 176 Z" fill="#D4205F"/>
+      <path d="M-104 -74 q34 -34 76 -22 q-46 8 -60 40 Z" fill="#ffffff" opacity="0.45"/>
+    </g>
+  </g>
+
+  <!-- کودک کوچک درون قلب -->
+  <g transform="translate(800 384)">
+    <circle cx="0" cy="-18" r="42" fill="#ffe3c8"/>
+    <path d="M-42 -26 A42 42 0 0 1 42 -26 L42 -42 A42 42 0 0 0 -42 -42 Z" fill="#3b2b2b"/>
+    <path d="M-38 42 q38 -24 76 0 l10 74 q-48 14 -96 0 Z" fill="#ffffff" opacity="0.92"/>
+    <circle cx="-14" cy="-20" r="5" fill="#3b2b2b"/>
+    <circle cx="14" cy="-20" r="5" fill="#3b2b2b"/>
+    <path d="M-14 0 q14 14 28 0" stroke="#c1694f" stroke-width="5" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- ستاره‌های امید -->
+  <g fill="#ffe08a">
+    <path d="M300 200 l14 40 42 4 -32 28 10 42 -34 -24 -36 22 12 -40 -30 -30 42 -2 Z" opacity="0.9"/>
+    <path d="M1330 620 l11 32 34 3 -26 22 8 34 -27 -19 -29 18 10 -32 -24 -24 34 -2 Z" opacity="0.8"/>
+    <path d="M1180 160 l8 24 26 2 -20 17 6 26 -20 -14 -22 13 8 -24 -18 -18 26 -2 Z" opacity="0.7"/>
+  </g>
+
+  <path d="M0 812 C 300 762 560 852 860 812 C 1140 776 1360 848 1600 806 L1600 900 L0 900 Z" fill="#2f3468" opacity="0.5"/>
+</svg>

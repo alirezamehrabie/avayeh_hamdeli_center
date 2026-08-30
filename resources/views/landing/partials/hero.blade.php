@@ -1,5 +1,5 @@
 <!-- بخش آغازین: هیرو -->
-<section id="hero" class="relative overflow-hidden bg-[#f8fbff] pb-16 pt-28 sm:pb-24 sm:pt-36">
+<section id="hero" class="relative overflow-hidden bg-[#f8fbff] pb-16 pt-16 sm:pb-24 sm:pt-20">
     <!-- بلاب‌های رنگی نرم -->
     <div class="pointer-events-none absolute -right-28 top-[-7rem] h-72 w-72 rounded-full bg-[#36A9DF]/22 blur-3xl sm:h-96 sm:w-96" aria-hidden="true"></div>
     <div class="pointer-events-none absolute -left-24 top-1/4 h-64 w-64 rounded-full bg-[#D4205F]/14 blur-3xl sm:h-80 sm:w-80" aria-hidden="true"></div>
@@ -17,13 +17,13 @@
                     مرکز نیکوکاری تخصصی کودکان
                 </span>
 
-                <h1 class="mt-5 text-3xl font-black leading-[1.35] text-slate-900 sm:text-4xl lg:text-5xl lg:leading-[1.25]">
+                <h2 class="mt-5 text-3xl font-black leading-[1.35] text-slate-900 sm:text-4xl lg:text-5xl lg:leading-[1.25]">
                     بگذار صدای
                     <span class="bg-gradient-to-l from-[#1572A1] via-[#5964AE] to-[#A4184B] bg-clip-text text-transparent">
                         همدلی
                     </span>
                     به گوش کودکان برسد
-                </h1>
+                </h2>
 
                 <p class="mx-auto mt-5 max-w-xl text-base leading-8 text-slate-600 sm:text-lg lg:mx-0">
                     آوای همدلی کنار کودکان در نیاز می‌ایستد؛ با آموزش، تغذیه، لباس و فرصتی برای لبخند. هر همدلیِ شما، تک‌تک این کودکان را یک قدم به امید نزدیک‌تر می‌کند.
@@ -74,7 +74,7 @@
                 <!-- نشان شناور تعداد -->
                 <div class="absolute -top-4 left-3 rounded-2xl border border-white bg-white/95 px-4 py-3 shadow-xl shadow-slate-900/10 backdrop-blur sm:left-6">
                     <span class="flex items-center gap-2">
-                        <span class="text-lg font-black text-[#A4184B]">+۲۰۰</span>
+                        <span class="text-lg font-black text-[#A4184B]">+۲۰۰۰</span>
                         <span class="text-[11px] font-medium leading-4 text-slate-600">کودک در کنار ما<br>هر روز لبخند می‌زنند</span>
                     </span>
                 </div>

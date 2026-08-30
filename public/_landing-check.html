@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="مرکز نیکوکاری تخصصی کودکان آوای همدلی؛ همراهی، آموزش، تغذیه و امید برای کودکان در نیاز.">
+    <title>آوای همدلی | مرکز نیکوکاری تخصصی کودکان</title>
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="آوای همدلی | مرکز نیکوکاری تخصصی کودکان">
+    <meta property="og:description" content="همراه ما باش تا امید را به کودکان در نیاز هدیه دهیم.">
+    <meta property="og:image" content="http://127.0.0.1:8899/images/logo-sm.png">
+
+    <link rel="icon" type="image/png" href="http://127.0.0.1:8899/images/logo-sm.png">
+
+    <script type="module" src="http://[::1]:5174/@vite/client" data-navigate-track="reload"></script><link rel="stylesheet" href="http://[::1]:5174/resources/css/app.css" data-navigate-track="reload" /><script type="module" src="http://[::1]:5174/resources/js/app.js" data-navigate-track="reload"></script>    <!-- Livewire Styles --><style >[wire\:loading][wire\:loading], [wire\:loading\.delay][wire\:loading\.delay], [wire\:loading\.inline-block][wire\:loading\.inline-block], [wire\:loading\.inline][wire\:loading\.inline], [wire\:loading\.block][wire\:loading\.block], [wire\:loading\.flex][wire\:loading\.flex], [wire\:loading\.table][wire\:loading\.table], [wire\:loading\.grid][wire\:loading\.grid], [wire\:loading\.inline-flex][wire\:loading\.inline-flex] {display: none;}[wire\:loading\.delay\.none][wire\:loading\.delay\.none], [wire\:loading\.delay\.shortest][wire\:loading\.delay\.shortest], [wire\:loading\.delay\.shorter][wire\:loading\.delay\.shorter], [wire\:loading\.delay\.short][wire\:loading\.delay\.short], [wire\:loading\.delay\.default][wire\:loading\.delay\.default], [wire\:loading\.delay\.long][wire\:loading\.delay\.long], [wire\:loading\.delay\.longer][wire\:loading\.delay\.longer], [wire\:loading\.delay\.longest][wire\:loading\.delay\.longest] {display: none;}[wire\:offline][wire\:offline] {display: none;}[wire\:dirty]:not(textarea):not(input):not(select) {display: none;}:root {--livewire-progress-bar-color: #2299dd;}[x-cloak] {display: none !important;}[wire\:cloak] {display: none !important;}dialog#livewire-error::backdrop {background-color: rgba(0, 0, 0, .6);}</style>
+
+    <style>
+        body { font-family: 'iransans', 'Vazir', Tahoma, sans-serif; }
+        /* clip (not hidden) so no scroll container is created and fixed/sticky keep working.
+           html is the sole scroll container here: the global body scrollbar gutter would
+           otherwise reserve a strip that stops full-bleed sections short of the edge. */
+        html { overflow-x: clip; }
+        body { overflow-y: visible; scrollbar-gutter: auto; }
+        .landing-section { scroll-margin-top: 5rem; }
+        [x-cloak] { display: none !important; }
+        [data-reveal] { opacity: 0; transform: translateY(18px); }
+        [data-reveal].reveal-visible {
+            opacity: 1;
+            transform: none;
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            [data-reveal] { opacity: 1; transform: none; }
+        }
+    </style>
+</head>
+<body
+    x-data="{
+        mobileNavOpen: false,
+        floatingBarVisible: false,
+        revealHeights: new Set(),
+        init() {
+            this.initFloatingBar();
+            this.initReveal();
+            this.initCounter();
+        },
+        initFloatingBar() {
+            const heroEnd = document.getElementById('hero')?.getBoundingClientRect().bottom ?? 600;
+            const footer = document.getElementById('site-footer');
+            const onScroll = () => {
+                if (!footer) return;
+                const footerTop = footer.getBoundingClientRect().top;
+                const pastHero = window.scrollY > heroEnd;
+                this.floatingBarVisible = pastHero && footerTop > window.innerHeight;
+            };
+            window.addEventListener('scroll', onScroll, { passive: true });
+            onScroll();
+        },
+        initReveal() {
+            const els = document.querySelectorAll('[data-reveal]');
+            const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const io = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('reveal-visible');
+                        io.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.12 });
+            els.forEach((el) => {
+                if (prefersReduced) { el.classList.add('reveal-visible'); return; }
+                io.observe(el);
+            });
+        },
+        initCounter() {
+            const counters = document.querySelectorAll('[data-counter]');
+            const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const io = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (!entry.isIntersecting) return;
+                    const el = entry.target;
+                    io.unobserve(el);
+                    if (prefersReduced) { el.textContent = el.dataset.target; return; }
+                    const target = parseFloat(el.dataset.target);
+                    const suffix = el.dataset.suffix ?? '';
+                    const dur = 1400;
+                    const start = performance.now();
+                    const tick = (now) => {
+                        const p = Math.min((now - start) / dur, 1);
+                        const eased = 1 - Math.pow(1 - p, 3);
+                        el.textContent = Math.round(target * eased).toLocaleString('fa-IR') + suffix;
+                        if (p < 1) requestAnimationFrame(tick);
+                    };
+                    requestAnimationFrame(tick);
+                });
+            }, { threshold: 0.5 });
+            counters.forEach((c) => io.observe(c));
+        }
+    }"
+    class="min-h-screen bg-white text-slate-700 antialiased"
+>
+        <!-- هدر ثابت و موبایل‌فرست -->
+<header
+    x-cloak
+    x-data="{ scrolled: false }"
+    @scroll.window="scrolled = window.scrollY > 8"
+    class="fixed inset-x-0 top-0 z-40 transition-all duration-300"
+    :class="scrolled ? 'bg-white/90 shadow-sm backdrop-blur-md' : 'bg-white/60 backdrop-blur-sm'"
+>
+    <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <!-- برند -->
+        <a href="#top" class="flex min-w-0 items-center gap-2.5" aria-label="آوای همدلی">
+            <img
+                src="http://127.0.0.1:8899/images/logo-sm.png"
+                alt="لوگوی آوای همدلی"
+                class="h-9 w-9 shrink-0 rounded-xl object-cover shadow-sm sm:h-10 sm:w-10"
+            >
+            <span class="min-w-0">
+                <span class="block truncate text-sm font-black text-slate-900 sm:text-base">آوای همدلی</span>
+                <span class="block truncate text-[10px] leading-4 text-slate-500 sm:text-[11px]">مرکز نیکوکاری تخصصی کودکان</span>
+            </span>
+        </a>
+
+        <!-- ناوبری دسکتاپ -->
+        <nav class="hidden items-center gap-1 lg:flex" aria-label="ناوبری اصلی">
+                                        <a
+                    href="#about"
+                    class="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-indigo-50 hover:text-[#5964AE]"
+                >درباره ما</a>
+                            <a
+                    href="#services"
+                    class="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-indigo-50 hover:text-[#5964AE]"
+                >خدمات</a>
+                            <a
+                    href="#impact"
+                    class="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-indigo-50 hover:text-[#5964AE]"
+                >عددهای ما</a>
+                            <a
+                    href="#stories"
+                    class="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-indigo-50 hover:text-[#5964AE]"
+                >قصه‌ها</a>
+                            <a
+                    href="#help"
+                    class="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-indigo-50 hover:text-[#5964AE]"
+                >کمک شما</a>
+                            <a
+                    href="#contact"
+                    class="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-indigo-50 hover:text-[#5964AE]"
+                >تماس</a>
+                    </nav>
+
+        <!-- اقدامات -->
+        <div class="flex items-center gap-2">
+            <a
+                href="#help"
+                class="hidden items-center gap-2 rounded-xl bg-[linear-gradient(135deg,#4d56a3_0%,#1572A1_60%,#A4184B_135%)] px-5 py-2.5 text-sm font-extrabold text-white shadow-md shadow-[#5964AE]/20 transition hover:shadow-lg hover:shadow-[#1572A1]/25 active:translate-y-px sm:inline-flex"
+            >
+                <i class="bi bi-heart-fill" aria-hidden="true"></i>
+                همدلی کنید
+            </a>
+            <a
+                href="http://127.0.0.1:8899/login"
+                class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-[#1572A1]/40 hover:text-[#1572A1] sm:min-h-0"
+            >
+                <i class="bi bi-box-arrow-in-left" aria-hidden="true"></i>
+                <span class="hidden sm:inline">ورود پرسنل</span>
+                <span class="sm:hidden">ورود</span>
+            </a>
+
+            <!-- دکمه همبرگر -->
+            <button
+                type="button"
+                @click="mobileNavOpen = !mobileNavOpen"
+                :aria-expanded="mobileNavOpen.toString()"
+                aria-controls="mobile-nav"
+                aria-label="باز و بسته کردن منو"
+                class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition hover:border-[#1572A1]/40 hover:text-[#1572A1] lg:hidden"
+            >
+                <svg x-show="!mobileNavOpen" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+                <svg x-show="mobileNavOpen" x-cloak class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M6 6l12 12M18 6L6 18"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- منوی موبایل -->
+    <div
+        x-cloak
+        x-show="mobileNavOpen"
+        x-collapse
+        id="mobile-nav"
+        class="border-t border-slate-100 bg-white/95 px-4 pb-4 pt-2 backdrop-blur lg:hidden"
+    >
+        <nav class="flex flex-col" aria-label="ناوبری موبایل">
+                            <a
+                    href="#about"
+                    @click="mobileNavOpen = false"
+                    class="flex min-h-12 items-center gap-3 rounded-xl px-4 text-sm font-semibold text-slate-700 transition hover:bg-indigo-50 hover:text-[#5964AE]"
+                >
+                    درباره ما
+                </a>
+                            <a
+                    href="#services"
+                    @click="mobileNavOpen = false"
+                    class="flex min-h-12 items-center gap-3 rounded-xl px-4 text-sm font-semibold text-slate-700 transition hover:bg-indigo-50 hover:text-[#5964AE]"
+                >
+                    خدمات
+                </a>
+                            <a
+                    href="#impact"
+                    @click="mobileNavOpen = false"
+                    class="flex min-h-12 items-center gap-3 rounded-xl px-4 text-sm font-semibold text-slate-700 transition hover:bg-indigo-50 hover:text-[#5964AE]"
+                >
+                    عددهای ما
+                </a>
+                            <a
+                    href="#stories"
+                    @click="mobileNavOpen = false"
+                    class="flex min-h-12 items-center gap-3 rounded-xl px-4 text-sm font-semibold text-slate-700 transition hover:bg-indigo-50 hover:text-[#5964AE]"
+                >
+                    قصه‌ها
+                </a>
+                            <a
+                    href="#help"
+                    @click="mobileNavOpen = false"
+                    class="flex min-h-12 items-center gap-3 rounded-xl px-4 text-sm font-semibold text-slate-700 transition hover:bg-indigo-50 hover:text-[#5964AE]"
+                >
+                    کمک شما
+                </a>
+                            <a
+                    href="#contact"
+                    @click="mobileNavOpen = false"
+                    class="flex min-h-12 items-center gap-3 rounded-xl px-4 text-sm font-semibold text-slate-700 transition hover:bg-indigo-50 hover:text-[#5964AE]"
+                >
+                    تماس
+                </a>
+                    </nav>
+    </div>
+</header>    <!-- اسلایدشو تصاویر مرکز -->
+<section
+    id="slider"
+    class="relative bg-slate-900"
+    aria-label="اسلایدشو تصاویر مرکز نیکوکاری کودکان"
+    aria-roledescription="کاروسل"
+    x-data="{
+        active: 0,
+        count: 4,
+        hovered: false,
+        userPaused: false,
+        timer: null,
+        duration: 6000,
+        reduced: false,
+        get playing() { return !this.reduced && !this.userPaused; },
+        init() {
+            this.reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            this.start();
+            document.addEventListener('visibilitychange', () => {
+                document.hidden ? this.stop() : this.start();
+            });
+        },
+        start() {
+            this.stop();
+            if (!this.playing) return;
+            this.timer = setInterval(() => {
+                if (!this.hovered) this.next();
+            }, this.duration);
+        },
+        stop() {
+            if (this.timer) clearInterval(this.timer);
+            this.timer = null;
+        },
+        toggle() {
+            this.userPaused = !this.userPaused;
+            this.userPaused ? this.stop() : this.start();
+        },
+        go(index) {
+            this.active = (index + this.count) % this.count;
+            this.start();
+        },
+        next() { this.go(this.active + 1); },
+        prev() { this.go(this.active - 1); },
+    }"
+    @mouseenter="hovered = true"
+    @mouseleave="hovered = false"
+    @keydown.left.prevent="next()"
+    @keydown.right.prevent="prev()"
+>
+    <div class="relative h-[78svh] min-h-[460px] w-full overflow-hidden sm:h-[82svh] lg:h-[88svh]">
+        <!-- تصاویر -->
+                    <div
+                class="absolute inset-0 transition-all duration-[1200ms] ease-out motion-reduce:transition-none"
+                :class="active === 0 ? 'opacity-100 scale-100' : 'opacity-0 scale-105'"
+                :aria-hidden="active === 0 ? 'false' : 'true'"
+            >
+                <img
+                    src="http://127.0.0.1:8899/images/landing/slide-1.svg"
+                    alt="کودکان تحت پوشش در مسیر آموزش و یادگیری"
+                    class="h-full w-full object-cover"
+                    loading="eager"
+                    fetchpriority="high"
+                    draggable="false"
+                >
+            </div>
+                    <div
+                class="absolute inset-0 transition-all duration-[1200ms] ease-out motion-reduce:transition-none"
+                :class="active === 1 ? 'opacity-100 scale-100' : 'opacity-0 scale-105'"
+                :aria-hidden="active === 1 ? 'false' : 'true'"
+            >
+                <img
+                    src="http://127.0.0.1:8899/images/landing/slide-2.svg"
+                    alt="تغذیه سالم و بسته‌های غذایی کودکان"
+                    class="h-full w-full object-cover"
+                    loading="lazy"
+                    fetchpriority="low"
+                    draggable="false"
+                >
+            </div>
+                    <div
+                class="absolute inset-0 transition-all duration-[1200ms] ease-out motion-reduce:transition-none"
+                :class="active === 2 ? 'opacity-100 scale-100' : 'opacity-0 scale-105'"
+                :aria-hidden="active === 2 ? 'false' : 'true'"
+            >
+                <img
+                    src="http://127.0.0.1:8899/images/landing/slide-3.svg"
+                    alt="حمایت و پناه از کودکان بی‌سرپرست"
+                    class="h-full w-full object-cover"
+                    loading="lazy"
+                    fetchpriority="low"
+                    draggable="false"
+                >
+            </div>
+                    <div
+                class="absolute inset-0 transition-all duration-[1200ms] ease-out motion-reduce:transition-none"
+                :class="active === 3 ? 'opacity-100 scale-100' : 'opacity-0 scale-105'"
+                :aria-hidden="active === 3 ? 'false' : 'true'"
+            >
+                <img
+                    src="http://127.0.0.1:8899/images/landing/slide-4.svg"
+                    alt="بازی و شادی کودکان در مرکز"
+                    class="h-full w-full object-cover"
+                    loading="lazy"
+                    fetchpriority="low"
+                    draggable="false"
+                >
+            </div>
+        
+        <!-- لایه‌های تیرگی برای خوانایی متن -->
+        <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(8,20,38,0.55)_0%,rgba(8,20,38,0.28)_40%,rgba(8,20,38,0.80)_100%)]" aria-hidden="true"></div>
+        <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_90%_at_78%_8%,rgba(21,114,161,0.30)_0%,transparent_55%),radial-gradient(110%_80%_at_8%_96%,rgba(164,24,75,0.36)_0%,transparent_60%)]" aria-hidden="true"></div>
+
+        <!-- متن روی اسلاید -->
+        <div class="absolute inset-0 z-20 flex items-center pt-16">
+            <div class="mx-auto w-full max-w-6xl px-4 sm:px-6">
+                <div class="max-w-2xl text-center sm:text-right">
+                    <span class="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-xs font-bold text-white backdrop-blur-md sm:text-sm">
+                        <span class="relative flex h-2 w-2" aria-hidden="true">
+                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#8ad4f2] opacity-75"></span>
+                            <span class="relative inline-flex h-2 w-2 rounded-full bg-[#36A9DF]"></span>
+                        </span>
+                                                    <span x-show="active === 0" x-cloak>آموزش و یادگیری</span>
+                                                    <span x-show="active === 1" x-cloak>تغذیه سالم</span>
+                                                    <span x-show="active === 2" x-cloak>پناه و حمایت</span>
+                                                    <span x-show="active === 3" x-cloak>بازی و شادی</span>
+                                            </span>
+
+                    <h1 class="mt-5 text-4xl font-black leading-[1.25] text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.5)] sm:text-5xl lg:text-6xl">
+                        آوای همدلی
+                    </h1>
+
+                    <p class="mt-4 text-lg font-extrabold leading-9 text-white drop-shadow-[0_2px_16px_rgba(0,0,0,0.55)] sm:text-2xl sm:leading-10">
+                        حامی کودکان بی‌سرپرست و آسیب‌دیده
+                    </p>
+
+                    <p class="mt-4 min-h-14 text-sm font-medium leading-7 text-white/85 sm:text-base">
+                                                    <span
+                                x-show="active === 0"
+                                x-cloak
+                                x-transition:enter="transition ease-out duration-500"
+                                x-transition:enter-start="opacity-0 translate-y-2"
+                                x-transition:enter-end="opacity-100 translate-y-0"
+                                class="block"
+                            >کلاس، کتاب و آینده‌ای روشن برای هر کودک</span>
+                                                    <span
+                                x-show="active === 1"
+                                x-cloak
+                                x-transition:enter="transition ease-out duration-500"
+                                x-transition:enter-start="opacity-0 translate-y-2"
+                                x-transition:enter-end="opacity-100 translate-y-0"
+                                class="block"
+                            >هر وعده‌ی گرم، یک قدم به سلامت نزدیک‌تر</span>
+                                                    <span
+                                x-show="active === 2"
+                                x-cloak
+                                x-transition:enter="transition ease-out duration-500"
+                                x-transition:enter-start="opacity-0 translate-y-2"
+                                x-transition:enter-end="opacity-100 translate-y-0"
+                                class="block"
+                            >دست‌هایی که کودکان را تنها نمی‌گذارند</span>
+                                                    <span
+                                x-show="active === 3"
+                                x-cloak
+                                x-transition:enter="transition ease-out duration-500"
+                                x-transition:enter-start="opacity-0 translate-y-2"
+                                x-transition:enter-end="opacity-100 translate-y-0"
+                                class="block"
+                            >کودکی، حقِ بازی کردن و خندیدن است</span>
+                                            </p>
+
+                    <div class="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-center lg:justify-start">
+                        <a
+                            href="#help"
+                            class="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#4d56a3_0%,#1572A1_58%,#A4184B_135%)] px-8 py-4 text-base font-extrabold text-white shadow-xl shadow-black/30 transition hover:-translate-y-0.5 active:translate-y-0"
+                        >
+                            <i class="bi bi-heart-fill" aria-hidden="true"></i>
+                            همراهی کن
+                        </a>
+                        <a
+                            href="#about"
+                            class="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-white/35 bg-white/10 px-8 py-4 text-base font-bold text-white backdrop-blur-md transition hover:bg-white/20"
+                        >
+                            درباره مرکز
+                            <i class="bi bi-arrow-down" aria-hidden="true"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- دکمه‌های پیمایش (در RTL: چپ = بعدی) -->
+        <button
+            type="button"
+            @click="next()"
+            aria-label="اسلاید بعدی"
+            class="absolute left-3 top-1/2 z-30 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-white/10 text-white backdrop-blur-md transition hover:bg-white/25 sm:left-6 sm:inline-flex"
+        >
+            <i class="bi bi-chevron-left text-xl" aria-hidden="true"></i>
+        </button>
+        <button
+            type="button"
+            @click="prev()"
+            aria-label="اسلاید قبلی"
+            class="absolute right-3 top-1/2 z-30 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-white/10 text-white backdrop-blur-md transition hover:bg-white/25 sm:right-6 sm:inline-flex"
+        >
+            <i class="bi bi-chevron-right text-xl" aria-hidden="true"></i>
+        </button>
+
+        <!-- نشانگرها و کنترل پخش -->
+        <div class="absolute bottom-3 left-0 right-0 z-30 flex items-center justify-center gap-1">
+                            <button
+                    type="button"
+                    @click="go(0)"
+                    aria-label="نمایش اسلاید 1: آموزش و یادگیری"
+                    :aria-current="active === 0 ? 'true' : 'false'"
+                    class="group flex h-11 w-8 items-center justify-center"
+                >
+                    <span
+                        class="h-2.5 rounded-full transition-all duration-500"
+                        :class="active === 0 ? 'w-12 bg-white' : 'w-2.5 bg-white/40 group-hover:bg-white/70'"
+                        aria-hidden="true"
+                    ></span>
+                </button>
+                            <button
+                    type="button"
+                    @click="go(1)"
+                    aria-label="نمایش اسلاید 2: تغذیه سالم"
+                    :aria-current="active === 1 ? 'true' : 'false'"
+                    class="group flex h-11 w-8 items-center justify-center"
+                >
+                    <span
+                        class="h-2.5 rounded-full transition-all duration-500"
+                        :class="active === 1 ? 'w-12 bg-white' : 'w-2.5 bg-white/40 group-hover:bg-white/70'"
+                        aria-hidden="true"
+                    ></span>
+                </button>
+                            <button
+                    type="button"
+                    @click="go(2)"
+                    aria-label="نمایش اسلاید 3: پناه و حمایت"
+                    :aria-current="active === 2 ? 'true' : 'false'"
+                    class="group flex h-11 w-8 items-center justify-center"
+                >
+                    <span
+                        class="h-2.5 rounded-full transition-all duration-500"
+                        :class="active === 2 ? 'w-12 bg-white' : 'w-2.5 bg-white/40 group-hover:bg-white/70'"
+                        aria-hidden="true"
+                    ></span>
+                </button>
+                            <button
+                    type="button"
+                    @click="go(3)"
+                    aria-label="نمایش اسلاید 4: بازی و شادی"
+                    :aria-current="active === 3 ? 'true' : 'false'"
+                    class="group flex h-11 w-8 items-center justify-center"
+                >
+                    <span
+                        class="h-2.5 rounded-full transition-all duration-500"
+                        :class="active === 3 ? 'w-12 bg-white' : 'w-2.5 bg-white/40 group-hover:bg-white/70'"
+                        aria-hidden="true"
+                    ></span>
+                </button>
+            
+            <button
+                type="button"
+                @click="toggle()"
+                x-show="!reduced"
+                x-cloak
+                :aria-label="userPaused ? 'ادامه پخش خودکار' : 'توقف پخش خودکار'"
+                :aria-pressed="userPaused ? 'true' : 'false'"
+                class="mr-3 flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white backdrop-blur-md transition hover:bg-white/25"
+            >
+                <i class="bi text-sm" :class="userPaused ? 'bi-play-fill' : 'bi-pause-fill'" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <!-- نشان اعتماد شناور -->
+        <div class="absolute bottom-6 left-6 z-30 hidden items-center gap-3 rounded-2xl border border-white/25 bg-white/10 px-4 py-3 text-white backdrop-blur-md lg:flex">
+            <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
+                <i class="bi bi-shield-check text-lg" aria-hidden="true"></i>
+            </span>
+            <span>
+                <span class="block text-xs font-black">شفاف و امن</span>
+                <span class="block text-[11px] text-white/75">هر کمک، پیگیری می‌شود</span>
+            </span>
+        </div>
+    </div>
+</section>
+    <!-- بخش آغازین: هیرو -->
+<section id="hero" class="relative overflow-hidden bg-[#f8fbff] pb-16 pt-16 sm:pb-24 sm:pt-20">
+    <!-- بلاب‌های رنگی نرم -->
+    <div class="pointer-events-none absolute -right-28 top-[-7rem] h-72 w-72 rounded-full bg-[#36A9DF]/22 blur-3xl sm:h-96 sm:w-96" aria-hidden="true"></div>
+    <div class="pointer-events-none absolute -left-24 top-1/4 h-64 w-64 rounded-full bg-[#D4205F]/14 blur-3xl sm:h-80 sm:w-80" aria-hidden="true"></div>
+    <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(238,248,253,0.9)_0%,rgba(255,255,255,0.85)_45%,rgba(252,241,246,0.9)_100%)]" aria-hidden="true"></div>
+
+    <div class="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
+        <div class="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-14">
+            <!-- متن -->
+            <div class="text-center lg:text-right">
+                <span
+                    data-reveal
+                    class="inline-flex items-center gap-2 rounded-full border border-[#36A9DF]/25 bg-white/70 px-4 py-1.5 text-xs font-bold text-[#1572A1] backdrop-blur"
+                >
+                    <span class="h-2 w-2 rounded-full bg-[#36A9DF]" aria-hidden="true"></span>
+                    مرکز نیکوکاری تخصصی کودکان
+                </span>
+
+                <h2 class="mt-5 text-3xl font-black leading-[1.35] text-slate-900 sm:text-4xl lg:text-5xl lg:leading-[1.25]">
+                    بگذار صدای
+                    <span class="bg-gradient-to-l from-[#1572A1] via-[#5964AE] to-[#A4184B] bg-clip-text text-transparent">
+                        همدلی
+                    </span>
+                    به گوش کودکان برسد
+                </h2>
+
+                <p class="mx-auto mt-5 max-w-xl text-base leading-8 text-slate-600 sm:text-lg lg:mx-0">
+                    آوای همدلی کنار کودکان در نیاز می‌ایستد؛ با آموزش، تغذیه، لباس و فرصتی برای لبخند. هر همدلیِ شما، تک‌تک این کودکان را یک قدم به امید نزدیک‌تر می‌کند.
+                </p>
+
+                <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center lg:justify-start">
+                    <a
+                        href="#help"
+                        class="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#4d56a3_0%,#1572A1_58%,#A4184B_135%)] px-8 py-4 text-base font-extrabold text-white shadow-lg shadow-[#5964AE]/25 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[#1572A1]/30 active:translate-y-0"
+                    >
+                        <i class="bi bi-heart-fill" aria-hidden="true"></i>
+                        همراهی کن
+                    </a>
+                    <a
+                        href="#about"
+                        class="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white/80 px-8 py-4 text-base font-bold text-slate-700 backdrop-blur transition hover:border-[#1572A1]/40 hover:text-[#1572A1]"
+                    >
+                        بیشتر بدانید
+                        <i class="bi bi-arrow-down" aria-hidden="true"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- تصویر / نشان -->
+            <div class="relative mx-auto w-full max-w-sm lg:max-w-md" data-reveal>
+                <div class="relative overflow-hidden rounded-[2rem] bg-[linear-gradient(145deg,#1572A1_0%,#5964AE_50%,#A4184B_120%)] p-4 shadow-2xl shadow-[#5964AE]/25">
+                    <div class="flex aspect-square items-center justify-center rounded-[1.6rem] bg-white/95">
+                        <img
+                            src="http://127.0.0.1:8899/images/logo-sm.png"
+                            alt="لوگوی مرکز نیکوکاری آوای همدلی"
+                            class="w-2/3 object-contain"
+                            loading="eager"
+                        >
+                    </div>
+                </div>
+
+                <!-- نشان شناور شفافیت -->
+                <div class="absolute -bottom-4 right-3 flex items-center gap-3 rounded-2xl border border-white bg-white/95 px-4 py-3 shadow-xl shadow-slate-900/10 backdrop-blur sm:right-6">
+                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-[#1572A1]/10 text-[#1572A1]">
+                        <i class="bi bi-shield-check text-xl" aria-hidden="true"></i>
+                    </span>
+                    <span>
+                        <span class="block text-xs font-black text-slate-900">شفاف و امن</span>
+                        <span class="block text-[11px] text-slate-500">هر کمک، پیگیری می‌شود</span>
+                    </span>
+                </div>
+
+                <!-- نشان شناور تعداد -->
+                <div class="absolute -top-4 left-3 rounded-2xl border border-white bg-white/95 px-4 py-3 shadow-xl shadow-slate-900/10 backdrop-blur sm:left-6">
+                    <span class="flex items-center gap-2">
+                        <span class="text-lg font-black text-[#A4184B]">+۲۰۰</span>
+                        <span class="text-[11px] font-medium leading-4 text-slate-600">کودک در کنار ما<br>هر روز لبخند می‌زنند</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>    <!-- بخش اعتماد -->
+<section class="border-y border-slate-100 bg-white" aria-label="دلایل اعتماد">
+    <div class="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-4 py-10 sm:px-6 lg:grid-cols-4">
+                            <div class="flex flex-col items-center gap-2.5 text-center">
+                <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#5964AE]/8 text-[#5964AE]">
+                    <i class="bi-shield-check text-2xl" aria-hidden="true"></i>
+                </span>
+                <span class="text-sm font-black text-slate-900">شفافیت کامل</span>
+                <span class="text-xs leading-5 text-slate-500">گزارش دقیق از هر خدمت</span>
+            </div>
+                    <div class="flex flex-col items-center gap-2.5 text-center">
+                <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#5964AE]/8 text-[#5964AE]">
+                    <i class="bi-heart text-2xl" aria-hidden="true"></i>
+                </span>
+                <span class="text-sm font-black text-slate-900">با مهربانی</span>
+                <span class="text-xs leading-5 text-slate-500">همدلی در تخصص و مراقبت</span>
+            </div>
+                    <div class="flex flex-col items-center gap-2.5 text-center">
+                <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#5964AE]/8 text-[#5964AE]">
+                    <i class="bi-people text-2xl" aria-hidden="true"></i>
+                </span>
+                <span class="text-sm font-black text-slate-900">تیم متخصص</span>
+                <span class="text-xs leading-5 text-slate-500">مددکاران و مربیان دلسوز</span>
+            </div>
+                    <div class="flex flex-col items-center gap-2.5 text-center">
+                <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#5964AE]/8 text-[#5964AE]">
+                    <i class="bi-gift text-2xl" aria-hidden="true"></i>
+                </span>
+                <span class="text-sm font-black text-slate-900">هدیه امید</span>
+                <span class="text-xs leading-5 text-slate-500">آموزش، تغذیه و لباس</span>
+            </div>
+            </div>
+</section>    <!-- بخش درباره ما -->
+<section id="about" class="landing-section bg-[#f8fbff]" aria-labelledby="about-title">
+    <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+        <div class="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16">
+            <!-- تصویر -->
+            <div class="order-2 lg:order-1" data-reveal>
+                <div class="relative">
+                    <div class="overflow-hidden rounded-[2rem] bg-white p-4 shadow-xl shadow-slate-900/8 ring-1 ring-slate-100">
+                        <div class="flex aspect-[4/3] items-center justify-center rounded-[1.6rem] bg-[linear-gradient(145deg,#f0f6fb_0%,#f6eff4_100%)]">
+                            <img
+                                src="http://127.0.0.1:8899/images/logo-sm.png"
+                                alt="نشان آوای همدلی"
+                                class="w-1/2 object-contain"
+                                loading="lazy"
+                            >
+                        </div>
+                    </div>
+                    <div class="absolute -bottom-5 right-6 flex items-center gap-3 rounded-2xl border border-[#36A9DF]/20 bg-white px-5 py-3.5 shadow-lg shadow-slate-900/10">
+                        <span class="text-2xl">💛</span>
+                        <span class="text-xs font-bold leading-5 text-slate-700">با هم، آینده‌ی<br>بهتری برای کودکان</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- متن -->
+            <div class="order-1 lg:order-2" data-reveal>
+                <span class="inline-flex items-center gap-2 rounded-full bg-[#5964AE]/10 px-4 py-1.5 text-xs font-bold text-[#5964AE]">
+                    <i class="bi bi-star-fill" aria-hidden="true"></i>
+                    درباره ما
+                </span>
+                <h2 id="about-title" class="mt-4 text-2xl font-black leading-snug text-slate-900 sm:text-3xl lg:text-4xl">
+                    جایی که هر کودک، دیده می‌شود
+                </h2>
+                <p class="mt-5 text-base leading-8 text-slate-600 sm:text-lg">
+                    آوای همدلی مرکزی نیکوکاریِ تخصصی برای کودکان است؛ باور داریم هر کودک شایسته‌ی آموزش، تغذیه‌ی سالم، لباس گرم و فرصتی برای رشد است. ما کنار کودکان در نیاز می‌ایستیم و با همراهی شما، شرایطی می‌سازیم تا بتوانند کودکی کنند.
+                </p>
+
+                <ul class="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-2" aria-label="خدمات اصلی">
+                                                                <li class="flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-4 py-3 shadow-sm">
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#5964AE]/8 text-[#5964AE]">
+                                <i class="bi-book" aria-hidden="true"></i>
+                            </span>
+                            <span class="text-sm font-bold text-slate-800">آموزش و توانمندسازی</span>
+                        </li>
+                                            <li class="flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-4 py-3 shadow-sm">
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#5964AE]/8 text-[#5964AE]">
+                                <i class="bi-cup-hot" aria-hidden="true"></i>
+                            </span>
+                            <span class="text-sm font-bold text-slate-800">تغذیه و سلامت</span>
+                        </li>
+                                            <li class="flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-4 py-3 shadow-sm">
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#5964AE]/8 text-[#5964AE]">
+                                <i class="bi-person-heart" aria-hidden="true"></i>
+                            </span>
+                            <span class="text-sm font-bold text-slate-800">مراقبت تخصصی</span>
+                        </li>
+                                            <li class="flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-4 py-3 shadow-sm">
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#5964AE]/8 text-[#5964AE]">
+                                <i class="bi-emoji-smile" aria-hidden="true"></i>
+                            </span>
+                            <span class="text-sm font-bold text-slate-800">فضای امن و امیدبخش</span>
+                        </li>
+                                    </ul>
+            </div>
+        </div>
+    </div>
+</section>    <!-- بخش خدمات -->
+<section id="services" class="landing-section bg-white pb-16 sm:pb-24" aria-labelledby="services-title">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+        <div class="text-center" data-reveal>
+            <span class="inline-flex items-center gap-2 rounded-full bg-[#36A9DF]/10 px-4 py-1.5 text-xs font-bold text-[#1572A1]">
+                <i class="bi bi-grid-1x2-fill" aria-hidden="true"></i>
+                خدمات ما
+            </span>
+            <h2 id="services-title" class="mt-4 text-2xl font-black text-slate-900 sm:text-3xl lg:text-4xl">
+                چه کارهایی انجام می‌دهیم؟
+            </h2>
+            <p class="mx-auto mt-3 max-w-xl text-base leading-7 text-slate-600">
+                مجموعه‌ای از خدمات تخصصی برای پوشش نیازهای محرومیت‌زدایی کودکان.
+            </p>
+        </div>
+
+        <div class="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                                        <article
+                    data-reveal
+                    class="group flex flex-col rounded-3xl border border-slate-100 bg-[#f8fbff] p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-[#5964AE]/20 hover:shadow-lg hover:shadow-[#5964AE]/10"
+                >
+                    <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-[#5964AE] shadow-sm ring-1 ring-slate-100 transition group-hover:bg-[#5964AE] group-hover:text-white">
+                        <i class="bi-egg-fried text-2xl" aria-hidden="true"></i>
+                    </span>
+                    <h3 class="mt-5 text-base font-black text-slate-900">تغذیه سالم</h3>
+                    <p class="mt-2 text-sm leading-6 text-slate-600">وعده‌های غذایی مغذی و محرک رشد برای کودکان در نیاز.</p>
+                </article>
+                            <article
+                    data-reveal
+                    class="group flex flex-col rounded-3xl border border-slate-100 bg-[#f8fbff] p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-[#5964AE]/20 hover:shadow-lg hover:shadow-[#5964AE]/10"
+                >
+                    <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-[#5964AE] shadow-sm ring-1 ring-slate-100 transition group-hover:bg-[#5964AE] group-hover:text-white">
+                        <i class="bi-journal-bookmark-fill text-2xl" aria-hidden="true"></i>
+                    </span>
+                    <h3 class="mt-5 text-base font-black text-slate-900">آموزش و سواد</h3>
+                    <p class="mt-2 text-sm leading-6 text-slate-600">حمایت آموزشی، لوازم تحریر و مسیر یادگیری برای آینده‌ی بهتر.</p>
+                </article>
+                            <article
+                    data-reveal
+                    class="group flex flex-col rounded-3xl border border-slate-100 bg-[#f8fbff] p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-[#5964AE]/20 hover:shadow-lg hover:shadow-[#5964AE]/10"
+                >
+                    <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-[#5964AE] shadow-sm ring-1 ring-slate-100 transition group-hover:bg-[#5964AE] group-hover:text-white">
+                        <i class="bi-handbag-fill text-2xl" aria-hidden="true"></i>
+                    </span>
+                    <h3 class="mt-5 text-base font-black text-slate-900">لباس و پوشاک</h3>
+                    <p class="mt-2 text-sm leading-6 text-slate-600">تأمین لباس گرم و مناسبِ فصل برای آسایش و کرامت کودک.</p>
+                </article>
+                            <article
+                    data-reveal
+                    class="group flex flex-col rounded-3xl border border-slate-100 bg-[#f8fbff] p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-[#5964AE]/20 hover:shadow-lg hover:shadow-[#5964AE]/10"
+                >
+                    <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-[#5964AE] shadow-sm ring-1 ring-slate-100 transition group-hover:bg-[#5964AE] group-hover:text-white">
+                        <i class="bi-activity text-2xl" aria-hidden="true"></i>
+                    </span>
+                    <h3 class="mt-5 text-base font-black text-slate-900">بازتوانی و مراقبت</h3>
+                    <p class="mt-2 text-sm leading-6 text-slate-600">خدمات تخصصی مددکاری، روانی و مراقبتی متناسب با هر کودک.</p>
+                </article>
+                    </div>
+
+        <p class="mt-12 text-center">
+            <a
+                href="#help"
+                class="inline-flex items-center gap-2 rounded-2xl border-2 border-[#5964AE]/20 bg-[#5964AE]/5 px-8 py-4 text-base font-bold text-[#5964AE] transition hover:border-[#5964AE]/40 hover:bg-[#5964AE]/10"
+            >
+                حمایت از این خدمات
+                <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            </a>
+        </p>
+    </div>
+</section>    <!-- بخش اعداد/اثر -->
+<section id="impact" class="landing-section relative overflow-hidden bg-[linear-gradient(145deg,#38538C_0%,#5964AE_55%,#A4184B_140%)] py-16 sm:py-24" aria-labelledby="impact-title">
+    <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_0%,rgba(54,169,223,0.25),transparent_50%)]" aria-hidden="true"></div>
+    <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_100%,rgba(212,32,95,0.22),transparent_50%)]" aria-hidden="true"></div>
+
+    <div class="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
+        <div class="text-center text-white" data-reveal>
+            <span class="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-xs font-bold ring-1 ring-white/25">
+                <i class="bi bi-graph-up" aria-hidden="true"></i>
+                عددهای امید
+            </span>
+            <h2 id="impact-title" class="mt-4 text-2xl font-black sm:text-3xl lg:text-4xl">
+                اثر ما با هم، عدد می‌شود
+            </h2>
+            <p class="mx-auto mt-3 max-w-xl text-sm leading-7 text-white/85 sm:text-base">
+                آمار واقعی از تلاش و همراهی شما؛ عددها تلاش‌مند و صادق منتشر می‌شوند.
+            </p>
+        </div>
+
+        <div class="mt-12 grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4">
+                                        <div class="text-center">
+                    <span
+                        data-counter
+                        data-target="200"
+                        data-suffix="+"
+                        class="block text-3xl font-black text-white sm:text-4xl lg:text-5xl"
+                    >۰</span>
+                    <span class="mt-2 block text-sm font-semibold text-white/85">کودک تحت پوشش</span>
+                </div>
+                            <div class="text-center">
+                    <span
+                        data-counter
+                        data-target="1200"
+                        data-suffix="+"
+                        class="block text-3xl font-black text-white sm:text-4xl lg:text-5xl"
+                    >۰</span>
+                    <span class="mt-2 block text-sm font-semibold text-white/85">وعده‌ی غذایی</span>
+                </div>
+                            <div class="text-center">
+                    <span
+                        data-counter
+                        data-target="340"
+                        data-suffix="+"
+                        class="block text-3xl font-black text-white sm:text-4xl lg:text-5xl"
+                    >۰</span>
+                    <span class="mt-2 block text-sm font-semibold text-white/85">بسته‌ی پوشاک</span>
+                </div>
+                            <div class="text-center">
+                    <span
+                        data-counter
+                        data-target="80"
+                        data-suffix="+"
+                        class="block text-3xl font-black text-white sm:text-4xl lg:text-5xl"
+                    >۰</span>
+                    <span class="mt-2 block text-sm font-semibold text-white/85">همراه و حامی</span>
+                </div>
+                    </div>
+
+        <p class="mt-10 text-center text-xs leading-6 text-white/70">
+            * عددها نمونه و برای نمایش طراحی شده‌اند؛ پیش از انتشار با داده‌های واقعی مرکز به‌روزرسانی می‌شوند.
+        </p>
+    </div>
+</section>    <!-- بخش قصه‌ها -->
+<section id="stories" class="landing-section bg-[#f8fbff] py-16 sm:py-24" aria-labelledby="stories-title">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+        <div class="text-center" data-reveal>
+            <span class="inline-flex items-center gap-2 rounded-full bg-[#D4205F]/10 px-4 py-1.5 text-xs font-bold text-[#A4184B]">
+                <i class="bi bi-chat-heart-fill" aria-hidden="true"></i>
+                قصه‌های همدلی
+            </span>
+            <h2 id="stories-title" class="mt-4 text-2xl font-black text-slate-900 sm:text-3xl lg:text-4xl">
+                روایت کوچک‌ترین تغییرها
+            </h2>
+        </div>
+
+        <div
+            class="mt-12 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 [scrollbar-width:thin]"
+            x-data="{ active: 0 }"
+            @scroll.capture.passive="$el.querySelectorAll('.story-card').forEach((c,i)=>{ const r=c.getBoundingClientRect(); if(r.left>=0 && r.right<=window.innerWidth+16) active=i; })"
+            role="region"
+            aria-label="قصه‌های همدلی"
+            aria-roledescription="کاروسل"
+        >
+                                        <article class="story-card relative min-w-[85%] snap-center rounded-3xl border border-slate-100 bg-white p-6 shadow-sm sm:min-w-[48%] lg:min-w-[31.5%]">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#D4205F]/10 text-2xl">
+                        ✏️
+                    </div>
+                    <blockquote class="mt-4 text-sm font-medium leading-7 text-slate-700 sm:text-base">
+                        «با تغذیه‌ی سالم، نمره‌هایم بهتر شد و دوباره به مدرسه انگیزه گرفتم.»
+                    </blockquote>
+                    <footer class="mt-5 flex items-center gap-2 text-xs">
+                        <span class="font-black text-slate-900">به نام خودم</span>
+                        <span class="text-slate-400">•</span>
+                        <span class="text-slate-500">کودک تحت پوشش</span>
+                    </footer>
+                    <span class="absolute left-5 top-5 text-4xl text-[#5964AE]/10" aria-hidden="true">❝</span>
+                </article>
+                            <article class="story-card relative min-w-[85%] snap-center rounded-3xl border border-slate-100 bg-white p-6 shadow-sm sm:min-w-[48%] lg:min-w-[31.5%]">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#D4205F]/10 text-2xl">
+                        🎒
+                    </div>
+                    <blockquote class="mt-4 text-sm font-medium leading-7 text-slate-700 sm:text-base">
+                        «وقتی بسته‌ی لباس رسید، برای اولین بار با اعتماد به نفس به مهد برگشتم.»
+                    </blockquote>
+                    <footer class="mt-5 flex items-center gap-2 text-xs">
+                        <span class="font-black text-slate-900">حفظ حریم خصوصی</span>
+                        <span class="text-slate-400">•</span>
+                        <span class="text-slate-500">کودک تحت پوشش</span>
+                    </footer>
+                    <span class="absolute left-5 top-5 text-4xl text-[#5964AE]/10" aria-hidden="true">❝</span>
+                </article>
+                            <article class="story-card relative min-w-[85%] snap-center rounded-3xl border border-slate-100 bg-white p-6 shadow-sm sm:min-w-[48%] lg:min-w-[31.5%]">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#D4205F]/10 text-2xl">
+                        💛
+                    </div>
+                    <blockquote class="mt-4 text-sm font-medium leading-7 text-slate-700 sm:text-base">
+                        «چند ماه همراهی، لبخند و امید را به خانواده‌ی ما برگرداند.»
+                    </blockquote>
+                    <footer class="mt-5 flex items-center gap-2 text-xs">
+                        <span class="font-black text-slate-900">به نام، حفظ حریم</span>
+                        <span class="text-slate-400">•</span>
+                        <span class="text-slate-500">حامی و همراه</span>
+                    </footer>
+                    <span class="absolute left-5 top-5 text-4xl text-[#5964AE]/10" aria-hidden="true">❝</span>
+                </article>
+                    </div>
+
+        <!-- نقاط پیمایش -->
+        <div class="mt-5 flex justify-center gap-2">
+                            <span
+                    class="h-2 rounded-full transition-all duration-300"
+                    :class="active === 0 ? 'w-6 bg-[#5964AE]' : 'w-2 bg-slate-300'"
+                    aria-hidden="true"
+                ></span>
+                            <span
+                    class="h-2 rounded-full transition-all duration-300"
+                    :class="active === 1 ? 'w-6 bg-[#5964AE]' : 'w-2 bg-slate-300'"
+                    aria-hidden="true"
+                ></span>
+                            <span
+                    class="h-2 rounded-full transition-all duration-300"
+                    :class="active === 2 ? 'w-6 bg-[#5964AE]' : 'w-2 bg-slate-300'"
+                    aria-hidden="true"
+                ></span>
+                    </div>
+    </div>
+</section>    <!-- بخش کمک شما (قلب صفحه) -->
+<section id="help" class="landing-section bg-white pb-16 sm:pb-24" aria-labelledby="help-title">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+        <div class="text-center" data-reveal>
+            <span class="inline-flex items-center gap-2 rounded-full bg-[#D4205F]/10 px-4 py-1.5 text-xs font-bold text-[#A4184B]">
+                <i class="bi bi-hand-thumbs-up-fill" aria-hidden="true"></i>
+                کمک شما
+            </span>
+            <h2 id="help-title" class="mt-4 text-2xl font-black text-slate-900 sm:text-3xl lg:text-4xl">
+                با شما، امید بیشتر می‌شود
+            </h2>
+            <p class="mx-auto mt-3 max-w-xl text-base leading-7 text-slate-600">
+                هر راهی برای همدلی، ارزش یک لبخند را دارد.
+            </p>
+        </div>
+
+        <div class="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-3">
+                                        <article
+                    data-reveal
+                    class="group flex flex-col overflow-hidden rounded-3xl border border-slate-100 bg-[#f8fbff] p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-[#5964AE]/10"
+                >
+                    <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white bg-gradient-to-br from-[#1572A1] to-[#36A9DF] text-white shadow-md">
+                        <i class="bi-gift-fill text-2xl" aria-hidden="true"></i>
+                    </span>
+                    <h3 class="mt-5 text-lg font-black text-slate-900">نیکوکاری مالی</h3>
+                    <p class="mt-2 flex-1 text-sm leading-7 text-slate-600">با کمک مالی مستقیم، وعده‌های غذایی، پوشاک و لوازم تحریر کودکان را تأمین کنید.</p>
+                    <a
+                        href="#contact"
+                        class="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border-2 border-[#5964AE]/20 px-6 text-sm font-black text-[#5964AE] transition group-hover:border-[#5964AE]/40 group-hover:bg-[#5964AE] group-hover:text-white"
+                    >
+                        کمک مالی
+                        <i class="bi bi-arrow-left" aria-hidden="true"></i>
+                    </a>
+                </article>
+                            <article
+                    data-reveal
+                    class="group flex flex-col overflow-hidden rounded-3xl border border-slate-100 bg-[#f8fbff] p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-[#5964AE]/10"
+                >
+                    <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white bg-gradient-to-br from-[#5964AE] to-[#8b5fe0] text-white shadow-md">
+                        <i class="bi-person-heart text-2xl" aria-hidden="true"></i>
+                    </span>
+                    <h3 class="mt-5 text-lg font-black text-slate-900">حمایت پیوسته</h3>
+                    <p class="mt-2 flex-1 text-sm leading-7 text-slate-600">حامی یک کودک باشید و در مسیر آموزش و رشد او، نقش‌آفرینی مستمر داشته باشید.</p>
+                    <a
+                        href="#contact"
+                        class="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border-2 border-[#5964AE]/20 px-6 text-sm font-black text-[#5964AE] transition group-hover:border-[#5964AE]/40 group-hover:bg-[#5964AE] group-hover:text-white"
+                    >
+                        حامی شوید
+                        <i class="bi bi-arrow-left" aria-hidden="true"></i>
+                    </a>
+                </article>
+                            <article
+                    data-reveal
+                    class="group flex flex-col overflow-hidden rounded-3xl border border-slate-100 bg-[#f8fbff] p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-[#5964AE]/10"
+                >
+                    <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white bg-gradient-to-br from-[#A4184B] to-[#D4205F] text-white shadow-md">
+                        <i class="bi-people-fill text-2xl" aria-hidden="true"></i>
+                    </span>
+                    <h3 class="mt-5 text-lg font-black text-slate-900">داوطلب همدل</h3>
+                    <p class="mt-2 flex-1 text-sm leading-7 text-slate-600">از وقت و مهارت خود بگویید؛ مربی، همراه آموزشی و دوست کودکان باشید.</p>
+                    <a
+                        href="#contact"
+                        class="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border-2 border-[#5964AE]/20 px-6 text-sm font-black text-[#5964AE] transition group-hover:border-[#5964AE]/40 group-hover:bg-[#5964AE] group-hover:text-white"
+                    >
+                        داوطلب شوم
+                        <i class="bi bi-arrow-left" aria-hidden="true"></i>
+                    </a>
+                </article>
+                    </div>
+    </div>
+</section>    <!-- بخش تماس -->
+<section id="contact" class="landing-section bg-[#f8fbff] py-16 sm:py-24" aria-labelledby="contact-title">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+        <div class="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
+            <!-- اطلاعات تماس -->
+            <div data-reveal>
+                <span class="inline-flex items-center gap-2 rounded-full bg-[#36A9DF]/10 px-4 py-1.5 text-xs font-bold text-[#1572A1]">
+                    <i class="bi bi-telephone-fill" aria-hidden="true"></i>
+                    تماس با ما
+                </span>
+                <h2 id="contact-title" class="mt-4 text-2xl font-black text-slate-900 sm:text-3xl lg:text-4xl">
+                    در تماس باشیم
+                </h2>
+                <p class="mt-3 max-w-md text-base leading-8 text-slate-600">
+                    برای همدلی، سؤال یا دریافت اطلاعات بیشتر، از راه‌های زیر با ما در ارتباط باشید.
+                </p>
+
+                <ul class="mt-8 space-y-3">
+                                                                <li>
+                            <a
+                                href="tel:+982112345678"
+                                class="flex min-h-16 items-center gap-4 rounded-2xl border border-slate-100 bg-white px-5 py-4 shadow-sm transition hover:border-[#1572A1]/30 hover:shadow-md"
+                            >
+                                <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#5964AE]/8 text-[#5964AE]">
+                                    <i class="bi-telephone text-xl" aria-hidden="true"></i>
+                                </span>
+                                <span class="min-w-0">
+                                    <span class="block text-xs font-bold text-slate-500">تلفن</span>
+                                    <span class="mt-0.5 block truncate text-sm font-black text-slate-800" >(۰۲۱) ۱۲۳۴ ۵۶۷۸</span>
+                                </span>
+                            </a>
+                        </li>
+                                            <li>
+                            <a
+                                href="#"
+                                class="flex min-h-16 items-center gap-4 rounded-2xl border border-slate-100 bg-white px-5 py-4 shadow-sm transition hover:border-[#1572A1]/30 hover:shadow-md"
+                            >
+                                <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#5964AE]/8 text-[#5964AE]">
+                                    <i class="bi-whatsapp text-xl" aria-hidden="true"></i>
+                                </span>
+                                <span class="min-w-0">
+                                    <span class="block text-xs font-bold text-slate-500">واتس‌اپ</span>
+                                    <span class="mt-0.5 block truncate text-sm font-black text-slate-800" >۰۹۱۲ ۳۴۵ ۶۷۸۹</span>
+                                </span>
+                            </a>
+                        </li>
+                                            <li>
+                            <a
+                                href="#"
+                                class="flex min-h-16 items-center gap-4 rounded-2xl border border-slate-100 bg-white px-5 py-4 shadow-sm transition hover:border-[#1572A1]/30 hover:shadow-md"
+                            >
+                                <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#5964AE]/8 text-[#5964AE]">
+                                    <i class="bi-instagram text-xl" aria-hidden="true"></i>
+                                </span>
+                                <span class="min-w-0">
+                                    <span class="block text-xs font-bold text-slate-500">اینستاگرام</span>
+                                    <span class="mt-0.5 block truncate text-sm font-black text-slate-800"  dir="ltr" >@avaye_hamdeli</span>
+                                </span>
+                            </a>
+                        </li>
+                                            <li>
+                            <a
+                                href="#"
+                                class="flex min-h-16 items-center gap-4 rounded-2xl border border-slate-100 bg-white px-5 py-4 shadow-sm transition hover:border-[#1572A1]/30 hover:shadow-md"
+                            >
+                                <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#5964AE]/8 text-[#5964AE]">
+                                    <i class="bi-geo-alt text-xl" aria-hidden="true"></i>
+                                </span>
+                                <span class="min-w-0">
+                                    <span class="block text-xs font-bold text-slate-500">آدرس</span>
+                                    <span class="mt-0.5 block truncate text-sm font-black text-slate-800" >تهران، خیابان امید، کوچه‌ی همدلی، پلاک ۷</span>
+                                </span>
+                            </a>
+                        </li>
+                                    </ul>
+            </div>
+
+            <!-- فرم پیام -->
+            <div class="rounded-3xl border border-slate-100 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-8" data-reveal>
+                <h3 class="text-lg font-black text-slate-900">پیام بگذارید</h3>
+                <p class="mt-1 text-sm text-slate-500">ما در اولین فرصت پاسخ می‌دهیم.</p>
+
+                <form class="mt-6 space-y-4" @submit.prevent="alert('در نسخه‌ی پیش‌نمایش، اطلاعات شما ذخیره نمی‌شود.')">
+                    <div>
+                        <label for="landing-name" class="mb-1.5 block text-sm font-bold text-slate-700">نام</label>
+                        <input
+                            id="landing-name"
+                            type="text"
+                            required
+                            class="block min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 shadow-inner shadow-slate-100 outline-none transition placeholder:text-slate-500 hover:border-slate-400 focus:border-[#1572A1] focus:ring-4 focus:ring-[#1572A1]/20"
+                            placeholder="نام شما"
+                        >
+                    </div>
+                    <div>
+                        <label for="landing-phone" class="mb-1.5 block text-sm font-bold text-slate-700">شماره تماس</label>
+                        <input
+                            id="landing-phone"
+                            type="tel"
+                            inputmode="tel"
+                            required
+                            class="block min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 shadow-inner shadow-slate-100 outline-none transition placeholder:text-slate-500 hover:border-slate-400 focus:border-[#1572A1] focus:ring-4 focus:ring-[#1572A1]/20"
+                            placeholder="۰۹۱۲ ۳۴۵ ۶۷۸۹"
+                        >
+                    </div>
+                    <div>
+                        <label for="landing-message" class="mb-1.5 block text-sm font-bold text-slate-700">پیام</label>
+                        <textarea
+                            id="landing-message"
+                            rows="4"
+                            required
+                            class="block w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-inner shadow-slate-100 outline-none transition placeholder:text-slate-500 hover:border-slate-400 focus:border-[#1572A1] focus:ring-4 focus:ring-[#1572A1]/20"
+                            placeholder="نظر، سؤال یا درخواست خود را بنویسید..."
+                        ></textarea>
+                    </div>
+                    <button
+                        type="submit"
+                        class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[linear-gradient(135deg,#4d56a3_0%,#1572A1_58%,#A4184B_135%)] px-6 py-4 text-sm font-extrabold text-white shadow-lg shadow-[#5964AE]/20 transition hover:shadow-xl"
+                    >
+                        <i class="bi bi-send-fill" aria-hidden="true"></i>
+                        ارسال پیام
+                    </button>
+                    <p class="text-center text-[11px] leading-5 text-slate-400">
+                        با ارسال پیام، رضایت می‌دهید مرکز برای پاسخگویی با شما تماس بگیرد.
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>    <!-- پابرگ -->
+<footer id="site-footer" class="relative bg-[linear-gradient(145deg,#1e2b4a_0%,#38538C_60%,#5a2a4a_140%)] text-white">
+    <div class="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+        <div class="grid grid-cols-1 gap-10 md:grid-cols-3">
+            <!-- برند -->
+            <div>
+                <div class="flex items-center gap-3">
+                    <img src="http://127.0.0.1:8899/images/logo-wh.webp" alt="لوگوی آوای همدلی" class="h-12 w-12 rounded-xl object-cover">
+                    <div>
+                        <p class="text-base font-black">آوای همدلی</p>
+                        <p class="text-[11px] text-white/70">مرکز نیکوکاری تخصصی کودکان</p>
+                    </div>
+                </div>
+                <p class="mt-4 text-sm leading-7 text-white/75">
+                    با همدلیِ شما، کودکان در نیاز فرصت کودکی، آموزش و امید را به دست می‌آورند.
+                </p>
+                <div class="mt-5 flex gap-2">
+                                            <a
+                            href="#contact"
+                            class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white/85 transition hover:bg-white/20 hover:text-white"
+                            aria-label="اینستاگرام"
+                        >
+                            <i class="bi-instagram text-lg" aria-hidden="true"></i>
+                        </a>
+                                            <a
+                            href="#contact"
+                            class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white/85 transition hover:bg-white/20 hover:text-white"
+                            aria-label="واتس‌اپ"
+                        >
+                            <i class="bi-whatsapp text-lg" aria-hidden="true"></i>
+                        </a>
+                                            <a
+                            href="#contact"
+                            class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white/85 transition hover:bg-white/20 hover:text-white"
+                            aria-label="تلگرام"
+                        >
+                            <i class="bi-telegram text-lg" aria-hidden="true"></i>
+                        </a>
+                                            <a
+                            href="#contact"
+                            class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white/85 transition hover:bg-white/20 hover:text-white"
+                            aria-label="ایمیل"
+                        >
+                            <i class="bi-envelope text-lg" aria-hidden="true"></i>
+                        </a>
+                                    </div>
+            </div>
+
+            <!-- دسترسی سریع -->
+            <nav aria-label="دسترسی سریع">
+                <h3 class="text-sm font-black text-white/90">دسترسی سریع</h3>
+                <ul class="mt-4 space-y-2.5">
+                                            <li>
+                            <a href="#about" class="inline-flex items-center gap-2 text-sm text-white/70 transition hover:text-white">
+                                <i class="bi bi-chevron-left text-xs" aria-hidden="true"></i>
+                                درباره ما
+                            </a>
+                        </li>
+                                            <li>
+                            <a href="#services" class="inline-flex items-center gap-2 text-sm text-white/70 transition hover:text-white">
+                                <i class="bi bi-chevron-left text-xs" aria-hidden="true"></i>
+                                خدمات
+                            </a>
+                        </li>
+                                            <li>
+                            <a href="#impact" class="inline-flex items-center gap-2 text-sm text-white/70 transition hover:text-white">
+                                <i class="bi bi-chevron-left text-xs" aria-hidden="true"></i>
+                                عددهای امید
+                            </a>
+                        </li>
+                                            <li>
+                            <a href="#stories" class="inline-flex items-center gap-2 text-sm text-white/70 transition hover:text-white">
+                                <i class="bi bi-chevron-left text-xs" aria-hidden="true"></i>
+                                قصه‌های همدلی
+                            </a>
+                        </li>
+                                            <li>
+                            <a href="#help" class="inline-flex items-center gap-2 text-sm text-white/70 transition hover:text-white">
+                                <i class="bi bi-chevron-left text-xs" aria-hidden="true"></i>
+                                کمک شما
+                            </a>
+                        </li>
+                                    </ul>
+            </nav>
+
+            <!-- ورود پرسنل -->
+            <div>
+                <h3 class="text-sm font-black text-white/90">اطلاعات بیشتر</h3>
+                <ul class="mt-4 space-y-2.5">
+                    <li>
+                        <a href="http://127.0.0.1:8899/login" class="inline-flex items-center gap-2 text-sm text-white/70 transition hover:text-white">
+                            <i class="bi bi-box-arrow-in-left text-xs" aria-hidden="true"></i>
+                            ورود پرسنل و مدیران
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#contact" class="inline-flex items-center gap-2 text-sm text-white/70 transition hover:text-white">
+                            <i class="bi bi-telephone text-xs" aria-hidden="true"></i>
+                            (۰۲۱) ۱۲۳۴ ۵۶۷۸
+                        </a>
+                    </li>
+                    <li class="text-sm text-white/70">شنبه تا پنجشنبه، ۸ تا ۱۶</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="mt-12 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-center text-xs text-white/60 sm:flex-row sm:text-right">
+            <p>© ۱۴۰۵ مرکز نیکوکاری تخصصی کودکان آوای همدلی. همه‌ی حقوق محفوظ است.</p>
+            <p class="inline-flex items-center gap-1">ساخته‌شده با <span class="text-[#ff5d8f]">♥</span> برای کودکان</p>
+        </div>
+    </div>
+</footer>    <!-- نوار اقدام پایین موبایل -->
+<div
+    x-cloak
+    x-show="floatingBarVisible"
+    x-transition.opacity.duration.300ms
+    class="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur lg:hidden"
+    role="region"
+    aria-label="اقدام سریع"
+>
+    <div class="mx-auto flex max-w-md items-center gap-3">
+        <a
+            href="#help"
+            class="flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-xl bg-[linear-gradient(135deg,#4d56a3_0%,#1572A1_58%,#A4184B_135%)] px-4 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-[#5964AE]/25 active:translate-y-px"
+        >
+            <i class="bi bi-heart-fill" aria-hidden="true"></i>
+            همدلی کن
+        </a>
+        <a
+            href="#contact"
+            class="inline-flex h-14 w-14 items-center justify-center rounded-xl border border-[#1572A1]/25 bg-[#1572A1]/10 text-[#1572A1]"
+            aria-label="تماس با ما"
+        >
+            <i class="bi bi-telephone text-lg" aria-hidden="true"></i>
+        </a>
+    </div>
+</div>
+    <script data-navigate-once="true">window.livewireScriptConfig = {"csrf":null,"uri":"\/livewire\/update","progressBar":"","nonce":""};</script>
+    </body>
+</html>
