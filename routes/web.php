@@ -55,6 +55,12 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+// پیش‌نمایش صفحه‌ی عمومی (لندینگ) — موقتاً فقط برای مدیران با دسترسی کامل
+// پس از تأیید طراحی، این صفحه به روت اصلی منتقل و دسترسی عموم می‌شود.
+Route::view('/landing', 'landing.index')
+    ->middleware(['auth', 'can:full-access'])
+    ->name('landing.preview');
+
 Route::get('/qr/r/{token}', [QrIdentityController::class, 'resolve'])
     ->middleware(['auth'])
     ->name('qr-identities.resolve');

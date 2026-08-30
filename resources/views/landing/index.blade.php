@@ -1,0 +1,15 @@
+@extends('layouts.landing')
+
+@section('content')
+    @include('landing.partials.header')
+    @include('landing.partials.hero')
+    @include('landing.partials.trust')
+    @include('landing.partials.about')
+    @include('landing.partials.services')
+    @include('landing.partials.impact')
+    @include('landing.partials.stories')
+    @include('landing.partials.help')
+    @include('landing.partials.contact')
+    @include('landing.partials.footer')
+    @include('landing.partials.bottom-bar')
+@endsection
