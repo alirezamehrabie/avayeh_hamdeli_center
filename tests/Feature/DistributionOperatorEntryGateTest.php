@@ -137,6 +137,52 @@ class DistributionOperatorEntryGateTest extends TestCase
         $component->assertSet('scanStatus', 'paused');
     }
 
+    public function test_toggling_a_category_persists_without_re_rendering_the_gate(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Food basket', $operator);
+
+        $person = Person::query()->create([
+            'first_name' => 'Sara',
+            'last_name' => 'Kazemi',
+            'national_id' => '9234567890',
+            'person_code' => '14060',
+        ]);
+
+        $issued = app(QrIdentityService::class)->issueFor($person, $operator->id);
+        $token = $issued['token'] ?? $issued['identity']->token_encrypted;
+
+        $this->actingAs($operator);
+
+        $component = Livewire::test(EntryGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token);
+
+        // The checklist flips on the client, so a toggle must neither ship fresh HTML back nor
+        // rebuild the gate's data — that render (service + categories + entry fields + identity
+        // card) on every tap was the selection lag.
+        $statements = [];
+        DB::listen(function ($query) use (&$statements): void {
+            $statements[] = $query->sql;
+        });
+
+        $component->call('toggleCategory', $category->id);
+
+        $this->assertArrayNotHasKey('html', $component->effects);
+
+        $this->assertEmpty(
+            array_filter($statements, fn (string $sql): bool => str_contains($sql, 'service_entry_fields')),
+            'Toggling a category must not re-hydrate the selected service with its entry fields.',
+        );
+
+        $this->assertDatabaseHas('gate_entry_assignments', [
+            'service_category_id' => $category->id,
+            'person_id' => $person->id,
+            'status' => GateEntryAssignment::STATUS_PENDING,
+        ]);
+    }
+
     public function test_concurrent_authorization_of_same_item_converges_without_crashing(): void
     {
         [$operator] = $this->operator();
@@ -234,7 +280,7 @@ class DistributionOperatorEntryGateTest extends TestCase
             // Finalized items render as locked, separate from editable (pending) assignments.
             ->assertSet('lockedCategoryIds', [$category->id])
             ->assertSet('assignedCategoryIds', [$category->id])
-            ->assertSee('ثبت‌شده در گیت بعدی');
+            ->assertSee('ثبت‌شده');
 
         // Tapping a locked item must not soft-delete or re-author it.
         $component->call('toggleCategory', $category->id)

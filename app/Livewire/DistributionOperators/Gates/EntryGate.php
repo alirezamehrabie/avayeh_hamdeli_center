@@ -6,7 +6,9 @@ use App\Models\EducationLevel;
 use App\Models\GateEntryAssignment;
 use App\Models\GateEntryFieldValue;
 use App\Models\QrIdentity;
+use App\Models\Service;
 use App\Models\ServiceEntryField;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Layout;
@@ -261,17 +263,27 @@ class EntryGate extends AbstractGateComponent
     {
         $this->authorizeGate();
 
-        $service = $this->selectedService;
-
-        if (! $service || ! $this->hasScannedSubject()) {
+        if (! $this->selectedServiceId || ! $this->hasScannedSubject()) {
             return;
         }
 
-        $category = $service->categories->firstWhere('id', $categoryId);
+        // One existence check instead of loading the service with its categories and entry fields:
+        // a toggle only needs to know that this category still belongs to the selected gate service.
+        $isEligibleCategory = Service::query()
+            ->supportsGateDelivery()
+            ->whereKey($this->selectedServiceId)
+            ->whereHas('categories', fn (Builder $query) => $query->whereKey($categoryId))
+            ->exists();
 
-        if (! $category) {
+        if (! $isEligibleCategory) {
             return;
         }
+
+        // The client already flipped this item optimistically (see the entryGateCategories
+        // Alpine component), so persisting is all the server needs to do. Skipping the render
+        // avoids re-querying the service, its categories and its extra fields and re-diffing the
+        // whole gate — identity card, scanner column and checklist — on every single tap.
+        $this->skipRender();
 
         // Include trashed rows: toggling a category off only soft-deletes the assignment, but the
         // (service_category_id, person_id/guardian_id) unique index still holds that key. Re-adding via a
@@ -301,12 +313,12 @@ class EntryGate extends AbstractGateComponent
         if ($existing) {
             // Re-authorize a previously removed item: clear the soft delete and refresh its details.
             $existing->forceFill(array_merge(
-                $this->assignmentAttributes($category->id),
+                $this->assignmentAttributes($categoryId),
                 ['deleted_at' => null],
             ))->save();
         } else {
             try {
-                GateEntryAssignment::query()->create($this->assignmentAttributes($category->id));
+                GateEntryAssignment::query()->create($this->assignmentAttributes($categoryId));
             } catch (UniqueConstraintViolationException) {
                 // Another station authorized the same item between our read and write. The row now exists
                 // with the same (category, recipient) key, so converge to it instead of surfacing a 500.

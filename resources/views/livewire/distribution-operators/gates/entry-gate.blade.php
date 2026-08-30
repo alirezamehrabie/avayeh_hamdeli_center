@@ -500,6 +500,12 @@
                 </div>
 
                 {{-- Bottom row: Categories section with full width --}}
+                {{-- Optimistic checklist state lives on the client so taps feel instant; the key is
+                     tied to the scanned subject so a new scan reseeds it from the server's DB state. --}}
+                <div
+                    x-data="entryGateCategories(@js(array_map('intval', $assignedCategoryIds)))"
+                    wire:key="entry-gate-categories-{{ $scannedPersonId ?? 0 }}-{{ $scannedGuardianId ?? 0 }}"
+                >
                 <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm lg:p-5">
                     {{-- Mobile sheet handle (hidden on desktop) --}}
                     <div class="lg:hidden">
@@ -509,7 +515,7 @@
                                 <span class="text-sm font-extrabold text-slate-800">دسته‌بندی‌های خدمت</span>
                                 @if($lastScanResult)
                                     <span class="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-600">
-                                        {{ count($assignedCategoryIds) }} انتخاب‌شده
+                                        <span x-text="assignedCount">{{ count($assignedCategoryIds) }}</span> انتخاب‌شده
                                     </span>
                                 @endif
                             </span>
@@ -529,7 +535,7 @@
                         <h2 class="text-sm font-extrabold text-slate-800">دسته‌بندی‌های خدمت</h2>
                         @if($lastScanResult)
                             <span class="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-600">
-                                {{ count($assignedCategoryIds) }} انتخاب‌شده
+                                <span x-text="assignedCount">{{ count($assignedCategoryIds) }}</span> انتخاب‌شده
                             </span>
                         @endif
                     </div>
@@ -546,46 +552,64 @@
                         <div class="grid gap-3 sm:grid-cols-2">
                             @foreach($selectedService->categories as $category)
                                 @php($isLocked = in_array($category->id, $lockedCategoryIds, true))
-                                @php($isChecked = in_array($category->id, $assignedCategoryIds, true))
-                                <button
-                                    type="button"
-                                    @if(! $isLocked) wire:click="toggleCategory({{ $category->id }})" @endif
-                                    @disabled($isLocked)
-                                    wire:key="entry-gate-category-{{ $category->id }}"
-                                    @class([
-                                        'group flex w-full items-center justify-between gap-3 rounded-xl border p-3 text-right transition-all duration-150 ease-out',
-                                        'cursor-not-allowed border-emerald-300 bg-emerald-50/50 opacity-60' => $isLocked,
-                                        'border-indigo-400 bg-indigo-50 shadow-[0_2px_8px_-2px_rgba(99,102,241,0.25)] scale-[1.02]' => $isChecked && ! $isLocked,
-                                        'border-slate-200 bg-white hover:border-indigo-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]' => ! $isChecked && ! $isLocked,
-                                    ])
-                                >
-                                    <span class="flex items-center gap-3">
-                                        <span @class([
-                                            'flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 transition-all duration-150',
-                                            'border-emerald-600 bg-emerald-600 text-white' => $isLocked,
-                                            'border-indigo-600 bg-indigo-600 text-white shadow-sm' => $isChecked && ! $isLocked,
-                                            'border-slate-300 bg-white group-hover:border-indigo-400' => ! $isChecked && ! $isLocked,
-                                        ])>
-                                            @if($isLocked)
+                                @php($cid = (int) $category->id)
+                                @if($isLocked)
+                                    {{-- Locked: already delivered/finalized downstream, so it is read-only here. --}}
+                                    <div
+                                        wire:key="entry-gate-category-{{ $category->id }}"
+                                        class="flex w-full cursor-not-allowed items-center justify-between gap-3 rounded-xl border border-emerald-300 bg-emerald-50/50 p-3 text-right opacity-60"
+                                    >
+                                        <span class="flex items-center gap-3">
+                                            <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 border-emerald-600 bg-emerald-600 text-white">
                                                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                                            @elseif($isChecked)
-                                                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 111.42-1.42l2.79 2.79 6.79-6.79a1 1 0 011.42 0z" clip-rule="evenodd" /></svg>
+                                            </span>
+                                            <span class="flex flex-col">
+                                                <span class="text-sm font-extrabold text-slate-800">{{ $category->name }}</span>
+                                                <span class="text-[10px] font-semibold text-slate-400" dir="ltr">{{ $category->code }}</span>
+                                            </span>
+                                        </span>
+                                        <span class="flex shrink-0 items-center gap-2">
+                                            <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">ثبت‌شده</span>
+                                            @if($category->unitLabel)
+                                                <span class="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-slate-500">{{ $category->unitLabel }}</span>
                                             @endif
                                         </span>
-                                        <span class="flex flex-col">
-                                            <span class="text-sm font-extrabold text-slate-800 group-hover:text-indigo-700 transition-colors">{{ $category->name }}</span>
-                                            <span class="text-[10px] font-semibold text-slate-400" dir="ltr">{{ $category->code }}</span>
+                                    </div>
+                                @else
+                                    {{-- Toggleable: the tick is client state so the tap lands instantly, and
+                                         @click persists it in the background. --}}
+                                    <button
+                                        type="button"
+                                        @click="toggle({{ $cid }})"
+                                        wire:key="entry-gate-category-{{ $category->id }}"
+                                        class="group flex w-full items-center justify-between gap-3 rounded-xl border p-3 text-right transition-all duration-150 ease-out"
+                                        :class="isAssigned({{ $cid }})
+                                            ? 'border-indigo-400 bg-indigo-50 shadow-[0_2px_8px_-2px_rgba(99,102,241,0.25)] scale-[1.02]'
+                                            : 'border-slate-200 bg-white hover:border-indigo-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]'"
+                                        :aria-pressed="isAssigned({{ $cid }})"
+                                    >
+                                        <span class="flex items-center gap-3">
+                                            <span
+                                                class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 transition-all duration-150"
+                                                :class="[
+                                                    isAssigned({{ $cid }}) ? 'border-indigo-600 bg-indigo-600 text-white shadow-sm' : 'border-slate-300 bg-white group-hover:border-indigo-400',
+                                                    isSaving({{ $cid }}) ? 'animate-pulse' : '',
+                                                ]"
+                                            >
+                                                <svg x-show="isAssigned({{ $cid }})" x-cloak class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 111.42-1.42l2.79 2.79 6.79-6.79a1 1 0 011.42 0z" clip-rule="evenodd" /></svg>
+                                            </span>
+                                            <span class="flex flex-col">
+                                                <span class="text-sm font-extrabold text-slate-800 group-hover:text-indigo-700 transition-colors">{{ $category->name }}</span>
+                                                <span class="text-[10px] font-semibold text-slate-400" dir="ltr">{{ $category->code }}</span>
+                                            </span>
                                         </span>
-                                    </span>
-                                    <span class="flex shrink-0 items-center gap-2">
-                                        @if($isLocked)
-                                            <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">ثبت‌شده</span>
-                                        @endif
                                         @if($category->unitLabel)
-                                            <span class="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-slate-500">{{ $category->unitLabel }}</span>
+                                            <span class="flex shrink-0 items-center gap-2">
+                                                <span class="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-slate-500">{{ $category->unitLabel }}</span>
+                                            </span>
                                         @endif
-                                    </span>
-                                </button>
+                                    </button>
+                                @endif
                             @endforeach
                         </div>
 
@@ -627,7 +651,9 @@
 
                                 <div wire:loading.remove wire:target="confirmPermission" class="flex items-center gap-2">
                                     <span>ارسال مجوز و نفر بعدی</span>
-                                    <span class="rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold" dir="ltr">{{ count($assignedCategoryIds) }}/{{ $selectedService?->categories->count() ?? 0 }}</span>
+                                    <span class="rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold" dir="ltr">
+                                        <span x-text="assignedCount">{{ count($assignedCategoryIds) }}</span>/{{ $selectedService?->categories->count() ?? 0 }}
+                                    </span>
                                 </div>
 
                                 <span wire:loading wire:target="confirmPermission">در حال پردازش...</span>
@@ -663,10 +689,11 @@
                             انتخاب دسته‌بندی‌ها
                         </span>
                         <span class="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-black text-indigo-600">
-                            {{ count($assignedCategoryIds) }} انتخاب‌شده
+                            <span x-text="assignedCount">{{ count($assignedCategoryIds) }}</span> انتخاب‌شده
                         </span>
                     </button>
                 @endif
+                </div>
             </div>
         @endif
     </div>

@@ -356,6 +356,59 @@ Alpine.data('deliveryItems', (initialDelivered = []) => ({
     },
 }));
 
+// Entry Gate — service-categories checklist. Same optimistic pattern as deliveryItems:
+// the tick flips on tap and the toggleCategory persist runs in the background (that
+// server method skipRender()s), so a tap never waits for a re-render of the whole gate.
+Alpine.data('entryGateCategories', (initialAssigned = []) => ({
+    assigned: new Set((initialAssigned || []).map(Number)),
+    saving: new Set(),
+    isAssigned(id) {
+        return this.assigned.has(Number(id));
+    },
+    isSaving(id) {
+        return this.saving.has(Number(id));
+    },
+    get assignedCount() {
+        return this.assigned.size;
+    },
+    toggle(id) {
+        id = Number(id);
+        if (this.saving.has(id)) {
+            // A persist for this item is still in flight — ignore the extra tap so the
+            // client can't drift out of step with the server's flip sequence.
+            return;
+        }
+
+        const wasAssigned = this.assigned.has(id);
+
+        // Optimistic flip (Sets are reassigned so Alpine picks up the change).
+        if (wasAssigned) {
+            this.assigned.delete(id);
+        } else {
+            this.assigned.add(id);
+        }
+        this.assigned = new Set(this.assigned);
+
+        this.saving.add(id);
+        this.saving = new Set(this.saving);
+
+        Promise.resolve(this.$wire.toggleCategory(id))
+            .catch(() => {
+                // Persist failed — restore the pre-tap state so the UI stays truthful.
+                if (wasAssigned) {
+                    this.assigned.add(id);
+                } else {
+                    this.assigned.delete(id);
+                }
+                this.assigned = new Set(this.assigned);
+            })
+            .finally(() => {
+                this.saving.delete(id);
+                this.saving = new Set(this.saving);
+            });
+    },
+}));
+
 window.addEventListener('client-card-browser-print', (event) => {
     const { html, title } = event.detail || {};
 
