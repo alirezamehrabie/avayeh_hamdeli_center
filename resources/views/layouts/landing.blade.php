@@ -33,6 +33,7 @@
         }
         @media (prefers-reduced-motion: reduce) {
             [data-reveal] { opacity: 1; transform: none; }
+            .scroll-progress-fill { transition: none !important; }
         }
     </style>
 </head>
