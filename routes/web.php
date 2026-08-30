@@ -69,7 +69,7 @@ Route::get('/people', IndexPeople::class)->middleware(['auth', 'can:manage-peopl
 Route::get('/people/advanced-reporting', AdvancedFilterBuilder::class)->middleware(['auth', 'can:full-access'])->name('people.advanced-reporting');
 Route::get('/people/block-list', DeletedPeople::class)->middleware(['auth', 'can:people-delete'])->name('people.block-list');
 Route::get('/people/case-file', DashboardHome::class)
-    ->middleware(['auth', 'can:access-admin-panel'])
+    ->middleware(['auth', 'can:full-access'])
     ->name('people.case-file');
 Route::get('/guardians', IndexGuardians::class)->middleware(['auth', 'can:full-access'])->name('guardians.index');
 Route::get('/guardians/block-list', DeletedGuardians::class)->middleware(['auth', 'can:full-access'])->name('guardians.block-list');
@@ -90,11 +90,11 @@ Route::get('/admin/dashboard', DashboardHome::class)
     ->name('admin.dashboard');
 
 Route::get('/admin/people/case-file', DashboardHome::class)
-    ->middleware(['auth', 'can:access-admin-panel'])
+    ->middleware(['auth', 'can:full-access'])
     ->name('admin.people.case-file');
 
 Route::get('/admin/people/case-file/attachments/{attachment}', [BeneficiaryCaseRecordAttachmentController::class, 'show'])
-    ->middleware(['auth', 'can:access-admin-panel'])
+    ->middleware(['auth', 'can:full-access'])
     ->name('admin.people.case-file.attachments.show');
 
 Route::get('/admin/services/service-definition', DashboardHome::class)
@@ -230,7 +230,7 @@ Route::get('/child-supporter/dashboard', ChildSupporterDashboard::class)
     ->name('child-supporter.dashboard');
 
 Route::get('/admin/special-features/print-client-card', DashboardHome::class)
-    ->middleware(['auth', 'can:access-admin-panel'])
+    ->middleware(['auth', 'can:full-access'])
     ->name('admin.special-features.print-client-card');
 
 Route::get('/admin/child-supporters/sponsor-registration', SponsorRegistration::class)

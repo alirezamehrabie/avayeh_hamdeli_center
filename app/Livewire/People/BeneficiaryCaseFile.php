@@ -117,7 +117,7 @@ class BeneficiaryCaseFile extends Component
 
     public function mount(?int $personId = null): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         $this->selectedPersonId = $personId;
         $this->recordedAt = Jalalian::now()->format('Y/m/d');
@@ -156,7 +156,7 @@ class BeneficiaryCaseFile extends Component
 
     public function selectPerson(int $personId): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         $this->selectedPersonId = $personId;
         $this->resetLoadedCaseFileData();
@@ -177,7 +177,7 @@ class BeneficiaryCaseFile extends Component
 
     public function resolveScannedBeneficiaryQr(string $payload): array
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         $token = $this->extractQrToken(trim((string) $payload));
 
@@ -218,7 +218,7 @@ class BeneficiaryCaseFile extends Component
 
     public function exportToExcel()
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         $person = $this->selectedPerson;
 
@@ -243,7 +243,7 @@ class BeneficiaryCaseFile extends Component
 
     public function saveCaseRecord(CreateBeneficiaryCaseRecord $action): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
         abort_unless((bool) $this->selectedPerson, 404);
 
         $validated = $this->validate($this->createRecordRules(), [], $this->recordValidationAttributes());
@@ -270,7 +270,7 @@ class BeneficiaryCaseFile extends Component
 
     public function startEditingCaseRecord(int $recordId): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
         abort_unless((bool) $this->selectedPerson, 404);
 
         $record = $this->resolveEditableCaseRecord($recordId);
@@ -302,7 +302,7 @@ class BeneficiaryCaseFile extends Component
 
     public function markEditAttachmentForRemoval(int $attachmentId): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
         abort_unless($this->editingCaseRecordId !== null, 404);
 
         $attachment = app(BeneficiaryCaseFileQuery::class)->findAttachmentForRecordOrFail(
@@ -357,7 +357,7 @@ class BeneficiaryCaseFile extends Component
 
     public function updateCaseRecord(UpdateBeneficiaryCaseRecord $action): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
         abort_unless((bool) $this->selectedPerson, 404);
         abort_unless($this->editingCaseRecordId !== null, 404);
 
@@ -393,7 +393,7 @@ class BeneficiaryCaseFile extends Component
 
     public function generateAiCaseAnalysis(GeneratesBeneficiaryCaseAnalysis $assistant): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         $person = $this->selectedPerson;
         abort_unless((bool) $person, 404);
@@ -434,7 +434,7 @@ class BeneficiaryCaseFile extends Component
 
     public function generateFollowUpMessage(GeneratesFollowUpMessage $generator): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         $person = $this->selectedPerson;
         abort_unless((bool) $person, 404);
@@ -505,7 +505,7 @@ class BeneficiaryCaseFile extends Component
 
     public function saveSelectedAiReminders(): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
         abort_unless((bool) $this->selectedPerson, 404);
 
         $allowedCategories = ['today_tasks', 'pending_approvals', 'contract_deadlines', 'required_reports'];
@@ -988,7 +988,7 @@ class BeneficiaryCaseFile extends Component
 
     public function render()
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         return view('livewire.people.beneficiary-case-file', [
             'recordTypeOptions' => BeneficiaryCaseRecord::TYPE_OPTIONS,

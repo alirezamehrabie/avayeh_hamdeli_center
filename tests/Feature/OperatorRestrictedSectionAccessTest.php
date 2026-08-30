@@ -5,8 +5,11 @@ namespace Tests\Feature;
 use App\Livewire\Activities\ActivityList;
 use App\Livewire\Activities\ActivityScanner;
 use App\Livewire\Admin\GateReport;
+use App\Livewire\Admin\PrintClientCard;
 use App\Livewire\ChildSupporters\SponsorList;
 use App\Livewire\ChildSupporters\SponsorRegistration;
+use App\Livewire\People\BeneficiaryCaseFile;
+use App\Livewire\People\IncompleteCasesQueue;
 use App\Livewire\Services\ServiceReports;
 use App\Models\Activity;
 use App\Models\User;
@@ -30,6 +33,9 @@ class OperatorRestrictedSectionAccessTest extends TestCase
             route('admin.service-reports'),
             route('admin.child-supporters.sponsor-registration'),
             route('admin.child-supporters.sponsor-list'),
+            route('admin.people.case-file'),
+            route('people.case-file'),
+            route('admin.special-features.print-client-card'),
         ] as $url) {
             $this->getJson($url)->assertForbidden();
         }
@@ -57,6 +63,9 @@ class OperatorRestrictedSectionAccessTest extends TestCase
             'child-supporter-sponsor-registration',
             'child-supporter-sponsor-edit',
             'child-supporter-sponsor-list',
+            'people-incomplete-cases',
+            'beneficiary-case-file',
+            'special-features-print-client-card',
         ] as $section) {
             $this->getJson(route('admin.dashboard', ['section' => $section]))
                 ->assertForbidden();
@@ -103,6 +112,9 @@ class OperatorRestrictedSectionAccessTest extends TestCase
         Livewire::test(ServiceReports::class)->assertForbidden();
         Livewire::test(SponsorRegistration::class)->assertForbidden();
         Livewire::test(SponsorList::class)->assertForbidden();
+        Livewire::test(IncompleteCasesQueue::class)->assertForbidden();
+        Livewire::test(BeneficiaryCaseFile::class)->assertForbidden();
+        Livewire::test(PrintClientCard::class)->assertForbidden();
     }
 
     public function test_registration_operator_navigation_hides_restricted_sections(): void
@@ -114,6 +126,9 @@ class OperatorRestrictedSectionAccessTest extends TestCase
             ->assertDontSee("section: 'advanced-service-report'", false)
             ->assertDontSee("section: 'advanced-gate-report'", false)
             ->assertDontSee("section: 'child-supporter-sponsor-registration'", false)
+            ->assertDontSee("section: 'people-incomplete-cases'", false)
+            ->assertDontSee("section: 'beneficiary-case-file'", false)
+            ->assertDontSee("section: 'special-features-print-client-card'", false)
             ->assertDontSee("selectSection('activity-definition')", false)
             ->assertDontSee("selectSection('child-supporter-sponsor-registration')", false)
             ->assertSee("section: 'advanced-operator-report'", false);

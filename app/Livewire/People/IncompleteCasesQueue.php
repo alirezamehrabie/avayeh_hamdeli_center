@@ -51,7 +51,7 @@ class IncompleteCasesQueue extends Component
 
     public function mount(): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
     }
 
     public function updatingSelectedReason(): void
@@ -596,7 +596,7 @@ class IncompleteCasesQueue extends Component
 
     public function render()
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         return view('livewire.people.incomplete-cases-queue');
     }

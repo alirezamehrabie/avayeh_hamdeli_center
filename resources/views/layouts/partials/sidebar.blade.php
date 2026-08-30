@@ -94,11 +94,11 @@
         $dashboardMenuItems = [
             'people' => [
                 ['section' => 'people-list', 'label' => 'لیست مددجویان', 'icon' => 'fa fa-users', 'active' => ['people-list', 'person-edit'], 'visible' => $user?->can('manage-people')],
-                ['section' => 'people-incomplete-cases', 'label' => 'پرونده‌های ناقص', 'icon' => 'fa fa-exclamation-triangle', 'visible' => $user?->can('access-admin-panel')],
+                ['section' => 'people-incomplete-cases', 'label' => 'پرونده‌های ناقص', 'icon' => 'fa fa-exclamation-triangle', 'visible' => $user?->can('full-access')],
                 ['section' => 'person-create', 'label' => 'فرم کامل ثبت نام', 'icon' => 'fa fa-user-plus', 'visible' => $user?->can('people-register')],
                 ['section' => 'people-fast-create', 'label' => 'ثبت سریع مددجو', 'icon' => 'fa fa-bolt', 'visible' => $user?->can('people-register')],
                 ['section' => 'people-block-list', 'label' => 'مددجویان غیرفعال', 'icon' => 'fa fa-ban', 'visible' => $user?->can('people-delete')],
-                ['section' => 'beneficiary-case-file', 'label' => 'پرونده مددجو', 'icon' => 'fa fa-folder-open', 'visible' => $user?->can('access-admin-panel')],
+                ['section' => 'beneficiary-case-file', 'label' => 'پرونده مددجو', 'icon' => 'fa fa-folder-open', 'visible' => $user?->can('full-access')],
             ],
             'social-workers' => [
                 ['section' => 'social-workers-list', 'label' => 'لیست مددکاران', 'active' => ['social-workers-list', 'social-worker-edit']],
@@ -123,7 +123,7 @@
             ],
             'special-features' => [
                 ['section' => 'special-features-id-card-scanner', 'label' => 'اسکن کارت شناسایی'],
-                ['section' => 'special-features-print-client-card', 'label' => 'چاپ کارت مددجو'],
+                ['section' => 'special-features-print-client-card', 'label' => 'چاپ کارت مددجو', 'visible' => $user?->can('full-access')],
             ],
             'notifications' => [
                 ['section' => 'notifications-center', 'label' => 'مرکز اعلان‌ها', 'badge' => $unreadNotificationsCount],
@@ -449,6 +449,7 @@
                 </button>
                 <div x-show="openMenu === 'special-features'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
                     @foreach($dashboardMenuItems['special-features'] as $item)
+                        @continue(array_key_exists('visible', $item) && ! $item['visible'])
                         <x-sidebar.dashboard-section-button
                             :section="$item['section']"
                             :active="$isActive($item['active'] ?? $item['section'])"

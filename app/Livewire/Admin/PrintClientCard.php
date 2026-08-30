@@ -106,7 +106,7 @@ class PrintClientCard extends Component
 
     public function mount(): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         $config = config('label-printer');
         $printer = $config['printer'];
@@ -187,7 +187,7 @@ class PrintClientCard extends Component
 
     public function addToPrintList(int $personId): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         foreach ($this->printList as $item) {
             if ($item['id'] === $personId) {
@@ -231,7 +231,7 @@ class PrintClientCard extends Component
 
     public function printDirectly(): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         if (empty($this->printList)) {
             session()->flash('error', 'لیست چاپ خالی است.');
@@ -281,7 +281,7 @@ class PrintClientCard extends Component
 
     public function printTestLabel(): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         if ($this->printerConnection === 'browser') {
             $this->printBrowserTestLabel();
@@ -380,7 +380,7 @@ class PrintClientCard extends Component
 
     public function exportLayoutSettings(): ?\Symfony\Component\HttpFoundation\Response
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         $payload = [
             'type' => 'avayeh-hamdeli-label-layout',
@@ -400,7 +400,7 @@ class PrintClientCard extends Component
 
     public function importLayoutSettings(): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         if (! $this->layoutImportFile) {
             session()->flash('error', 'ابتدا فایل تنظیمات را انتخاب کنید.');
@@ -616,7 +616,7 @@ class PrintClientCard extends Component
 
     public function downloadPrintFile(): ?\Symfony\Component\HttpFoundation\Response
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         if (empty($this->printList)) {
             session()->flash('error', 'لیست چاپ خالی است.');
@@ -639,7 +639,7 @@ class PrintClientCard extends Component
 
     public function exportToCsv(): \Symfony\Component\HttpFoundation\Response
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         if (empty($this->printList)) {
             session()->flash('error', 'لیست چاپ خالی است.');
@@ -669,7 +669,7 @@ class PrintClientCard extends Component
 
     public function exportToExcel(): ?\Symfony\Component\HttpFoundation\Response
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         if (empty($this->printList)) {
             session()->flash('error', 'لیست چاپ خالی است.');
@@ -766,7 +766,7 @@ class PrintClientCard extends Component
 
     public function selectSocialWorker(int $socialWorkerId): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         $this->selectedSocialWorkerId = $socialWorkerId;
         $this->socialWorkerSearch = '';
@@ -780,7 +780,7 @@ class PrintClientCard extends Component
 
     public function addSocialWorkerClientsToPrintList(): void
     {
-        abort_unless(auth()->check() && auth()->user()->can('access-admin-panel'), 403);
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         if (! $this->selectedSocialWorkerId) {
             session()->flash('error', 'لطفاً ابتدا یک مددکار انتخاب کنید.');

@@ -28,6 +28,9 @@ class DashboardHome extends Component
         'child-supporter-sponsor-registration',
         'child-supporter-sponsor-edit',
         'child-supporter-sponsor-list',
+        'people-incomplete-cases',
+        'beneficiary-case-file',
+        'special-features-print-client-card',
     ];
 
     #[Url(as: 'section', history: true)]
@@ -229,8 +232,6 @@ class DashboardHome extends Component
         }
 
         if ($user?->can('access-admin-panel')) {
-            $validSections[] = 'people-incomplete-cases';
-            $validSections[] = 'beneficiary-case-file';
             $validSections[] = 'advanced-operator-report';
             $validSections[] = 'special-features-id-card-scanner';
         }
@@ -238,6 +239,8 @@ class DashboardHome extends Component
         if ($user?->can('full-access')) {
             array_push(
                 $validSections,
+                'people-incomplete-cases',
+                'beneficiary-case-file',
                 'social-workers-list',
                 'social-workers-block-list',
                 'social-worker-create',
