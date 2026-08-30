@@ -13,6 +13,7 @@ use App\Models\ServiceDelivery;
 use App\Models\ServiceWorkerAllocation;
 use App\Models\SocialWorker;
 use App\Models\SocialWorkerSavedFilter;
+use App\Services\SocialWorkers\SocialWorkerPerformanceEvaluator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
@@ -31,10 +32,16 @@ class AdvancedSocialWorkerReport extends Component
     public string $saveFilterName = '';
     public ?int $selectedWorkerId = null;
     public bool $showWorkerModal = false;
+    public string $workerModalTab = 'profile';
     public array $columnFilters = [];
     public ?string $sortColumn = null;
     public string $sortDirection = 'desc';
     public array $columnFilterDefinitions = [];
+
+    public array $workerModalTabs = [
+        'profile'     => ['label' => 'اطلاعات پرونده', 'icon' => 'bi-person-vcard'],
+        'performance' => ['label' => 'ارزیابی عملکرد', 'icon' => 'bi-speedometer2'],
+    ];
 
     public array $visibleColumns = [
         'worker_code',
@@ -281,12 +288,23 @@ class AdvancedSocialWorkerReport extends Component
     {
         $this->selectedWorkerId = $workerId;
         $this->showWorkerModal = true;
+        $this->workerModalTab = 'profile';
+    }
+
+    public function setWorkerModalTab(string $tab): void
+    {
+        if (!isset($this->workerModalTabs[$tab])) {
+            return;
+        }
+
+        $this->workerModalTab = $tab;
     }
 
     public function closeWorkerModal(): void
     {
         $this->showWorkerModal = false;
         $this->selectedWorkerId = null;
+        $this->workerModalTab = 'profile';
     }
 
     public function getSelectedWorkerProperty(): ?SocialWorker
@@ -310,6 +328,21 @@ class AdvancedSocialWorkerReport extends Component
                     ->orderByDesc('id'),
             ])
             ->find($this->selectedWorkerId);
+    }
+
+    /**
+     * ارزیابی عملکرد مددکار انتخاب‌شده بر پایه سرعت واکنش به تخصیص‌ها و کیفیت تحویل.
+     */
+    #[Computed]
+    public function workerPerformance(): ?array
+    {
+        $worker = $this->selectedWorker;
+
+        if (!$worker) {
+            return null;
+        }
+
+        return app(SocialWorkerPerformanceEvaluator::class)->evaluate($worker);
     }
 
     /**
