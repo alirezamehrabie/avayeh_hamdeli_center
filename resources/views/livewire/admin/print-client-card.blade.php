@@ -751,6 +751,51 @@
                     @endif
                 </div>
 
+                {{-- Registration Date Batch Add --}}
+                <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-5">
+                    <h2 class="text-base font-semibold text-slate-800 mb-1">افزودن مددجویان ثبت‌شده در یک روز مشخص</h2>
+                    <p class="mb-4 text-xs text-slate-500">تاریخ‌هایی را که مددجو ثبت شده‌اند انتخاب و یک‌جا به لیست چاپ اضافه کنید.</p>
+
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
+                        <div>
+                            <input
+                                type="text"
+                                wire:model.live.debounce.500ms="registrationDate"
+                                data-jdp
+                                data-jdp-only-date
+                                placeholder="مثال: 1403/01/15"
+                                inputmode="numeric"
+                                class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:ring focus:ring-indigo-100"
+                                dir="ltr"
+                            >
+
+                            @if($this->registrationDate !== '' && $preview = $this->registrationDatePreview)
+                                <p class="mt-2 text-xs {{ $preview['valid'] ? 'text-slate-500' : 'text-red-500' }}">
+                                    @if($preview['valid'])
+                                        {{ $preview['count'] }} مددجو در این تاریخ ثبت شده‌اند.
+                                    @else
+                                        تاریخ وارد شده معتبر نیست.
+                                    @endif
+                                </p>
+                            @endif
+                        </div>
+
+                        <button
+                            type="button"
+                            wire:click="addRegistrationDateClientsToPrintList"
+                            wire:loading.attr="disabled"
+                            wire:target="addRegistrationDateClientsToPrintList"
+                            class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100 disabled:opacity-60"
+                        >
+                            <svg wire:loading wire:target="addRegistrationDateClientsToPrintList" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            افزودن به لیست چاپ
+                        </button>
+                    </div>
+                </div>
+
                 {{-- Social Worker Selector --}}
                 <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-5">
                     <h2 class="text-base font-semibold text-slate-800 mb-4">افزودن مددجویان یک مددکار</h2>

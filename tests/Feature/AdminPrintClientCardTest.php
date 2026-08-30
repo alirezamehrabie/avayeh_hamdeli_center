@@ -8,12 +8,15 @@ use App\Models\Person;
 use App\Models\SocialWorker;
 use App\Models\User;
 use App\Services\LabelPrinterService;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\Testing\File;
 use Livewire\Livewire;
 use Tests\TestCase;
 
 class AdminPrintClientCardTest extends TestCase
 {
+    use DatabaseTransactions;
+
     public function test_print_client_card_mounts_with_zpl_default_layout_values(): void
     {
         $this->actingAs($this->adminUser());
@@ -215,6 +218,110 @@ class AdminPrintClientCardTest extends TestCase
             [$client->id],
             collect($component->get('printList'))->pluck('id')->all()
         );
+    }
+
+    public function test_adding_registration_date_clients_appends_to_the_print_list(): void
+    {
+        $this->actingAs($this->adminUser());
+
+        $guardian = Guardian::query()->create([
+            'guardian_code' => random_int(1000000, 9999999),
+            'first_name' => 'Reg',
+            'last_name' => 'Guardian',
+        ]);
+
+        $targetDate = \Carbon\Carbon::create(2026, 5, 7, 10, 30, 0); // 1405/02/17
+        $onTargetDay = Person::query()->create([
+            'guardian_id' => $guardian->id,
+            'person_code' => (string) random_int(1000000, 9999999),
+            'national_id' => (string) random_int(1000000000, 9999999999),
+            'first_name' => 'On',
+            'last_name' => 'Target',
+        ]);
+        $onTargetDay->forceFill(['created_at' => $targetDate])->save();
+
+        $differentDay = Person::query()->create([
+            'guardian_id' => $guardian->id,
+            'person_code' => (string) random_int(1000000, 9999999),
+            'national_id' => (string) random_int(1000000000, 9999999999),
+            'first_name' => 'Other',
+            'last_name' => 'Day',
+        ]);
+        $differentDay->forceFill(['created_at' => $targetDate->copy()->addDay()])->save();
+
+        $component = Livewire::test(PrintClientCard::class)
+            ->set('registrationDate', '1405/02/17')
+            ->call('addRegistrationDateClientsToPrintList')
+            ->assertHasNoErrors()
+            ->assertSet('loadingRegistrationDateClients', false);
+
+        $ids = collect($component->get('printList'))->pluck('id')->all();
+
+        $this->assertContains($onTargetDay->id, $ids, 'client registered on the target day must be added');
+        $this->assertNotContains($differentDay->id, $ids, 'client registered on another day must be excluded');
+    }
+
+    public function test_adding_registration_date_clients_appends_onto_existing_list_without_duplicates(): void
+    {
+        $this->actingAs($this->adminUser());
+
+        $guardian = Guardian::query()->create([
+            'guardian_code' => random_int(1000000, 9999999),
+            'first_name' => 'Reg',
+            'last_name' => 'Guardian',
+        ]);
+
+        $targetDate = \Carbon\Carbon::create(2026, 5, 7, 10, 30, 0);
+        $client = Person::query()->create([
+            'guardian_id' => $guardian->id,
+            'person_code' => (string) random_int(1000000, 9999999),
+            'national_id' => (string) random_int(1000000000, 9999999999),
+            'first_name' => 'On',
+            'last_name' => 'Target',
+        ]);
+        $client->forceFill(['created_at' => $targetDate])->save();
+
+        $other = Person::query()->create([
+            'guardian_id' => $guardian->id,
+            'person_code' => (string) random_int(1000000, 9999999),
+            'national_id' => (string) random_int(1000000000, 9999999999),
+            'first_name' => 'Another',
+            'last_name' => 'Client',
+        ]);
+        $other->forceFill(['created_at' => $targetDate])->save();
+
+        $component = Livewire::test(PrintClientCard::class)
+            ->set('printList', [
+                [
+                    'id' => $client->id,
+                    'full_name' => 'On Target',
+                    'national_id' => (string) $client->national_id,
+                    'person_code' => (string) $client->person_code,
+                ],
+            ])
+            ->set('registrationDate', '1405/02/17')
+            ->call('addRegistrationDateClientsToPrintList');
+
+        $ids = collect($component->get('printList'))->pluck('id')->all();
+
+        $this->assertContains($client->id, $ids, 'existing client stays in the list');
+        $this->assertContains($other->id, $ids, 'new client on the target day is appended');
+        $this->assertCount(
+            1,
+            collect($ids)->filter(fn ($id) => $id === $client->id)->all(),
+            'existing client must not be duplicated'
+        );
+    }
+
+    public function test_adding_registration_date_clients_rejects_an_invalid_date(): void
+    {
+        $this->actingAs($this->adminUser());
+
+        $component = Livewire::test(PrintClientCard::class)
+            ->set('registrationDate', '1405/13/40')
+            ->call('addRegistrationDateClientsToPrintList');
+
+        $this->assertSame([], $component->get('printList'));
     }
 
     private function adminUser(): User

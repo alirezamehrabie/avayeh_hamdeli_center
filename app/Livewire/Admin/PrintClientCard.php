@@ -2,6 +2,9 @@
 
 namespace App\Livewire\Admin;
 
+use App\Helpers\Morilog\CalendarUtils;
+use App\Helpers\Morilog\Jalalian;
+use App\Helpers\PersianText;
 use App\Models\Person;
 use App\Models\QrIdentity;
 use App\Models\SocialWorker;
@@ -39,6 +42,11 @@ class PrintClientCard extends Component
     public array $socialWorkerOptions = [];
 
     public bool $loadingSocialWorkerClients = false;
+
+    // Registration-date batch add (clients registered on a specific day)
+    public string $registrationDate = '';
+
+    public bool $loadingRegistrationDateClients = false;
 
     // Printer connection settings
     public string $printerConnection = '';
@@ -776,6 +784,98 @@ class PrintClientCard extends Component
     public function clearSocialWorkerSelection(): void
     {
         $this->selectedSocialWorkerId = null;
+    }
+
+    public function addRegistrationDateClientsToPrintList(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
+
+        $gregorian = $this->registrationDateToGregorian($this->registrationDate);
+
+        if ($gregorian === null) {
+            session()->flash('error', 'تاریخ ثبت مددجویان معتبر نیست. لطفاً یک تاریخ شمسی معتبر وارد کنید.');
+
+            return;
+        }
+
+        $this->loadingRegistrationDateClients = true;
+
+        $people = Person::query()
+            ->select(['people.id', 'people.first_name', 'people.last_name', 'people.national_id', 'people.person_code'])
+            ->whereBetween('created_at', [$gregorian->copy()->startOfDay(), $gregorian->copy()->endOfDay()])
+            ->orderBy('created_at')
+            ->get();
+
+        foreach ($people as $person) {
+            $this->printList[] = [
+                'id' => $person->id,
+                'full_name' => $person->full_name ?: trim($person->first_name.' '.$person->last_name) ?: '-',
+                'national_id' => $person->national_id ?: '-',
+                'person_code' => $person->person_code ?: '-',
+            ];
+        }
+
+        $this->loadingRegistrationDateClients = false;
+
+        $this->deduplicatePrintList();
+
+        if ($people->isEmpty()) {
+            session()->flash('error', "در تاریخ {$this->registrationDate} هیچ مددجویی ثبت نشده است.");
+        } else {
+            session()->flash('success', "{$people->count()} مددجویی که در تاریخ {$this->registrationDate} ثبت شده‌اند به لیست چاپ اضافه شدند.");
+        }
+    }
+
+    public function getRegistrationDatePreviewProperty(): array
+    {
+        $gregorian = $this->registrationDateToGregorian($this->registrationDate);
+
+        if ($gregorian === null) {
+            return ['count' => 0, 'valid' => false];
+        }
+
+        return [
+            'count' => Person::whereBetween('created_at', [$gregorian->copy()->startOfDay(), $gregorian->copy()->endOfDay()])->count(),
+            'valid' => true,
+        ];
+    }
+
+    protected function registrationDateToGregorian(string $date): ?\Carbon\Carbon
+    {
+        $date = PersianText::normalizeDigits(trim($date));
+
+        if (! preg_match('/^\d{4}\/\d{1,2}\/\d{1,2}$/', $date)) {
+            return null;
+        }
+
+        [$year, $month, $day] = array_map('intval', explode('/', $date));
+
+        if (! CalendarUtils::isValidateJalaliDate($year, $month, $day)) {
+            return null;
+        }
+
+        try {
+            return \Carbon\Carbon::parse(Jalalian::fromFormat('Y/m/d', $date)->toCarbon()->format('Y-m-d'));
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    protected function deduplicatePrintList(): void
+    {
+        $seen = [];
+
+        $this->printList = array_values(array_filter($this->printList, function ($item) use (&$seen) {
+            $key = $item['id'];
+
+            if (isset($seen[$key])) {
+                return false;
+            }
+
+            $seen[$key] = true;
+
+            return true;
+        }));
     }
 
     public function addSocialWorkerClientsToPrintList(): void
