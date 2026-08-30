@@ -121,7 +121,7 @@
             x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
             x-transition:leave-end="opacity-0 translate-y-4 scale-95"
-            class="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-t-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/20 sm:h-auto sm:max-h-[90vh] sm:rounded-3xl"
+            class="relative flex h-[calc(100dvh-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-t-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/20 sm:h-[90vh] sm:rounded-3xl"
             @click.stop
             tabindex="-1"
         >
@@ -152,13 +152,13 @@
                 </button>
             </div>
 
-            <div class="flex gap-2 overflow-x-auto border-b border-slate-100 bg-white px-4 pb-3 sm:px-5">
+            <div class="flex flex-wrap gap-2 border-b border-slate-100 bg-white px-4 pb-3 pt-1.5 sm:px-5">
                 @foreach($workerModalTabs as $tabKey => $tab)
                     @php($isActiveTab = $workerModalTab === $tabKey)
                     <button
                         type="button"
                         wire:click="setWorkerModalTab('{{ $tabKey }}')"
-                        class="inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition {{ $isActiveTab ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}"
+                        class="inline-flex h-9 min-w-fit shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 text-[13px] font-bold transition {{ $isActiveTab ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}"
                         @if($isActiveTab) aria-current="page" @endif
                     >
                         <i class="bi {{ $tab['icon'] }} text-sm"></i>
