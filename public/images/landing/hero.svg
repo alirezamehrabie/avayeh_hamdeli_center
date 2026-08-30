@@ -1,0 +1,183 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000" role="img" aria-label="کودکان شاد در کنار هم، با رسیدن صدای همدلی">
+  <defs>
+    <linearGradient id="hbg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eef6fc"/>
+      <stop offset="0.55" stop-color="#f7f0f8"/>
+      <stop offset="1" stop-color="#fbeef4"/>
+    </linearGradient>
+    <radialGradient id="hglow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#8ad4f2" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#8ad4f2" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="hsun" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffe6a7" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#ffe6a7" stop-opacity="0"/>
+    </radialGradient>
+    <path id="hhrt" d="M0 6.4 C0 1.6 4.8 0 8 3.2 C11.2 0 16 1.6 16 6.4 C16 11.2 8 16 8 16 C8 16 0 11.2 0 6.4 Z"/>
+  </defs>
+
+  <!-- آسمان -->
+  <rect width="1000" height="1000" fill="url(#hbg)"/>
+  <circle cx="500" cy="430" r="400" fill="url(#hglow)"/>
+
+  <!-- خورشید -->
+  <circle cx="150" cy="140" r="150" fill="url(#hsun)"/>
+  <circle cx="150" cy="140" r="52" fill="#ffdf95" opacity="0.9"/>
+
+  <!-- ابرها -->
+  <g fill="#ffffff" opacity="0.75">
+    <ellipse cx="830" cy="150" rx="56" ry="22"/>
+    <ellipse cx="796" cy="160" rx="32" ry="16"/>
+    <ellipse cx="864" cy="160" rx="36" ry="17"/>
+  </g>
+  <g fill="#ffffff" opacity="0.6">
+    <ellipse cx="230" cy="252" rx="44" ry="17"/>
+    <ellipse cx="204" cy="261" rx="26" ry="12"/>
+    <ellipse cx="256" cy="260" rx="28" ry="13"/>
+  </g>
+
+  <!-- قلب و امواج صدا؛ «صدای همدلی» -->
+  <g fill="none" stroke-linecap="round">
+    <g stroke-width="7">
+      <path d="M424 132 Q 396 170 424 208" stroke="#36A9DF"/>
+      <path d="M576 132 Q 604 170 576 208" stroke="#36A9DF"/>
+    </g>
+    <g stroke-width="7" opacity="0.8">
+      <path d="M408 116 Q 366 170 408 224" stroke="#5964AE"/>
+      <path d="M592 116 Q 634 170 592 224" stroke="#5964AE"/>
+    </g>
+    <g stroke-width="7" opacity="0.55">
+      <path d="M392 100 Q 336 170 392 240" stroke="#D4205F"/>
+      <path d="M608 100 Q 664 170 608 240" stroke="#D4205F"/>
+    </g>
+  </g>
+  <use href="#hhrt" transform="translate(474 144) scale(3.25)" fill="#D4205F"/>
+
+  <!-- پرنده‌ها -->
+  <g stroke="#5964AE" stroke-width="4" fill="none" opacity="0.45" stroke-linecap="round">
+    <path d="M300 122 q8 -8 16 0 q8 -8 16 0"/>
+    <path d="M688 132 q7 -7 14 0 q7 -7 14 0"/>
+  </g>
+
+  <!-- نت‌های موسیقی -->
+  <g transform="translate(238 330) rotate(-12) scale(1.25)" fill="#5964AE">
+    <ellipse cx="0" cy="0" rx="13" ry="9.5" transform="rotate(-18)"/>
+    <rect x="8" y="-46" width="5.5" height="48" rx="2"/>
+    <ellipse cx="46" cy="-5" rx="13" ry="9.5" transform="rotate(-18)"/>
+    <rect x="54" y="-51" width="5.5" height="48" rx="2"/>
+    <path d="M8 -46 L59.5 -51 L59.5 -38 L8 -33 Z"/>
+  </g>
+  <g transform="translate(762 318) rotate(10) scale(1.3)" fill="#A4184B">
+    <ellipse cx="0" cy="0" rx="14" ry="10" transform="rotate(-18)"/>
+    <rect x="10" y="-48" width="6" height="50" rx="2"/>
+    <path d="M16 -48 C 34 -42 38 -28 28 -12 C 33 -30 24 -35 16 -35 Z"/>
+  </g>
+  <g transform="translate(160 520) rotate(-8) scale(0.9)" fill="#36A9DF" opacity="0.85">
+    <ellipse cx="0" cy="0" rx="14" ry="10" transform="rotate(-18)"/>
+    <rect x="10" y="-48" width="6" height="50" rx="2"/>
+    <path d="M16 -48 C 34 -42 38 -28 28 -12 C 33 -30 24 -35 16 -35 Z"/>
+  </g>
+  <g transform="translate(846 540) rotate(14) scale(0.9)" fill="#D4205F" opacity="0.7">
+    <ellipse cx="0" cy="0" rx="14" ry="10" transform="rotate(-18)"/>
+    <rect x="10" y="-48" width="6" height="50" rx="2"/>
+    <path d="M16 -48 C 34 -42 38 -28 28 -12 C 33 -30 24 -35 16 -35 Z"/>
+  </g>
+
+  <!-- قلب‌های شناور -->
+  <use href="#hhrt" transform="translate(352 262) scale(1.4)" fill="#ffb3c7" opacity="0.9"/>
+  <use href="#hhrt" transform="translate(656 268) scale(1.6)" fill="#D4205F" opacity="0.8"/>
+  <use href="#hhrt" transform="translate(120 428) scale(1.1)" fill="#ffb3c7" opacity="0.8"/>
+
+  <!-- کاغذرنگی -->
+  <g>
+    <circle cx="200" cy="200" r="7" fill="#ffb3c7"/>
+    <circle cx="330" cy="140" r="5" fill="#8ad4f2"/>
+    <circle cx="680" cy="200" r="6" fill="#ffe08a"/>
+    <circle cx="860" cy="260" r="7" fill="#8ad4f2"/>
+    <circle cx="120" cy="330" r="6" fill="#ffe08a"/>
+    <circle cx="900" cy="420" r="6" fill="#ffb3c7"/>
+    <circle cx="70" cy="640" r="7" fill="#8ad4f2" opacity="0.7"/>
+    <circle cx="940" cy="660" r="6" fill="#ffe08a" opacity="0.8"/>
+    <rect x="272" y="206" width="16" height="7" rx="3.5" fill="#D4205F" opacity="0.7" transform="rotate(20 280 210)"/>
+    <rect x="723" y="157" width="14" height="6" rx="3" fill="#5964AE" opacity="0.6" transform="rotate(-15 730 160)"/>
+    <rect x="88" y="477" width="14" height="6" rx="3" fill="#36A9DF" opacity="0.6" transform="rotate(30 95 480)"/>
+    <path d="M395 292 l3 9 9 3 -9 3 -3 9 -3 -9 -9 -3 9 -3 Z" fill="#f6c79a" opacity="0.9"/>
+    <path d="M620 320 l3 9 9 3 -9 3 -3 9 -3 -9 -9 -3 9 -3 Z" fill="#8ad4f2" opacity="0.9"/>
+    <path d="M880 120 l2.5 7.5 7.5 2.5 -7.5 2.5 -2.5 7.5 -2.5 -7.5 -7.5 -2.5 7.5 -2.5 Z" fill="#ffb3c7" opacity="0.9"/>
+  </g>
+
+  <!-- تپه‌ها -->
+  <path d="M0 812 C 180 772 320 798 500 788 C 680 778 840 802 1000 780 L1000 1000 L0 1000 Z" fill="#dcebf7"/>
+  <path d="M0 882 C 200 844 420 870 640 852 C 800 840 900 852 1000 842 L1000 1000 L0 1000 Z" fill="#e8f1f9"/>
+
+  <!-- سایه‌ها -->
+  <ellipse cx="500" cy="868" rx="100" ry="14" fill="#0d5c85" opacity="0.08"/>
+  <ellipse cx="300" cy="842" rx="78" ry="12" fill="#0d5c85" opacity="0.08"/>
+  <ellipse cx="700" cy="838" rx="80" ry="12" fill="#0d5c85" opacity="0.08"/>
+
+  <!-- کودک وسط؛ بلندترین پرش -->
+  <g>
+    <path d="M484 640 L448 724" stroke="#2d3a66" stroke-width="22" stroke-linecap="round"/>
+    <path d="M516 640 L556 722" stroke="#2d3a66" stroke-width="22" stroke-linecap="round"/>
+    <circle cx="444" cy="736" r="13" fill="#233055"/>
+    <circle cx="560" cy="734" r="13" fill="#233055"/>
+    <path d="M462 522 q38 -19 76 0 l9 116 q-51 18 -102 0 Z" fill="#8ad4f2"/>
+    <path d="M470 542 L410 436" stroke="#ffd9b8" stroke-width="20" stroke-linecap="round"/>
+    <path d="M530 542 L592 438" stroke="#ffd9b8" stroke-width="20" stroke-linecap="round"/>
+    <circle cx="408" cy="432" r="10" fill="#ffd9b8"/>
+    <circle cx="594" cy="434" r="10" fill="#ffd9b8"/>
+    <circle cx="451" cy="460" r="9" fill="#3b2b2b"/>
+    <circle cx="549" cy="460" r="9" fill="#3b2b2b"/>
+    <circle cx="500" cy="470" r="46" fill="#ffd9b8"/>
+    <path d="M455 464 A46 46 0 0 1 545 464 L545 452 A46 46 0 0 0 455 452 Z" fill="#3b2b2b"/>
+  </g>
+
+  <!-- کودک چپ -->
+  <g>
+    <path d="M286 700 L264 778" stroke="#233055" stroke-width="18" stroke-linecap="round"/>
+    <path d="M314 700 L336 774" stroke="#233055" stroke-width="18" stroke-linecap="round"/>
+    <circle cx="260" cy="790" r="11" fill="#233055"/>
+    <circle cx="340" cy="786" r="11" fill="#233055"/>
+    <path d="M269 604 q31 -16 62 0 l8 98 q-45 16 -90 0 Z" fill="#ffb3c7"/>
+    <path d="M277 620 L224 542" stroke="#f6c79a" stroke-width="17" stroke-linecap="round"/>
+    <path d="M323 620 L376 546" stroke="#f6c79a" stroke-width="17" stroke-linecap="round"/>
+    <circle cx="222" cy="538" r="8.5" fill="#f6c79a"/>
+    <circle cx="378" cy="542" r="8.5" fill="#f6c79a"/>
+    <circle cx="300" cy="516" r="12" fill="#1f1a1a"/>
+    <circle cx="300" cy="560" r="38" fill="#f6c79a"/>
+    <path d="M263 554 A38 38 0 0 1 337 554 L337 543 A38 38 0 0 0 263 543 Z" fill="#1f1a1a"/>
+  </g>
+
+  <!-- کودک راست -->
+  <g>
+    <path d="M687 688 L666 770" stroke="#2b3560" stroke-width="19" stroke-linecap="round"/>
+    <path d="M713 688 L736 766" stroke="#2b3560" stroke-width="19" stroke-linecap="round"/>
+    <circle cx="662" cy="782" r="11" fill="#2b3560"/>
+    <circle cx="740" cy="778" r="11" fill="#2b3560"/>
+    <path d="M669 588 q33 -17 66 0 l8 102 q-47 16 -94 0 Z" fill="#ffe08a"/>
+    <path d="M677 604 L626 526" stroke="#e8b489" stroke-width="18" stroke-linecap="round"/>
+    <path d="M723 604 L776 532" stroke="#e8b489" stroke-width="18" stroke-linecap="round"/>
+    <circle cx="624" cy="522" r="9" fill="#e8b489"/>
+    <circle cx="778" cy="528" r="9" fill="#e8b489"/>
+    <circle cx="700" cy="540" r="40" fill="#e8b489"/>
+    <path d="M661 534 A40 40 0 0 1 739 534 L739 523 A40 40 0 0 0 661 523 Z" fill="#2b1f1f"/>
+  </g>
+
+  <!-- گل‌های کوچک -->
+  <g stroke="#7bc4a0" stroke-width="4" stroke-linecap="round" fill="none">
+    <path d="M130 930 C 128 914 124 906 116 900"/>
+    <path d="M140 930 C 140 912 144 904 150 896"/>
+    <path d="M870 918 C 868 902 864 894 856 888"/>
+    <path d="M880 918 C 880 900 884 892 890 884"/>
+    <path d="M505 952 C 503 936 499 928 491 922"/>
+    <path d="M515 952 C 515 934 519 926 525 918"/>
+  </g>
+  <g>
+    <circle cx="116" cy="898" r="6" fill="#ffb3c7"/>
+    <circle cx="150" cy="894" r="5" fill="#8ad4f2"/>
+    <circle cx="856" cy="886" r="6" fill="#8ad4f2"/>
+    <circle cx="890" cy="882" r="5" fill="#ffb3c7"/>
+    <circle cx="491" cy="920" r="5" fill="#ffd9b8"/>
+    <circle cx="525" cy="916" r="5" fill="#8ad4f2"/>
+  </g>
+</svg>

@@ -50,11 +50,11 @@
             <!-- تصویر / نشان -->
             <div class="relative mx-auto w-full max-w-sm lg:max-w-md" data-reveal>
                 <div class="relative overflow-hidden rounded-[2rem] bg-[linear-gradient(145deg,#1572A1_0%,#5964AE_50%,#A4184B_120%)] p-4 shadow-2xl shadow-[#5964AE]/25">
-                    <div class="flex aspect-square items-center justify-center rounded-[1.6rem] bg-white/95">
+                    <div class="relative aspect-square overflow-hidden rounded-[1.6rem] bg-white/95">
                         <img
-                            src="{{ asset('images/logo-sm.png') }}"
-                            alt="لوگوی مرکز نیکوکاری آوای همدلی"
-                            class="w-2/3 object-contain"
+                            src="{{ asset('images/landing/hero.svg') }}"
+                            alt="کودکانی شاد و پرشی‌کنان در کنار هم، با رسیدن صدای همدلی"
+                            class="absolute inset-0 h-full w-full object-cover"
                             loading="eager"
                         >
                     </div>

@@ -6,11 +6,11 @@
             <div class="order-2 lg:order-1" data-reveal>
                 <div class="relative">
                     <div class="overflow-hidden rounded-[2rem] bg-white p-4 shadow-xl shadow-slate-900/8 ring-1 ring-slate-100">
-                        <div class="flex aspect-[4/3] items-center justify-center rounded-[1.6rem] bg-[linear-gradient(145deg,#f0f6fb_0%,#f6eff4_100%)]">
+                        <div class="relative aspect-[4/3] overflow-hidden rounded-[1.6rem] bg-[linear-gradient(145deg,#f0f6fb_0%,#f6eff4_100%)]">
                             <img
-                                src="{{ asset('images/logo-sm.png') }}"
-                                alt="نشان آوای همدلی"
-                                class="w-1/2 object-contain"
+                                src="{{ asset('images/landing/about.svg') }}"
+                                alt="مراقب آوای همدلی دست کودک را گرفته و به سمت خانه می‌رود"
+                                class="absolute inset-0 h-full w-full object-cover"
                                 loading="lazy"
                             >
                         </div>

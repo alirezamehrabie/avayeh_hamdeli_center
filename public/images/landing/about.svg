@@ -1,0 +1,157 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" width="1200" height="900" role="img" aria-label="همراهی و حمایت از کودکان در خانه‌ی آوای همدلی">
+  <defs>
+    <linearGradient id="abg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eef6fc"/>
+      <stop offset="0.55" stop-color="#f8f0f7"/>
+      <stop offset="1" stop-color="#fdeef4"/>
+    </linearGradient>
+    <radialGradient id="asun" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffe6a7" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#ffe6a7" stop-opacity="0"/>
+    </radialGradient>
+    <path id="ahrt" d="M0 6.4 C0 1.6 4.8 0 8 3.2 C11.2 0 16 1.6 16 6.4 C16 11.2 8 16 8 16 C8 16 0 11.2 0 6.4 Z"/>
+  </defs>
+
+  <!-- آسمان -->
+  <rect width="1200" height="900" fill="url(#abg)"/>
+
+  <!-- خورشید -->
+  <circle cx="170" cy="148" r="180" fill="url(#asun)"/>
+  <circle cx="170" cy="148" r="62" fill="#ffdf95" opacity="0.9"/>
+
+  <!-- ابرها -->
+  <g fill="#ffffff" opacity="0.75">
+    <ellipse cx="470" cy="140" rx="60" ry="24"/>
+    <ellipse cx="430" cy="152" rx="36" ry="18"/>
+    <ellipse cx="512" cy="150" rx="40" ry="20"/>
+  </g>
+  <g fill="#ffffff" opacity="0.6">
+    <ellipse cx="950" cy="120" rx="48" ry="19"/>
+    <ellipse cx="918" cy="130" rx="28" ry="14"/>
+    <ellipse cx="984" cy="129" rx="32" ry="16"/>
+  </g>
+
+  <!-- لکه‌های رنگی نرم -->
+  <circle cx="1128" cy="540" r="150" fill="#8ad4f2" opacity="0.1"/>
+  <circle cx="84" cy="640" r="130" fill="#D4205F" opacity="0.06"/>
+
+  <!-- پرنده‌ها -->
+  <g stroke="#5964AE" stroke-width="4" fill="none" opacity="0.45" stroke-linecap="round">
+    <path d="M640 150 q9 -9 18 0 q9 -9 18 0"/>
+    <path d="M706 126 q7 -7 14 0 q7 -7 14 0"/>
+  </g>
+
+  <!-- تپه‌ها -->
+  <path d="M0 700 C 200 620 380 660 560 648 C 760 634 900 664 1200 640 L1200 900 L0 900 Z" fill="#d5e7f4"/>
+  <path d="M0 790 C 240 730 480 770 720 744 C 940 722 1060 742 1200 726 L1200 900 L0 900 Z" fill="#e4eff8"/>
+
+  <!-- خانه؛ نماد «خانه‌ای که هیچ بچه‌ای بی‌پناه نمی‌ماند» -->
+  <g>
+    <path d="M745 540 L920 396 L1095 540 Z" fill="#D4205F"/>
+    <rect x="757" y="534" width="326" height="14" rx="7" fill="#A4184B" opacity="0.55"/>
+    <rect x="996" y="420" width="46" height="12" rx="6" fill="#4b5490"/>
+    <rect x="1002" y="428" width="34" height="66" rx="8" fill="#5964AE"/>
+    <g fill="#ffffff" opacity="0.7">
+      <circle cx="1019" cy="402" r="9"/>
+      <circle cx="1032" cy="378" r="7"/>
+      <circle cx="1046" cy="356" r="5.5"/>
+    </g>
+    <rect x="765" y="538" width="310" height="202" rx="14" fill="#ffffff"/>
+    <rect x="800" y="592" width="64" height="64" rx="10" fill="#bfe6f8"/>
+    <rect x="829" y="592" width="6" height="64" fill="#ffffff"/>
+    <rect x="800" y="621" width="64" height="6" fill="#ffffff"/>
+    <rect x="978" y="592" width="64" height="64" rx="10" fill="#bfe6f8"/>
+    <rect x="1007" y="592" width="6" height="64" fill="#ffffff"/>
+    <rect x="978" y="621" width="64" height="6" fill="#ffffff"/>
+    <path d="M888 740 v-86 a37 37 0 0 1 74 0 v86 z" fill="#5964AE"/>
+    <circle cx="948" cy="694" r="5" fill="#ffd9b8"/>
+    <use href="#ahrt" transform="translate(915 580) scale(1.15)" fill="#D4205F"/>
+    <g fill="#9fd6bb">
+      <circle cx="788" cy="742" r="20"/>
+      <circle cx="814" cy="748" r="14"/>
+      <circle cx="1062" cy="744" r="18"/>
+      <circle cx="1040" cy="749" r="12"/>
+    </g>
+  </g>
+
+  <!-- کاغذِ هواپیما؛ نماد امید و آینده -->
+  <path d="M200 340 C 268 268 348 244 492 240" stroke="#5964AE" stroke-width="4" stroke-dasharray="2 14" stroke-linecap="round" fill="none" opacity="0.45"/>
+  <g transform="translate(500 218) rotate(14)">
+    <path d="M0 24 L92 0 L40 42 Z" fill="#ffffff"/>
+    <path d="M0 24 L40 42 L18 54 Z" fill="#8ad4f2"/>
+  </g>
+
+  <!-- قلب‌های شناور -->
+  <use href="#ahrt" transform="translate(262 212) scale(2.2)" fill="#D4205F" opacity="0.9"/>
+  <use href="#ahrt" transform="translate(566 118) scale(1.4)" fill="#A4184B" opacity="0.7"/>
+  <use href="#ahrt" transform="translate(866 258) scale(1.7)" fill="#D4205F" opacity="0.8"/>
+  <use href="#ahrt" transform="translate(150 330) scale(1.1)" fill="#ffb3c7" opacity="0.8"/>
+
+  <!-- ستاره‌های کوچک -->
+  <g opacity="0.8">
+    <path d="M312 232 l3 9 9 3 -9 3 -3 9 -3 -9 -9 -3 9 -3 Z" fill="#8ad4f2"/>
+    <path d="M1062 284 l3 9 9 3 -9 3 -3 9 -3 -9 -9 -3 9 -3 Z" fill="#f6c79a"/>
+    <path d="M620 100 l2.5 7.5 7.5 2.5 -7.5 2.5 -2.5 7.5 -2.5 -7.5 -7.5 -2.5 7.5 -2.5 Z" fill="#8ad4f2"/>
+  </g>
+
+  <!-- مسیر قدم‌زدن تا خانه -->
+  <path d="M420 800 C 560 788 700 782 852 764" stroke="#ffffff" stroke-width="30" stroke-linecap="round" fill="none" opacity="0.55"/>
+
+  <!-- سایه‌ها -->
+  <ellipse cx="382" cy="774" rx="110" ry="14" fill="#0d5c85" opacity="0.08"/>
+  <ellipse cx="684" cy="778" rx="72" ry="12" fill="#0d5c85" opacity="0.08"/>
+
+  <!-- مراقب؛ «کنارشان می‌ایستیم» -->
+  <g>
+    <circle cx="372" cy="262" r="16" fill="#3b2b2b"/>
+    <rect x="346" y="610" width="28" height="152" rx="14" fill="#2d3a66"/>
+    <rect x="384" y="610" width="28" height="152" rx="14" fill="#2d3a66"/>
+    <path d="M318 384 q56 -30 112 0 l26 232 q-84 28 -168 0 Z" fill="#5964AE"/>
+    <path d="M338 408 L302 546" stroke="#ffd9b8" stroke-width="24" stroke-linecap="round"/>
+    <circle cx="372" cy="318" r="52" fill="#ffd9b8"/>
+    <path d="M321 308 A52 52 0 0 1 423 308 L423 292 A52 52 0 0 0 321 292 Z" fill="#3b2b2b"/>
+    <path d="M428 412 L596 566" stroke="#ffd9b8" stroke-width="26" stroke-linecap="round"/>
+    <circle cx="302" cy="546" r="12" fill="#ffd9b8"/>
+  </g>
+
+  <!-- کودک، بادکنک به دست -->
+  <g>
+    <path d="M782 404 C 772 438 762 462 756 492" stroke="#5964AE" stroke-width="4" fill="none"/>
+    <ellipse cx="782" cy="352" rx="42" ry="52" fill="#D4205F"/>
+    <ellipse cx="766" cy="332" rx="11" ry="17" fill="#ffffff" opacity="0.3" transform="rotate(-18 766 332)"/>
+    <path d="M774 406 L782 398 L790 406 Z" fill="#A4184B"/>
+    <rect x="660" y="676" width="22" height="94" rx="11" fill="#233055"/>
+    <rect x="690" y="676" width="22" height="94" rx="11" fill="#233055"/>
+    <path d="M648 570 q32 -18 64 0 l10 112 q-42 16 -84 0 Z" fill="#ffb3c7"/>
+    <circle cx="638" cy="512" r="10" fill="#1f1a1a"/>
+    <circle cx="722" cy="512" r="10" fill="#1f1a1a"/>
+    <circle cx="680" cy="525" r="38" fill="#f6c79a"/>
+    <path d="M643 519 A38 38 0 0 1 717 519 L717 505 A38 38 0 0 0 643 505 Z" fill="#1f1a1a"/>
+    <path d="M660 588 L598 568" stroke="#f6c79a" stroke-width="20" stroke-linecap="round"/>
+    <path d="M708 588 L752 500" stroke="#f6c79a" stroke-width="19" stroke-linecap="round"/>
+    <circle cx="754" cy="496" r="10" fill="#f6c79a"/>
+  </g>
+
+  <!-- دست‌های به‌هم‌رسیده -->
+  <circle cx="598" cy="568" r="14" fill="#ffd9b8"/>
+
+  <!-- گل‌های کوچک -->
+  <g stroke="#7bc4a0" stroke-width="4" stroke-linecap="round" fill="none">
+    <path d="M148 806 C 146 790 142 782 134 776"/>
+    <path d="M158 806 C 158 788 162 780 168 772"/>
+    <path d="M140 806 C 138 792 134 786 126 780"/>
+    <path d="M1054 798 C 1052 782 1048 774 1040 768"/>
+    <path d="M1064 798 C 1064 780 1068 772 1074 764"/>
+    <path d="M712 826 C 710 810 706 802 698 796"/>
+    <path d="M722 826 C 722 808 726 800 732 792"/>
+  </g>
+  <g>
+    <circle cx="134" cy="774" r="6" fill="#ffb3c7"/>
+    <circle cx="168" cy="770" r="5" fill="#8ad4f2"/>
+    <circle cx="126" cy="778" r="4" fill="#ffd9b8"/>
+    <circle cx="1040" cy="766" r="6" fill="#8ad4f2"/>
+    <circle cx="1074" cy="762" r="5" fill="#ffb3c7"/>
+    <circle cx="698" cy="794" r="5" fill="#ffd9b8"/>
+    <circle cx="732" cy="790" r="5" fill="#8ad4f2"/>
+  </g>
+</svg>
