@@ -13,6 +13,8 @@ class NotificationEventRegistry
 {
     public const EVENT_USER_LOGIN = 'user.login';
 
+    public const EVENT_USER_LOGOUT = 'user.logout';
+
     public const EVENT_SERVICE_CREATED = 'service.created';
 
     public const EVENT_SERVICE_UPDATED = 'service.updated';
@@ -38,7 +40,7 @@ class NotificationEventRegistry
      */
     public static function events(): array
     {
-        $loginTargetableRoles = [
+        $sessionTargetableRoles = [
             User::ACCESS_LEVEL_ADMIN,
             User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
             User::ACCESS_LEVEL_SOCIAL_WORKER,
@@ -53,7 +55,14 @@ class NotificationEventRegistry
                 'description' => 'هنگام ورود کاربران انتخاب‌شده (بر اساس نقش یا کاربر مشخص) اعلان دریافت کنید.',
                 'group' => 'ورود و خروج',
                 'supports_targeting' => true,
-                'targetable_roles' => $loginTargetableRoles,
+                'targetable_roles' => $sessionTargetableRoles,
+            ],
+            self::EVENT_USER_LOGOUT => [
+                'label' => 'خروج کاربران از سیستم',
+                'description' => 'هنگام خروج کاربران انتخاب‌شده (بر اساس نقش یا کاربر مشخص) اعلان دریافت کنید.',
+                'group' => 'ورود و خروج',
+                'supports_targeting' => true,
+                'targetable_roles' => $sessionTargetableRoles,
             ],
             self::EVENT_SERVICE_CREATED => [
                 'label' => 'ثبت خدمت جدید',

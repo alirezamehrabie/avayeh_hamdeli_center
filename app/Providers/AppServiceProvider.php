@@ -58,7 +58,7 @@ class AppServiceProvider extends ServiceProvider
         Person::observe(PersonObserver::class);
         Service::observe(ServiceNotificationObserver::class);
 
-        // NotifyManagersOfUserLogin در app/Listeners به‌صورت خودکار کشف می‌شود.
+        // NotifyManagersOfUserLogin و NotifyManagersOfUserLogout در app/Listeners به‌صورت خودکار کشف می‌شوند.
 
         Relation::enforceMorphMap([
             'person' => Person::class,
