@@ -37,6 +37,7 @@
 
     @php
         $isServiceDeliveryActive = request()->routeIs('social-worker.dashboard');
+        $isAttendanceActive = request()->routeIs('social-worker.attendance');
         $isDeliveryHistoryActive = request()->routeIs('social-worker.delivery-history');
         $isUserAccountActive = request()->routeIs('social-worker.user-account');
     @endphp
@@ -47,6 +48,13 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M9 12h6m-6 4h6M7 4h10a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z"/>
             </svg>
             <span>تحویل خدمت</span>
+        </a>
+
+        <a href="{{ route('social-worker.attendance') }}" class="flex items-center rounded-lg px-4 py-2.5 transition-all duration-200 {{ $isAttendanceActive ? 'bg-indigo-700 text-white shadow-sm' : 'text-indigo-100 hover:bg-indigo-800 hover:text-white' }}">
+            <svg class="ml-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M9 12l2 2 4-4m-9 9h10a2 2 0 002-2V7a2 2 0 00-2-2h-1V3H8v2H7a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            <span>حضور و غیاب</span>
         </a>
 
         <a href="{{ route('social-worker.delivery-history') }}" class="flex items-center rounded-lg px-4 py-2.5 transition-all duration-200 {{ $isDeliveryHistoryActive ? 'bg-indigo-700 text-white shadow-sm' : 'text-indigo-100 hover:bg-indigo-800 hover:text-white' }}">

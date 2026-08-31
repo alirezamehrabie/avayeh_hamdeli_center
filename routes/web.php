@@ -26,6 +26,7 @@ use App\Livewire\People\CreatePerson;
 use App\Livewire\People\DeletedPeople;
 use App\Livewire\People\FastCreatePerson;
 use App\Livewire\People\IndexPeople;
+use App\Livewire\SocialWorkers\Attendance as SocialWorkerAttendance;
 use App\Livewire\SocialWorkers\CreateSocialWorker;
 use App\Livewire\SocialWorkers\Dashboard as SocialWorkerDashboard;
 use App\Livewire\SocialWorkers\DeletedSocialWorkers;
@@ -186,6 +187,10 @@ Route::get('/admin/system-settings/user-account', UserAccount::class)
 Route::get('/social-worker/dashboard', SocialWorkerDashboard::class)
     ->middleware(['auth', 'can:access-social-worker-panel'])
     ->name('social-worker.dashboard');
+
+Route::get('/social-worker/attendance', SocialWorkerAttendance::class)
+    ->middleware(['auth', 'can:access-social-worker-panel'])
+    ->name('social-worker.attendance');
 
 Route::get('/social-worker/delivery-history', SocialWorkerDeliveryHistory::class)
     ->middleware(['auth', 'can:access-social-worker-panel'])

@@ -569,6 +569,11 @@ class Person extends Model
         return $this->hasMany(ActivityAttendance::class);
     }
 
+    public function attendanceSheetEntries()
+    {
+        return $this->hasMany(AttendanceSheetEntry::class);
+    }
+
     public function sponsorProfiles(): BelongsToMany
     {
         return $this->belongsToMany(SponsorProfile::class, 'person_sponsor_profile')
