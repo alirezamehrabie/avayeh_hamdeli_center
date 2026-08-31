@@ -12,6 +12,14 @@ use Throwable;
 class CaseRecordAttachmentStorage
 {
     /**
+     * پیوست‌های پرونده مددجو، اسناد حساس شخصی هستند و باید روی دیسک خصوصی
+     * (خارج از public/storage) ذخیره شوند و فقط از طریق روت کنترل‌شده‌ی
+     * admin.people.case-file.attachments.show سرو شوند.
+     * رکوردهای قدیمی با disk='public' همچنان از همان مسیر قبلی سرو می‌شوند.
+     */
+    private const TARGET_DISK = 'local';
+
+    /**
      * @param  array<int, UploadedFile>  $uploads
      * @return Collection<int, BeneficiaryCaseRecordAttachment>
      */
@@ -27,14 +35,14 @@ class CaseRecordAttachmentStorage
             foreach ($uploads as $upload) {
                 $path = $upload->store(
                     "beneficiary-case-records/{$record->person_id}/{$record->id}",
-                    'public'
+                    self::TARGET_DISK
                 );
                 $storedPaths[] = $path;
 
                 $storedAttachments->push(BeneficiaryCaseRecordAttachment::query()->create([
                     'beneficiary_case_record_id' => $record->id,
                     'uploaded_by' => $uploadedBy,
-                    'disk' => 'public',
+                    'disk' => self::TARGET_DISK,
                     'path' => $path,
                     'original_name' => $upload->getClientOriginalName(),
                     'mime_type' => $upload->getMimeType(),
@@ -42,7 +50,7 @@ class CaseRecordAttachmentStorage
                 ]));
             }
         } catch (Throwable $exception) {
-            Storage::disk('public')->delete($storedPaths);
+            Storage::disk(self::TARGET_DISK)->delete($storedPaths);
 
             throw $exception;
         }

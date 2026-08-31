@@ -335,6 +335,7 @@ class BeneficiaryCaseFileTest extends TestCase
     public function test_admin_can_add_and_remove_attachments_while_editing_manual_case_record(): void
     {
         Storage::fake('public');
+        Storage::fake('local');
 
         $admin = $this->admin();
         $person = $this->person();
@@ -381,8 +382,9 @@ class BeneficiaryCaseFileTest extends TestCase
 
         $this->assertNotNull($newAttachment);
         $this->assertSame('new.pdf', $newAttachment->original_name);
+        $this->assertSame('local', $newAttachment->disk);
         Storage::disk('public')->assertMissing($oldPath);
-        Storage::disk('public')->assertExists($newAttachment->path);
+        Storage::disk('local')->assertExists($newAttachment->path);
     }
 
     public function test_attachment_removal_during_edit_requires_explicit_confirmation(): void
@@ -722,6 +724,7 @@ class BeneficiaryCaseFileTest extends TestCase
     public function test_uploaded_case_record_files_are_removed_when_database_save_fails(): void
     {
         Storage::fake('public');
+        Storage::fake('local');
 
         $admin = $this->admin();
         $person = $this->person();
@@ -749,7 +752,7 @@ class BeneficiaryCaseFileTest extends TestCase
             BeneficiaryCaseRecordAttachment::flushEventListeners();
         }
 
-        $this->assertSame([], Storage::disk('public')->allFiles('beneficiary-case-records'));
+        $this->assertSame([], Storage::disk('local')->allFiles('beneficiary-case-records'));
         $this->assertDatabaseCount('beneficiary_case_records', 0);
         $this->assertDatabaseCount('beneficiary_case_record_attachments', 0);
     }
@@ -757,6 +760,7 @@ class BeneficiaryCaseFileTest extends TestCase
     public function test_failed_case_record_update_preserves_existing_attachments_and_removes_new_files(): void
     {
         Storage::fake('public');
+        Storage::fake('local');
 
         $admin = $this->admin();
         $person = $this->person();
@@ -814,6 +818,10 @@ class BeneficiaryCaseFileTest extends TestCase
             [$existingPath],
             Storage::disk('public')->allFiles('beneficiary-case-records')
         );
+        $this->assertSame(
+            [],
+            Storage::disk('local')->allFiles('beneficiary-case-records')
+        );
     }
 
     public function test_admin_can_open_case_record_attachment_through_authorized_route(): void
@@ -845,6 +853,40 @@ class BeneficiaryCaseFileTest extends TestCase
 
         $this->assertSame(route('admin.people.case-file.attachments.show', ['attachment' => $attachment]), $attachment->url);
         $this->assertStringNotContainsString('/storage/', $attachment->url);
+
+        $this->actingAs($admin)
+            ->get($attachment->url)
+            ->assertOk()
+            ->assertHeader('content-disposition', 'inline; filename=invoice.pdf');
+    }
+
+    public function test_admin_can_open_private_disk_attachment_through_authorized_route(): void
+    {
+        Storage::fake('public');
+        Storage::fake('local');
+
+        $admin = $this->admin();
+        $person = $this->person();
+        $record = BeneficiaryCaseRecord::query()->create([
+            'person_id' => $person->id,
+            'created_by' => $admin->id,
+            'record_type' => BeneficiaryCaseRecord::TYPE_INVOICE,
+            'title' => 'فاکتور تست',
+            'recorded_at' => '2026-07-03',
+        ]);
+
+        $path = "beneficiary-case-records/{$person->id}/{$record->id}/invoice.pdf";
+        Storage::disk('local')->put($path, 'secure invoice content');
+
+        $attachment = BeneficiaryCaseRecordAttachment::query()->create([
+            'beneficiary_case_record_id' => $record->id,
+            'uploaded_by' => $admin->id,
+            'disk' => 'local',
+            'path' => $path,
+            'original_name' => 'invoice.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => strlen('secure invoice content'),
+        ]);
 
         $this->actingAs($admin)
             ->get($attachment->url)
