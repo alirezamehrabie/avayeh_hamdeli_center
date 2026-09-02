@@ -4,6 +4,7 @@ namespace App\Livewire\DistributionOperators\Gates;
 
 use App\Models\EducationLevel;
 use App\Models\GateEntryAssignment;
+use App\Models\GateEntryDeliveryRecipient;
 use App\Models\GateEntryFieldValue;
 use App\Models\QrIdentity;
 use App\Models\Service;
@@ -30,6 +31,18 @@ class EntryGate extends AbstractGateComponent
 
     /** @var array<int, mixed> Values entered for the scanned subject, keyed by service_entry_field id. */
     public array $entryFieldValues = [];
+
+    /** Operator's declaration that this subject's items are handed to somebody else. */
+    public bool $isProxyDelivery = false;
+
+    /** One of GateEntryDeliveryRecipient::TYPE_OPTIONS keys; empty until the operator picks one. */
+    public string $proxyRecipientType = '';
+
+    /** Name/details of the recipient — only stored when the type is "other". */
+    public string $proxyRecipientName = '';
+
+    /** Inline validation message shown under the delivery-method box. */
+    public ?string $proxyError = null;
 
     /** @var array<int, string>|null Cached education levels. */
     private ?array $cachedEducationLevels = null;
@@ -59,6 +72,7 @@ class EntryGate extends AbstractGateComponent
     {
         $this->loadSubjectAssignments();
         $this->loadSubjectFieldValues();
+        $this->loadSubjectDeliveryRecipient();
 
         // Open the mobile categories bottom-sheet now that a subject is on screen.
         $this->dispatch('entry-gate-subject-loaded');
@@ -69,6 +83,10 @@ class EntryGate extends AbstractGateComponent
         $this->assignedCategoryIds = [];
         $this->lockedCategoryIds = [];
         $this->entryFieldValues = [];
+        $this->isProxyDelivery = false;
+        $this->proxyRecipientType = '';
+        $this->proxyRecipientName = '';
+        $this->proxyError = null;
     }
 
     /** The Entry Gate renders the extra fields as editable inputs, not identity-card rows. */
@@ -259,6 +277,145 @@ class EntryGate extends AbstractGateComponent
             ->all();
     }
 
+    /**
+     * Restore the delivery-method declaration for the scanned subject so re-scanning shows what
+     * was recorded earlier instead of silently resetting to a direct handover.
+     */
+    protected function loadSubjectDeliveryRecipient(): void
+    {
+        $this->proxyError = null;
+
+        if (! $this->hasScannedSubject()) {
+            $this->isProxyDelivery = false;
+            $this->proxyRecipientType = '';
+            $this->proxyRecipientName = '';
+
+            return;
+        }
+
+        $record = $this->subjectDeliveryRecipientQuery()->first();
+
+        $this->isProxyDelivery = (bool) $record?->is_proxy_delivery;
+        $this->proxyRecipientType = (string) ($record?->recipient_type ?? '');
+        $this->proxyRecipientName = (string) ($record?->recipient_name ?? '');
+    }
+
+    /**
+     * Toggling the "delivery to non-customer" checkbox. Persisting immediately keeps the
+     * declaration safe if the operator walks away before confirming, and mirrors how the extra
+     * fields already save on blur.
+     */
+    public function updatedIsProxyDelivery(): void
+    {
+        $this->authorizeGate();
+
+        if (! $this->isProxyDelivery) {
+            // Clearing the flag also clears the recipient so a stale "mother" can't linger on the row.
+            $this->proxyRecipientType = '';
+            $this->proxyRecipientName = '';
+        }
+
+        $this->persistDeliveryRecipient();
+    }
+
+    public function updatedProxyRecipientType(): void
+    {
+        $this->authorizeGate();
+
+        if (! array_key_exists($this->proxyRecipientType, GateEntryDeliveryRecipient::TYPE_OPTIONS)) {
+            $this->proxyRecipientType = '';
+        }
+
+        if ($this->proxyRecipientType !== GateEntryDeliveryRecipient::TYPE_OTHER) {
+            $this->proxyRecipientName = '';
+        }
+
+        $this->persistDeliveryRecipient();
+    }
+
+    public function updatedProxyRecipientName(): void
+    {
+        $this->authorizeGate();
+
+        $this->persistDeliveryRecipient();
+    }
+
+    /**
+     * Upsert the scanned subject's declaration for this service.
+     *
+     * Only a complete declaration is written — a half-filled one (box ticked, recipient not chosen
+     * yet) would read back as "handed to somebody, unknown who" in the reports. Until it is complete
+     * the choice lives in the component only, and confirmPermission() refuses to move on. Turning the
+     * box back off updates an existing row so the record never contradicts the screen.
+     */
+    protected function persistDeliveryRecipient(): void
+    {
+        if (! $this->selectedServiceId || ! $this->hasScannedSubject()) {
+            return;
+        }
+
+        $this->proxyError = null;
+
+        $type = $this->isProxyDelivery ? $this->proxyRecipientType : '';
+        $name = $type === GateEntryDeliveryRecipient::TYPE_OTHER ? trim($this->proxyRecipientName) : '';
+
+        $isComplete = $this->isProxyDelivery
+            && array_key_exists($type, GateEntryDeliveryRecipient::TYPE_OPTIONS)
+            && ($type !== GateEntryDeliveryRecipient::TYPE_OTHER || $name !== '');
+
+        $existing = $this->subjectDeliveryRecipientQuery()->first();
+
+        if (! $isComplete && (! $existing || $this->isProxyDelivery)) {
+            return;
+        }
+
+        $isGuardian = $this->scannedSubjectType === QrIdentity::SUBJECT_GUARDIAN;
+
+        $record = $existing ?? GateEntryDeliveryRecipient::query()->newModelInstance([
+            'service_id' => $this->selectedServiceId,
+            'person_id' => $isGuardian ? null : $this->scannedPersonId,
+            'guardian_id' => $isGuardian ? $this->scannedGuardianId : null,
+            'created_by' => auth()->id(),
+        ]);
+
+        $record->forceFill([
+            'is_proxy_delivery' => $this->isProxyDelivery,
+            'recipient_type' => $type ?: null,
+            'recipient_name' => $name ?: null,
+        ]);
+
+        if ($record->exists) {
+            $record->updated_by = auth()->id();
+        }
+
+        try {
+            $record->save();
+        } catch (UniqueConstraintViolationException) {
+            // Another station recorded a declaration for the same (service, subject) between our read
+            // and write. Converge onto that row instead of surfacing a 500.
+            $winner = $this->subjectDeliveryRecipientQuery()->first();
+
+            $winner?->forceFill([
+                'is_proxy_delivery' => $this->isProxyDelivery,
+                'recipient_type' => $type ?: null,
+                'recipient_name' => $name ?: null,
+                'updated_by' => auth()->id(),
+            ])->save();
+        }
+    }
+
+    protected function subjectDeliveryRecipientQuery()
+    {
+        $query = GateEntryDeliveryRecipient::query()
+            ->where('service_id', $this->selectedServiceId);
+
+        if ($this->scannedSubjectType === QrIdentity::SUBJECT_GUARDIAN) {
+            return $query->where('guardian_id', $this->scannedGuardianId);
+        }
+
+        return $query->where('person_id', $this->scannedPersonId);
+    }
+
     public function toggleCategory(int $categoryId): void
     {
         $this->authorizeGate();
@@ -358,7 +515,37 @@ class EntryGate extends AbstractGateComponent
             return;
         }
 
+        // A half-filled proxy declaration would be recorded as "delivered to someone else, unknown who",
+        // which defeats the point of the field — hold the operator on this subject until it is complete.
+        if ($this->isProxyDelivery) {
+            if (! array_key_exists($this->proxyRecipientType, GateEntryDeliveryRecipient::TYPE_OPTIONS)) {
+                $this->proxyError = 'گیرنده خدمت را انتخاب کنید.';
+
+                return;
+            }
+
+            if ($this->proxyRecipientType === GateEntryDeliveryRecipient::TYPE_OTHER && trim($this->proxyRecipientName) === '') {
+                $this->proxyError = 'نام و مشخصات گیرنده را وارد کنید.';
+
+                return;
+            }
+        }
+
         $this->resumeScanning();
+    }
+
+    /** Persian label of the currently selected proxy recipient, for the summary chip. */
+    public function getProxyRecipientLabelProperty(): string
+    {
+        if (! $this->isProxyDelivery) {
+            return '';
+        }
+
+        if ($this->proxyRecipientType === GateEntryDeliveryRecipient::TYPE_OTHER) {
+            return trim($this->proxyRecipientName) ?: GateEntryDeliveryRecipient::TYPE_OPTIONS[GateEntryDeliveryRecipient::TYPE_OTHER];
+        }
+
+        return GateEntryDeliveryRecipient::TYPE_OPTIONS[$this->proxyRecipientType] ?? '';
     }
 
     public function getEducationLevelsProperty(): Collection

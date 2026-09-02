@@ -4,6 +4,7 @@ namespace App\Livewire\DistributionOperators\Gates;
 
 use App\Models\EducationLevel;
 use App\Models\GateEntryAssignment;
+use App\Models\GateEntryDeliveryRecipient;
 use App\Models\GateEntryFieldValue;
 use App\Models\Guardian;
 use App\Models\Person;
@@ -81,7 +82,10 @@ abstract class AbstractGateComponent extends Component
      */
     protected function scanResultExtras(): array
     {
-        return ['extra_fields' => $this->subjectEntryFields()];
+        return [
+            'extra_fields' => $this->subjectEntryFields(),
+            'proxy_recipient' => $this->subjectProxyRecipient(),
+        ];
     }
 
     public function mount(): void
@@ -510,6 +514,39 @@ abstract class AbstractGateComponent extends Component
         }
 
         return $rows;
+    }
+
+    /**
+     * The Entry Gate's "delivery to non-customer" declaration for the scanned subject, so the
+     * Delivery and Exit gates can warn the operator that these items go to somebody else.
+     *
+     * @return array{type: string, label: string}|null
+     */
+    protected function subjectProxyRecipient(): ?array
+    {
+        if (! $this->selectedServiceId || ! $this->hasScannedSubject()) {
+            return null;
+        }
+
+        $isGuardian = $this->scannedSubjectType === QrIdentity::SUBJECT_GUARDIAN;
+
+        $record = GateEntryDeliveryRecipient::query()
+            ->where('service_id', $this->selectedServiceId)
+            ->where('is_proxy_delivery', true)
+            ->when($isGuardian,
+                fn ($query) => $query->where('guardian_id', $this->scannedGuardianId),
+                fn ($query) => $query->where('person_id', $this->scannedPersonId),
+            )
+            ->first();
+
+        if (! $record) {
+            return null;
+        }
+
+        return [
+            'type' => (string) $record->recipient_type,
+            'label' => $record->recipient_label,
+        ];
     }
 
     protected function subjectAssignmentQuery()

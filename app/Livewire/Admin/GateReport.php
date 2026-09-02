@@ -8,6 +8,7 @@ use App\Exports\GateExitReportExport;
 use App\Helpers\Morilog\Jalalian;
 use App\Models\EducationLevel;
 use App\Models\GateEntryAssignment;
+use App\Models\GateEntryDeliveryRecipient;
 use App\Models\GateEntryFieldValue;
 use App\Models\Service;
 use App\Models\ServiceDelivery;
@@ -39,6 +40,9 @@ class GateReport extends Component
     public string $selectedCategory = 'all';
 
     public string $selectedStatus = 'all';
+
+    /** all | direct | proxy | one of GateEntryDeliveryRecipient::TYPE_OPTIONS keys. */
+    public string $selectedDeliveryMethod = 'all';
 
     public string $dateFrom = '';
 
@@ -86,7 +90,7 @@ class GateReport extends Component
 
     public function updated(string $property): void
     {
-        if (in_array($property, ['search', 'selectedCategory', 'selectedStatus', 'dateFrom', 'dateTo'], true)) {
+        if (in_array($property, ['search', 'selectedCategory', 'selectedStatus', 'selectedDeliveryMethod', 'dateFrom', 'dateTo'], true)) {
             $this->resetPage();
         }
     }
@@ -96,6 +100,7 @@ class GateReport extends Component
         $this->search = '';
         $this->selectedCategory = 'all';
         $this->selectedStatus = 'all';
+        $this->selectedDeliveryMethod = 'all';
         $this->dateFrom = '';
         $this->dateTo = '';
         $this->resetPage();
@@ -131,9 +136,9 @@ class GateReport extends Component
         $exportQuery = $query->limit($maxRows);
 
         $export = match ($this->activeTab) {
-            'delivery' => new GateDeliveryReportExport($exportQuery),
-            'exit' => new GateExitReportExport($exportQuery),
-            default => new GateEntryReportExport($exportQuery),
+            'delivery' => new GateDeliveryReportExport($exportQuery, $service),
+            'exit' => new GateExitReportExport($exportQuery, $service),
+            default => new GateEntryReportExport($exportQuery, $service),
         };
 
         return \Maatwebsite\Excel\Facades\Excel::download($export, $filename);
@@ -148,6 +153,8 @@ class GateReport extends Component
         $categories = collect();
         $entryFieldsByPerson = collect();
         $entryFieldsByGuardian = collect();
+        $proxyByPerson = collect();
+        $proxyByGuardian = collect();
 
         if ($service) {
             $categories = $service->categories()->ordered()->get();
@@ -155,6 +162,8 @@ class GateReport extends Component
 
             $results = $this->buildQueryForTab($this->activeTab, $service)
                 ->paginate(20);
+
+            [$proxyByPerson, $proxyByGuardian] = $this->loadProxyRecipients($service, $results->getCollection());
 
             if ($this->activeTab === 'entry') {
                 [$entryFieldsByPerson, $entryFieldsByGuardian] = $this->loadEntryFieldValues($service, $results->getCollection());
@@ -170,6 +179,8 @@ class GateReport extends Component
             'entryFieldsByPerson' => $entryFieldsByPerson,
             'entryFieldsByGuardian' => $entryFieldsByGuardian,
             'entryFieldDefinitions' => $service?->entryFields ?? collect(),
+            'proxyByPerson' => $proxyByPerson,
+            'proxyByGuardian' => $proxyByGuardian,
         ]);
     }
 
@@ -223,12 +234,19 @@ class GateReport extends Component
             ->where('delivery_channel', Service::DELIVERY_CHANNEL_GATE)
             ->sum('delivered_total_value');
 
+        // Distinct beneficiaries whose items were declared as handed to somebody else.
+        $proxyRecipients = (int) GateEntryDeliveryRecipient::query()
+            ->where('service_id', $service->id)
+            ->where('is_proxy_delivery', true)
+            ->count();
+
         return [
             'entered' => $totalEntered,
             'delivered' => $delivered,
             'exited' => $finalized,
             'pending' => $pending,
             'total_value' => $totalValue,
+            'proxy_recipients' => $proxyRecipients,
         ];
     }
 
@@ -306,6 +324,58 @@ class GateReport extends Component
         if ($dateTo) {
             $query->whereDate($dateColumn, '<=', $dateTo);
         }
+
+        $this->applyDeliveryMethodFilter($query);
+    }
+
+    /**
+     * Filter by the Entry Gate's delivery-method declaration. Both reported tables (assignments and
+     * the delivery ledger) carry service_id + person_id/guardian_id, so the declaration is matched
+     * with a correlated subquery against whichever table the tab is reading.
+     */
+    protected function applyDeliveryMethodFilter(Builder $query): void
+    {
+        if ($this->selectedDeliveryMethod === 'all') {
+            return;
+        }
+
+        $table = $query->getModel()->getTable();
+
+        $matchesSubject = function ($recipientQuery) use ($table): void {
+            $recipientQuery->from('gate_entry_delivery_recipients')
+                ->whereColumn('gate_entry_delivery_recipients.service_id', "{$table}.service_id")
+                ->where(function ($subjectQuery) use ($table): void {
+                    $subjectQuery
+                        ->whereColumn('gate_entry_delivery_recipients.person_id', "{$table}.person_id")
+                        ->orWhereColumn('gate_entry_delivery_recipients.guardian_id', "{$table}.guardian_id");
+                })
+                ->where('gate_entry_delivery_recipients.is_proxy_delivery', true);
+        };
+
+        // "Direct" means no active proxy declaration at all — including rows recorded before this
+        // feature existed, which is why it is a NOT EXISTS rather than a flag comparison.
+        if ($this->selectedDeliveryMethod === 'direct') {
+            $query->whereNotExists($matchesSubject);
+
+            return;
+        }
+
+        if ($this->selectedDeliveryMethod === 'proxy') {
+            $query->whereExists($matchesSubject);
+
+            return;
+        }
+
+        if (! array_key_exists($this->selectedDeliveryMethod, GateEntryDeliveryRecipient::TYPE_OPTIONS)) {
+            return;
+        }
+
+        $type = $this->selectedDeliveryMethod;
+
+        $query->whereExists(function ($recipientQuery) use ($matchesSubject, $type): void {
+            $matchesSubject($recipientQuery);
+            $recipientQuery->where('gate_entry_delivery_recipients.recipient_type', $type);
+        });
     }
 
     /**
@@ -368,12 +438,50 @@ class GateReport extends Component
         return [$byPerson, $byGuardian];
     }
 
+    /**
+     * Delivery-method declarations for the rows on screen, keyed by person_id / guardian_id.
+     * Every reported tab carries both columns, so one loader serves all three.
+     *
+     * @return array{0: Collection, 1: Collection}
+     */
+    protected function loadProxyRecipients(Service $service, Collection $rows): array
+    {
+        if ($rows->isEmpty()) {
+            return [collect(), collect()];
+        }
+
+        $personIds = $rows->pluck('person_id')->filter()->unique()->values();
+        $guardianIds = $rows->pluck('guardian_id')->filter()->unique()->values();
+
+        if ($personIds->isEmpty() && $guardianIds->isEmpty()) {
+            return [collect(), collect()];
+        }
+
+        $records = GateEntryDeliveryRecipient::query()
+            ->where('service_id', $service->id)
+            ->where('is_proxy_delivery', true)
+            ->where(function (Builder $query) use ($personIds, $guardianIds): void {
+                $query->whereIn('person_id', $personIds)->orWhereIn('guardian_id', $guardianIds);
+            })
+            ->get();
+
+        return [
+            $records->whereNotNull('person_id')->mapWithKeys(
+                fn (GateEntryDeliveryRecipient $record) => [(int) $record->person_id => $record->recipient_label]
+            ),
+            $records->whereNotNull('guardian_id')->mapWithKeys(
+                fn (GateEntryDeliveryRecipient $record) => [(int) $record->guardian_id => $record->recipient_label]
+            ),
+        ];
+    }
+
     protected function resetFilters(): void
     {
         $this->activeTab = 'entry';
         $this->search = '';
         $this->selectedCategory = 'all';
         $this->selectedStatus = 'all';
+        $this->selectedDeliveryMethod = 'all';
         $this->dateFrom = '';
         $this->dateTo = '';
         $this->resetPage();

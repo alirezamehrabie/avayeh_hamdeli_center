@@ -245,6 +245,16 @@
                                     </div>
                                 @endif
 
+                                @if(! empty($lastScanResult['proxy_recipient']['label']))
+                                    <div class="mt-3 flex items-center justify-between gap-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2">
+                                        <span class="inline-flex shrink-0 items-center gap-1.5 text-[11px] font-bold text-amber-600">
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4z"/></svg>
+                                            تحویل به غیر از مددجو
+                                        </span>
+                                        <span class="min-w-0 truncate text-sm font-black text-amber-700">{{ $lastScanResult['proxy_recipient']['label'] }}</span>
+                                    </div>
+                                @endif
+
                                 @if(! empty($lastScanResult['extra_fields']))
                                     <div class="mt-3 space-y-1.5 border-t border-slate-100 pt-3">
                                         <p class="text-[11px] font-bold text-slate-500">اطلاعات تکمیلی</p>

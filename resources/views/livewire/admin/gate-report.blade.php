@@ -95,7 +95,7 @@
             @endif
 
             {{-- KPI stat cards --}}
-            <div class="grid grid-cols-2 gap-3 border-b border-slate-200 p-4 sm:grid-cols-4 sm:p-6">
+            <div class="grid grid-cols-2 gap-3 border-b border-slate-200 p-4 sm:grid-cols-3 lg:grid-cols-5 sm:p-6">
                 <div class="rounded-2xl border border-sky-100 bg-sky-50/60 p-3">
                     <p class="text-[11px] font-semibold text-sky-600">کل ورودی‌ها</p>
                     <p class="mt-1 text-xl font-black text-sky-900">{{ number_format($stats['entered']) }}</p>
@@ -107,6 +107,10 @@
                 <div class="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-3">
                     <p class="text-[11px] font-semibold text-emerald-600">خروج نهایی</p>
                     <p class="mt-1 text-xl font-black text-emerald-900">{{ number_format($stats['exited']) }}</p>
+                </div>
+                <div class="rounded-2xl border border-orange-100 bg-orange-50/60 p-3">
+                    <p class="text-[11px] font-semibold text-orange-600">تحویل به غیر از مددجو</p>
+                    <p class="mt-1 text-xl font-black text-orange-900">{{ number_format($stats['proxy_recipients']) }} <span class="text-xs font-bold">نفر</span></p>
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3">
                     <p class="text-[11px] font-semibold text-slate-600">ارزش کل توزیع‌شده</p>
@@ -143,7 +147,7 @@
 
             {{-- Filters --}}
             <div class="border-b border-slate-200 p-4 sm:px-6">
-                <div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_9rem_9rem_9rem_auto] sm:items-center">
+                <div class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_9rem_9rem_9rem_9rem_auto] sm:items-center">
                     <input
                         type="search"
                         wire:model.live.debounce.300ms="search"
@@ -155,6 +159,15 @@
                         <option value="all">همه دسته‌ها</option>
                         @foreach($categories as $category)
                             <option value="{{ $category->id }}">{{ $category->name }}</option>
+                        @endforeach
+                    </select>
+
+                    <select wire:model.live="selectedDeliveryMethod" class="h-10 rounded-xl border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
+                        <option value="all">همه نحوه‌های تحویل</option>
+                        <option value="direct">تحویل به مددجو</option>
+                        <option value="proxy">تحویل به غیر از مددجو</option>
+                        @foreach(\App\Models\GateEntryDeliveryRecipient::TYPE_OPTIONS as $value => $label)
+                            <option value="{{ $value }}">&nbsp;&nbsp;— {{ $label }}</option>
                         @endforeach
                     </select>
 
@@ -211,7 +224,7 @@
                         >
                     </div>
 
-                    @if($search !== '' || $selectedCategory !== 'all' || $selectedStatus !== 'all' || $dateFrom !== '' || $dateTo !== '')
+                    @if($search !== '' || $selectedCategory !== 'all' || $selectedStatus !== 'all' || $selectedDeliveryMethod !== 'all' || $dateFrom !== '' || $dateTo !== '')
                         <button type="button" wire:click="clearFilters" class="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-500 transition hover:bg-slate-50">
                             پاک کردن
                         </button>
@@ -229,6 +242,7 @@
                             <th class="px-4 py-4 text-center font-bold">نوع</th>
                             <th class="px-4 py-4 text-right font-bold">دسته‌بندی/قلم</th>
                             <th class="px-4 py-4 text-center font-bold">وضعیت</th>
+                            <th class="px-4 py-4 text-right font-bold">نحوه تحویل</th>
                             <th class="px-4 py-4 text-right font-bold">اپراتور ورود</th>
                             <th class="px-4 py-4 text-right font-bold">زمان ورود</th>
                         </tr>
@@ -241,6 +255,9 @@
                                 $extraFields = $isGuardian
                                     ? ($entryFieldsByGuardian[$assignment->guardian_id] ?? [])
                                     : ($entryFieldsByPerson[$assignment->person_id] ?? []);
+                                $proxyLabel = $isGuardian
+                                    ? ($proxyByGuardian[$assignment->guardian_id] ?? '')
+                                    : ($proxyByPerson[$assignment->person_id] ?? '');
                             @endphp
                             <tr class="align-top transition hover:bg-slate-50">
                                 <td class="px-4 py-4 text-slate-700">
@@ -262,6 +279,15 @@
                                         {{ $statusLabels[$assignment->status] ?? $assignment->status }}
                                     </span>
                                 </td>
+                                <td class="px-4 py-4 text-right">
+                                    @if($proxyLabel !== '')
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-0.5 text-[11px] font-bold text-orange-700">
+                                            غیر از مددجو: {{ $proxyLabel }}
+                                        </span>
+                                    @else
+                                        <span class="text-[11px] font-semibold text-slate-400">تحویل به مددجو</span>
+                                    @endif
+                                </td>
                                 <td class="px-4 py-4 text-right text-slate-600 text-xs">{{ $assignment->creator?->full_name ?: $assignment->creator?->name ?: '-' }}</td>
                                 <td class="px-4 py-4 text-right text-slate-500 text-xs">
                                     {{ $assignment->assigned_at ? \App\Helpers\Morilog\Jalalian::fromDateTime($assignment->assigned_at)->format('Y/m/d H:i') : '-' }}
@@ -269,7 +295,7 @@
                             </tr>
                             @if(! empty($extraFields))
                                 <tr class="bg-slate-50/70">
-                                    <td colspan="6" class="px-4 pb-3 pt-1 text-xs text-slate-600">
+                                    <td colspan="7" class="px-4 pb-3 pt-1 text-xs text-slate-600">
                                         <div class="flex flex-wrap gap-x-4 gap-y-1">
                                             @foreach($extraFields as $field)
                                                 <span><span class="font-bold text-slate-700">{{ $field['label'] }}:</span> {{ $field['value'] }}</span>
@@ -280,7 +306,7 @@
                             @endif
                         @empty
                             <tr>
-                                <td colspan="6" class="px-4 py-12 text-center text-slate-500">هنوز رکوردی برای گیت ورود این خدمت ثبت نشده است.</td>
+                                <td colspan="7" class="px-4 py-12 text-center text-slate-500">هنوز رکوردی برای گیت ورود این خدمت ثبت نشده است.</td>
                             </tr>
                         @endforelse
                         </tbody>
@@ -290,7 +316,12 @@
                 {{-- Mobile cards --}}
                 <div class="divide-y divide-slate-100 sm:hidden">
                     @forelse($results as $assignment)
-                        @php $isGuardian = (bool) $assignment->guardian_id; @endphp
+                        @php
+                            $isGuardian = (bool) $assignment->guardian_id;
+                            $proxyLabel = $isGuardian
+                                ? ($proxyByGuardian[$assignment->guardian_id] ?? '')
+                                : ($proxyByPerson[$assignment->person_id] ?? '');
+                        @endphp
                         <div class="p-4">
                             <div class="flex items-start justify-between">
                                 <p class="font-bold text-slate-900">{{ $assignment->recipient_name }}</p>
@@ -299,6 +330,9 @@
                                 </span>
                             </div>
                             <p class="mt-1 text-xs text-slate-500">{{ $assignment->serviceCategory?->name ?: '-' }} &middot; {{ $isGuardian ? 'خانوادگی' : 'شخصی' }}</p>
+                            @if($proxyLabel !== '')
+                                <p class="mt-2 inline-flex rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-700">تحویل به غیر از مددجو: {{ $proxyLabel }}</p>
+                            @endif
                             <p class="mt-2 text-[11px] text-slate-500">اپراتور: {{ $assignment->creator?->full_name ?: $assignment->creator?->name ?: '-' }}</p>
                             <p class="text-[11px] text-slate-500">{{ $assignment->assigned_at ? \App\Helpers\Morilog\Jalalian::fromDateTime($assignment->assigned_at)->format('Y/m/d H:i') : '-' }}</p>
                         </div>
@@ -316,13 +350,19 @@
                             <th class="px-4 py-4 text-right font-bold">گیرنده</th>
                             <th class="px-4 py-4 text-right font-bold">دسته‌بندی/قلم</th>
                             <th class="px-4 py-4 text-center font-bold">وضعیت فعلی</th>
+                            <th class="px-4 py-4 text-right font-bold">نحوه تحویل</th>
                             <th class="px-4 py-4 text-right font-bold">اپراتور تحویل</th>
                             <th class="px-4 py-4 text-right font-bold">زمان تحویل</th>
                         </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                         @forelse($results as $assignment)
-                            @php $isGuardian = (bool) $assignment->guardian_id; @endphp
+                            @php
+                                $isGuardian = (bool) $assignment->guardian_id;
+                                $proxyLabel = $isGuardian
+                                    ? ($proxyByGuardian[$assignment->guardian_id] ?? '')
+                                    : ($proxyByPerson[$assignment->person_id] ?? '');
+                            @endphp
                             <tr class="align-top transition hover:bg-slate-50">
                                 <td class="px-4 py-4 text-slate-700">
                                     <p class="font-bold text-slate-900">{{ $assignment->recipient_name }}</p>
@@ -334,6 +374,15 @@
                                         {{ $statusLabels[$assignment->status] ?? $assignment->status }}
                                     </span>
                                 </td>
+                                <td class="px-4 py-4 text-right">
+                                    @if($proxyLabel !== '')
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-0.5 text-[11px] font-bold text-orange-700">
+                                            غیر از مددجو: {{ $proxyLabel }}
+                                        </span>
+                                    @else
+                                        <span class="text-[11px] font-semibold text-slate-400">تحویل به مددجو</span>
+                                    @endif
+                                </td>
                                 <td class="px-4 py-4 text-right text-slate-600 text-xs">{{ $assignment->deliveredBy?->full_name ?: $assignment->deliveredBy?->name ?: '-' }}</td>
                                 <td class="px-4 py-4 text-right text-slate-500 text-xs">
                                     {{ $assignment->delivered_at ? \App\Helpers\Morilog\Jalalian::fromDateTime($assignment->delivered_at)->format('Y/m/d H:i') : '-' }}
@@ -341,7 +390,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-4 py-12 text-center text-slate-500">هنوز رکوردی برای گیت تحویل این خدمت ثبت نشده است.</td>
+                                <td colspan="6" class="px-4 py-12 text-center text-slate-500">هنوز رکوردی برای گیت تحویل این خدمت ثبت نشده است.</td>
                             </tr>
                         @endforelse
                         </tbody>
@@ -350,6 +399,11 @@
 
                 <div class="divide-y divide-slate-100 sm:hidden">
                     @forelse($results as $assignment)
+                        @php
+                            $proxyLabel = $assignment->guardian_id
+                                ? ($proxyByGuardian[$assignment->guardian_id] ?? '')
+                                : ($proxyByPerson[$assignment->person_id] ?? '');
+                        @endphp
                         <div class="p-4">
                             <div class="flex items-start justify-between">
                                 <p class="font-bold text-slate-900">{{ $assignment->recipient_name }}</p>
@@ -358,6 +412,9 @@
                                 </span>
                             </div>
                             <p class="mt-1 text-xs text-slate-500">{{ $assignment->serviceCategory?->name ?: '-' }}</p>
+                            @if($proxyLabel !== '')
+                                <p class="mt-2 inline-flex rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-700">تحویل به غیر از مددجو: {{ $proxyLabel }}</p>
+                            @endif
                             <p class="mt-2 text-[11px] text-slate-500">اپراتور: {{ $assignment->deliveredBy?->full_name ?: $assignment->deliveredBy?->name ?: '-' }}</p>
                             <p class="text-[11px] text-slate-500">{{ $assignment->delivered_at ? \App\Helpers\Morilog\Jalalian::fromDateTime($assignment->delivered_at)->format('Y/m/d H:i') : '-' }}</p>
                         </div>
@@ -376,13 +433,19 @@
                             <th class="px-4 py-4 text-right font-bold">دسته‌بندی/قلم</th>
                             <th class="px-4 py-4 text-center font-bold">مقدار</th>
                             <th class="px-4 py-4 text-center font-bold">ارزش تحویل</th>
+                            <th class="px-4 py-4 text-right font-bold">نحوه تحویل</th>
                             <th class="px-4 py-4 text-right font-bold">اپراتور خروج</th>
                             <th class="px-4 py-4 text-right font-bold">زمان خروج</th>
                         </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                         @forelse($results as $delivery)
-                            @php $isGuardian = (bool) $delivery->guardian_id; @endphp
+                            @php
+                                $isGuardian = (bool) $delivery->guardian_id;
+                                $proxyLabel = $isGuardian
+                                    ? ($proxyByGuardian[$delivery->guardian_id] ?? '')
+                                    : ($proxyByPerson[$delivery->person_id] ?? '');
+                            @endphp
                             <tr class="align-top transition hover:bg-slate-50">
                                 <td class="px-4 py-4 text-slate-700">
                                     <p class="font-bold text-slate-900">{{ $delivery->recipient_name }}</p>
@@ -391,6 +454,15 @@
                                 <td class="px-4 py-4 text-right text-slate-700">{{ $delivery->serviceCategory?->name ?: '-' }}</td>
                                 <td class="px-4 py-4 text-center font-bold text-slate-800">{{ number_format((float) $delivery->delivered_quantity, 2) }}</td>
                                 <td class="px-4 py-4 text-center font-bold text-emerald-600">{{ number_format($delivery->delivered_total_value) }} ریال</td>
+                                <td class="px-4 py-4 text-right">
+                                    @if($proxyLabel !== '')
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-0.5 text-[11px] font-bold text-orange-700">
+                                            غیر از مددجو: {{ $proxyLabel }}
+                                        </span>
+                                    @else
+                                        <span class="text-[11px] font-semibold text-slate-400">تحویل به مددجو</span>
+                                    @endif
+                                </td>
                                 <td class="px-4 py-4 text-right text-slate-600 text-xs">{{ $delivery->creator?->full_name ?: $delivery->creator?->name ?: '-' }}</td>
                                 <td class="px-4 py-4 text-right text-slate-500 text-xs">
                                     {{ $delivery->delivered_at ? \App\Helpers\Morilog\Jalalian::fromDateTime($delivery->delivered_at)->format('Y/m/d') : '-' }}
@@ -398,7 +470,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-4 py-12 text-center text-slate-500">هنوز رکوردی برای گیت خروج این خدمت ثبت نشده است.</td>
+                                <td colspan="7" class="px-4 py-12 text-center text-slate-500">هنوز رکوردی برای گیت خروج این خدمت ثبت نشده است.</td>
                             </tr>
                         @endforelse
                         </tbody>
@@ -407,12 +479,20 @@
 
                 <div class="divide-y divide-slate-100 sm:hidden">
                     @forelse($results as $delivery)
+                        @php
+                            $proxyLabel = $delivery->guardian_id
+                                ? ($proxyByGuardian[$delivery->guardian_id] ?? '')
+                                : ($proxyByPerson[$delivery->person_id] ?? '');
+                        @endphp
                         <div class="p-4">
                             <div class="flex items-start justify-between">
                                 <p class="font-bold text-slate-900">{{ $delivery->recipient_name }}</p>
                                 <span class="text-xs font-bold text-emerald-600">{{ number_format($delivery->delivered_total_value) }} ریال</span>
                             </div>
                             <p class="mt-1 text-xs text-slate-500">{{ $delivery->serviceCategory?->name ?: '-' }} &middot; {{ number_format((float) $delivery->delivered_quantity, 2) }}</p>
+                            @if($proxyLabel !== '')
+                                <p class="mt-2 inline-flex rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-700">تحویل به غیر از مددجو: {{ $proxyLabel }}</p>
+                            @endif
                             <p class="mt-2 text-[11px] text-slate-500">اپراتور: {{ $delivery->creator?->full_name ?: $delivery->creator?->name ?: '-' }}</p>
                             <p class="text-[11px] text-slate-500">{{ $delivery->delivered_at ? \App\Helpers\Morilog\Jalalian::fromDateTime($delivery->delivered_at)->format('Y/m/d') : '-' }}</p>
                         </div>

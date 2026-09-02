@@ -499,6 +499,83 @@
                     </div>
                 </div>
 
+                {{-- Delivery method: who physically receives the items (recorded per subject per service) --}}
+                <div class="mb-6 rounded-3xl border p-4 shadow-sm transition-colors lg:p-5 {{ $isProxyDelivery ? 'border-amber-300 bg-amber-50/50' : 'border-slate-200 bg-white' }}">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h2 class="flex items-center gap-2 text-sm font-extrabold text-slate-800">
+                            <svg class="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                            نحوه تحویل
+                        </h2>
+                        @if($isProxyDelivery && $this->proxyRecipientLabel !== '')
+                            <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-bold text-amber-700">
+                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4z"/></svg>
+                            تحویل به: {{ $this->proxyRecipientLabel }}
+                            </span>
+                        @endif
+                    </div>
+
+                    @if(! $lastScanResult)
+                        <p class="mt-3 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-center text-xs font-semibold text-slate-500">
+                            برای ثبت نحوه تحویل، ابتدا QR فرد را اسکن کنید.
+                        </p>
+                    @else
+                        <label class="mt-3 block cursor-pointer">
+                            <input type="checkbox" wire:model.live="isProxyDelivery" class="peer sr-only">
+                            <div class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 transition peer-checked:border-amber-400 peer-checked:bg-amber-50 peer-checked:ring-4 peer-checked:ring-amber-100 peer-focus-visible:ring-4 peer-focus-visible:ring-amber-200">
+                                {{-- The tick reads $wire directly: a peer-checked: variant only reaches siblings
+                                     of the input, not this nested span. --}}
+                                <span
+                                    class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 transition"
+                                    :class="$wire.isProxyDelivery ? 'border-amber-500 bg-amber-500 text-white' : 'border-slate-300 bg-white text-transparent'"
+                                >
+                                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 111.42-1.42l2.79 2.79 6.79-6.79a1 1 0 011.42 0z" clip-rule="evenodd" /></svg>
+                                </span>
+                                <span class="flex min-w-0 flex-col">
+                                    <span class="text-sm font-extrabold text-slate-800">تحویل به غیر از مددجو</span>
+                                    <span class="text-[11px] font-semibold text-slate-500">اگر خدمت به شخص دیگری تحویل می‌شود، این گزینه را فعال کنید.</span>
+                                </span>
+                            </div>
+                        </label>
+
+                        <div x-show="$wire.isProxyDelivery" x-cloak class="mt-3 grid gap-3 sm:grid-cols-2">
+                            <div class="flex flex-col gap-1">
+                                <label class="text-[11px] font-bold text-slate-500">گیرنده خدمت</label>
+                                <select
+                                    wire:model.live="proxyRecipientType"
+                                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 transition focus:border-amber-300 focus:outline-none focus:ring-4 focus:ring-amber-100"
+                                >
+                                    <option value="">— انتخاب کنید —</option>
+                                    @foreach(\App\Models\GateEntryDeliveryRecipient::TYPE_OPTIONS as $value => $label)
+                                        <option value="{{ $value }}">{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div x-show="$wire.proxyRecipientType === '{{ \App\Models\GateEntryDeliveryRecipient::TYPE_OTHER }}'" x-cloak class="flex flex-col gap-1">
+                                <label class="text-[11px] font-bold text-slate-500">نام و مشخصات گیرنده</label>
+                                <div class="relative">
+                                    <input
+                                        type="text"
+                                        wire:model.live.debounce.600ms="proxyRecipientName"
+                                        placeholder="مثلاً: مریم رضایی، همسایه، ۰۹۱۲۰۰۰۰۰۰۰"
+                                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 placeholder:text-slate-400 transition focus:border-amber-300 focus:outline-none focus:ring-4 focus:ring-amber-100"
+                                    >
+                                    <div wire:loading.delay.200ms wire:target="proxyRecipientName" class="pointer-events-none absolute inset-y-0 left-2 flex items-center">
+                                        <svg class="h-4 w-4 animate-spin text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+                                            <path d="M12 2a10 10 0 0110 10" stroke-linecap="round"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if($proxyError)
+                            <p class="mt-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-600">{{ $proxyError }}</p>
+                        @endif
+                    @endif
+                </div>
+
                 {{-- Bottom row: Categories section with full width --}}
                 {{-- Optimistic checklist state lives on the client so taps feel instant; the key is
                      tied to the scanned subject so a new scan reseeds it from the server's DB state. --}}

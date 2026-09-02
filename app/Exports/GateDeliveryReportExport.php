@@ -2,8 +2,10 @@
 
 namespace App\Exports;
 
+use App\Exports\Concerns\ResolvesGateDeliveryMethod;
 use App\Helpers\Morilog\Jalalian;
 use App\Models\GateEntryAssignment;
+use App\Models\Service;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -13,9 +15,9 @@ use Maatwebsite\Excel\Concerns\WithTitle;
 
 class GateDeliveryReportExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMapping, WithTitle
 {
-    public function __construct(protected Builder $query)
-    {
-    }
+    use ResolvesGateDeliveryMethod;
+
+    public function __construct(protected Builder $query, protected ?Service $service = null) {}
 
     public function query(): Builder
     {
@@ -24,16 +26,17 @@ class GateDeliveryReportExport implements FromQuery, ShouldAutoSize, WithHeading
 
     public function headings(): array
     {
-        return [
+        return array_merge([
             'نام گیرنده',
             'نوع',
             'کد',
             'کد ملی',
             'دسته‌بندی/قلم',
             'وضعیت فعلی',
+        ], $this->deliveryMethodHeadings(), [
             'اپراتور تحویل',
             'زمان تحویل',
-        ];
+        ]);
     }
 
     public function map($row): array
@@ -44,16 +47,17 @@ class GateDeliveryReportExport implements FromQuery, ShouldAutoSize, WithHeading
             ? 'از گیت خروج نهایی شده'
             : 'در انتظار خروج';
 
-        return [
+        return array_merge([
             $row->recipient_name,
             $isGuardian ? 'خانوادگی' : 'شخصی',
             $code ?: '-',
             $row->national_id ?: '-',
             $row->serviceCategory?->name ?: '-',
             $currentState,
+        ], $this->deliveryMethodColumns($this->service, $row), [
             $row->deliveredBy?->full_name ?: $row->deliveredBy?->name ?: '-',
             $row->delivered_at ? Jalalian::fromDateTime($row->delivered_at)->format('Y/m/d H:i') : '-',
-        ];
+        ]);
     }
 
     public function title(): string

@@ -2,7 +2,9 @@
 
 namespace App\Exports;
 
+use App\Exports\Concerns\ResolvesGateDeliveryMethod;
 use App\Helpers\Morilog\Jalalian;
+use App\Models\Service;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -12,9 +14,9 @@ use Maatwebsite\Excel\Concerns\WithTitle;
 
 class GateExitReportExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMapping, WithTitle
 {
-    public function __construct(protected Builder $query)
-    {
-    }
+    use ResolvesGateDeliveryMethod;
+
+    public function __construct(protected Builder $query, protected ?Service $service = null) {}
 
     public function query(): Builder
     {
@@ -23,7 +25,7 @@ class GateExitReportExport implements FromQuery, ShouldAutoSize, WithHeadings, W
 
     public function headings(): array
     {
-        return [
+        return array_merge([
             'نام گیرنده',
             'نوع',
             'کد',
@@ -31,10 +33,11 @@ class GateExitReportExport implements FromQuery, ShouldAutoSize, WithHeadings, W
             'دسته‌بندی/قلم',
             'مقدار',
             'ارزش تحویل (ریال)',
+        ], $this->deliveryMethodHeadings(), [
             'اپراتور خروج',
             'زمان خروج',
             'یادداشت',
-        ];
+        ]);
     }
 
     public function map($row): array
@@ -42,7 +45,7 @@ class GateExitReportExport implements FromQuery, ShouldAutoSize, WithHeadings, W
         $isGuardian = (bool) $row->guardian_id;
         $code = $isGuardian ? $row->guardian?->guardian_code : $row->person?->person_code;
 
-        return [
+        return array_merge([
             $row->recipient_name,
             $isGuardian ? 'خانوادگی' : 'شخصی',
             $code ?: '-',
@@ -50,10 +53,11 @@ class GateExitReportExport implements FromQuery, ShouldAutoSize, WithHeadings, W
             $row->serviceCategory?->name ?: '-',
             number_format((float) $row->delivered_quantity, 2),
             number_format((int) $row->delivered_total_value),
+        ], $this->deliveryMethodColumns($this->service, $row), [
             $row->creator?->full_name ?: $row->creator?->name ?: '-',
             $row->delivered_at ? Jalalian::fromDateTime($row->delivered_at)->format('Y/m/d') : '-',
             $row->notes ?: '-',
-        ];
+        ]);
     }
 
     public function title(): string
