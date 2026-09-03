@@ -100,6 +100,125 @@ class DistributionOperatorDeliveryGateTest extends TestCase
         ]);
     }
 
+    public function test_toggle_reports_the_resulting_delivered_state_to_the_client(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Food basket', $operator);
+
+        $person = Person::query()->create([
+            'first_name' => 'Reza',
+            'last_name' => 'Kazemi',
+            'national_id' => '7234567890',
+            'person_code' => '14040',
+        ]);
+
+        $this->assign($service, $category, $person, $operator);
+
+        $token = $this->issueToken($person, $operator);
+
+        $this->actingAs($operator);
+
+        $component = Livewire::test(DeliveryGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token);
+
+        // The Alpine checklist realigns its optimistic tick with this return value.
+        $component->call('toggleDelivered', $category->id, 'deliver')
+            ->assertReturned(true);
+
+        $component->call('toggleDelivered', $category->id, 'revert')
+            ->assertReturned(false);
+    }
+
+    public function test_a_stale_tap_cannot_flip_an_item_the_operator_never_saw_change(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Food basket', $operator);
+
+        $person = Person::query()->create([
+            'first_name' => 'Zahra',
+            'last_name' => 'Sadeghi',
+            'national_id' => '8234567890',
+            'person_code' => '14041',
+        ]);
+
+        $assignment = $this->assign($service, $category, $person, $operator);
+
+        $token = $this->issueToken($person, $operator);
+
+        $this->actingAs($operator);
+
+        $component = Livewire::test(DeliveryGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            ->assertSet('deliveredCategoryIds', []);
+
+        // Another station delivered this item while the page sat open on a pending row. The operator here
+        // still sees an unticked row, so their tap means "deliver" — a plain toggle would read the row as
+        // delivered and silently revert it, i.e. cancel a delivery with no confirmation at all.
+        $assignment->forceFill([
+            'status' => GateEntryAssignment::STATUS_DELIVERED,
+            'delivered_at' => now(),
+            'delivered_by' => $operator->id,
+        ])->save();
+
+        $component->call('toggleDelivered', $category->id, 'deliver')
+            ->assertReturned(true)
+            ->assertSet('deliveredCategoryIds', [$category->id]);
+
+        $this->assertDatabaseHas('gate_entry_assignments', [
+            'id' => $assignment->id,
+            'status' => GateEntryAssignment::STATUS_DELIVERED,
+        ]);
+
+        // The mirror case: the row was reverted elsewhere, so a confirmed "revert" tap on the tick this
+        // operator still sees must not re-deliver it.
+        $assignment->forceFill([
+            'status' => GateEntryAssignment::STATUS_PENDING,
+            'delivered_at' => null,
+            'delivered_by' => null,
+        ])->save();
+
+        $component->call('toggleDelivered', $category->id, 'revert')
+            ->assertReturned(false)
+            ->assertSet('deliveredCategoryIds', []);
+
+        $this->assertDatabaseHas('gate_entry_assignments', [
+            'id' => $assignment->id,
+            'status' => GateEntryAssignment::STATUS_PENDING,
+        ]);
+    }
+
+    public function test_toggling_delivery_persists_without_re_rendering_the_gate(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Food basket', $operator);
+
+        $person = Person::query()->create([
+            'first_name' => 'Nima',
+            'last_name' => 'Bagheri',
+            'national_id' => '9234567890',
+            'person_code' => '14042',
+        ]);
+
+        $this->assign($service, $category, $person, $operator);
+
+        $token = $this->issueToken($person, $operator);
+
+        $this->actingAs($operator);
+
+        $component = Livewire::test(DeliveryGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            ->call('toggleDelivered', $category->id, 'deliver');
+
+        // The Alpine checklist owns the tick, so a toggle must not re-render (and re-query) the gate.
+        $this->assertArrayNotHasKey('html', $component->effects);
+    }
+
     public function test_existing_delivered_status_is_reflected_on_scan(): void
     {
         [$operator] = $this->operator();

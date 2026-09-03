@@ -306,6 +306,10 @@ Alpine.data('jalaliDateTimeField', (model) => ({
 // tap flips instantly (optimistic), fires the persist call in the background, and rolls
 // back only if the server rejects it. The matching server method skipRender()s, so a
 // toggle never re-renders the list or re-runs its queries.
+//
+// Marking an item delivered is instant, but *clearing* a mark first goes through the
+// confirmation modal: a ticked item has already been handed over, so a stray tap by the
+// next operator at the station must not be able to drop it back into the queue.
 Alpine.data('deliveryItems', (initialDelivered = []) => ({
     delivered: new Set((initialDelivered || []).map(Number)),
     saving: new Set(),
@@ -318,7 +322,7 @@ Alpine.data('deliveryItems', (initialDelivered = []) => ({
     get deliveredCount() {
         return this.delivered.size;
     },
-    toggle(id) {
+    toggle(id, label = '') {
         id = Number(id);
         if (this.saving.has(id)) {
             // A persist for this item is still in flight — ignore the extra tap so the
@@ -326,33 +330,87 @@ Alpine.data('deliveryItems', (initialDelivered = []) => ({
             return;
         }
 
+        if (this.delivered.has(id)) {
+            this.confirmUndeliver(id, label);
+
+            return;
+        }
+
+        this.persist(id, 'deliver');
+    },
+    confirmUndeliver(id, label = '') {
+        const item = String(label ?? '').trim();
+
+        window.dispatchEvent(new CustomEvent('open-notification-modal', {
+            detail: {
+                config: {
+                    type: 'warning',
+                    icon: 'warning',
+                    title: 'برداشتن تأیید تحویل',
+                    message: (item !== '' ? `قلم «${item}»` : 'این قلم')
+                        + ' به‌عنوان تحویل‌شده ثبت شده است. با برداشتن علامت، تحویل ثبت‌شده لغو می‌شود و این قلم دوباره «در انتظار تحویل» قرار می‌گیرد.',
+                    buttons: [
+                        {
+                            label: 'برداشتن علامت',
+                            action: 'event',
+                            event: 'delivery-gate-undeliver-confirmed',
+                            payload: { id },
+                            variant: 'danger',
+                        },
+                        {
+                            label: 'انصراف',
+                            action: 'close',
+                            variant: 'secondary',
+                        },
+                    ],
+                },
+            },
+        }));
+    },
+    undeliverConfirmed(id) {
+        id = Number(id);
+
+        if (this.saving.has(id) || !this.delivered.has(id)) {
+            return;
+        }
+
+        this.persist(id, 'revert');
+    },
+    persist(id, intent) {
         const wasDelivered = this.delivered.has(id);
 
         // Optimistic flip (Sets are reassigned so Alpine picks up the change).
-        if (wasDelivered) {
-            this.delivered.delete(id);
-        } else {
-            this.delivered.add(id);
-        }
-        this.delivered = new Set(this.delivered);
+        this.apply(id, !wasDelivered);
 
         this.saving.add(id);
         this.saving = new Set(this.saving);
 
-        Promise.resolve(this.$wire.toggleDelivered(id))
+        Promise.resolve(this.$wire.toggleDelivered(id, intent))
+            .then((delivered) => {
+                // The server owns the row's real status and refuses a flip that contradicts
+                // the tap's intent — e.g. another station delivered this item while the page
+                // sat open — so realign with what it reports instead of the optimistic guess.
+                if (typeof delivered === 'boolean') {
+                    this.apply(id, delivered);
+                }
+            })
             .catch(() => {
                 // Persist failed — restore the pre-tap state so the UI stays truthful.
-                if (wasDelivered) {
-                    this.delivered.add(id);
-                } else {
-                    this.delivered.delete(id);
-                }
-                this.delivered = new Set(this.delivered);
+                this.apply(id, wasDelivered);
             })
             .finally(() => {
                 this.saving.delete(id);
                 this.saving = new Set(this.saving);
             });
+    },
+    apply(id, delivered) {
+        if (delivered) {
+            this.delivered.add(id);
+        } else {
+            this.delivered.delete(id);
+        }
+
+        this.delivered = new Set(this.delivered);
     },
 }));
 

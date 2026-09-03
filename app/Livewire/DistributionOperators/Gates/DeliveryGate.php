@@ -61,12 +61,22 @@ class DeliveryGate extends AbstractGateComponent
         return "{$prefix}{$authorized} قلم مجاز برای تحویل نمایش داده شد. اقلام تحویل‌شده را علامت بزنید.";
     }
 
-    public function toggleDelivered(int $categoryId): void
+    /**
+     * Flip one authorized item between pending and delivered.
+     *
+     * $intent is the tap's meaning as the client understood it ('deliver' / 'revert'). The row's real
+     * status is whatever the database says, so a tap whose intent contradicts it is refused rather than
+     * applied blindly: two operators can have the same subject on screen, and the second one must not
+     * silently undo a delivery the first one just recorded. Passing null keeps the plain toggle.
+     *
+     * @return bool the item's delivered state after the call, so the client can realign with the server.
+     */
+    public function toggleDelivered(int $categoryId, ?string $intent = null): bool
     {
         $this->authorizeGate();
 
         if (! $this->selectedService || ! $this->hasScannedSubject()) {
-            return;
+            return $this->isMarkedDelivered($categoryId);
         }
 
         // Only items approved at the Entry Gate are deliverable here — no assignment, no delivery.
@@ -75,26 +85,43 @@ class DeliveryGate extends AbstractGateComponent
             ->first();
 
         if (! $assignment) {
-            return;
+            return $this->isMarkedDelivered($categoryId);
         }
 
         // An item already finalized at the Exit Gate is locked. Reverting it here would push it back to
         // "delivered" and let the Exit Gate finalize it a second time, creating a duplicate ServiceDelivery
         // ledger entry (a double distribution). Only pending ⇄ delivered transitions are allowed at this gate.
         if ($assignment->status === GateEntryAssignment::STATUS_FINALIZED) {
-            return;
+            return $this->isMarkedDelivered($categoryId);
         }
 
-        if ($assignment->status === GateEntryAssignment::STATUS_DELIVERED) {
+        $isDelivered = $assignment->status === GateEntryAssignment::STATUS_DELIVERED;
+
+        // The client only asked to change a status it believed the row had. If the row already moved on,
+        // the tap is stale — report the real state instead of flipping it the wrong way.
+        $expectedBefore = match ($intent) {
+            'deliver' => false,
+            'revert' => true,
+            default => null,
+        };
+
+        if ($expectedBefore !== null && $expectedBefore !== $isDelivered) {
+            $this->syncDeliveredCategoryId($categoryId, $isDelivered);
+            $this->skipRender();
+
+            return $isDelivered;
+        }
+
+        if ($isDelivered) {
             $assignment->forceFill([
                 'status' => GateEntryAssignment::STATUS_PENDING,
                 'delivered_at' => null,
                 'delivered_by' => null,
             ])->save();
-            $this->deliveredCategoryIds = array_values(array_diff($this->deliveredCategoryIds, [$categoryId]));
+            $this->syncDeliveredCategoryId($categoryId, false);
             $this->skipRender();
 
-            return;
+            return false;
         }
 
         $assignment->forceFill([
@@ -103,15 +130,33 @@ class DeliveryGate extends AbstractGateComponent
             'delivered_by' => auth()->id(),
         ])->save();
 
-        if (! in_array($categoryId, $this->deliveredCategoryIds, true)) {
-            $this->deliveredCategoryIds[] = $categoryId;
-        }
+        $this->syncDeliveredCategoryId($categoryId, true);
 
         // The client already flipped this item optimistically (see the deliveryItems
         // Alpine component); persisting is all the server needs to do. Skipping the render
         // avoids re-querying the service + authorized items and re-diffing the whole gate
         // on every single tap — the core of the old selection lag.
         $this->skipRender();
+
+        return true;
+    }
+
+    protected function isMarkedDelivered(int $categoryId): bool
+    {
+        return in_array($categoryId, $this->deliveredCategoryIds, true);
+    }
+
+    protected function syncDeliveredCategoryId(int $categoryId, bool $delivered): void
+    {
+        if ($delivered) {
+            if (! $this->isMarkedDelivered($categoryId)) {
+                $this->deliveredCategoryIds[] = $categoryId;
+            }
+
+            return;
+        }
+
+        $this->deliveredCategoryIds = array_values(array_diff($this->deliveredCategoryIds, [$categoryId]));
     }
 
     /**

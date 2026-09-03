@@ -411,10 +411,13 @@
                 {{-- Right: authorized items to deliver --}}
                 @php($authorizedItems = $this->authorizedItems)
                 {{-- Optimistic checklist state lives on the client so taps feel instant; the key is
-                     tied to the scanned subject so a new scan reseeds it from the server's DB state. --}}
+                     tied to the scanned subject so a new scan reseeds it from the server's DB state.
+                     Clearing a tick is the one branch that waits: the modal's confirm button dispatches
+                     back here so an accidental tap can't silently cancel a recorded delivery. --}}
                 <div
                     class="flex min-h-0 flex-col gap-3"
                     x-data="deliveryItems(@js(array_map('intval', $deliveredCategoryIds)))"
+                    x-on:delivery-gate-undeliver-confirmed.window="undeliverConfirmed($event.detail.id)"
                     wire:key="delivery-column-{{ $scannedPersonId ?? 0 }}-{{ $scannedGuardianId ?? 0 }}"
                 >
                     <div class="flex items-center justify-between gap-2">
@@ -473,10 +476,11 @@
                                 @else
                                     {{-- Toggleable: the whole row is the only tap target; checkbox + pill are pure state mirrors.
                                          State is client-driven for instant feedback; @click persists in the background.
+                                         Clearing a tick routes through a confirmation modal first (see deliveryItems).
                                          Mobile keeps every row single-line: name truncates and the text pill yields to a dot. --}}
                                     <button
                                         type="button"
-                                        @click="toggle({{ $cid }})"
+                                        @click="toggle({{ $cid }}, @js($category?->name ?? ''))"
                                         wire:key="delivery-gate-item-{{ $item->id }}"
                                         class="flex w-full items-center justify-between gap-2 rounded-2xl border-2 px-3 py-2.5 text-right transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-1 sm:gap-3 sm:px-4 sm:py-3"
                                         :class="isDelivered({{ $cid }}) ? 'border-emerald-500 bg-emerald-50' : 'border-slate-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/40'"
