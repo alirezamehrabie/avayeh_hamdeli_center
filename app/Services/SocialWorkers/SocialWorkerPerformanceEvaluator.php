@@ -46,23 +46,24 @@ class SocialWorkerPerformanceEvaluator
 
     public const CHART_MONTHS = 6;
 
-    public function evaluate(SocialWorker $worker): array
+    public function evaluate(SocialWorker $worker, ?array $range = null): array
     {
+        $range = $this->normalizeRange($range);
         $workerId = (int) $worker->getKey();
 
-        $allocations = $this->allocationRows($workerId);
-        $deliverySummary = $this->deliverySummary($workerId);
+        $allocations = $this->allocationRows($workerId, $range);
+        $deliverySummary = $this->deliverySummary($workerId, $range);
 
         if ($allocations->isEmpty() && (int) $deliverySummary['count'] === 0) {
-            return $this->emptyResult();
+            return $this->emptyResult($range);
         }
 
         $response = $this->responseMetric($allocations);
         $fulfillment = $this->fulfillmentMetric($allocations);
         $coverage = $this->coverageMetric($allocations);
-        $punctuality = $this->punctualityMetric($workerId);
-        $monthly = $this->monthlyActivity($workerId);
-        $consistency = $this->consistencyMetric($monthly);
+        $punctuality = $this->punctualityMetric($workerId, $range);
+        $monthly = $this->monthlyActivity($workerId, $range);
+        $consistency = $this->consistencyMetric($monthly, $range !== null);
 
         $metrics = [
             'response' => $response,
@@ -83,8 +84,9 @@ class SocialWorkerPerformanceEvaluator
             'response_distribution' => $response['distribution'],
             'monthly_activity' => $monthly,
             'delivery_summary' => $deliverySummary,
-            'channel_breakdown' => $this->channelBreakdown($workerId),
+            'channel_breakdown' => $this->channelBreakdown($workerId, $range),
             'open_allocations' => $this->openAllocations($allocations),
+            'range' => $this->rangeLabel($range),
             'weights' => self::WEIGHTS,
         ];
     }
@@ -97,20 +99,22 @@ class SocialWorkerPerformanceEvaluator
      * مستقل از تعداد مددکاران سبک بماند.
      *
      * @param  array<int, int>  $workerIds
+     * @param  array{from?: mixed, to?: mixed}|null  $range  بازهٔ ارزیابی؛ خالی یعنی همهٔ زمان‌ها.
      * @return array<int, array<string, mixed>> کلید هر ردیف، شناسهٔ مددکار است.
      */
-    public function rankMany(array $workerIds): array
+    public function rankMany(array $workerIds, ?array $range = null): array
     {
+        $range = $this->normalizeRange($range);
         $workerIds = array_values(array_unique(array_map('intval', $workerIds)));
 
         if ($workerIds === []) {
             return [];
         }
 
-        $allocationsByWorker = $this->allocationRowsForMany($workerIds, withLabels: false);
-        $deliverySummaries = $this->deliverySummariesForMany($workerIds);
-        $punctualityRows = $this->punctualityRowsForMany($workerIds);
-        $monthlyActivities = $this->monthlyActivityForMany($workerIds);
+        $allocationsByWorker = $this->allocationRowsForMany($workerIds, withLabels: false, range: $range);
+        $deliverySummaries = $this->deliverySummariesForMany($workerIds, $range);
+        $punctualityRows = $this->punctualityRowsForMany($workerIds, $range);
+        $monthlyActivities = $this->monthlyActivityForMany($workerIds, $range);
 
         $result = [];
 
@@ -136,14 +140,14 @@ class SocialWorkerPerformanceEvaluator
             }
 
             $response = $this->responseMetric($allocations);
-            $monthly = $monthlyActivities[$workerId] ?? array_values($this->monthlySkeleton());
+            $monthly = $monthlyActivities[$workerId] ?? array_values($this->monthlySkeleton($range));
 
             $metrics = [
                 'response' => $response,
                 'fulfillment' => $this->fulfillmentMetric($allocations),
                 'coverage' => $this->coverageMetric($allocations),
                 'punctuality' => $this->buildPunctualityMetric($punctualityRows[$workerId] ?? null),
-                'consistency' => $this->consistencyMetric($monthly),
+                'consistency' => $this->consistencyMetric($monthly, $range !== null),
             ];
 
             $score = $this->weightedScore($metrics);
@@ -165,7 +169,101 @@ class SocialWorkerPerformanceEvaluator
         return $result;
     }
 
-    protected function emptyResult(): array
+    /**
+     * نرمال‌سازی بازهٔ ارزیابی: کلیدهای from/to می‌توانند Carbon یا رشتهٔ تاریخ میلادی باشند.
+     * هر دو خالی یعنی ارزیابی همهٔ زمان‌ها (null)؛ بازهٔ وارونه به‌صورت خودکار اصلاح می‌شود.
+     *
+     * @param  array{from?: mixed, to?: mixed}|null  $range
+     * @return array{from: ?Carbon, to: ?Carbon}|null
+     */
+    protected function normalizeRange(?array $range): ?array
+    {
+        if ($range === null) {
+            return null;
+        }
+
+        $parse = static function (mixed $value): ?Carbon {
+            if ($value === null || $value === '') {
+                return null;
+            }
+
+            return $value instanceof Carbon ? $value : Carbon::parse($value);
+        };
+
+        $from = $parse($range['from'] ?? null);
+        $to = $parse($range['to'] ?? null);
+
+        if ($from === null && $to === null) {
+            return null;
+        }
+
+        if ($from !== null && $to !== null && $from->greaterThan($to)) {
+            [$from, $to] = [$to, $from];
+        }
+
+        return [
+            'from' => $from?->copy()->startOfDay(),
+            'to' => $to?->copy()->endOfDay(),
+        ];
+    }
+
+    /**
+     * برچسب شمسی بازه برای نمایش در رابط کاربری؛ null یعنی ارزیابی همهٔ زمان‌ها.
+     *
+     * @return array{from: ?string, to: ?string}|null
+     */
+    protected function rangeLabel(?array $range): ?array
+    {
+        if ($range === null) {
+            return null;
+        }
+
+        return [
+            'from' => $range['from'] ? Jalalian::fromDateTime($range['from'])->format('Y/m/d') : null,
+            'to' => $range['to'] ? Jalalian::fromDateTime($range['to'])->format('Y/m/d') : null,
+        ];
+    }
+
+    /**
+     * اعمال بازهٔ ارزیابی روی یک ستون زمانی. سمتِ خالی کرانه‌ای ندارد.
+     * برای ستون‌های type=date مقدار را باید به قالب تاریخ رشته‌ای داد تا در SQLite
+     * مقایسهٔ «تاریخ در برابر تاریخ+زمان» روز پایانی را حذف نکند.
+     */
+    protected function applyRange(\Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder $query, string $column, ?array $range, bool $dateOnly = false): void
+    {
+        if ($range === null) {
+            return;
+        }
+
+        if ($range['from'] !== null) {
+            $query->where($column, '>=', $dateOnly ? $range['from']->toDateString() : $range['from']);
+        }
+
+        if ($range['to'] !== null) {
+            $query->where($column, '<=', $dateOnly ? $range['to']->toDateString() : $range['to']);
+        }
+    }
+
+    /**
+     * پنجرهٔ ماه‌های نمودار فعالیت: با بازه، از ماه شروع تا ماه پایان؛
+     * بدون بازه همان شش ماه شمسیِ منتهی به امروز.
+     *
+     * @return array{0: Carbon, 1: Carbon}
+     */
+    protected function monthlyWindow(?array $range): array
+    {
+        $end = $range['to'] ?? Carbon::now();
+
+        $start = $range['from'] ?? Jalalian::fromDateTime($end)
+            ->getFirstDayOfMonth()
+            ->subMonths(self::CHART_MONTHS - 1)
+            ->toCarbon()
+            ->startOfDay();
+
+        return [$start, $end];
+    }
+
+    protected function emptyResult(?array $range = null): array
     {
         return [
             'has_data' => false,
@@ -178,6 +276,7 @@ class SocialWorkerPerformanceEvaluator
             'delivery_summary' => $this->emptyDeliverySummary(),
             'channel_breakdown' => [],
             'open_allocations' => [],
+            'range' => $this->rangeLabel($range),
             'weights' => self::WEIGHTS,
         ];
     }
@@ -199,9 +298,9 @@ class SocialWorkerPerformanceEvaluator
      * هر ردیف یک تخصیص (خدمت + دسته‌بندی) با زمان ساخت آن توسط اپراتور و
      * نخستین زمان ثبت تحویل توسط مددکار است.
      */
-    protected function allocationRows(int $workerId): Collection
+    protected function allocationRows(int $workerId, ?array $range = null): Collection
     {
-        return $this->allocationRowsForMany([$workerId])[$workerId] ?? collect();
+        return $this->allocationRowsForMany([$workerId], range: $range)[$workerId] ?? collect();
     }
 
     /**
@@ -211,12 +310,13 @@ class SocialWorkerPerformanceEvaluator
      * فهرست رتبه‌بندی با $withLabels = false دو کوئری و هیدریت مدل کمتری اجرا می‌کند.
      *
      * @param  array<int, int>  $workerIds
+     * @param  array{from: ?Carbon, to: ?Carbon}|null  $range  بازهٔ نرمال‌شدهٔ ارزیابی.
      * @return array<int, Collection>
      */
-    protected function allocationRowsForMany(array $workerIds, bool $withLabels = true): array
+    protected function allocationRowsForMany(array $workerIds, bool $withLabels = true, ?array $range = null): array
     {
         // بدون هیدریت مدل: این کوئری در گزارش رتبه‌بندی روی همهٔ تخصیص‌ها اجرا می‌شود.
-        $allocations = DB::table('service_social_worker')
+        $allocationQuery = DB::table('service_social_worker')
             ->whereIn('service_social_worker.social_worker_id', $workerIds)
             ->join('services', 'services.id', '=', 'service_social_worker.service_id')
             ->whereNull('services.deleted_at')
@@ -227,8 +327,11 @@ class SocialWorkerPerformanceEvaluator
                 'service_social_worker.allocated_quantity',
                 'service_social_worker.created_at',
             ])
-            ->orderBy('service_social_worker.created_at')
-            ->get();
+            ->orderBy('service_social_worker.created_at');
+
+        $this->applyRange($allocationQuery, 'service_social_worker.created_at', $range);
+
+        $allocations = $allocationQuery->get();
 
         if ($allocations->isEmpty()) {
             return [];
@@ -236,7 +339,7 @@ class SocialWorkerPerformanceEvaluator
 
         $serviceIds = $allocations->pluck('service_id')->unique()->all();
 
-        $deliveryStats = DB::table('service_deliveries')
+        $deliveryStatsQuery = DB::table('service_deliveries')
             ->whereNull('deleted_at')
             ->whereIn('social_worker_id', $workerIds)
             ->whereIn('service_id', $serviceIds)
@@ -244,8 +347,12 @@ class SocialWorkerPerformanceEvaluator
             ->selectRaw('count(*) as deliveries_count')
             ->selectRaw('coalesce(sum(delivered_quantity), 0) as delivered_quantity')
             ->selectRaw('min(created_at) as first_registered_at')
-            ->groupBy('social_worker_id', 'service_id', 'service_category_id')
-            ->get()
+            ->groupBy('social_worker_id', 'service_id', 'service_category_id');
+
+        // مبنای سنجهٔ پاسخ‌دهی، لحظهٔ ثبت تحویل در پنل مددکار است، پس بازه هم روی created_at اعمال می‌شود.
+        $this->applyRange($deliveryStatsQuery, 'service_deliveries.created_at', $range);
+
+        $deliveryStats = $deliveryStatsQuery->get()
             ->keyBy(fn ($row): string => $row->social_worker_id.':'.$row->service_id.':'.$row->service_category_id);
 
         $serviceNames = $withLabels
@@ -262,7 +369,13 @@ class SocialWorkerPerformanceEvaluator
                 ->pluck('name', 'id')
             : collect();
 
+        // در ارزیابی بازه‌ای، تخصیص بی‌پاسخ تا پایان همان بازه سنجیده می‌شود، نه تا امروز؛
+        // وگرنه تخصیصِ تازهٔ انتهای یک بازهٔ گذشته بی‌دلیل «رهاشده» حساب می‌شود.
         $now = Carbon::now();
+
+        if ($range !== null && $range['to'] !== null && $range['to']->lessThan($now)) {
+            $now = $range['to'];
+        }
 
         return $allocations
             ->map(function (object $allocation) use ($deliveryStats, $serviceNames, $categoryNames, $now, $withLabels): array {
@@ -446,18 +559,19 @@ class SocialWorkerPerformanceEvaluator
     /**
      * وقت‌شناسی: چه سهمی از تحویل‌ها در بازهٔ توزیع تعریف‌شدهٔ خدمت انجام شده است.
      */
-    protected function punctualityMetric(int $workerId): array
+    protected function punctualityMetric(int $workerId, ?array $range = null): array
     {
-        return $this->buildPunctualityMetric($this->punctualityRowsForMany([$workerId])[$workerId] ?? null);
+        return $this->buildPunctualityMetric($this->punctualityRowsForMany([$workerId], $range)[$workerId] ?? null);
     }
 
     /**
      * @param  array<int, int>  $workerIds
+     * @param  array{from: ?Carbon, to: ?Carbon}|null  $range
      * @return array<int, object>
      */
-    protected function punctualityRowsForMany(array $workerIds): array
+    protected function punctualityRowsForMany(array $workerIds, ?array $range = null): array
     {
-        return ServiceDelivery::query()
+        $query = ServiceDelivery::query()
             ->whereIn('service_deliveries.social_worker_id', $workerIds)
             ->join('services', 'services.id', '=', 'service_deliveries.service_id')
             ->whereNotNull('services.distribution_end_date')
@@ -465,8 +579,11 @@ class SocialWorkerPerformanceEvaluator
             ->selectRaw('service_deliveries.social_worker_id as worker_id')
             ->selectRaw('count(*) as total')
             ->selectRaw('sum(case when service_deliveries.delivered_at <= services.distribution_end_date then 1 else 0 end) as on_time')
-            ->selectRaw('sum(case when service_deliveries.delivered_at < services.distribution_start_date then 1 else 0 end) as early')
-            ->get()
+            ->selectRaw('sum(case when service_deliveries.delivered_at < services.distribution_start_date then 1 else 0 end) as early');
+
+        $this->applyRange($query, 'service_deliveries.delivered_at', $range, dateOnly: true);
+
+        return $query->get()
             ->keyBy(fn ($row): int => (int) $row->worker_id)
             ->all();
     }
@@ -496,9 +613,10 @@ class SocialWorkerPerformanceEvaluator
     }
 
     /**
-     * تداوم فعالیت: در چند ماه از {@see self::CHART_MONTHS} ماه گذشته تحویل ثبت شده است.
+     * تداوم فعالیت: در چند ماه از پنجرهٔ نمودار تحویل ثبت‌شده است؛
+     * با بازهٔ ارزیابی، ماه‌های همان بازه مبنای شمارش‌اند.
      */
-    protected function consistencyMetric(array $monthlyActivity): array
+    protected function consistencyMetric(array $monthlyActivity, bool $rangeActive = false): array
     {
         $months = count($monthlyActivity);
         $activeMonths = collect($monthlyActivity)->where('count', '>', 0)->count();
@@ -506,7 +624,9 @@ class SocialWorkerPerformanceEvaluator
         return [
             'key' => 'consistency',
             'label' => 'تداوم فعالیت',
-            'description' => 'تعداد ماه‌های فعال از '.$months.' ماه گذشته',
+            'description' => $rangeActive
+                ? 'تعداد ماه‌های فعال در ماه‌های بازهٔ ارزیابی'
+                : 'تعداد ماه‌های فعال از '.$months.' ماه گذشته',
             'icon' => 'bi-activity',
             'accent' => 'violet',
             'score' => $months > 0 ? round($activeMonths / $months * 100, 1) : 0.0,
@@ -523,28 +643,40 @@ class SocialWorkerPerformanceEvaluator
      *
      * @return array<int, array<string, mixed>>
      */
-    protected function monthlyActivity(int $workerId): array
+    protected function monthlyActivity(int $workerId, ?array $range = null): array
     {
-        return $this->monthlyActivityForMany([$workerId])[$workerId] ?? array_values($this->monthlySkeleton());
+        return $this->monthlyActivityForMany([$workerId], $range)[$workerId] ?? array_values($this->monthlySkeleton($range));
     }
 
     /**
      * اسکلت ماه‌های شمسی پنجرهٔ نمودار، برای پرکردن با داده‌های تحویل.
+     * با بازهٔ ارزیابی، ماه‌های همان بازه ساخته می‌شوند.
      *
      * @return array<string, array<string, mixed>>
      */
-    protected function monthlySkeleton(): array
+    protected function monthlySkeleton(?array $range = null): array
     {
-        $buckets = [];
-        $cursor = Jalalian::now()->getFirstDayOfMonth()->subMonths(self::CHART_MONTHS - 1);
+        [$windowStart, $windowEnd] = $this->monthlyWindow($range);
 
-        for ($index = 0; $index < self::CHART_MONTHS; $index++) {
-            $buckets[$cursor->getYear().'-'.$cursor->getMonth()] = [
+        $buckets = [];
+        $cursor = Jalalian::fromDateTime($windowStart)->getFirstDayOfMonth();
+        $endJalali = Jalalian::fromDateTime($windowEnd);
+        $endKey = $endJalali->getYear().'-'.$endJalali->getMonth();
+
+        // سقف محافظ: بازه‌های بسیار بلند نمودار را ناخوانا می‌کنند؛ ۲۰ ماه کافی است.
+        for ($index = 0; $index < 20; $index++) {
+            $key = $cursor->getYear().'-'.$cursor->getMonth();
+
+            $buckets[$key] = [
                 'label' => CalendarUtils::IRANIAN_MONTHS_NAME[$cursor->getMonth() - 1],
                 'year' => $cursor->getYear(),
                 'count' => 0,
                 'value' => 0,
             ];
+
+            if ($key === $endKey) {
+                break;
+            }
 
             $cursor = $cursor->addMonths(1);
         }
@@ -554,28 +686,31 @@ class SocialWorkerPerformanceEvaluator
 
     /**
      * @param  array<int, int>  $workerIds
+     * @param  array{from: ?Carbon, to: ?Carbon}|null  $range
      * @return array<int, array<int, array<string, mixed>>>
      */
-    protected function monthlyActivityForMany(array $workerIds): array
+    protected function monthlyActivityForMany(array $workerIds, ?array $range = null): array
     {
-        $windowStart = Jalalian::now()
-            ->getFirstDayOfMonth()
-            ->subMonths(self::CHART_MONTHS - 1)
-            ->toCarbon()
-            ->startOfDay();
+        [$windowStart, $windowEnd] = $this->monthlyWindow($range);
 
         // تجمیع در SQL و سپس یک تبدیل شمسی برای هر تاریخ یگانه؛ هیدریت هزاران مدل تحویل لازم نیست.
-        $rows = DB::table('service_deliveries')
+        $query = DB::table('service_deliveries')
             ->whereNull('deleted_at')
             ->whereIn('social_worker_id', $workerIds)
             ->where('delivered_at', '>=', $windowStart->toDateString())
             ->groupBy('social_worker_id', 'delivered_at')
             ->selectRaw('social_worker_id, delivered_at')
             ->selectRaw('count(*) as deliveries_count')
-            ->selectRaw('coalesce(sum(delivered_total_value), 0) as delivered_value')
-            ->get();
+            ->selectRaw('coalesce(sum(delivered_total_value), 0) as delivered_value');
 
-        $skeleton = $this->monthlySkeleton();
+        // کرانهٔ بالا فقط با بازهٔ مشخص اعمال می‌شود تا مسیر همهٔ زمان‌ها دقیقاً مثل قبل بماند.
+        if ($range !== null && $range['to'] !== null) {
+            $query->where('delivered_at', '<=', $range['to']->toDateString());
+        }
+
+        $rows = $query->get();
+
+        $skeleton = $this->monthlySkeleton($range);
         $buckets = [];
 
         foreach ($workerIds as $workerId) {
@@ -610,26 +745,30 @@ class SocialWorkerPerformanceEvaluator
         return array_map('array_values', $buckets);
     }
 
-    protected function deliverySummary(int $workerId): array
+    protected function deliverySummary(int $workerId, ?array $range = null): array
     {
-        return $this->deliverySummariesForMany([$workerId])[$workerId] ?? $this->emptyDeliverySummary();
+        return $this->deliverySummariesForMany([$workerId], $range)[$workerId] ?? $this->emptyDeliverySummary();
     }
 
     /**
      * @param  array<int, int>  $workerIds
+     * @param  array{from: ?Carbon, to: ?Carbon}|null  $range
      * @return array<int, array<string, mixed>>
      */
-    protected function deliverySummariesForMany(array $workerIds): array
+    protected function deliverySummariesForMany(array $workerIds, ?array $range = null): array
     {
-        return ServiceDelivery::query()
+        $query = ServiceDelivery::query()
             ->whereIn('social_worker_id', $workerIds)
             ->groupBy('social_worker_id')
             ->selectRaw('social_worker_id')
             ->selectRaw('count(*) as deliveries_count')
             ->selectRaw('coalesce(sum(delivered_total_value), 0) as delivered_value')
             ->selectRaw('min(delivered_at) as first_delivered_at')
-            ->selectRaw('max(delivered_at) as last_delivered_at')
-            ->get()
+            ->selectRaw('max(delivered_at) as last_delivered_at');
+
+        $this->applyRange($query, 'delivered_at', $range, dateOnly: true);
+
+        return $query->get()
             ->mapWithKeys(fn ($row): array => [
                 (int) $row->social_worker_id => [
                     'count' => (int) $row->deliveries_count,
@@ -648,13 +787,16 @@ class SocialWorkerPerformanceEvaluator
     /**
      * @return array<int, array<string, mixed>>
      */
-    protected function channelBreakdown(int $workerId): array
+    protected function channelBreakdown(int $workerId, ?array $range = null): array
     {
-        $counts = ServiceDelivery::query()
+        $query = ServiceDelivery::query()
             ->where('social_worker_id', $workerId)
             ->selectRaw('delivery_channel, count(*) as deliveries_count')
-            ->groupBy('delivery_channel')
-            ->pluck('deliveries_count', 'delivery_channel');
+            ->groupBy('delivery_channel');
+
+        $this->applyRange($query, 'delivered_at', $range, dateOnly: true);
+
+        $counts = $query->pluck('deliveries_count', 'delivery_channel');
 
         $total = (int) $counts->sum();
 

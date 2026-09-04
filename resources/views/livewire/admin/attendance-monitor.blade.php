@@ -35,7 +35,7 @@
                 <p class="mt-1 text-2xl font-black text-slate-800">{{ $fa(number_format($stats['sheets'])) }}</p>
             </div>
             <div class="rounded-2xl border border-sky-100 bg-sky-50 p-3 sm:p-4">
-                <p class="text-[11px] font-semibold text-sky-700">وردها</p>
+                <p class="text-[11px] font-semibold text-sky-700">ورودها</p>
                 <p class="mt-1 text-2xl font-black text-sky-800">{{ $fa(number_format($stats['checkIns'])) }}</p>
             </div>
             <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4">

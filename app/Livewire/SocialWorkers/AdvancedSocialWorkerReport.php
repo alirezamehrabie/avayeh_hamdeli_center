@@ -3,6 +3,7 @@
 namespace App\Livewire\SocialWorkers;
 
 use App\Exports\SocialWorkersExport;
+use App\Helpers\Morilog\CalendarUtils;
 use App\Helpers\Morilog\Jalalian;
 use App\Models\AcademicLevel;
 use App\Models\District;
@@ -15,6 +16,7 @@ use App\Models\SocialWorker;
 use App\Models\SocialWorkerSavedFilter;
 use App\Services\SocialWorkers\SocialWorkerPerformanceEvaluator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -37,6 +39,11 @@ class AdvancedSocialWorkerReport extends Component
     public bool $showWorkerModal = false;
     public string $workerModalTab = 'profile';
     public bool $showRankingModal = false;
+    /** بازهٔ ارزیابی رتبه‌بندی (رشتهٔ تاریخ جلالی Y/m/d)؛ خالی یعنی همهٔ زمان‌ها. */
+    public string $rankingDateFrom = '';
+    public string $rankingDateTo = '';
+    /** تب عملکرد فقط وقتی بازهٔ رتبه‌بندی را اعمال می‌کند که از خودِ فهرست رتبه‌بندی باز شده باشد. */
+    public bool $workerModalFromRanking = false;
     public array $columnFilters = [];
     public ?string $sortColumn = null;
     public string $sortDirection = 'desc';
@@ -293,6 +300,7 @@ class AdvancedSocialWorkerReport extends Component
         $this->selectedWorkerId = $workerId;
         $this->showWorkerModal = true;
         $this->workerModalTab = 'profile';
+        $this->workerModalFromRanking = false;
     }
 
     public function setWorkerModalTab(string $tab): void
@@ -309,6 +317,7 @@ class AdvancedSocialWorkerReport extends Component
         $this->showWorkerModal = false;
         $this->selectedWorkerId = null;
         $this->workerModalTab = 'profile';
+        $this->workerModalFromRanking = false;
     }
 
     public function openRankingModal(): void
@@ -321,6 +330,83 @@ class AdvancedSocialWorkerReport extends Component
         $this->showRankingModal = false;
     }
 
+    public function clearRankingRange(): void
+    {
+        $this->rankingDateFrom = '';
+        $this->rankingDateTo = '';
+    }
+
+    /**
+     * بازهٔ نرمال‌شدهٔ ارزیابی رتبه‌بندی؛ ورودی نامعتبر یا خالی نادیده گرفته می‌شود
+     * و در نتیجه همان رفتار پیشین (ارزیابی همهٔ زمان‌ها) باقی می‌ماند.
+     *
+     * @return array{from: ?Carbon, to: ?Carbon}|null
+     */
+    #[Computed]
+    public function rankingRange(): ?array
+    {
+        $from = $this->normalizedDateInput($this->rankingDateFrom);
+        $to = $this->normalizedDateInput($this->rankingDateTo);
+
+        if ($from === null && $to === null) {
+            return null;
+        }
+
+        return ['from' => $from, 'to' => $to];
+    }
+
+    /**
+     * برچسب شمسی بازهٔ فعال برای نمایش در مودال رتبه‌بندی.
+     */
+    #[Computed]
+    public function rankingRangeLabel(): ?string
+    {
+        $range = $this->rankingRange;
+
+        if ($range === null) {
+            return null;
+        }
+
+        $from = $range['from'] ? Jalalian::fromDateTime($range['from'])->format('Y/m/d') : 'آغاز';
+        $to = $range['to'] ? Jalalian::fromDateTime($range['to'])->format('Y/m/d') : 'امروز';
+
+        return "بازهٔ ارزیابی: {$from} تا {$to}";
+    }
+
+    /**
+     * تبدیل ورودی متنی تاریخ (جلالی Y/m/d یا میلادی) به Carbon؛ نامعتبر یعنی null.
+     * همان قرارداد ServiceReports تا مدیر بتواند دست‌نویس هم وارد کند.
+     */
+    protected function normalizedDateInput(string $date): ?Carbon
+    {
+        $date = trim($date);
+
+        if ($date === '') {
+            return null;
+        }
+
+        if (preg_match('/^\d{4}\/\d{1,2}\/\d{1,2}$/', $date) === 1) {
+            [$year, $month, $day] = array_map('intval', explode('/', $date));
+
+            if (!CalendarUtils::isValidateJalaliDate($year, $month, $day)) {
+                return null;
+            }
+
+            try {
+                // toCarbon کربن داخلی کمکی‌ها را برمی‌گرداند؛ به کربن لاراول تبدیل می‌شود.
+                return Carbon::instance(Jalalian::fromFormat('Y/m/d', sprintf('%04d/%02d/%02d', $year, $month, $day))->toCarbon());
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+
+        try {
+            return Carbon::parse($date)->startOfDay();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     /**
      * از فهرست رتبه‌بندی به پروندهٔ همان مددکار می‌رویم تا مدیر جزئیات را ببیند.
      */
@@ -330,11 +416,13 @@ class AdvancedSocialWorkerReport extends Component
         $this->selectedWorkerId = $workerId;
         $this->showWorkerModal = true;
         $this->workerModalTab = 'performance';
+        $this->workerModalFromRanking = true;
     }
 
     /**
      * رتبه‌بندی مددکاران فیلترشده بر پایهٔ امتیاز کل ارزیابی عملکرد.
      * برای سبک ماندن مودال، فهرست به RANKING_LIMIT مددکار برتر محدود می‌شود.
+     * بازهٔ اختیاری رتبه‌بندی (rankingDateFrom/To) دامنهٔ داده‌های تخصیص و تحویل را محدود می‌کند.
      */
     #[Computed]
     public function ranking(): array
@@ -350,7 +438,7 @@ class AdvancedSocialWorkerReport extends Component
             return ['rows' => [], 'evaluated' => 0, 'total' => 0, 'truncated' => false];
         }
 
-        $evaluations = app(SocialWorkerPerformanceEvaluator::class)->rankMany($workerIds);
+        $evaluations = app(SocialWorkerPerformanceEvaluator::class)->rankMany($workerIds, $this->rankingRange);
 
         $workers = SocialWorker::query()
             ->withoutGlobalScope('active')
@@ -422,6 +510,8 @@ class AdvancedSocialWorkerReport extends Component
 
     /**
      * ارزیابی عملکرد مددکار انتخاب‌شده بر پایه سرعت واکنش به تخصیص‌ها و کیفیت تحویل.
+     * اگر مودال از فهرست رتبه‌بندی باز شده باشد، همان بازهٔ ارزیابی روی جزئیات هم اعمال می‌شود
+     * تا امتیاز تب عملکرد با ردیف رتبه‌بندی هم‌خوان بماند.
      */
     #[Computed]
     public function workerPerformance(): ?array
@@ -432,7 +522,9 @@ class AdvancedSocialWorkerReport extends Component
             return null;
         }
 
-        return app(SocialWorkerPerformanceEvaluator::class)->evaluate($worker);
+        $range = $this->workerModalFromRanking ? $this->rankingRange : null;
+
+        return app(SocialWorkerPerformanceEvaluator::class)->evaluate($worker, $range);
     }
 
     /**

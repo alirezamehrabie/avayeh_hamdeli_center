@@ -99,27 +99,97 @@
             @click.stop
             tabindex="-1"
         >
-            <div class="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-slate-100 bg-white px-4 py-3 sm:px-5 sm:py-4">
-                <div class="min-w-0">
-                    <div class="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
-                        <i class="bi bi-trophy-fill text-[11px]"></i>
-                        <span>رتبه‌بندی عملکرد</span>
+            <div class="sticky top-0 z-10 border-b border-slate-100 bg-white px-4 py-3 sm:px-5 sm:py-4">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <div class="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
+                            <i class="bi bi-trophy-fill text-[11px]"></i>
+                            <span>رتبه‌بندی عملکرد</span>
+                        </div>
+                        <h2 class="mt-2 truncate text-lg font-extrabold text-slate-900 sm:text-xl">جدول رتبه‌بندی مددکاران</h2>
+                        <p class="mt-1 text-xs font-semibold text-slate-500">
+                            @if($rangeLabel = $this->rankingRangeLabel)
+                                <span class="text-amber-700">{{ $rangeLabel }}</span>؛
+                            @endif
+                            بر پایهٔ امتیاز کل ارزیابی عملکرد؛ {{ number_format($ranking['evaluated']) }} مددکار از {{ number_format($ranking['total']) }} نتیجهٔ فیلترشده
+                        </p>
                     </div>
-                    <h2 class="mt-2 truncate text-lg font-extrabold text-slate-900 sm:text-xl">جدول رتبه‌بندی مددکاران</h2>
-                    <p class="mt-1 text-xs font-semibold text-slate-500">
-                        بر پایهٔ امتیاز کل ارزیابی عملکرد؛ {{ number_format($ranking['evaluated']) }} مددکار از {{ number_format($ranking['total']) }} نتیجهٔ فیلترشده
-                    </p>
+
+                    <button
+                        x-ref="closeButton"
+                        type="button"
+                        @click="close()"
+                        class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-2xl leading-none text-slate-500 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-4 focus:ring-slate-200"
+                        aria-label="بستن"
+                    >
+                        &times;
+                    </button>
                 </div>
 
-                <button
-                    x-ref="closeButton"
-                    type="button"
-                    @click="close()"
-                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-2xl leading-none text-slate-500 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus:outline-none focus:ring-4 focus:ring-slate-200"
-                    aria-label="بستن"
-                >
-                    &times;
-                </button>
+                {{-- بازهٔ ارزیابی: مدیر می‌تواند عملکرد را در یک بازهٔ تاریخی دلخواه بسنجد؛ خالی یعنی همهٔ زمان‌ها. --}}
+                <div class="mt-3 flex flex-wrap items-center gap-2">
+                    <span class="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-slate-600">
+                        <i class="bi bi-calendar3 text-amber-600"></i>
+                        بازهٔ ارزیابی:
+                    </span>
+
+                    <div x-data="jalaliDateTimeField($wire.entangle('rankingDateFrom').live)" class="w-32">
+                        <input
+                            type="text"
+                            x-ref="input"
+                            x-model="draft"
+                            x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                            x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                            x-on:jalali-picker-open="handlePickerOpen()"
+                            x-on:jalali-picker-close="handlePickerClose()"
+                            x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                            readonly
+                            inputmode="none"
+                            autocomplete="off"
+                            data-jdp-readonly
+                            data-jdp
+                            data-jdp-only-date
+                            placeholder="از تاریخ"
+                            aria-label="از تاریخ بازهٔ ارزیابی"
+                            class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                        >
+                    </div>
+
+                    <span class="text-[11px] font-bold text-slate-400">تا</span>
+
+                    <div x-data="jalaliDateTimeField($wire.entangle('rankingDateTo').live)" class="w-32">
+                        <input
+                            type="text"
+                            x-ref="input"
+                            x-model="draft"
+                            x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                            x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                            x-on:jalali-picker-open="handlePickerOpen()"
+                            x-on:jalali-picker-close="handlePickerClose()"
+                            x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                            readonly
+                            inputmode="none"
+                            autocomplete="off"
+                            data-jdp-readonly
+                            data-jdp
+                            data-jdp-only-date
+                            placeholder="تا تاریخ"
+                            aria-label="تا تاریخ بازهٔ ارزیابی"
+                            class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                        >
+                    </div>
+
+                    @if($this->rankingRange)
+                        <button
+                            type="button"
+                            wire:click="clearRankingRange"
+                            class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-bold text-slate-500 outline-none transition hover:bg-slate-50 hover:text-slate-800 focus:ring-2 focus:ring-amber-100"
+                        >
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                            حذف بازه (همهٔ زمان‌ها)
+                        </button>
+                    @endif
+                </div>
             </div>
 
             <div class="min-h-0 flex-1 space-y-2 overflow-y-auto bg-slate-50 p-3 sm:p-4">
@@ -209,7 +279,7 @@
                         </span>
                         <p class="mt-3 text-sm font-extrabold text-slate-900">مددکاری برای رتبه‌بندی یافت نشد</p>
                         <p class="mx-auto mt-2 max-w-md text-xs leading-6 text-slate-500">
-                            با فیلترهای فعلی نتیجه‌ای وجود ندارد. فیلترها را تغییر دهید و دوباره تلاش کنید.
+                            با فیلترها و بازهٔ ارزیابی فعلی نتیجه‌ای وجود ندارد. در صورت نیاز بازه را حذف کنید یا فیلترها را تغییر دهید.
                         </p>
                     </div>
                 @endforelse

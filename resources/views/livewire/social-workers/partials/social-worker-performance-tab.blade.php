@@ -72,6 +72,13 @@
                         {{ $performance['grade']['label'] }}
                     </p>
 
+                    @if(! empty($performance['range']))
+                        <p class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-extrabold text-amber-700 ring-1 ring-amber-100">
+                            <i class="bi bi-calendar3"></i>
+                            ارزیابی در بازهٔ {{ $performance['range']['from'] ?? 'آغاز' }} تا {{ $performance['range']['to'] ?? 'امروز' }}
+                        </p>
+                    @endif
+
                     <div class="mt-3 flex items-center gap-1.5" role="img" aria-label="امتیاز {{ number_format($stars, 1) }} از ۵ ستاره">
                         @for($starIndex = 1; $starIndex <= 5; $starIndex++)
                             @php
@@ -243,7 +250,13 @@
     <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div class="mb-3 flex items-start justify-between gap-3">
             <div class="min-w-0">
-                <p class="text-sm font-extrabold text-slate-900">روند تحویل در {{ count($performance['monthly_activity']) }} ماه گذشته</p>
+                <p class="text-sm font-extrabold text-slate-900">
+                    @if(! empty($performance['range']))
+                        روند تحویل در {{ count($performance['monthly_activity']) }} ماهِ بازهٔ ارزیابی
+                    @else
+                        روند تحویل در {{ count($performance['monthly_activity']) }} ماه گذشته
+                    @endif
+                </p>
                 <p class="mt-1 text-xs leading-5 text-slate-500">تعداد تحویل ثبت‌شده بر اساس ماه شمسی</p>
             </div>
             <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-700 ring-1 ring-violet-100">
