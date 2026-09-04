@@ -2,18 +2,18 @@
 
 namespace App\Models;
 
+use App\Helpers\Morilog\Jalalian;
 use App\Models\Concerns\InvalidatesIncompleteCasesQueueCache;
 use App\Traits\HasJalaliBirthDate;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Request;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Helpers\Morilog\Jalalian;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Request;
 
 class Person extends Model
 {
@@ -46,6 +46,9 @@ class Person extends Model
         'normalized_first_name',
         'normalized_last_name',
         'normalized_full_name',
+        'compact_first_name',
+        'compact_last_name',
+        'compact_full_name',
         'national_id',
         'shenasnameh_serial',
         'shenasnameh_series_number',
@@ -76,7 +79,6 @@ class Person extends Model
         'deletion_reason',
     ];
 
-
     /**
      * ✅ فیلدهایی که فقط خواندنی هستند (ستون‌های مجازی)
      */
@@ -84,7 +86,6 @@ class Person extends Model
         'full_name', // ستون مجازی - فقط خواندنی
         'birth_date_full', // ستون مجازی - فقط خواندنی
     ];
-
 
     protected $casts = [
         'birth_day' => 'integer',
@@ -108,12 +109,10 @@ class Person extends Model
         'sadaat_status_label',
     ];
 
-
     // 🔹 ACCESSORS - تاریخ تولد و سن
     /**
      * ✅ Accessor برای دریافت تاریخ تولد کامل
      */
-
     public function getBirthDateAttribute(): ?string
     {
         if ($this->birth_year && $this->birth_month && $this->birth_day) {
@@ -124,6 +123,7 @@ class Person extends Model
                 $this->birth_day
             );
         }
+
         return null;
     }
 
@@ -158,31 +158,30 @@ class Person extends Model
         return $this->guardian?->beneficiary_with_code ?? '-';
     }
 
-
     /**
      * ✅ Accessor برای سن ساده (فقط بر اساس سال)
      */
     public function getAgeAttribute(): ?int
     {
-        if (!$this->birth_year) {
+        if (! $this->birth_year) {
             return null;
         }
 
         try {
             $currentYear = self::resolveJalalianNow()->getYear();
+
             return $currentYear - $this->birth_year;
         } catch (\Exception $e) {
             return null;
         }
     }
 
-
     /**
      * ✅ Accessor برای سن دقیق (با در نظر گرفتن ماه و روز تولد)
      */
     public function getExactAgeAttribute(): ?int
     {
-        if (!$this->birth_year || !$this->birth_month || !$this->birth_day) {
+        if (! $this->birth_year || ! $this->birth_month || ! $this->birth_day) {
             return null;
         }
 
@@ -208,7 +207,6 @@ class Person extends Model
         }
     }
 
-
     /**
      * ✅ Accessor برای کد مددجو فرمت‌شده (با خط تیره)
      */
@@ -229,7 +227,6 @@ class Person extends Model
     {
         return $query->where('full_name', 'LIKE', "%{$name}%");
     }
-
 
     /**
      * ✅ Scope برای جستجوی پیشرفته
@@ -253,6 +250,14 @@ class Person extends Model
         return preg_replace('/\s+/u', ' ', trim($value)) ?? '';
     }
 
+    /**
+     * Space-insensitive form of the normalized text, so compound Persian
+     * names ("محمد حسین" vs "محمدحسین") compare equal during search.
+     */
+    public static function normalizeCompactSearchText(?string $value): string
+    {
+        return str_replace(' ', '', self::normalizeSearchText($value));
+    }
 
     /**
      * ✅ Scope برای فیلتر بر اساس سال تولد
@@ -287,7 +292,6 @@ class Person extends Model
         return $query->whereBetween('birth_year', [$minBirthYear, $maxBirthYear]);
     }
 
-
     /**
      * ✅ Scope برای فیلتر افرادی که در این ماه متولد شده‌اند
      */
@@ -301,7 +305,6 @@ class Person extends Model
 
         return $query->where('birth_month', $currentMonth);
     }
-
 
     /**
      * استخراج کد مددکار
@@ -319,10 +322,9 @@ class Person extends Model
         if ($this->person_code && strlen($this->person_code) === 6) {
             return (int) substr($this->person_code, 2);
         }
+
         return null;
     }
-
-
 
     /**
      * تاریخ تولد با نام ماه فارسی
@@ -330,7 +332,7 @@ class Person extends Model
      */
     public function getBirthDatePersianAttribute(): ?string
     {
-        if (!$this->birth_year || !$this->birth_month || !$this->birth_day) {
+        if (! $this->birth_year || ! $this->birth_month || ! $this->birth_day) {
             return null;
         }
 
@@ -339,8 +341,6 @@ class Person extends Model
         return "{$this->birth_day} {$monthName} {$this->birth_year}";
     }
 
-
-
     /**
      * جستجو بر اساس تاریخ کامل
      */
@@ -348,7 +348,6 @@ class Person extends Model
     {
         return $query->where('birth_date_full', $fullDate);
     }
-
 
     /**
      * تولید کد یکتا برای مددجو
@@ -370,8 +369,6 @@ class Person extends Model
             return '14000';
         });
     }
-
-
 
     public function restoreSupervision(): bool
     {
@@ -397,8 +394,6 @@ class Person extends Model
 
         throw new \RuntimeException('No Jalalian implementation is available.');
     }
-
-
 
     // 🔹 BOOT - رویدادهای مدل
     protected static function boot()
@@ -459,13 +454,6 @@ class Person extends Model
             $model->storeAuditLog('deleted', $model->getOriginal(), []);
         });
     }
-
-
-
-
-
-
-
 
     // 🔹 RELATIONSHIPS - روابط
 
@@ -610,10 +598,15 @@ class Person extends Model
     {
         $firstName = self::normalizeSearchText($this->first_name);
         $lastName = self::normalizeSearchText($this->last_name);
+        $fullName = trim($firstName.' '.$lastName);
 
         $this->normalized_first_name = $firstName;
         $this->normalized_last_name = $lastName;
-        $this->normalized_full_name = trim($firstName . ' ' . $lastName);
+        $this->normalized_full_name = $fullName;
+
+        $this->compact_first_name = self::normalizeCompactSearchText($firstName);
+        $this->compact_last_name = self::normalizeCompactSearchText($lastName);
+        $this->compact_full_name = self::normalizeCompactSearchText($fullName);
     }
 
     public static function hasNormalizedSearchColumns(): bool

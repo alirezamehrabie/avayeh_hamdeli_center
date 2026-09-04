@@ -12,7 +12,7 @@ class BackfillPeopleNormalizedSearchColumns extends Command
         {--chunk=500 : Number of people to process per batch}
         {--force-all : Recompute normalized search columns for all people}';
 
-    protected $description = 'Backfill normalized search columns for people using batched bulk updates.';
+    protected $description = 'Backfill normalized and compact search columns for people using batched bulk updates.';
 
     public function handle(): int
     {
@@ -29,7 +29,10 @@ class BackfillPeopleNormalizedSearchColumns extends Command
                 $builder
                     ->whereNull('normalized_first_name')
                     ->orWhereNull('normalized_last_name')
-                    ->orWhereNull('normalized_full_name');
+                    ->orWhereNull('normalized_full_name')
+                    ->orWhereNull('compact_first_name')
+                    ->orWhereNull('compact_last_name')
+                    ->orWhereNull('compact_full_name');
             });
         }
 
@@ -42,12 +45,18 @@ class BackfillPeopleNormalizedSearchColumns extends Command
             $firstNameCase = 'CASE id';
             $lastNameCase = 'CASE id';
             $fullNameCase = 'CASE id';
+            $compactFirstNameCase = 'CASE id';
+            $compactLastNameCase = 'CASE id';
+            $compactFullNameCase = 'CASE id';
             $ids = [];
 
             foreach ($people as $person) {
                 $normalizedFirstName = Person::normalizeSearchText((string) $person->first_name);
                 $normalizedLastName = Person::normalizeSearchText((string) $person->last_name);
                 $normalizedFullName = trim($normalizedFirstName.' '.$normalizedLastName);
+                $compactFirstName = Person::normalizeCompactSearchText($normalizedFirstName);
+                $compactLastName = Person::normalizeCompactSearchText($normalizedLastName);
+                $compactFullName = Person::normalizeCompactSearchText($normalizedFullName);
 
                 $firstNameCase .= ' WHEN ? THEN ?';
                 $bindings[] = $person->id;
@@ -61,18 +70,36 @@ class BackfillPeopleNormalizedSearchColumns extends Command
                 $bindings[] = $person->id;
                 $bindings[] = $normalizedFullName;
 
+                $compactFirstNameCase .= ' WHEN ? THEN ?';
+                $bindings[] = $person->id;
+                $bindings[] = $compactFirstName;
+
+                $compactLastNameCase .= ' WHEN ? THEN ?';
+                $bindings[] = $person->id;
+                $bindings[] = $compactLastName;
+
+                $compactFullNameCase .= ' WHEN ? THEN ?';
+                $bindings[] = $person->id;
+                $bindings[] = $compactFullName;
+
                 $ids[] = $person->id;
             }
 
             $firstNameCase .= ' END';
             $lastNameCase .= ' END';
             $fullNameCase .= ' END';
+            $compactFirstNameCase .= ' END';
+            $compactLastNameCase .= ' END';
+            $compactFullNameCase .= ' END';
 
             $placeholders = implode(', ', array_fill(0, count($ids), '?'));
             $sql = "UPDATE people
                 SET normalized_first_name = {$firstNameCase},
                     normalized_last_name = {$lastNameCase},
-                    normalized_full_name = {$fullNameCase}
+                    normalized_full_name = {$fullNameCase},
+                    compact_first_name = {$compactFirstNameCase},
+                    compact_last_name = {$compactLastNameCase},
+                    compact_full_name = {$compactFullNameCase}
                 WHERE id IN ({$placeholders})";
 
             DB::update($sql, [...$bindings, ...$ids]);

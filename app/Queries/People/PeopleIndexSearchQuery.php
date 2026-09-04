@@ -29,6 +29,9 @@ class PeopleIndexSearchQuery
                 'normalized_first_name',
                 'normalized_last_name',
                 'normalized_full_name',
+                'compact_first_name',
+                'compact_last_name',
+                'compact_full_name',
             ])
             ->with(['creator:id,name', 'updater:id,name']);
 
@@ -74,6 +77,15 @@ class PeopleIndexSearchQuery
         return Person::normalizeSearchText($search);
     }
 
+    /**
+     * Space-insensitive form of an already-normalized search term, matching
+     * the compact_* columns so "محمد حسین" and "محمدحسین" search the same.
+     */
+    public function compactSearchTerm(string $normalizedSearch): string
+    {
+        return str_replace(' ', '', $normalizedSearch);
+    }
+
     public function needsMoreInput(string $search, string $searchField): bool
     {
         return $search !== ''
@@ -87,21 +99,39 @@ class PeopleIndexSearchQuery
         $isNumeric = ctype_digit($search);
         $escapedSearch = $this->escapeLike($search);
         $prefixSearch = "{$escapedSearch}%";
+        $compactSearch = $this->escapeLike($this->compactSearchTerm($search));
+        $compactPrefix = "{$compactSearch}%";
         $fullNameColumn = 'normalized_full_name';
         $firstNameColumn = 'normalized_first_name';
         $lastNameColumn = 'normalized_last_name';
+        $compactFullNameColumn = 'compact_full_name';
+        $compactFirstNameColumn = 'compact_first_name';
+        $compactLastNameColumn = 'compact_last_name';
 
         match ($searchField) {
             'person_code' => strlen($search) >= 5
                 ? $query->where('person_code', $search)
                 : $query->where('person_code', 'LIKE', $prefixSearch),
-            'full_name' => $this->applyFullNameSearch($query, $fullNameColumn, $prefixSearch, $escapedSearch),
-            'first_name' => $query->where($firstNameColumn, 'LIKE', $prefixSearch),
-            'last_name' => $query->where($lastNameColumn, 'LIKE', $prefixSearch),
+            'full_name' => $this->applyFullNameSearch(
+                $query,
+                $fullNameColumn,
+                $compactFullNameColumn,
+                $prefixSearch,
+                $compactPrefix,
+                $escapedSearch
+            ),
+            'first_name' => $query->where(function (Builder $q) use ($firstNameColumn, $compactFirstNameColumn, $prefixSearch, $compactPrefix): void {
+                $q->where($firstNameColumn, 'LIKE', $prefixSearch)
+                    ->orWhere($compactFirstNameColumn, 'LIKE', $compactPrefix);
+            }),
+            'last_name' => $query->where(function (Builder $q) use ($lastNameColumn, $compactLastNameColumn, $prefixSearch, $compactPrefix): void {
+                $q->where($lastNameColumn, 'LIKE', $prefixSearch)
+                    ->orWhere($compactLastNameColumn, 'LIKE', $compactPrefix);
+            }),
             'national_id' => $this->applyIdentifierSearch($query, 'national_id', $search, $prefixSearch),
             'mother_national_id' => $this->applyIdentifierSearch($query, 'mother_national_id', $search, $prefixSearch),
             'father_national_id' => $this->applyIdentifierSearch($query, 'father_national_id', $search, $prefixSearch),
-            default => $query->where(function (Builder $q) use ($search, $escapedSearch, $prefixSearch, $isNumeric, $fullNameColumn, $firstNameColumn, $lastNameColumn) {
+            default => $query->where(function (Builder $q) use ($search, $escapedSearch, $prefixSearch, $compactPrefix, $isNumeric, $fullNameColumn, $firstNameColumn, $lastNameColumn, $compactFullNameColumn, $compactFirstNameColumn, $compactLastNameColumn) {
                 if ($isNumeric) {
                     $q->where('person_code', 'LIKE', $prefixSearch)
                         ->orWhere('national_id', strlen($search) === 10 ? '=' : 'LIKE', strlen($search) === 10 ? $search : $prefixSearch)
@@ -113,7 +143,10 @@ class PeopleIndexSearchQuery
 
                 $q->where($fullNameColumn, 'LIKE', $prefixSearch)
                     ->orWhere($firstNameColumn, 'LIKE', $prefixSearch)
-                    ->orWhere($lastNameColumn, 'LIKE', $prefixSearch);
+                    ->orWhere($lastNameColumn, 'LIKE', $prefixSearch)
+                    ->orWhere($compactFullNameColumn, 'LIKE', $compactPrefix)
+                    ->orWhere($compactFirstNameColumn, 'LIKE', $compactPrefix)
+                    ->orWhere($compactLastNameColumn, 'LIKE', $compactPrefix);
 
                 if (mb_strlen($search) >= 3) {
                     $q->orWhere($fullNameColumn, 'LIKE', "%{$escapedSearch}%");
@@ -129,10 +162,17 @@ class PeopleIndexSearchQuery
             : $query->where($column, 'LIKE', $prefixSearch);
     }
 
-    private function applyFullNameSearch(Builder $query, string $fullNameColumn, string $prefixSearch, string $escapedSearch): void
-    {
-        $query->where(function (Builder $q) use ($fullNameColumn, $prefixSearch, $escapedSearch): void {
-            $q->where($fullNameColumn, 'LIKE', $prefixSearch);
+    private function applyFullNameSearch(
+        Builder $query,
+        string $fullNameColumn,
+        string $compactFullNameColumn,
+        string $prefixSearch,
+        string $compactPrefix,
+        string $escapedSearch
+    ): void {
+        $query->where(function (Builder $q) use ($fullNameColumn, $compactFullNameColumn, $prefixSearch, $compactPrefix, $escapedSearch): void {
+            $q->where($fullNameColumn, 'LIKE', $prefixSearch)
+                ->orWhere($compactFullNameColumn, 'LIKE', $compactPrefix);
 
             if (mb_strlen($escapedSearch) >= 3) {
                 $q->orWhere($fullNameColumn, 'LIKE', "%{$escapedSearch}%");
@@ -164,6 +204,7 @@ class PeopleIndexSearchQuery
 
         $escapedSearch = $this->escapeLike($search);
         $prefixSearch = "{$escapedSearch}%";
+        $compactPrefix = $this->escapeLike($this->compactSearchTerm($search)).'%';
 
         match ($searchField) {
             'person_code' => $query->orderByRaw(
@@ -185,18 +226,27 @@ class PeopleIndexSearchQuery
             'full_name' => $query->orderByRaw(
                 'CASE
                     WHEN normalized_full_name LIKE ? THEN 0
-                    WHEN normalized_full_name LIKE ? THEN 1
-                    ELSE 2
+                    WHEN compact_full_name LIKE ? THEN 1
+                    WHEN normalized_full_name LIKE ? THEN 2
+                    ELSE 3
                 END',
-                [$prefixSearch, "%{$escapedSearch}%"]
+                [$prefixSearch, $compactPrefix, "%{$escapedSearch}%"]
             ),
             'first_name' => $query->orderByRaw(
-                'CASE WHEN normalized_first_name LIKE ? THEN 0 ELSE 1 END',
-                [$prefixSearch]
+                'CASE
+                    WHEN normalized_first_name LIKE ? THEN 0
+                    WHEN compact_first_name LIKE ? THEN 1
+                    ELSE 2
+                END',
+                [$prefixSearch, $compactPrefix]
             ),
             'last_name' => $query->orderByRaw(
-                'CASE WHEN normalized_last_name LIKE ? THEN 0 ELSE 1 END',
-                [$prefixSearch]
+                'CASE
+                    WHEN normalized_last_name LIKE ? THEN 0
+                    WHEN compact_last_name LIKE ? THEN 1
+                    ELSE 2
+                END',
+                [$prefixSearch, $compactPrefix]
             ),
             default => ctype_digit($search)
                 ? $query->orderByRaw(
@@ -216,12 +266,13 @@ class PeopleIndexSearchQuery
                 : $query->orderByRaw(
                     'CASE
                         WHEN normalized_full_name LIKE ? THEN 0
-                        WHEN normalized_first_name LIKE ? THEN 1
-                        WHEN normalized_last_name LIKE ? THEN 2
-                        WHEN normalized_full_name LIKE ? THEN 3
-                        ELSE 4
+                        WHEN compact_full_name LIKE ? THEN 1
+                        WHEN normalized_first_name LIKE ? THEN 2
+                        WHEN normalized_last_name LIKE ? THEN 3
+                        WHEN normalized_full_name LIKE ? THEN 4
+                        ELSE 5
                     END',
-                    [$prefixSearch, $prefixSearch, $prefixSearch, "%{$escapedSearch}%"]
+                    [$prefixSearch, $compactPrefix, $prefixSearch, $prefixSearch, "%{$escapedSearch}%"]
                 ),
         };
     }

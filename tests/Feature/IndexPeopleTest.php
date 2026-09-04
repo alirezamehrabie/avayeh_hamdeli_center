@@ -182,6 +182,91 @@ class IndexPeopleTest extends TestCase
         $this->assertTrue($results->contains($target->id));
     }
 
+    public function test_all_search_matches_compound_first_name_written_without_space(): void
+    {
+        $target = $this->person('P810021', '8100010024', [
+            'first_name' => 'محمد حسین',
+            'last_name' => 'رضایی',
+        ]);
+        $this->person('P810022', '8100010025', [
+            'first_name' => 'مهدی',
+            'last_name' => 'رضایی',
+        ]);
+
+        $results = app(PeopleIndexSearchQuery::class)
+            ->applyTo(Person::query(), 'محمدحسین', 'all')
+            ->pluck('id');
+
+        $this->assertTrue($results->contains($target->id));
+        $this->assertCount(1, $results);
+    }
+
+    public function test_all_search_matches_compound_first_name_written_with_space(): void
+    {
+        $target = $this->person('P810023', '8100010026', [
+            'first_name' => 'محمدحسین',
+            'last_name' => 'احمدی',
+        ]);
+        $this->person('P810024', '8100010027', [
+            'first_name' => 'حسین',
+            'last_name' => 'محمدی',
+        ]);
+
+        $results = app(PeopleIndexSearchQuery::class)
+            ->applyTo(Person::query(), 'محمد حسین', 'all')
+            ->pluck('id');
+
+        $this->assertTrue($results->contains($target->id));
+        $this->assertCount(1, $results);
+    }
+
+    public function test_all_search_matches_compound_name_written_with_zwnj(): void
+    {
+        $target = $this->person('P810025', '8100010028', [
+            'first_name' => 'محمدحسین',
+            'last_name' => 'موسوی',
+        ]);
+
+        $results = app(PeopleIndexSearchQuery::class)
+            ->applyTo(Person::query(), "محمد\u{200C}حسین", 'all')
+            ->pluck('id');
+
+        $this->assertTrue($results->contains($target->id));
+    }
+
+    public function test_first_name_field_search_matches_compound_name_across_spacing(): void
+    {
+        $target = $this->person('P810026', '8100010029', [
+            'first_name' => 'امیرحسین',
+            'last_name' => 'کاظمی',
+        ]);
+        $this->person('P810027', '8100010030', [
+            'first_name' => 'امیر',
+            'last_name' => 'کاظمی',
+        ]);
+
+        $results = app(PeopleIndexSearchQuery::class)
+            ->applyTo(Person::query(), 'امیر حسین', 'first_name')
+            ->pluck('id');
+
+        $this->assertTrue($results->contains($target->id));
+        $this->assertCount(1, $results);
+    }
+
+    public function test_full_name_field_search_matches_compound_name_across_spacing(): void
+    {
+        $target = $this->person('P810028', '8100010031', [
+            'first_name' => 'محمد رضا',
+            'last_name' => 'حسینی',
+        ]);
+
+        $results = app(PeopleIndexSearchQuery::class)
+            ->applyTo(Person::query(), 'محمدرضا حسینی', 'full_name')
+            ->pluck('id');
+
+        $this->assertTrue($results->contains($target->id));
+    }
+
     public function test_people_index_paginator_limits_appended_attributes_to_birth_date(): void
     {
         $this->person('P810011', '8100010011', [

@@ -37,6 +37,9 @@ class BackfillPeopleNormalizedSearchColumnsCommandTest extends TestCase
             'normalized_first_name' => 'علی',
             'normalized_last_name' => 'رضایی',
             'normalized_full_name' => 'علی رضایی',
+            'compact_first_name' => 'علی',
+            'compact_last_name' => 'رضایی',
+            'compact_full_name' => 'علیرضایی',
         ]);
     }
 
