@@ -242,9 +242,19 @@ class Person extends Model
         });
     }
 
+    /**
+     * Canonical search form: Arabic letters folded to Persian equivalents
+     * (ي/ى→ی, ك→ک, ۀ/ة→ه), all alef variants folded to plain ا
+     * (آ/أ/إ/ٱ→ا, so "آرمان" ≡ "ارمان"), ZWNJ/ZWJ turned into spaces and
+     * whitespace runs collapsed to a single space.
+     */
     public static function normalizeSearchText(?string $value): string
     {
-        $value = str_replace(['ي', 'ى', 'ك', 'ۀ', 'ة'], ['ی', 'ی', 'ک', 'ه', 'ه'], (string) $value);
+        $value = str_replace(
+            ['ي', 'ى', 'ك', 'ۀ', 'ة', 'آ', 'أ', 'إ', 'ٱ'],
+            ['ی', 'ی', 'ک', 'ه', 'ه', 'ا', 'ا', 'ا', 'ا'],
+            (string) $value
+        );
         $value = str_replace(["\u{200C}", "\u{200D}"], ' ', $value);
 
         return preg_replace('/\s+/u', ' ', trim($value)) ?? '';

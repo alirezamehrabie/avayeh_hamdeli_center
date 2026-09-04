@@ -30,12 +30,17 @@ class PersianText
     }
 
     /**
-     * Normalize Arabic characters to their Persian equivalents and collapse
+     * Normalize Arabic characters to their Persian equivalents — including
+     * folding every alef variant (آ/أ/إ/ٱ) to plain ا — and collapse
      * whitespace, matching Person::normalizeSearchText().
      */
     public static function normalizeText(?string $value): string
     {
-        $value = str_replace(['ي', 'ى', 'ك', 'ۀ', 'ة'], ['ی', 'ی', 'ک', 'ه', 'ه'], (string) $value);
+        $value = str_replace(
+            ['ي', 'ى', 'ك', 'ۀ', 'ة', 'آ', 'أ', 'إ', 'ٱ'],
+            ['ی', 'ی', 'ک', 'ه', 'ه', 'ا', 'ا', 'ا', 'ا'],
+            (string) $value
+        );
         $value = str_replace(["\u{200C}", "\u{200D}", "\u{FEFF}", "\u{00A0}"], ' ', $value);
 
         return preg_replace('/\s+/u', ' ', trim($value)) ?? '';

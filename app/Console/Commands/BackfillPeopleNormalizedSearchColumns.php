@@ -41,13 +41,21 @@ class BackfillPeopleNormalizedSearchColumns extends Command
                 return;
             }
 
-            $bindings = [];
+            // Bindings must be grouped per column (all pairs of one CASE, then
+            // the next), not interleaved per row, or the placeholders of each
+            // CASE expression consume the wrong values.
             $firstNameCase = 'CASE id';
             $lastNameCase = 'CASE id';
             $fullNameCase = 'CASE id';
             $compactFirstNameCase = 'CASE id';
             $compactLastNameCase = 'CASE id';
             $compactFullNameCase = 'CASE id';
+            $firstNameBindings = [];
+            $lastNameBindings = [];
+            $fullNameBindings = [];
+            $compactFirstNameBindings = [];
+            $compactLastNameBindings = [];
+            $compactFullNameBindings = [];
             $ids = [];
 
             foreach ($people as $person) {
@@ -59,28 +67,28 @@ class BackfillPeopleNormalizedSearchColumns extends Command
                 $compactFullName = Person::normalizeCompactSearchText($normalizedFullName);
 
                 $firstNameCase .= ' WHEN ? THEN ?';
-                $bindings[] = $person->id;
-                $bindings[] = $normalizedFirstName;
+                $firstNameBindings[] = $person->id;
+                $firstNameBindings[] = $normalizedFirstName;
 
                 $lastNameCase .= ' WHEN ? THEN ?';
-                $bindings[] = $person->id;
-                $bindings[] = $normalizedLastName;
+                $lastNameBindings[] = $person->id;
+                $lastNameBindings[] = $normalizedLastName;
 
                 $fullNameCase .= ' WHEN ? THEN ?';
-                $bindings[] = $person->id;
-                $bindings[] = $normalizedFullName;
+                $fullNameBindings[] = $person->id;
+                $fullNameBindings[] = $normalizedFullName;
 
                 $compactFirstNameCase .= ' WHEN ? THEN ?';
-                $bindings[] = $person->id;
-                $bindings[] = $compactFirstName;
+                $compactFirstNameBindings[] = $person->id;
+                $compactFirstNameBindings[] = $compactFirstName;
 
                 $compactLastNameCase .= ' WHEN ? THEN ?';
-                $bindings[] = $person->id;
-                $bindings[] = $compactLastName;
+                $compactLastNameBindings[] = $person->id;
+                $compactLastNameBindings[] = $compactLastName;
 
                 $compactFullNameCase .= ' WHEN ? THEN ?';
-                $bindings[] = $person->id;
-                $bindings[] = $compactFullName;
+                $compactFullNameBindings[] = $person->id;
+                $compactFullNameBindings[] = $compactFullName;
 
                 $ids[] = $person->id;
             }
@@ -102,7 +110,15 @@ class BackfillPeopleNormalizedSearchColumns extends Command
                     compact_full_name = {$compactFullNameCase}
                 WHERE id IN ({$placeholders})";
 
-            DB::update($sql, [...$bindings, ...$ids]);
+            DB::update($sql, [
+                ...$firstNameBindings,
+                ...$lastNameBindings,
+                ...$fullNameBindings,
+                ...$compactFirstNameBindings,
+                ...$compactLastNameBindings,
+                ...$compactFullNameBindings,
+                ...$ids,
+            ]);
             $updatedCount += count($ids);
         }, 'id');
 

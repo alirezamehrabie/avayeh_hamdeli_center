@@ -267,6 +267,66 @@ class IndexPeopleTest extends TestCase
         $this->assertTrue($results->contains($target->id));
     }
 
+    public function test_all_search_matches_alef_variants_in_both_directions(): void
+    {
+        $madda = $this->person('P810029', '8100010032', [
+            'first_name' => 'آرمان',
+            'last_name' => 'موسوی',
+        ]);
+        $plain = $this->person('P810030', '8100010033', [
+            'first_name' => 'ارمان',
+            'last_name' => 'حسینی',
+        ]);
+        $hamza = $this->person('P810031', '8100010034', [
+            'first_name' => 'أرمان',
+            'last_name' => 'رضایی',
+        ]);
+        $this->person('P810032', '8100010035', [
+            'first_name' => 'مهدی',
+            'last_name' => 'موسوی',
+        ]);
+
+        foreach (['آرمان', 'ارمان', 'أرمان'] as $term) {
+            $results = app(PeopleIndexSearchQuery::class)
+                ->applyTo(Person::query(), $term, 'all')
+                ->pluck('id');
+
+            $this::assertTrue(
+                $results->contains($madda->id) && $results->contains($plain->id) && $results->contains($hamza->id),
+                "Search term [{$term}] should match every alef-variant record."
+            );
+            $this->assertCount(3, $results);
+        }
+    }
+
+    public function test_full_name_field_search_matches_alef_variant_records(): void
+    {
+        $target = $this->person('P810033', '8100010036', [
+            'first_name' => 'آرمان',
+            'last_name' => 'کاظمی',
+        ]);
+
+        $results = app(PeopleIndexSearchQuery::class)
+            ->applyTo(Person::query(), 'ارمان کاظمی', 'full_name')
+            ->pluck('id');
+
+        $this->assertSame([$target->id], $results->all());
+    }
+
+    public function test_alef_folding_composes_with_compound_spacing(): void
+    {
+        $target = $this->person('P810034', '8100010037', [
+            'first_name' => 'آرمان رضا',
+            'last_name' => 'نوری',
+        ]);
+
+        $results = app(PeopleIndexSearchQuery::class)
+            ->applyTo(Person::query(), 'ارمانرضا', 'all')
+            ->pluck('id');
+
+        $this->assertTrue($results->contains($target->id));
+    }
+
     public function test_people_index_paginator_limits_appended_attributes_to_birth_date(): void
     {
         $this->person('P810011', '8100010011', [
