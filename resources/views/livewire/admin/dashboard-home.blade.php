@@ -288,6 +288,10 @@
                         @endif
                         @break
 
+                    @case('social-worker-attendance-monitor')
+                        <livewire:admin.attendance-monitor :embedded="true" :key="'social-worker-attendance-monitor'" />
+                        @break
+
                     @case('guardians-list')
                         <livewire:guardians.index-guardians :embedded="true" :key="'guardians-list'" />
                         @break

@@ -52,7 +52,7 @@
         $activeSection = $activeSection ?? null;
         $isActive = fn ($sections) => in_array($activeSection, (array) $sections, true);
         $peopleOpen = $dashboardMode ? $isActive(['people-fast-create', 'people-list', 'people-incomplete-cases', 'people-block-list', 'person-create', 'person-edit', 'beneficiary-case-file']) : request()->routeIs('people.*');
-        $socialWorkersOpen = $dashboardMode ? $isActive(['social-workers-list', 'social-workers-block-list', 'social-worker-create', 'social-worker-edit']) : request()->routeIs('social-workers.*');
+        $socialWorkersOpen = $dashboardMode ? $isActive(['social-workers-list', 'social-workers-block-list', 'social-worker-create', 'social-worker-edit', 'social-worker-attendance-monitor']) : request()->routeIs('social-workers.*');
         $guardiansOpen = $dashboardMode ? $isActive(['guardians-list', 'guardians-block-list']) : request()->routeIs('guardians.*');
         $reportsOpen = $dashboardMode ? $isActive(['advanced-reports', 'advanced-service-report', 'advanced-beneficiary-report', 'advanced-operator-report', 'advanced-supervisor-report', 'advanced-social-worker-report', 'advanced-gate-report']) : false;
         $servicesOpen = $dashboardMode ? $isActive(['service-definition', 'service-management', 'service-list', 'service-delivery', 'service-delivery-social-worker', 'service-delivery-beneficiary', 'service-archive']) : false;
@@ -102,6 +102,7 @@
             ],
             'social-workers' => [
                 ['section' => 'social-workers-list', 'label' => 'لیست مددکاران', 'active' => ['social-workers-list', 'social-worker-edit']],
+                ['section' => 'social-worker-attendance-monitor', 'label' => 'پایش حضور و غیاب'],
                 ['section' => 'social-worker-create', 'label' => 'ثبت مددکار جدید'],
                 ['section' => 'social-workers-block-list', 'label' => 'مددکاران غیرفعال'],
             ],
@@ -227,7 +228,7 @@
             @if($dashboardMode)
                 <div>
                     <button type="button" @click="openMenu = openMenu === 'social-workers' ? '' : 'social-workers'"
-                            class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $isActive(['social-workers-list', 'social-workers-block-list', 'social-worker-create', 'social-worker-edit']) ? 'bg-indigo-700' : '' }}">
+                            class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $isActive(['social-workers-list', 'social-workers-block-list', 'social-worker-create', 'social-worker-edit', 'social-worker-attendance-monitor']) ? 'bg-indigo-700' : '' }}">
                         <div class="flex items-center">
                             <svg class="w-5 h-5 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path

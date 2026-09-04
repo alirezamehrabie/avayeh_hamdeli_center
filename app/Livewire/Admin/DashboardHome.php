@@ -245,6 +245,7 @@ class DashboardHome extends Component
                 'social-workers-block-list',
                 'social-worker-create',
                 'social-worker-edit',
+                'social-worker-attendance-monitor',
                 'guardians-list',
                 'guardians-block-list',
                 'guardian-edit',
