@@ -18,12 +18,13 @@ class BeneficiaryCompletenessEvaluator
         $personContacts ??= collect();
         $guardianContacts ??= collect();
 
+        $context = $this->buildEvaluationContext($person, $personContacts, $guardianContacts);
+
         foreach ($fields as $field) {
             $reason = $this->evaluateFieldDefect(
                 $person,
                 $field,
-                $personContacts,
-                $guardianContacts,
+                $context,
             );
 
             if ($reason !== null) {
@@ -101,25 +102,56 @@ class BeneficiaryCompletenessEvaluator
         ];
     }
 
-    private function evaluateFieldDefect(
+    /**
+     * Relations and derived flags are resolved once per person instead of
+     * once per catalog field; the queue evaluates every beneficiary against
+     * ~48 fields, and repeated loaded-relation access dominated the scan cost.
+     */
+    private function buildEvaluationContext(
         Person $person,
-        array $field,
         Collection $personContacts,
         Collection $guardianContacts,
-    ): ?array {
+    ): array {
         $guardian = $person->guardian;
         $education = $person->education;
         $familyStatus = $person->familyStatus;
-        $residence = $person->residenceContact ?: $guardian?->residence;
-        $contact = $this->resolveHouseholdContact($person, $personContacts, $guardianContacts);
         $supportCoverage = $person->supportCoverage;
-        $needsLevel = $person->needsLevel;
 
-        $isStudying = $education?->is_studying;
-        $hasDisability = $person->has_disability;
-        $hasParentDisability = $familyStatus?->has_parent_disability;
-        $insuranceStatus = $guardian?->insurance_status;
-        $supportOrganizationSlug = trim((string) ($supportCoverage?->organization?->slug ?? ''));
+        return [
+            'guardian' => $guardian,
+            'education' => $education,
+            'familyStatus' => $familyStatus,
+            'residence' => $person->residenceContact ?: $guardian?->residence,
+            'contact' => $this->resolveHouseholdContact($person, $personContacts, $guardianContacts),
+            'supportCoverage' => $supportCoverage,
+            'needsLevel' => $person->needsLevel,
+            'hasHarmTypes' => $person->harmTypes->isNotEmpty(),
+            'isStudying' => $education?->is_studying,
+            'hasDisability' => $person->has_disability,
+            'hasParentDisability' => $familyStatus?->has_parent_disability,
+            'insuranceStatus' => $guardian?->insurance_status,
+            'supportOrganizationSlug' => trim((string) ($supportCoverage?->organization?->slug ?? '')),
+        ];
+    }
+
+    private function evaluateFieldDefect(
+        Person $person,
+        array $field,
+        array $context,
+    ): ?array {
+        $guardian = $context['guardian'];
+        $education = $context['education'];
+        $familyStatus = $context['familyStatus'];
+        $residence = $context['residence'];
+        $contact = $context['contact'];
+        $supportCoverage = $context['supportCoverage'];
+        $needsLevel = $context['needsLevel'];
+
+        $isStudying = $context['isStudying'];
+        $hasDisability = $context['hasDisability'];
+        $hasParentDisability = $context['hasParentDisability'];
+        $insuranceStatus = $context['insuranceStatus'];
+        $supportOrganizationSlug = $context['supportOrganizationSlug'];
 
         $isMissing = match ($field['key']) {
             'first_name' => $this->isBlankValue($person->first_name),
@@ -139,7 +171,7 @@ class BeneficiaryCompletenessEvaluator
             'role' => $this->isBlankValue($person->role),
             'sadaat_status' => $this->isBlankValue($person->sadaat_status),
             'sadaat_relation_id' => $person->sadaat_status === 'sadaat' && $person->sadaat_relation_id === null,
-            'harm_types' => $person->harmTypes->isEmpty(),
+            'harm_types' => ! $context['hasHarmTypes'],
             'has_disability' => $hasDisability === null,
             'disability_type_id' => (bool) $hasDisability && $person->disability_type_id === null,
             'disability_description' => (bool) $hasDisability && $this->isBlankValue($person->disability_description),

@@ -35,9 +35,25 @@ class IncompleteCasesQueue extends Component
 
     protected ?array $scanResultsCache = null;
 
+    protected ?array $baseScanCache = null;
+
     protected ?LengthAwarePaginator $incompletePeoplePaginatorCache = null;
 
     protected array $incompleteStateCache = [];
+
+    /**
+     * Person ids covered by the currently primed contact caches. Used to tell
+     * "no contact row exists" apart from "this person was never queried", so a
+     * scan chunk never re-primes contacts person-by-person.
+     *
+     * @var array<int, int>
+     */
+    protected array $contactCachePersonIds = [];
+
+    /**
+     * @var array<int, int>
+     */
+    protected array $contactCacheGuardianIds = [];
 
     protected ?array $catalogFieldsCache = null;
 
@@ -182,14 +198,48 @@ class IncompleteCasesQueue extends Component
             return $this->scanResultsCache;
         }
 
-        return $this->scanResultsCache = Cache::remember(
-            $this->scanCacheKey(),
+        $baseScan = $this->baseScan();
+
+        $sortable = [];
+
+        foreach ($baseScan['records'] as $record) {
+            if ($this->matchesRecordFilters($record)) {
+                $sortable[] = [
+                    'id' => $record['id'],
+                    'sort' => $this->recordSortReference($record),
+                ];
+            }
+        }
+
+        usort($sortable, fn (array $left, array $right): int => $this->compareSortReferences($left['sort'], $right['sort']));
+
+        return $this->scanResultsCache = [
+            'incomplete_count' => $baseScan['incomplete_count'],
+            'reason_counts' => $baseScan['reason_counts'],
+            'severity_counts' => $baseScan['severity_counts'],
+            'filtered_ids' => array_column($sortable, 'id'),
+        ];
+    }
+
+    /**
+     * The expensive per-person completeness evaluation is independent of the
+     * active search/filter/sort selection, so it is cached once per data
+     * version and filter changes only re-run the in-memory pass above.
+     */
+    protected function baseScan(): array
+    {
+        if ($this->baseScanCache !== null) {
+            return $this->baseScanCache;
+        }
+
+        return $this->baseScanCache = Cache::remember(
+            $this->baseScanCacheKey(),
             now()->addMinutes(5),
-            fn (): array => $this->buildScanResults()
+            fn (): array => $this->buildBaseScan()
         );
     }
 
-    protected function buildScanResults(): array
+    protected function buildBaseScan(): array
     {
         $reasonCounts = array_fill_keys($this->catalogFieldKeys(), 0);
 
@@ -199,13 +249,13 @@ class IncompleteCasesQueue extends Component
         );
 
         $incompleteCount = 0;
-        $filteredReferences = [];
+        $records = [];
 
         Person::query()
             ->select($this->personColumns())
             ->with($this->scanRelations())
             ->orderBy('id')
-            ->chunkById(200, function (EloquentCollection $people) use (&$filteredReferences, &$incompleteCount, &$reasonCounts, &$severityCounts): void {
+            ->chunkById(200, function (EloquentCollection $people) use (&$records, &$incompleteCount, &$reasonCounts, &$severityCounts): void {
                 $this->primeContactCachesForPeople($people);
 
                 foreach ($people as $person) {
@@ -225,24 +275,37 @@ class IncompleteCasesQueue extends Component
 
                     $severityCounts[$state['severity']['key']]++;
 
-                    if ($this->matchesSelectedFilters($person, $state)) {
-                        $filteredReferences[] = [
-                            'id' => $person->id,
-                            'sort' => $this->sortReferenceFor($person, $state),
-                        ];
-                    }
+                    $records[] = $this->buildScanRecord($person, $state);
                 }
 
                 $this->flushContactCaches();
             });
 
-        usort($filteredReferences, fn (array $left, array $right): int => $this->compareSortReferences($left['sort'], $right['sort']));
-
-        return $this->scanResultsCache = [
+        return [
             'incomplete_count' => $incompleteCount,
             'reason_counts' => $reasonCounts,
             'severity_counts' => $severityCounts,
-            'filtered_ids' => array_column($filteredReferences, 'id'),
+            'records' => $records,
+        ];
+    }
+
+    /**
+     * Compact, filter/sort-ready projection of one incomplete person. The full
+     * reason details are rebuilt per person only for the current page rows.
+     */
+    protected function buildScanRecord(Person $person, array $state): array
+    {
+        return [
+            'id' => (int) $person->id,
+            'ts' => $person->created_at?->getTimestamp() ?? 0,
+            'reasons' => array_keys($state['reasons']),
+            'severity' => $state['severity']['key'],
+            'name' => Person::normalizeSearchText((string) ($person->full_name ?: trim($person->first_name.' '.$person->last_name))),
+            'gname' => Person::normalizeSearchText(trim((string) ($person->guardian?->first_name.' '.$person->guardian?->last_name))),
+            'swname' => $this->normalizedSocialWorkerName($person->guardian?->social_worker_id),
+            'code' => (string) $person->person_code,
+            'nid' => (string) $person->national_id,
+            'gnid' => (string) ($person->guardian?->national_code ?? ''),
         ];
     }
 
@@ -263,24 +326,24 @@ class IncompleteCasesQueue extends Component
         );
     }
 
-    protected function matchesSelectedFilters(Person $person, array $state): bool
+    protected function matchesRecordFilters(array $record): bool
     {
-        if (! $this->matchesSearch($person)) {
+        if (! $this->matchesRecordSearch($record)) {
             return false;
         }
 
-        if ($this->selectedReason !== 'all' && ! array_key_exists($this->selectedReason, $state['reasons'])) {
+        if ($this->selectedReason !== 'all' && ! in_array($this->selectedReason, $record['reasons'], true)) {
             return false;
         }
 
-        if ($this->selectedSeverity !== 'all' && $state['severity']['key'] !== $this->selectedSeverity) {
+        if ($this->selectedSeverity !== 'all' && $record['severity'] !== $this->selectedSeverity) {
             return false;
         }
 
         return true;
     }
 
-    protected function matchesSearch(Person $person): bool
+    protected function matchesRecordSearch(array $record): bool
     {
         $search = $this->normalizedSearch();
 
@@ -288,19 +351,15 @@ class IncompleteCasesQueue extends Component
             return true;
         }
 
-        $personName = Person::normalizeSearchText((string) ($person->full_name ?: trim($person->first_name.' '.$person->last_name)));
-        $guardianName = Person::normalizeSearchText(trim((string) ($person->guardian?->first_name.' '.$person->guardian?->last_name)));
-        $socialWorkerName = $this->normalizedSocialWorkerName($person->guardian?->social_worker_id);
-
         if (ctype_digit($search)) {
-            return $this->matchesNumericIdentifier((string) $person->person_code, $search, 5)
-                || $this->matchesNumericIdentifier((string) $person->national_id, $search, 10)
-                || $this->matchesNumericIdentifier((string) ($person->guardian?->national_code ?? ''), $search, 10);
+            return $this->matchesNumericIdentifier($record['code'], $search, 5)
+                || $this->matchesNumericIdentifier($record['nid'], $search, 10)
+                || $this->matchesNumericIdentifier($record['gnid'], $search, 10);
         }
 
-        return $this->matchesNormalizedText($personName, $search)
-            || $this->matchesNormalizedText($guardianName, $search)
-            || $this->matchesNormalizedText($socialWorkerName, $search);
+        return $this->matchesNormalizedText($record['name'], $search)
+            || $this->matchesNormalizedText($record['gname'], $search)
+            || $this->matchesNormalizedText($record['swname'], $search);
     }
 
     protected function normalizedSearch(): string
@@ -375,18 +434,9 @@ class IncompleteCasesQueue extends Component
         );
     }
 
-    protected function personSortKey(Person $person): string
+    protected function recordSortReference(array $record): array
     {
-        return sprintf(
-            '%010d-%010d',
-            $person->created_at?->getTimestamp() ?? 0,
-            $person->id
-        );
-    }
-
-    protected function sortReferenceFor(Person $person, array $state): array
-    {
-        $severityRank = match ($state['severity']['key'] ?? 'low') {
+        $severityRank = match ($record['severity'] ?? 'low') {
             'critical' => 4,
             'high' => 3,
             'medium' => 2,
@@ -396,25 +446,25 @@ class IncompleteCasesQueue extends Component
         return match ($this->selectedSort) {
             'severity' => [
                 'priority' => $severityRank,
-                'secondary' => count($state['reasons']),
-                'timestamp' => $person->created_at?->getTimestamp() ?? 0,
-                'id' => $person->id,
+                'secondary' => count($record['reasons']),
+                'timestamp' => $record['ts'],
+                'id' => $record['id'],
             ],
             'missing_count' => [
-                'priority' => count($state['reasons']),
+                'priority' => count($record['reasons']),
                 'secondary' => $severityRank,
-                'timestamp' => $person->created_at?->getTimestamp() ?? 0,
-                'id' => $person->id,
+                'timestamp' => $record['ts'],
+                'id' => $record['id'],
             ],
             'oldest' => [
-                'priority' => -1 * ($person->created_at?->getTimestamp() ?? 0),
-                'secondary' => -1 * $person->id,
+                'priority' => -1 * $record['ts'],
+                'secondary' => -1 * $record['id'],
                 'timestamp' => 0,
                 'id' => 0,
             ],
             default => [
-                'priority' => $person->created_at?->getTimestamp() ?? 0,
-                'secondary' => $person->id,
+                'priority' => $record['ts'],
+                'secondary' => $record['id'],
                 'timestamp' => 0,
                 'id' => 0,
             ],
@@ -434,16 +484,9 @@ class IncompleteCasesQueue extends Component
         return 0;
     }
 
-    protected function scanCacheKey(): string
+    protected function baseScanCacheKey(): string
     {
-        return implode(':', [
-            'people-incomplete-cases',
-            $this->normalizedSearch(),
-            $this->selectedReason,
-            $this->selectedSeverity,
-            $this->selectedSort,
-            app(IncompleteCasesQueueCache::class)->currentVersion(),
-        ]);
+        return 'people-incomplete-cases:scan:'.app(IncompleteCasesQueueCache::class)->currentVersion();
     }
 
     protected function personColumns(): array
@@ -506,29 +549,38 @@ class IncompleteCasesQueue extends Component
 
     protected function hydrateCompletenessContext(Person $person): Person
     {
+        // Attach the social worker from the chunk-level cache first so the
+        // loadMissing() below finds the relation already present and does not
+        // fire a per-person query during the full scan.
+        $this->syncSocialWorkerRelations(collect([$person]));
+
         $person->loadMissing($this->pageRelations());
 
-        if (
-            ! ($this->personContactsCache?->has($person->id) ?? false)
-            && ! ($this->guardianContactsCache?->has($person->guardian_id) ?? false)
-        ) {
+        if (! $this->contactCachesCover($person)) {
             $this->primeContactCachesForPeople(collect([$person]));
         }
-
-        $this->syncSocialWorkerRelations(collect([$person]));
 
         return $person;
     }
 
+    protected function contactCachesCover(Person $person): bool
+    {
+        return in_array((int) $person->id, $this->contactCachePersonIds, true)
+            || ($person->guardian_id !== null && in_array((int) $person->guardian_id, $this->contactCacheGuardianIds, true));
+    }
+
     protected function primeContactCachesForPeople(Collection $people): void
     {
-        $personIds = $people->pluck('id')->filter()->values();
-        $guardianIds = $people->pluck('guardian_id')->filter()->unique()->values();
+        $personIds = $people->pluck('id')->filter()->map(fn ($id): int => (int) $id)->values();
+        $guardianIds = $people->pluck('guardian_id')->filter()->map(fn ($id): int => (int) $id)->unique()->values();
         $socialWorkerIds = $people
             ->pluck('guardian.social_worker_id')
             ->filter()
             ->unique()
             ->values();
+
+        $this->contactCachePersonIds = $personIds->all();
+        $this->contactCacheGuardianIds = $guardianIds->all();
 
         $this->personContactsCache = $personIds->isEmpty()
             ? collect()
@@ -577,6 +629,8 @@ class IncompleteCasesQueue extends Component
         $this->personContactsCache = null;
         $this->guardianContactsCache = null;
         $this->socialWorkersCache = null;
+        $this->contactCachePersonIds = [];
+        $this->contactCacheGuardianIds = [];
     }
 
     protected function normalizedSocialWorkerName(?int $socialWorkerId): string

@@ -9,6 +9,7 @@ use App\Models\Person;
 use App\Models\SocialWorker;
 use App\Models\SupportOrganization;
 use App\Models\User;
+use App\Services\People\IncompleteCasesQueueCache;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -319,7 +320,7 @@ class IncompleteCasesQueueTest extends TestCase
         ]);
 
         $component = Livewire::test(IncompleteCasesQueue::class)->instance();
-        $cacheKey = $this->invokeProtectedMethod($component, 'scanCacheKey');
+        $cacheKey = $this->invokeProtectedMethod($component, 'baseScanCacheKey');
 
         Cache::put($cacheKey, [
             'incomplete_count' => 99,
@@ -330,12 +331,82 @@ class IncompleteCasesQueueTest extends TestCase
                 'medium' => 7,
                 'low' => 6,
             ],
-            'filtered_ids' => [],
+            'records' => [],
         ], now()->addMinutes(5));
 
         Livewire::test(IncompleteCasesQueue::class)
             ->assertSee('99')
             ->assertDontSee($person->person_code);
+    }
+
+    public function test_scan_batches_social_worker_lookups_instead_of_querying_per_person(): void
+    {
+        $this->actingAs($this->admin());
+
+        for ($index = 0; $index < 8; $index++) {
+            $this->createCatalogCompletePerson([
+                'person_code' => (string) (16200 + $index),
+                'national_id' => (string) (4400000000 + $index),
+                'profile_photo' => null,
+            ]);
+        }
+
+        app(IncompleteCasesQueueCache::class)->bump();
+
+        $component = app(IncompleteCasesQueue::class);
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $this->invokeProtectedMethod($component, 'baseScan');
+
+        $workerQueries = array_filter(
+            DB::getQueryLog(),
+            fn (array $query): bool => str_contains($query['query'], 'from `social_workers`')
+        );
+
+        DB::disableQueryLog();
+
+        $this->assertLessThanOrEqual(
+            2,
+            count($workerQueries),
+            'The scan must batch-load social workers per chunk instead of lazy-loading guardian.socialWorker per person.'
+        );
+    }
+
+    public function test_filter_changes_reuse_cached_base_scan_without_rescanning_people(): void
+    {
+        $this->actingAs($this->admin());
+
+        $this->createCatalogCompletePerson([
+            'person_code' => '16210',
+            'national_id' => '',
+            'profile_photo' => null,
+        ]);
+
+        Livewire::test(IncompleteCasesQueue::class);
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        Livewire::test(IncompleteCasesQueue::class)
+            ->set('selectedReason', 'national_id')
+            ->set('selectedSeverity', 'critical')
+            ->assertSee('16210');
+
+        $scanQueries = array_filter(
+            DB::getQueryLog(),
+            fn (array $query): bool => str_contains($query['query'], 'from `people`')
+                && str_contains($query['query'], 'order by `people`.`id` asc')
+        );
+
+        DB::disableQueryLog();
+
+        $this->assertCount(
+            0,
+            $scanQueries,
+            'Changing filters must reuse the cached base scan instead of re-evaluating every person.'
+        );
     }
 
     public function test_queue_cache_invalidates_when_social_worker_data_changes(): void
