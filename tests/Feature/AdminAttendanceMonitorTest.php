@@ -148,6 +148,120 @@ class AdminAttendanceMonitorTest extends TestCase
             ->assertDontSee('پایش حضور و غیاب مددجویان');
     }
 
+    public function test_archive_button_requires_confirmation_before_deleting(): void
+    {
+        $manager = $this->manager();
+        $this->actingAs($manager);
+        [$worker, $user] = $this->socialWorkerUser(920);
+        $sheet = $this->sheet($worker, $user, 'نشست در انتظار تایید');
+
+        $monitor = Livewire::test(AttendanceMonitor::class)
+            ->call('askArchiveSheet', $sheet->id)
+            ->assertSet('sheetToArchiveId', $sheet->id)
+            ->assertSee('بله، به بایگانی منتقل شود');
+
+        $this->assertNotSoftDeleted('attendance_sheets', ['id' => $sheet->id]);
+
+        $monitor->call('cancelArchiveSheet')
+            ->assertSet('sheetToArchiveId', null);
+
+        $this->assertNotSoftDeleted('attendance_sheets', ['id' => $sheet->id]);
+    }
+
+    public function test_manager_can_archive_a_sheet_and_entries_are_preserved(): void
+    {
+        $manager = $this->manager();
+        $this->actingAs($manager);
+        [$worker, $user] = $this->socialWorkerUser(921);
+        $sheet = $this->sheet($worker, $user, 'جلسه پایان‌شده');
+        $person = $this->personFor($worker, '6666666666', '18007', 'Saeed', 'Archived');
+        $this->entry($sheet, $person, $user, out: now());
+
+        Livewire::test(AttendanceMonitor::class)
+            ->call('askArchiveSheet', $sheet->id)
+            ->call('confirmArchiveSheet')
+            ->assertDontSee('wire:key="sheet-'.$sheet->id.'"', escape: false);
+
+        $this->assertSoftDeleted('attendance_sheets', [
+            'id' => $sheet->id,
+            'archived_by' => $manager->id,
+        ]);
+        $this->assertDatabaseCount('attendance_sheet_entries', 1);
+    }
+
+    public function test_archived_sheet_appears_in_archive_tab_with_its_entries(): void
+    {
+        $this->actingAs($this->manager());
+        [$worker, $user] = $this->socialWorkerUser(922);
+        $sheet = $this->sheet($worker, $user, 'کارگاه بایگانی‌شده');
+        $person = $this->personFor($worker, '7777777771', '18008', 'Mahsa', 'Archived');
+        $this->entry($sheet, $person, $user);
+
+        $sheet->delete();
+
+        Livewire::test(AttendanceMonitor::class)
+            ->call('setActiveTab', 'archive')
+            ->assertSee('کارگاه بایگانی‌شده')
+            ->assertDontSee('Mahsa Archived')
+            ->call('toggleSheet', $sheet->id)
+            ->assertSee('Mahsa Archived');
+    }
+
+    public function test_restore_returns_an_archived_sheet_to_the_monitor(): void
+    {
+        $this->actingAs($this->manager());
+        [$worker, $user] = $this->socialWorkerUser(923);
+        $sheet = $this->sheet($worker, $user, 'شیت بازگردانی');
+        $sheet->forceFill(['archived_by' => $user->id])->save();
+        $sheet->delete();
+
+        Livewire::test(AttendanceMonitor::class)
+            ->call('setActiveTab', 'archive')
+            ->assertSee('شیت بازگردانی')
+            ->call('restoreSheet', $sheet->id)
+            ->assertSet('activeTab', 'archive');
+
+        $this->assertNotSoftDeleted('attendance_sheets', ['id' => $sheet->id]);
+        $this->assertNull($sheet->fresh()->archived_by);
+
+        Livewire::test(AttendanceMonitor::class)
+            ->assertSee('شیت بازگردانی');
+    }
+
+    public function test_archived_sheets_do_not_contribute_to_present_counts(): void
+    {
+        $this->actingAs($this->manager());
+        [$worker, $user] = $this->socialWorkerUser(924);
+        $sheet = $this->sheet($worker, $user, 'شیت در حال بایگانی');
+        $person = $this->personFor($worker, '7777777772', '18009', 'Nima', 'Inside');
+        $this->entry($sheet, $person, $user);
+
+        Livewire::test(AttendanceMonitor::class)
+            ->call('askArchiveSheet', $sheet->id)
+            ->call('confirmArchiveSheet')
+            ->call('setActiveTab', 'present')
+            ->assertSee('هم‌اکنون مددجوی در هیچ شیتی حاضر نیست');
+    }
+
+    public function test_archived_sheet_disappears_from_social_worker_panel_and_name_can_be_reused(): void
+    {
+        $manager = $this->manager();
+        [$worker, $workerUser] = $this->socialWorkerUser(925);
+        $sheet = $this->sheet($worker, $manager, 'کلاس هفتگی');
+        $sheet->forceFill(['archived_by' => $manager->id])->save();
+        $sheet->delete();
+
+        $this->actingAs($workerUser);
+
+        Livewire::test(\App\Livewire\SocialWorkers\Attendance::class)
+            ->assertDontSee('کلاس هفتگی')
+            ->set('newSheetName', 'کلاس هفتگی')
+            ->call('createSheet')
+            ->assertHasNoErrors();
+
+        $this->assertSame(2, AttendanceSheet::withTrashed()->where('name', 'کلاس هفتگی')->count());
+    }
+
     private function manager(): User
     {
         return User::factory()->create([

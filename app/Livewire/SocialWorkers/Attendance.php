@@ -49,7 +49,9 @@ class Attendance extends Component
                 'string',
                 'max:120',
                 Rule::unique('attendance_sheets', 'name')
-                    ->where(fn ($query) => $query->where('social_worker_id', $this->currentSocialWorkerId())),
+                    ->where(fn ($query) => $query
+                        ->where('social_worker_id', $this->currentSocialWorkerId())
+                        ->whereNull('deleted_at')),
             ],
         ], [], ['newSheetName' => 'نام حضور و غیاب']);
 

@@ -31,6 +31,7 @@ class AttendanceMonitor extends Component
     public const TAB_OPTIONS = [
         'sheets' => 'شیت‌های حضور و غیاب',
         'present' => 'حاضران همین حالا',
+        'archive' => 'بایگانی',
     ];
 
     public bool $embedded = false;
@@ -45,6 +46,9 @@ class AttendanceMonitor extends Component
     public string $socialWorkerFilter = '';
 
     public ?int $expandedSheetId = null;
+
+    /** Sheet awaiting the manager's confirmation in the archive modal. */
+    public ?int $sheetToArchiveId = null;
 
     public function boot(): void
     {
@@ -61,8 +65,60 @@ class AttendanceMonitor extends Component
         if (in_array($property, ['range', 'search', 'socialWorkerFilter'], true)) {
             $this->resetPage('sheets');
             $this->resetPage('present');
+            $this->resetPage('archive');
             $this->expandedSheetId = null;
         }
+    }
+
+    public function askArchiveSheet(int $sheetId): void
+    {
+        $sheet = AttendanceSheet::query()->find($sheetId);
+
+        if (! $sheet) {
+            return;
+        }
+
+        $this->sheetToArchiveId = $sheet->id;
+    }
+
+    public function cancelArchiveSheet(): void
+    {
+        $this->sheetToArchiveId = null;
+    }
+
+    public function confirmArchiveSheet(): void
+    {
+        $sheet = AttendanceSheet::query()->find((int) $this->sheetToArchiveId);
+
+        if (! $sheet) {
+            $this->sheetToArchiveId = null;
+
+            return;
+        }
+
+        $sheet->forceFill(['archived_by' => auth()->id()])->save();
+        $sheet->delete();
+
+        $this->sheetToArchiveId = null;
+        $this->expandedSheetId = null;
+        $this->resetPage('sheets');
+        session()->flash('success', 'حضور و غیاب «'.$sheet->name.'» به بایگانی منتقل شد.');
+    }
+
+    public function restoreSheet(int $sheetId): void
+    {
+        $sheet = AttendanceSheet::query()->onlyTrashed()->find($sheetId);
+
+        if (! $sheet) {
+            return;
+        }
+
+        $sheet->restore();
+        $sheet->forceFill(['archived_by' => null])->save();
+
+        $this->expandedSheetId = null;
+        $this->resetPage('archive');
+        session()->flash('success', 'حضور و غیاب «'.$sheet->name.'» از بایگانی بازگردانی شد.');
     }
 
     public function setRange(string $range): void
@@ -85,6 +141,7 @@ class AttendanceMonitor extends Component
 
         $this->activeTab = $tab;
         $this->expandedSheetId = null;
+        $this->sheetToArchiveId = null;
     }
 
     public function toggleSheet(int $sheetId): void
@@ -110,10 +167,24 @@ class AttendanceMonitor extends Component
             'presentEntries' => $this->activeTab === 'present'
                 ? $this->presentQuery()->paginate(20, ['*'], 'present')
                 : collect(),
+            'archiveSheets' => $this->activeTab === 'archive'
+                ? $this->archiveQuery()->paginate(10, ['*'], 'archive')
+                : collect(),
             'expandedEntries' => $this->expandedSheetId
                 ? $this->sheetEntries($this->expandedSheetId)
                 : collect(),
             'socialWorkers' => $this->socialWorkerOptions(),
+            'sheetToArchive' => $this->sheetToArchiveId
+                ? AttendanceSheet::query()
+                    ->with('socialWorker:id,first_name,last_name,worker_code')
+                    ->withCount([
+                        'entries as entries_count',
+                        'entries as present_count' => fn (Builder $query) => $query
+                            ->whereNotNull('checked_in_at')
+                            ->whereNull('checked_out_at'),
+                    ])
+                    ->find($this->sheetToArchiveId)
+                : null,
             'stats' => [
                 'sheets' => (clone $this->sheetsQuery())->count(),
                 'checkIns' => AttendanceSheetEntry::query()
@@ -125,6 +196,7 @@ class AttendanceMonitor extends Component
                     ->whereNotNull('checked_out_at')
                     ->count(),
                 'present' => $this->presentQuery()->count(),
+                'archived' => $this->archiveQuery()->count(),
             ],
         ]);
     }
@@ -136,7 +208,7 @@ class AttendanceMonitor extends Component
     {
         return SocialWorker::query()
             ->select(['id', 'first_name', 'last_name', 'worker_code'])
-            ->whereIn('id', AttendanceSheet::query()->select('social_worker_id'))
+            ->whereIn('id', AttendanceSheet::withTrashed()->select('social_worker_id'))
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->get();
@@ -188,6 +260,7 @@ class AttendanceMonitor extends Component
             ])
             ->whereNotNull('checked_in_at')
             ->whereNull('checked_out_at')
+            ->whereHas('sheet')
             ->when($this->socialWorkerFilter !== '', fn (Builder $query) => $query->whereHas(
                 'sheet',
                 fn (Builder $sheet) => $sheet->where('social_worker_id', (int) $this->socialWorkerFilter)
@@ -199,6 +272,41 @@ class AttendanceMonitor extends Component
                     ->orWhereHas('sheet', fn (Builder $sheet) => $sheet->where('name', 'like', $like));
             }))
             ->orderByDesc('checked_in_at');
+    }
+
+    /**
+     * Archived (soft-deleted) sheets. The archive ignores the time range on
+     * purpose: it is a full ledger, newest archive first.
+     */
+    protected function archiveQuery(): Builder
+    {
+        $search = trim($this->search);
+        $like = '%'.$this->escapeLike($search).'%';
+
+        return AttendanceSheet::query()
+            ->onlyTrashed()
+            ->with([
+                'socialWorker:id,first_name,last_name,worker_code',
+                'archiver:id,name',
+            ])
+            ->withCount([
+                'entries as entries_count',
+                'entries as check_ins_count' => fn (Builder $query) => $query->whereNotNull('checked_in_at'),
+                'entries as check_outs_count' => fn (Builder $query) => $query->whereNotNull('checked_out_at'),
+            ])
+            ->when($this->socialWorkerFilter !== '', fn (Builder $query) => $query->where('social_worker_id', (int) $this->socialWorkerFilter))
+            ->when($search !== '', fn (Builder $query) => $query->where(function (Builder $query) use ($like): void {
+                $query->where('name', 'like', $like)
+                    ->orWhereHas('socialWorker', fn (Builder $worker) => $worker
+                        ->where('full_name', 'like', $like)
+                        ->orWhere('first_name', 'like', $like)
+                        ->orWhere('last_name', 'like', $like))
+                    ->orWhereHas('entries', fn (Builder $entry) => $entry
+                        ->where('person_name', 'like', $like)
+                        ->orWhere('person_code', 'like', $like)
+                        ->orWhere('national_id', 'like', $like));
+            }))
+            ->latest('deleted_at');
     }
 
     protected function sheetEntries(int $sheetId): Collection

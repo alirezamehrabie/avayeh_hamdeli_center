@@ -5,9 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AttendanceSheet extends Model
 {
+    use SoftDeletes;
+
     /**
      * Scan mode is a per-session UI choice on the attendance screen, not sheet
      * state: the same sheet is switched between ورود and خروج as needed.
@@ -25,6 +28,7 @@ class AttendanceSheet extends Model
         'social_worker_id',
         'name',
         'created_by',
+        'archived_by',
     ];
 
     protected function casts(): array
@@ -32,6 +36,7 @@ class AttendanceSheet extends Model
         return [
             'social_worker_id' => 'integer',
             'created_by' => 'integer',
+            'archived_by' => 'integer',
         ];
     }
 
@@ -43,6 +48,11 @@ class AttendanceSheet extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function archiver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'archived_by');
     }
 
     public function entries(): HasMany
