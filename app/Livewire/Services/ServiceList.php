@@ -8,19 +8,56 @@ use App\Traits\InteractsWithNotificationModal;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\On;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class ServiceList extends Component
 {
     use InteractsWithNotificationModal;
     use SummarizesServiceDeliveries;
+    use WithPagination;
 
     public string $search = '';
 
     public string $statusFilter = 'all';
 
+    public int $perPage = 15;
+
     public function mount(): void
     {
         abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
+    }
+
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingStatusFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    /**
+     * Worker/recipients summaries are computed for the clicked service only
+     * and streamed to the Alpine modal via an event, instead of being baked
+     * into every list row (which used to serialize the full delivery history
+     * of every service into the page HTML).
+     */
+    public function showWorkerSummary(int $serviceId): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
+
+        $service = Service::query()
+            ->with([
+                'serviceName',
+                'categories' => fn ($query) => $query->ordered(),
+                'workerAllocations.socialWorker',
+                'deliveries.person.guardian',
+                'deliveries.guardian',
+            ])
+            ->findOrFail($serviceId);
+
+        $this->dispatch('service-workers-loaded', summary: $this->socialWorkerSummary($service, Service::unitOptions()));
     }
 
     public function editService(int $serviceId): void
@@ -109,9 +146,6 @@ class ServiceList extends Component
                     'district',
                     'creator',
                     'socialWorkers',
-                    'workerAllocations.socialWorker',
-                    'deliveries.person.guardian',
-                    'deliveries.guardian',
                 ])
                 ->when($search !== '', function ($query) use ($search) {
                     $query->where(function ($nestedQuery) use ($search) {
@@ -130,7 +164,8 @@ class ServiceList extends Component
                 })
                 ->when($statusFilter !== 'all', fn ($query) => $query->where('status', $statusFilter))
                 ->latest()
-                ->get(),
+                ->orderByDesc('id')
+                ->paginate($this->perPage),
             'typeOptions' => Service::TYPE_OPTIONS,
             'unitOptions' => Service::unitOptions(),
             'statusOptions' => Service::STATUS_OPTIONS,

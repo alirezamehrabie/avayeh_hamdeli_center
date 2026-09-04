@@ -16,6 +16,7 @@
             this.workersOpen = true;
         }
     }"
+    x-on:service-workers-loaded.window="openWorkers($event.detail.summary)"
     class="space-y-4"
     dir="rtl"
 >
@@ -120,10 +121,7 @@
                     $createdAt = $service->created_at
                         ? \App\Helpers\Morilog\Jalalian::fromDateTime($service->created_at)->format('Y/m/d')
                         : '-';
-                @endphp
-
-                <article
-                    @click="openDetails(@js([
+                    $detailsPayload = [
                         'code' => $service->code,
                         'name' => $service->serviceName?->name ?: '-',
                         'category' => $service->serviceCategory?->name ?: '-',
@@ -151,7 +149,12 @@
                         ])->values(),
                         'categories_total' => number_format((int) ($service->total_service_value ?? 0)) . ' ریال',
                         'categories_total_words' => \App\Helpers\PersianNumber::rialToTomanWords((int) ($service->total_service_value ?? 0)),
-                    ]))"
+                    ];
+                @endphp
+
+                <article
+                    x-data="{ detailsPayload: @js($detailsPayload) }"
+                    @click="openDetails(detailsPayload)"
                     class="cursor-pointer rounded-[28px] border border-slate-200 bg-white px-4 py-4 shadow-sm transition hover:border-slate-300 hover:shadow-md sm:px-5"
                 >
                     <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
@@ -204,6 +207,7 @@
                                     'service' => $service,
                                     'unitOptions' => $unitOptions,
                                     'label' => 'وضعیت',
+                                    'lazy' => true,
                                 ])
                             </div>
 
@@ -230,35 +234,7 @@
 
                             <button
                                 type="button"
-                                @click.stop="openDetails(@js([
-                                    'code' => $service->code,
-                                    'name' => $service->serviceName?->name ?: '-',
-                                    'category' => $service->serviceCategory?->name ?: '-',
-                                    'type' => $typeOptions[$service->service_type] ?? $service->service_type,
-                                    'status' => $statusOptions[$service->status] ?? $service->status,
-                                    'priority' => $service->priority ? ($priorityOptions[$service->priority] ?? $service->priority) : 'بدون اولویت',
-                                    'quantity' => $this->formatReadableNumber($service->total_quantity) . ' ' . ($unitOptions[$service->service_unit] ?? ($service->service_unit ?? '-')),
-                                    'value' => number_format($service->total_service_value) . ' ریال',
-                                    'district' => $service->district?->name ?: 'بدون منطقه',
-                                    'start' => $service->distribution_start_date ? \App\Helpers\Morilog\Jalalian::fromDateTime($service->distribution_start_date)->format('Y/m/d') : '-',
-                                    'end' => $service->distribution_end_date ? \App\Helpers\Morilog\Jalalian::fromDateTime($service->distribution_end_date)->format('Y/m/d') : '-',
-                                    'creator' => $service->creator?->full_name ?: $service->creator?->name ?: '-',
-                                    'description' => $service->description ?: 'توضیحی ثبت نشده است.',
-                                    'status_notes' => $service->status_notes ?: 'یادداشتی ثبت نشده است.',
-                                    'workers_count' => $service->uniqueSocialWorkersCount(),
-                                    'created_at' => $service->created_at ? \App\Helpers\Morilog\Jalalian::fromDateTime($service->created_at)->format('Y/m/d') : '-',
-                                    'categories' => $service->categories->map(fn ($category) => [
-                                        'name' => $category->name,
-                                        'summary' => $this->formatReadableNumber($category->quantity)
-                                            . ' × '
-                                            . number_format((int) ($category->value ?? 0))
-                                            . ' ریال = '
-                                            . number_format((int) round(((float) $category->quantity) * ((float) ($category->value ?? 0))))
-                                            . ' ریال',
-                                    ])->values(),
-                                    'categories_total' => number_format((int) ($service->total_service_value ?? 0)) . ' ریال',
-                                    'categories_total_words' => \App\Helpers\PersianNumber::rialToTomanWords((int) ($service->total_service_value ?? 0)),
-                                ]))"
+                                @click.stop="openDetails(detailsPayload)"
                                 class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-600 transition hover:bg-slate-100 hover:text-slate-800"
                                 title="جزئیات"
                                 aria-label="جزئیات"
@@ -288,6 +264,12 @@
                     {{ trim($search ?? '') !== '' ? 'هیچ خدمتی برای جستجوی فعلی یافت نشد.' : 'هنوز خدمتی تعریف نشده است.' }}
                 </div>
             @endforelse
+
+            @if($services->hasPages())
+                <div class="pt-1">
+                    {{ $services->links('vendor.livewire.tailwind-mobile-persian') }}
+                </div>
+            @endif
         </div>
     </div>
 
