@@ -3,6 +3,25 @@
         sidebarOpen: window.innerWidth >= 1024,
         reminderDrawerOpen: false,
         resizeHandler: null,
+        sectionLoading: false,
+        sectionLoaderVisible: false,
+        sectionLoaderTimer: null,
+        beginSectionLoading() {
+            this.sectionLoading = true;
+            window.clearTimeout(this.sectionLoaderTimer);
+            // صفحه بارگذاری فقط برای بارگذاری‌های محسوس (>۲۵۰ms) ظاهر می‌شود تا از پرش بصری جلوگیری شود.
+            this.sectionLoaderTimer = window.setTimeout(() => {
+                if (this.sectionLoading) {
+                    this.sectionLoaderVisible = true;
+                }
+            }, 250);
+        },
+        endSectionLoading() {
+            this.sectionLoading = false;
+            window.clearTimeout(this.sectionLoaderTimer);
+            this.sectionLoaderTimer = null;
+            this.sectionLoaderVisible = false;
+        },
         initSidebar() {
             this.syncSidebar();
             this.resizeHandler = () => this.syncSidebar();
@@ -92,7 +111,9 @@
         }
     }"
     x-init="initSidebar()"
-    @open-dashboard-section.window="closeSidebarOnMobile(); closeReminderDrawer()"
+    @open-dashboard-section.window="closeSidebarOnMobile(); closeReminderDrawer(); beginSectionLoading()"
+    @dashboard-section-rendered.window="endSectionLoading()"
+    @sidebar-request-failed.window="endSectionLoading()"
     @keydown.escape.window="closeSidebarOnMobile(); closeReminderDrawer()"
     @keydown.tab.window="trapSidebarFocus($event)"
     class="flex h-full overflow-hidden"
@@ -227,7 +248,45 @@
     <div class="flex min-w-0 min-h-0 flex-1 w-full flex-col overflow-y-auto">
         @include('layouts.partials.header')
 
-        <main class="min-h-0 px-2 py-4 lg:px-4">
+        <main class="relative min-h-0 px-2 py-4 lg:px-4" :aria-busy="sectionLoading ? 'true' : 'false'">
+            {{-- صفحه بارگذاری برنددار: با المان واضح و مرتبط با سایت (لوگو + حلقه چرخان) و هماهنگ با تم سایدبار.
+                 با fixed دقیقاً قدِ viewportِ ناحیه محتوا (سمت چپ سایدبار) را پر می‌کند؛ m-auto هم وسط‌چین می‌کند
+                 و هم در بخش‌های خیلی بلند/کوتاه از بریده‌شدن یا خارج‌شدن اسپینر از دید جلوگیری می‌کند. --}}
+            <div
+                x-show="sectionLoaderVisible"
+                x-cloak
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                class="fixed inset-y-0 left-0 right-0 z-40 flex overflow-y-auto bg-gradient-to-br from-indigo-900 via-indigo-900 to-indigo-950 text-white lg:right-64"
+            >
+                <div class="m-auto flex flex-col items-center gap-4 px-6 py-10 text-center sm:gap-5">
+                    {{-- لوگوی سایت داخل حلقه چرخان --}}
+                    <div class="relative flex h-20 w-20 shrink-0 items-center justify-center sm:h-24 sm:w-24">
+                        <span class="absolute inset-0 animate-spin rounded-full border-2 border-indigo-500/30 border-t-indigo-200" aria-hidden="true"></span>
+                        <span class="absolute inset-[6px] animate-spin rounded-full border-2 border-purple-400/20 border-b-purple-200/70 [animation-duration:1.8s]" style="animation-direction: reverse;" aria-hidden="true"></span>
+                        <div class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl opacity-90 shadow-lg shadow-indigo-500/20 sm:h-16 sm:w-16">
+                            <img src="{{ asset('images/logo-wh.webp') }}" width="150" height="150" alt="لوگوی آوای همدلی" class="h-full w-full object-cover">
+                        </div>
+                    </div>
+
+                    {{-- نام برند، همان استایل سایدبار --}}
+                    <div>
+                        <p class="mb-1 text-[11px] font-light tracking-wide text-indigo-100/80">مرکز نیکوکاری تخصصی کودکان</p>
+                        <h2 class="bg-gradient-to-l from-indigo-200 via-purple-100 to-indigo-200 bg-clip-text text-2xl font-black text-transparent">آوای همدلی</h2>
+                    </div>
+
+                    {{-- متن و نقطه‌های بارگذاری --}}
+                    <div class="flex items-center gap-2 text-sm text-indigo-100">
+                        <span>در حال بارگذاری</span>
+                        <x-sidebar.loading-dots class="text-indigo-200" />
+                    </div>
+                </div>
+            </div>
+
             <div class="container mx-auto min-h-0">
                 @switch($activeSection)
                     @case('people-fast-create')

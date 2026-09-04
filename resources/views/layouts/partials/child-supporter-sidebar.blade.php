@@ -42,11 +42,12 @@
     @endphp
 
     <nav class="flex-1 space-y-2" x-data="{ openMenu: {{ \Illuminate\Support\Js::from($isSystemSettingsActive ? 'system-settings' : '') }} }">
-        <a href="{{ route('child-supporter.dashboard') }}" class="flex items-center rounded-lg px-4 py-2.5 transition-all duration-200 {{ $isDashboardActive ? 'bg-indigo-700 text-white shadow-sm' : 'text-indigo-100 hover:bg-indigo-800 hover:text-white' }}">
+        <a href="{{ route('child-supporter.dashboard') }}" x-data="{ nav: false }" @click="nav = true" @pageshow.window="if ($event.persisted) nav = false" class="flex items-center rounded-lg px-4 py-2.5 transition-all duration-200 {{ $isDashboardActive ? 'bg-indigo-700 text-white shadow-sm' : 'text-indigo-100 hover:bg-indigo-800 hover:text-white' }}">
             <svg class="ml-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M3 12l9-8 9 8-2 1.75V20a1 1 0 01-1 1h-4v-6h-4v6H6a1 1 0 01-1-1v-6.25L3 12z"/>
             </svg>
-            <span>پیشخوان</span>
+            <span :class="nav && 'opacity-60'">پیشخوان</span>
+            <x-sidebar.loading-dots x-show="nav" x-cloak class="mr-auto text-indigo-200" />
         </a>
 
         <button type="button" @click="openMenu = openMenu === 'system-settings' ? '' : 'system-settings'"
@@ -64,9 +65,10 @@
         </button>
 
         <div x-show="openMenu === 'system-settings'" x-collapse.duration.250ms class="mr-8 mt-2 space-y-1">
-            <a href="{{ route('child-supporter.user-account') }}"
-               class="block rounded px-4 py-2 text-sm {{ $isUserAccountActive ? 'bg-indigo-800 text-white' : 'text-indigo-200 hover:text-white' }}">
-                حساب کاربری
+            <a href="{{ route('child-supporter.user-account') }}" x-data="{ nav: false }" @click="nav = true" @pageshow.window="if ($event.persisted) nav = false"
+               class="flex items-center justify-between rounded px-4 py-2 text-sm {{ $isUserAccountActive ? 'bg-indigo-800 text-white' : 'text-indigo-200 hover:text-white' }}">
+                <span :class="nav && 'opacity-60'">حساب کاربری</span>
+                <x-sidebar.loading-dots x-show="nav" x-cloak class="text-indigo-200" />
             </a>
         </div>
     </nav>

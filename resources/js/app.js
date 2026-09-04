@@ -1627,6 +1627,14 @@ document.addEventListener('livewire:init', () => {
     patchJalaliDatepickerLifecycle();
     initializeJalaliDateTimePickers();
 
+    // شبکه‌ی رویدادهای حالت بارگذاری سایدبار: اگر درخواست Livewire شکست بخورد،
+    // رویداد حباب‌شونده‌ای روی window می‌فرستیم تا Dot Spinner و اسکلتون قفل نمانند.
+    Livewire.hook('request', ({ fail }) => {
+        fail(() => {
+            window.dispatchEvent(new CustomEvent('sidebar-request-failed', { bubbles: true }));
+        });
+    });
+
     Livewire.hook('morph.updated', () => {
         patchJalaliDatepickerLifecycle();
         initializeJalaliDateTimePickers();

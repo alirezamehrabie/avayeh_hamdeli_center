@@ -290,6 +290,10 @@ class DashboardHome extends Component
     private function dispatchDashboardSectionChanged(): void
     {
         $this->dispatch('dashboard-section-changed', section: $this->activeSection)->to(DashboardSidebar::class);
+
+        // رویداد حباب‌شونده برای مرورگر: پس از اتمام رندر بخش جدید، حالت بارگذاری
+        // سایدبار (Dot Spinner روی گزینه انتخاب‌شده) و اسکلتون محتوا خاموش می‌شود.
+        $this->dispatch('dashboard-section-rendered', section: $this->activeSection);
     }
 
     public function addReminder(): void

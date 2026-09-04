@@ -15,7 +15,7 @@ return [
 
     'name' => env('APP_NAME', 'سامانه آوای همدلی'),
 
-    'asset_version' => env('ASSET_VERSION', '1.4.1'),
+    'asset_version' => env('ASSET_VERSION', '1.4.8'),
 
     /*
     |--------------------------------------------------------------------------

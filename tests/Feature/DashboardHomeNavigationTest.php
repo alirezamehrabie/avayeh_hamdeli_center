@@ -257,6 +257,25 @@ class DashboardHomeNavigationTest extends TestCase
             ->assertSet('caseFilePersonId', $person->id);
     }
 
+    public function test_selecting_section_dispatches_rendered_event_for_sidebar_loading_state(): void
+    {
+        $this->actingAs($this->manager());
+
+        Livewire::test(DashboardHome::class)
+            ->call('selectSection', 'people-list')
+            ->assertDispatched('dashboard-section-changed', section: 'people-list')
+            ->assertDispatched('dashboard-section-rendered', section: 'people-list');
+    }
+
+    public function test_url_section_change_dispatches_rendered_event(): void
+    {
+        $this->actingAs($this->manager());
+
+        Livewire::test(DashboardHome::class)
+            ->set('activeSection', 'people-list')
+            ->assertDispatched('dashboard-section-rendered', section: 'people-list');
+    }
+
     private function manager(): User
     {
         return User::factory()->create([
