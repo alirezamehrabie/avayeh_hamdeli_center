@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اتصال برقرار نیست | آوای همدلی</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'iransans', 'Vazir', Tahoma, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8fbff;
+            color: #1e293b;
+            padding: 1.5rem;
+        }
+        .card {
+            max-width: 26rem;
+            width: 100%;
+            background: #fff;
+            border-radius: 1.25rem;
+            box-shadow: 0 10px 30px rgba(89, 100, 174, 0.12);
+            padding: 2.5rem 2rem;
+            text-align: center;
+        }
+        .icon {
+            width: 4.5rem;
+            height: 4.5rem;
+            margin: 0 auto 1.25rem;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #5964AE 0%, #1572A1 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 2rem;
+        }
+        h1 { font-size: 1.25rem; margin-bottom: 0.75rem; color: #5964AE; }
+        p { font-size: 0.95rem; line-height: 1.9; color: #64748b; margin-bottom: 1.75rem; }
+        button {
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            background: #5964AE;
+            border: 0;
+            border-radius: 0.75rem;
+            padding: 0.75rem 2.25rem;
+            cursor: pointer;
+        }
+        button:active { transform: scale(0.98); }
+    </style>
+</head>
+<body>
+    <main class="card">
+        <div class="icon">⚠</div>
+        <h1>اتصال به اینترنت برقرار نیست</h1>
+        <p>
+            برای ادامه‌ی کار به اتصال اینترنت نیاز دارید.
+            پس از برقراری اتصال، دوباره تلاش کنید.
+        </p>
+        <button type="button" onclick="window.location.reload()">تلاش دوباره</button>
+    </main>
+</body>
+</html>

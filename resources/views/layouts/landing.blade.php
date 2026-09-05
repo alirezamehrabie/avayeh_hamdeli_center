@@ -14,6 +14,7 @@
     <link rel="icon" type="image/png" href="{{ asset('images/logo-sm.png') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.pwa-head')
     @livewireStyles
 
     <style>

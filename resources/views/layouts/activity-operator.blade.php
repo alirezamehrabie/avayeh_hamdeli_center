@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>پیشخوان اپراتور فعالیت - آوای همدلی</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.pwa-head')
     @livewireStyles
 </head>
 <body class="bg-gray-100 text-gray-800">

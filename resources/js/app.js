@@ -1642,3 +1642,18 @@ document.addEventListener('livewire:init', () => {
 });
 
 Livewire.start();
+
+// ── PWA: ثبت Service Worker (مرحله ۱ — فقط Online-first و قابل‌نصب) ──────────
+// ثبت فقط در بیلد پروداکشن انجام می‌شود تا در حالت `npm run dev` (hot reload)
+// هیچ دخالتی در سرو دارایی‌ها نداشته باشد. در زمینه‌ی ناامن هم ثبت نمی‌شود
+// (تست محلی روی http://localhost معتبر است چون امن محسوب می‌شود).
+// هر خطایی در ثبت، بی‌صدا بلعیده می‌شود تا رفتار فعلی برنامه هرگز نشکند.
+if (import.meta.env.PROD && 'serviceWorker' in navigator && window.isSecureContext) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker
+            .register('/sw.js', { scope: '/' })
+            .catch((error) => {
+                console.warn('[pwa] service worker registration failed:', error);
+            });
+    });
+}
