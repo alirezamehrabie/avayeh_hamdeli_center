@@ -5,6 +5,7 @@ namespace App\Livewire\DistributionOperators\Gates;
 use App\Models\GateEntryAssignment;
 use App\Models\Service;
 use App\Models\ServiceDelivery;
+use App\Models\ServiceDeliveryCancellation;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -253,9 +254,9 @@ class ExitGate extends AbstractGateComponent
     }
 
     /**
-     * Cancel one already-finalized category: the delivery ledger row is removed and the assignment
-     * returns to "pending" so it can be redelivered from the Delivery Gate. Only reachable while the
-     * subject's exit is unlocked by a manager password (see unlockExit).
+     * Cancel one already-finalized category: the delivery ledger row is archived and removed, and the
+     * assignment returns to "pending" so it can be redelivered from the Delivery Gate. Only reachable
+     * while the subject's exit is unlocked by a manager password (see unlockExit).
      */
     public function cancelFinalizedCategory(int $assignmentId): void
     {
@@ -265,30 +266,58 @@ class ExitGate extends AbstractGateComponent
             return;
         }
 
-        $assignment = $this->subjectAssignmentQuery()
-            ->where('id', $assignmentId)
-            ->where('status', GateEntryAssignment::STATUS_FINALIZED)
-            ->first();
+        $canceled = DB::transaction(function () use ($assignmentId): bool {
+            // Lock the row for the whole transaction: two stations cancelling the same item must not
+            // both archive-and-purge the ledger row (the second would write a duplicate audit record).
+            $assignment = $this->subjectAssignmentQuery()
+                ->where('id', $assignmentId)
+                ->where('status', GateEntryAssignment::STATUS_FINALIZED)
+                ->lockForUpdate()
+                ->first();
 
-        if (! $assignment) {
-            return;
-        }
+            if (! $assignment) {
+                return false;
+            }
 
-        DB::transaction(function () use ($assignment): void {
             // Force-deleting frees the unique gate_entry_assignment_id slot so the category can be
-            // delivered and finalized cleanly again; the model's deleted event refreshes stock.
-            ServiceDelivery::query()
+            // delivered and finalized cleanly again; the model's deleted event refreshes stock. The
+            // ledger row is archived first so the distribution record and this cancellation never
+            // disappear — the audit row is the permanent trace of what was delivered and who dropped it.
+            $delivery = ServiceDelivery::query()
                 ->where('gate_entry_assignment_id', $assignment->id)
-                ->forceDelete();
+                ->first();
+
+            if ($delivery) {
+                ServiceDeliveryCancellation::query()->create([
+                    'service_delivery_id' => $delivery->id,
+                    'gate_entry_assignment_id' => $assignment->id,
+                    'service_id' => $delivery->service_id,
+                    'service_category_id' => $delivery->service_category_id,
+                    'person_id' => $delivery->person_id,
+                    'guardian_id' => $delivery->guardian_id,
+                    'delivered_quantity' => $delivery->delivered_quantity,
+                    'delivered_total_value' => $delivery->delivered_total_value,
+                    'delivered_at' => $delivery->delivered_at,
+                    'delivery_snapshot' => $delivery->getAttributes(),
+                    'canceled_by' => auth()->id(),
+                    'canceled_at' => now(),
+                ]);
+
+                $delivery->forceDelete();
+            }
 
             $assignment->forceFill([
                 'status' => GateEntryAssignment::STATUS_PENDING,
                 'delivered_at' => null,
                 'delivered_by' => null,
             ])->save();
+
+            return true;
         });
 
-        $this->dispatch('exit-category-cancelled');
+        if ($canceled) {
+            $this->dispatch('exit-category-cancelled');
+        }
     }
 
     /**

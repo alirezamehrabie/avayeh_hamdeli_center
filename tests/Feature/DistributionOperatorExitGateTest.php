@@ -5,10 +5,10 @@ namespace Tests\Feature;
 use App\Livewire\DistributionOperators\Gates\ExitGate;
 use App\Models\GateEntryAssignment;
 use App\Models\Person;
-use App\Models\QrIdentity;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\ServiceDelivery;
+use App\Models\ServiceDeliveryCancellation;
 use App\Models\ServiceName;
 use App\Models\User;
 use App\Services\QrIdentityService;
@@ -77,6 +77,7 @@ class DistributionOperatorExitGateTest extends TestCase
         Livewire::test(ExitGate::class)
             ->call('selectService', $service->id)
             ->call('resolveScannedQr', $token)
+            ->set('selectedItems', [$assignment->id])
             ->call('finalizeExit')
             ->assertSee('خروج تأیید');
 
@@ -119,6 +120,7 @@ class DistributionOperatorExitGateTest extends TestCase
         Livewire::test(ExitGate::class)
             ->call('selectService', $service->id)
             ->call('resolveScannedQr', $token)
+            ->set('selectedItems', [$assignment->id])
             ->call('finalizeExit');
 
         $this->assertSame(1, ServiceDelivery::query()->count());
@@ -129,11 +131,13 @@ class DistributionOperatorExitGateTest extends TestCase
 
         // Defense in depth: even if an assignment is forced back to delivered (the path Step 2 blocks),
         // re-finalizing must not write a second ledger row for the same assignment.
-        $assignment->forceFill(['status' => GateEntryAssignment::STATUS_DELIVERED])->save();
+        // refresh() so the forceFill actually dirties the (finalized) row instead of no-op'ing.
+        $assignment->refresh()->forceFill(['status' => GateEntryAssignment::STATUS_DELIVERED])->save();
 
         Livewire::test(ExitGate::class)
             ->call('selectService', $service->id)
             ->call('resolveScannedQr', $token)
+            ->set('selectedItems', [$assignment->id])
             ->call('finalizeExit');
 
         $this->assertSame(1, ServiceDelivery::query()->count());
@@ -174,11 +178,15 @@ class DistributionOperatorExitGateTest extends TestCase
 
         $this->actingAs($operator);
 
+        $assignment = GateEntryAssignment::query()->sole();
+
         $component = Livewire::test(ExitGate::class)
             ->call('selectService', $service->id)
             ->call('resolveScannedQr', $token)
+            ->set('selectedItems', [$assignment->id])
             ->call('finalizeExit')
             // Second finalize call finds no delivered rows — no duplicate is written.
+            ->set('selectedItems', [$assignment->id])
             ->call('finalizeExit');
 
         $this->assertSame(1, ServiceDelivery::query()->count());
@@ -213,6 +221,147 @@ class DistributionOperatorExitGateTest extends TestCase
         $this->assertSame(0, ServiceDelivery::query()->count());
     }
 
+    public function test_canceling_a_finalized_delivery_archives_the_ledger_row_with_audit_trace(): void
+    {
+        [$operator] = $this->operator();
+        $manager = $this->manager();
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Food basket', $operator);
+        $person = $this->makePerson();
+
+        $assignment = $this->assign($service, $category, $person, $operator, GateEntryAssignment::STATUS_DELIVERED);
+        $token = $this->issueToken($person, $operator);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ExitGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            ->set('selectedItems', [$assignment->id])
+            ->call('finalizeExit');
+
+        $delivery = ServiceDelivery::query()->firstOrFail();
+
+        Livewire::test(ExitGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            ->set('managerPassword', 'manager-secret')
+            ->call('unlockExit')
+            ->assertSet('exitUnlocked', true)
+            ->call('cancelFinalizedCategory', $assignment->id);
+
+        // The ledger row is purged so the unique assignment slot frees up (existing behavior)...
+        $this->assertSame(0, ServiceDelivery::withTrashed()->count());
+
+        // ...and the assignment is released back to pending.
+        $this->assertDatabaseHas('gate_entry_assignments', [
+            'id' => $assignment->id,
+            'status' => GateEntryAssignment::STATUS_PENDING,
+        ]);
+
+        // But the distribution record and the cancellation survive as a permanent audit trail.
+        $cancellation = ServiceDeliveryCancellation::query()->sole();
+        $this->assertSame($delivery->id, $cancellation->service_delivery_id);
+        $this->assertSame($assignment->id, $cancellation->gate_entry_assignment_id);
+        $this->assertSame($service->id, $cancellation->service_id);
+        $this->assertSame($category->id, $cancellation->service_category_id);
+        $this->assertSame($person->id, $cancellation->person_id);
+        $this->assertSame($operator->id, $cancellation->canceled_by);
+        $this->assertNotNull($cancellation->canceled_at);
+        $this->assertSame(10, $cancellation->delivered_total_value);
+        $this->assertEquals($delivery->getAttributes(), $cancellation->delivery_snapshot);
+        $this->assertSame('تحویل نهایی از گیت خروج', $cancellation->snapshotDelivery()->notes);
+        $this->assertNotSame($manager->id, $cancellation->canceled_by);
+    }
+
+    public function test_cancel_without_unlock_is_refused_and_writes_no_audit_row(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Food basket', $operator);
+        $person = $this->makePerson();
+
+        $assignment = $this->assign($service, $category, $person, $operator, GateEntryAssignment::STATUS_DELIVERED);
+        $token = $this->issueToken($person, $operator);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ExitGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            ->set('selectedItems', [$assignment->id])
+            ->call('finalizeExit');
+
+        // Without the manager unlock the cancel call is a no-op: ledger and assignment untouched.
+        Livewire::test(ExitGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            ->assertSet('exitUnlocked', false)
+            ->call('cancelFinalizedCategory', $assignment->id);
+
+        $this->assertSame(1, ServiceDelivery::query()->count());
+        $this->assertSame(0, ServiceDeliveryCancellation::query()->count());
+        $this->assertDatabaseHas('gate_entry_assignments', [
+            'id' => $assignment->id,
+            'status' => GateEntryAssignment::STATUS_FINALIZED,
+        ]);
+    }
+
+    public function test_redelivering_after_a_cancel_writes_a_fresh_ledger_row_and_keeps_the_cancellation(): void
+    {
+        [$operator] = $this->operator();
+        $this->manager();
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Food basket', $operator);
+        $person = $this->makePerson();
+
+        $assignment = $this->assign($service, $category, $person, $operator, GateEntryAssignment::STATUS_DELIVERED);
+        $token = $this->issueToken($person, $operator);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ExitGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            ->set('selectedItems', [$assignment->id])
+            ->call('finalizeExit');
+
+        $originalDeliveryId = (int) ServiceDelivery::query()->value('id');
+
+        Livewire::test(ExitGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            ->set('managerPassword', 'manager-secret')
+            ->call('unlockExit')
+            ->call('cancelFinalizedCategory', $assignment->id);
+
+        // Simulate the Delivery Gate re-ticking the freed item, then exit it again.
+        // refresh() first: the in-memory instance still holds 'delivered' from creation, so a plain
+        // forceFill would not dirty the attribute and no UPDATE would run against the (now pending) row.
+        $assignment->refresh()->forceFill(['status' => GateEntryAssignment::STATUS_DELIVERED])->save();
+
+        Livewire::test(ExitGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            ->set('selectedItems', [$assignment->id])
+            ->call('finalizeExit');
+
+        // The archived cancellation stays, and a brand-new ledger row is written for the same assignment.
+        $this->assertSame(1, ServiceDeliveryCancellation::query()->count());
+        $this->assertSame($originalDeliveryId, (int) ServiceDeliveryCancellation::query()->value('service_delivery_id'));
+
+        $this->assertSame(1, ServiceDelivery::query()->count());
+        $this->assertNotSame($originalDeliveryId, (int) ServiceDelivery::query()->value('id'));
+        $this->assertDatabaseHas('service_deliveries', [
+            'gate_entry_assignment_id' => $assignment->id,
+            'delivery_channel' => Service::DELIVERY_CHANNEL_GATE,
+        ]);
+        $this->assertDatabaseHas('gate_entry_assignments', [
+            'id' => $assignment->id,
+            'status' => GateEntryAssignment::STATUS_FINALIZED,
+        ]);
+    }
+
     /**
      * @return array{0: User}
      */
@@ -223,6 +372,15 @@ class DistributionOperatorExitGateTest extends TestCase
             'is_admin' => false,
             'permissions' => [User::PERMISSION_DISTRIBUTION_OUTBOUND_GATE],
         ])];
+    }
+
+    protected function manager(): User
+    {
+        return User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_MANAGER,
+            'is_admin' => false,
+            'password' => 'manager-secret',
+        ]);
     }
 
     protected function makePerson(): Person
