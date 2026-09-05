@@ -377,7 +377,7 @@
                             <h2 class="text-base font-black text-slate-900">خط زمانی پرونده</h2>
                             <p class="mt-1 text-sm text-slate-500">آخرین رکوردهای خدمات تحویل‌شده، حضورهای ثبت‌شده و رکوردهای دستی</p>
                         </div>
-                        <span class="text-xs font-bold text-slate-400">آخرین {{ number_format($timeline->count()) }} رکورد</span>
+                        <span class="text-xs font-bold text-slate-400">{{ number_format($timeline->count()) }} رخداد پرونده</span>
                     </div>
 
                     @if($timeline->isEmpty())
@@ -400,65 +400,86 @@
                                     </thead>
                                     <tbody class="divide-y divide-slate-100 bg-white">
                                         @foreach($timeline as $row)
-                                            <tr>
-                                                <td class="whitespace-nowrap px-4 py-3 text-slate-600">{{ $this->formatDate($row['date']) }}</td>
-                                                <td class="px-4 py-3">
-                                                    <span @class([
-                                                        'inline-flex rounded-full px-2.5 py-1 text-xs font-bold',
-                                                        'bg-emerald-50 text-emerald-700' => $row['type'] === 'service',
-                                                        'bg-cyan-50 text-cyan-700' => $row['type'] === 'activity',
-                                                        'bg-violet-50 text-violet-700' => $row['type'] === 'manual',
-                                                    ])>
-                                                        {{ $row['badge'] }}
-                                                    </span>
-                                                </td>
-                                                <td class="px-4 py-3">
-                                                    <p class="font-bold text-slate-800">{{ $row['title'] }}</p>
-                                                    @if($row['subtitle'])
+                                            @if($row['type'] === 'service-group')
+                                                <tr class="bg-emerald-50/60">
+                                                    <td class="whitespace-nowrap px-4 py-3 text-slate-600">{{ $this->formatDate($row['date']) }}</td>
+                                                    <td class="px-4 py-3">
+                                                        <span class="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">{{ $row['badge'] }}</span>
+                                                    </td>
+                                                    <td class="px-4 py-3">
+                                                        <p class="font-black text-slate-900">{{ $row['title'] }}</p>
                                                         <p class="mt-1 text-xs text-slate-500">{{ $row['subtitle'] }}</p>
-                                                    @endif
-                                                    @if(! empty($row['details']))
-                                                        <div class="mt-2 flex flex-wrap gap-1.5">
-                                                            @foreach($row['details'] as $label => $value)
-                                                                <span class="rounded-lg bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-500">{{ $label }}: {{ $value }}</span>
-                                                            @endforeach
-                                                        </div>
-                                                    @endif
-                                                    @if(($row['attachments'] ?? collect())->isNotEmpty())
-                                                        <div class="mt-2 flex flex-wrap gap-1.5">
-                                                            @foreach($row['attachments'] as $attachment)
-                                                                <a
-                                                                    href="{{ $attachment->url }}"
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    class="inline-flex items-center gap-1 rounded-lg border border-violet-100 bg-violet-50 px-2 py-1 text-[11px] font-bold text-violet-700 transition hover:bg-violet-100"
-                                                                >
-                                                                    <i class="bi bi-paperclip"></i>
-                                                                    <span>{{ $attachment->original_name }}</span>
-                                                                    @if($attachment->size_label)
-                                                                        <span class="font-semibold text-violet-400">({{ $attachment->size_label }})</span>
-                                                                    @endif
-                                                                </a>
-                                                            @endforeach
-                                                        </div>
-                                                    @endif
-                                                </td>
-                                                <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700">{{ $row['quantity'] }}</td>
-                                                <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700">{{ $row['value'] }}</td>
-                                                <td class="px-4 py-3 text-center">
-                                                    @if($row['type'] === 'manual' && ! empty($row['record_id']))
-                                                        <button
-                                                            type="button"
-                                                            wire:click="startEditingCaseRecord({{ $row['record_id'] }})"
-                                                            class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-violet-200 bg-violet-50 text-violet-700 transition hover:bg-violet-100 focus:outline-none focus:ring-4 focus:ring-violet-100"
-                                                            aria-label="ویرایش رکورد"
-                                                            title="ویرایش رکورد"
-                                                        >
-                                                            <i class="bi bi-pencil-square text-sm"></i>
-                                                        </button>
-                                                    @endif
-                                                </td>
-                                            </tr>
+                                                        @if(! empty($row['details']))
+                                                            <div class="mt-2 flex flex-wrap gap-1.5">
+                                                                @foreach($row['details'] as $label => $value)
+                                                                    <span class="rounded-lg bg-white/80 px-2 py-1 text-[11px] font-semibold text-slate-500">{{ $label }}: {{ $value }}</span>
+                                                                @endforeach
+                                                            </div>
+                                                        @endif
+                                                    </td>
+                                                    <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700">{{ $row['quantity'] }}</td>
+                                                    <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700">{{ $row['value'] }}</td>
+                                                    <td class="px-4 py-3 text-center text-xs font-bold text-emerald-700">{{ number_format($row['children']->count()) }} دسته</td>
+                                                </tr>
+                                                @foreach($row['children'] as $child)
+                                                    <tr class="bg-emerald-50/20">
+                                                        <td class="px-4 py-3"></td>
+                                                        <td class="px-4 py-3 text-xs font-bold text-emerald-700">جزئیات</td>
+                                                        <td class="px-4 py-3 pr-8">
+                                                            <p class="font-bold text-slate-800">{{ $child['category'] }}</p>
+                                                            @if(! empty($child['details']))
+                                                                <div class="mt-2 flex flex-wrap gap-1.5">
+                                                                    @foreach($child['details'] as $label => $value)
+                                                                        <span class="rounded-lg bg-white px-2 py-1 text-[11px] font-semibold text-slate-500">{{ $label }}: {{ $value }}</span>
+                                                                    @endforeach
+                                                                </div>
+                                                            @endif
+                                                        </td>
+                                                        <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700">{{ $child['quantity'] }}</td>
+                                                        <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700">{{ $child['value'] }}</td>
+                                                        <td class="px-4 py-3"></td>
+                                                    </tr>
+                                                @endforeach
+                                            @else
+                                                <tr>
+                                                    <td class="whitespace-nowrap px-4 py-3 text-slate-600">{{ $this->formatDate($row['date']) }}</td>
+                                                    <td class="px-4 py-3">
+                                                        <span @class([
+                                                            'inline-flex rounded-full px-2.5 py-1 text-xs font-bold',
+                                                            'bg-cyan-50 text-cyan-700' => $row['type'] === 'activity',
+                                                            'bg-violet-50 text-violet-700' => $row['type'] === 'manual',
+                                                        ])>{{ $row['badge'] }}</span>
+                                                    </td>
+                                                    <td class="px-4 py-3">
+                                                        <p class="font-bold text-slate-800">{{ $row['title'] }}</p>
+                                                        @if($row['subtitle']) <p class="mt-1 text-xs text-slate-500">{{ $row['subtitle'] }}</p> @endif
+                                                        @if(! empty($row['details']))
+                                                            <div class="mt-2 flex flex-wrap gap-1.5">
+                                                                @foreach($row['details'] as $label => $value)
+                                                                    <span class="rounded-lg bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-500">{{ $label }}: {{ $value }}</span>
+                                                                @endforeach
+                                                            </div>
+                                                        @endif
+                                                        @if(($row['attachments'] ?? collect())->isNotEmpty())
+                                                            <div class="mt-2 flex flex-wrap gap-1.5">
+                                                                @foreach($row['attachments'] as $attachment)
+                                                                    <a href="{{ $attachment->url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 rounded-lg border border-violet-100 bg-violet-50 px-2 py-1 text-[11px] font-bold text-violet-700 transition hover:bg-violet-100">
+                                                                        <i class="bi bi-paperclip"></i><span>{{ $attachment->original_name }}</span>
+                                                                        @if($attachment->size_label) <span class="font-semibold text-violet-400">({{ $attachment->size_label }})</span> @endif
+                                                                    </a>
+                                                                @endforeach
+                                                            </div>
+                                                        @endif
+                                                    </td>
+                                                    <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700">{{ $row['quantity'] }}</td>
+                                                    <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700">{{ $row['value'] }}</td>
+                                                    <td class="px-4 py-3 text-center">
+                                                        @if($row['type'] === 'manual' && ! empty($row['record_id']))
+                                                            <button type="button" wire:click="startEditingCaseRecord({{ $row['record_id'] }})" class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-violet-200 bg-violet-50 text-violet-700 transition hover:bg-violet-100 focus:outline-none focus:ring-4 focus:ring-violet-100" aria-label="ویرایش رکورد" title="ویرایش رکورد"><i class="bi bi-pencil-square text-sm"></i></button>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @endif
                                         @endforeach
                                     </tbody>
                                 </table>

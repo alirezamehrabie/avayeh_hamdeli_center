@@ -27,7 +27,9 @@ class BeneficiaryCaseFileTimeline
         $serviceRows = $serviceDeliveries
             ->reject(fn (ServiceDelivery $delivery): bool => $delivery->activity_attendance_id
                 && in_array((int) $delivery->activity_attendance_id, $activityAttendanceIds, true))
-            ->map(fn (ServiceDelivery $delivery): array => $this->serviceRow($delivery, $selectedPerson));
+            ->groupBy(fn (ServiceDelivery $delivery): string => $this->serviceGroupKey($delivery, $selectedPerson))
+            ->map(fn (Collection $deliveries): array => $this->serviceGroupRow($deliveries, $selectedPerson))
+            ->values();
 
         $attendanceRows = $activityAttendances
             ->map(fn (ActivityAttendance $attendance): array => $this->attendanceRow($attendance));
@@ -52,25 +54,60 @@ class BeneficiaryCaseFileTimeline
         return Jalalian::fromDateTime($date)->format('Y/m/d H:i');
     }
 
-    private function serviceRow(ServiceDelivery $delivery, ?Person $selectedPerson): array
+    private function serviceGroupKey(ServiceDelivery $delivery, ?Person $selectedPerson): string
+    {
+        $deliveryDate = optional($delivery->delivered_at ?? $delivery->created_at)->format('Y-m-d');
+        $scope = $this->isFamilyServiceDelivery($delivery, $selectedPerson) ? 'family' : 'direct';
+
+        return implode('|', [(int) $delivery->service_id, $deliveryDate, $scope]);
+    }
+
+    private function serviceGroupRow(Collection $deliveries, ?Person $selectedPerson): array
+    {
+        /** @var ServiceDelivery $firstDelivery */
+        $firstDelivery = $deliveries->sortByDesc(fn (ServiceDelivery $delivery) => $delivery->delivered_at ?? $delivery->created_at)->first();
+        $service = $firstDelivery->service;
+        $isFamilyDelivery = $this->isFamilyServiceDelivery($firstDelivery, $selectedPerson);
+        $timestamp = optional($firstDelivery->delivered_at)->timestamp ?? optional($firstDelivery->created_at)->timestamp ?? 0;
+
+        return [
+            'type' => 'service-group',
+            'date' => $firstDelivery->delivered_at ?? $firstDelivery->created_at,
+            'timestamp' => $timestamp,
+            'title' => $service?->name ?: $service?->serviceName?->name ?: 'خدمت ثبت‌شده',
+            'subtitle' => 'دسته‌بندی‌های ثبت‌شده در این نوبت',
+            'badge' => $isFamilyDelivery ? 'خدمت خانوار' : $this->deliveryChannelLabel($firstDelivery->delivery_channel),
+            'quantity' => $this->formatGroupQuantity($deliveries),
+            'value' => $this->formatGroupValue($deliveries),
+            'details' => array_filter([
+                'سطح ثبت' => $isFamilyDelivery ? 'خانوار/سرپرست' : 'مددجوی منتخب',
+                'کد خدمت' => $service?->code,
+                'فعالیت مرتبط' => $firstDelivery->activityAttendance?->activity?->name ?? $service?->activity?->name,
+                'تعداد دسته‌بندی' => number_format($deliveries->count()),
+            ]),
+            'children' => $deliveries
+                ->sortBy('id')
+                ->map(fn (ServiceDelivery $delivery): array => $this->serviceChildRow($delivery, $selectedPerson))
+                ->values(),
+        ];
+    }
+
+    private function serviceChildRow(ServiceDelivery $delivery, ?Person $selectedPerson): array
     {
         $service = $delivery->service;
         $activity = $delivery->activityAttendance?->activity ?? $service?->activity;
         $isFamilyDelivery = $this->isFamilyServiceDelivery($delivery, $selectedPerson);
 
         return [
-            'type' => 'service',
-            'date' => $delivery->delivered_at,
-            'timestamp' => optional($delivery->delivered_at)->timestamp ?? optional($delivery->created_at)->timestamp ?? 0,
-            'title' => $service?->name ?: $service?->serviceName?->name ?: 'خدمت ثبت‌شده',
-            'subtitle' => $delivery->serviceCategory?->name,
-            'badge' => $isFamilyDelivery ? 'خدمت خانوار' : $this->deliveryChannelLabel($delivery->delivery_channel),
+            'category' => $delivery->serviceCategory?->name ?: 'دسته‌بندی ثبت‌شده',
             'quantity' => $this->formatQuantity($delivery),
-            'value' => $delivery->delivered_total_value ? number_format((int) $delivery->delivered_total_value).' ریال' : 'ثبت نشده',
+            'value' => $delivery->delivered_total_value !== null
+                ? number_format((int) $delivery->delivered_total_value).' ریال'
+                : 'ثبت نشده',
             'details' => array_filter([
-                'سطح ثبت' => $isFamilyDelivery ? 'خانوار/سرپرست' : 'مددجوی منتخب',
                 'دریافت‌کننده' => $delivery->recipient_name,
                 'کانال تحویل' => $this->deliveryChannelLabel($delivery->delivery_channel),
+                'سطح ثبت' => $isFamilyDelivery ? 'خانوار/سرپرست' : 'مددجوی منتخب',
                 'کد خدمت' => $service?->code,
                 'فعالیت مرتبط' => $activity?->name,
                 'مددکار/تحویل‌دهنده' => $this->socialWorkerName($delivery),
@@ -78,6 +115,21 @@ class BeneficiaryCaseFileTimeline
                 'یادداشت' => $delivery->notes,
             ]),
         ];
+    }
+
+    private function formatGroupQuantity(Collection $deliveries): string
+    {
+        return $deliveries
+            ->map(fn (ServiceDelivery $delivery): string => $this->formatQuantity($delivery))
+            ->unique()
+            ->implode(' + ');
+    }
+
+    private function formatGroupValue(Collection $deliveries): string
+    {
+        $total = $deliveries->sum(fn (ServiceDelivery $delivery): int => (int) $delivery->delivered_total_value);
+
+        return $total > 0 ? number_format($total).' ریال' : 'ثبت نشده';
     }
 
     private function attendanceRow(ActivityAttendance $attendance): array

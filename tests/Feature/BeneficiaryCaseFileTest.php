@@ -597,6 +597,52 @@ class BeneficiaryCaseFileTest extends TestCase
         $this->assertSame('activity', $timeline->first()['type']);
     }
 
+    public function test_same_service_and_delivery_date_is_rendered_as_one_group_with_category_details(): void
+    {
+        $admin = $this->admin();
+        $person = $this->person();
+        [$service, $firstCategory] = $this->serviceWithCategory($admin, 'پکیج حمایتی');
+        $secondCategory = $service->categories()->create([
+            'service_name_id' => $service->service_name_id,
+            'name' => 'اقلام بهداشتی',
+            'quantity' => 10,
+            'unit' => 'count',
+            'value' => 50000,
+            'created_by' => $admin->id,
+        ]);
+
+        foreach ([[$firstCategory, 'دریافت‌کننده اول', 'یادداشت اول', 100000], [$secondCategory, 'دریافت‌کننده دوم', 'یادداشت دوم', 50000]] as [$category, $recipient, $notes, $value]) {
+            ServiceDelivery::query()->create([
+                'service_id' => $service->id,
+                'service_category_id' => $category->id,
+                'delivery_channel' => Service::DELIVERY_CHANNEL_HOME,
+                'person_id' => $person->id,
+                'national_id' => $person->national_id,
+                'full_name' => $person->full_name ?: trim($person->first_name.' '.$person->last_name),
+                'recipient_name' => $recipient,
+                'notes' => $notes,
+                'delivered_quantity' => 1,
+                'value_per_unit_snapshot' => $value,
+                'delivered_total_value' => $value,
+                'delivered_at' => '2026-07-03',
+                'created_by' => $admin->id,
+            ]);
+        }
+
+        $this->actingAs($admin);
+        $timeline = Livewire::test(BeneficiaryCaseFile::class, ['personId' => $person->id])
+            ->instance()
+            ->getTimelineProperty();
+
+        $this->assertCount(1, $timeline);
+        $this->assertSame('service-group', $timeline->first()['type']);
+        $this->assertSame('پکیج حمایتی', $timeline->first()['title']);
+        $this->assertSame('150,000 ریال', $timeline->first()['value']);
+        $this->assertCount(2, $timeline->first()['children']);
+        $this->assertSame(['پکیج حمایتی Category', 'اقلام بهداشتی'], $timeline->first()['children']->pluck('category')->all());
+        $this->assertSame(['یادداشت اول', 'یادداشت دوم'], $timeline->first()['children']->pluck('details')->map(fn (array $details): ?string => $details['یادداشت'] ?? null)->all());
+    }
+
     public function test_guardian_services_are_separated_from_direct_beneficiary_totals(): void
     {
         $admin = $this->admin();
