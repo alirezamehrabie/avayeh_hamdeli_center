@@ -5,6 +5,7 @@ import '@majidh1/jalalidatepicker/dist/jalalidatepicker.min.css';
 import '@majidh1/jalalidatepicker';
 import { attendanceResultBanner, createAttendanceResultBannerState } from './attendance-result-banner';
 import { deliveryReceipt } from './delivery-receipt';
+import './connection-status';
 import { Livewire, Alpine } from '../../vendor/livewire/livewire/dist/livewire.esm';
 
 window.Alpine = Alpine;
@@ -1632,6 +1633,9 @@ document.addEventListener('livewire:init', () => {
     Livewire.hook('request', ({ fail }) => {
         fail(() => {
             window.dispatchEvent(new CustomEvent('sidebar-request-failed', { bubbles: true }));
+            // فاز ۲ PWA: نشانگر اتصال با دیدن این رویداد در حالت آفلاین صریحاً
+            // اعلام می‌کند عملیات انجام نشد — هیچ موفقیت جعلی گزارش نمی‌شود.
+            window.dispatchEvent(new CustomEvent('pwa:livewire-failed'));
         });
     });
 

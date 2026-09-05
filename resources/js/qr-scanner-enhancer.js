@@ -1,3 +1,8 @@
+// فاز ۲ PWA: باینری WASM موبایل‌کننده‌ی بارکد به‌جای CDN (jsDelivr) از دارایی
+// هش‌دار محلیِ Vite خوانده می‌شود تا decode کردنِ QR روی دستگاه، بدون اینترنت
+// هم کار کند (و Service Worker آن را پیش‌کش کند). منطق اسکن و decode دست‌نخورده است.
+import zxingReaderWasmUrl from 'zxing-wasm/reader/zxing_reader.wasm?url';
+
 let zxingReady = null;
 let zxingReader = null;
 
@@ -170,6 +175,9 @@ function sharpnessScore(imageData) {
 async function ensureZxing() {
     if (!zxingReady) {
         zxingReady = import('zxing-wasm/reader').then(async (reader) => {
+            reader.setZXingModuleOverrides({
+                locateFile: () => zxingReaderWasmUrl,
+            });
             zxingReader = reader;
             await reader.prepareZXingModule();
 

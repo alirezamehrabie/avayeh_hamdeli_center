@@ -212,6 +212,8 @@
             });
         </script>
     @endif
+    <x-connection-indicator />
+
     @stack('scripts')
 </body>
 </html>

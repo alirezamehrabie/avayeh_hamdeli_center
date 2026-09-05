@@ -3,6 +3,7 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
+        "postbuild": "node scripts/generate-precache-manifest.mjs",
         "dev": "vite",
         "start": "node index.js"
     },

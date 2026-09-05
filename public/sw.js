@@ -1,27 +1,42 @@
 /**
- * Service Worker — آوای همدلی (مرحله ۱: PWA قابل‌نصب، Online-first)
+ * Service Worker — آوای همدلی (فاز ۲: Hybrid / Online-first PWA)
  *
- * اصول این نسخه:
- *  - فقط درخواست‌های GET هم‌مبدأ کش می‌شوند؛ هر درخواست دارای state
- *    (POST/PUT/DELETE/PATCH و /livewire/*) هرگز کش نمی‌شود.
- *  - پاسخ‌های HTML/ناوبری و مسیرهای احراز هویت هرگز کش نمی‌شوند
- *    (جلوگیری از سرو شدن صفحه‌ی بیات و نشت داده روی دستگاه مشترک).
- *  - تنها دارایی‌های استاتیک (build هش‌شده، تصاویر، صداها، فونت‌ها) کش می‌شوند.
+ * تفکیک استراتژی‌ها:
+ *  - Static Assets (build هش‌شده، تصاویر، صداها، css) → Cache First
+ *  - صفحات عمومی/قابل‌کش (PUBLIC_PAGE_PREFIXES)      → Network First + fallback کش
+ *    (فعلاً خالی است: کل HTML این پروژه احراز هویت‌شده و session-based است و
+ *    کش‌کردنش هم صفحه‌ی بیات می‌دهد هم نشت داده روی دستگاه مشترک.)
+ *  - ناوبری (Navigation)                              → Network Only + offline.html
+ *  - Livewire و هر درخواست دارای state                → Network Only (دست‌نخورده)
+ *  - اطلاعات حساس/session (auth، /up، پیوست‌ها)       → هرگز کش نمی‌شوند
  *
- * ساختار برای مراحل بعد (Hybrid/Offline):
- *  - استراتژی‌ها به‌صورت تابع‌های مستقل تعریف شده‌اند؛ برای افزودن
- *    Offline Queue / IndexedDB / Background Sync فقط به dispatch انتهای فایل
- *    یک شاخه‌ی جدید اضافه کنید و ثابت‌های کش را باافزایش VERSION تغییر دهید.
+ * App Shell:
+ *  - دارایی‌های build زمان install از /precache-manifest.json (خروجی postbuild
+ *    Vite) پیش‌کش می‌شوند تا پوسته‌ی بصری (CSS/JS/فونت/آیکون) حتی در اولین
+ *    بار اجرای آفلاین هم موجود باشد. HTML پوسته عمداً کش نمی‌شود چون
+ *    خروجیِ Livewire‌ی هر کاربر متفاوت است.
  *
- * ⚠ Kill switch: پس از هر دیپلوی که فایل‌های استاتیکِ بدون هاش
- * (images/sounds/css) یا منطق این فایل تغییر کرده، VERSION را افزایش دهید
- * تا کش‌های قدیمی در دستگاه کاربران پاک شود.
+ * Recovery:
+ *  - کلاینت پس از برگشت اینترنت پیام REVALIDATE_STATIC می‌فرستد؛ این SW
+ *    کش دارایی‌های بدون‌هاش (تصویر/صدا/css) را خالی می‌کند تا نسخه‌ی تازه
+ *    از سرور گرفته شود. دارایی‌های هش‌دار نیازی به revalidate ندارند چون
+ *    HTML تازه همیشه هش درست را درخواست می‌کند.
+ *
+ * ساختار برای فاز ۳ (Offline Queue / IndexedDB / Background Sync):
+ *  - یک شاخه‌ی جدید در dispatch انتهای fetch + یک cache/message handler
+ *    مستقل؛ هیچ‌کدام از استراتژی‌های بالا بازنویسی نمی‌شوند.
+ *
+ * ⚠ Kill switch: با هر دیپلوی که فایل استاتیکِ بدون‌هاش یا منطق این فایل
+ *   تغییر کرد، VERSION را افزایش دهید تا همه‌ی کش‌های قدیمی پاک شوند.
  */
 
-const VERSION = 'v1';
+const VERSION = 'v10';
 const BUILD_CACHE = `avaayeh-build-${VERSION}`;      // دارایی‌های هش‌شده‌ی Vite (تغییرناپذیر)
-const STATIC_CACHE = `avaayeh-static-${VERSION}`;    // تصاویر/صداها/css استاتیک
+const STATIC_CACHE = `avaayeh-static-${VERSION}`;    // تصاویر/صداها/css استاتیک (بدون هاش)
 const SHELL_CACHE = `avaayeh-shell-${VERSION}`;      // پوسته‌ی آفلاین (offline.html + آیکون‌ها)
+const PAGES_CACHE = `avaayeh-pages-${VERSION}`;      // صفحات عمومیِ network-first (فعلاً خالی)
+
+const PRECACHE_MANIFEST_URL = '/precache-manifest.json';
 
 // فایل‌های پوسته که در زمان install کش می‌شوند (برای صفحه‌ی آفلاین و نصب)
 const CORE_ASSETS = [
@@ -44,7 +59,14 @@ const NEVER_CACHE_PREFIXES = [
     '/uploads/',
 ];
 
-// پیشوند دارایی‌های استاتیکِ قابل‌کش
+// مسیرهای دقیقِ هرگز-کش (نقطه‌ی سلامت اتصال؛ کش‌شدنش یعنی تشخیص آفلاین‌بودن اشتباه)
+const NEVER_CACHE_EXACT = ['/up'];
+
+// پیشوند صفحات عمومیِ قابل‌کش با استراتژی Network First.
+// خالی بماند درست است: همه‌ی صفحات این پروژه پشت auth هستند. اگر در آینده
+// صفحه‌ی عمومی (مثلاً لندینگ بدون لاگین) اضافه شد، پیشوندش را همین‌جا بگذارید.
+const PUBLIC_PAGE_PREFIXES = [];
+
 const BUILD_PREFIXES = ['/build/'];
 const STATIC_PREFIXES = ['/images/', '/sounds/', '/css/'];
 
@@ -63,31 +85,54 @@ const pathOf = (request) => new URL(request.url).pathname;
 
 const hasPrefix = (pathname, prefixes) => prefixes.some((prefix) => pathname.startsWith(prefix));
 
-const isNeverCached = (request) => hasPrefix(pathOf(request), NEVER_CACHE_PREFIXES);
+const isNeverCached = (request) => {
+    const pathname = pathOf(request);
+    return NEVER_CACHE_EXACT.includes(pathname) || hasPrefix(pathname, NEVER_CACHE_PREFIXES);
+};
 const isBuildAsset = (request) => hasPrefix(pathOf(request), BUILD_PREFIXES);
 const isStaticAsset = (request) => hasPrefix(pathOf(request), STATIC_PREFIXES);
 const isNavigation = (request) => request.mode === 'navigate';
+const isPublicPage = (request) => hasPrefix(pathOf(request), PUBLIC_PAGE_PREFIXES);
 
 self.addEventListener('install', (event) => {
     event.waitUntil((async () => {
-        const cache = await caches.open(SHELL_CACHE);
+        const shell = await caches.open(SHELL_CACHE);
         // تک‌تک اضافه می‌شوند تا نبودِ یک فایل، نصب را شکست ندهد
         await Promise.all(CORE_ASSETS.map(async (asset) => {
             try {
-                await cache.add(new Request(asset, { cache: 'reload' }));
+                await shell.add(new Request(asset, { cache: 'reload' }));
             } catch (e) {
                 console.warn('[sw] core asset unavailable:', asset, e);
             }
         }));
-        // مرحله ۱: بلافاصله فعال شود تا دیپلوی‌های بعدی گیر نکنند
+
+        // App Shell: پیش‌کش دارایی‌های build فعلی (هش‌دار) از manifest تولیدشده در build
+        try {
+            const response = await fetch(PRECACHE_MANIFEST_URL, { cache: 'reload' });
+            if (response.ok) {
+                const urls = await response.json();
+                const build = await caches.open(BUILD_CACHE);
+                await Promise.all(urls.map(async (url) => {
+                    try {
+                        await build.add(new Request(url, { cache: 'reload' }));
+                    } catch (e) {
+                        console.warn('[sw] precache asset unavailable:', url, e);
+                    }
+                }));
+            }
+        } catch (e) {
+            console.warn('[sw] precache manifest unavailable; falling back to runtime caching', e);
+        }
+
         self.skipWaiting();
     })());
 });
 
 self.addEventListener('activate', (event) => {
     event.waitUntil((async () => {
-        const keep = new Set([BUILD_CACHE, STATIC_CACHE, SHELL_CACHE]);
+        const keep = new Set([BUILD_CACHE, STATIC_CACHE, SHELL_CACHE, PAGES_CACHE]);
         const names = await caches.keys();
+        // پاک‌سازی کش نسخه‌های قدیمی (app-cache-v1 → v2 و…)
         await Promise.all(
             names.filter((name) => !keep.has(name)).map((name) => caches.delete(name))
         );
@@ -96,9 +141,8 @@ self.addEventListener('activate', (event) => {
 });
 
 /**
- * استراتژی Cache-First برای دارایی‌های استاتیک.
- * دارایی‌های /build/ به‌دلیل هش در نام، تغییرناپذیرند؛ بقیه با افزایش VERSION
- * یا تغییر نام فایل در دیپلوی بعدی به‌روز می‌شوند.
+ * Cache First — برای دارایی‌های استاتیک.
+ * /build/ به‌دلیل هش در نام تغییرناپذیر است؛ بقیه با VERSION یا REVALIDATE به‌روز می‌شوند.
  */
 async function cacheFirst(request, cacheName) {
     const cache = await caches.open(cacheName);
@@ -115,8 +159,43 @@ async function cacheFirst(request, cacheName) {
 }
 
 /**
- * ناوبری: همیشه شبکه (online-first). فقط در صورت قطعی شبکه،
- * صفحه‌ی آفلاین استاتیک سرو می‌شود — هرگز HTML بیات از کش.
+ * عناصر <audio> (صداهای اسکنر) درخواست Range می‌فرستند؛ اگر نسخه‌ی کامل در کش
+ * باشد همان را برمی‌گردانیم (پخش صدای کوتاه محلی با ۲۰۰ هم کار می‌کند) تا
+ * اسکنر در حالت آفلاین بی‌صدا نشود. در غیر این صورت درخواست به شبکه می‌رود.
+ */
+async function cachedFullOrPassthrough(request, cacheName) {
+    const cache = await caches.open(cacheName);
+    const cached = await cache.match(request);
+    if (cached) {
+        return cached;
+    }
+    return fetch(request);
+}
+
+/**
+ * Network First — فقط برای صفحات عمومیِ allowlist‌شده.
+ * پاسخ موفق تازه همیشه کش می‌شود؛ فقط هنگام قطعی از کش سرو می‌شود.
+ */
+async function networkFirst(request, cacheName) {
+    const cache = await caches.open(cacheName);
+    try {
+        const response = await fetch(request);
+        if (response.ok && (response.type === 'basic' || response.type === 'default')) {
+            cache.put(request, response.clone());
+        }
+        return response;
+    } catch (e) {
+        const cached = await cache.match(request);
+        if (cached) {
+            return cached;
+        }
+        throw e;
+    }
+}
+
+/**
+ * ناوبری: همیشه شبکه (online-first). فقط در صورت قطعی، صفحه‌ی آفلاین
+ * استاتیک سرو می‌شود — هرگز HTML بیات یا احراز هویت‌شده از کش.
  */
 async function networkFirstNavigation(request) {
     try {
@@ -136,23 +215,22 @@ async function networkFirstNavigation(request) {
 self.addEventListener('fetch', (event) => {
     const { request } = event;
 
-    // فقط GET هم‌مبدأ؛ بقیه (از جمله POST/PUT/DELETE و کراس‌اورجین) دست‌نخورده رد می‌شوند
+    // فقط GET هم‌مبدأ؛ بقیه (POST/PUT/PATCH/DELETE، Livewire، کراس‌اورجین) رد می‌شوند
     if (!isSameOriginGet(request)) {
         return;
     }
 
-    // درخواست‌های دارای Range (پخش تدریجی صدا) کش نمی‌شوند
-    if (request.headers.has('range')) {
+    // ناوبری اولویت اول است: هرگز کش نمی‌شود ولی در قطعی، offline.html را
+    // می‌گیرد — حتی برای مسیرهای never-cache مثل /login (وگرنه کاربر صفحه
+    // خطای خام مرورگر می‌بیند). اگر بعد از این شاخه بیاید، never-cache
+    // باعث می‌شد ناوبری‌های احراز هویت بدون fallback به شبکه بروند.
+    if (isNavigation(request)) {
+        event.respondWith(networkFirstNavigation(request));
         return;
     }
 
     if (isNeverCached(request)) {
         return; // شبکه‌ی عادی، بدون دخالت کش
-    }
-
-    if (isNavigation(request)) {
-        event.respondWith(networkFirstNavigation(request));
-        return;
     }
 
     if (isBuildAsset(request)) {
@@ -161,14 +239,34 @@ self.addEventListener('fetch', (event) => {
     }
 
     if (isStaticAsset(request)) {
+        if (request.headers.has('range')) {
+            event.respondWith(cachedFullOrPassthrough(request, STATIC_CACHE));
+            return;
+        }
         event.respondWith(cacheFirst(request, STATIC_CACHE));
         return;
     }
 
-    // بقیه‌ی GETها (صفحات HTML، JSON و…) هرگز کش نمی‌شوند
+    if (isPublicPage(request)) {
+        event.respondWith(networkFirst(request, PAGES_CACHE));
+        return;
+    }
+
+    // بقیه‌ی GETها (صفحات HTML پنل، JSON و…) هرگز کش نمی‌شوند
 });
 
-// ── نقطه‌ی اتصال مراحل بعد ──────────────────────────────────────────────
-// رویدادهای sync (Background Sync) و پیام‌های IndexedDB/Offline Queue در
-// مراحل بعد همین‌جا و با همان الگوی VERSION افزوده می‌شوند.
+// پیام‌های کلاینت (از resources/js/connection-status.js)
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'REVALIDATE_STATIC') {
+        event.waitUntil((async () => {
+            const cache = await caches.open(STATIC_CACHE);
+            const keys = await cache.keys();
+            await Promise.all(keys.map((request) => cache.delete(request)));
+        })());
+    }
+});
+
+// ── نقطه‌ی اتصال فاز ۳ ──────────────────────────────────────────────────
+// Offline Queue / IndexedDB / Background Sync: یک handler برای event 'sync'
+// و یک شاخه‌ی dispatch اینجا اضافه می‌شود؛ استراتژی‌های بالا دست‌نخورده می‌مانند.
 // ────────────────────────────────────────────────────────────────────────

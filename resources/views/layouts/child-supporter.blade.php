@@ -98,6 +98,8 @@
     <x-notification-modal />
 
     @livewireScriptConfig
+    <x-connection-indicator />
+
     @stack('scripts')
 </body>
 </html>
