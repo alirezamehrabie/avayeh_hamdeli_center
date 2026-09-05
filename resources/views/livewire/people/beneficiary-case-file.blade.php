@@ -410,10 +410,8 @@
                                                         <p class="font-black text-slate-900">{{ $row['title'] }}</p>
                                                         <p class="mt-1 text-xs text-slate-500">{{ $row['subtitle'] }}</p>
                                                         @if(! empty($row['details']))
-                                                            <div class="mt-2 flex flex-wrap gap-1.5">
-                                                                @foreach($row['details'] as $label => $value)
-                                                                    <span class="rounded-lg bg-white/80 px-2 py-1 text-[11px] font-semibold text-slate-500">{{ $label }}: {{ $value }}</span>
-                                                                @endforeach
+                                                            <div class="mt-2">
+                                                                <x-details-popover :details="$row['details']" popover-title="جزئیات خدمت" />
                                                             </div>
                                                         @endif
                                                     </td>
@@ -428,10 +426,8 @@
                                                         <td class="px-4 py-3 pr-8">
                                                             <p class="font-bold text-slate-800">{{ $child['category'] }}</p>
                                                             @if(! empty($child['details']))
-                                                                <div class="mt-2 flex flex-wrap gap-1.5">
-                                                                    @foreach($child['details'] as $label => $value)
-                                                                        <span class="rounded-lg bg-white px-2 py-1 text-[11px] font-semibold text-slate-500">{{ $label }}: {{ $value }}</span>
-                                                                    @endforeach
+                                                                <div class="mt-2">
+                                                                    <x-details-popover :details="$child['details']" popover-title="جزئیات تحویل" />
                                                                 </div>
                                                             @endif
                                                         </td>
@@ -454,10 +450,8 @@
                                                         <p class="font-bold text-slate-800">{{ $row['title'] }}</p>
                                                         @if($row['subtitle']) <p class="mt-1 text-xs text-slate-500">{{ $row['subtitle'] }}</p> @endif
                                                         @if(! empty($row['details']))
-                                                            <div class="mt-2 flex flex-wrap gap-1.5">
-                                                                @foreach($row['details'] as $label => $value)
-                                                                    <span class="rounded-lg bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-500">{{ $label }}: {{ $value }}</span>
-                                                                @endforeach
+                                                            <div class="mt-2">
+                                                                <x-details-popover :details="$row['details']" :popover-title="$row['type'] === 'activity' ? 'جزئیات فعالیت' : 'جزئیات رکورد'" />
                                                             </div>
                                                         @endif
                                                         @if(($row['attachments'] ?? collect())->isNotEmpty())
