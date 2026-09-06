@@ -95,6 +95,39 @@
         x-data="{
             open: @js($openState),
             copiedField: null,
+            closing: false,
+            enableHistoryClose: false,
+            historyStatePushed: false,
+            closingFromPopstate: false,
+            popstateHandler: null,
+            init() {
+                this.enableHistoryClose = window.matchMedia('(max-width: 767px), (pointer: coarse)').matches;
+                this.setupHistoryClose();
+            },
+            destroy() {
+                this.teardownHistoryClose();
+            },
+            setupHistoryClose() {
+                if (! this.enableHistoryClose || ! window.history?.pushState) return;
+
+                window.history.pushState({ ...(window.history.state || {}), householdDetailsModal: true }, '', window.location.href);
+                this.historyStatePushed = true;
+
+                this.popstateHandler = () => {
+                    if (! this.historyStatePushed || this.closing) return;
+
+                    this.closingFromPopstate = true;
+                    this.close(true);
+                };
+
+                window.addEventListener('popstate', this.popstateHandler);
+            },
+            teardownHistoryClose() {
+                if (! this.popstateHandler) return;
+
+                window.removeEventListener('popstate', this.popstateHandler);
+                this.popstateHandler = null;
+            },
             async copyText(value, field) {
                 if (! value || value === '-') return;
 
@@ -110,7 +143,21 @@
                     this.copiedField = null;
                 }
             },
-            close() {
+            close(skipHistoryBack = false) {
+                if (this.closing) return;
+
+                if (this.historyStatePushed && ! this.closingFromPopstate && ! skipHistoryBack) {
+                    this.historyStatePushed = false;
+
+                    try {
+                        window.history.back();
+                    } catch (error) {
+                        // The modal must still close even if the pushed history entry cannot be consumed.
+                    }
+                }
+
+                this.closing = true;
+                this.historyStatePushed = false;
                 this.open = false;
                 setTimeout(() => $wire.{{ $closeMethod }}(), 220);
             }

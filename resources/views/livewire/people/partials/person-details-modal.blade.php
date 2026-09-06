@@ -355,13 +355,13 @@
                 if (this.closing) return;
 
                 if (this.historyStatePushed && ! this.closingFromPopstate && ! skipHistoryBack) {
-                    try {
-                        window.history.replaceState({ ...(window.history.state || {}), personDetailsModal: false }, '', window.location.href);
-                    } catch (error) {
-                        // The modal must still close even if history state cannot be adjusted.
-                    }
-
                     this.historyStatePushed = false;
+
+                    try {
+                        window.history.back();
+                    } catch (error) {
+                        // The modal must still close even if the pushed history entry cannot be consumed.
+                    }
                 }
 
                 this.closing = true;
