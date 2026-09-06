@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Storage;
 
 class ServiceCategory extends Model
 {
@@ -163,7 +162,9 @@ class ServiceCategory extends Model
     }
 
     /**
-     * Canonical public URL for a stored category thumbnail path, or null when empty.
+     * Canonical URL for a stored category thumbnail path, or null when empty.
+     * Served through the /media streaming route so it works regardless of
+     * whether the /storage symlink resolves on the deployment host.
      */
     public static function thumbnailUrl(?string $path): ?string
     {
@@ -171,7 +172,9 @@ class ServiceCategory extends Model
             return null;
         }
 
-        return Storage::disk('public')->url((string) $path);
+        $normalized = ltrim(str_replace('\\', '/', (string) $path), '/');
+
+        return route('media.service-category-thumbnails.show', ['path' => $normalized]);
     }
 
     /**

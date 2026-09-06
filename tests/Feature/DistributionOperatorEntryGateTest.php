@@ -499,7 +499,7 @@ class DistributionOperatorEntryGateTest extends TestCase
             ->set('manualSearch', 'Karimi')
             ->call('selectManualSubject', QrIdentity::SUBJECT_PERSON, $person->id)
             ->assertSee('Food basket')
-            ->assertSee('/storage/'.$imagePath, false)
+            ->assertSee('/media/'.$imagePath, false)
             ->assertSee('broken: false', false);
     }
 

@@ -1268,7 +1268,7 @@ class ServiceDefinitionTest extends TestCase
         $category->forceFill(['image_path' => 'service-categories/'.$service->id.'/category-x.jpg'])->save();
 
         $this->assertStringContainsString(
-            '/storage/service-categories/'.$service->id.'/category-x.jpg',
+            '/media/service-categories/'.$service->id.'/category-x.jpg',
             (string) $category->image_url
         );
     }

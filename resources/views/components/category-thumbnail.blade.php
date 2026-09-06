@@ -10,7 +10,7 @@
 @php
     $imageUrl = $url
         ?: ($category?->image_url)
-        ?: ($path ? \Illuminate\Support\Facades\Storage::disk('public')->url((string) $path) : null);
+        ?: \App\Models\ServiceCategory::thumbnailUrl($path);
 
     $altText = $name ?: ($category?->name ?: 'تصویر دسته‌بندی');
 

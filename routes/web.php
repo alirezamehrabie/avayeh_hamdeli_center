@@ -3,6 +3,7 @@
 use App\Http\Controllers\ActivityCheckInController;
 use App\Http\Controllers\BeneficiaryCaseRecordAttachmentController;
 use App\Http\Controllers\QrIdentityController;
+use App\Http\Controllers\ServiceCategoryThumbnailController;
 use App\Livewire\Admin\DashboardHome;
 use App\Livewire\Admin\UserAccount;
 use App\Livewire\Auth\Login;
@@ -103,6 +104,11 @@ Route::get('/admin/people/case-file', DashboardHome::class)
 Route::get('/admin/people/case-file/attachments/{attachment}', [BeneficiaryCaseRecordAttachmentController::class, 'show'])
     ->middleware(['auth', 'can:full-access'])
     ->name('admin.people.case-file.attachments.show');
+
+Route::get('/media/{path}', [ServiceCategoryThumbnailController::class, 'show'])
+    ->where('path', ServiceCategoryThumbnailController::PATH_PATTERN)
+    ->middleware(['auth'])
+    ->name('media.service-category-thumbnails.show');
 
 Route::get('/admin/services/service-definition', DashboardHome::class)
     ->middleware(['auth', 'can:full-access'])
