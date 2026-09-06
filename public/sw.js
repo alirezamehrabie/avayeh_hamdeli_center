@@ -30,7 +30,7 @@
  *   تغییر کرد، VERSION را افزایش دهید تا همه‌ی کش‌های قدیمی پاک شوند.
  */
 
-const VERSION = 'v12';
+const VERSION = 'v13';
 const BUILD_CACHE = `avaayeh-build-${VERSION}`;      // دارایی‌های هش‌شده‌ی Vite (تغییرناپذیر)
 const STATIC_CACHE = `avaayeh-static-${VERSION}`;    // تصاویر/صداها/css استاتیک (بدون هاش)
 const SHELL_CACHE = `avaayeh-shell-${VERSION}`;      // پوسته‌ی آفلاین (offline.html + آیکون‌ها)
