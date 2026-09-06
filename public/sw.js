@@ -30,7 +30,7 @@
  *   تغییر کرد، VERSION را افزایش دهید تا همه‌ی کش‌های قدیمی پاک شوند.
  */
 
-const VERSION = 'v13';
+const VERSION = 'v17';
 const BUILD_CACHE = `avaayeh-build-${VERSION}`;      // دارایی‌های هش‌شده‌ی Vite (تغییرناپذیر)
 const STATIC_CACHE = `avaayeh-static-${VERSION}`;    // تصاویر/صداها/css استاتیک (بدون هاش)
 const SHELL_CACHE = `avaayeh-shell-${VERSION}`;      // پوسته‌ی آفلاین (offline.html + آیکون‌ها)
@@ -142,6 +142,16 @@ self.addEventListener('activate', (event) => {
         await Promise.all(
             names.filter((name) => !keep.has(name)).map((name) => caches.delete(name))
         );
+        // Navigation Preload: مرورگر درخواست ناوبری را هم‌زمان با بالا آمدن SW
+        // از شبکه می‌گیرد؛ پس cold‌start سرویس‌ورکر روی باز شدن برنامه تأخیر
+        // نمی‌اندازد (راه‌حل استاندارد تأخیر راه‌اندازی PWA روی اندروید).
+        try {
+            if (self.registration.navigationPreload) {
+                await self.registration.navigationPreload.enable();
+            }
+        } catch (e) {
+            // پشتیبانی نشد: بی‌خطر، همان رفتار قبلی
+        }
         await self.clients.claim();
     })());
 });
@@ -203,8 +213,14 @@ async function networkFirst(request, cacheName) {
  * ناوبری: همیشه شبکه (online-first). فقط در صورت قطعی، صفحه‌ی آفلاین
  * استاتیک سرو می‌شود — هرگز HTML بیات یا احراز هویت‌شده از کش.
  */
-async function networkFirstNavigation(request) {
+async function networkFirstNavigation(request, event) {
     try {
+        // پاسخِ از پیش در حال پرواز (Navigation Preload) را مصرف کن تا دوباره
+        // fetch نشود؛ اگر نبود، خودمان به شبکه می‌رویم.
+        const preloaded = event && event.preloadResponse ? await event.preloadResponse : null;
+        if (preloaded) {
+            return preloaded;
+        }
         return await fetch(request);
     } catch (e) {
         const offline = await caches.match('/offline.html', { cacheName: SHELL_CACHE });
@@ -238,7 +254,7 @@ self.addEventListener('fetch', (event) => {
     }
 
     if (isNavigation(request)) {
-        event.respondWith(networkFirstNavigation(request));
+        event.respondWith(networkFirstNavigation(request, event));
         return;
     }
 
