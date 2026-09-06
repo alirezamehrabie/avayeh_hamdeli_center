@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\QrIdentityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -469,6 +470,61 @@ class DistributionOperatorEntryGateTest extends TestCase
             'service_category_id' => $category->id,
             'person_id' => $person->id,
         ]);
+    }
+
+    public function test_category_thumbnail_is_rendered_next_to_category_name_in_entry_gate(): void
+    {
+        Storage::fake('public');
+
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Food basket', $operator);
+
+        $imagePath = 'service-categories/'.$service->id.'/category-thumb.jpg';
+        Storage::disk('public')->put($imagePath, 'thumbnail-binary');
+        $category->forceFill(['image_path' => $imagePath])->save();
+
+        $person = Person::query()->create([
+            'first_name' => 'Reza',
+            'last_name' => 'Karimi',
+            'national_id' => '1234567891',
+            'person_code' => '14002',
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(EntryGate::class)
+            ->call('selectService', $service->id)
+            ->call('toggleManualSearch')
+            ->set('manualSearch', 'Karimi')
+            ->call('selectManualSubject', QrIdentity::SUBJECT_PERSON, $person->id)
+            ->assertSee('Food basket')
+            ->assertSee('/storage/'.$imagePath, false)
+            ->assertSee('broken: false', false);
+    }
+
+    public function test_entry_gate_category_rows_stay_compact_when_no_category_has_a_thumbnail(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $this->makeCategory($service, 'Rice pack', $operator);
+
+        $person = Person::query()->create([
+            'first_name' => 'Sara',
+            'last_name' => 'Norouzi',
+            'national_id' => '1234567892',
+            'person_code' => '14003',
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(EntryGate::class)
+            ->call('selectService', $service->id)
+            ->call('toggleManualSearch')
+            ->set('manualSearch', 'Norouzi')
+            ->call('selectManualSubject', QrIdentity::SUBJECT_PERSON, $person->id)
+            ->assertSee('Rice pack')
+            ->assertDontSee('broken: false', false);
     }
 
     /**

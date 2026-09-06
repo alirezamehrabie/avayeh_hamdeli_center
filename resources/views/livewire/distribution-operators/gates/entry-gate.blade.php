@@ -626,6 +626,7 @@
                             <p class="text-sm font-bold text-slate-600">برای این خدمت دسته‌بندی‌ای تعریف نشده است.</p>
                         </div>
                     @else
+                        @php($serviceHasThumbnails = $selectedService->categories->contains(fn ($category) => filled($category->image_path)))
                         <div class="grid gap-3 sm:grid-cols-2">
                             @foreach($selectedService->categories as $category)
                                 @php($isLocked = in_array($category->id, $lockedCategoryIds, true))
@@ -640,6 +641,9 @@
                                             <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 border-emerald-600 bg-emerald-600 text-white">
                                                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                                             </span>
+                                            @if($serviceHasThumbnails)
+                                                <x-category-thumbnail :category="$category" sizeClass="h-10 w-10" roundedClass="rounded-lg" />
+                                            @endif
                                             <span class="flex flex-col">
                                                 <span class="text-sm font-extrabold text-slate-800">{{ $category->name }}</span>
                                                 <span class="text-[10px] font-semibold text-slate-400" dir="ltr">{{ $category->code }}</span>
@@ -675,6 +679,9 @@
                                             >
                                                 <svg x-show="isAssigned({{ $cid }})" x-cloak class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 111.42-1.42l2.79 2.79 6.79-6.79a1 1 0 011.42 0z" clip-rule="evenodd" /></svg>
                                             </span>
+                                            @if($serviceHasThumbnails)
+                                                <x-category-thumbnail :category="$category" sizeClass="h-10 w-10" roundedClass="rounded-lg" />
+                                            @endif
                                             <span class="flex flex-col">
                                                 <span class="text-sm font-extrabold text-slate-800 group-hover:text-indigo-700 transition-colors">{{ $category->name }}</span>
                                                 <span class="text-[10px] font-semibold text-slate-400" dir="ltr">{{ $category->code }}</span>
