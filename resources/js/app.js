@@ -1656,6 +1656,17 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator && window.isSecureConte
     window.addEventListener('load', () => {
         navigator.serviceWorker
             .register('/sw.js', { scope: '/' })
+            .then((registration) => {
+                // پنل PWA ممکن است روزها بدون ریلود کامل باز بماند و کروم sw.js را
+                // فقط هنگام ناوبری کامل یا هر ۲۴ ساعت چک می‌کند؛ این به‌روزرسانی
+                // زمان‌بندی‌شده (فقط وقتی تب نمایان است) دیپلوی تازه را حداکثر ظرف
+                // ۱۰ دقیقه روی دستگاه می‌نشاند. update() فقط یک GET مقایسه‌ای است.
+                setInterval(() => {
+                    if (document.visibilityState === 'visible') {
+                        registration.update().catch(() => {});
+                    }
+                }, 10 * 60 * 1000);
+            })
             .catch((error) => {
                 console.warn('[pwa] service worker registration failed:', error);
             });

@@ -17,9 +17,13 @@
  *    خروجیِ Livewire‌ی هر کاربر متفاوت است.
  *
  * Recovery:
+ *  - دارایی‌های استاتیکِ بدون‌هاش (تصویر/صدا/css) با استراتژی
+ *    Stale-While-Revalidate سرو می‌شوند: نسخه‌ی کشی فوراً داده می‌شود و اگر
+ *    بیش از ۱۲ ساعت از ذخیره‌اش گذشته باشد، نسخه‌ی تازه در پس‌زمینه گرفته
+ *    و جایگزین می‌شود. پس حتی بدون افزایش VERSION، کش خودبه‌خود تازه می‌شود.
  *  - کلاینت پس از برگشت اینترنت پیام REVALIDATE_STATIC می‌فرستد؛ این SW
- *    کش دارایی‌های بدون‌هاش (تصویر/صدا/css) را خالی می‌کند تا نسخه‌ی تازه
- *    از سرور گرفته شود. دارایی‌های هش‌دار نیازی به revalidate ندارند چون
+ *    کش دارایی‌های بدون‌هاش را یک‌جا خالی می‌کند تا نسخه‌ی تازه از سرور
+ *    گرفته شود. دارایی‌های هش‌دار نیازی به revalidate ندارند چون
  *    HTML تازه همیشه هش درست را درخواست می‌کند.
  *
  * ساختار برای فاز ۳ (Offline Queue / IndexedDB / Background Sync):
@@ -30,7 +34,7 @@
  *   تغییر کرد، VERSION را افزایش دهید تا همه‌ی کش‌های قدیمی پاک شوند.
  */
 
-const VERSION = 'v17';
+const VERSION = 'v18';
 const BUILD_CACHE = `avaayeh-build-${VERSION}`;      // دارایی‌های هش‌شده‌ی Vite (تغییرناپذیر)
 const STATIC_CACHE = `avaayeh-static-${VERSION}`;    // تصاویر/صداها/css استاتیک (بدون هاش)
 const SHELL_CACHE = `avaayeh-shell-${VERSION}`;      // پوسته‌ی آفلاین (offline.html + آیکون‌ها)
@@ -175,6 +179,53 @@ async function cacheFirst(request, cacheName) {
 }
 
 /**
+ * Stale-While-Revalidate — برای استاتیکِ بدون‌هاش (تصویر/صدا/css).
+ * نسخه‌ی کشی فوراً سرو می‌شود؛ اگر عمرش از STATIC_MAX_AGE_MS بیشتر باشد،
+ * تازه‌اش در پس‌زمینه گرفته و با مُهر زمانی جایگزین می‌شود. این‌طور کش
+ * حتی بدون bump کردن VERSION خودبه‌خود درمان می‌شود.
+ */
+const STATIC_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+const CACHED_AT_HEADER = 'x-avaayeh-cached-at';
+
+const stampResponse = (response) => {
+    const headers = new Headers(response.headers);
+    headers.set(CACHED_AT_HEADER, String(Date.now()));
+    return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+    });
+};
+
+async function staleWhileRevalidate(request, event, cacheName) {
+    const cache = await caches.open(cacheName);
+    const cached = await cache.match(request);
+
+    if (cached) {
+        const cachedAt = Number(cached.headers.get(CACHED_AT_HEADER) || 0);
+        if (Date.now() - cachedAt >= STATIC_MAX_AGE_MS) {
+            event.waitUntil((async () => {
+                try {
+                    const fresh = await fetch(request, { cache: 'reload' });
+                    if (fresh && fresh.ok && (fresh.type === 'basic' || fresh.type === 'default')) {
+                        await cache.put(request, stampResponse(fresh));
+                    }
+                } catch (e) {
+                    // آفلاین یا خطای سرور: نسخه‌ی کشی می‌ماند
+                }
+            })());
+        }
+        return cached;
+    }
+
+    const response = await fetch(request);
+    if (response.ok && (response.type === 'basic' || response.type === 'default')) {
+        cache.put(request, stampResponse(response.clone()));
+    }
+    return response;
+}
+
+/**
  * عناصر <audio> (صداهای اسکنر) درخواست Range می‌فرستند؛ اگر نسخه‌ی کامل در کش
  * باشد همان را برمی‌گردانیم (پخش صدای کوتاه محلی با ۲۰۰ هم کار می‌کند) تا
  * اسکنر در حالت آفلاین بی‌صدا نشود. در غیر این صورت درخواست به شبکه می‌رود.
@@ -234,6 +285,29 @@ async function networkFirstNavigation(request, event) {
     }
 }
 
+/**
+ * صفحه‌ی بارگذاری (start_url): از کش پوسته سرو می‌شود؛ تطبیق بدون‌کوئری است
+ * چون میان‌بُرهای نصب ممکن است پارامتر اضافه کنند (?...) و وگرنه کش نخورد.
+ * اگر کش و شبکه هر دو ناموفق بودند، offline.html می‌آید تا کاربر صفحه‌ی
+ * خطای خام مرورگر نبیند.
+ */
+async function serveLoadingSplash(request) {
+    const cached = await caches.match(LOADING_PATH, { cacheName: SHELL_CACHE, ignoreSearch: true });
+    if (cached) {
+        return cached;
+    }
+
+    try {
+        return await fetch(request);
+    } catch (e) {
+        const offline = await caches.match('/offline.html', { cacheName: SHELL_CACHE });
+        if (offline) {
+            return offline;
+        }
+        throw e;
+    }
+}
+
 self.addEventListener('fetch', (event) => {
     const { request } = event;
 
@@ -249,7 +323,7 @@ self.addEventListener('fetch', (event) => {
     // صفحه‌ی بارگذاری: استاتیک و بدون state → کش‌اول تا لحظه‌ی راه‌اندازی
     // آفلاین/کند هم فوری و برند سرو شود (خودش به / ریدایرکت می‌کند).
     if (isNavigation(request) && pathOf(request) === LOADING_PATH) {
-        event.respondWith(cacheFirst(request, SHELL_CACHE));
+        event.respondWith(serveLoadingSplash(request));
         return;
     }
 
@@ -272,7 +346,7 @@ self.addEventListener('fetch', (event) => {
             event.respondWith(cachedFullOrPassthrough(request, STATIC_CACHE));
             return;
         }
-        event.respondWith(cacheFirst(request, STATIC_CACHE));
+        event.respondWith(staleWhileRevalidate(request, event, STATIC_CACHE));
         return;
     }
 

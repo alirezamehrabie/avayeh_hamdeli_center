@@ -29,5 +29,20 @@
             "type": "image/png",
             "purpose": "maskable"
         }
+    ],
+    "shortcuts": [
+        {
+            "name": "اسکن حضور و غیاب",
+            "short_name": "اسکن",
+            "description": "باز کردن مستقیم صفحه حضور و غیاب مددکار",
+            "url": "/social-worker/attendance",
+            "icons": [
+                {
+                    "src": "/images/pwa/icon-192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        }
     ]
 }

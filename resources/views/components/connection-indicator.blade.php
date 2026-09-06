@@ -40,7 +40,7 @@
      x-on:connection:status.window="status = $event.detail.status"
      x-on:pwa:livewire-failed.window="if (status !== 'online') { toast = true; clearTimeout(toastTimer); toastTimer = setTimeout(() => { toast = false }, 6000) }"
      class="pointer-events-none fixed bottom-4 left-4 z-[9998] print:hidden"
-     style="max-width: calc(100vw - 2rem);"
+     style="max-width: calc(100vw - 2rem); bottom: calc(1rem + env(safe-area-inset-bottom));"
 >
     {{-- درخواستی که در حالت آفلاین شکست خورده: صریحاً بگوییم چیزی ذخیره نشده --}}
     <div x-show="toast"
