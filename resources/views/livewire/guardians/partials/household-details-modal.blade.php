@@ -95,6 +95,43 @@
         x-data="{
             open: @js($openState),
             copiedField: null,
+            closing: false,
+            enableHistoryClose: false,
+            historyStatePushed: false,
+            popstateHandler: null,
+            init() {
+                this.enableHistoryClose = window.matchMedia('(max-width: 767px), (pointer: coarse)').matches;
+                this.setupHistoryClose();
+            },
+            destroy() {
+                this.teardownHistoryClose();
+            },
+            setupHistoryClose() {
+                if (! this.enableHistoryClose || ! window.history?.pushState) return;
+
+                try {
+                    window.history.pushState({ ...(window.history.state || {}), householdDetailsModal: true }, '', window.location.href);
+                    this.historyStatePushed = true;
+                } catch (error) {
+                    this.historyStatePushed = false;
+
+                    return;
+                }
+
+                this.popstateHandler = () => {
+                    if (! this.historyStatePushed || this.closing) return;
+
+                    this.close(true);
+                };
+
+                window.addEventListener('popstate', this.popstateHandler);
+            },
+            teardownHistoryClose() {
+                if (! this.popstateHandler) return;
+
+                window.removeEventListener('popstate', this.popstateHandler);
+                this.popstateHandler = null;
+            },
             async copyText(value, field) {
                 if (! value || value === '-') return;
 
@@ -110,8 +147,22 @@
                     this.copiedField = null;
                 }
             },
-            close() {
+            close(fromHistory = false) {
+                if (this.closing) return;
+
+                this.closing = true;
                 this.open = false;
+
+                if (this.historyStatePushed && ! fromHistory) {
+                    this.historyStatePushed = false;
+
+                    try {
+                        window.history.back();
+                    } catch (error) {
+                        // The modal must still close even if browser history cannot be adjusted.
+                    }
+                }
+
                 setTimeout(() => $wire.{{ $closeMethod }}(), 220);
             }
         }"
