@@ -121,7 +121,8 @@
                     @endcan
                 @endforeach
 
-                @can('access-activity-operator-panel')
+                {{-- حضور و غیاب موقتاً از پنل اپراتور توزیع مخفی شده است؛ برای بازگرداندن، بلوک @can('access-activity-operator-panel') زیر را از حالت کامنت خارج کنید --}}
+                {{-- @can('access-activity-operator-panel')
                     <div class="my-1 border-t border-indigo-700/70" role="separator" aria-hidden="true"></div>
 
                     <a
@@ -131,7 +132,7 @@
                         <span>حضور و غیاب</span>
                         <span class="text-xs text-indigo-100/80">فعالیت</span>
                     </a>
-                @endcan
+                @endcan --}}
 
                 <div class="my-1 border-t border-indigo-700/70" role="separator" aria-hidden="true"></div>
 
