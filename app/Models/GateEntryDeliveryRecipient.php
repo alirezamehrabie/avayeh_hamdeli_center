@@ -25,7 +25,7 @@ class GateEntryDeliveryRecipient extends Model
     public const TYPE_OPTIONS = [
         self::TYPE_MOTHER => 'مادر',
         self::TYPE_FATHER => 'پدر',
-        self::TYPE_GROUP_LEADER => 'سرگروه (یاریگر)',
+        self::TYPE_GROUP_LEADER => 'سرگروه (مددکار)',
         self::TYPE_OTHER => 'سایر',
     ];
 

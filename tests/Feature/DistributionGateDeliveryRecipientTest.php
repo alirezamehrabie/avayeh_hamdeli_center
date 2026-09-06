@@ -126,7 +126,7 @@ class DistributionGateDeliveryRecipientTest extends TestCase
 
         $this->assertSame(GateEntryDeliveryRecipient::TYPE_GROUP_LEADER, $record->recipient_type);
         $this->assertNull($record->recipient_name);
-        $this->assertSame('سرگروه (یاریگر)', $record->recipient_label);
+        $this->assertSame('سرگروه (مددکار)', $record->recipient_label);
     }
 
     public function test_unchecking_the_box_reverts_the_declaration_to_a_direct_handover(): void
@@ -461,7 +461,7 @@ class DistributionGateDeliveryRecipientTest extends TestCase
             ->assertSee('تحویل به غیر از مددجو')
             ->assertSee('مادر')
             ->assertSee('پدر')
-            ->assertSee('سرگروه (یاریگر)')
+            ->assertSee('سرگروه (مددکار)')
             ->assertSee('سایر')
             ->html();
 
