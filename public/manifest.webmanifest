@@ -3,7 +3,7 @@
     "short_name": "آوای همدلی",
     "description": "پنل مدیریت و پیشخوان مرکز نیکوکاری تخصصی کودکان آوای همدلی",
     "id": "/",
-    "start_url": "/",
+    "start_url": "/loading.html",
     "scope": "/",
     "display": "standalone",
     "theme_color": "#5964AE",

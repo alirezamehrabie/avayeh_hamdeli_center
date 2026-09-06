@@ -2,66 +2,116 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#5964AE">
     <title>اتصال برقرار نیست | آوای همدلی</title>
     <style>
+        /* صفحه‌ی آفلاین — هم‌زبان با صفحه‌ی بارگذاری و ورود (برند روشن + هاله‌ها) */
+        :root {
+            --indigo: #5964AE;
+            --indigo-deep: #4d56a3;
+            --blue: #1572A1;
+            --rose: #D4205F;
+            --cyan: #36A9DF;
+            --bg: #f8fbff;
+            --ink: #1e293b;
+            --muted: #64748b;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'iransans', 'Vazir', Tahoma, sans-serif;
-            min-height: 100vh;
+            font-family: 'iransans', 'Vazirmatn', Tahoma, 'Segoe UI', sans-serif;
+            min-height: 100svh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #f8fbff;
-            color: #1e293b;
+            background: var(--bg);
+            color: var(--ink);
             padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
         }
+        .glow { position: fixed; border-radius: 50%; filter: blur(64px); pointer-events: none; z-index: 0; }
+        .glow-a { top: -8rem; right: -6rem; width: 22rem; height: 22rem; background: rgba(54, 169, 223, 0.20); }
+        .glow-b { bottom: -8rem; left: -7rem; width: 20rem; height: 20rem; background: rgba(212, 32, 95, 0.14); }
+
         .card {
+            position: relative;
+            z-index: 2;
             max-width: 26rem;
             width: 100%;
-            background: #fff;
-            border-radius: 1.25rem;
-            box-shadow: 0 10px 30px rgba(89, 100, 174, 0.12);
-            padding: 2.5rem 2rem;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            border-radius: 1.75rem;
+            box-shadow: 0 24px 70px rgba(89, 100, 174, 0.18);
+            padding: 2.75rem 2rem 2.25rem;
             text-align: center;
+            animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
+        @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
         .icon {
-            width: 4.5rem;
-            height: 4.5rem;
-            margin: 0 auto 1.25rem;
+            width: 5rem;
+            height: 5rem;
+            margin: 0 auto 1.5rem;
             border-radius: 50%;
-            background: linear-gradient(135deg, #5964AE 0%, #1572A1 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             color: #fff;
-            font-size: 2rem;
+            background: linear-gradient(140deg, var(--indigo-deep) 0%, var(--blue) 55%, var(--rose) 125%);
+            box-shadow: 0 14px 34px rgba(89, 100, 174, 0.32);
         }
-        h1 { font-size: 1.25rem; margin-bottom: 0.75rem; color: #5964AE; }
-        p { font-size: 0.95rem; line-height: 1.9; color: #64748b; margin-bottom: 1.75rem; }
+        .icon svg { width: 2.5rem; height: 2.5rem; }
+
+        h1 { font-size: 1.3rem; font-weight: 800; margin-bottom: 0.75rem; color: var(--indigo-deep); }
+        p { font-size: 0.95rem; line-height: 2; color: var(--muted); margin-bottom: 1.9rem; }
+
         button {
             font-family: inherit;
             font-size: 1rem;
             font-weight: 700;
             color: #fff;
-            background: #5964AE;
+            background: linear-gradient(120deg, var(--indigo) 0%, var(--blue) 100%);
             border: 0;
-            border-radius: 0.75rem;
-            padding: 0.75rem 2.25rem;
+            border-radius: 0.85rem;
+            padding: 0.85rem 2.5rem;
             cursor: pointer;
+            box-shadow: 0 12px 26px rgba(89, 100, 174, 0.32);
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
         }
-        button:active { transform: scale(0.98); }
+        button:hover { box-shadow: 0 16px 32px rgba(89, 100, 174, 0.4); }
+        button:active { transform: scale(0.97); }
+
+        .hint { margin-top: 1.25rem; font-size: 0.78rem; color: #94a3b8; }
+
+        @media (prefers-reduced-motion: reduce) { .card { animation: none; } }
     </style>
 </head>
 <body>
+    <div class="glow glow-a"></div>
+    <div class="glow glow-b"></div>
+
     <main class="card">
-        <div class="icon">⚠</div>
+        <div class="icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 1l22 22"/>
+                <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
+                <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+                <path d="M10.71 5.05A16 16 0 0 1 22.58 9"/>
+                <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
+                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                <line x1="12" y1="20" x2="12.01" y2="20"/>
+            </svg>
+        </div>
         <h1>اتصال به اینترنت برقرار نیست</h1>
         <p>
             برای ادامه‌ی کار به اتصال اینترنت نیاز دارید.
             پس از برقراری اتصال، دوباره تلاش کنید.
         </p>
         <button type="button" onclick="window.location.reload()">تلاش دوباره</button>
+        <div class="hint">مرکز نیکوکاری تخصصی کودکان آوای همدلی</div>
     </main>
 </body>
 </html>

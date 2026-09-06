@@ -30,7 +30,7 @@
  *   تغییر کرد، VERSION را افزایش دهید تا همه‌ی کش‌های قدیمی پاک شوند.
  */
 
-const VERSION = 'v10';
+const VERSION = 'v12';
 const BUILD_CACHE = `avaayeh-build-${VERSION}`;      // دارایی‌های هش‌شده‌ی Vite (تغییرناپذیر)
 const STATIC_CACHE = `avaayeh-static-${VERSION}`;    // تصاویر/صداها/css استاتیک (بدون هاش)
 const SHELL_CACHE = `avaayeh-shell-${VERSION}`;      // پوسته‌ی آفلاین (offline.html + آیکون‌ها)
@@ -41,10 +41,16 @@ const PRECACHE_MANIFEST_URL = '/precache-manifest.json';
 // فایل‌های پوسته که در زمان install کش می‌شوند (برای صفحه‌ی آفلاین و نصب)
 const CORE_ASSETS = [
     '/offline.html',
+    '/loading.html',
+    '/images/logo-sm.png',
     '/images/pwa/icon-192.png',
     '/images/pwa/icon-512.png',
     '/images/pwa/maskable-icon-512.png',
 ];
+
+// صفحه‌ی بارگذاری اولیه (start_url منیفست): استاتیک و بدون state است، پس
+// ناوبری‌اش کش‌اول سرو می‌شود تا حتی آفلاین هم فوری بالا بیاید.
+const LOADING_PATH = '/loading.html';
 
 // پیشوند مسیرهایی که هرگز نباید کش شوند (دارای state / احراز هویت / داده‌ی کاربر)
 const NEVER_CACHE_PREFIXES = [
@@ -224,6 +230,13 @@ self.addEventListener('fetch', (event) => {
     // می‌گیرد — حتی برای مسیرهای never-cache مثل /login (وگرنه کاربر صفحه
     // خطای خام مرورگر می‌بیند). اگر بعد از این شاخه بیاید، never-cache
     // باعث می‌شد ناوبری‌های احراز هویت بدون fallback به شبکه بروند.
+    // صفحه‌ی بارگذاری: استاتیک و بدون state → کش‌اول تا لحظه‌ی راه‌اندازی
+    // آفلاین/کند هم فوری و برند سرو شود (خودش به / ریدایرکت می‌کند).
+    if (isNavigation(request) && pathOf(request) === LOADING_PATH) {
+        event.respondWith(cacheFirst(request, SHELL_CACHE));
+        return;
+    }
+
     if (isNavigation(request)) {
         event.respondWith(networkFirstNavigation(request));
         return;
