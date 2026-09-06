@@ -9,8 +9,11 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @include('partials.pwa-head')
     @stack('styles')
+    <style>
+        body { font-family: 'iransans', 'Vazir', Tahoma, sans-serif; }
+    </style>
 </head>
-<body class="min-h-screen bg-white antialiased">
+<body class="min-h-screen bg-[#f8fbff] antialiased">
     {{ $slot }}
 
     @livewireScriptConfig
