@@ -2,6 +2,7 @@
 /node_modules
 /public/build
 /public/hot
+/public/precache-manifest.json
 /public/storage
 /storage/*.key
 /storage/pail

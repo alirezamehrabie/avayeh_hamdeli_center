@@ -360,7 +360,7 @@
                     try {
                         window.history.back();
                     } catch (error) {
-                        // The modal must still close even if browser history cannot be adjusted.
+                        // The modal must still close even if the pushed history entry cannot be consumed.
                     }
                 }
 

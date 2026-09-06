@@ -310,3 +310,14 @@ body {
         }
     }
 }
+
+/* PWA — ناحیه امن ناچ iPhone. با viewport-fit=cover در حالت standalone،
+   env() روی دسکتاپ و اندروید صفر است → هیچ تغییر بصری ایجاد نمی‌شود و
+   فقط روی دستگاه‌های ناچ‌دار، هدر/فوتر زیر ناچ یا نوار حرکت نمی‌رود. */
+.pwa-safe-top {
+    padding-top: env(safe-area-inset-top);
+}
+
+.pwa-safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+}

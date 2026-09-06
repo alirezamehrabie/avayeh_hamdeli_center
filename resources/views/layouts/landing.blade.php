@@ -2,7 +2,7 @@
 <html lang="fa" dir="rtl" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="description" content="مرکز نیکوکاری تخصصی کودکان آوای همدلی؛ همراهی، آموزش، تغذیه و امید برای کودکان در نیاز.">
     <title>{{ $title ?? 'آوای همدلی | مرکز نیکوکاری تخصصی کودکان' }}</title>
 
@@ -14,6 +14,7 @@
     <link rel="icon" type="image/png" href="{{ asset('images/logo-sm.png') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.pwa-head')
     @livewireStyles
 
     <style>

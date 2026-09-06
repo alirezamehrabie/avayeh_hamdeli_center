@@ -5,6 +5,7 @@ import '@majidh1/jalalidatepicker/dist/jalalidatepicker.min.css';
 import '@majidh1/jalalidatepicker';
 import { attendanceResultBanner, createAttendanceResultBannerState } from './attendance-result-banner';
 import { deliveryReceipt } from './delivery-receipt';
+import './connection-status';
 import { Livewire, Alpine } from '../../vendor/livewire/livewire/dist/livewire.esm';
 
 window.Alpine = Alpine;
@@ -1632,6 +1633,9 @@ document.addEventListener('livewire:init', () => {
     Livewire.hook('request', ({ fail }) => {
         fail(() => {
             window.dispatchEvent(new CustomEvent('sidebar-request-failed', { bubbles: true }));
+            // فاز ۲ PWA: نشانگر اتصال با دیدن این رویداد در حالت آفلاین صریحاً
+            // اعلام می‌کند عملیات انجام نشد — هیچ موفقیت جعلی گزارش نمی‌شود.
+            window.dispatchEvent(new CustomEvent('pwa:livewire-failed'));
         });
     });
 
@@ -1641,4 +1645,113 @@ document.addEventListener('livewire:init', () => {
     });
 });
 
+// ── PWA: نصب روی صفحه اصلی (گزینه «نسخه اندروید» در سایدبار) ────────────────
+// کروم رویداد beforeinstallprompt را وقتی صادر می‌کند که شرایط نصب فراهم باشد
+// (سرویس‌ورکر ثبت‌شده + منیفست معتبر + معیارهای تعامل، معمولاً اندروید/دسکتاپ).
+// رویداد را زودگیر و نگه می‌داریم تا کاربر با دکمه‌ی «تأیید و نصب» در مودال،
+// دیالوگ بومی نصب را با ژست کاربری (user gesture) ببیند.
+window.__pwaDeferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    window.__pwaDeferredInstallPrompt = event;
+    window.dispatchEvent(new CustomEvent('pwa:install-available'));
+});
+
+window.addEventListener('appinstalled', () => {
+    window.__pwaDeferredInstallPrompt = null;
+    window.dispatchEvent(new CustomEvent('pwa:installed'));
+});
+
+window.__pwaIsStandalone = () =>
+    window.matchMedia('(display-mode: standalone)').matches
+    || window.matchMedia('(display-mode: fullscreen)').matches
+    || window.navigator.standalone === true;
+
+// نتیجه: 'accepted' | 'dismissed' | 'installed' (از قبل نصب است) | 'unavailable'
+window.__pwaInstall = async () => {
+    if (window.__pwaIsStandalone()) {
+        return 'installed';
+    }
+
+    const promptEvent = window.__pwaDeferredInstallPrompt;
+
+    if (!promptEvent) {
+        return 'unavailable';
+    }
+
+    promptEvent.prompt();
+    const { outcome } = await promptEvent.userChoice;
+
+    if (outcome === 'accepted') {
+        window.__pwaDeferredInstallPrompt = null;
+        return 'accepted';
+    }
+
+    return 'dismissed';
+};
+
+Alpine.data('androidInstallModal', () => ({
+    open: false,
+    state: 'confirm', // confirm | installing | success | manual | installed
+
+    show() {
+        if (window.__pwaIsStandalone()) {
+            this.state = 'installed';
+        } else if (window.__pwaDeferredInstallPrompt) {
+            this.state = 'confirm';
+        } else {
+            this.state = 'manual';
+        }
+
+        this.open = true;
+    },
+
+    close() {
+        this.open = false;
+    },
+
+    async install() {
+        this.state = 'installing';
+
+        const outcome = await window.__pwaInstall();
+
+        if (outcome === 'accepted') {
+            this.state = 'success';
+        } else if (outcome === 'installed') {
+            this.state = 'installed';
+        } else if (outcome === 'dismissed') {
+            this.state = 'confirm';
+        } else {
+            this.state = 'manual';
+        }
+    },
+}));
+
 Livewire.start();
+
+// ── PWA: ثبت Service Worker (مرحله ۱ — فقط Online-first و قابل‌نصب) ──────────
+// ثبت فقط در بیلد پروداکشن انجام می‌شود تا در حالت `npm run dev` (hot reload)
+// هیچ دخالتی در سرو دارایی‌ها نداشته باشد. در زمینه‌ی ناامن هم ثبت نمی‌شود
+// (تست محلی روی http://localhost معتبر است چون امن محسوب می‌شود).
+// هر خطایی در ثبت، بی‌صدا بلعیده می‌شود تا رفتار فعلی برنامه هرگز نشکند.
+if (import.meta.env.PROD && 'serviceWorker' in navigator && window.isSecureContext) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker
+            .register('/sw.js', { scope: '/' })
+            .then((registration) => {
+                // پنل PWA ممکن است روزها بدون ریلود کامل باز بماند و کروم sw.js را
+                // فقط هنگام ناوبری کامل یا هر ۲۴ ساعت چک می‌کند؛ این به‌روزرسانی
+                // زمان‌بندی‌شده (فقط وقتی تب نمایان است) دیپلوی تازه را حداکثر ظرف
+                // ۱۰ دقیقه روی دستگاه می‌نشاند. update() فقط یک GET مقایسه‌ای است.
+                setInterval(() => {
+                    if (document.visibilityState === 'visible') {
+                        registration.update().catch(() => {});
+                    }
+                }, 10 * 60 * 1000);
+            })
+            .catch((error) => {
+                console.warn('[pwa] service worker registration failed:', error);
+            });
+    });
+}

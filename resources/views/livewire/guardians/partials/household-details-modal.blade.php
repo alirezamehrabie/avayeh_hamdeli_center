@@ -98,6 +98,7 @@
             closing: false,
             enableHistoryClose: false,
             historyStatePushed: false,
+            closingFromPopstate: false,
             popstateHandler: null,
             init() {
                 this.enableHistoryClose = window.matchMedia('(max-width: 767px), (pointer: coarse)').matches;
@@ -109,18 +110,13 @@
             setupHistoryClose() {
                 if (! this.enableHistoryClose || ! window.history?.pushState) return;
 
-                try {
-                    window.history.pushState({ ...(window.history.state || {}), householdDetailsModal: true }, '', window.location.href);
-                    this.historyStatePushed = true;
-                } catch (error) {
-                    this.historyStatePushed = false;
-
-                    return;
-                }
+                window.history.pushState({ ...(window.history.state || {}), householdDetailsModal: true }, '', window.location.href);
+                this.historyStatePushed = true;
 
                 this.popstateHandler = () => {
                     if (! this.historyStatePushed || this.closing) return;
 
+                    this.closingFromPopstate = true;
                     this.close(true);
                 };
 
@@ -147,22 +143,22 @@
                     this.copiedField = null;
                 }
             },
-            close(fromHistory = false) {
+            close(skipHistoryBack = false) {
                 if (this.closing) return;
 
-                this.closing = true;
-                this.open = false;
-
-                if (this.historyStatePushed && ! fromHistory) {
+                if (this.historyStatePushed && ! this.closingFromPopstate && ! skipHistoryBack) {
                     this.historyStatePushed = false;
 
                     try {
                         window.history.back();
                     } catch (error) {
-                        // The modal must still close even if browser history cannot be adjusted.
+                        // The modal must still close even if the pushed history entry cannot be consumed.
                     }
                 }
 
+                this.closing = true;
+                this.historyStatePushed = false;
+                this.open = false;
                 setTimeout(() => $wire.{{ $closeMethod }}(), 220);
             }
         }"

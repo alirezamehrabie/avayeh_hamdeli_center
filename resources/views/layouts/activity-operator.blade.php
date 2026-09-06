@@ -2,9 +2,10 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>پیشخوان اپراتور فعالیت - آوای همدلی</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.pwa-head')
     @livewireStyles
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -144,7 +145,7 @@
             style="display: none;"
         ></div>
 
-        <div class="flex min-w-0 flex-1 flex-col overflow-y-auto">
+        <div class="pwa-safe-top flex min-w-0 flex-1 flex-col overflow-y-auto">
             <header class="flex items-center justify-between gap-4 border-b bg-white px-4 py-3 shadow-sm sm:px-6">
                 <div class="flex items-center gap-4">
                     <button
@@ -211,6 +212,8 @@
             });
         </script>
     @endif
+    <x-connection-indicator />
+
     @stack('scripts')
 </body>
 </html>

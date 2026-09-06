@@ -668,6 +668,17 @@
             </div>
         @endif
 
+        @can('full-access')
+            <button type="button"
+                    @click="typeof closeSidebarOnMobile === 'function' && closeSidebarOnMobile(); $dispatch('open-android-install-modal')"
+                    class="flex items-center w-full px-4 py-2.5 rounded-lg transition-colors hover:bg-indigo-800">
+                <svg class="w-5 h-5 ml-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M17.6 9.48l1.84-3.18c.1-.17.04-.39-.14-.47a.37.37 0 00-.47.14l-1.86 3.22a11.46 11.46 0 00-4.02-.73c-1.43 0-2.79.26-4.02.73L5.12 5.96a.37.37 0 00-.47-.14c-.18.08-.24.3-.14.47l1.84 3.18A10.78 10.78 0 001 18h22a10.78 10.78 0 00-5.4-8.52zM7 15.25a1.25 1.25 0 110-2.5 1.25 1.25 0 010 2.5zm10 0a1.25 1.25 0 110-2.5 1.25 1.25 0 010 2.5z"/>
+                </svg>
+                <span>نسخه اندروید</span>
+            </button>
+        @endcan
+
     </nav>
 
     <div class="mt-auto pt-4 border-t border-indigo-800/50">
@@ -689,5 +700,132 @@
         </form>
     </div>
 
+    @can('full-access')
+        <template x-teleport="body">
+            <div
+                x-data="androidInstallModal()"
+                x-on:open-android-install-modal.window="show()"
+                x-on:pwa:installed.window="if (open) state = 'success'"
+                x-on:keydown.escape.window="if (open) close()"
+                x-cloak
+            >
+                <div
+                    x-show="open"
+                    x-transition.opacity
+                    class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 px-4 py-6 backdrop-blur-sm"
+                    style="display: none;"
+                >
+                    <div class="absolute inset-0" @click="close()"></div>
+
+                    <div
+                        x-show="open"
+                        x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 scale-95"
+                        x-transition:enter-end="opacity-100 scale-100"
+                        x-transition:leave="transition ease-in duration-150"
+                        x-transition:leave-start="opacity-100 scale-100"
+                        x-transition:leave-end="opacity-0 scale-95"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="نصب نسخه اندروید"
+                        class="relative w-full max-w-md rounded-[28px] bg-white p-6 text-center shadow-2xl"
+                        @click.stop
+                    >
+                        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-green-600 shadow-lg shadow-emerald-500/30">
+                            <svg class="h-9 w-9 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <path d="M17.6 9.48l1.84-3.18c.1-.17.04-.39-.14-.47a.37.37 0 00-.47.14l-1.86 3.22a11.46 11.46 0 00-4.02-.73c-1.43 0-2.79.26-4.02.73L5.12 5.96a.37.37 0 00-.47-.14c-.18.08-.24.3-.14.47l1.84 3.18A10.78 10.78 0 001 18h22a10.78 10.78 0 00-5.4-8.52zM7 15.25a1.25 1.25 0 110-2.5 1.25 1.25 0 010 2.5zm10 0a1.25 1.25 0 110-2.5 1.25 1.25 0 010 2.5z"/>
+                            </svg>
+                        </div>
+
+                        <h2 class="mt-4 text-lg font-extrabold text-slate-800">نسخه اندروید</h2>
+
+                        <template x-if="state === 'confirm'">
+                            <div>
+                                <p class="mt-2 text-sm font-medium leading-6 text-slate-600">
+                                    اپلیکیشن «آوای همدلی» به‌صورت نسخه اندروید روی صفحه اصلی گوشی شما نصب می‌شود.
+                                    با تأیید، پنجره نصب مرورگر باز می‌شود.
+                                </p>
+                                <div class="mt-6 flex flex-wrap gap-3">
+                                    <div class="flex min-w-32 flex-1">
+                                        <button
+                                            type="button"
+                                            @click="close()"
+                                            class="inline-flex w-full items-center justify-center rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-200 active:scale-[0.98]"
+                                        >انصراف</button>
+                                    </div>
+                                    <div class="flex min-w-32 flex-1">
+                                        <button
+                                            type="button"
+                                            @click="install()"
+                                            class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-indigo-500 active:scale-[0.98]"
+                                        >
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16v2a2 2 0 002 2h14a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/>
+                                            </svg>
+                                            تأیید و نصب
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template x-if="state === 'installing'">
+                            <div class="flex items-center justify-center gap-3 py-8 text-sm font-bold text-slate-600">
+                                <svg class="h-5 w-5 animate-spin text-indigo-600" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                                در حال باز کردن پنجره نصب…
+                            </div>
+                        </template>
+
+                        <template x-if="state === 'success'">
+                            <div>
+                                <p class="mt-2 text-sm font-bold leading-6 text-emerald-700">
+                                    نصب انجام شد! آیکون «آوای همدلی» به صفحه اصلی گوشی شما اضافه شد.
+                                </p>
+                                <button
+                                    type="button"
+                                    @click="close()"
+                                    class="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-indigo-500 active:scale-[0.98]"
+                                >بستن</button>
+                            </div>
+                        </template>
+
+                        <template x-if="state === 'installed'">
+                            <div>
+                                <p class="mt-2 text-sm font-medium leading-6 text-slate-600">
+                                    این برنامه هم‌اکنون روی این دستگاه نصب است و از صفحه اصلی در دسترس شماست.
+                                </p>
+                                <button
+                                    type="button"
+                                    @click="close()"
+                                    class="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-200 active:scale-[0.98]"
+                                >بستن</button>
+                            </div>
+                        </template>
+
+                        <template x-if="state === 'manual'">
+                            <div>
+                                <div class="mt-4 rounded-2xl border border-amber-100 bg-amber-50 p-4 text-right">
+                                    <p class="text-sm font-bold text-amber-800">پنجره نصب خودکار در دسترس نیست؛ برای نصب دستی:</p>
+                                    <ol class="mt-2 list-inside list-decimal space-y-1 text-xs font-semibold leading-5 text-amber-700">
+                                        <li>منوی ⋮ (سه‌نقطه) مرورگر کروم را باز کنید.</li>
+                                        <li>گزینه «افزودن به صفحه اصلی» را بزنید.</li>
+                                        <li>تأیید کنید تا آیکون برنامه روی صفحه اصلی ساخته شود.</li>
+                                    </ol>
+                                </div>
+                                <button
+                                    type="button"
+                                    @click="close()"
+                                    class="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-200 active:scale-[0.98]"
+                                >فهمیدم</button>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </template>
+    @endcan
 
 </aside>

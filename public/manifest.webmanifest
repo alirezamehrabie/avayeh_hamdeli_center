@@ -1,0 +1,48 @@
+{
+    "name": "آوای همدلی | مرکز نیکوکاری تخصصی کودکان",
+    "short_name": "آوای همدلی",
+    "description": "پنل مدیریت و پیشخوان مرکز نیکوکاری تخصصی کودکان آوای همدلی",
+    "id": "/",
+    "start_url": "/loading.html",
+    "scope": "/",
+    "display": "standalone",
+    "theme_color": "#5964AE",
+    "background_color": "#f8fbff",
+    "lang": "fa",
+    "dir": "rtl",
+    "icons": [
+        {
+            "src": "/images/pwa/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/images/pwa/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/images/pwa/maskable-icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "اسکن حضور و غیاب",
+            "short_name": "اسکن",
+            "description": "باز کردن مستقیم صفحه حضور و غیاب مددکار",
+            "url": "/social-worker/attendance",
+            "icons": [
+                {
+                    "src": "/images/pwa/icon-192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        }
+    ]
+}

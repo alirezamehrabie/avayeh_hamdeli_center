@@ -2,9 +2,10 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>پیشخوان مددکار - آوای همدلی</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.pwa-head')
     @livewireStyles
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-900">
@@ -35,7 +36,7 @@
             style="display: none;"
         ></div>
 
-        <div class="flex w-full flex-1 flex-col overflow-y-auto">
+        <div class="pwa-safe-top flex w-full flex-1 flex-col overflow-y-auto">
             <header class="flex items-center justify-between gap-4 border-b bg-white px-6 py-4 shadow-sm">
                 <div class="flex items-center gap-4">
                     <button type="button" @click="toggleSidebar()" class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 text-indigo-700 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-indigo-100 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-indigo-100" aria-label="نمایش یا پنهان‌سازی منو">
@@ -70,6 +71,8 @@
     <x-notification-modal />
 
     @livewireScriptConfig
+    <x-connection-indicator />
+
     @stack('scripts')
 </body>
 </html>
