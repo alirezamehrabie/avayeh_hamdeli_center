@@ -601,6 +601,80 @@
                                                 @error("categories.$index.value") <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                                             </div>
                                         </div>
+
+                                        @php
+                                            $pendingCategoryImage = $category['image'] ?? null;
+                                            $pendingCategoryImageUrl = null;
+                                            $categoryImageFileName = null;
+
+                                            if (is_object($pendingCategoryImage)) {
+                                                $categoryImageFileName = method_exists($pendingCategoryImage, 'getClientOriginalName')
+                                                    ? $pendingCategoryImage->getClientOriginalName()
+                                                    : null;
+
+                                                if (method_exists($pendingCategoryImage, 'temporaryUrl')) {
+                                                    try {
+                                                        $pendingCategoryImageUrl = $pendingCategoryImage->temporaryUrl();
+                                                    } catch (\Throwable) {
+                                                        $pendingCategoryImageUrl = null;
+                                                    }
+                                                }
+                                            }
+
+                                            $storedCategoryImageId = (int) ($category['id'] ?? 0);
+                                            $storedCategoryImagePath = $storedCategoryImageId > 0
+                                                ? ($this->categoryImagePathsById[$storedCategoryImageId] ?? null)
+                                                : null;
+                                            $categoryImagePreviewUrl = $pendingCategoryImageUrl ?: \App\Models\ServiceCategory::thumbnailUrl($storedCategoryImagePath);
+                                        @endphp
+                                        <div class="mt-3 rounded-2xl border border-slate-200 bg-slate-50/70 px-3.5 py-3">
+                                            <div class="flex items-center justify-between gap-3">
+                                                <div class="flex min-w-0 items-center gap-3">
+                                                    <x-category-thumbnail
+                                                        :url="$categoryImagePreviewUrl"
+                                                        :name="$category['name'] ?: null"
+                                                        sizeClass="h-11 w-11"
+                                                        roundedClass="rounded-xl"
+                                                    />
+                                                    <div class="min-w-0">
+                                                        <p class="text-sm font-bold text-slate-700">تصویر دسته</p>
+                                                        <p class="truncate text-xs font-medium text-slate-400">
+                                                            {{ $categoryImageFileName ?: 'jpeg، png یا webp تا ۶ مگابایت (اختیاری)' }}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <div class="flex shrink-0 items-center gap-2">
+                                                    <label class="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700">
+                                                        <input
+                                                            type="file"
+                                                            class="hidden"
+                                                            accept="image/jpeg,image/png,image/webp"
+                                                            wire:model.live="categories.{{ $index }}.image"
+                                                        >
+                                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                            <path d="M12 16V6m0 0 4 4m-4-4-4 4M5 18h14"/>
+                                                        </svg>
+                                                        {{ $categoryImagePreviewUrl ? 'تغییر تصویر' : 'انتخاب تصویر' }}
+                                                    </label>
+
+                                                    @if($categoryImagePreviewUrl)
+                                                        <button
+                                                            type="button"
+                                                            wire:click="removeCategoryImage({{ $index }})"
+                                                            class="inline-flex items-center rounded-xl px-2.5 py-2 text-xs font-bold text-rose-500 transition hover:bg-rose-50 hover:text-rose-600"
+                                                        >
+                                                            حذف تصویر
+                                                        </button>
+                                                    @endif
+                                                </div>
+                                            </div>
+
+                                            <div wire:loading wire:target="categories.{{ $index }}.image" class="mt-2 text-xs font-semibold text-cyan-600">
+                                                در حال بارگذاری تصویر...
+                                            </div>
+                                        </div>
+                                        @error("categories.$index.image") <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                                     </div>
                                 @endforeach
                             </div>

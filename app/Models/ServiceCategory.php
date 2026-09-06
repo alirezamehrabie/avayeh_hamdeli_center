@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class ServiceCategory extends Model
 {
@@ -159,6 +160,27 @@ class ServiceCategory extends Model
     public function getAvailableQuantityAttribute(): float
     {
         return (float) $this->quantity;
+    }
+
+    /**
+     * Canonical public URL for a stored category thumbnail path, or null when empty.
+     */
+    public static function thumbnailUrl(?string $path): ?string
+    {
+        if (blank($path)) {
+            return null;
+        }
+
+        return Storage::disk('public')->url((string) $path);
+    }
+
+    /**
+     * Canonical public URL for the category thumbnail, or null when none is set.
+     * Use this accessor everywhere a category image needs to be displayed.
+     */
+    public function getImageUrlAttribute(): ?string
+    {
+        return static::thumbnailUrl($this->image_path);
     }
 
     public function recalculateServiceTotals(): void

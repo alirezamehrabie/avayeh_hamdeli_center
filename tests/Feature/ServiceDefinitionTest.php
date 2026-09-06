@@ -15,7 +15,10 @@ use App\Models\ServiceName;
 use App\Models\SocialWorker;
 use App\Models\User;
 use App\Services\QrIdentityService;
+use App\Support\Images\OptimizedImageStorage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -1084,6 +1087,190 @@ class ServiceDefinitionTest extends TestCase
             ->call('restoreCategory', $template->id);
 
         $this->assertNotNull($template->fresh()?->deleted_at);
+    }
+
+    public function test_service_definition_create_stores_category_thumbnail_image(): void
+    {
+        Storage::fake('public');
+
+        $this->actingAs($this->manager());
+
+        Livewire::test(ServiceDefinition::class)
+            ->set('serviceName', 'Thumbnail Create Service')
+            ->set('serviceType', 'individual')
+            ->set('distributionStartDate', '1405/03/30')
+            ->set('status', 'draft')
+            ->set('categories', [[
+                'id' => null,
+                'code' => '',
+                'name' => 'Lunch Pack',
+                'quantity' => '10',
+                'unit' => 'pack',
+                'value' => '',
+            ]])
+            ->set('categories.0.image', UploadedFile::fake()->image('lunch.png', 2400, 1800))
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $service = Service::query()->where('name', 'Thumbnail Create Service')->firstOrFail();
+        $category = $service->categories()->firstOrFail();
+
+        $this->assertNotNull($category->image_path);
+        $this->assertStringStartsWith('service-categories/'.$service->id.'/', (string) $category->image_path);
+        $this->assertTrue(str_ends_with((string) $category->image_path, '.jpg'));
+        Storage::disk('public')->assertExists((string) $category->image_path);
+    }
+
+    public function test_service_definition_edit_replaces_category_thumbnail_and_removes_old_file(): void
+    {
+        Storage::fake('public');
+
+        $user = $this->manager();
+        $service = $this->serviceWithCategory($user, 'Replace Thumbnail Service', true);
+        $category = $service->categories()->firstOrFail();
+
+        $oldPath = 'service-categories/'.$service->id.'/category-old.jpg';
+        Storage::disk('public')->put($oldPath, 'legacy-image-binary');
+        $category->forceFill(['image_path' => $oldPath])->save();
+
+        $this->actingAs($user);
+
+        Livewire::test(ServiceDefinition::class, ['serviceId' => $service->id])
+            ->set('categories.0.image', UploadedFile::fake()->image('fresh.png', 800, 600))
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $category->refresh();
+
+        $this->assertNotNull($category->image_path);
+        $this->assertNotSame($oldPath, $category->image_path);
+        Storage::disk('public')->assertExists((string) $category->image_path);
+        Storage::disk('public')->assertMissing($oldPath);
+    }
+
+    public function test_service_definition_edit_removes_category_thumbnail_image(): void
+    {
+        Storage::fake('public');
+
+        $user = $this->manager();
+        $service = $this->serviceWithCategory($user, 'Remove Thumbnail Service', true);
+        $category = $service->categories()->firstOrFail();
+
+        $oldPath = 'service-categories/'.$service->id.'/category-remove.jpg';
+        Storage::disk('public')->put($oldPath, 'legacy-image-binary');
+        $category->forceFill(['image_path' => $oldPath])->save();
+
+        $this->actingAs($user);
+
+        Livewire::test(ServiceDefinition::class, ['serviceId' => $service->id])
+            ->call('removeCategoryImage', 0)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $category->refresh();
+
+        $this->assertNull($category->image_path);
+        Storage::disk('public')->assertMissing($oldPath);
+    }
+
+    public function test_service_definition_rejects_non_image_category_upload(): void
+    {
+        Storage::fake('public');
+
+        $this->actingAs($this->manager());
+
+        Livewire::test(ServiceDefinition::class)
+            ->set('serviceName', 'Invalid Thumbnail Service')
+            ->set('serviceType', 'individual')
+            ->set('distributionStartDate', '1405/03/30')
+            ->set('status', 'draft')
+            ->set('categories', [[
+                'id' => null,
+                'code' => '',
+                'name' => 'Invalid Image Pack',
+                'quantity' => '10',
+                'unit' => 'pack',
+                'value' => '',
+            ]])
+            ->set('categories.0.image', UploadedFile::fake()->create('document.pdf', 100, 'application/pdf'))
+            ->call('save')
+            ->assertHasErrors(['categories.0.image']);
+
+        $this->assertSame([], Storage::disk('public')->allFiles());
+    }
+
+    public function test_service_definition_removes_stored_category_images_when_save_fails(): void
+    {
+        Storage::fake('public');
+
+        $failingStorage = new class extends OptimizedImageStorage
+        {
+            public int $storeCalls = 0;
+
+            public function store(UploadedFile $file, string $directory, string $disk = 'public', string $filenamePrefix = 'image'): string
+            {
+                $this->storeCalls++;
+
+                if ($this->storeCalls > 1) {
+                    throw new \RuntimeException('Simulated storage failure.');
+                }
+
+                return parent::store($file, $directory, $disk, $filenamePrefix);
+            }
+        };
+
+        $this->app->instance(OptimizedImageStorage::class, $failingStorage);
+
+        $this->actingAs($this->manager());
+
+        Livewire::test(ServiceDefinition::class)
+            ->set('serviceName', 'Rollback Thumbnail Service')
+            ->set('serviceType', 'individual')
+            ->set('distributionStartDate', '1405/03/30')
+            ->set('status', 'draft')
+            ->set('categories', [
+                [
+                    'id' => null,
+                    'code' => '',
+                    'name' => 'First Pack',
+                    'quantity' => '10',
+                    'unit' => 'pack',
+                    'value' => '',
+                ],
+                [
+                    'id' => null,
+                    'code' => '',
+                    'name' => 'Second Pack',
+                    'quantity' => '5',
+                    'unit' => 'pack',
+                    'value' => '',
+                ],
+            ])
+            ->set('categories.0.image', UploadedFile::fake()->image('first.png', 800, 600))
+            ->set('categories.1.image', UploadedFile::fake()->image('second.png', 800, 600))
+            ->call('save');
+
+        $this->assertGreaterThan(0, $failingStorage->storeCalls);
+        $this->assertSame([], Storage::disk('public')->allFiles());
+        $this->assertDatabaseMissing('services', ['name' => 'Rollback Thumbnail Service']);
+    }
+
+    public function test_category_image_url_accessor_is_canonical_thumbnail_source(): void
+    {
+        Storage::fake('public');
+
+        $user = $this->manager();
+        $service = $this->serviceWithCategory($user, 'Accessor Thumbnail Service', true);
+        $category = $service->categories()->firstOrFail();
+
+        $this->assertNull($category->image_url);
+
+        $category->forceFill(['image_path' => 'service-categories/'.$service->id.'/category-x.jpg'])->save();
+
+        $this->assertStringContainsString(
+            '/storage/service-categories/'.$service->id.'/category-x.jpg',
+            (string) $category->image_url
+        );
     }
 
     private function manager(): User

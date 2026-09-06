@@ -9,22 +9,37 @@ use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\ServiceCategoryTemplate;
 use App\Models\ServiceName;
+use App\Support\Images\OptimizedImageStorage;
 use App\Traits\InteractsWithNotificationModal;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\On;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class ServiceDefinition extends Component
 {
     use InteractsWithNotificationModal;
+    use WithFileUploads;
 
     /**
+     * Stored image paths keyed by category id. Public so Livewire keeps it
+     * across requests (protected state is lost after the first round-trip).
+     *
      * @var array<int, string>
      */
-    protected array $categoryImagePathsById = [];
+    public array $categoryImagePathsById = [];
+
+    /**
+     * Category ids whose stored image is marked for deletion, mapped to the
+     * old path so the file can be removed after a successful save.
+     *
+     * @var array<int, string>
+     */
+    public array $categoryImageRemovals = [];
 
     public ?int $serviceId = null;
 
@@ -55,7 +70,7 @@ class ServiceDefinition extends Component
     public string $statusNotes = '';
 
     /**
-     * @var array<int, array{id: ?int, code: string, name: string, quantity: string, unit: string, value: string}>
+     * @var array<int, array{id: ?int, code: string, name: string, quantity: string, unit: string, value: string, image: ?UploadedFile}>
      */
     public array $categories = [];
 
@@ -88,6 +103,24 @@ class ServiceDefinition extends Component
         }
     }
 
+    public function removeCategoryImage(int $index): void
+    {
+        if (! isset($this->categories[$index])) {
+            return;
+        }
+
+        $this->categories[$index]['image'] = null;
+
+        $categoryId = (int) ($this->categories[$index]['id'] ?? 0);
+
+        if ($categoryId > 0 && isset($this->categoryImagePathsById[$categoryId])) {
+            $this->categoryImageRemovals[$categoryId] = $this->categoryImagePathsById[$categoryId];
+            unset($this->categoryImagePathsById[$categoryId]);
+        }
+
+        $this->resetValidation("categories.{$index}.image");
+    }
+
     public function save(): void
     {
         try {
@@ -106,99 +139,139 @@ class ServiceDefinition extends Component
                 ]);
             }
 
-            DB::transaction(function () use ($validated): void {
-                $service = $this->editingServiceId
-                    ? Service::query()->findOrFail($this->editingServiceId)
-                    : new Service;
-                $serviceName = $this->persistServiceNameRecord(trim($validated['serviceName']));
+            $imageStorage = app(OptimizedImageStorage::class);
+            $storedImagePaths = [];
+            $pathsToDeleteAfterCommit = [];
 
-                if (! $this->editingServiceId) {
-                    $service->code = Service::generateNextCode();
-                    $service->created_by = auth()->id();
-                }
+            try {
+                DB::transaction(function () use ($validated, $imageStorage, &$storedImagePaths, &$pathsToDeleteAfterCommit): void {
+                    $service = $this->editingServiceId
+                        ? Service::query()->findOrFail($this->editingServiceId)
+                        : new Service;
+                    $serviceName = $this->persistServiceNameRecord(trim($validated['serviceName']));
 
-                $service->fill([
-                    'service_name_id' => $serviceName->id,
-                    'name' => trim($validated['serviceName']),
-                    'service_type' => $validated['serviceType'],
-                    'supports_gate_delivery' => (bool) $validated['supportsGateDelivery'],
-                    'supports_home_delivery' => (bool) $validated['supportsHomeDelivery'],
-                    'description' => $validated['description'] ?: null,
-                    'district_id' => $validated['serviceDistrictId'] ?: null,
-                    'distribution_start_date' => $this->jalaliToGregorian($validated['distributionStartDate']),
-                    'distribution_end_date' => blank($validated['distributionEndDate'])
-                        ? null
-                        : $this->jalaliToGregorian($validated['distributionEndDate']),
-                    'priority' => $validated['priority'] ?: null,
-                    'status' => $validated['status'],
-                    'status_notes' => $validated['statusNotes'] ?: null,
-                    'total_quantity' => collect($validated['categories'])->sum(fn (array $category) => (float) $category['quantity']),
-                    'total_service_value' => 0,
-                    'quantity_delivered' => $this->editingServiceId ? (float) $service->quantity_delivered : 0,
-                ]);
-                $service->save();
-
-                if ($this->editingServiceId) {
-                    $service->categories()
-                        ->withTrashed()
-                        ->update(['service_name_id' => $serviceName->id]);
-                }
-
-                $service->categories()->withTrashed()->whereNotNull('deleted_at')->restore();
-
-                $existingCategoryIds = collect($validated['categories'])
-                    ->pluck('id')
-                    ->filter()
-                    ->map(fn ($id) => (int) $id)
-                    ->values();
-
-                if ($this->editingServiceId) {
-                    $service->categories()->whereNotIn('id', $existingCategoryIds)->delete();
-                }
-
-                foreach ($validated['categories'] as $index => $categoryData) {
-                    $categoryName = trim($categoryData['name']);
-
-                    $payload = [
-                        'service_name_id' => $service->service_name_id,
-                        'service_id' => $service->id,
-                        'name' => $categoryName,
-                        'quantity' => (float) $categoryData['quantity'],
-                        'unit' => trim($categoryData['unit']),
-                        'value' => (int) $categoryData['value'],
-                        'created_by' => $this->editingServiceId
-                            ? (int) (ServiceCategory::query()->whereKey($categoryData['id'] ?? null)->value('created_by') ?? auth()->id())
-                            : auth()->id(),
-                    ];
-
-                    $category = ! empty($categoryData['id'])
-                        ? ServiceCategory::query()->where('service_id', $service->id)->findOrFail((int) $categoryData['id'])
-                        : new ServiceCategory;
-
-                    if (blank($category->code)) {
-                        $category->code = $this->editingServiceId
-                            ? $this->generateCategoryCode($service, $index, $existingCategoryIds->count())
-                            : $this->generateCategoryCode($service, $index, 0);
+                    if (! $this->editingServiceId) {
+                        $service->code = Service::generateNextCode();
+                        $service->created_by = auth()->id();
                     }
 
-                    if (blank($category->sort_id)) {
-                        $category->sort_id = $this->editingServiceId
-                            ? $this->nextCategorySortId($service->id)
-                            : ($index + 1);
+                    $service->fill([
+                        'service_name_id' => $serviceName->id,
+                        'name' => trim($validated['serviceName']),
+                        'service_type' => $validated['serviceType'],
+                        'supports_gate_delivery' => (bool) $validated['supportsGateDelivery'],
+                        'supports_home_delivery' => (bool) $validated['supportsHomeDelivery'],
+                        'description' => $validated['description'] ?: null,
+                        'district_id' => $validated['serviceDistrictId'] ?: null,
+                        'distribution_start_date' => $this->jalaliToGregorian($validated['distributionStartDate']),
+                        'distribution_end_date' => blank($validated['distributionEndDate'])
+                            ? null
+                            : $this->jalaliToGregorian($validated['distributionEndDate']),
+                        'priority' => $validated['priority'] ?: null,
+                        'status' => $validated['status'],
+                        'status_notes' => $validated['statusNotes'] ?: null,
+                        'total_quantity' => collect($validated['categories'])->sum(fn (array $category) => (float) $category['quantity']),
+                        'total_service_value' => 0,
+                        'quantity_delivered' => $this->editingServiceId ? (float) $service->quantity_delivered : 0,
+                    ]);
+                    $service->save();
+
+                    if ($this->editingServiceId) {
+                        $service->categories()
+                            ->withTrashed()
+                            ->update(['service_name_id' => $serviceName->id]);
                     }
 
-                    $category->fill($payload);
-                    $category->save();
+                    $service->categories()->withTrashed()->whereNotNull('deleted_at')->restore();
 
-                    $this->persistCategoryTemplateRecord(
-                        $service->service_name_id,
-                        $categoryName,
-                        $index + 1
-                    );
+                    $existingCategoryIds = collect($validated['categories'])
+                        ->pluck('id')
+                        ->filter()
+                        ->map(fn ($id) => (int) $id)
+                        ->values();
+
+                    if ($this->editingServiceId) {
+                        $service->categories()->whereNotIn('id', $existingCategoryIds)->delete();
+                    }
+
+                    foreach ($validated['categories'] as $index => $categoryData) {
+                        $categoryName = trim($categoryData['name']);
+
+                        $payload = [
+                            'service_name_id' => $service->service_name_id,
+                            'service_id' => $service->id,
+                            'name' => $categoryName,
+                            'quantity' => (float) $categoryData['quantity'],
+                            'unit' => trim($categoryData['unit']),
+                            'value' => (int) $categoryData['value'],
+                            'created_by' => $this->editingServiceId
+                                ? (int) (ServiceCategory::query()->whereKey($categoryData['id'] ?? null)->value('created_by') ?? auth()->id())
+                                : auth()->id(),
+                        ];
+
+                        $category = ! empty($categoryData['id'])
+                            ? ServiceCategory::query()->where('service_id', $service->id)->findOrFail((int) $categoryData['id'])
+                            : new ServiceCategory;
+
+                        $categoryId = (int) ($categoryData['id'] ?? 0);
+                        $oldImagePath = $categoryId > 0
+                            ? ($this->categoryImageRemovals[$categoryId] ?? $this->categoryImagePathsById[$categoryId] ?? null)
+                            : null;
+                        $image = $categoryData['image'] ?? null;
+
+                        if ($image instanceof UploadedFile) {
+                            $newImagePath = $imageStorage->store(
+                                $image,
+                                'service-categories/'.$service->id,
+                                'public',
+                                'category'
+                            );
+                            $storedImagePaths[] = $newImagePath;
+                            $payload['image_path'] = $newImagePath;
+
+                            if (filled($oldImagePath)) {
+                                $pathsToDeleteAfterCommit[] = $oldImagePath;
+                            }
+                        } elseif ($categoryId > 0 && isset($this->categoryImageRemovals[$categoryId])) {
+                            $payload['image_path'] = null;
+                            $pathsToDeleteAfterCommit[] = $this->categoryImageRemovals[$categoryId];
+                        }
+
+                        if (blank($category->code)) {
+                            $category->code = $this->editingServiceId
+                                ? $this->generateCategoryCode($service, $index, $existingCategoryIds->count())
+                                : $this->generateCategoryCode($service, $index, 0);
+                        }
+
+                        if (blank($category->sort_id)) {
+                            $category->sort_id = $this->editingServiceId
+                                ? $this->nextCategorySortId($service->id)
+                                : ($index + 1);
+                        }
+
+                        $category->fill($payload);
+                        $category->save();
+
+                        $this->persistCategoryTemplateRecord(
+                            $service->service_name_id,
+                            $categoryName,
+                            $index + 1
+                        );
+                    }
+
+                    $service->refreshFinancialTotals();
+                });
+            } catch (\Throwable $e) {
+                foreach ($storedImagePaths as $storedPath) {
+                    $imageStorage->delete($storedPath);
                 }
 
-                $service->refreshFinancialTotals();
-            });
+                throw $e;
+            }
+
+            foreach ($pathsToDeleteAfterCommit as $obsoletePath) {
+                $imageStorage->delete($obsoletePath);
+            }
 
             $this->resetForm();
             $this->bootDefaults();
@@ -278,6 +351,7 @@ class ServiceDefinition extends Component
                 'quantity' => $this->formatDecimal($category->quantity),
                 'unit' => (string) $category->unit,
                 'value' => (int) $category->value > 0 ? (string) $category->value : '',
+                'image' => null,
             ])
             ->values()
             ->all();
@@ -293,7 +367,6 @@ class ServiceDefinition extends Component
         $this->resetForm();
         $this->bootDefaults();
         $this->resetValidation();
-        $this->categoryImagePathsById = [];
     }
 
     public function getPreviewServiceCodeProperty(): string
@@ -329,12 +402,10 @@ class ServiceDefinition extends Component
 
                 $isAvailable = Storage::disk('public')->exists($imagePath);
 
-                $relativeUrl = '/storage/'.ltrim(str_replace('\\', '/', $imagePath), '/');
-
                 return [
                     'id' => $categoryId,
                     'name' => trim((string) ($category['name'] ?? '')) ?: 'دسته‌بندی بدون نام',
-                    'image_url' => $isAvailable ? $relativeUrl : null,
+                    'image_url' => $isAvailable ? ServiceCategory::thumbnailUrl($imagePath) : null,
                     'is_available' => $isAvailable,
                 ];
             })
@@ -421,6 +492,7 @@ class ServiceDefinition extends Component
             'categories.*.name' => ['required', 'string', 'max:255'],
             'categories.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'categories.*.unit' => ['required', Rule::in(Service::unitKeys())],
+            'categories.*.image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:6144'],
             'categories.*.value' => [
                 'nullable',
                 'regex:/^[\d,\s]+$/',
@@ -454,6 +526,7 @@ class ServiceDefinition extends Component
             'categories.*.quantity' => 'تعداد',
             'categories.*.unit' => 'واحد',
             'categories.*.value' => 'ارزش واحد',
+            'categories.*.image' => 'تصویر دسته',
         ];
     }
 
@@ -490,6 +563,8 @@ class ServiceDefinition extends Component
             'status',
             'statusNotes',
             'categories',
+            'categoryImagePathsById',
+            'categoryImageRemovals',
         ]);
 
         $this->serviceType = 'individual';
@@ -508,6 +583,7 @@ class ServiceDefinition extends Component
             'quantity' => '',
             'unit' => array_key_first(Service::unitOptions()) ?: 'package',
             'value' => '',
+            'image' => null,
         ];
     }
 
