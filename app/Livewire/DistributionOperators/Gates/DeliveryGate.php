@@ -3,6 +3,7 @@
 namespace App\Livewire\DistributionOperators\Gates;
 
 use App\Models\GateEntryAssignment;
+use App\Models\QrIdentity;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Layout;
 
@@ -16,6 +17,62 @@ class DeliveryGate extends AbstractGateComponent
 
     /** @var array<int, int> Category ids locked because they were already finalized at the Exit Gate. */
     public array $finalizedCategoryIds = [];
+
+    /**
+     * Deep link from the Exit Gate (?subject=person:ID / ?subject=guardian:ID): loads the same
+     * subject right away so the operator confirms the flagged items instead of rescanning their QR.
+     */
+    #[\Livewire\Attributes\Url(as: 'subject', except: '')]
+    public string $subjectHandoff = '';
+
+    public function mount(): void
+    {
+        parent::mount();
+
+        $this->applySubjectHandoff();
+    }
+
+    /**
+     * Apply a one-shot subject handoff from the Exit Gate. The parameter is cleared once consumed so
+     * a later page reload does not jump back to the handed-off subject after the operator moved on.
+     */
+    protected function applySubjectHandoff(): void
+    {
+        if ($this->subjectHandoff === '') {
+            return;
+        }
+
+        $handoff = $this->subjectHandoff;
+        $this->subjectHandoff = '';
+
+        if (! $this->selectedService) {
+            return;
+        }
+
+        [$type, $id] = array_pad(explode(':', $handoff, 2), 2, null);
+
+        if (! $id || ! ctype_digit($id)) {
+            return;
+        }
+
+        if ($type === QrIdentity::SUBJECT_GUARDIAN) {
+            $guardian = $this->findGuardian((int) $id);
+
+            if ($guardian) {
+                $this->applyGuardianScan($guardian, false, 'handoff');
+            }
+
+            return;
+        }
+
+        if ($type === QrIdentity::SUBJECT_PERSON) {
+            $person = $this->findPerson((int) $id);
+
+            if ($person) {
+                $this->applyPersonScan($person, false, 'handoff');
+            }
+        }
+    }
 
     protected function scanContext(): string
     {
@@ -52,7 +109,11 @@ class DeliveryGate extends AbstractGateComponent
         }
 
         $delivered = count($this->deliveredCategoryIds);
-        $prefix = $source === 'manual' ? 'به‌صورت دستی انتخاب شد. ' : '';
+        $prefix = match ($source) {
+            'manual' => 'به‌صورت دستی انتخاب شد. ',
+            'handoff' => 'از گیت خروج ارجاع داده شد. ',
+            default => '',
+        };
 
         if ($isDuplicate) {
             return "این {$subjectLabel} هم‌اکنون انتخاب شده است؛ {$delivered} از {$authorized} قلم تحویل شده است.";

@@ -34,7 +34,7 @@ class DistributionOperatorExitGateTest extends TestCase
         Livewire::test(ExitGate::class)->assertForbidden();
     }
 
-    public function test_scan_shows_only_delivered_items_and_offers_finalize(): void
+    public function test_scan_shows_delivered_items_for_finalize_and_flags_undelivered_authorizations(): void
     {
         [$operator] = $this->operator();
         $service = $this->makeGateService($operator);
@@ -43,9 +43,10 @@ class DistributionOperatorExitGateTest extends TestCase
 
         $person = $this->makePerson();
 
-        // Delivered at the Delivery Gate vs. still pending — only the delivered one shows here.
-        $this->assign($service, $delivered, $person, $operator, GateEntryAssignment::STATUS_DELIVERED);
-        $this->assign($service, $pendingOnly, $person, $operator, GateEntryAssignment::STATUS_PENDING);
+        // Delivered at the Delivery Gate vs. still pending — only the delivered one is finalizable,
+        // but the pending one must no longer stay invisible: it surfaces as an undelivered authorization.
+        $deliveredAssignment = $this->assign($service, $delivered, $person, $operator, GateEntryAssignment::STATUS_DELIVERED);
+        $pendingAssignment = $this->assign($service, $pendingOnly, $person, $operator, GateEntryAssignment::STATUS_PENDING);
 
         $token = $this->issueToken($person, $operator);
 
@@ -57,8 +58,11 @@ class DistributionOperatorExitGateTest extends TestCase
             ->assertSet('scannedPersonId', $person->id)
             ->assertSet('scanStatus', 'paused')
             ->assertSee('Food basket')
-            ->assertDontSee('Blanket')
-            ->assertSee('تأیید خروج و ثبت نهایی تحویل');
+            ->assertSee('Blanket')
+            ->assertSee('تأیید خروج و ثبت نهایی تحویل')
+            // The pending item is never part of the selectable finalize checklist.
+            ->assertSee('exit-gate-item-'.$deliveredAssignment->id)
+            ->assertDontSee('exit-gate-item-'.$pendingAssignment->id);
     }
 
     public function test_finalize_commits_permanent_delivery_and_locks_assignment(): void
@@ -219,6 +223,83 @@ class DistributionOperatorExitGateTest extends TestCase
             ->assertDontSee('تأیید خروج و ثبت نهایی تحویل');
 
         $this->assertSame(0, ServiceDelivery::query()->count());
+    }
+
+    public function test_undelivered_authorizations_offer_a_delivery_gate_handoff_link(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+            'permissions' => [
+                User::PERMISSION_DISTRIBUTION_OUTBOUND_GATE,
+                User::PERMISSION_DISTRIBUTION_DELIVERY_GATE,
+            ],
+        ]);
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Blanket', $operator);
+        $person = $this->makePerson();
+
+        $this->assign($service, $category, $person, $operator, GateEntryAssignment::STATUS_PENDING);
+
+        $token = $this->issueToken($person, $operator);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ExitGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            ->assertSee('هنوز در گیت تحویل تأیید نشده است')
+            ->assertSee('تأیید در گیت تحویل')
+            // The handoff link carries both the service and the scanned subject so the Delivery
+            // Gate lands on the same person instead of making them rescan their QR.
+            ->assertSee('subject=person%3A'.$person->id);
+    }
+
+    public function test_handoff_link_is_hidden_without_delivery_gate_access(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Blanket', $operator);
+        $person = $this->makePerson();
+
+        $this->assign($service, $category, $person, $operator, GateEntryAssignment::STATUS_PENDING);
+
+        $token = $this->issueToken($person, $operator);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ExitGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            ->assertSee('هنوز در گیت تحویل تأیید نشده است')
+            ->assertDontSee('subject=person%3A')
+            ->assertSee('هماهنگ با اپراتور گیت تحویل');
+    }
+
+    public function test_finalize_ignores_pending_assignments_even_if_their_ids_are_injected(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Blanket', $operator);
+        $person = $this->makePerson();
+
+        $assignment = $this->assign($service, $category, $person, $operator, GateEntryAssignment::STATUS_PENDING);
+        $token = $this->issueToken($person, $operator);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ExitGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            ->set('selectedItems', [$assignment->id])
+            ->call('finalizeExit');
+
+        // The status guard keeps an undelivered authorization out of the ledger and out of finalized.
+        $this->assertSame(0, ServiceDelivery::query()->count());
+        $this->assertDatabaseHas('gate_entry_assignments', [
+            'id' => $assignment->id,
+            'status' => GateEntryAssignment::STATUS_PENDING,
+        ]);
     }
 
     public function test_canceling_a_finalized_delivery_archives_the_ledger_row_with_audit_trace(): void

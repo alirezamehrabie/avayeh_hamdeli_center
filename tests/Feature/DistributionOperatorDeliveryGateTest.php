@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Livewire\DistributionOperators\Gates\DeliveryGate;
 use App\Models\GateEntryAssignment;
+use App\Models\Guardian;
 use App\Models\Person;
 use App\Models\QrIdentity;
 use App\Models\Service;
@@ -320,6 +321,84 @@ class DistributionOperatorDeliveryGateTest extends TestCase
             ->call('resolveScannedQr', 'not-a-real-token')
             ->assertSet('scanStatus', 'scan_error')
             ->assertSet('scannedPersonId', null);
+    }
+
+    public function test_exit_gate_handoff_query_loads_the_subject_on_mount(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Food basket', $operator);
+
+        $person = Person::query()->create([
+            'first_name' => 'Ali',
+            'last_name' => 'Ahmadi',
+            'national_id' => '1234567890',
+            'person_code' => '14001',
+        ]);
+
+        $this->assign($service, $category, $person, $operator);
+
+        $this->actingAs($operator);
+
+        // The Exit Gate's handoff link deep-links straight onto this subject — no rescan needed.
+        $this->get(route('distribution-operator.gates.delivery', [
+            'service' => $service->id,
+            'subject' => 'person:'.$person->id,
+        ]))
+            ->assertOk()
+            ->assertSee('از گیت خروج ارجاع داده شد')
+            ->assertSee('Ali Ahmadi')
+            ->assertSee('Food basket');
+    }
+
+    public function test_exit_gate_handoff_query_loads_a_guardian_subject(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Food basket', $operator);
+
+        $guardian = Guardian::query()->create([
+            'guardian_code' => 5566778,
+            'first_name' => 'Maryam',
+            'last_name' => 'Karimi',
+        ]);
+
+        GateEntryAssignment::query()->create([
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'person_id' => null,
+            'guardian_id' => $guardian->id,
+            'full_name' => 'Maryam Karimi',
+            'status' => GateEntryAssignment::STATUS_PENDING,
+            'assigned_at' => now(),
+            'created_by' => $operator->id,
+        ]);
+
+        $this->actingAs($operator);
+
+        $this->get(route('distribution-operator.gates.delivery', [
+            'service' => $service->id,
+            'subject' => 'guardian:'.$guardian->id,
+        ]))
+            ->assertOk()
+            ->assertSee('از گیت خروج ارجاع داده شد')
+            ->assertSee('Maryam Karimi');
+    }
+
+    public function test_invalid_handoff_subject_is_ignored_and_the_gate_stays_on_the_scan_prompt(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+
+        $this->actingAs($operator);
+
+        $this->get(route('distribution-operator.gates.delivery', [
+            'service' => $service->id,
+            'subject' => 'person:not-a-number',
+        ]))
+            ->assertOk()
+            ->assertDontSee('از گیت خروج ارجاع داده شد')
+            ->assertSee('دوربین را فعال کنید');
     }
 
     /**

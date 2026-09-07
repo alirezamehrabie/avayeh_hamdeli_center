@@ -405,6 +405,7 @@
                 {{-- Right: delivered items to verify + finalize exit --}}
                 @php($deliveredItems = $this->deliveredItems)
                 @php($finalizedItems = $this->finalizedItems)
+                @php($pendingItems = $this->pendingItems)
                 {{-- All selection interactions below are pure Alpine: ticking is instant and never
                      waits for a Livewire round-trip. selectedItems syncs to the server lazily and is
                      passed explicitly to finalizeExit so the confirm click costs a single request. --}}
@@ -463,6 +464,50 @@
                             </span>
                         @endif
                     </div>
+
+                    {{-- Undelivered Entry Gate authorizations: they are not finalizable, but they must
+                         not slip past the exit unnoticed. Surface them and hand the operator off to the
+                         Delivery Gate for the same subject, or point at the Entry Gate for revocation. --}}
+                    @if($lastScanResult && $pendingItems->isNotEmpty())
+                        @php($handoffSubject = ($scannedSubjectType === \App\Models\QrIdentity::SUBJECT_GUARDIAN ? 'guardian:'.$scannedGuardianId : 'person:'.$scannedPersonId))
+                        <div class="rounded-2xl border border-rose-300 bg-rose-50 p-4">
+                            <p class="inline-flex items-center gap-1.5 text-sm font-bold text-rose-700">
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.3 3.86l-8 13.9A2 2 0 004 21h16a2 2 0 001.7-3.24l-8-13.9a2 2 0 00-3.4 0z"/></svg>
+                                {{ $pendingItems->count() }} قلم مجاز از گیت ورود هنوز در گیت تحویل تأیید نشده است
+                            </p>
+                            <p class="mt-1 text-xs font-semibold leading-5 text-rose-600">
+                                تکلیف این اقلام را روشن کنید: یا در گیت تحویل تحویلشان را تأیید کنید، یا در صورت عدم نیاز، اپراتور گیت ورود مجوزشان را از این فرد حذف کند تا در گیت خروج به مشکل برنخورید.
+                            </p>
+                            <div class="mt-3 space-y-2">
+                                @foreach($pendingItems as $item)
+                                    @php($category = $item->serviceCategory)
+                                    <div
+                                        wire:key="exit-gate-pending-{{ $item->id }}"
+                                        class="flex items-center justify-between gap-3 rounded-xl border border-rose-200 bg-white px-3 py-2.5"
+                                    >
+                                        <span class="flex min-w-0 items-center gap-2.5">
+                                            <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 border-rose-300 bg-rose-50 text-[11px] font-black text-rose-500">؟</span>
+                                            <span class="flex min-w-0 flex-col">
+                                                <span class="truncate text-sm font-bold text-slate-800">{{ $category?->name ?? '-' }}</span>
+                                                <span class="text-[11px] font-semibold text-slate-400" dir="ltr">{{ $category?->code ?? '-' }}</span>
+                                            </span>
+                                        </span>
+                                        @if(auth()->user()->can('access-distribution-delivery-gate'))
+                                            <a
+                                                href="{{ route('distribution-operator.gates.delivery', ['service' => $selectedService->id, 'subject' => $handoffSubject]) }}"
+                                                class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-rose-600 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-rose-700"
+                                            >
+                                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m7-7l-7 7 7 7"/></svg>
+                                                تأیید در گیت تحویل
+                                            </a>
+                                        @else
+                                            <span class="shrink-0 rounded-full bg-rose-100 px-2.5 py-1 text-[11px] font-bold text-rose-700">هماهنگ با اپراتور گیت تحویل</span>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
 
                     @if(! $lastScanResult)
                         <div class="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center">

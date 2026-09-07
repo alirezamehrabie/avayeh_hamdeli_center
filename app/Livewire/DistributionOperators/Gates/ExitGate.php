@@ -85,21 +85,30 @@ class ExitGate extends AbstractGateComponent
     {
         $delivered = $this->deliveredItems->count();
         $finalized = $this->finalizedItems->count();
+        $pending = $this->pendingItems->count();
         $prefix = $source === 'manual' ? 'به‌صورت دستی انتخاب شد. ' : '';
 
+        // Authorizations that were never ticked at the Delivery Gate must be called out here too,
+        // otherwise the operator would treat the finalize checklist as the whole story.
+        $warning = $pending > 0
+            ? " هشدار: {$pending} قلم مجاز از گیت ورود هنوز در گیت تحویل تأیید نشده است."
+            : '';
+
         if ($delivered === 0 && $finalized > 0) {
-            return "{$prefix}این {$subjectLabel} پیش‌تر از گیت خروج تأیید شده است؛ {$finalized} قلم به‌صورت نهایی ثبت شده است.";
+            return "{$prefix}این {$subjectLabel} پیش‌تر از گیت خروج تأیید شده است؛ {$finalized} قلم به‌صورت نهایی ثبت شده است.{$warning}";
         }
 
         if ($delivered === 0) {
-            return "برای این {$subjectLabel} قلم تحویل‌شده‌ای برای این خدمت ثبت نشده است.";
+            return $pending > 0
+                ? "برای این {$subjectLabel} قلم تحویل‌شده‌ای ثبت نشده است؛ {$pending} قلم مجاز از گیت ورود هنوز در گیت تحویل تأیید نشده است."
+                : "برای این {$subjectLabel} قلم تحویل‌شده‌ای برای این خدمت ثبت نشده است.";
         }
 
         if ($isDuplicate) {
-            return "این {$subjectLabel} هم‌اکنون انتخاب شده است؛ {$delivered} قلم آماده تأیید خروج است.";
+            return "این {$subjectLabel} هم‌اکنون انتخاب شده است؛ {$delivered} قلم آماده تأیید خروج است.{$warning}";
         }
 
-        return "{$prefix}{$delivered} قلم تحویل‌شده نمایش داده شد. اطلاعات را بررسی و خروج را تأیید کنید.";
+        return "{$prefix}{$delivered} قلم تحویل‌شده نمایش داده شد. اطلاعات را بررسی و خروج را تأیید کنید.{$warning}";
     }
 
     /**
@@ -334,6 +343,17 @@ class ExitGate extends AbstractGateComponent
     public function getFinalizedItemsProperty(): Collection
     {
         return $this->subjectItemsByStatus(GateEntryAssignment::STATUS_FINALIZED);
+    }
+
+    /**
+     * Items authorized at the Entry Gate that were never ticked at the Delivery Gate. They are not
+     * finalizable, but they must not stay invisible here: the operator either confirms them at the
+     * Delivery Gate (the view offers a handoff link that lands on this same subject) or, when the
+     * category is not needed, has the Entry Gate revoke the authorization for this subject.
+     */
+    public function getPendingItemsProperty(): Collection
+    {
+        return $this->subjectItemsByStatus(GateEntryAssignment::STATUS_PENDING);
     }
 
     public function render()
