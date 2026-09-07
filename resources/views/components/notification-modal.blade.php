@@ -120,37 +120,40 @@
         class="fixed bottom-5 left-4 right-4 z-[110] sm:left-6 sm:right-auto sm:w-full sm:max-w-sm"
         style="display: none;"
     >
-        <div class="flex items-start gap-3 rounded-2xl border bg-white px-4 py-3 shadow-xl" :class="typeClasses(toast.type).toast">
-            <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" :class="typeClasses(toast.type).iconWrapper">
+        {{-- config.solid renders a fully-filled card (used by the delivery gate's success toast);
+             without it every existing toast keeps its current white look byte-for-byte. --}}
+        <div class="flex items-start gap-3 rounded-2xl border px-4 py-3 shadow-xl" :class="toast.solid ? 'border-emerald-500 bg-emerald-600 ring-1 ring-emerald-400/50' : 'bg-white ' + typeClasses(toast.type).toast">
+            <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" :class="toast.solid ? 'bg-white/20' : typeClasses(toast.type).iconWrapper">
                 <template x-if="toast.icon === 'success'">
-                    <svg class="h-5 w-5" :class="typeClasses(toast.type).icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="h-5 w-5" :class="toast.solid ? 'text-white' : typeClasses(toast.type).icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
                 </template>
                 <template x-if="toast.icon === 'warning'">
-                    <svg class="h-5 w-5" :class="typeClasses(toast.type).icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="h-5 w-5" :class="toast.solid ? 'text-white' : typeClasses(toast.type).icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86l-7.5 13A1 1 0 003.66 18h16.68a1 1 0 00.87-1.5l-7.5-13a1 1 0 00-1.74 0z" />
                     </svg>
                 </template>
                 <template x-if="toast.icon === 'error'">
-                    <svg class="h-5 w-5" :class="typeClasses(toast.type).icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="h-5 w-5" :class="toast.solid ? 'text-white' : typeClasses(toast.type).icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </template>
                 <template x-if="toast.icon === 'info'">
-                    <svg class="h-5 w-5" :class="typeClasses(toast.type).icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="h-5 w-5" :class="toast.solid ? 'text-white' : typeClasses(toast.type).icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </template>
             </span>
             <div class="min-w-0 flex-1">
-                <p class="text-sm font-black text-slate-900" x-text="toast.title"></p>
-                <p class="mt-1 text-xs font-semibold leading-5 text-slate-600" x-text="toast.message"></p>
+                <p class="text-sm font-black" :class="toast.solid ? 'text-white' : 'text-slate-900'" x-text="toast.title"></p>
+                <p class="mt-1 text-xs font-semibold leading-5" :class="toast.solid ? 'text-emerald-50' : 'text-slate-600'" x-text="toast.message"></p>
             </div>
             <button
                 type="button"
                 @click="closeToast()"
-                class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition"
+                :class="toast.solid ? 'text-emerald-100 hover:bg-white/10 hover:text-white' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'"
                 aria-label="بستن"
             >
                 <span class="text-lg leading-none">&times;</span>
@@ -181,6 +184,7 @@
                         title: '',
                         message: '',
                         icon: 'success',
+                        solid: false,
                         timeout: null,
                     },
                     open(config) {
@@ -204,6 +208,7 @@
                             title: config.title || this.defaultTitle(type),
                             message: config.message || '',
                             icon: config.icon || type,
+                            solid: config.solid === true,
                             timeout: null,
                         };
 

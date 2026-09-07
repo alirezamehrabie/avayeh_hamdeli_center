@@ -92,11 +92,6 @@ class DeliveryGate extends AbstractGateComponent
         $this->dispatch('delivery-gate-subject-loaded');
     }
 
-    protected function onResumeScanning(): void
-    {
-        $this->dispatch('delivery-confirmed');
-    }
-
     protected function resetGateSpecificState(): void
     {
         $this->deliveredCategoryIds = [];
@@ -229,6 +224,9 @@ class DeliveryGate extends AbstractGateComponent
      * Each item is already persisted the moment it is toggled (see toggleDelivered),
      * so confirming has nothing left to write — it simply closes out this subject and
      * re-arms the scanner, i.e. the exact same workflow as the "next scan" button.
+     * The success toast is earned only when the subject actually has delivered rows:
+     * the button is gated client-side, but the DB is the source of truth (a revert
+     * recorded at another station could leave nothing delivered at this moment).
      */
     public function confirmDelivery(): void
     {
@@ -236,6 +234,14 @@ class DeliveryGate extends AbstractGateComponent
 
         if (! $this->selectedService || ! $this->hasScannedSubject()) {
             return;
+        }
+
+        $deliveredCount = $this->subjectAssignmentQuery()
+            ->where('status', GateEntryAssignment::STATUS_DELIVERED)
+            ->count();
+
+        if ($deliveredCount > 0) {
+            $this->dispatch('delivery-confirmed', count: $deliveredCount);
         }
 
         $this->resumeScanning();

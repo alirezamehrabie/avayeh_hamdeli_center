@@ -625,6 +625,44 @@ class DistributionOperatorDeliveryGateTest extends TestCase
         $this->assertSame(2, substr_count($component->html(), 'تحویل به غیر از مددجو'));
     }
 
+    public function test_success_toast_fires_only_on_confirm_with_delivered_items(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Food basket', $operator);
+
+        $person = Person::query()->create([
+            'first_name' => 'Ali',
+            'last_name' => 'Ahmadi',
+            'national_id' => '1234567890',
+            'person_code' => '14001',
+        ]);
+
+        $this->assign($service, $category, $person, $operator);
+        $token = $this->issueToken($person, $operator);
+
+        $this->actingAs($operator);
+
+        $component = Livewire::test(DeliveryGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token);
+
+        // Nothing delivered yet: confirming must not claim a delivery happened.
+        $component->call('confirmDelivery')
+            ->assertNotDispatched('delivery-confirmed');
+
+        // Deliver one item, then use the plain "next scan" button: it never toasts either.
+        $component->call('resolveScannedQr', $token)
+            ->call('toggleDelivered', $category->id, 'deliver')
+            ->call('resumeScanning')
+            ->assertNotDispatched('delivery-confirmed');
+
+        // Confirming with a delivered row toasts, carrying the count for the message.
+        $component->call('resolveScannedQr', $token)
+            ->call('confirmDelivery')
+            ->assertDispatched('delivery-confirmed', count: 1);
+    }
+
     /**
      * @return array{0: User}
      */

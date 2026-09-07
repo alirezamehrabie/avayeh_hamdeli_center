@@ -160,7 +160,7 @@
                 x-on:delivery-gate-subject-loaded.window="itemsSheetOpen = true"
                 x-on:keydown.window.ctrl.enter.prevent="triggerNextScanShortcut()"
                 x-on:keydown.window.meta.enter.prevent="triggerNextScanShortcut()"
-                x-on:delivery-confirmed.window="window.dispatchEvent(new CustomEvent('open-notification-toast', { detail: { config: { type: 'success', title: 'تحویل انجام شد', message: '', icon: 'success', duration: 4200 } } }))"
+                x-on:delivery-confirmed.window="window.dispatchEvent(new CustomEvent('open-notification-toast', { detail: { config: { type: 'success', solid: true, title: 'تحویل انجام شد', message: ($event.detail.count ?? 0) + ' قلم برای این فرد تحویل ثبت شد', icon: 'success', duration: 3700 } } }))"
                 class="grid gap-5 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] {{ ($lastScanResult && $authorizedItems->isNotEmpty()) ? 'pb-24 sm:pb-24 lg:pb-5' : '' }}"
             >
                 {{-- Left: identity (kept at the top so it stays visible at a glance) + scanner --}}
