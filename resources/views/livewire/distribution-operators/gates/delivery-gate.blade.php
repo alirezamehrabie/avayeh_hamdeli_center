@@ -346,15 +346,29 @@
                         </button>
                     </div>
 
-                    <div class="rounded-2xl border px-4 py-3 text-sm font-semibold
-                        @class([
-                            'border-amber-200 bg-amber-50 text-amber-700' => $scanStatus === 'paused' && ($lastScanResult['code_key'] ?? null) === 'duplicate',
-                            'border-emerald-200 bg-emerald-50 text-emerald-700' => $scanStatus === 'paused' && ($lastScanResult['code_key'] ?? null) !== 'duplicate',
-                            'border-rose-200 bg-rose-50 text-rose-700' => $scanStatus === 'scan_error',
-                            'border-slate-200 bg-slate-50 text-slate-600' => ! in_array($scanStatus, ['paused', 'scan_error'], true),
-                        ])">
-                        {{ $scanMessage }}
-                    </div>
+                    {{-- Scan feedback (success / duplicate / error) stays a prominent banner; the standing
+                         camera guidance is a quiet caption so it doesn't compete with the scanner on mobile. --}}
+                    @if(in_array($scanStatus, ['paused', 'scan_error'], true))
+                        <div class="rounded-2xl border px-4 py-3 text-sm font-semibold
+                            @class([
+                                'border-amber-200 bg-amber-50 text-amber-700' => ($lastScanResult['code_key'] ?? null) === 'duplicate',
+                                'border-emerald-200 bg-emerald-50 text-emerald-700' => ($lastScanResult['code_key'] ?? null) !== 'duplicate',
+                                'border-rose-200 bg-rose-50 text-rose-700' => $scanStatus === 'scan_error',
+                            ])">
+                            {{ $scanMessage }}
+                        </div>
+                    @else
+                        <p class="flex items-center justify-center gap-1.5 px-1 text-center text-xs font-medium leading-5 text-slate-400">
+                            @if($scanStatus === 'scanning')
+                                <span class="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-emerald-400"></span>
+                            @else
+                                <svg class="h-3.5 w-3.5 shrink-0 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V6a2 2 0 012-2h2M16 4h2a2 2 0 012 2v2M20 16v2a2 2 0 01-2 2h-2M8 20H6a2 2 0 01-2-2v-2M4 12h16"/>
+                                </svg>
+                            @endif
+                            <span>{{ $scanMessage }}</span>
+                        </p>
+                    @endif
 
                     {{-- Manual fallback: when the camera fails or a QR is damaged --}}
                     <div class="rounded-2xl border border-slate-200 bg-white">
