@@ -103,6 +103,20 @@ class ServiceCategoryBreakdownExportTest extends TestCase
             ->assertSee('exportCategoryBreakdownToExcel', false);
     }
 
+    public function test_modal_rows_show_remaining_against_category_total(): void
+    {
+        [$user, $service] = $this->serviceWithDeliveries();
+
+        $this->actingAs($user);
+
+        $packLabel = Service::unitOptions()['pack'] ?? 'pack';
+
+        // Pack category: quantity 30, delivered 2 + 2 = 4 → 26 remaining; no record-count prefix.
+        Livewire::test(ServiceReports::class, ['selectedServiceId' => $service->id])
+            ->assertSee('26 '.$packLabel.' باقی‌مانده از 30', false)
+            ->assertDontSee('رکورد تحویل |', false);
+    }
+
     /**
      * Three deliveries across two categories: the pack category is delivered
      * twice (2 + 2 = 4) and the kg category once (5).

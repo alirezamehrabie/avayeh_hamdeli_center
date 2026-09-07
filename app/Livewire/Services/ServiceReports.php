@@ -248,6 +248,7 @@ class ServiceReports extends Component
                 $first = $deliveries->first();
                 $unitKey = $first->serviceCategory?->unit ?: null;
                 $total = $deliveries->sum(fn ($d) => (float) $d->delivered_quantity);
+                $categoryQuantity = $first->serviceCategory ? (float) $first->serviceCategory->quantity : null;
 
                 return [
                     'category' => $first->serviceCategory?->name ?: '-',
@@ -255,6 +256,12 @@ class ServiceReports extends Component
                     'total' => Service::formatQuantityForUnit($total, $unitKey),
                     'totalRaw' => $total,
                     'recordCount' => $deliveries->count(),
+                    'remaining' => $categoryQuantity === null
+                        ? null
+                        : Service::formatQuantityForUnit(max(0, $categoryQuantity - $total), $unitKey),
+                    'categoryTotal' => $categoryQuantity === null
+                        ? null
+                        : Service::formatQuantityForUnit($categoryQuantity, $unitKey),
                 ];
             })
             ->values();

@@ -460,8 +460,8 @@
                                                         </span>
                                                         <div class="min-w-0 flex-1">
                                                             <p class="truncate text-sm font-bold text-slate-800">{{ $row['category'] }}</p>
-                                                            @if(($row['recordCount'] ?? 1) > 1)
-                                                                <p class="mt-0.5 text-[11px] text-slate-400">{{ $row['recordCount'] }} رکورد تحویل</p>
+                                                            @if(($row['remaining'] ?? null) !== null)
+                                                                <p class="mt-0.5 text-[11px] text-slate-400">{{ $row['remaining'].(($row['unitLabel'] ?? '-') !== '-' ? ' '.$row['unitLabel'] : '').' باقی‌مانده از '.$row['categoryTotal'] }}</p>
                                                             @endif
                                                         </div>
                                                         <span class="shrink-0 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-black text-indigo-700">
