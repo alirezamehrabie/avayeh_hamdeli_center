@@ -483,13 +483,16 @@ class DistributionOperatorDeliveryGateTest extends TestCase
 
         // The fixed sheet header carries the registration-form identity facts: name + father,
         // person code + social worker, and the filled-in gender/age chips. The education level
-        // was deliberately dropped from the compact header.
+        // was deliberately dropped from the compact header. The standalone card above the scanner
+        // shows the father directly under the name and no longer repeats the national id.
         Livewire::test(DeliveryGate::class)
             ->call('selectService', $service->id)
             ->call('resolveScannedQr', $token)
             ->assertSee('پدر: Reza')
+            ->assertSee('نام پدر: Reza')
             ->assertSee('کد مددجو')
             ->assertSee('Zahra Moradi')
+            ->assertDontSee('1234567890')
             ->assertDontSee('دیپلم')
             ->assertSee('آقا / پسر');
     }

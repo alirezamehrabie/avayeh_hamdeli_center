@@ -222,25 +222,34 @@
                                                 <span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">تکراری</span>
                                             @endif
                                         </div>
+                                        {{-- Father directly under the full name (registration-form order);
+                                             national id dropped — the person code already identifies. --}}
+                                        @if(! empty($lastScanResult['identity']['father_name']))
+                                            <p class="mt-0.5 truncate text-[11px] font-semibold text-slate-400">نام پدر: {{ $lastScanResult['identity']['father_name'] }}</p>
+                                        @endif
                                         <p class="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] font-semibold text-slate-500">
                                             <span>{{ $lastScanResult['code_label'] ?? 'کد' }}: <span class="font-bold text-slate-700" dir="ltr">{{ $lastScanResult['code'] ?? '-' }}</span></span>
                                             <span class="text-slate-300">·</span>
-                                            <span>کد ملی: <span class="font-bold text-slate-700" dir="ltr">{{ $lastScanResult['national_id'] ?? '-' }}</span></span>
+                                            <span class="inline-flex min-w-0 items-center gap-1 font-bold text-sky-700">
+                                                <svg class="h-3 w-3 shrink-0 text-sky-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21a8 8 0 0116 0"/></svg>
+                                                مددکار: <span class="min-w-0 truncate">{{ $lastScanResult['social_worker'] ?: '-' }}</span>
+                                            </span>
                                         </p>
                                     </div>
                                 </div>
 
-                                {{-- Worker (sky, matching the sheet header) + demographics on one line. --}}
-                                <div class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 pt-2 text-[11px] font-bold">
-                                    <span class="inline-flex min-w-0 items-center gap-1 text-sky-700">
-                                        <svg class="h-3.5 w-3.5 shrink-0 text-sky-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21a8 8 0 0116 0"/></svg>
-                                        مددکار: <span class="min-w-0 truncate">{{ $lastScanResult['social_worker'] ?: '-' }}</span>
-                                    </span>
-                                    @foreach($lastScanResult['details'] as $detail)
-                                        <span class="text-slate-300">·</span>
-                                        <span class="text-slate-500">{{ $detail['label'] }}: <span class="text-slate-700">{{ $detail['value'] }}</span></span>
-                                    @endforeach
-                                </div>
+                                {{-- Demographics under a hairline; the father row moved up with the name. --}}
+                                @php($demographics = collect($lastScanResult['details'] ?? [])->reject(fn ($detail) => ($detail['label'] ?? '') === 'نام پدر'))
+                                @if($demographics->isNotEmpty())
+                                    <div class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 pt-2 text-[11px] font-bold">
+                                        @foreach($demographics as $detail)
+                                            <span class="text-slate-500">{{ $detail['label'] }}: <span class="text-slate-700">{{ $detail['value'] }}</span></span>
+                                            @if(! $loop->last)
+                                                <span class="text-slate-300">·</span>
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                @endif
 
                                 @if(! empty($lastScanResult['proxy_recipient']['label']))
                                     <div class="mt-2 flex items-center justify-between gap-2 rounded-xl border border-amber-300 bg-amber-50 px-2.5 py-1.5">
