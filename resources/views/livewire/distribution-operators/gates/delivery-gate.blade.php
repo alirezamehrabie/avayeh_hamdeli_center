@@ -144,15 +144,19 @@
         @else
             {{-- Step 2: Scan + deliver --}}
             <div
-                x-data="idCardScanner({
-                    resolveScan: (payload) => $wire.resolveScannedQr(payload),
-                    successSoundUrl: '/sounds/scan-card.wav',
-                    enableResultBanner: false,
-                    autoStart: true,
-                    autoResumeAfterSuccess: false,
-                })"
+                x-data="{
+                    ...idCardScanner({
+                        resolveScan: (payload) => $wire.resolveScannedQr(payload),
+                        successSoundUrl: '/sounds/scan-card.wav',
+                        enableResultBanner: false,
+                        autoStart: true,
+                        autoResumeAfterSuccess: false,
+                    }),
+                    itemsSheetOpen: false,
+                }"
                 x-init="init()"
-                x-on:id-card-scanner-resume.window="resumeFromWire()"
+                x-on:id-card-scanner-resume.window="resumeFromWire(); itemsSheetOpen = false"
+                x-on:delivery-gate-subject-loaded.window="itemsSheetOpen = true"
                 x-on:keydown.window.ctrl.enter.prevent="triggerNextScanShortcut()"
                 x-on:keydown.window.meta.enter.prevent="triggerNextScanShortcut()"
                 x-on:delivery-confirmed.window="window.dispatchEvent(new CustomEvent('open-notification-toast', { detail: { config: { type: 'success', title: 'تحویل انجام شد', message: '', icon: 'success', duration: 4200 } } }))"
@@ -420,155 +424,222 @@
                     x-on:delivery-gate-undeliver-confirmed.window="undeliverConfirmed($event.detail.id)"
                     wire:key="delivery-column-{{ $scannedPersonId ?? 0 }}-{{ $scannedGuardianId ?? 0 }}"
                 >
-                    <div class="flex items-center justify-between gap-2">
-                        <h2 class="text-sm font-extrabold text-slate-800">اقلام مجاز برای تحویل</h2>
-                        @if($lastScanResult && $authorizedItems->isNotEmpty())
-                            @php($finalizedCount = count($finalizedCategoryIds))
-                            <div class="flex shrink-0 items-center gap-1.5">
-                                <span class="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 ring-1 ring-inset ring-amber-200">
-                                    <span x-text="{{ $authorizedItems->count() }} - deliveredCount - {{ $finalizedCount }}">{{ $authorizedItems->count() - count($deliveredCategoryIds) - $finalizedCount }}</span>
-                                    باقی‌مانده
+                    {{-- Mobile-only backdrop: tapping it parks the sheet off-screen again. --}}
+                    <div
+                        x-cloak
+                        x-show="itemsSheetOpen"
+                        @click="itemsSheetOpen = false"
+                        @touchmove.prevent
+                        x-transition:enter="transition-opacity ease-out duration-200"
+                        x-transition:enter-start="opacity-0"
+                        x-transition:enter-end="opacity-100"
+                        x-transition:leave="transition-opacity ease-in duration-150"
+                        x-transition:leave-start="opacity-100"
+                        x-transition:leave-end="opacity-0"
+                        class="fixed inset-0 z-30 bg-slate-950/40 lg:hidden"
+                    ></div>
+
+                    {{-- The items panel: a plain column on desktop, a bottom sheet on mobile.
+                         translate-y-full parks it below the viewport while closed; the lg:* classes
+                         reset every sheet property so the desktop grid layout stays untouched. --}}
+                    <div
+                        :class="itemsSheetOpen ? 'translate-y-0' : 'translate-y-full lg:translate-y-0'"
+                        class="fixed inset-x-0 bottom-0 z-40 flex max-h-[85svh] min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain rounded-t-3xl border-t border-slate-200 bg-white p-4 pb-[calc(1rem_+_env(safe-area-inset-bottom))] shadow-2xl transition-transform duration-300 ease-out lg:static lg:z-auto lg:max-h-none lg:translate-y-0 lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none"
+                    >
+                        {{-- Mobile sheet chrome: grabber handle, title + live count, close. --}}
+                        <div class="sticky top-0 z-10 bg-white lg:hidden">
+                            <div class="mx-auto h-1.5 w-12 rounded-full bg-slate-200"></div>
+                            <div class="mt-3 flex items-center justify-between gap-2">
+                                <span class="flex min-w-0 items-center gap-2">
+                                    <span class="truncate text-sm font-extrabold text-slate-800">اقلام مجاز برای تحویل</span>
+                                    @if($lastScanResult && $authorizedItems->isNotEmpty())
+                                        <span class="shrink-0 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                                            <span x-text="deliveredCount">{{ count($deliveredCategoryIds) }}</span>/{{ $authorizedItems->count() }} تحویل شد
+                                        </span>
+                                    @endif
                                 </span>
-                                <span class="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 ring-1 ring-inset ring-emerald-200">
-                                    <span x-text="deliveredCount">{{ count($deliveredCategoryIds) }}</span> از {{ $authorizedItems->count() }} تحویل شد
-                                </span>
+                                <button
+                                    type="button"
+                                    @click="itemsSheetOpen = false"
+                                    class="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
+                                >
+                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+                                    بستن
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Desktop header --}}
+                        <div class="flex items-center justify-between gap-2 max-lg:hidden">
+                            <h2 class="text-sm font-extrabold text-slate-800">اقلام مجاز برای تحویل</h2>
+                            @if($lastScanResult && $authorizedItems->isNotEmpty())
+                                @php($finalizedCount = count($finalizedCategoryIds))
+                                <div class="flex shrink-0 items-center gap-1.5">
+                                    <span class="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-700 ring-1 ring-inset ring-amber-200">
+                                        <span x-text="{{ $authorizedItems->count() }} - deliveredCount - {{ $finalizedCount }}">{{ $authorizedItems->count() - count($deliveredCategoryIds) - $finalizedCount }}</span>
+                                        باقی‌مانده
+                                    </span>
+                                    <span class="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                                        <span x-text="deliveredCount">{{ count($deliveredCategoryIds) }}</span> از {{ $authorizedItems->count() }} تحویل شد
+                                    </span>
+                                </div>
+                            @endif
+                        </div>
+
+                        @if(! $lastScanResult)
+                            <div class="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center">
+                                <p class="text-sm font-bold text-slate-600">برای مشاهده اقلام مجاز، ابتدا QR فرد را اسکن کنید.</p>
+                            </div>
+                        @elseif($authorizedItems->isEmpty())
+                            <div class="rounded-2xl border border-dashed border-amber-300 bg-amber-50 px-5 py-8 text-center">
+                                <p class="text-sm font-bold text-amber-700">برای این فرد در گیت ورود قلمی برای این خدمت ثبت نشده است.</p>
+                                <p class="mt-1 text-xs font-semibold text-amber-600">فقط اقلام تأییدشده در گیت ورود قابل تحویل هستند.</p>
+                            </div>
+                        @else
+                            <div class="space-y-2">
+                                @foreach($authorizedItems as $item)
+                                    @php($category = $item->serviceCategory)
+                                    @php($cid = (int) $item->service_category_id)
+                                    @php($isFinalized = in_array($item->service_category_id, $finalizedCategoryIds, true))
+                                    @if($isFinalized)
+                                        {{-- Locked: already finalized at the Exit Gate — grayed out and clearly out of play. --}}
+                                        <div
+                                            wire:key="delivery-gate-item-{{ $item->id }}"
+                                            class="flex w-full cursor-not-allowed select-none items-center justify-between gap-2 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-100/60 px-3 py-2.5 text-right opacity-75 sm:gap-3 sm:px-4 sm:py-3"
+                                        >
+                                            <span class="flex min-w-0 items-center gap-2.5 sm:gap-3">
+                                                <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-400">
+                                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                                </span>
+                                                <span class="flex min-w-0 flex-col">
+                                                    <span class="truncate text-sm font-bold text-slate-500">{{ $category?->name ?? '-' }}</span>
+                                                    <span class="truncate text-[11px] font-semibold text-slate-400" dir="ltr">{{ $category?->code ?? '-' }}</span>
+                                                </span>
+                                            </span>
+                                            <span class="flex shrink-0 items-center gap-1.5 sm:gap-2">
+                                                @if($category?->unitLabel)
+                                                    <span class="hidden rounded-md bg-white px-2 py-0.5 text-[10px] font-bold text-slate-400 sm:inline-block">{{ $category->unitLabel }}</span>
+                                                @endif
+                                                <span class="rounded-full bg-slate-200 px-2.5 py-0.5 text-[11px] font-bold text-slate-600">خروج نهایی شده</span>
+                                            </span>
+                                        </div>
+                                    @else
+                                        {{-- Toggleable: the whole row is the only tap target; checkbox + pill are pure state mirrors.
+                                             State is client-driven for instant feedback; @click persists in the background.
+                                             Clearing a tick routes through a confirmation modal first (see deliveryItems).
+                                             Mobile keeps every row single-line: name truncates and the text pill yields to a dot. --}}
+                                        <button
+                                            type="button"
+                                            @click="toggle({{ $cid }}, @js($category?->name ?? ''))"
+                                            wire:key="delivery-gate-item-{{ $item->id }}"
+                                            class="flex w-full items-center justify-between gap-2 rounded-2xl border-2 px-3 py-2.5 text-right transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-1 sm:gap-3 sm:px-4 sm:py-3"
+                                            :class="isDelivered({{ $cid }}) ? 'border-emerald-500 bg-emerald-50' : 'border-slate-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/40'"
+                                            :aria-pressed="isDelivered({{ $cid }})"
+                                        >
+                                            <span class="flex min-w-0 items-center gap-2.5 sm:gap-3">
+                                                <span
+                                                    class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 shadow-sm transition"
+                                                    :class="[ isDelivered({{ $cid }}) ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 bg-white', isSaving({{ $cid }}) ? 'animate-pulse' : '' ]"
+                                                >
+                                                    <svg x-show="isDelivered({{ $cid }})" x-cloak class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 111.42-1.42l2.79 2.79 6.79-6.79a1 1 0 011.42 0z" clip-rule="evenodd" />
+                                                    </svg>
+                                                </span>
+                                                <span class="flex min-w-0 flex-col">
+                                                    <span class="truncate text-sm font-extrabold text-slate-900">{{ $category?->name ?? '-' }}</span>
+                                                    <span class="truncate text-[11px] font-semibold text-slate-400" dir="ltr">{{ $category?->code ?? '-' }}</span>
+                                                </span>
+                                            </span>
+                                            <span class="flex shrink-0 items-center gap-1.5 sm:gap-2">
+                                                @if($category?->unitLabel)
+                                                    <span class="hidden rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 sm:inline-block">{{ $category->unitLabel }}</span>
+                                                @endif
+                                                <span
+                                                    class="hidden rounded-full px-3 py-1 text-[11px] font-black transition sm:block"
+                                                    :class="isDelivered({{ $cid }}) ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500'"
+                                                    x-text="isDelivered({{ $cid }}) ? 'تحویل شد' : 'در انتظار تحویل'"
+                                                >{{ in_array($item->service_category_id, $deliveredCategoryIds, true) ? 'تحویل شد' : 'در انتظار تحویل' }}</span>
+                                                <span
+                                                    class="h-2.5 w-2.5 shrink-0 rounded-full transition sm:hidden"
+                                                    :class="isDelivered({{ $cid }}) ? 'bg-emerald-600' : 'bg-slate-300'"
+                                                ></span>
+                                            </span>
+                                        </button>
+                                    @endif
+                                @endforeach
+                            </div>
+
+                            {{-- Confirm + advance: deliveries are already saved per item on toggle, so this
+                                 closes out the current subject and jumps to the next scan in one tap. --}}
+                            {{-- Inside the mobile sheet this floats above the home-indicator safe area;
+                                 on desktop it keeps its plain page-sticky behavior. --}}
+                            <div class="sticky bottom-[env(safe-area-inset-bottom)] mt-1 -mx-1 bg-gradient-to-t from-white via-white to-transparent px-1 pb-1 pt-3 lg:bottom-0">
+                                <button
+                                    type="button"
+                                    wire:click="confirmDelivery"
+                                    wire:loading.attr="disabled"
+                                    wire:target="confirmDelivery"
+                                    title="تأیید تحویل و اسکن نفر بعدی (Ctrl + Enter)"
+                                    class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3.5 text-base font-black text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.99] disabled:opacity-75 disabled:cursor-not-allowed"
+                                    :class="nextScanShortcutActive ? 'ring-2 ring-emerald-300 ring-offset-1' : ''"
+                                >
+                                    {{-- Loading spinner --}}
+                                    <svg
+                                        wire:loading
+                                        wire:target="confirmDelivery"
+                                        class="h-5 w-5 animate-spin"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                    >
+                                        <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+                                        <path d="M12 2a10 10 0 0110 10" stroke-linecap="round"></path>
+                                    </svg>
+
+                                    {{-- Checkmark icon (hidden during loading) --}}
+                                    <svg
+                                        wire:loading.remove
+                                        wire:target="confirmDelivery"
+                                        class="h-5 w-5"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                    >
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                    </svg>
+
+                                    {{-- Text (hidden during loading) --}}
+                                    <div wire:loading.remove wire:target="confirmDelivery" class="flex items-center gap-2">
+                                        <span>تأیید تحویل و نفر بعدی</span>
+                                        <span class="rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold" dir="ltr"><span x-text="deliveredCount">{{ count($deliveredCategoryIds) }}</span>/{{ $authorizedItems->count() }}</span>
+                                    </div>
+
+                                    {{-- Loading text --}}
+                                    <span wire:loading wire:target="confirmDelivery">در حال پردازش...</span>
+                                </button>
+                                <p class="mt-1.5 text-center text-[11px] font-semibold text-slate-400">اقلام علامت‌خورده ثبت شده‌اند؛ با تأیید به نفر بعدی می‌روید.</p>
                             </div>
                         @endif
                     </div>
 
-                    @if(! $lastScanResult)
-                        <div class="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center">
-                            <p class="text-sm font-bold text-slate-600">برای مشاهده اقلام مجاز، ابتدا QR فرد را اسکن کنید.</p>
-                        </div>
-                    @elseif($authorizedItems->isEmpty())
-                        <div class="rounded-2xl border border-dashed border-amber-300 bg-amber-50 px-5 py-8 text-center">
-                            <p class="text-sm font-bold text-amber-700">برای این فرد در گیت ورود قلمی برای این خدمت ثبت نشده است.</p>
-                            <p class="mt-1 text-xs font-semibold text-amber-600">فقط اقلام تأییدشده در گیت ورود قابل تحویل هستند.</p>
-                        </div>
-                    @else
-                        <div class="space-y-2">
-                            @foreach($authorizedItems as $item)
-                                @php($category = $item->serviceCategory)
-                                @php($cid = (int) $item->service_category_id)
-                                @php($isFinalized = in_array($item->service_category_id, $finalizedCategoryIds, true))
-                                @if($isFinalized)
-                                    {{-- Locked: already finalized at the Exit Gate — grayed out and clearly out of play. --}}
-                                    <div
-                                        wire:key="delivery-gate-item-{{ $item->id }}"
-                                        class="flex w-full cursor-not-allowed select-none items-center justify-between gap-2 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-100/60 px-3 py-2.5 text-right opacity-75 sm:gap-3 sm:px-4 sm:py-3"
-                                    >
-                                        <span class="flex min-w-0 items-center gap-2.5 sm:gap-3">
-                                            <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-400">
-                                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                                            </span>
-                                            <span class="flex min-w-0 flex-col">
-                                                <span class="truncate text-sm font-bold text-slate-500">{{ $category?->name ?? '-' }}</span>
-                                                <span class="truncate text-[11px] font-semibold text-slate-400" dir="ltr">{{ $category?->code ?? '-' }}</span>
-                                            </span>
-                                        </span>
-                                        <span class="flex shrink-0 items-center gap-1.5 sm:gap-2">
-                                            @if($category?->unitLabel)
-                                                <span class="hidden rounded-md bg-white px-2 py-0.5 text-[10px] font-bold text-slate-400 sm:inline-block">{{ $category->unitLabel }}</span>
-                                            @endif
-                                            <span class="rounded-full bg-slate-200 px-2.5 py-0.5 text-[11px] font-bold text-slate-600">خروج نهایی شده</span>
-                                        </span>
-                                    </div>
-                                @else
-                                    {{-- Toggleable: the whole row is the only tap target; checkbox + pill are pure state mirrors.
-                                         State is client-driven for instant feedback; @click persists in the background.
-                                         Clearing a tick routes through a confirmation modal first (see deliveryItems).
-                                         Mobile keeps every row single-line: name truncates and the text pill yields to a dot. --}}
-                                    <button
-                                        type="button"
-                                        @click="toggle({{ $cid }}, @js($category?->name ?? ''))"
-                                        wire:key="delivery-gate-item-{{ $item->id }}"
-                                        class="flex w-full items-center justify-between gap-2 rounded-2xl border-2 px-3 py-2.5 text-right transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-1 sm:gap-3 sm:px-4 sm:py-3"
-                                        :class="isDelivered({{ $cid }}) ? 'border-emerald-500 bg-emerald-50' : 'border-slate-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/40'"
-                                        :aria-pressed="isDelivered({{ $cid }})"
-                                    >
-                                        <span class="flex min-w-0 items-center gap-2.5 sm:gap-3">
-                                            <span
-                                                class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 shadow-sm transition"
-                                                :class="[ isDelivered({{ $cid }}) ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 bg-white', isSaving({{ $cid }}) ? 'animate-pulse' : '' ]"
-                                            >
-                                                <svg x-show="isDelivered({{ $cid }})" x-cloak class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 111.42-1.42l2.79 2.79 6.79-6.79a1 1 0 011.42 0z" clip-rule="evenodd" />
-                                                </svg>
-                                            </span>
-                                            <span class="flex min-w-0 flex-col">
-                                                <span class="truncate text-sm font-extrabold text-slate-900">{{ $category?->name ?? '-' }}</span>
-                                                <span class="truncate text-[11px] font-semibold text-slate-400" dir="ltr">{{ $category?->code ?? '-' }}</span>
-                                            </span>
-                                        </span>
-                                        <span class="flex shrink-0 items-center gap-1.5 sm:gap-2">
-                                            @if($category?->unitLabel)
-                                                <span class="hidden rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 sm:inline-block">{{ $category->unitLabel }}</span>
-                                            @endif
-                                            <span
-                                                class="hidden rounded-full px-3 py-1 text-[11px] font-black transition sm:block"
-                                                :class="isDelivered({{ $cid }}) ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500'"
-                                                x-text="isDelivered({{ $cid }}) ? 'تحویل شد' : 'در انتظار تحویل'"
-                                            >{{ in_array($item->service_category_id, $deliveredCategoryIds, true) ? 'تحویل شد' : 'در انتظار تحویل' }}</span>
-                                            <span
-                                                class="h-2.5 w-2.5 shrink-0 rounded-full transition sm:hidden"
-                                                :class="isDelivered({{ $cid }}) ? 'bg-emerald-600' : 'bg-slate-300'"
-                                            ></span>
-                                        </span>
-                                    </button>
-                                @endif
-                            @endforeach
-                        </div>
-
-                        {{-- Confirm + advance: deliveries are already saved per item on toggle, so this
-                             closes out the current subject and jumps to the next scan in one tap. --}}
-                        <div class="sticky bottom-0 mt-1 -mx-1 bg-gradient-to-t from-white via-white to-transparent px-1 pb-1 pt-3">
-                            <button
-                                type="button"
-                                wire:click="confirmDelivery"
-                                wire:loading.attr="disabled"
-                                wire:target="confirmDelivery"
-                                title="تأیید تحویل و اسکن نفر بعدی (Ctrl + Enter)"
-                                class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3.5 text-base font-black text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.99] disabled:opacity-75 disabled:cursor-not-allowed"
-                                :class="nextScanShortcutActive ? 'ring-2 ring-emerald-300 ring-offset-1' : ''"
-                            >
-                                {{-- Loading spinner --}}
-                                <svg
-                                    wire:loading
-                                    wire:target="confirmDelivery"
-                                    class="h-5 w-5 animate-spin"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                >
-                                    <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
-                                    <path d="M12 2a10 10 0 0110 10" stroke-linecap="round"></path>
-                                </svg>
-
-                                {{-- Checkmark icon (hidden during loading) --}}
-                                <svg
-                                    wire:loading.remove
-                                    wire:target="confirmDelivery"
-                                    class="h-5 w-5"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                >
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                                </svg>
-
-                                {{-- Text (hidden during loading) --}}
-                                <div wire:loading.remove wire:target="confirmDelivery" class="flex items-center gap-2">
-                                    <span>تأیید تحویل و نفر بعدی</span>
-                                    <span class="rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold" dir="ltr"><span x-text="deliveredCount">{{ count($deliveredCategoryIds) }}</span>/{{ $authorizedItems->count() }}</span>
-                                </div>
-
-                                {{-- Loading text --}}
-                                <span wire:loading wire:target="confirmDelivery">در حال پردازش...</span>
-                            </button>
-                            <p class="mt-1.5 text-center text-[11px] font-semibold text-slate-400">اقلام علامت‌خورده ثبت شده‌اند؛ با تأیید به نفر بعدی می‌روید.</p>
-                        </div>
+                    {{-- Mobile-only reopen affordance: it lives in the page flow (outside the sheet)
+                         so the operator can bring the checklist back after closing it. --}}
+                    @if($lastScanResult && $authorizedItems->isNotEmpty())
+                        <button
+                            type="button"
+                            @click="itemsSheetOpen = true"
+                            class="flex w-full items-center justify-between gap-2 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-bold text-indigo-700 transition hover:bg-indigo-100 lg:hidden"
+                        >
+                            <span class="flex items-center gap-2">
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                                اقلام مجاز برای تحویل
+                            </span>
+                            <span class="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-black text-indigo-600">
+                                <span x-text="deliveredCount">{{ count($deliveredCategoryIds) }}</span>/{{ $authorizedItems->count() }} تحویل شد
+                            </span>
+                        </button>
                     @endif
                 </div>
             </div>

@@ -87,6 +87,9 @@ class DeliveryGate extends AbstractGateComponent
     protected function onSubjectLoaded(): void
     {
         $this->loadSubjectDeliveryState();
+
+        // Open the mobile items bottom-sheet now that a subject is on screen.
+        $this->dispatch('delivery-gate-subject-loaded');
     }
 
     protected function onResumeScanning(): void

@@ -401,6 +401,38 @@ class DistributionOperatorDeliveryGateTest extends TestCase
             ->assertSee('دوربین را فعال کنید');
     }
 
+    public function test_scanning_a_subject_opens_the_mobile_items_sheet(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Food basket', $operator);
+
+        $person = Person::query()->create([
+            'first_name' => 'Ali',
+            'last_name' => 'Ahmadi',
+            'national_id' => '1234567890',
+            'person_code' => '14001',
+        ]);
+
+        $this->assign($service, $category, $person, $operator);
+
+        $token = $this->issueToken($person, $operator);
+
+        $this->actingAs($operator);
+
+        // The view listens for this event to slide the bottom sheet up on mobile.
+        Livewire::test(DeliveryGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            ->assertDispatched('delivery-gate-subject-loaded');
+
+        // Manual selection takes the same onSubjectLoaded path, so it opens the sheet too.
+        Livewire::test(DeliveryGate::class)
+            ->call('selectService', $service->id)
+            ->call('selectManualSubject', QrIdentity::SUBJECT_PERSON, $person->id)
+            ->assertDispatched('delivery-gate-subject-loaded');
+    }
+
     /**
      * @return array{0: User}
      */
