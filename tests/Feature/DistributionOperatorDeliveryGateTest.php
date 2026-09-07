@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Livewire\DistributionOperators\Gates\DeliveryGate;
+use App\Models\Education;
+use App\Models\EducationLevel;
 use App\Models\GateEntryAssignment;
 use App\Models\Guardian;
 use App\Models\Person;
@@ -10,6 +12,7 @@ use App\Models\QrIdentity;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\ServiceName;
+use App\Models\SocialWorker;
 use App\Models\User;
 use App\Services\QrIdentityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -431,6 +434,88 @@ class DistributionOperatorDeliveryGateTest extends TestCase
             ->call('selectService', $service->id)
             ->call('selectManualSubject', QrIdentity::SUBJECT_PERSON, $person->id)
             ->assertDispatched('delivery-gate-subject-loaded');
+    }
+
+    public function test_scan_surfaces_compact_identity_in_the_sheet_header(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Food basket', $operator);
+
+        $worker = SocialWorker::query()->create([
+            'first_name' => 'Zahra',
+            'last_name' => 'Moradi',
+            'is_active' => true,
+        ]);
+
+        $guardian = Guardian::query()->create([
+            'social_worker_id' => $worker->id,
+            'guardian_code' => 5566771,
+            'first_name' => 'Ali',
+            'last_name' => 'Guardian',
+        ]);
+
+        $person = Person::query()->create([
+            'guardian_id' => $guardian->id,
+            'first_name' => 'Ali',
+            'last_name' => 'Ahmadi',
+            'national_id' => '1234567890',
+            'person_code' => '14001',
+            'father_name' => 'Reza',
+            'gender' => 'male',
+            'birth_year' => 1380,
+        ]);
+
+        $level = EducationLevel::query()->create(['name' => 'دیپلم', 'sort_order' => 5]);
+
+        Education::query()->create([
+            'person_id' => $person->id,
+            'education_level_id' => $level->id,
+            'is_studying' => true,
+        ]);
+
+        $this->assign($service, $category, $person, $operator);
+        $token = $this->issueToken($person, $operator);
+
+        $this->actingAs($operator);
+
+        // The fixed sheet header carries the registration-form identity facts: name + father,
+        // person code + social worker, and the filled-in gender/age/education chips.
+        Livewire::test(DeliveryGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            ->assertSee('پدر: Reza')
+            ->assertSee('کد مددجو')
+            ->assertSee('Zahra Moradi')
+            ->assertSee('دیپلم')
+            ->assertSee('آقا / پسر');
+    }
+
+    public function test_confirm_button_stays_disabled_until_an_item_is_ticked(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Food basket', $operator);
+
+        $person = Person::query()->create([
+            'first_name' => 'Ali',
+            'last_name' => 'Ahmadi',
+            'national_id' => '1234567890',
+            'person_code' => '14001',
+        ]);
+
+        $this->assign($service, $category, $person, $operator);
+        $token = $this->issueToken($person, $operator);
+
+        $this->actingAs($operator);
+
+        // The confirm button binds Alpine's live deliveredCount: zero ticks = disabled,
+        // and the amber hint tells the operator what unlocks it.
+        Livewire::test(DeliveryGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            ->assertSee('deliveredCount === 0')
+            ->assertSee('برای فعال‌شدن دکمه، ابتدا حداقل یک قلم را علامت بزنید');
     }
 
     /**

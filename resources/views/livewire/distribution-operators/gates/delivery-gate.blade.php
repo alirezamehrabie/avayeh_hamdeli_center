@@ -441,32 +441,79 @@
 
                     {{-- The items panel: a plain column on desktop, a bottom sheet on mobile.
                          translate-y-full parks it below the viewport while closed; the lg:* classes
-                         reset every sheet property so the desktop grid layout stays untouched. --}}
+                         reset every sheet property so the desktop grid layout stays untouched.
+                         Padding lives on the regions (not the sheet) so the sticky header/footer
+                         can span the full sheet width while items scroll between them. --}}
                     <div
                         :class="itemsSheetOpen ? 'translate-y-0' : 'translate-y-full lg:translate-y-0'"
-                        class="fixed inset-x-0 bottom-0 z-40 flex max-h-[85svh] min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain rounded-t-3xl border-t border-slate-200 bg-white p-4 pb-[calc(1rem_+_env(safe-area-inset-bottom))] shadow-2xl transition-transform duration-300 ease-out lg:static lg:z-auto lg:max-h-none lg:translate-y-0 lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none"
+                        class="fixed inset-x-0 bottom-0 z-40 flex max-h-[85svh] min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain rounded-t-3xl border-t border-slate-200 bg-white shadow-2xl transition-transform duration-300 ease-out lg:static lg:z-auto lg:max-h-none lg:translate-y-0 lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none"
                     >
-                        {{-- Mobile sheet chrome: grabber handle, title + live count, close. --}}
-                        <div class="sticky top-0 z-10 bg-white lg:hidden">
+                        {{-- Fixed sheet top (mobile): grabber + compact identity box. Sticky inside
+                             the sheet's scroll area, so it stays pinned while the items scroll under it. --}}
+                        <div class="sticky top-0 z-10 bg-white px-4 pb-2 pt-3 lg:hidden">
                             <div class="mx-auto h-1.5 w-12 rounded-full bg-slate-200"></div>
-                            <div class="mt-3 flex items-center justify-between gap-2">
-                                <span class="flex min-w-0 items-center gap-2">
-                                    <span class="truncate text-sm font-extrabold text-slate-800">اقلام مجاز برای تحویل</span>
-                                    @if($lastScanResult && $authorizedItems->isNotEmpty())
-                                        <span class="shrink-0 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 ring-1 ring-inset ring-emerald-200">
-                                            <span x-text="deliveredCount">{{ count($deliveredCategoryIds) }}</span>/{{ $authorizedItems->count() }} تحویل شد
+
+                            @if($lastScanResult)
+                                @php($identity = $lastScanResult['identity'] ?? null)
+                                @php($isPersonSubject = ($lastScanResult['type'] ?? null) === \App\Models\QrIdentity::SUBJECT_PERSON)
+                                <div class="mt-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 shadow-sm">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="flex min-w-0 flex-1 items-center gap-2.5">
+                                            @if($lastScanResult['avatar_url'] ?? null)
+                                                <img src="{{ $lastScanResult['avatar_url'] }}" alt="" class="h-9 w-9 shrink-0 rounded-xl object-cover ring-1 ring-slate-200">
+                                            @else
+                                                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base font-black {{ $isPersonSubject ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
+                                                    {{ mb_substr(trim($lastScanResult['name'] ?? '-'), 0, 1) }}
+                                                </span>
+                                            @endif
+                                            <span class="flex min-w-0 flex-col">
+                                                <span class="flex min-w-0 items-baseline gap-1.5">
+                                                    <span class="truncate text-sm font-black text-slate-900">{{ $identity['name'] ?? $lastScanResult['name'] ?? '-' }}</span>
+                                                    @if(! empty($identity['father_name']))
+                                                        <span class="shrink-0 text-[10px] font-semibold text-slate-400">( پدر: {{ $identity['father_name'] }} )</span>
+                                                    @endif
+                                                </span>
+                                                <span class="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11px] font-bold text-slate-500">
+                                                    <span class="shrink-0">{{ $identity['code_label'] ?? 'کد' }}: <span class="text-slate-700" dir="ltr">{{ $identity['code'] ?? '-' }}</span></span>
+                                                    <span class="shrink-0 text-slate-300">·</span>
+                                                    <span class="min-w-0 truncate text-violet-600">مددکار: {{ $identity['worker'] ?: '-' }}</span>
+                                                </span>
+                                            </span>
                                         </span>
+                                        <button
+                                            type="button"
+                                            @click="itemsSheetOpen = false"
+                                            aria-label="بستن"
+                                            class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100"
+                                        >
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+                                        </button>
+                                    </div>
+
+                                    @if(! empty($identity['chips']))
+                                        <div class="mt-2 flex flex-wrap items-center gap-1.5 border-t border-slate-200/70 pt-2">
+                                            @foreach($identity['chips'] as $chip)
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[10px] font-bold ring-1 ring-slate-200">
+                                                    <span class="text-slate-400">{{ $chip['label'] }}:</span>
+                                                    <span class="text-slate-700">{{ $chip['value'] }}</span>
+                                                </span>
+                                            @endforeach
+                                        </div>
                                     @endif
-                                </span>
-                                <button
-                                    type="button"
-                                    @click="itemsSheetOpen = false"
-                                    class="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
-                                >
-                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
-                                    بستن
-                                </button>
-                            </div>
+                                </div>
+                            @else
+                                <div class="mt-3 flex items-center justify-between gap-2">
+                                    <span class="text-sm font-extrabold text-slate-800">اقلام مجاز برای تحویل</span>
+                                    <button
+                                        type="button"
+                                        @click="itemsSheetOpen = false"
+                                        class="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
+                                    >
+                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+                                        بستن
+                                    </button>
+                                </div>
+                            @endif
                         </div>
 
                         {{-- Desktop header --}}
@@ -487,16 +534,16 @@
                         </div>
 
                         @if(! $lastScanResult)
-                            <div class="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center">
+                            <div class="mx-4 flex flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center lg:mx-0">
                                 <p class="text-sm font-bold text-slate-600">برای مشاهده اقلام مجاز، ابتدا QR فرد را اسکن کنید.</p>
                             </div>
                         @elseif($authorizedItems->isEmpty())
-                            <div class="rounded-2xl border border-dashed border-amber-300 bg-amber-50 px-5 py-8 text-center">
+                            <div class="mx-4 rounded-2xl border border-dashed border-amber-300 bg-amber-50 px-5 py-8 text-center lg:mx-0">
                                 <p class="text-sm font-bold text-amber-700">برای این فرد در گیت ورود قلمی برای این خدمت ثبت نشده است.</p>
                                 <p class="mt-1 text-xs font-semibold text-amber-600">فقط اقلام تأییدشده در گیت ورود قابل تحویل هستند.</p>
                             </div>
                         @else
-                            <div class="space-y-2">
+                            <div class="mx-4 space-y-2 lg:mx-0">
                                 @foreach($authorizedItems as $item)
                                     @php($category = $item->serviceCategory)
                                     @php($cid = (int) $item->service_category_id)
@@ -571,16 +618,20 @@
 
                             {{-- Confirm + advance: deliveries are already saved per item on toggle, so this
                                  closes out the current subject and jumps to the next scan in one tap. --}}
-                            {{-- Inside the mobile sheet this floats above the home-indicator safe area;
-                                 on desktop it keeps its plain page-sticky behavior. --}}
-                            <div class="sticky bottom-[env(safe-area-inset-bottom)] mt-1 -mx-1 bg-gradient-to-t from-white via-white to-transparent px-1 pb-1 pt-3 lg:bottom-0">
+                            {{-- Fixed sheet bottom (mobile): solid bar above the home-indicator safe
+                                 area. On desktop it keeps its plain page-sticky gradient behavior. --}}
+                            <div class="sticky bottom-[env(safe-area-inset-bottom)] z-10 mt-1 border-t border-slate-100 bg-white px-4 pb-[calc(1rem_+_env(safe-area-inset-bottom))] pt-3 lg:bottom-0 lg:border-0 lg:bg-transparent lg:bg-gradient-to-t lg:from-white lg:via-white lg:to-transparent lg:px-1 lg:pb-1">
+                                {{-- whitespace-nowrap + the mobile text/padding scale keep the label
+                                     on a single line inside the sheet instead of growing the button.
+                                     The button arms itself only after the first tick (deliveredCount). --}}
                                 <button
                                     type="button"
                                     wire:click="confirmDelivery"
                                     wire:loading.attr="disabled"
                                     wire:target="confirmDelivery"
+                                    x-bind:disabled="deliveredCount === 0"
                                     title="تأیید تحویل و اسکن نفر بعدی (Ctrl + Enter)"
-                                    class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3.5 text-base font-black text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.99] disabled:opacity-75 disabled:cursor-not-allowed"
+                                    class="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-emerald-600 px-4 py-3.5 text-[15px] font-black text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-emerald-300 disabled:opacity-100 sm:px-5 sm:text-base"
                                     :class="nextScanShortcutActive ? 'ring-2 ring-emerald-300 ring-offset-1' : ''"
                                 >
                                     {{-- Loading spinner --}}
@@ -619,7 +670,8 @@
                                     {{-- Loading text --}}
                                     <span wire:loading wire:target="confirmDelivery">در حال پردازش...</span>
                                 </button>
-                                <p class="mt-1.5 text-center text-[11px] font-semibold text-slate-400">اقلام علامت‌خورده ثبت شده‌اند؛ با تأیید به نفر بعدی می‌روید.</p>
+                                <p x-show="deliveredCount > 0" style="display: none;" class="mt-1.5 text-center text-[11px] font-semibold text-slate-400">اقلام علامت‌خورده ثبت شده‌اند؛ با تأیید به نفر بعدی می‌روید.</p>
+                                <p x-show="deliveredCount === 0" style="display: none;" class="mt-1.5 text-center text-[11px] font-bold text-amber-600">برای فعال‌شدن دکمه، ابتدا حداقل یک قلم را علامت بزنید.</p>
                             </div>
                         @endif
                     </div>

@@ -365,6 +365,7 @@ abstract class AbstractGateComponent extends Component
             'mobile' => (string) ($person->phone_number ?: ($person->guardian?->guardian_phone_number ?: '-')),
             'social_worker' => $this->workerFullName($person->guardian?->socialWorker),
             'details' => $this->personDetails($person),
+            'identity' => $this->personIdentity($person),
         ], $this->scanResultExtras());
         $this->onSubjectLoaded();
         $this->scanStatus = 'paused';
@@ -389,6 +390,7 @@ abstract class AbstractGateComponent extends Component
             'mobile' => (string) ($guardian->guardian_phone_number ?: '-'),
             'social_worker' => $this->workerFullName($guardian->socialWorker),
             'details' => $this->guardianDetails($guardian),
+            'identity' => $this->guardianIdentity($guardian),
         ], $this->scanResultExtras());
         $this->onSubjectLoaded();
         $this->scanStatus = 'paused';
@@ -405,7 +407,11 @@ abstract class AbstractGateComponent extends Component
     protected function findPerson(int $subjectId): ?Person
     {
         return Person::query()
-            ->with(['guardian:id,guardian_phone_number,social_worker_id', 'guardian.socialWorker'])
+            ->with([
+                'guardian:id,guardian_phone_number,social_worker_id',
+                'guardian.socialWorker',
+                'education.educationLevel:id,name',
+            ])
             ->find($subjectId);
     }
 
@@ -452,6 +458,72 @@ abstract class AbstractGateComponent extends Component
         }
 
         return $details;
+    }
+
+    /**
+     * Compact identity facts for the Delivery Gate's bottom-sheet header: name + father on one line,
+     * code + social worker below, and only the registration-form demographics that were filled in.
+     *
+     * @return array{name: string, father_name: string|null, code_label: string, code: string, worker: string, chips: array<int, array{label: string, value: string}>}
+     */
+    protected function personIdentity(Person $person): array
+    {
+        $chips = [];
+
+        if ($person->gender_label) {
+            $chips[] = ['label' => 'جنسیت', 'value' => (string) $person->gender_label];
+        }
+
+        if ($person->age) {
+            $chips[] = ['label' => 'سن', 'value' => $person->age.' سال'];
+        }
+
+        $educationLevel = $person->education?->educationLevel?->name;
+
+        if ($educationLevel) {
+            $chips[] = ['label' => 'مقطع تحصیلی', 'value' => (string) $educationLevel];
+        }
+
+        return [
+            'name' => $person->full_name ?: trim($person->first_name.' '.$person->last_name) ?: '-',
+            'father_name' => trim((string) $person->father_name) ?: null,
+            'code_label' => 'کد مددجو',
+            'code' => (string) ($person->formatted_person_code ?: $person->person_code ?: '-'),
+            'worker' => $this->workerFullName($person->guardian?->socialWorker),
+            'chips' => $chips,
+        ];
+    }
+
+    /**
+     * Guardian counterpart of personIdentity — the registration form has no father/gender row for
+     * the household head, so the chips surface age, household size and district instead.
+     *
+     * @return array{name: string, father_name: string|null, code_label: string, code: string, worker: string, chips: array<int, array{label: string, value: string}>}
+     */
+    protected function guardianIdentity(Guardian $guardian): array
+    {
+        $chips = [];
+
+        if ($guardian->guardian_age) {
+            $chips[] = ['label' => 'سن', 'value' => $guardian->guardian_age.' سال'];
+        }
+
+        $chips[] = ['label' => 'اعضای خانوار', 'value' => (string) ($guardian->people_count ?? 0)];
+
+        $district = $guardian->residence?->district?->name;
+
+        if ($district) {
+            $chips[] = ['label' => 'منطقه', 'value' => (string) $district];
+        }
+
+        return [
+            'name' => $guardian->full_name ?: trim($guardian->first_name.' '.$guardian->last_name) ?: '-',
+            'father_name' => null,
+            'code_label' => 'کد خانوار',
+            'code' => (string) ($guardian->guardian_code ?: '-'),
+            'worker' => $this->workerFullName($guardian->socialWorker),
+            'chips' => $chips,
+        ];
     }
 
     /** Full name of the subject household's assigned social worker, shown prominently on the identity card. */
