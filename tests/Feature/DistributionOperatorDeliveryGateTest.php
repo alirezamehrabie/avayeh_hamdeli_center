@@ -6,6 +6,7 @@ use App\Livewire\DistributionOperators\Gates\DeliveryGate;
 use App\Models\Education;
 use App\Models\EducationLevel;
 use App\Models\GateEntryAssignment;
+use App\Models\GateEntryDeliveryRecipient;
 use App\Models\Guardian;
 use App\Models\Person;
 use App\Models\QrIdentity;
@@ -581,6 +582,44 @@ class DistributionOperatorDeliveryGateTest extends TestCase
             ->assertSee('Rice pack');
 
         $this->assertStringNotContainsString('rounded-lg h-10 w-10', $component->html());
+    }
+
+    public function test_proxy_delivery_is_surfaced_inside_the_sheet_identity_header(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Food basket', $operator);
+
+        $person = Person::query()->create([
+            'first_name' => 'Ali',
+            'last_name' => 'Ahmadi',
+            'national_id' => '1234567890',
+            'person_code' => '14001',
+        ]);
+
+        GateEntryDeliveryRecipient::query()->create([
+            'service_id' => $service->id,
+            'person_id' => $person->id,
+            'guardian_id' => null,
+            'is_proxy_delivery' => true,
+            'recipient_type' => GateEntryDeliveryRecipient::TYPE_OTHER,
+            'recipient_name' => 'مریم رضایی، همسایه',
+            'created_by' => $operator->id,
+        ]);
+
+        $this->assign($service, $category, $person, $operator);
+        $token = $this->issueToken($person, $operator);
+
+        $this->actingAs($operator);
+
+        $component = Livewire::test(DeliveryGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            ->assertSee('مریم رضایی، همسایه');
+
+        // The banner must appear twice: the standalone identity card AND the fixed sheet header,
+        // so the operator sees the proxy declaration while ticking items inside the sheet.
+        $this->assertSame(2, substr_count($component->html(), 'تحویل به غیر از مددجو'));
     }
 
     /**

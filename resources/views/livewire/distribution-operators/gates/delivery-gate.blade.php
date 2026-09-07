@@ -481,6 +481,16 @@
                                         </button>
                                     </div>
 
+                                    {{-- Proxy delivery must stay in view while ticking: these items
+                                         are handed to somebody else, not to the scanned subject. --}}
+                                    @if(! empty($lastScanResult['proxy_recipient']['label']))
+                                        <div class="mt-2 flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-2 py-1.5">
+                                            <svg class="h-3.5 w-3.5 shrink-0 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4z"/></svg>
+                                            <span class="shrink-0 text-[10px] font-black text-amber-600">تحویل به غیر از مددجو:</span>
+                                            <span class="min-w-0 truncate text-[11px] font-bold text-amber-700">{{ $lastScanResult['proxy_recipient']['label'] }}</span>
+                                        </div>
+                                    @endif
+
                                     @if(! empty($identity['chips']))
                                         <div class="mt-2 flex flex-wrap items-center gap-1.5 border-t border-slate-200/70 pt-2">
                                             @foreach($identity['chips'] as $chip)
