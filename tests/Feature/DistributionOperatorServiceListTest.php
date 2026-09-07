@@ -24,6 +24,7 @@ class DistributionOperatorServiceListTest extends TestCase
         $operator = User::factory()->create([
             'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
             'is_admin' => false,
+            'permissions' => [User::PERMISSION_DISTRIBUTION_SERVICE_MANAGE],
         ]);
         $otherOperator = User::factory()->create([
             'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
@@ -66,9 +67,30 @@ class DistributionOperatorServiceListTest extends TestCase
             ->assertSee('pressHoldPreview()', false)
             ->assertSee('x-on:pointerdown="beginPreview()"', false)
             ->assertSee('Latest category')
+            ->assertSee('data-service-batch-creator-root', false)
             ->assertSee(route('distribution-operator.edit-service', $latestService->id), false)
             ->assertDontSee('Older misc package')
             ->assertDontSee('Other operator package');
+    }
+
+    public function test_define_service_hides_service_sections_without_manage_permission(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+
+        $service = $this->makeService($operator, 'Hidden misc package');
+        $this->makeCategory($service, 'Hidden category', $operator);
+
+        $this->actingAs($operator);
+
+        Livewire::test(DefineService::class)
+            ->assertSee('بخشی برای نمایش وجود ندارد')
+            ->assertDontSee('آخرین خدمت')
+            ->assertDontSee('تخصیص خدمت')
+            ->assertDontSee('Hidden misc package')
+            ->assertDontSee('data-service-batch-creator-root', false);
     }
 
     public function test_operator_service_list_separates_campaign_and_misc_services(): void

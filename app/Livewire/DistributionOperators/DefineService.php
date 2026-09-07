@@ -17,15 +17,23 @@ class DefineService extends Component
 
     public function render()
     {
-        $latestMiscService = $this->latestMiscService();
+        // Operators without the misc-service management permission must not see
+        // the latest-service quick access or the allocation form on this page.
+        $canManageServices = auth()->check()
+            && auth()->user()->can('manage-distribution-operator-services');
+
+        $latestMiscService = $canManageServices ? $this->latestMiscService() : null;
 
         return view('livewire.distribution-operators.define-service', [
+            'canManageServices' => $canManageServices,
             'latestMiscService' => $latestMiscService,
             'latestMiscServiceSummary' => $latestMiscService
                 ? $this->latestMiscServiceSummary($latestMiscService)
                 : null,
             'unitOptions' => Service::unitOptions(),
-            'todayMiscCount' => $this->miscServicesQuery()->whereDate('created_at', today())->count(),
+            'todayMiscCount' => $canManageServices
+                ? $this->miscServicesQuery()->whereDate('created_at', today())->count()
+                : 0,
         ]);
     }
 
