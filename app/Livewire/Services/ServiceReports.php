@@ -134,20 +134,34 @@ class ServiceReports extends Component
         });
     }
 
+    public function getDeliveryRecipientCountProperty(): int
+    {
+        if (! $this->selectedService) {
+            return 0;
+        }
+
+        return $this->selectedService->deliveries
+            ->groupBy(fn ($delivery) => $this->recipientGroupKey($delivery))
+            ->count();
+    }
+
+    protected function recipientGroupKey(ServiceDelivery $delivery): string
+    {
+        if ($delivery->person_id) {
+            return 'person-'.$delivery->person_id;
+        }
+        if ($delivery->guardian_id) {
+            return 'guardian-'.$delivery->guardian_id;
+        }
+        $nationalId = trim((string) ($delivery->national_id ?? ''));
+
+        return $nationalId !== '' ? 'manual-'.$nationalId : 'manual-delivery-'.$delivery->id;
+    }
+
     public function getGroupedDeliveriesProperty()
     {
         return $this->filteredDeliveries
-            ->groupBy(function ($delivery) {
-                if ($delivery->person_id) {
-                    return 'person-'.$delivery->person_id;
-                }
-                if ($delivery->guardian_id) {
-                    return 'guardian-'.$delivery->guardian_id;
-                }
-                $nationalId = trim((string) ($delivery->national_id ?? ''));
-
-                return $nationalId !== '' ? 'manual-'.$nationalId : 'manual-delivery-'.$delivery->id;
-            })
+            ->groupBy(fn ($delivery) => $this->recipientGroupKey($delivery))
             ->map(function ($deliveries) {
                 $first = $deliveries->first();
 

@@ -520,6 +520,12 @@
                         <span class="text-xs font-medium text-slate-500">نوع:</span>
                         <x-service-type-badge :type="$selectedService->service_type" />
                     </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-medium text-slate-500">تعداد تحویل:</span>
+                        <span class="inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-800">
+                            {{ number_format($this->deliveryRecipientCount) }} نفر
+                        </span>
+                    </div>
                 </div>
 
                 <div class="px-6 py-3">
