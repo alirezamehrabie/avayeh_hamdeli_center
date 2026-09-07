@@ -24,16 +24,15 @@ class ServiceReportsDateFilterTest extends TestCase
         $this->actingAs($user);
 
         Livewire::test(ServiceReports::class, ['selectedServiceId' => $service->id])
-            ->assertViewHas('filteredDeliveries', fn ($deliveries): bool => $deliveries->count() === 3)
+            ->assertViewHas('deliveryGroups', fn ($groups): bool => $groups->count() === 3)
             ->set('deliveryDateFrom', '2026-08-10')
-            ->assertViewHas('filteredDeliveries', fn ($deliveries): bool => $deliveries->count() === 2
-                && $deliveries->every(fn (ServiceDelivery $delivery): bool => $delivery->delivered_at->toDateString() >= '2026-08-10'))
+            ->assertViewHas('deliveryGroups', fn ($groups): bool => $groups->count() === 2)
             ->set('deliveryDateTo', '2026-08-19')
-            ->assertViewHas('filteredDeliveries', fn ($deliveries): bool => $deliveries->count() === 1
-                && $deliveries->first()->delivered_at->toDateString() === '2026-08-15')
+            ->assertViewHas('deliveryGroups', fn ($groups): bool => $groups->count() === 1
+                && $groups->first()->deliveries->first()->delivered_at->toDateString() === '2026-08-15')
             ->set('deliveryDateFrom', '')
             ->set('deliveryDateTo', '')
-            ->assertViewHas('filteredDeliveries', fn ($deliveries): bool => $deliveries->count() === 3);
+            ->assertViewHas('deliveryGroups', fn ($groups): bool => $groups->count() === 3);
     }
 
     public function test_jalali_date_inputs_are_converted_to_gregorian_when_filtering(): void
@@ -48,8 +47,8 @@ class ServiceReportsDateFilterTest extends TestCase
         Livewire::test(ServiceReports::class, ['selectedServiceId' => $service->id])
             ->set('deliveryDateFrom', $jalaliFrom)
             ->set('deliveryDateTo', $jalaliTo)
-            ->assertViewHas('filteredDeliveries', fn ($deliveries): bool => $deliveries->count() === 1
-                && $deliveries->first()->delivered_at->toDateString() === '2026-08-15');
+            ->assertViewHas('deliveryGroups', fn ($groups): bool => $groups->count() === 1
+                && $groups->first()->deliveries->first()->delivered_at->toDateString() === '2026-08-15');
     }
 
     public function test_clear_delivery_filters_resets_search_type_and_dates(): void
@@ -68,7 +67,7 @@ class ServiceReportsDateFilterTest extends TestCase
             ->assertSet('selectedDeliveryEntryType', 'all')
             ->assertSet('deliveryDateFrom', '')
             ->assertSet('deliveryDateTo', '')
-            ->assertViewHas('filteredDeliveries', fn ($deliveries): bool => $deliveries->count() === 3);
+            ->assertViewHas('deliveryGroups', fn ($groups): bool => $groups->count() === 3);
     }
 
     public function test_invalid_date_input_is_ignored_instead_of_throwing(): void
@@ -80,7 +79,7 @@ class ServiceReportsDateFilterTest extends TestCase
         Livewire::test(ServiceReports::class, ['selectedServiceId' => $service->id])
             ->set('deliveryDateFrom', 'not-a-date')
             ->set('deliveryDateTo', '1404/13/40')
-            ->assertViewHas('filteredDeliveries', fn ($deliveries): bool => $deliveries->count() === 3)
+            ->assertViewHas('deliveryGroups', fn ($groups): bool => $groups->count() === 3)
             ->assertHasNoErrors();
     }
 

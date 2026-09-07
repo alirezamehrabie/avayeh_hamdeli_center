@@ -622,8 +622,8 @@
                     </div>
                 </div>
 
-                <div class="space-y-4 bg-slate-50/70 px-4 py-4 sm:px-6">
-                    @forelse($groupedDeliveries as $group)
+                <div class="space-y-4 bg-slate-50/70 px-4 py-4 sm:px-6" id="delivery-groups-list">
+                    @forelse($deliveryGroups as $group)
                         @php
                             $typeBadge = match ($group->recipientType) {
                                 'شخصی' => 'bg-indigo-100 text-indigo-700 ring-indigo-200/60',
@@ -1016,6 +1016,12 @@
                             {{ (trim($deliverySearch ?? "") !== "" || $selectedDeliveryEntryType !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '') ? "موردی برای فیلترهای فعلی پیدا نشد." : "هنوز هیچ تحویلی برای این خدمت ثبت نشده است." }}
                         </div>
                     @endforelse
+
+                    @if($deliveryGroups->hasPages())
+                        <div class="pt-2">
+                            {{ $deliveryGroups->onEachSide(1)->links('vendor.livewire.tailwind-mobile-persian', ['scrollTo' => '#delivery-groups-list']) }}
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -1037,7 +1043,7 @@
 
                     <form wire:submit="saveDeliveryEdits" class="space-y-5 px-6 py-5">
                         @php
-                            $editingDelivery = $selectedService?->deliveries?->firstWhere('id', $editingDeliveryId);
+                            $editingDelivery = $this->editingDelivery;
                             $isManualEditing = $editingDelivery && ! $editingDelivery->person && ! $editingDelivery->guardian;
                         @endphp
 

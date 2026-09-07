@@ -14,6 +14,9 @@ use App\Models\ServiceCategory;
 use App\Models\ServiceDelivery;
 use App\Models\ServiceName;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
@@ -25,6 +28,8 @@ class ServiceReports extends Component
     use WithPagination;
 
     protected const SERVICES_PER_PAGE = 20;
+
+    protected const DELIVERY_GROUPS_PER_PAGE = 20;
 
     public function boot(): void
     {
@@ -77,73 +82,116 @@ class ServiceReports extends Component
 
     public string $editConnectMessageType = 'info';
 
-    public function getFilteredDeliveriesProperty()
+    /**
+     * Single source of truth for the delivery filters (entry type, date range,
+     * search). The paginated list, the category-breakdown modal and the exports
+     * all build on it, so on-screen numbers and exported files always agree.
+     */
+    protected function filteredDeliveryQuery(): Builder
     {
-        if (! $this->selectedService) {
-            return collect();
-        }
+        $query = ServiceDelivery::query()->where('service_id', $this->selectedServiceId);
 
-        $search = trim($this->deliverySearch);
         $entryType = $this->selectedDeliveryEntryType;
-
-        $deliveries = $this->selectedService->deliveries->sortByDesc('delivered_at');
-
-        if ($entryType !== 'all') {
-            $deliveries = $deliveries->filter(function ($delivery) use ($entryType) {
-                return match ($entryType) {
-                    'manual' => ! $delivery->person && ! $delivery->guardian,
-                    'individual' => (bool) $delivery->person,
-                    'guardian' => ! $delivery->person && (bool) $delivery->guardian,
-                    default => true,
-                };
-            });
+        if ($entryType === 'manual') {
+            $query->whereNull('person_id')->whereNull('guardian_id');
+        } elseif ($entryType === 'individual') {
+            $query->whereNotNull('person_id');
+        } elseif ($entryType === 'guardian') {
+            $query->whereNull('person_id')->whereNotNull('guardian_id');
         }
 
         $dateFrom = $this->normalizedDateInput($this->deliveryDateFrom);
         $dateTo = $this->normalizedDateInput($this->deliveryDateTo);
 
         if ($dateFrom !== null) {
-            $deliveries = $deliveries->filter(fn ($delivery) => $delivery->delivered_at !== null
-                && $delivery->delivered_at->toDateString() >= $dateFrom);
+            $query->whereDate('delivered_at', '>=', $dateFrom);
         }
 
         if ($dateTo !== null) {
-            $deliveries = $deliveries->filter(fn ($delivery) => $delivery->delivered_at !== null
-                && $delivery->delivered_at->toDateString() <= $dateTo);
+            $query->whereDate('delivered_at', '<=', $dateTo);
         }
 
-        if ($search === '') {
-            return $deliveries;
+        $search = trim($this->deliverySearch);
+
+        if ($search !== '') {
+            $like = '%'.$search.'%';
+
+            $query->where(function ($q) use ($like) {
+                $q->where('full_name', 'like', $like)
+                    ->orWhere('national_id', 'like', $like)
+                    ->orWhere('mobile', 'like', $like)
+                    ->orWhere('notes', 'like', $like)
+                    ->orWhereHas('person', fn ($p) => $p->where('first_name', 'like', $like)->orWhere('last_name', 'like', $like))
+                    ->orWhereHas('guardian', fn ($g) => $g->where('first_name', 'like', $like)->orWhere('last_name', 'like', $like))
+                    ->orWhereHas('socialWorker', fn ($w) => $w->where('first_name', 'like', $like)->orWhere('last_name', 'like', $like))
+                    ->orWhereHas('creator', fn ($c) => $c->where('name', 'like', $like));
+            });
         }
 
-        return $deliveries->filter(function ($delivery) use ($search) {
-            $name = trim($delivery->recipient_name ?? '');
-            $nationalId = trim($delivery->recipient_national_id ?? '');
-            $socialWorker = trim($delivery->socialWorker?->full_name ?? '');
-            $creator = trim($delivery->creator?->full_name ?? $delivery->creator?->name ?? '');
-            $notes = trim($delivery->notes ?? '');
-            $mobile = trim($delivery->mobile ?? '');
+        return $query;
+    }
 
-            $nameMatch = stripos($name, $search) !== false;
-            $nationalIdMatch = stripos($nationalId, $search) !== false;
-            $socialWorkerMatch = stripos($socialWorker, $search) !== false;
-            $creatorMatch = stripos($creator, $search) !== false;
-            $notesMatch = stripos($notes, $search) !== false;
-            $mobileMatch = stripos($mobile, $search) !== false;
+    /**
+     * SQL mirror of recipientGroupKey(): one stable group key per recipient
+     * (person / guardian / manual-by-national-id / manual-by-delivery-id).
+     */
+    protected function recipientGroupKeyExpression(): string
+    {
+        return "CASE
+            WHEN person_id IS NOT NULL THEN CONCAT('person-', person_id)
+            WHEN guardian_id IS NOT NULL THEN CONCAT('guardian-', guardian_id)
+            WHEN national_id IS NOT NULL AND TRIM(national_id) <> '' THEN CONCAT('manual-', TRIM(national_id))
+            ELSE CONCAT('manual-delivery-', id)
+        END";
+    }
 
-            return $nameMatch || $nationalIdMatch || $socialWorkerMatch || $creatorMatch || $notesMatch || $mobileMatch;
-        });
+    protected function deliveryRelationQuery(Builder $query): Builder
+    {
+        return $query
+            ->with(['serviceCategory', 'person.guardian', 'guardian', 'socialWorker', 'creator', 'updater'])
+            ->orderByDesc('delivered_at');
+    }
+
+    protected function findServiceDelivery(int $deliveryId): ?ServiceDelivery
+    {
+        if (! $this->selectedServiceId) {
+            return null;
+        }
+
+        return $this->deliveryRelationQuery(
+            ServiceDelivery::query()
+                ->where('service_id', $this->selectedServiceId)
+                ->whereKey($deliveryId)
+        )->first();
+    }
+
+    public function getEditingDeliveryProperty(): ?ServiceDelivery
+    {
+        return $this->editingDeliveryId ? $this->findServiceDelivery($this->editingDeliveryId) : null;
+    }
+
+    public function getFilteredDeliveriesProperty()
+    {
+        if (! $this->selectedService) {
+            return collect();
+        }
+
+        return $this->deliveryRelationQuery($this->filteredDeliveryQuery())->get();
     }
 
     public function getDeliveryRecipientCountProperty(): int
     {
-        if (! $this->selectedService) {
+        if (! $this->selectedServiceId) {
             return 0;
         }
 
-        return $this->selectedService->deliveries
-            ->groupBy(fn ($delivery) => $this->recipientGroupKey($delivery))
-            ->count();
+        // Intentionally unfiltered: the header count reflects all deliveries of the service.
+        $row = ServiceDelivery::query()
+            ->where('service_id', $this->selectedServiceId)
+            ->selectRaw('COUNT(DISTINCT '.$this->recipientGroupKeyExpression().') as recipient_count')
+            ->first();
+
+        return (int) ($row->recipient_count ?? 0);
     }
 
     protected function recipientGroupKey(ServiceDelivery $delivery): string
@@ -163,108 +211,172 @@ class ServiceReports extends Component
     {
         return $this->filteredDeliveries
             ->groupBy(fn ($delivery) => $this->recipientGroupKey($delivery))
-            ->map(function ($deliveries) {
-                $first = $deliveries->first();
+            ->map(fn ($deliveries) => $this->mapDeliveryGroup($deliveries))
+            ->values();
+    }
 
-                $unitTotals = $deliveries
-                    ->groupBy(fn ($d) => $d->serviceCategory?->unit ?: '__none__')
-                    ->map(function ($unitDeliveries, $unitKey) {
-                        $hasUnit = $unitKey !== '__none__';
-                        $total = $unitDeliveries->sum(fn ($d) => (float) $d->delivered_quantity);
+    /**
+     * Recipient groups for the on-screen list, paginated in SQL: the first
+     * query resolves only the current page of group keys (20 per page), the
+     * second loads just those deliveries. Full-set aggregates (modal breakdown,
+     * exports) never go through this property.
+     */
+    public function getDeliveryGroupsProperty()
+    {
+        if (! $this->selectedServiceId) {
+            return new LengthAwarePaginator([], 0, self::DELIVERY_GROUPS_PER_PAGE);
+        }
 
-                        return [
-                            'unitKey' => $hasUnit ? $unitKey : null,
-                            'label' => $hasUnit ? (Service::unitOptions()[$unitKey] ?? $unitKey) : '-',
-                            'total' => Service::formatQuantityForUnit($total, $hasUnit ? $unitKey : null),
-                        ];
-                    })
-                    ->values();
+        $groupPage = $this->filteredDeliveryQuery()
+            ->selectRaw($this->recipientGroupKeyExpression().' as group_key, MAX(delivered_at) as last_delivered_at')
+            ->groupBy('group_key')
+            ->orderByDesc('last_delivered_at')
+            ->paginate(self::DELIVERY_GROUPS_PER_PAGE, ['group_key', 'last_delivered_at'], 'deliveries');
 
-                $receiptItems = $deliveries
-                    ->groupBy(function ($d) {
-                        $categoryId = $d->service_category_id ?: 'none';
-                        $unitKey = $d->serviceCategory?->unit ?: '__none__';
+        $keys = collect($groupPage->items())->pluck('group_key');
 
-                        return $categoryId.'|'.$unitKey;
-                    })
-                    ->map(function ($categoryDeliveries) {
-                        $sample = $categoryDeliveries->first();
-                        $unitKey = $sample->serviceCategory?->unit ?: null;
-                        $total = $categoryDeliveries->sum(fn ($d) => (float) $d->delivered_quantity);
-                        $lastDeliveredAt = $categoryDeliveries
-                            ->map(fn ($d) => $d->delivered_at)
-                            ->filter()
-                            ->sortDesc()
-                            ->first();
+        if ($keys->isEmpty()) {
+            return $groupPage->setCollection(collect());
+        }
 
-                        return [
-                            'category' => $sample->serviceCategory?->name ?: '-',
-                            'quantity' => Service::formatQuantityForUnit($total, $unitKey),
-                            'unitLabel' => $unitKey ? (Service::unitOptions()[$unitKey] ?? $unitKey) : '-',
-                            'recordCount' => $categoryDeliveries->count(),
-                            'date' => $lastDeliveredAt
-                                ? Jalalian::fromDateTime($lastDeliveredAt)->format('Y/m/d')
-                                : '-',
-                        ];
-                    })
-                    ->values();
+        $deliveries = $this->deliveryRelationQuery($this->filteredDeliveryQuery())
+            ->where(function ($q) use ($keys) {
+                foreach ($keys as $key) {
+                    if (str_starts_with($key, 'person-')) {
+                        $q->orWhere(fn ($inner) => $inner->where('person_id', substr($key, 7)));
+                    } elseif (str_starts_with($key, 'guardian-')) {
+                        $q->orWhere(fn ($inner) => $inner->where('guardian_id', substr($key, 9)));
+                    } elseif (str_starts_with($key, 'manual-delivery-')) {
+                        $q->orWhere(fn ($inner) => $inner->where('id', substr($key, 16)));
+                    } else {
+                        $nationalId = substr($key, 7);
+                        $q->orWhere(fn ($inner) => $inner
+                            ->whereNull('person_id')
+                            ->whereNull('guardian_id')
+                            ->where('national_id', $nationalId));
+                    }
+                }
+            })
+            ->get();
 
-                $lastDeliveredAt = $deliveries
+        $groups = $deliveries
+            ->groupBy(fn ($delivery) => $this->recipientGroupKey($delivery))
+            ->map(fn ($groupDeliveries) => $this->mapDeliveryGroup($groupDeliveries));
+
+        return $groupPage->setCollection(
+            $keys->map(fn ($key) => $groups->get($key))->filter()->values()
+        );
+    }
+
+    protected function mapDeliveryGroup(Collection $deliveries): object
+    {
+        $first = $deliveries->first();
+
+        $unitTotals = $deliveries
+            ->groupBy(fn ($d) => $d->serviceCategory?->unit ?: '__none__')
+            ->map(function ($unitDeliveries, $unitKey) {
+                $hasUnit = $unitKey !== '__none__';
+                $total = $unitDeliveries->sum(fn ($d) => (float) $d->delivered_quantity);
+
+                return [
+                    'unitKey' => $hasUnit ? $unitKey : null,
+                    'label' => $hasUnit ? (Service::unitOptions()[$unitKey] ?? $unitKey) : '-',
+                    'total' => Service::formatQuantityForUnit($total, $hasUnit ? $unitKey : null),
+                ];
+            })
+            ->values();
+
+        $receiptItems = $deliveries
+            ->groupBy(function ($d) {
+                $categoryId = $d->service_category_id ?: 'none';
+                $unitKey = $d->serviceCategory?->unit ?: '__none__';
+
+                return $categoryId.'|'.$unitKey;
+            })
+            ->map(function ($categoryDeliveries) {
+                $sample = $categoryDeliveries->first();
+                $unitKey = $sample->serviceCategory?->unit ?: null;
+                $total = $categoryDeliveries->sum(fn ($d) => (float) $d->delivered_quantity);
+                $lastDeliveredAt = $categoryDeliveries
                     ->map(fn ($d) => $d->delivered_at)
                     ->filter()
                     ->sortDesc()
                     ->first();
 
-                return (object) [
-                    'recipientName' => $first->recipient_name,
-                    'recipientNationalId' => $first->recipient_national_id,
-                    'recipientType' => $first->person ? 'شخصی' : ($first->guardian ? 'خانوادگی' : 'ثبت دستی'),
-                    'person' => $first->person,
-                    'guardian' => $first->guardian,
-                    'mobile' => $deliveries->pluck('mobile')->filter()->first(),
-                    'totalQuantity' => $deliveries->sum(fn ($d) => (float) $d->delivered_quantity),
-                    'unitTotals' => $unitTotals,
-                    'receiptItems' => $receiptItems,
-                    'receiptDate' => $lastDeliveredAt
+                return [
+                    'category' => $sample->serviceCategory?->name ?: '-',
+                    'quantity' => Service::formatQuantityForUnit($total, $unitKey),
+                    'unitLabel' => $unitKey ? (Service::unitOptions()[$unitKey] ?? $unitKey) : '-',
+                    'recordCount' => $categoryDeliveries->count(),
+                    'date' => $lastDeliveredAt
                         ? Jalalian::fromDateTime($lastDeliveredAt)->format('Y/m/d')
                         : '-',
-                    'totalValue' => $deliveries->sum('delivered_total_value'),
-                    'deliveries' => $deliveries->values(),
                 ];
             })
             ->values();
+
+        $lastDeliveredAt = $deliveries
+            ->map(fn ($d) => $d->delivered_at)
+            ->filter()
+            ->sortDesc()
+            ->first();
+
+        return (object) [
+            'recipientName' => $first->recipient_name,
+            'recipientNationalId' => $first->recipient_national_id,
+            'recipientType' => $first->person ? 'شخصی' : ($first->guardian ? 'خانوادگی' : 'ثبت دستی'),
+            'person' => $first->person,
+            'guardian' => $first->guardian,
+            'mobile' => $deliveries->pluck('mobile')->filter()->first(),
+            'totalQuantity' => $deliveries->sum(fn ($d) => (float) $d->delivered_quantity),
+            'unitTotals' => $unitTotals,
+            'receiptItems' => $receiptItems,
+            'receiptDate' => $lastDeliveredAt
+                ? Jalalian::fromDateTime($lastDeliveredAt)->format('Y/m/d')
+                : '-',
+            'totalValue' => $deliveries->sum('delivered_total_value'),
+            'deliveries' => $deliveries->values(),
+        ];
     }
 
     public function getDeliveredCategoryBreakdownProperty()
     {
-        return $this->filteredDeliveries
-            ->groupBy(function ($delivery) {
-                $categoryId = $delivery->service_category_id ?: 'none';
-                $unitKey = $delivery->serviceCategory?->unit ?: '__none__';
+        if (! $this->selectedServiceId) {
+            return collect();
+        }
 
-                return $categoryId.'|'.$unitKey;
-            })
-            ->map(function ($deliveries) {
-                $first = $deliveries->first();
-                $unitKey = $first->serviceCategory?->unit ?: null;
-                $total = $deliveries->sum(fn ($d) => (float) $d->delivered_quantity);
-                $categoryQuantity = $first->serviceCategory ? (float) $first->serviceCategory->quantity : null;
+        $rows = $this->filteredDeliveryQuery()
+            ->selectRaw('service_category_id, SUM(delivered_quantity) as total, COUNT(*) as record_count, MAX(delivered_at) as last_delivered_at')
+            ->groupBy('service_category_id')
+            ->orderByDesc('last_delivered_at')
+            ->get();
 
-                return [
-                    'category' => $first->serviceCategory?->name ?: '-',
-                    'unitLabel' => $unitKey ? (Service::unitOptions()[$unitKey] ?? $unitKey) : '-',
-                    'total' => Service::formatQuantityForUnit($total, $unitKey),
-                    'totalRaw' => $total,
-                    'recordCount' => $deliveries->count(),
-                    'remaining' => $categoryQuantity === null
-                        ? null
-                        : Service::formatQuantityForUnit(max(0, $categoryQuantity - $total), $unitKey),
-                    'categoryTotal' => $categoryQuantity === null
-                        ? null
-                        : Service::formatQuantityForUnit($categoryQuantity, $unitKey),
-                ];
-            })
-            ->values();
+        $categories = ServiceCategory::query()
+            ->withTrashed()
+            ->whereIn('id', $rows->pluck('service_category_id')->filter()->unique())
+            ->get()
+            ->keyBy('id');
+
+        return $rows->map(function ($row) use ($categories) {
+            $category = $row->service_category_id ? $categories->get((int) $row->service_category_id) : null;
+            $unitKey = $category?->unit ?: null;
+            $total = (float) $row->total;
+            $categoryQuantity = $category !== null ? (float) $category->quantity : null;
+
+            return [
+                'category' => $category?->name ?: '-',
+                'unitLabel' => $unitKey ? (Service::unitOptions()[$unitKey] ?? $unitKey) : '-',
+                'total' => Service::formatQuantityForUnit($total, $unitKey),
+                'totalRaw' => $total,
+                'recordCount' => (int) $row->record_count,
+                'remaining' => $categoryQuantity === null
+                    ? null
+                    : Service::formatQuantityForUnit(max(0, $categoryQuantity - $total), $unitKey),
+                'categoryTotal' => $categoryQuantity === null
+                    ? null
+                    : Service::formatQuantityForUnit($categoryQuantity, $unitKey),
+            ];
+        })->values();
     }
 
     public function mount(?int $selectedServiceId = null): void
@@ -287,6 +399,7 @@ class ServiceReports extends Component
         $this->selectedDeliveryEntryType = 'all';
         $this->deliveryDateFrom = '';
         $this->deliveryDateTo = '';
+        $this->resetPage('deliveries');
         $this->closeEditDeliveryModal();
         $this->dispatch('open-dashboard-section', section: 'advanced-service-report', id: $serviceId);
     }
@@ -298,6 +411,7 @@ class ServiceReports extends Component
         $this->selectedDeliveryEntryType = 'all';
         $this->deliveryDateFrom = '';
         $this->deliveryDateTo = '';
+        $this->resetPage('deliveries');
         $this->closeEditDeliveryModal();
         $this->dispatch('open-dashboard-section', section: 'advanced-service-report');
     }
@@ -349,12 +463,33 @@ class ServiceReports extends Component
         $this->resetPage();
     }
 
+    public function updatingDeliverySearch(): void
+    {
+        $this->resetPage('deliveries');
+    }
+
+    public function updatingSelectedDeliveryEntryType(): void
+    {
+        $this->resetPage('deliveries');
+    }
+
+    public function updatingDeliveryDateFrom(): void
+    {
+        $this->resetPage('deliveries');
+    }
+
+    public function updatingDeliveryDateTo(): void
+    {
+        $this->resetPage('deliveries');
+    }
+
     public function clearDeliveryFilters(): void
     {
         $this->deliverySearch = '';
         $this->selectedDeliveryEntryType = 'all';
         $this->deliveryDateFrom = '';
         $this->deliveryDateTo = '';
+        $this->resetPage('deliveries');
     }
 
     public function exportToExcel()
@@ -435,12 +570,6 @@ class ServiceReports extends Component
                 'categories' => fn ($query) => $query->withTrashed()->ordered(),
                 'district',
                 'socialWorkers',
-                'deliveries.serviceCategory',
-                'deliveries.person.guardian',
-                'deliveries.guardian',
-                'deliveries.socialWorker',
-                'deliveries.creator',
-                'deliveries.updater',
             ])
             ->find($this->selectedServiceId);
     }
@@ -510,8 +639,7 @@ class ServiceReports extends Component
         return view('livewire.services.service-reports', [
             'services' => $services,
             'selectedService' => $this->selectedService,
-            'filteredDeliveries' => $this->filteredDeliveries,
-            'groupedDeliveries' => $this->groupedDeliveries,
+            'deliveryGroups' => $this->deliveryGroups,
             'statusOptions' => Service::STATUS_OPTIONS,
             'typeDisplayOptions' => Service::typeDisplayOptions(),
             'unitOptions' => Service::unitOptions(),
@@ -523,7 +651,7 @@ class ServiceReports extends Component
 
     public function editDelivery(int $deliveryId): void
     {
-        $delivery = $this->selectedService?->deliveries->firstWhere('id', $deliveryId);
+        $delivery = $this->findServiceDelivery($deliveryId);
 
         if (! $delivery) {
             return;
@@ -784,7 +912,9 @@ class ServiceReports extends Component
 
     protected function currentEditingDeliveryIsManual(): bool
     {
-        $delivery = $this->selectedService?->deliveries->firstWhere('id', $this->editingDeliveryId);
+        $delivery = $this->editingDeliveryId
+            ? $this->findServiceDelivery($this->editingDeliveryId)
+            : null;
 
         return $delivery ? $this->isManualDelivery($delivery) : false;
     }
