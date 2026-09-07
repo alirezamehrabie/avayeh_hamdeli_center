@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Services;
 
+use App\Exports\ServiceCategoryBreakdownExport;
 use App\Exports\ServiceReportExport;
 use App\Helpers\Morilog\CalendarUtils;
 use App\Helpers\Morilog\Jalalian;
@@ -252,6 +253,7 @@ class ServiceReports extends Component
                     'category' => $first->serviceCategory?->name ?: '-',
                     'unitLabel' => $unitKey ? (Service::unitOptions()[$unitKey] ?? $unitKey) : '-',
                     'total' => Service::formatQuantityForUnit($total, $unitKey),
+                    'totalRaw' => $total,
                     'recordCount' => $deliveries->count(),
                 ];
             })
@@ -381,6 +383,34 @@ class ServiceReports extends Component
         $filename = 'گزارش-خدمت-'.$serviceName.'-'.Jalalian::now()->format('Y-m-d').'.xlsx';
 
         $export = new ServiceReportExport($service, $grouped, Service::unitOptions());
+
+        return \Maatwebsite\Excel\Facades\Excel::download($export, $filename);
+    }
+
+    public function exportCategoryBreakdownToExcel()
+    {
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
+
+        $service = $this->selectedService;
+
+        if (! $service) {
+            session()->flash('error', 'ابتدا یک خدمت را انتخاب کنید.');
+
+            return null;
+        }
+
+        $breakdown = $this->deliveredCategoryBreakdown;
+
+        if ($breakdown->isEmpty()) {
+            session()->flash('error', 'رکوردی برای خروجی گرفتن یافت نشد.');
+
+            return null;
+        }
+
+        $serviceName = $service->serviceName?->name ?: 'خدمت';
+        $filename = 'جزئیات-تحویل-'.$serviceName.'-'.Jalalian::now()->format('Y-m-d').'.xlsx';
+
+        $export = new ServiceCategoryBreakdownExport($breakdown, $serviceName);
 
         return \Maatwebsite\Excel\Facades\Excel::download($export, $filename);
     }

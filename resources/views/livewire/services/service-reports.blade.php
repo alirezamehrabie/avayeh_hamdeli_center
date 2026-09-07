@@ -484,10 +484,29 @@
                                             {{-- Footer summary --}}
                                             @if($this->deliveredCategoryBreakdown->isNotEmpty())
                                                 <div class="flex items-center justify-between gap-3 border-t border-slate-200 bg-white px-5 py-3">
-                                                    <span class="text-xs font-medium text-slate-500">مجموع دسته‌بندی‌ها</span>
-                                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-3 py-1 text-xs font-black text-white">
-                                                        {{ $this->deliveredCategoryBreakdown->count() }} دسته‌بندی
-                                                    </span>
+                                                    <div class="flex min-w-0 items-center gap-2">
+                                                        <span class="text-xs font-medium text-slate-500">مجموع دسته‌بندی‌ها</span>
+                                                        <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-slate-900 px-3 py-1 text-xs font-black text-white">
+                                                            {{ $this->deliveredCategoryBreakdown->count() }} دسته‌بندی
+                                                        </span>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        wire:click="exportCategoryBreakdownToExcel"
+                                                        wire:loading.attr="disabled"
+                                                        wire:target="exportCategoryBreakdownToExcel"
+                                                        class="inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-emerald-500/90 px-3 py-1.5 text-[11px] font-bold text-white ring-1 ring-emerald-300/40 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                                                    >
+                                                        <svg wire:loading.remove wire:target="exportCategoryBreakdownToExcel" class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                                                        </svg>
+                                                        <svg wire:loading wire:target="exportCategoryBreakdownToExcel" class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                                        </svg>
+                                                        <span wire:loading.remove wire:target="exportCategoryBreakdownToExcel">خروجی اکسل</span>
+                                                        <span wire:loading wire:target="exportCategoryBreakdownToExcel">در حال آماده‌سازی…</span>
+                                                    </button>
                                                 </div>
                                             @endif
                                         </div>
