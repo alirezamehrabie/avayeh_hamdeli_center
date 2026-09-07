@@ -410,7 +410,6 @@ abstract class AbstractGateComponent extends Component
             ->with([
                 'guardian:id,guardian_phone_number,social_worker_id',
                 'guardian.socialWorker',
-                'education.educationLevel:id,name',
             ])
             ->find($subjectId);
     }
@@ -476,12 +475,6 @@ abstract class AbstractGateComponent extends Component
 
         if ($person->age) {
             $chips[] = ['label' => 'سن', 'value' => $person->age.' سال'];
-        }
-
-        $educationLevel = $person->education?->educationLevel?->name;
-
-        if ($educationLevel) {
-            $chips[] = ['label' => 'مقطع تحصیلی', 'value' => (string) $educationLevel];
         }
 
         return [

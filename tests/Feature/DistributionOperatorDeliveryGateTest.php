@@ -16,6 +16,7 @@ use App\Models\SocialWorker;
 use App\Models\User;
 use App\Services\QrIdentityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -480,14 +481,15 @@ class DistributionOperatorDeliveryGateTest extends TestCase
         $this->actingAs($operator);
 
         // The fixed sheet header carries the registration-form identity facts: name + father,
-        // person code + social worker, and the filled-in gender/age/education chips.
+        // person code + social worker, and the filled-in gender/age chips. The education level
+        // was deliberately dropped from the compact header.
         Livewire::test(DeliveryGate::class)
             ->call('selectService', $service->id)
             ->call('resolveScannedQr', $token)
             ->assertSee('پدر: Reza')
             ->assertSee('کد مددجو')
             ->assertSee('Zahra Moradi')
-            ->assertSee('دیپلم')
+            ->assertDontSee('دیپلم')
             ->assertSee('آقا / پسر');
     }
 
@@ -516,6 +518,68 @@ class DistributionOperatorDeliveryGateTest extends TestCase
             ->call('resolveScannedQr', $token)
             ->assertSee('deliveredCount === 0')
             ->assertSee('برای فعال‌شدن دکمه، ابتدا حداقل یک قلم را علامت بزنید');
+    }
+
+    public function test_sheet_item_rows_reserve_uniform_thumbnail_slots(): void
+    {
+        Storage::fake('public');
+
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $withThumb = $this->makeCategory($service, 'Food basket', $operator);
+        $withoutThumb = $this->makeCategory($service, 'Blanket', $operator);
+
+        $imagePath = 'service-categories/'.$service->id.'/thumb.jpg';
+        Storage::disk('public')->put($imagePath, 'thumbnail-binary');
+        $withThumb->forceFill(['image_path' => $imagePath])->save();
+
+        $person = Person::query()->create([
+            'first_name' => 'Ali',
+            'last_name' => 'Ahmadi',
+            'national_id' => '1234567890',
+            'person_code' => '14001',
+        ]);
+
+        $this->assign($service, $withThumb, $person, $operator);
+        $this->assign($service, $withoutThumb, $person, $operator);
+        $token = $this->issueToken($person, $operator);
+
+        $this->actingAs($operator);
+
+        $component = Livewire::test(DeliveryGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            ->assertSee('/media/'.$imagePath, false);
+
+        // Both rows — the thumbless one included — reserve the same fixed-size frame,
+        // so the sheet's item heights stay uniform.
+        $this->assertSame(2, substr_count($component->html(), 'h-10 w-10'));
+    }
+
+    public function test_item_rows_stay_compact_when_no_category_has_a_thumbnail(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $category = $this->makeCategory($service, 'Rice pack', $operator);
+
+        $person = Person::query()->create([
+            'first_name' => 'Sara',
+            'last_name' => 'Norouzi',
+            'national_id' => '2234567890',
+            'person_code' => '14010',
+        ]);
+
+        $this->assign($service, $category, $person, $operator);
+        $token = $this->issueToken($person, $operator);
+
+        $this->actingAs($operator);
+
+        $component = Livewire::test(DeliveryGate::class)
+            ->call('selectService', $service->id)
+            ->call('resolveScannedQr', $token)
+            ->assertSee('Rice pack');
+
+        $this->assertStringNotContainsString('h-10 w-10', $component->html());
     }
 
     /**

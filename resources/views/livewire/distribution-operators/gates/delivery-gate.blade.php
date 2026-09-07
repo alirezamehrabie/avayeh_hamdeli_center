@@ -329,24 +329,27 @@
                         </div>
                     </div>
 
+                    {{-- Next scan is the operator's most-used action, so it takes the leading slot
+                         and the solid primary treatment; re-arming the camera is secondary. --}}
                     <div class="grid gap-3 sm:grid-cols-2">
-                        <button
-                            type="button"
-                            @click="startCamera()"
-                            class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
-                        >
-                            فعال‌سازی دوربین
-                        </button>
                         <button
                             type="button"
                             wire:click="resumeScanning"
                             title="اسکن نفر بعدی (Ctrl + Enter)"
-                            class="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100"
-                            :class="nextScanShortcutActive ? 'ring-2 ring-emerald-400 ring-offset-1 bg-emerald-100 scale-[0.98]' : ''"
+                            class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98]"
+                            :class="nextScanShortcutActive ? 'ring-2 ring-emerald-300 ring-offset-1' : ''"
                         >
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M5 9a7 7 0 0111-3.7L20 9M19 15a7 7 0 01-11 3.7L4 15"/></svg>
                             <span>اسکن نفر بعدی</span>
-                            <kbd class="hidden rounded border border-emerald-300 bg-white/70 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600 sm:inline-block">Ctrl + Enter</kbd>
+                            <kbd class="hidden rounded border border-white/30 bg-white/20 px-1.5 py-0.5 text-[10px] font-semibold text-white sm:inline-block">Ctrl + Enter</kbd>
+                        </button>
+                        <button
+                            type="button"
+                            @click="startCamera()"
+                            class="inline-flex items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-bold text-indigo-700 transition hover:bg-indigo-100"
+                        >
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h1.6l1.1-1.6h4.6l1.1 1.6H19a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3.2"/></svg>
+                            فعال‌سازی دوربین
                         </button>
                     </div>
 
@@ -414,6 +417,10 @@
 
                 {{-- Right: authorized items to deliver --}}
                 @php($authorizedItems = $this->authorizedItems)
+                {{-- Same rule as the Entry Gate: if any category of the service has a thumbnail,
+                     every row reserves the same fixed-size slot (placeholder for the thumbless
+                     ones), so the sheet's rows keep one uniform height and shape. --}}
+                @php($serviceHasThumbnails = $selectedService?->categories->contains(fn ($category) => filled($category->image_path)))
                 {{-- Optimistic checklist state lives on the client so taps feel instant; the key is
                      tied to the scanned subject so a new scan reseeds it from the server's DB state.
                      Clearing a tick is the one branch that waits: the modal's confirm button dispatches
@@ -476,7 +483,7 @@
                                                 <span class="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11px] font-bold text-slate-500">
                                                     <span class="shrink-0">{{ $identity['code_label'] ?? 'کد' }}: <span class="text-slate-700" dir="ltr">{{ $identity['code'] ?? '-' }}</span></span>
                                                     <span class="shrink-0 text-slate-300">·</span>
-                                                    <span class="min-w-0 truncate text-violet-600">مددکار: {{ $identity['worker'] ?: '-' }}</span>
+                                                    <span class="min-w-0 truncate text-sky-700">مددکار: {{ $identity['worker'] ?: '-' }}</span>
                                                 </span>
                                             </span>
                                         </span>
@@ -558,6 +565,9 @@
                                                 <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-400">
                                                     <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                                                 </span>
+                                                @if($serviceHasThumbnails)
+                                                    <x-category-thumbnail :category="$category" sizeClass="h-10 w-10" roundedClass="rounded-lg" />
+                                                @endif
                                                 <span class="flex min-w-0 flex-col">
                                                     <span class="truncate text-sm font-bold text-slate-500">{{ $category?->name ?? '-' }}</span>
                                                     <span class="truncate text-[11px] font-semibold text-slate-400" dir="ltr">{{ $category?->code ?? '-' }}</span>
@@ -592,6 +602,9 @@
                                                         <path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 111.42-1.42l2.79 2.79 6.79-6.79a1 1 0 011.42 0z" clip-rule="evenodd" />
                                                     </svg>
                                                 </span>
+                                                @if($serviceHasThumbnails)
+                                                    <x-category-thumbnail :category="$category" sizeClass="h-10 w-10" roundedClass="rounded-lg" />
+                                                @endif
                                                 <span class="flex min-w-0 flex-col">
                                                     <span class="truncate text-sm font-extrabold text-slate-900">{{ $category?->name ?? '-' }}</span>
                                                     <span class="truncate text-[11px] font-semibold text-slate-400" dir="ltr">{{ $category?->code ?? '-' }}</span>
@@ -631,7 +644,7 @@
                                     wire:target="confirmDelivery"
                                     x-bind:disabled="deliveredCount === 0"
                                     title="تأیید تحویل و اسکن نفر بعدی (Ctrl + Enter)"
-                                    class="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-emerald-600 px-4 py-3.5 text-[15px] font-black text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-emerald-300 disabled:opacity-100 sm:px-5 sm:text-base"
+                                    class="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-emerald-600 px-4 py-3.5 text-[15px] font-black text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:opacity-100 sm:px-5 sm:text-base"
                                     :class="nextScanShortcutActive ? 'ring-2 ring-emerald-300 ring-offset-1' : ''"
                                 >
                                     {{-- Loading spinner --}}
