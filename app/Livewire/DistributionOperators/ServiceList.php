@@ -35,6 +35,10 @@ class ServiceList extends Component
     {
         abort_unless(auth()->check() && auth()->user()->can('access-distribution-operator-panel'), 403);
 
+        // The service list is part of the misc-service management surface, so
+        // operators without the management permission cannot view it either.
+        abort_unless(auth()->user()->can('manage-distribution-operator-services'), 403);
+
         if (! in_array($this->activeTab, $this->availableTabs(), true)) {
             $this->activeTab = self::TAB_MISC;
         }

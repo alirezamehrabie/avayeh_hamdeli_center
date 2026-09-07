@@ -968,7 +968,7 @@ Alpine.data('idCardScanner', ({
             return;
         }
 
-        this.setStatus('scanning', 'اسکن دوباره فعال شد. QR را مقابل دوربین نگه دارید.');
+        this.setStatus('scanning', 'دوربین فعال است، کارت را اسکن کنید.');
     },
     async stopCamera() {
         this.scanning = false;

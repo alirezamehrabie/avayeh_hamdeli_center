@@ -28,7 +28,7 @@ use Livewire\Component;
 abstract class AbstractGateComponent extends Component
 {
     /** Shown once a service is selected and the operator should start scanning. */
-    protected const CAMERA_PROMPT = 'دوربین را فعال کنید و QR مددجو یا سرپرست خانوار را اسکن کنید.';
+    protected const CAMERA_PROMPT = 'دوربین را فعال کنید و کارت مددجو را اسکن کنید';
 
     #[\Livewire\Attributes\Url(as: 'service', except: null)]
     public ?int $selectedServiceId = null;
@@ -240,7 +240,7 @@ abstract class AbstractGateComponent extends Component
         $this->manualSearch = '';
         $this->showManualSearch = false;
         $this->scanStatus = 'scanning';
-        $this->scanMessage = 'اسکن دوباره فعال شد. QR بعدی را مقابل دوربین نگه دارید.';
+        $this->scanMessage = 'دوربین فعال است، کارت بعدی را اسکن کنید.';
 
         $this->dispatch('id-card-scanner-resume');
         $this->onResumeScanning();

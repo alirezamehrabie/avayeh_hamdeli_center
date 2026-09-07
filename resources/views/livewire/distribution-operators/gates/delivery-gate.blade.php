@@ -51,11 +51,11 @@
                 </div>
             </div>
         @else
-            <div class="border-b border-slate-100 bg-slate-50/60 px-5 py-4">
+            <div class="border-b border-slate-100 bg-slate-50/60 px-4 py-4">
                 <div>
                     <h1 class="text-xl font-black text-slate-900">گیت تحویل</h1>
                     <p class="mt-1 text-xs font-semibold text-slate-500">
-                        انتخاب خدمت، اسکن QR و ثبت تحویل اقلام مجاز تأییدشده در گیت ورود.
+                        خدمت مورد نظر را انتخاب کنید
                     </p>
                 </div>
             </div>
@@ -63,9 +63,9 @@
 
         @if(! $selectedService)
             {{-- Step 1: Service selection --}}
-            <div class="px-5 py-6">
+            <div class="px-4 py-4">
                 <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <h2 class="text-sm font-extrabold text-slate-800">۱. انتخاب خدمت گیت تحویل</h2>
+                    <h2 class="text-sm font-extrabold text-slate-800">انتخاب خدمت گیت تحویل</h2>
 
                     <div class="relative w-full sm:max-w-xs">
                         <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-400">
@@ -329,7 +329,7 @@
                             type="button"
                             wire:click="resumeScanning"
                             title="اسکن نفر بعدی (Ctrl + Enter)"
-                            class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98]"
+                            class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98]"
                             :class="nextScanShortcutActive ? 'ring-2 ring-emerald-300 ring-offset-1' : ''"
                         >
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M5 9a7 7 0 0111-3.7L20 9M19 15a7 7 0 01-11 3.7L4 15"/></svg>
@@ -377,9 +377,9 @@
                             wire:click="toggleManualSearch"
                             class="flex w-full items-center justify-between gap-2 px-4 py-3 text-sm font-bold text-slate-700"
                         >
-                            <span class="flex items-center gap-2">
+                            <span class="flex items-center gap-2 font-medium">
                                 <svg class="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="M21 21l-3.5-3.5"/></svg>
-                                جستجوی دستی (در صورت خرابی QR یا دوربین)
+                                جستجوی دستی مددجو
                             </span>
                             <svg class="h-4 w-4 text-slate-400 transition-transform {{ $showManualSearch ? 'rotate-180' : '' }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                         </button>

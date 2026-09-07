@@ -93,11 +93,88 @@ class DistributionOperatorServiceListTest extends TestCase
             ->assertDontSee('data-service-batch-creator-root', false);
     }
 
+    public function test_define_service_shows_gate_shortcut_button_for_gate_only_operator(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+            'permissions' => [User::PERMISSION_DISTRIBUTION_INBOUND_GATE],
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(DefineService::class)
+            ->assertSee('بخش‌های فعال شما')
+            ->assertSee('گیت ورود')
+            ->assertSee(route('distribution-operator.gates.entry'), false)
+            ->assertDontSee('گیت تحویل')
+            ->assertDontSee('گیت خروج')
+            ->assertDontSee('data-service-batch-creator-root', false);
+    }
+
+    public function test_define_service_shows_shortcut_buttons_for_every_authorized_gate(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+            'permissions' => [
+                User::PERMISSION_DISTRIBUTION_INBOUND_GATE,
+                User::PERMISSION_DISTRIBUTION_DELIVERY_GATE,
+                User::PERMISSION_DISTRIBUTION_OUTBOUND_GATE,
+            ],
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(DefineService::class)
+            ->assertSee('گیت ورود')
+            ->assertSee('گیت تحویل')
+            ->assertSee('گیت خروج')
+            ->assertSee(route('distribution-operator.gates.entry'), false)
+            ->assertSee(route('distribution-operator.gates.delivery'), false)
+            ->assertSee(route('distribution-operator.gates.exit'), false);
+    }
+
+    public function test_service_list_is_forbidden_without_manage_permission(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+
+        $this->actingAs($operator);
+
+        Livewire::test(ServiceList::class)->assertForbidden();
+    }
+
+    public function test_sidebar_hides_service_list_item_without_manage_permission(): void
+    {
+        $operator = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+        ]);
+
+        $this->actingAs($operator);
+
+        $this->get(route('distribution-operator.define-service'))
+            ->assertOk()
+            ->assertDontSee('فهرست خدمات');
+
+        $operator->forceFill([
+            'permissions' => [User::PERMISSION_DISTRIBUTION_SERVICE_MANAGE],
+        ])->save();
+
+        $this->get(route('distribution-operator.define-service'))
+            ->assertOk()
+            ->assertSee('فهرست خدمات');
+    }
+
     public function test_operator_service_list_separates_campaign_and_misc_services(): void
     {
         $operator = User::factory()->create([
             'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
             'is_admin' => false,
+            'permissions' => [User::PERMISSION_DISTRIBUTION_SERVICE_MANAGE],
         ]);
         $manager = User::factory()->create([
             'access_level' => User::ACCESS_LEVEL_MANAGER,
@@ -156,6 +233,7 @@ class DistributionOperatorServiceListTest extends TestCase
         $otherOperator = User::factory()->create([
             'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
             'is_admin' => false,
+            'permissions' => [User::PERMISSION_DISTRIBUTION_SERVICE_MANAGE],
         ]);
         $worker = SocialWorker::query()->create([
             'worker_code' => 942,
@@ -216,6 +294,7 @@ class DistributionOperatorServiceListTest extends TestCase
         $operator = User::factory()->create([
             'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
             'is_admin' => false,
+            'permissions' => [User::PERMISSION_DISTRIBUTION_SERVICE_MANAGE],
         ]);
         $manager = User::factory()->create([
             'access_level' => User::ACCESS_LEVEL_MANAGER,

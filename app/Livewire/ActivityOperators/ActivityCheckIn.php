@@ -40,7 +40,7 @@ class ActivityCheckIn extends Component
 
         $this->scanStatus = $activity->status === 'ongoing' ? 'ready' : 'paused';
         $this->scanMessage = $activity->status === 'ongoing'
-            ? 'دوربین را فعال کنید و QR مددجو را اسکن کنید.'
+            ? 'دوربین را فعال کنید و کارت مددجو را اسکن کنید.'
             : 'ثبت حضور فقط زمانی فعال است که فعالیت در وضعیت آماده برگزاری باشد.';
     }
 

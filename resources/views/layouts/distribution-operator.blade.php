@@ -101,13 +101,15 @@
                     <span class="text-xs text-indigo-100/80">ثبت</span>
                 </a>
 
-                <a
-                    href="{{ route('distribution-operator.service-list') }}"
-                    class="flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors {{ $isServiceListActive ? 'bg-indigo-700' : 'hover:bg-indigo-800' }}"
-                >
-                    <span>فهرست خدمات</span>
-                    <span class="text-xs text-indigo-100/80">ویرایش</span>
-                </a>
+                @can('manage-distribution-operator-services')
+                    <a
+                        href="{{ route('distribution-operator.service-list') }}"
+                        class="flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors {{ $isServiceListActive ? 'bg-indigo-700' : 'hover:bg-indigo-800' }}"
+                    >
+                        <span>فهرست خدمات</span>
+                        <span class="text-xs text-indigo-100/80">ویرایش</span>
+                    </a>
+                @endcan
 
                 @foreach($gateNavigationItems as $gateNavigationItem)
                     @can($gateNavigationItem['ability'])
