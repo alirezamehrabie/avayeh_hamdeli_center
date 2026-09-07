@@ -142,6 +142,7 @@
                 @endif
             </div>
         @else
+            @php($authorizedItems = $this->authorizedItems)
             {{-- Step 2: Scan + deliver --}}
             <div
                 x-data="{
@@ -160,22 +161,23 @@
                 x-on:keydown.window.ctrl.enter.prevent="triggerNextScanShortcut()"
                 x-on:keydown.window.meta.enter.prevent="triggerNextScanShortcut()"
                 x-on:delivery-confirmed.window="window.dispatchEvent(new CustomEvent('open-notification-toast', { detail: { config: { type: 'success', title: 'تحویل انجام شد', message: '', icon: 'success', duration: 4200 } } }))"
-                class="grid gap-5 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
+                class="grid gap-5 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] {{ ($lastScanResult && $authorizedItems->isNotEmpty()) ? 'pb-24 sm:pb-24 lg:pb-5' : '' }}"
             >
                 {{-- Left: identity (kept at the top so it stays visible at a glance) + scanner --}}
                 <div class="flex min-h-0 flex-col gap-4">
-                    {{-- Identity card (fixed-height slot so the layout doesn't jump between scans) --}}
-                    <div class="min-h-[8rem]">
+                    {{-- Identity card: one dense block (name+badges / codes / worker+demographics)
+                         so the scanner keeps the vertical space it needs. --}}
+                    <div class="min-h-[5.5rem]">
                         {{-- Skeleton while the scan resolves on the server --}}
                         <div
                             wire:loading.flex
                             wire:target="resolveScannedQr, selectManualSubject"
-                            class="hidden animate-pulse items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                            class="hidden animate-pulse items-center gap-2.5 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm"
                         >
-                            <div class="h-14 w-14 shrink-0 rounded-2xl bg-slate-200"></div>
+                            <div class="h-10 w-10 shrink-0 rounded-xl bg-slate-200"></div>
                             <div class="flex-1 space-y-2">
-                                <div class="h-3.5 w-2/3 rounded bg-slate-200"></div>
-                                <div class="h-3 w-1/2 rounded bg-slate-100"></div>
+                                <div class="h-3 w-2/3 rounded bg-slate-200"></div>
+                                <div class="h-2.5 w-1/2 rounded bg-slate-100"></div>
                             </div>
                         </div>
 
@@ -185,97 +187,79 @@
                             <div
                                 wire:loading.remove
                                 wire:target="resolveScannedQr, selectManualSubject"
-                                class="rounded-2xl border p-4 shadow-sm {{ $isDuplicateScan ? 'border-amber-300 bg-amber-50/40' : 'border-slate-200 bg-white' }}"
+                                class="rounded-2xl border p-3 shadow-sm {{ $isDuplicateScan ? 'border-amber-300 bg-amber-50/40' : 'border-slate-200 bg-white' }}"
                             >
-                                <div class="flex items-start gap-3">
+                                <div class="flex items-center gap-2.5">
                                     {{-- Avatar + subject-type anchor (emerald = مددجو, amber = خانوار) --}}
                                     <div class="relative shrink-0">
                                         @if($lastScanResult['avatar_url'] ?? null)
                                             <img
                                                 src="{{ $lastScanResult['avatar_url'] }}"
                                                 alt="{{ $lastScanResult['name'] ?? '' }}"
-                                                class="h-14 w-14 rounded-2xl object-cover ring-2 {{ $isPerson ? 'ring-emerald-200' : 'ring-amber-200' }}"
+                                                class="h-10 w-10 rounded-xl object-cover ring-1 {{ $isPerson ? 'ring-emerald-200' : 'ring-amber-200' }}"
                                             >
                                         @else
-                                            <div class="flex h-14 w-14 items-center justify-center rounded-2xl text-xl font-black {{ $isPerson ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
+                                            <div class="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-black {{ $isPerson ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
                                                 {{ mb_substr(trim($lastScanResult['name'] ?? '-'), 0, 1) }}
                                             </div>
                                         @endif
-                                        <span class="absolute -bottom-1 -left-1 flex h-6 w-6 items-center justify-center rounded-full ring-2 ring-white {{ $isPerson ? 'bg-emerald-500' : 'bg-amber-500' }}">
+                                        <span class="absolute -bottom-1 -left-1 flex h-5 w-5 items-center justify-center rounded-full ring-2 ring-white {{ $isPerson ? 'bg-emerald-500' : 'bg-amber-500' }}">
                                             @if($isPerson)
-                                                <svg class="h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21a8 8 0 0116 0"/></svg>
+                                                <svg class="h-2.5 w-2.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21a8 8 0 0116 0"/></svg>
                                             @else
-                                                <svg class="h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4z"/></svg>
+                                                <svg class="h-2.5 w-2.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4z"/></svg>
                                             @endif
                                         </span>
                                     </div>
 
                                     <div class="min-w-0 flex-1">
-                                        <div class="flex flex-wrap items-center gap-2">
-                                            <span class="rounded-full px-2.5 py-0.5 text-[11px] font-bold {{ $isPerson ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
+                                        <div class="flex items-center gap-1.5">
+                                            <p class="min-w-0 truncate text-sm font-black text-slate-900">{{ $lastScanResult['name'] ?? '-' }}</p>
+                                            <span class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold {{ $isPerson ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
                                                 {{ $lastScanResult['subject_label'] ?? '-' }}
                                             </span>
                                             @if($isDuplicateScan)
-                                                <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700">
-                                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.3 3.86l-8 13.9A2 2 0 004 21h16a2 2 0 001.7-3.24l-8-13.9a2 2 0 00-3.4 0z"/></svg>
-                                                    تکراری
-                                                </span>
+                                                <span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">تکراری</span>
                                             @endif
                                         </div>
-                                        <p class="mt-1.5 truncate text-lg font-black text-slate-900">{{ $lastScanResult['name'] ?? '-' }}</p>
+                                        <p class="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] font-semibold text-slate-500">
+                                            <span>{{ $lastScanResult['code_label'] ?? 'کد' }}: <span class="font-bold text-slate-700" dir="ltr">{{ $lastScanResult['code'] ?? '-' }}</span></span>
+                                            <span class="text-slate-300">·</span>
+                                            <span>کد ملی: <span class="font-bold text-slate-700" dir="ltr">{{ $lastScanResult['national_id'] ?? '-' }}</span></span>
+                                        </p>
                                     </div>
                                 </div>
 
-                                <dl class="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
-                                    <div class="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
-                                        <dt class="font-semibold text-slate-500">{{ $lastScanResult['code_label'] ?? 'کد' }}</dt>
-                                        <dd class="font-bold text-slate-800" dir="ltr">{{ $lastScanResult['code'] ?? '-' }}</dd>
-                                    </div>
-                                    <div class="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
-                                        <dt class="font-semibold text-slate-500">کد ملی</dt>
-                                        <dd class="font-bold text-slate-800" dir="ltr">{{ $lastScanResult['national_id'] ?? '-' }}</dd>
-                                    </div>
-                                    <div class="flex items-center justify-between gap-2 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 sm:col-span-2">
-                                        <dt class="inline-flex shrink-0 items-center gap-1.5 font-bold text-violet-500">
-                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21a8 8 0 0116 0"/></svg>
-                                            مددکار
-                                        </dt>
-                                        <dd class="min-w-0 truncate text-sm font-black text-violet-700">{{ $lastScanResult['social_worker'] ?: '-' }}</dd>
-                                    </div>
-                                </dl>
-
-                                @if(! empty($lastScanResult['details']))
-                                    <div class="mt-2 flex flex-wrap gap-1.5">
-                                        @foreach($lastScanResult['details'] as $detail)
-                                            <span class="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold">
-                                                <span class="text-slate-400">{{ $detail['label'] }}:</span>
-                                                <span class="text-slate-700">{{ $detail['value'] }}</span>
-                                            </span>
-                                        @endforeach
-                                    </div>
-                                @endif
+                                {{-- Worker (sky, matching the sheet header) + demographics on one line. --}}
+                                <div class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 pt-2 text-[11px] font-bold">
+                                    <span class="inline-flex min-w-0 items-center gap-1 text-sky-700">
+                                        <svg class="h-3.5 w-3.5 shrink-0 text-sky-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21a8 8 0 0116 0"/></svg>
+                                        مددکار: <span class="min-w-0 truncate">{{ $lastScanResult['social_worker'] ?: '-' }}</span>
+                                    </span>
+                                    @foreach($lastScanResult['details'] as $detail)
+                                        <span class="text-slate-300">·</span>
+                                        <span class="text-slate-500">{{ $detail['label'] }}: <span class="text-slate-700">{{ $detail['value'] }}</span></span>
+                                    @endforeach
+                                </div>
 
                                 @if(! empty($lastScanResult['proxy_recipient']['label']))
-                                    <div class="mt-3 flex items-center justify-between gap-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2">
-                                        <span class="inline-flex shrink-0 items-center gap-1.5 text-[11px] font-bold text-amber-600">
-                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4z"/></svg>
+                                    <div class="mt-2 flex items-center justify-between gap-2 rounded-xl border border-amber-300 bg-amber-50 px-2.5 py-1.5">
+                                        <span class="inline-flex shrink-0 items-center gap-1 text-[11px] font-bold text-amber-600">
+                                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4z"/></svg>
                                             تحویل به غیر از مددجو
                                         </span>
-                                        <span class="min-w-0 truncate text-sm font-black text-amber-700">{{ $lastScanResult['proxy_recipient']['label'] }}</span>
+                                        <span class="min-w-0 truncate text-xs font-black text-amber-700">{{ $lastScanResult['proxy_recipient']['label'] }}</span>
                                     </div>
                                 @endif
 
                                 @if(! empty($lastScanResult['extra_fields']))
-                                    <div class="mt-3 space-y-1.5 border-t border-slate-100 pt-3">
-                                        <p class="text-[11px] font-bold text-slate-500">اطلاعات تکمیلی</p>
-                                        <div class="flex flex-wrap gap-1.5">
-                                            @foreach($lastScanResult['extra_fields'] as $extra)
-                                                <span class="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2 py-1 text-[11px] font-semibold">
-                                                    <span class="text-indigo-400">{{ $extra['label'] }}:</span>
-                                                    <span class="text-indigo-700">{{ $extra['value'] }}</span>
-                                                </span>
-                                            @endforeach
-                                        </div>
+                                    <div class="mt-2 flex flex-wrap gap-1.5 border-t border-slate-100 pt-2">
+                                        @foreach($lastScanResult['extra_fields'] as $extra)
+                                            <span class="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold">
+                                                <span class="text-indigo-400">{{ $extra['label'] }}:</span>
+                                                <span class="text-indigo-700">{{ $extra['value'] }}</span>
+                                            </span>
+                                        @endforeach
                                     </div>
                                 @endif
                             </div>
@@ -283,7 +267,7 @@
                             <div
                                 wire:loading.remove
                                 wire:target="resolveScannedQr, selectManualSubject"
-                                class="flex h-[8rem] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 px-4 text-center"
+                                class="flex h-[5.5rem] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 px-4 text-center"
                             >
                                 <p class="text-xs font-semibold text-slate-400">پس از اسکن، اطلاعات هویتی فرد اینجا نمایش داده می‌شود.</p>
                             </div>
@@ -415,8 +399,7 @@
                     </div>
                 </div>
 
-                {{-- Right: authorized items to deliver --}}
-                @php($authorizedItems = $this->authorizedItems)
+                {{-- Right: authorized items to deliver ($authorizedItems resolved above the grid) --}}
                 {{-- Same rule as the Entry Gate: if any category of the service has a thumbnail,
                      every row reserves the same fixed-size slot (placeholder for the thumbless
                      ones), so the sheet's rows keep one uniform height and shape. --}}
@@ -452,6 +435,7 @@
                          Padding lives on the regions (not the sheet) so the sticky header/footer
                          can span the full sheet width while items scroll between them. --}}
                     <div
+                        x-cloak
                         :class="itemsSheetOpen ? 'translate-y-0' : 'translate-y-full lg:translate-y-0'"
                         class="fixed inset-x-0 bottom-0 z-40 flex max-h-[85svh] min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain rounded-t-3xl border-t border-slate-200 bg-white shadow-2xl transition-transform duration-300 ease-out lg:static lg:z-auto lg:max-h-none lg:translate-y-0 lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none"
                     >
@@ -589,7 +573,7 @@
                                             type="button"
                                             @click="toggle({{ $cid }}, @js($category?->name ?? ''))"
                                             wire:key="delivery-gate-item-{{ $item->id }}"
-                                            class="flex w-full items-center justify-between gap-2 rounded-2xl border-2 px-3 py-2.5 text-right transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-1 sm:gap-3 sm:px-4 sm:py-3"
+                                            class="flex w-full items-center justify-between gap-2 rounded-2xl border-2 px-3 py-2.5 text-right transition active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-1 sm:gap-3 sm:px-4 sm:py-3"
                                             :class="isDelivered({{ $cid }}) ? 'border-emerald-500 bg-emerald-50' : 'border-slate-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/40'"
                                             :aria-pressed="isDelivered({{ $cid }})"
                                         >
@@ -689,19 +673,22 @@
                         @endif
                     </div>
 
-                    {{-- Mobile-only reopen affordance: it lives in the page flow (outside the sheet)
-                         so the operator can bring the checklist back after closing it. --}}
+                    {{-- Mobile-only reopen bar: pinned to the bottom of the viewport (instead of
+                         buried in the page flow under the scanner + manual search) so it is always
+                         one thumb-tap away after the sheet closes. Hidden while the sheet is open. --}}
                     @if($lastScanResult && $authorizedItems->isNotEmpty())
                         <button
                             type="button"
+                            x-cloak
+                            x-show="!itemsSheetOpen"
                             @click="itemsSheetOpen = true"
-                            class="flex w-full items-center justify-between gap-2 rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-bold text-indigo-700 transition hover:bg-indigo-100 lg:hidden"
+                            class="fixed inset-x-4 bottom-[calc(1rem_+_env(safe-area-inset-bottom))] z-30 flex items-center justify-between gap-2 rounded-2xl border border-indigo-200 bg-white/95 px-4 py-3 text-sm font-bold text-indigo-700 shadow-lg backdrop-blur transition active:scale-[0.99] lg:hidden"
                         >
                             <span class="flex items-center gap-2">
                                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                                 اقلام مجاز برای تحویل
                             </span>
-                            <span class="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-black text-indigo-600">
+                            <span class="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-black text-indigo-600">
                                 <span x-text="deliveredCount">{{ count($deliveredCategoryIds) }}</span>/{{ $authorizedItems->count() }} تحویل شد
                             </span>
                         </button>

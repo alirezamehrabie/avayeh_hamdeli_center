@@ -552,8 +552,9 @@ class DistributionOperatorDeliveryGateTest extends TestCase
             ->assertSee('/media/'.$imagePath, false);
 
         // Both rows — the thumbless one included — reserve the same fixed-size frame,
-        // so the sheet's item heights stay uniform.
-        $this->assertSame(2, substr_count($component->html(), 'h-10 w-10'));
+        // so the sheet's item heights stay uniform. ('rounded-lg h-10 w-10' is the thumbnail
+        // frame specifically; the identity card's avatar also uses h-10 w-10.)
+        $this->assertSame(2, substr_count($component->html(), 'rounded-lg h-10 w-10'));
     }
 
     public function test_item_rows_stay_compact_when_no_category_has_a_thumbnail(): void
@@ -579,7 +580,7 @@ class DistributionOperatorDeliveryGateTest extends TestCase
             ->call('resolveScannedQr', $token)
             ->assertSee('Rice pack');
 
-        $this->assertStringNotContainsString('h-10 w-10', $component->html());
+        $this->assertStringNotContainsString('rounded-lg h-10 w-10', $component->html());
     }
 
     /**
