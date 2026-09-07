@@ -250,6 +250,7 @@ class DistributionOperatorExitGateTest extends TestCase
             ->call('resolveScannedQr', $token)
             ->assertSee('هنوز در گیت تحویل تأیید نشده است')
             ->assertSee('تأیید در گیت تحویل')
+            ->assertDontSee('تذکر به اپراتور گیت تحویل')
             // The handoff link carries both the service and the scanned subject so the Delivery
             // Gate lands on the same person instead of making them rescan their QR.
             ->assertSee('subject=person%3A'.$person->id);
@@ -272,8 +273,12 @@ class DistributionOperatorExitGateTest extends TestCase
             ->call('selectService', $service->id)
             ->call('resolveScannedQr', $token)
             ->assertSee('هنوز در گیت تحویل تأیید نشده است')
+            // Without the Delivery Gate permission there is no handoff button: the exit operator
+            // must alert the Delivery Gate staff verbally so they confirm under their own account.
+            ->assertDontSee('تأیید در گیت تحویل')
             ->assertDontSee('subject=person%3A')
-            ->assertSee('هماهنگ با اپراتور گیت تحویل');
+            ->assertSee('تذکر به اپراتور گیت تحویل')
+            ->assertSee('با حساب کاربری خودش');
     }
 
     public function test_finalize_ignores_pending_assignments_even_if_their_ids_are_injected(): void

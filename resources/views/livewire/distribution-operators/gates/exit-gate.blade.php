@@ -470,13 +470,21 @@
                          Delivery Gate for the same subject, or point at the Entry Gate for revocation. --}}
                     @if($lastScanResult && $pendingItems->isNotEmpty())
                         @php($handoffSubject = ($scannedSubjectType === \App\Models\QrIdentity::SUBJECT_GUARDIAN ? 'guardian:'.$scannedGuardianId : 'person:'.$scannedPersonId))
+                        {{-- Only an operator who holds the Delivery Gate permission may confirm items
+                             there themselves; everyone else must alert the Delivery Gate staff verbally
+                             so that gate confirms the item under its own account. --}}
+                        @php($canHandoffToDelivery = auth()->user()->can('access-distribution-delivery-gate'))
                         <div class="rounded-2xl border border-rose-300 bg-rose-50 p-4">
                             <p class="inline-flex items-center gap-1.5 text-sm font-bold text-rose-700">
                                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.3 3.86l-8 13.9A2 2 0 004 21h16a2 2 0 001.7-3.24l-8-13.9a2 2 0 00-3.4 0z"/></svg>
                                 {{ $pendingItems->count() }} قلم مجاز از گیت ورود هنوز در گیت تحویل تأیید نشده است
                             </p>
                             <p class="mt-1 text-xs font-semibold leading-5 text-rose-600">
-                                تکلیف این اقلام را روشن کنید: یا در گیت تحویل تحویلشان را تأیید کنید، یا در صورت عدم نیاز، اپراتور گیت ورود مجوزشان را از این فرد حذف کند تا در گیت خروج به مشکل برنخورید.
+                                @if($canHandoffToDelivery)
+                                    تکلیف این اقلام را روشن کنید: یا با دکمه «تأیید در گیت تحویل» تحویلشان را تأیید کنید، یا در صورت عدم نیاز، اپراتور گیت ورود مجوزشان را از این فرد حذف کند تا در گیت خروج به مشکل برنخورید.
+                                @else
+                                    تکلیف این اقلام را روشن کنید: یا به اپراتور گیت تحویل تذکر دهید تا با حساب کاربری خودش این اقلام را در گیت تحویل تأیید کند، یا در صورت عدم نیاز، اپراتور گیت ورود مجوزشان را از این فرد حذف کند تا در گیت خروج به مشکل برنخورید.
+                                @endif
                             </p>
                             <div class="mt-3 space-y-2">
                                 @foreach($pendingItems as $item)
@@ -492,7 +500,7 @@
                                                 <span class="text-[11px] font-semibold text-slate-400" dir="ltr">{{ $category?->code ?? '-' }}</span>
                                             </span>
                                         </span>
-                                        @if(auth()->user()->can('access-distribution-delivery-gate'))
+                                        @if($canHandoffToDelivery)
                                             <a
                                                 href="{{ route('distribution-operator.gates.delivery', ['service' => $selectedService->id, 'subject' => $handoffSubject]) }}"
                                                 class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-rose-600 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-rose-700"
@@ -501,7 +509,7 @@
                                                 تأیید در گیت تحویل
                                             </a>
                                         @else
-                                            <span class="shrink-0 rounded-full bg-rose-100 px-2.5 py-1 text-[11px] font-bold text-rose-700">هماهنگ با اپراتور گیت تحویل</span>
+                                            <span class="shrink-0 rounded-full bg-rose-100 px-2.5 py-1 text-[11px] font-bold text-rose-700">تذکر به اپراتور گیت تحویل</span>
                                         @endif
                                     </div>
                                 @endforeach
