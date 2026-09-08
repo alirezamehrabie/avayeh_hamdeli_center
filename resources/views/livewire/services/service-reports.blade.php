@@ -544,7 +544,7 @@
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
                                                             </svg>
                                                         </span>
-                                                        <p class="text-sm font-medium text-slate-500">{{ (trim($deliverySearch ?? "") !== "" || $selectedDeliveryEntryType !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '') ? "موردی برای فیلترهای فعلی پیدا نشد." : "هنوز هیچ تحویلی برای این خدمت ثبت نشده است." }}</p>
+                                                        <p class="text-sm font-medium text-slate-500">{{ (trim($deliverySearch ?? "") !== "" || $selectedDeliveryEntryType !== 'all' || $selectedDeliverySocialWorker !== 'all' || $selectedCoverageSocialWorker !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '') ? "موردی برای فیلترهای فعلی پیدا نشد." : "هنوز هیچ تحویلی برای این خدمت ثبت نشده است." }}</p>
                                                     </div>
                                                 @endforelse
                                             </div>
@@ -636,6 +636,20 @@
                             <option value="guardian">خانوادگی (سرپرست)</option>
                         </select>
 
+                        <select wire:model.live="selectedDeliverySocialWorker" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 sm:w-56">
+                            <option value="all">همه مددکاران تحویل‌دهنده</option>
+                            @foreach($deliverySocialWorkerOptions as $workerOption)
+                                <option value="{{ $workerOption['id'] }}">{{ $workerOption['name'] }}</option>
+                            @endforeach
+                        </select>
+
+                        <select wire:model.live="selectedCoverageSocialWorker" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 sm:w-56">
+                            <option value="all">همه مددکاران تحت پوشش</option>
+                            @foreach($coverageSocialWorkerOptions as $workerOption)
+                                <option value="{{ $workerOption['id'] }}">{{ $workerOption['name'] }}</option>
+                            @endforeach
+                        </select>
+
                         <div x-data="jalaliDateTimeField($wire.entangle('deliveryDateFrom').live)" class="w-full sm:w-40">
                             <input
                                 type="text"
@@ -678,7 +692,16 @@
                             >
                         </div>
 
-                        @if(trim($deliverySearch ?? '') !== '' || $selectedDeliveryEntryType !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '')
+                        <div class="flex items-center gap-2 sm:mr-auto">
+                            <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 ring-1 ring-indigo-100">
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                <span>{{ number_format($deliveryGroups->total()) }} نفر یافت شد</span>
+                            </span>
+                        </div>
+
+                        @if(trim($deliverySearch ?? '') !== '' || $selectedDeliveryEntryType !== 'all' || $selectedDeliverySocialWorker !== 'all' || $selectedCoverageSocialWorker !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '')
                             <button
                                 type="button"
                                 wire:click="clearDeliveryFilters"
@@ -1081,7 +1104,7 @@
                         </section>
                     @empty
                         <div class="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-12 text-center text-slate-500">
-                            {{ (trim($deliverySearch ?? "") !== "" || $selectedDeliveryEntryType !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '') ? "موردی برای فیلترهای فعلی پیدا نشد." : "هنوز هیچ تحویلی برای این خدمت ثبت نشده است." }}
+                            {{ (trim($deliverySearch ?? "") !== "" || $selectedDeliveryEntryType !== 'all' || $selectedDeliverySocialWorker !== 'all' || $selectedCoverageSocialWorker !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '') ? "موردی برای فیلترهای فعلی پیدا نشد." : "هنوز هیچ تحویلی برای این خدمت ثبت نشده است." }}
                         </div>
                     @endforelse
 

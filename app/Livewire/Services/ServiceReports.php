@@ -105,6 +105,16 @@ class ServiceReports extends Component
 
     public string $selectedDeliveryEntryType = 'all';
 
+    public string $selectedDeliverySocialWorker = 'all';
+
+    /**
+     * Filter by the recipient's covering social worker — the worker assigned
+     * to the family (guardians.social_worker_id). People have no worker of
+     * their own; for individual deliveries the coverage runs through the
+     * person's guardian.
+     */
+    public string $selectedCoverageSocialWorker = 'all';
+
     public string $deliveryDateFrom = '';
 
     public string $deliveryDateTo = '';
@@ -147,6 +157,28 @@ class ServiceReports extends Component
             $query->whereNotNull('person_id');
         } elseif ($entryType === 'guardian') {
             $query->whereNull('person_id')->whereNotNull('guardian_id');
+        }
+
+        $workerId = ctype_digit($this->selectedDeliverySocialWorker) && (int) $this->selectedDeliverySocialWorker > 0
+            ? (int) $this->selectedDeliverySocialWorker
+            : null;
+
+        if ($workerId !== null) {
+            $query->where('social_worker_id', $workerId);
+        }
+
+        $coverageWorkerId = ctype_digit($this->selectedCoverageSocialWorker) && (int) $this->selectedCoverageSocialWorker > 0
+            ? (int) $this->selectedCoverageSocialWorker
+            : null;
+
+        if ($coverageWorkerId !== null) {
+            // Coverage lives on the guardian: family deliveries link directly,
+            // individual deliveries via the person's guardian. Manual records
+            // have no guardian and never match.
+            $query->where(function ($q) use ($coverageWorkerId) {
+                $q->whereHas('guardian', fn ($g) => $g->where('social_worker_id', $coverageWorkerId))
+                    ->orWhereHas('person.guardian', fn ($g) => $g->where('social_worker_id', $coverageWorkerId));
+            });
         }
 
         $dateFrom = $this->normalizedDateInput($this->deliveryDateFrom);
@@ -483,6 +515,8 @@ class ServiceReports extends Component
         $this->selectedServiceId = $serviceId;
         $this->deliverySearch = '';
         $this->selectedDeliveryEntryType = 'all';
+        $this->selectedDeliverySocialWorker = 'all';
+        $this->selectedCoverageSocialWorker = 'all';
         $this->deliveryDateFrom = '';
         $this->deliveryDateTo = '';
         $this->resetPage('deliveries');
@@ -495,6 +529,8 @@ class ServiceReports extends Component
         $this->selectedServiceId = null;
         $this->deliverySearch = '';
         $this->selectedDeliveryEntryType = 'all';
+        $this->selectedDeliverySocialWorker = 'all';
+        $this->selectedCoverageSocialWorker = 'all';
         $this->deliveryDateFrom = '';
         $this->deliveryDateTo = '';
         $this->resetPage('deliveries');
@@ -565,6 +601,16 @@ class ServiceReports extends Component
         $this->resetPage('deliveries');
     }
 
+    public function updatingSelectedDeliverySocialWorker(): void
+    {
+        $this->resetPage('deliveries');
+    }
+
+    public function updatingSelectedCoverageSocialWorker(): void
+    {
+        $this->resetPage('deliveries');
+    }
+
     public function updatingDeliveryDateFrom(): void
     {
         $this->resetPage('deliveries');
@@ -579,6 +625,8 @@ class ServiceReports extends Component
     {
         $this->deliverySearch = '';
         $this->selectedDeliveryEntryType = 'all';
+        $this->selectedDeliverySocialWorker = 'all';
+        $this->selectedCoverageSocialWorker = 'all';
         $this->deliveryDateFrom = '';
         $this->deliveryDateTo = '';
         $this->resetPage('deliveries');
@@ -699,6 +747,8 @@ class ServiceReports extends Component
         // the detail screen skips the list entirely.
         $services = null;
         $socialWorkerOptions = [];
+        $deliverySocialWorkerOptions = [];
+        $coverageSocialWorkerOptions = [];
         $deliveryChannelCards = [];
 
         if ($this->selectedServiceId === null && $deliveryChannel === null) {
@@ -767,6 +817,52 @@ class ServiceReports extends Component
                 }))
                 ->latest()
                 ->paginate(self::SERVICES_PER_PAGE);
+        } elseif ($this->selectedServiceId !== null) {
+            // Detail-screen filter: only workers with at least one delivery in
+            // this service. Soft-deleted workers are excluded because their
+            // deliveries are cascaded away with them, but inactive ones remain
+            // so historical responsibility stays reportable.
+            $workerIds = ServiceDelivery::query()
+                ->where('service_id', $this->selectedServiceId)
+                ->whereNotNull('social_worker_id')
+                ->distinct()
+                ->pluck('social_worker_id');
+
+            $deliverySocialWorkerOptions = SocialWorker::query()
+                ->whereIn('id', $workerIds)
+                ->orderBy('first_name')
+                ->orderBy('last_name')
+                ->get(['id', 'first_name', 'last_name'])
+                ->map(fn (SocialWorker $worker): array => [
+                    'id' => $worker->id,
+                    'name' => trim($worker->first_name.' '.$worker->last_name),
+                ])
+                ->all();
+
+            // Coverage filter dropdown: workers assigned to guardians who have
+            // a delivery in this service — directly (family) or through their
+            // people (individual). Inactive workers stay selectable so past
+            // coverage remains reportable; soft-deleted rows drop out via scopes.
+            $coverageWorkerIds = Guardian::query()
+                ->whereNotNull('social_worker_id')
+                ->where(function ($q) {
+                    $q->whereHas('serviceDeliveries', fn ($d) => $d->where('service_id', $this->selectedServiceId))
+                        ->orWhereHas('people.serviceDeliveries', fn ($d) => $d->where('service_id', $this->selectedServiceId));
+                })
+                ->distinct()
+                ->pluck('social_worker_id');
+
+            $coverageSocialWorkerOptions = SocialWorker::query()
+                ->withoutGlobalScope('active')
+                ->whereIn('id', $coverageWorkerIds)
+                ->orderBy('first_name')
+                ->orderBy('last_name')
+                ->get(['id', 'first_name', 'last_name'])
+                ->map(fn (SocialWorker $worker): array => [
+                    'id' => $worker->id,
+                    'name' => trim($worker->first_name.' '.$worker->last_name),
+                ])
+                ->all();
         }
 
         return view('livewire.services.service-reports', [
@@ -782,6 +878,8 @@ class ServiceReports extends Component
             'categoryOptions' => $categories,
             'serviceNames' => $serviceNames,
             'socialWorkerOptions' => $socialWorkerOptions,
+            'deliverySocialWorkerOptions' => $deliverySocialWorkerOptions,
+            'coverageSocialWorkerOptions' => $coverageSocialWorkerOptions,
             'jalaliDateTime' => fn ($dateTime) => $dateTime ? Jalalian::fromDateTime($dateTime)->format('Y/m/d H:i') : '-',
         ]);
     }

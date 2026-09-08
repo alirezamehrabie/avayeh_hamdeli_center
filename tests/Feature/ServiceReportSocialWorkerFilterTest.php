@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Livewire\Services\ServiceReports;
+use App\Models\Guardian;
+use App\Models\Person;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\ServiceDelivery;
@@ -83,6 +85,135 @@ class ServiceReportSocialWorkerFilterTest extends TestCase
             ->assertViewHas('socialWorkerOptions', fn (array $options): bool => collect($options)->contains(
                 fn (array $option): bool => $option['id'] === $worker->id
             ));
+    }
+
+    public function test_detail_page_delivery_filter_returns_only_that_workers_recipients(): void
+    {
+        [$user, $worker, , $deliveredService] = $this->scenario();
+
+        $this->actingAs($user);
+
+        // Two deliveries in the detailed service: one by $worker, one by another worker.
+        $category = $deliveredService->categories()->first();
+
+        ServiceDelivery::query()->create([
+            'service_id' => $deliveredService->id,
+            'service_category_id' => $category->id,
+            'social_worker_id' => SocialWorker::query()->whereKey(412)->value('id'),
+            'delivery_channel' => Service::DELIVERY_CHANNEL_HOME,
+            'national_id' => '7778889990',
+            'full_name' => 'Other Worker Recipient',
+            'delivered_quantity' => 1,
+            'value_per_unit_snapshot' => 1000,
+            'delivered_total_value' => 1000,
+            'delivered_at' => now()->toDateString(),
+            'created_by' => $user->id,
+        ]);
+
+        $component = Livewire::test(ServiceReports::class, ['selectedServiceId' => $deliveredService->id]);
+
+        // Worker options on the detail page list only workers with a delivery here.
+        $component->assertViewHas('deliverySocialWorkerOptions', fn (array $options): bool => collect($options)
+            ->pluck('id')
+            ->contains($worker->id));
+
+        $component->set('selectedDeliverySocialWorker', (string) $worker->id);
+
+        $groups = $component->instance()->deliveryGroups;
+        $this->assertSame(1, $groups->total());
+        $this->assertSame('Some Recipient', $groups->items()[0]->recipientName);
+
+        // Clearing the filter restores both recipients.
+        $component->set('selectedDeliverySocialWorker', 'all');
+        $this->assertSame(2, $component->instance()->deliveryGroups->total());
+    }
+
+    public function test_detail_page_coverage_filter_returns_recipients_of_the_assigned_worker(): void
+    {
+        [$user, $worker, , $deliveredService] = $this->scenario();
+
+        $this->actingAs($user);
+
+        $category = $deliveredService->categories()->first();
+        $otherWorkerId = SocialWorker::query()->where('worker_code', 412)->value('id');
+
+        $coveredGuardian = Guardian::query()->create([
+            'guardian_code' => random_int(1000000, 9999999),
+            'national_code' => '5556667778',
+            'first_name' => 'Covered',
+            'last_name' => 'Household',
+            'social_worker_id' => $worker->id,
+        ]);
+
+        $coveredPerson = Person::query()->create([
+            'guardian_id' => $coveredGuardian->id,
+            'person_code' => (string) random_int(1000000, 9999999),
+            'national_id' => (string) random_int(1000000000, 9999999999),
+            'first_name' => 'Covered',
+            'last_name' => 'Child',
+        ]);
+
+        $otherGuardian = Guardian::query()->create([
+            'guardian_code' => random_int(1000000, 9999999),
+            'national_code' => '6667778889',
+            'first_name' => 'Other',
+            'last_name' => 'Household',
+            'social_worker_id' => $otherWorkerId,
+        ]);
+
+        // Family delivery for the covered guardian, individual delivery for
+        // their child (coverage reached via person.guardian), a family
+        // delivery for the other worker's guardian, and a manual record
+        // belonging to the scenario (no guardian at all).
+        $this->createDelivery($deliveredService, $category, $user, ['guardian_id' => $coveredGuardian->id], 'Covered Guardian');
+        $this->createDelivery($deliveredService, $category, $user, ['person_id' => $coveredPerson->id], 'Covered Child');
+        $this->createDelivery($deliveredService, $category, $user, ['guardian_id' => $otherGuardian->id], 'Other Guardian');
+
+        $component = Livewire::test(ServiceReports::class, ['selectedServiceId' => $deliveredService->id]);
+
+        // Coverage options list exactly the workers assigned to this service's recipient guardians.
+        $component->assertViewHas('coverageSocialWorkerOptions', fn (array $options): bool => collect($options)->pluck('id')->sort()->values()->all() === [$worker->id, $otherWorkerId]);
+
+        $component->set('selectedCoverageSocialWorker', (string) $worker->id);
+
+        $groups = $component->instance()->deliveryGroups;
+
+        // The «یافت شد» count is the same paginator total, so it must agree.
+        $this->assertSame(2, $groups->total());
+        $this->assertSame(
+            ['Covered Child', 'Covered Guardian'],
+            collect($groups->items())->pluck('recipientName')->sort()->values()->all()
+        );
+
+        // Clearing restores every recipient group, including the manual record.
+        $component->set('selectedCoverageSocialWorker', 'all');
+        $this->assertSame(4, $component->instance()->deliveryGroups->total());
+
+        // Combined with the entry-type filter, coverage still narrows correctly.
+        $component->set('selectedDeliveryEntryType', 'individual');
+        $component->set('selectedCoverageSocialWorker', (string) $worker->id);
+        $this->assertSame(1, $component->instance()->deliveryGroups->total());
+    }
+
+    private function createDelivery(
+        Service $service,
+        ServiceCategory $category,
+        User $user,
+        array $recipient,
+        string $fullName,
+    ): ServiceDelivery {
+        return ServiceDelivery::query()->create($recipient + [
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'delivery_channel' => Service::DELIVERY_CHANNEL_GATE,
+            'national_id' => (string) random_int(1000000000, 9999999999),
+            'full_name' => $fullName,
+            'delivered_quantity' => 1,
+            'value_per_unit_snapshot' => 1000,
+            'delivered_total_value' => 1000,
+            'delivered_at' => now()->toDateString(),
+            'created_by' => $user->id,
+        ]);
     }
 
     /**
