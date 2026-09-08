@@ -897,6 +897,11 @@
                             $guardianLabel = $group->person?->guardian?->full_name
                                 ?: $group->guardian?->full_name;
 
+                            // Recipient's covering social worker (guardian-assigned),
+                            // already eager-loaded with the delivery rows.
+                            $coverageWorkerName = $group->person?->guardian?->socialWorker?->full_name
+                                ?: $group->guardian?->socialWorker?->full_name;
+
                             $hasReceipt = $group->deliveries->count() > 0;
                             $relationLabel = $group->guardian
                                 ? ($group->guardian->guardian_code ? 'کد خانوار: '.$group->guardian->guardian_code : null)
@@ -931,6 +936,17 @@
                                         <div class="flex flex-wrap items-center gap-2">
                                             <span class="h-2.5 w-2.5 rounded-full bg-indigo-500"></span>
                                             <h3 class="text-base font-extrabold leading-6 text-slate-950 sm:text-lg">{{ $group->recipientName ?: '-' }}</h3>
+                                            @if($group->person?->person_code)
+                                                <span class="inline-flex shrink-0 items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-slate-700 ring-1 ring-slate-200">
+                                                    <span class="font-medium text-slate-400">کد مددجو:</span>
+                                                    {{ $group->person->person_code }}
+                                                </span>
+                                            @elseif($group->guardian?->guardian_code)
+                                                <span class="inline-flex shrink-0 items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-slate-700 ring-1 ring-slate-200">
+                                                    <span class="font-medium text-slate-400">کد خانوار:</span>
+                                                    {{ $group->guardian->guardian_code }}
+                                                </span>
+                                            @endif
                                             <span class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold ring-1 {{ $typeBadge }}">{{ $group->recipientType }}</span>
                                             @if($hasReceipt)
                                                 <button
@@ -952,16 +968,14 @@
 
                                         <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-600">
                                             <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 font-medium">کد ملی: {{ $group->recipientNationalId ?: '-' }}</span>
-                                            @if($group->person)
-                                                <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 font-medium">کد مددجو: {{ $group->person->person_code ?: '-' }}</span>
-                                            @endif
-                                            @if($group->guardian)
-                                                <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 font-medium">کد خانوار: {{ $group->guardian->guardian_code ?: '-' }}</span>
-                                            @elseif($guardianLabel)
-                                                <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 font-medium">سرپرست مرتبط: {{ $guardianLabel }}</span>
+                                            @if(!$group->guardian && $guardianLabel)
+                                                <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 font-medium">سرپرست: {{ $guardianLabel }}</span>
                                             @endif
                                             @if($group->mobile)
                                                 <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 font-medium">موبایل: {{ $group->mobile }}</span>
+                                            @endif
+                                            @if($coverageWorkerName)
+                                                <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 font-medium">مددکار: {{ $coverageWorkerName }}</span>
                                             @endif
                                             <span class="inline-flex items-center rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1 font-bold text-indigo-700">{{ $group->deliveries->count() }} دسته‌بندی</span>
                                         </div>
