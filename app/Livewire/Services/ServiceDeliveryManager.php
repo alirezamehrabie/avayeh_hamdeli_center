@@ -458,12 +458,9 @@ class ServiceDeliveryManager extends Component
     {
         return view('livewire.services.service-delivery-manager', [
             'services' => Service::query()
-                ->with([
-                    'serviceName',
-                    'categories' => fn ($query) => $query->orderBy('sort_id')->orderBy('id'),
-                    'workerAllocations.socialWorker',
-                    'workerAllocations.serviceCategory',
-                ])
+                ->with('serviceName:id,name')
+                ->withCount('categories')
+                ->withSum('workerAllocations', 'allocated_quantity')
                 ->supportsHomeDelivery()
                 ->whereIn('status', ['approved', 'in_distribution', 'completed'])
                 ->latest()

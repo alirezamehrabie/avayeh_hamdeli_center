@@ -341,6 +341,37 @@ class ServiceDefinitionTest extends TestCase
             ->assertDontSee($stationOnlyService->code);
     }
 
+    public function test_quota_service_options_use_aggregates_and_expose_code_for_search(): void
+    {
+        $manager = $this->manager();
+        $worker = SocialWorker::query()->create([
+            'worker_code' => 91,
+            'first_name' => 'Aggregate',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+        $service = $this->serviceWithCategory($manager, 'Aggregate Home Service', true);
+        $service->workerAllocations()->create([
+            'social_worker_id' => $worker->id,
+            'service_category_id' => $service->categories()->firstOrFail()->id,
+            'allocated_quantity' => 7,
+        ]);
+
+        $this->actingAs($manager);
+
+        Livewire::test(ServiceDeliveryManager::class)
+            ->assertViewHas('services', function ($services) use ($service): bool {
+                $option = $services->firstWhere('id', $service->id);
+
+                return $option
+                    && (int) $option->categories_count === 1
+                    && (float) $option->worker_allocations_sum_allocated_quantity === 7.0
+                    && ! $option->relationLoaded('categories')
+                    && ! $option->relationLoaded('workerAllocations');
+            })
+            ->assertSeeHtml('\u0022code\u0022:\u0022'.$service->code);
+    }
+
     public function test_social_worker_final_review_is_collapsed_by_default_and_expandable(): void
     {
         $manager = $this->manager();

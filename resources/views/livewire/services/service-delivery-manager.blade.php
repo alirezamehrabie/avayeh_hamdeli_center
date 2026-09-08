@@ -8,38 +8,62 @@
         serviceOptions: @js($services->map(fn ($service) => [
             'id' => (int) $service->id,
             'name' => $service->name ?: ($service->serviceName?->name ?? '-'),
-            'items' => (int) $service->categories->count(),
+            'code' => (string) ($service->code ?? ''),
+            'items' => (int) $service->categories_count,
         ])->values()),
         get selectedServiceOption() {
             return this.serviceOptions.find((service) => Number(service.id) === Number(this.selectedServiceId)) ?? null;
         },
         get filteredServiceOptions() {
-            const query = this.dropdownQuery.trim().toLowerCase();
+            const query = this.normalizeSearchText(this.dropdownQuery);
 
             if (! query) {
                 return this.serviceOptions.slice(0, 80);
             }
 
+            const terms = query.split(' ');
+
             return this.serviceOptions
                 .filter((service) => {
-                    return this.serviceOptionSearchText(service).toLowerCase().includes(query);
+                    const haystack = this.normalizeSearchText(`${service.name} ${service.code || ''}`).replace(/ /g, '');
+
+                    return terms.every((term) => {
+                        if (/^\d+$/.test(term) && String(service.id).startsWith(term)) {
+                            return true;
+                        }
+
+                        return haystack.includes(term);
+                    });
                 })
                 .slice(0, 80);
+        },
+        normalizeSearchText(value) {
+            let text = String(value ?? '');
+
+            text = text
+                .replace(/[يى]/g, 'ی')
+                .replace(/ك/g, 'ک')
+                .replace(/[ۀة]/g, 'ه')
+                .replace(/[آأإٱ]/g, 'ا')
+                .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
+                .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
+            text = text.replace(/[\u200C\u200D\uFEFF\u00A0]/g, ' ');
+
+            return text.toLowerCase().replace(/\s+/g, ' ').trim();
         },
         serviceOptionTitle(service) {
             return service.name || 'خدمت بدون عنوان';
         },
         serviceOptionMeta(service) {
-            return `شناسه ${service.id} · ${service.items} آیتم`;
-        },
-        serviceOptionSearchText(service) {
-            return [
-                service.id,
-                service.name,
-                service.items,
-                this.serviceOptionTitle(service),
-                this.serviceOptionMeta(service),
-            ].join(' ');
+            const parts = [`شناسه ${service.id}`];
+
+            if (service.code) {
+                parts.push(`کد ${service.code}`);
+            }
+
+            parts.push(`${service.items} آیتم`);
+
+            return parts.join(' · ');
         },
         openDropdown() {
             this.dropdownOpen = true;
@@ -280,7 +304,7 @@
                                         x-model.debounce.150ms="dropdownQuery"
                                         type="text"
                                         class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-cyan-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-100"
-                                        placeholder="جستجو با شناسه، نام یا تعداد آیتم"
+                                        placeholder="جستجو با نام، کد یا شناسه خدمت"
                                     >
                                 </div>
 
@@ -345,7 +369,7 @@
                             <div class="mt-3 max-h-[300px] space-y-2 overflow-y-auto overscroll-contain pl-1 xl:max-h-[420px]">
                                 @forelse($services as $service)
                                     @php
-                                        $allocated = (float) $service->allocated_quantity;
+                                        $allocated = (float) ($service->worker_allocations_sum_allocated_quantity ?? 0);
                                         $total = (float) $service->total_quantity;
                                         $percent = $total > 0 ? min(100, ($allocated / $total) * 100) : 0;
                                     @endphp
@@ -359,7 +383,7 @@
                                         <div class="flex items-center justify-between gap-3">
                                             <div class="min-w-0">
                                                 <p class="truncate text-sm font-black text-slate-800">{{ $service->name ?: ($service->serviceName?->name ?? '-') }}</p>
-                                                <p class="mt-0.5 text-[11px] font-bold text-slate-500">{{ $service->code }} - {{ $service->categories->count() }} آیتم</p>
+                                                <p class="mt-0.5 text-[11px] font-bold text-slate-500">{{ $service->code }} - {{ $service->categories_count }} آیتم</p>
                                             </div>
                                             <span class="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600">
                                                 {{ \App\Models\Service::formatQuantityForUnit($allocated, null) }}
