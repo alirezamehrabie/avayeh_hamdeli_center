@@ -42,6 +42,8 @@ class ServiceCategoryBreakdownExportTest extends TestCase
                 $kgRow = $rows->firstWhere(0, 'روغن کیلویی');
 
                 return $rows->count() === 2
+                    && $rows[0][0] === 'روغن کیلویی'
+                    && $rows[1][0] === 'برنج بسته‌ای'
                     && $packRow[1] === 4.0
                     && $packRow[2] === (Service::unitOptions()['pack'] ?? 'pack')
                     && $packRow[3] === 2
@@ -155,12 +157,14 @@ class ServiceCategoryBreakdownExportTest extends TestCase
 
         $this->deliver($service, $packCategory, $user, 2, 'تحویل اول', '1111111111');
         $this->deliver($service, $packCategory, $user, 2, 'تحویل دوم', '1111111111');
-        $this->deliver($service, $kgCategory, $user, 5, 'تحویل روغن', '2222222222');
+        // Older delivery date on the bigger total: the list must order by
+        // delivered quantity (5 > 4), NOT by recency as before.
+        $this->deliver($service, $kgCategory, $user, 5, 'تحویل روغن', '2222222222', now()->subDays(3)->toDateString());
 
         return [$user, $service->fresh()];
     }
 
-    private function deliver(Service $service, ServiceCategory $category, User $user, int $quantity, string $notes, string $nationalId): ServiceDelivery
+    private function deliver(Service $service, ServiceCategory $category, User $user, int $quantity, string $notes, string $nationalId, ?string $deliveredAt = null): ServiceDelivery
     {
         return ServiceDelivery::query()->create([
             'service_id' => $service->id,
@@ -171,7 +175,7 @@ class ServiceCategoryBreakdownExportTest extends TestCase
             'delivered_quantity' => $quantity,
             'value_per_unit_snapshot' => 1000,
             'delivered_total_value' => $quantity * 1000,
-            'delivered_at' => now()->toDateString(),
+            'delivered_at' => $deliveredAt ?? now()->toDateString(),
             'notes' => $notes,
             'created_by' => $user->id,
         ]);

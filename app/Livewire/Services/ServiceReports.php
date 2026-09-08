@@ -426,6 +426,7 @@ class ServiceReports extends Component
         $rows = $this->filteredDeliveryQuery()
             ->selectRaw('service_category_id, SUM(delivered_quantity) as total, COUNT(*) as record_count, MAX(delivered_at) as last_delivered_at')
             ->groupBy('service_category_id')
+            ->orderByDesc('total')
             ->orderByDesc('last_delivered_at')
             ->get();
 
