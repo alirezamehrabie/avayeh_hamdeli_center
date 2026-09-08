@@ -527,6 +527,67 @@ class DistributionOperatorEntryGateTest extends TestCase
             ->assertDontSee('broken: false', false);
     }
 
+    public function test_authorized_today_badge_counts_only_finalized_distinct_subjects(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+        $food = $this->makeCategory($service, 'Food basket', $operator);
+        $rice = $this->makeCategory($service, 'Rice pack', $operator);
+
+        $personA = Person::query()->create([
+            'first_name' => 'Reza', 'last_name' => 'Karimi',
+            'national_id' => '1234567891', 'person_code' => '14010',
+        ]);
+        $personB = Person::query()->create([
+            'first_name' => 'Ali', 'last_name' => 'Sadeghi',
+            'national_id' => '1234567894', 'person_code' => '14040',
+        ]);
+        $personC = Person::query()->create([
+            'first_name' => 'Hamed', 'last_name' => 'Zare',
+            'national_id' => '1234567895', 'person_code' => '14050',
+        ]);
+
+        $qr = app(QrIdentityService::class);
+        $tokenA = $this->issueToken($qr, $personA, $operator);
+        $tokenB = $this->issueToken($qr, $personB, $operator);
+        $tokenC = $this->issueToken($qr, $personC, $operator);
+
+        $this->actingAs($operator);
+
+        $component = Livewire::test(EntryGate::class)
+            ->call('selectService', $service->id)
+            ->assertSee('ورود مجاز امروز');
+
+        $this->assertSame(0, $component->instance()->authorizedToday);
+
+        // Successful scan + authorization + "ارسال مجوز و نفر بعدی" → +1 without a page refresh.
+        $component->call('resolveScannedQr', $tokenA)
+            ->call('toggleCategory', $food->id)
+            ->call('confirmPermission');
+        $this->assertSame(1, $component->instance()->authorizedToday);
+
+        // Scanned but nothing authorized (incomplete) must not count.
+        $component->call('resolveScannedQr', $tokenB)->call('confirmPermission');
+        $this->assertSame(1, $component->instance()->authorizedToday);
+
+        // Authorized then removed (cancelled → soft-deleted) must not count.
+        $component->call('resolveScannedQr', $tokenC)
+            ->call('toggleCategory', $food->id)
+            ->call('toggleCategory', $food->id)
+            ->call('confirmPermission');
+        $this->assertSame(1, $component->instance()->authorizedToday);
+
+        // Same subject authorized for a second item → still one entry, not two.
+        $component->call('resolveScannedQr', $tokenA)
+            ->call('toggleCategory', $rice->id)
+            ->call('confirmPermission');
+        $this->assertSame(1, $component->instance()->authorizedToday);
+
+        // A fresh mount (page refresh) recomputes the same real value from the database.
+        $fresh = Livewire::test(EntryGate::class, ['selectedServiceId' => $service->id]);
+        $this->assertSame(1, $fresh->instance()->authorizedToday);
+    }
+
     /**
      * @return array{0: User}
      */
@@ -563,6 +624,13 @@ class DistributionOperatorEntryGateTest extends TestCase
             'status' => 'approved',
             'created_by' => $creator->id,
         ]);
+    }
+
+    protected function issueToken(QrIdentityService $qr, Person $person, User $operator): string
+    {
+        $issued = $qr->issueFor($person, $operator->id);
+
+        return $issued['token'] ?? $issued['identity']->token_encrypted;
     }
 
     protected function makeCategory(Service $service, string $name, User $creator): ServiceCategory

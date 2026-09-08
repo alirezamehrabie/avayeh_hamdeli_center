@@ -29,6 +29,10 @@
                                     /
                                     <span dir="ltr">{{ rtrim(rtrim(number_format((float) $selectedService->total_quantity, 2), '0'), '.') }}</span>
                                 </span>
+                                <span class="text-emerald-700">
+                                    ورود مجاز امروز:
+                                    <span dir="ltr">{{ $this->authorizedToday }}</span>
+                                </span>
                             </p>
                         </div>
                     </div>

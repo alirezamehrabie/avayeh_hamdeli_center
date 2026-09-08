@@ -534,6 +534,29 @@ class EntryGate extends AbstractGateComponent
         $this->resumeScanning();
     }
 
+    /**
+     * Distinct subjects (person or guardian) authorized for the selected service today.
+     *
+     * Read from gate_entry_assignments so the green band always shows real data: toggles persist on
+     * tap but skip rendering, so the number visibly jumps exactly when "ارسال مجوز و نفر بعدی" re-renders,
+     * and a full page refresh recomputes the same value. Soft-deleted (cancelled) items are excluded,
+     * so an empty or fully-removed checklist never counts as an entry.
+     */
+    public function getAuthorizedTodayProperty(): int
+    {
+        if (! $this->selectedServiceId) {
+            return 0;
+        }
+
+        return GateEntryAssignment::query()
+            ->where('service_id', $this->selectedServiceId)
+            ->where('assigned_at', '>=', today())
+            ->select('person_id', 'guardian_id')
+            ->distinct()
+            ->get()
+            ->count();
+    }
+
     /** Persian label of the currently selected proxy recipient, for the summary chip. */
     public function getProxyRecipientLabelProperty(): string
     {
