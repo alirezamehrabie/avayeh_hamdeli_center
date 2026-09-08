@@ -58,6 +58,15 @@ class DashboardHome extends Component
 
     public ?int $serviceReportServiceId = null;
 
+    /**
+     * Delivery method picked on the advanced-service-report landing screen.
+     * Held here because opening a service remounts the child component via
+     * its :key; the URL copy keeps the filtered list alive across remounts,
+     * refreshes and browser back/forward.
+     */
+    #[Url(as: 'channel', history: true)]
+    public ?string $serviceReportChannel = null;
+
     public ?int $caseFilePersonId = null;
 
     public bool $showDeletedUsers = false;
@@ -111,10 +120,11 @@ class DashboardHome extends Component
     }
 
     #[On('open-dashboard-section')]
-    public function selectSection(string $section, ?int $id = null): void
+    public function selectSection(string $section, ?int $id = null, ?string $channel = null): void
     {
         $this->activeSection = $section;
         $this->normalizeActiveSection();
+        $this->serviceReportChannel = $this->activeSection === 'advanced-service-report' ? $channel : null;
         $this->sectionContextId = $this->sectionUsesContextId($this->activeSection) ? $id : null;
         $this->syncSectionContext();
         $this->editingActivityId = $this->activeSection === 'activity-definition' ? $id : null;
@@ -177,6 +187,11 @@ class DashboardHome extends Component
         $this->editingSponsorId = $this->activeSection === 'child-supporter-sponsor-edit' ? $id : null;
         $this->editingServiceId = $this->activeSection === 'service-definition' ? $id : null;
         $this->serviceReportServiceId = $this->activeSection === 'advanced-service-report' ? $id : null;
+
+        if ($this->activeSection !== 'advanced-service-report') {
+            $this->serviceReportChannel = null;
+        }
+
         $this->caseFilePersonId = $this->activeSection === 'beneficiary-case-file' ? $id : null;
     }
 

@@ -32,12 +32,58 @@ class ServiceReports extends Component
 
     protected const DELIVERY_GROUPS_PER_PAGE = 20;
 
+    /**
+     * Delivery-method landing cards shown before the services list. Adding a
+     * new delivery method means adding one entry here (plus its supports_*
+     * column/scope on Service, if missing); the selection screen and the
+     * backend list filter are both driven off this map.
+     */
+    protected const DELIVERY_CHANNELS = [
+        Service::DELIVERY_CHANNEL_HOME => [
+            'label' => 'خدمات تحویل در منزل',
+            'description' => 'خدماتی که مددکاران آن را در منزل مددجو تحویل می‌دهند.',
+            'scope' => 'supportsHomeDelivery',
+            'icon' => 'home',
+            'classes' => 'border-sky-100 hover:border-sky-300 focus:ring-sky-100',
+            'accent' => 'bg-sky-500',
+            'iconClasses' => 'bg-sky-100 text-sky-600',
+            'textClasses' => 'text-sky-600',
+        ],
+        Service::DELIVERY_CHANNEL_GATE => [
+            'label' => 'خدمات ایستگاه توزیع',
+            'description' => 'خدماتی که در گیت‌های ایستگاه توزیع تحویل داده می‌شوند.',
+            'scope' => 'supportsGateDelivery',
+            'icon' => 'station',
+            'classes' => 'border-indigo-100 hover:border-indigo-300 focus:ring-indigo-100',
+            'accent' => 'bg-indigo-500',
+            'iconClasses' => 'bg-indigo-100 text-indigo-600',
+            'textClasses' => 'text-indigo-600',
+        ],
+        Service::DELIVERY_CHANNEL_ACTIVITY => [
+            'label' => 'خدمات فعالیتی',
+            'description' => 'خدماتی که در دل فعالیت‌ها و هنگام حضور شرکت‌کنندگان تحویل داده می‌شوند.',
+            'scope' => 'supportsActivityDelivery',
+            'icon' => 'activity',
+            'classes' => 'border-emerald-100 hover:border-emerald-300 focus:ring-emerald-100',
+            'accent' => 'bg-emerald-500',
+            'iconClasses' => 'bg-emerald-100 text-emerald-600',
+            'textClasses' => 'text-emerald-600',
+        ],
+    ];
+
     public function boot(): void
     {
         abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
     }
 
     public ?int $selectedServiceId = null;
+
+    /**
+     * Currently chosen delivery method (a key of DELIVERY_CHANNELS).
+     * While it is null the landing selection screen is shown and the
+     * services list query never runs.
+     */
+    public ?string $deliveryChannel = null;
 
     public string $search = '';
 
@@ -382,11 +428,48 @@ class ServiceReports extends Component
         })->values();
     }
 
-    public function mount(?int $selectedServiceId = null): void
+    public function mount(?int $selectedServiceId = null, ?string $deliveryChannel = null): void
     {
         abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
 
         $this->selectedServiceId = $selectedServiceId;
+        $this->deliveryChannel = $this->normalizeDeliveryChannel($deliveryChannel);
+    }
+
+    protected function normalizeDeliveryChannel(?string $channel): ?string
+    {
+        return $channel !== null && array_key_exists($channel, self::DELIVERY_CHANNELS)
+            ? $channel
+            : null;
+    }
+
+    public function selectDeliveryChannel(string $channel): void
+    {
+        $channel = $this->normalizeDeliveryChannel($channel);
+
+        if ($channel === null) {
+            return;
+        }
+
+        $this->deliveryChannel = $channel;
+        $this->selectedServiceId = null;
+        $this->clearServiceFilters();
+        $this->dispatch('open-dashboard-section', section: 'advanced-service-report', channel: $channel);
+    }
+
+    public function backToChannelSelection(): void
+    {
+        $this->deliveryChannel = null;
+        $this->selectedServiceId = null;
+        $this->clearServiceFilters();
+        $this->resetPage('deliveries');
+        $this->closeEditDeliveryModal();
+        $this->dispatch('open-dashboard-section', section: 'advanced-service-report');
+    }
+
+    public function updatingDeliveryChannel(): void
+    {
+        $this->resetPage();
     }
 
     public function openService(int $serviceId): void
@@ -404,7 +487,7 @@ class ServiceReports extends Component
         $this->deliveryDateTo = '';
         $this->resetPage('deliveries');
         $this->closeEditDeliveryModal();
-        $this->dispatch('open-dashboard-section', section: 'advanced-service-report', id: $serviceId);
+        $this->dispatch('open-dashboard-section', section: 'advanced-service-report', id: $serviceId, channel: $this->normalizeDeliveryChannel($this->deliveryChannel));
     }
 
     public function backToServices(): void
@@ -416,7 +499,7 @@ class ServiceReports extends Component
         $this->deliveryDateTo = '';
         $this->resetPage('deliveries');
         $this->closeEditDeliveryModal();
-        $this->dispatch('open-dashboard-section', section: 'advanced-service-report');
+        $this->dispatch('open-dashboard-section', section: 'advanced-service-report', channel: $this->normalizeDeliveryChannel($this->deliveryChannel));
     }
 
     public function clearServiceFilters(): void
@@ -585,6 +668,7 @@ class ServiceReports extends Component
 
     public function render()
     {
+        $deliveryChannel = $this->normalizeDeliveryChannel($this->deliveryChannel);
         $search = trim($this->search);
 
         $status = ($this->selectedStatus === 'all') ? null : $this->selectedStatus;
@@ -610,12 +694,26 @@ class ServiceReports extends Component
             ->pluck('name')
             ->toArray();
 
-        // The services list is only rendered on the overview screen; skip it entirely
-        // while a single service (and its deliveries) is being inspected.
+        // The landing screen needs only the per-channel counts; the services list
+        // runs only after a delivery method is picked (and is then filtered by it);
+        // the detail screen skips the list entirely.
         $services = null;
         $socialWorkerOptions = [];
+        $deliveryChannelCards = [];
 
-        if ($this->selectedServiceId === null) {
+        if ($this->selectedServiceId === null && $deliveryChannel === null) {
+            $deliveryChannelCards = collect(self::DELIVERY_CHANNELS)
+                ->map(function (array $card, string $channel): array {
+                    $scope = $card['scope'];
+
+                    return $card + [
+                        'channel' => $channel,
+                        'count' => Service::query()->$scope()->count(),
+                    ];
+                })
+                ->values()
+                ->all();
+        } elseif ($this->selectedServiceId === null) {
             // Dropdown of assignable workers for the «مددکار اجتماعی» filter;
             // includes inactive (non-deleted) workers whose historical
             // responsibilities must stay reportable.
@@ -630,7 +728,10 @@ class ServiceReports extends Component
                 ])
                 ->all();
 
+            $channelScope = self::DELIVERY_CHANNELS[$deliveryChannel]['scope'];
+
             $services = Service::query()
+                ->$channelScope()
                 ->with([
                     'serviceName',
                     'categories' => fn ($query) => $query->ordered(),
@@ -670,6 +771,9 @@ class ServiceReports extends Component
 
         return view('livewire.services.service-reports', [
             'services' => $services,
+            'deliveryChannel' => $deliveryChannel,
+            'deliveryChannelLabel' => $deliveryChannel !== null ? self::DELIVERY_CHANNELS[$deliveryChannel]['label'] : null,
+            'deliveryChannelCards' => $deliveryChannelCards,
             'selectedService' => $this->selectedService,
             'deliveryGroups' => $this->deliveryGroups,
             'statusOptions' => Service::STATUS_OPTIONS,

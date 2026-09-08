@@ -469,7 +469,11 @@
                         @break
 
                     @case('advanced-service-report')
-                        <livewire:services.service-reports :selected-service-id="$serviceReportServiceId" :key="'advanced-service-report-'.($serviceReportServiceId ?? 'list')" />
+                        <livewire:services.service-reports
+                            :selected-service-id="$serviceReportServiceId"
+                            :delivery-channel="$serviceReportChannel"
+                            :key="'advanced-service-report-'.($serviceReportServiceId ?? 'list').'-'.($serviceReportChannel ?? 'pick')"
+                        />
                         @break
 
                     @case('advanced-operator-report')

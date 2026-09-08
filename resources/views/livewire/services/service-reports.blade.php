@@ -30,7 +30,55 @@
             || trim($serviceDateTo ?? '') !== '';
     @endphp
 
-    @if(! $selectedService)
+    @if(! $selectedService && ! $deliveryChannel)
+        {{-- Landing: pick a delivery method before entering the services report --}}
+        <div id="service-report-channel-picker" class="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
+            {{-- Header --}}
+            <div class="bg-gradient-to-l from-violet-600 via-indigo-600 to-sky-600 px-4 py-5 text-white sm:px-6 sm:py-6">
+                <h1 class="text-xl font-extrabold sm:text-2xl">گزارش خدمات</h1>
+                <p class="mt-1.5 max-w-3xl text-xs text-indigo-50/90 sm:text-sm">
+                    برای شروع، روش تحویل مورد نظر را انتخاب کنید. سپس فقط خدمات همان روش در گزارش نمایش داده می‌شوند.
+                </p>
+            </div>
+
+            {{-- Method cards --}}
+            <div class="grid grid-cols-1 gap-4 p-4 sm:p-6 md:grid-cols-3">
+                @foreach($deliveryChannelCards as $card)
+                    <button
+                        type="button"
+                        wire:key="channel-card-{{ $card['channel'] }}"
+                        wire:click="selectDeliveryChannel('{{ $card['channel'] }}')"
+                        class="group relative flex flex-col items-stretch overflow-hidden rounded-2xl border bg-white p-5 pr-6 text-right shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 {{ $card['classes'] }}"
+                    >
+                        <span class="absolute inset-y-0 right-0 w-1 {{ $card['accent'] }}"></span>
+                        <span class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl {{ $card['iconClasses'] }}">
+                            @if($card['icon'] === 'home')
+                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M2.25 12 11.2 3.05a1.13 1.13 0 0 1 1.6 0L21.75 12M4.5 9.75v10.13c0 .62.5 1.12 1.13 1.12H9.75v-4.88c0-.62.5-1.12 1.13-1.12h2.24c.63 0 1.13.5 1.13 1.12v4.88h4.13c.62 0 1.12-.5 1.12-1.13V9.75"/></svg>
+                            @elseif($card['icon'] === 'station')
+                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5m-4 0h4"/></svg>
+                            @else
+                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                            @endif
+                        </span>
+
+                        <span class="text-base font-extrabold text-slate-900">{{ $card['label'] }}</span>
+                        <span class="mt-1.5 block text-xs leading-6 text-slate-500">{{ $card['description'] }}</span>
+
+                        <span class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
+                            <span class="inline-flex items-center gap-1 text-xs font-bold text-slate-500">
+                                <svg class="h-4 w-4 {{ $card['textClasses'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7 12 3 4 7m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                                {{ $card['count'] }} خدمت
+                            </span>
+                            <span class="inline-flex items-center gap-1 text-xs font-black transition-transform group-hover:translate-x-1 {{ $card['textClasses'] }}">
+                                مشاهده گزارش
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.25 4.5 15.75 12l-7.5 7.5"/></svg>
+                            </span>
+                        </span>
+                    </button>
+                @endforeach
+            </div>
+        </div>
+    @elseif(! $selectedService)
         <div id="service-report-list" class="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
             {{-- Header --}}
             <div class="bg-gradient-to-l from-violet-600 via-indigo-600 to-sky-600 px-4 py-4 text-white sm:px-6 sm:py-5">
@@ -41,11 +89,22 @@
                             <span class="inline-flex items-center rounded-full border border-white/20 bg-white/15 px-2.5 py-0.5 text-xs font-semibold backdrop-blur">
                     {{ $services->total() }} خدمت
                 </span>
+                            <span class="inline-flex items-center rounded-full bg-white px-2.5 py-0.5 text-xs font-bold text-indigo-700 shadow-sm">
+                    {{ $deliveryChannelLabel }}
+                </span>
                         </div>
                         <p class="mt-1.5 max-w-3xl text-xs text-indigo-50/90 sm:text-sm">
                             فهرست خدمات را سریع مرور کنید، جستجو بزنید و مستقیم وارد تحویل‌های هر خدمت شوید.
                         </p>
                     </div>
+                    <button
+                        type="button"
+                        wire:click="backToChannelSelection"
+                        class="inline-flex w-fit shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold text-white transition hover:bg-white/20"
+                    >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        تغییر روش تحویل
+                    </button>
                 </div>
             </div>
 

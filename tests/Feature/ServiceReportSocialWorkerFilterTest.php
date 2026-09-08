@@ -27,6 +27,7 @@ class ServiceReportSocialWorkerFilterTest extends TestCase
         $this->actingAs($user);
 
         Livewire::test(ServiceReports::class)
+            ->call('selectDeliveryChannel', Service::DELIVERY_CHANNEL_GATE)
             ->set('selectedSocialWorker', (string) $worker->id)
             ->assertViewHas('services', fn (LengthAwarePaginator $services): bool => $services->pluck('id')->sort()->values()->all() === [$allocatedService->id, $deliveredService->id]
                 && $services->total() === 2);
@@ -41,6 +42,7 @@ class ServiceReportSocialWorkerFilterTest extends TestCase
         $this->actingAs($user);
 
         Livewire::test(ServiceReports::class)
+            ->call('selectDeliveryChannel', Service::DELIVERY_CHANNEL_GATE)
             ->set('selectedSocialWorker', (string) $worker->id)
             ->set('selectedStatus', 'draft')
             ->assertViewHas('services', fn (LengthAwarePaginator $services): bool => $services->pluck('id')->contains($allocatedService->id))
@@ -55,6 +57,7 @@ class ServiceReportSocialWorkerFilterTest extends TestCase
         $this->actingAs($user);
 
         Livewire::test(ServiceReports::class)
+            ->call('selectDeliveryChannel', Service::DELIVERY_CHANNEL_GATE)
             ->set('selectedSocialWorker', (string) $worker->id)
             ->assertViewHas('services', fn (LengthAwarePaginator $services): bool => $services->total() === 2)
             ->set('selectedSocialWorker', 'all')
@@ -76,6 +79,7 @@ class ServiceReportSocialWorkerFilterTest extends TestCase
         $this->actingAs($user);
 
         Livewire::test(ServiceReports::class)
+            ->call('selectDeliveryChannel', Service::DELIVERY_CHANNEL_GATE)
             ->assertViewHas('socialWorkerOptions', fn (array $options): bool => collect($options)->contains(
                 fn (array $option): bool => $option['id'] === $worker->id
             ));

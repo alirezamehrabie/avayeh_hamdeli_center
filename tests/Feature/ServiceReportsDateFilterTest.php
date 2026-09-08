@@ -92,6 +92,7 @@ class ServiceReportsDateFilterTest extends TestCase
         $service = $this->createServiceWithDeliveries($user, 'Reported Service', ['2026-08-14']);
 
         Livewire::test(ServiceReports::class)
+            ->call('selectDeliveryChannel', Service::DELIVERY_CHANNEL_GATE)
             ->set('search', $service->serviceName->name)
             ->set('selectedServiceName', $service->serviceName->name)
             ->set('selectedStatus', 'approved')
@@ -115,6 +116,7 @@ class ServiceReportsDateFilterTest extends TestCase
         $newer = $this->createServiceWithDeliveries($user, 'Newer Service', [], '2026-08-25 09:00:00');
 
         Livewire::test(ServiceReports::class)
+            ->call('selectDeliveryChannel', Service::DELIVERY_CHANNEL_GATE)
             ->assertViewHas('services', fn ($services): bool => $services->count() === 3)
             ->set('serviceDateFrom', '2026-08-10')
             ->assertViewHas('services', fn ($services): bool => $services->count() === 2
@@ -141,6 +143,7 @@ class ServiceReportsDateFilterTest extends TestCase
         $jalaliTo = Jalalian::fromDateTime('2026-08-31 00:00:00')->format('Y/m/d');
 
         Livewire::test(ServiceReports::class)
+            ->call('selectDeliveryChannel', Service::DELIVERY_CHANNEL_GATE)
             ->set('serviceDateFrom', $jalaliFrom)
             ->set('serviceDateTo', $jalaliTo)
             ->assertViewHas('services', fn ($services): bool => $services->count() === 1
@@ -157,6 +160,7 @@ class ServiceReportsDateFilterTest extends TestCase
         $this->createServiceWithDeliveries($user, 'Second Service', [], '2026-08-10 14:30:00');
 
         Livewire::test(ServiceReports::class)
+            ->call('selectDeliveryChannel', Service::DELIVERY_CHANNEL_GATE)
             ->set('serviceDateFrom', 'not-a-date')
             ->set('serviceDateTo', '1404/13/40')
             ->assertViewHas('services', fn ($services): bool => $services->count() === 2)
@@ -173,6 +177,7 @@ class ServiceReportsDateFilterTest extends TestCase
         $this->createServiceWithDeliveries($user, 'August Service', [], '2026-08-10 14:30:00');
 
         Livewire::test(ServiceReports::class)
+            ->call('selectDeliveryChannel', Service::DELIVERY_CHANNEL_GATE)
             ->set('serviceDateFrom', '2026-08-10')
             ->set('serviceDateTo', '2026-08-31')
             ->call('clearServiceFilters')
