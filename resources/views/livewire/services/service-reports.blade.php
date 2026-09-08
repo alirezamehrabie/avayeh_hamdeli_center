@@ -544,7 +544,7 @@
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
                                                             </svg>
                                                         </span>
-                                                        <p class="text-sm font-medium text-slate-500">{{ (trim($deliverySearch ?? "") !== "" || $selectedDeliveryEntryType !== 'all' || $selectedDeliverySocialWorker !== 'all' || $selectedCoverageSocialWorker !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '') ? "موردی برای فیلترهای فعلی پیدا نشد." : "هنوز هیچ تحویلی برای این خدمت ثبت نشده است." }}</p>
+                                                        <p class="text-sm font-medium text-slate-500">{{ (trim($deliverySearch ?? "") !== "" || $selectedDeliveryEntryType !== 'all' || $selectedCoverageSocialWorker !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '') ? "موردی برای فیلترهای فعلی پیدا نشد." : "هنوز هیچ تحویلی برای این خدمت ثبت نشده است." }}</p>
                                                     </div>
                                                 @endforelse
                                             </div>
@@ -636,19 +636,86 @@
                             <option value="guardian">خانوادگی (سرپرست)</option>
                         </select>
 
-                        <select wire:model.live="selectedDeliverySocialWorker" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 sm:w-56">
-                            <option value="all">همه مددکاران تحویل‌دهنده</option>
-                            @foreach($deliverySocialWorkerOptions as $workerOption)
-                                <option value="{{ $workerOption['id'] }}">{{ $workerOption['name'] }}</option>
-                            @endforeach
-                        </select>
+                        <div
+                            x-data="{
+                                open: false,
+                                query: '',
+                                workers: @js($coverageSocialWorkerOptions),
+                                normalizeSearchText(value) {
+                                    let text = String(value ?? '');
 
-                        <select wire:model.live="selectedCoverageSocialWorker" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 sm:w-56">
-                            <option value="all">همه مددکاران تحت پوشش</option>
-                            @foreach($coverageSocialWorkerOptions as $workerOption)
-                                <option value="{{ $workerOption['id'] }}">{{ $workerOption['name'] }}</option>
-                            @endforeach
-                        </select>
+                                    text = text
+                                        .replace(/[يى]/g, 'ی')
+                                        .replace(/ك/g, 'ک')
+                                        .replace(/[ۀة]/g, 'ه')
+                                        .replace(/[آأإٱ]/g, 'ا')
+                                        .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
+                                        .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
+                                    text = text.replace(/[\u200C\u200D\uFEFF\u00A0]/g, ' ');
+
+                                    return text.toLowerCase().replace(/\s+/g, ' ').trim();
+                                },
+                                get filtered() {
+                                    const query = this.normalizeSearchText(this.query);
+
+                                    if (! query) {
+                                        return this.workers.slice(0, 50);
+                                    }
+
+                                    const terms = query.split(' ');
+
+                                    return this.workers
+                                        .filter((worker) => {
+                                            const haystack = this.normalizeSearchText(worker.name).replace(/ /g, '');
+
+                                            return terms.every((term) => haystack.includes(term.replace(/ /g, '')));
+                                        })
+                                        .slice(0, 50);
+                                },
+                                choose(id) {
+                                    this.$wire.set('selectedCoverageSocialWorker', id === null ? 'all' : String(id));
+                                    this.open = false;
+                                    this.query = '';
+                                },
+                            }"
+                            class="relative w-full sm:w-64"
+                        >
+                            <button
+                                type="button"
+                                aria-label="مددکار اجتماعی"
+                                @click="open = !open; if (open) $nextTick(() => $refs.search.focus())"
+                                class="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition hover:border-slate-300 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                            >
+                                <span class="truncate">{{ data_get(collect($coverageSocialWorkerOptions)->firstWhere('id', (int) $selectedCoverageSocialWorker), 'name', 'همه مددکاران اجتماعی') }}</span>
+                                <svg class="h-4 w-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+
+                            <div
+                                x-show="open"
+                                x-cloak
+                                x-transition
+                                @click.outside="open = false"
+                                class="absolute z-30 mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 shadow-xl"
+                            >
+                                <input
+                                    x-ref="search"
+                                    type="text"
+                                    x-model="query"
+                                    placeholder="جستجوی مددکار اجتماعی…"
+                                    class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                                >
+
+                                <div class="mt-1 max-h-56 space-y-0.5 overflow-y-auto">
+                                    <button type="button" @click="choose(null)" class="w-full rounded-lg px-3 py-2 text-right text-sm font-bold text-slate-600 transition hover:bg-slate-50">همه مددکاران اجتماعی</button>
+                                    <template x-for="worker in filtered" :key="worker.id">
+                                        <button type="button" @click="choose(worker.id)" x-text="worker.name" class="w-full truncate rounded-lg px-3 py-2 text-right text-sm text-slate-700 transition hover:bg-indigo-50 hover:text-indigo-700"></button>
+                                    </template>
+                                    <p x-show="filtered.length === 0" class="px-3 py-2 text-xs text-slate-400">مددکاری با این جستجو یافت نشد.</p>
+                                </div>
+                            </div>
+                        </div>
 
                         <div x-data="jalaliDateTimeField($wire.entangle('deliveryDateFrom').live)" class="w-full sm:w-40">
                             <input
@@ -701,7 +768,7 @@
                             </span>
                         </div>
 
-                        @if(trim($deliverySearch ?? '') !== '' || $selectedDeliveryEntryType !== 'all' || $selectedDeliverySocialWorker !== 'all' || $selectedCoverageSocialWorker !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '')
+                        @if(trim($deliverySearch ?? '') !== '' || $selectedDeliveryEntryType !== 'all' || $selectedCoverageSocialWorker !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '')
                             <button
                                 type="button"
                                 wire:click="clearDeliveryFilters"
@@ -833,7 +900,7 @@
                                         <tbody class="divide-y divide-slate-100">
                                         @foreach($group->deliveries as $delivery)
                                             @php
-                                                $socialWorkerName = $delivery->socialWorker?->full_name ?: '—';
+                                                $socialWorkerName = $delivery->display_social_worker_name ?: '—';
                                                 $createdDate = $jalaliDateTime($delivery->created_at) ?: '—';
                                                 $deliveredDate = $delivery->delivered_at
                                                     ? \App\Helpers\Morilog\Jalalian::fromDateTime($delivery->delivered_at)->format('Y/m/d')
@@ -893,7 +960,7 @@
                                 <div class="rpt-md-cards space-y-3 px-3 py-3 sm:px-4">
                                     @foreach($group->deliveries as $delivery)
                                         @php
-                                            $socialWorkerName = $delivery->socialWorker?->full_name ?: '—';
+                                            $socialWorkerName = $delivery->display_social_worker_name ?: '—';
                                             $createdDate = $jalaliDateTime($delivery->created_at) ?: '—';
                                             $deliveredDate = $delivery->delivered_at
                                                 ? \App\Helpers\Morilog\Jalalian::fromDateTime($delivery->delivered_at)->format('Y/m/d')
@@ -1104,7 +1171,7 @@
                         </section>
                     @empty
                         <div class="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-12 text-center text-slate-500">
-                            {{ (trim($deliverySearch ?? "") !== "" || $selectedDeliveryEntryType !== 'all' || $selectedDeliverySocialWorker !== 'all' || $selectedCoverageSocialWorker !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '') ? "موردی برای فیلترهای فعلی پیدا نشد." : "هنوز هیچ تحویلی برای این خدمت ثبت نشده است." }}
+                            {{ (trim($deliverySearch ?? "") !== "" || $selectedDeliveryEntryType !== 'all' || $selectedCoverageSocialWorker !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '') ? "موردی برای فیلترهای فعلی پیدا نشد." : "هنوز هیچ تحویلی برای این خدمت ثبت نشده است." }}
                         </div>
                     @endforelse
 

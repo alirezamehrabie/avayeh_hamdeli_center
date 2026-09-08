@@ -149,6 +149,21 @@ class ServiceDelivery extends Model
         return (string) ($this->national_id ?: '-');
     }
 
+    /**
+     * Social worker to show for this row: the worker stamped on the delivery,
+     * falling back to the covering worker of the recipient's family — the
+     * guardian directly, or the person's guardian for individual deliveries.
+     * Null only when no worker is related at all (e.g. manual records).
+     */
+    public function getDisplaySocialWorkerNameAttribute(): ?string
+    {
+        $worker = $this->socialWorker
+            ?: $this->guardian?->socialWorker
+            ?: $this->person?->guardian?->socialWorker;
+
+        return $worker?->full_name ?: null;
+    }
+
     public static function attachToPerson(Person $person): void
     {
         static::query()

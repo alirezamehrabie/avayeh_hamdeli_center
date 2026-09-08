@@ -79,7 +79,7 @@ class ServiceReportExport implements FromArray, ShouldAutoSize, WithHeadings, Wi
                     number_format((float) $delivery->delivered_quantity, 2),
                     $unitLabel,
                     number_format((int) $delivery->delivered_total_value),
-                    $delivery->socialWorker?->full_name ?: '-',
+                    $delivery->display_social_worker_name ?: '-',
                     $delivery->delivered_at
                         ? Jalalian::fromDateTime($delivery->delivered_at)->format('Y/m/d')
                         : ($delivery->created_at ? Jalalian::fromDateTime($delivery->created_at)->format('Y/m/d') : '-'),

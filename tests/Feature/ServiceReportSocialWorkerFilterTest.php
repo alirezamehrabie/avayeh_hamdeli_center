@@ -87,47 +87,6 @@ class ServiceReportSocialWorkerFilterTest extends TestCase
             ));
     }
 
-    public function test_detail_page_delivery_filter_returns_only_that_workers_recipients(): void
-    {
-        [$user, $worker, , $deliveredService] = $this->scenario();
-
-        $this->actingAs($user);
-
-        // Two deliveries in the detailed service: one by $worker, one by another worker.
-        $category = $deliveredService->categories()->first();
-
-        ServiceDelivery::query()->create([
-            'service_id' => $deliveredService->id,
-            'service_category_id' => $category->id,
-            'social_worker_id' => SocialWorker::query()->whereKey(412)->value('id'),
-            'delivery_channel' => Service::DELIVERY_CHANNEL_HOME,
-            'national_id' => '7778889990',
-            'full_name' => 'Other Worker Recipient',
-            'delivered_quantity' => 1,
-            'value_per_unit_snapshot' => 1000,
-            'delivered_total_value' => 1000,
-            'delivered_at' => now()->toDateString(),
-            'created_by' => $user->id,
-        ]);
-
-        $component = Livewire::test(ServiceReports::class, ['selectedServiceId' => $deliveredService->id]);
-
-        // Worker options on the detail page list only workers with a delivery here.
-        $component->assertViewHas('deliverySocialWorkerOptions', fn (array $options): bool => collect($options)
-            ->pluck('id')
-            ->contains($worker->id));
-
-        $component->set('selectedDeliverySocialWorker', (string) $worker->id);
-
-        $groups = $component->instance()->deliveryGroups;
-        $this->assertSame(1, $groups->total());
-        $this->assertSame('Some Recipient', $groups->items()[0]->recipientName);
-
-        // Clearing the filter restores both recipients.
-        $component->set('selectedDeliverySocialWorker', 'all');
-        $this->assertSame(2, $component->instance()->deliveryGroups->total());
-    }
-
     public function test_detail_page_coverage_filter_returns_recipients_of_the_assigned_worker(): void
     {
         [$user, $worker, , $deliveredService] = $this->scenario();
@@ -193,6 +152,61 @@ class ServiceReportSocialWorkerFilterTest extends TestCase
         $component->set('selectedDeliveryEntryType', 'individual');
         $component->set('selectedCoverageSocialWorker', (string) $worker->id);
         $this->assertSame(1, $component->instance()->deliveryGroups->total());
+    }
+
+    public function test_detail_records_fall_back_to_the_covering_guardian_worker_name(): void
+    {
+        [$user, , , $deliveredService] = $this->scenario();
+
+        $this->actingAs($user);
+
+        $category = $deliveredService->categories()->first();
+
+        $familyWorker = $this->createWorker(413, 'Bahar');
+        $personWorker = $this->createWorker(414, 'Kian');
+
+        $familyGuardian = Guardian::query()->create([
+            'guardian_code' => random_int(1000000, 9999999),
+            'national_code' => '5556667008',
+            'first_name' => 'Family',
+            'last_name' => 'Household',
+            'social_worker_id' => $familyWorker->id,
+        ]);
+
+        $personGuardian = Guardian::query()->create([
+            'guardian_code' => random_int(1000000, 9999999),
+            'national_code' => '6667778009',
+            'first_name' => 'Person',
+            'last_name' => 'Household',
+            'social_worker_id' => $personWorker->id,
+        ]);
+
+        $person = Person::query()->create([
+            'guardian_id' => $personGuardian->id,
+            'person_code' => (string) random_int(1000000, 9999999),
+            'national_id' => (string) random_int(1000000000, 9999999999),
+            'first_name' => 'Person',
+            'last_name' => 'Beneficiary',
+        ]);
+
+        // Deliveries without a stamped worker: the family row resolves through
+        // its guardian, the individual row through the person's guardian.
+        $this->createDelivery($deliveredService, $category, $user, ['guardian_id' => $familyGuardian->id], 'Family Row');
+        $this->createDelivery($deliveredService, $category, $user, ['person_id' => $person->id], 'Individual Row');
+
+        Livewire::test(ServiceReports::class, ['selectedServiceId' => $deliveredService->id])
+            ->assertSee($familyWorker->full_name)
+            ->assertSee($personWorker->full_name);
+    }
+
+    private function createWorker(int $code, string $firstName): SocialWorker
+    {
+        return SocialWorker::query()->create([
+            'worker_code' => $code,
+            'first_name' => $firstName,
+            'last_name' => 'Covering '.Str::random(6),
+            'is_active' => true,
+        ]);
     }
 
     private function createDelivery(
