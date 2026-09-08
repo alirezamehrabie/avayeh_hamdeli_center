@@ -27,6 +27,12 @@
             'in_distribution' => 'bg-amber-100 text-amber-700',
             'completed' => 'bg-sky-100 text-sky-700',
         ];
+        $barClasses = [
+            'draft' => 'bg-slate-300',
+            'approved' => 'bg-emerald-500',
+            'in_distribution' => 'bg-amber-500',
+            'completed' => 'bg-sky-500',
+        ];
     @endphp
 
     <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
@@ -155,70 +161,29 @@
                 <article
                     x-data="{ detailsPayload: @js($detailsPayload) }"
                     @click="openDetails(detailsPayload)"
-                    class="cursor-pointer rounded-[28px] border border-slate-200 bg-white px-4 py-4 shadow-sm transition hover:border-slate-300 hover:shadow-md sm:px-5"
+                    class="relative cursor-pointer overflow-hidden rounded-[28px] border border-slate-200 bg-white px-4 py-4 shadow-sm transition hover:border-slate-300 hover:shadow-md sm:px-5"
                 >
-                    <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                        <div class="flex min-w-0 flex-1 flex-col gap-4 xl:flex-row xl:items-center xl:gap-3">
-                            <div class="flex items-center justify-between gap-3 xl:w-auto xl:justify-start">
-                                <span class="inline-flex shrink-0 items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-600">
-                                    {{ $service->code }}
-                                </span>
+                    <span class="absolute inset-y-0 right-0 w-1 {{ $barClasses[$service->status] ?? 'bg-slate-300' }}" aria-hidden="true"></span>
 
-                                <span class="inline-flex rounded-full px-3 py-1 text-[11px] font-bold {{ $badgeClasses[$service->status] ?? 'bg-slate-100 text-slate-700' }}">
-                                    {{ $statusOptions[$service->status] ?? $service->status }}
-                                </span>
-                            </div>
-
-                            <div class="min-w-0 xl:min-w-[13rem] xl:flex-[1.2]">
-                                <p class="text-[11px] font-medium text-slate-400">نام خدمت</p>
-                                <p class="mt-1 truncate text-sm font-black text-slate-800 sm:text-base">
-                                    {{ $service->serviceName?->name ?: '-' }}
-                                </p>
-                            </div>
-
-                            <div class="xl:w-auto xl:flex-[0.75]">
-                                <p class="text-[11px] font-medium text-slate-400">زیر‌دسته‌ها</p>
-                                <button
-                                    type="button"
-                                    @click.stop="categoryTitle = @js($service->serviceName?->name ?: 'خدمت'); categories = @js($service->categories->map(fn ($category) => [
-                                        'name' => $category->name,
-                                        'quantity' => $this->formatQuantityForUnit($category->quantity, (string) $category->unit),
-                                        'unit' => $unitOptions[$category->unit] ?? ($category->unit ?? '-'),
-                                    ])->values()); categoriesOpen = true"
-                                    class="mt-1 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
-                                >
-                                    <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7h16M4 12h10M4 17h7m9-7l2 2 4-4"/>
-                                    </svg>
-                                    <span>{{ $service->categories->count() }} مورد</span>
-                                </button>
-                            </div>
-
-                            <div class="min-w-0 xl:flex-[0.9]">
-                                <p class="text-[11px] font-medium text-slate-400">ارزش کل</p>
-                                <p class="mt-1 truncate text-sm font-bold text-slate-800">
-                                    {{ number_format($service->total_service_value) }} ریال
-                                </p>
-                            </div>
-
-                            <div class="xl:flex-[0.7]">
-                                <p class="text-[11px] font-medium text-slate-400">مددکاران</p>
-                                @include('livewire.services.partials.delivery-summary-trigger', [
-                                    'service' => $service,
-                                    'unitOptions' => $unitOptions,
-                                    'label' => 'وضعیت',
-                                    'lazy' => true,
-                                ])
-                            </div>
-
-                            <div class="min-w-0 xl:min-w-[12rem] xl:flex-1">
-                                <p class="text-[11px] font-medium text-slate-400">ایجاد شده توسط</p>
-                                <p class="mt-1 truncate text-sm font-bold text-slate-800">{{ $creatorName }}</p>
-                                <p class="mt-1 text-xs text-slate-500">{{ $createdAt }}</p>
-                            </div>
+                    <div class="flex flex-wrap items-center gap-3 sm:flex-nowrap sm:gap-4">
+                        <div class="flex shrink-0 flex-col items-start gap-1.5">
+                            <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold tracking-wide text-slate-600">
+                                {{ $service->code }}
+                            </span>
+                            <span class="inline-flex items-center gap-1.5 self-start rounded-full px-2.5 py-1 text-[11px] font-bold {{ $badgeClasses[$service->status] ?? 'bg-slate-100 text-slate-700' }}">
+                                <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-60"></span>
+                                {{ $statusOptions[$service->status] ?? $service->status }}
+                            </span>
                         </div>
 
-                        <div class="flex items-center justify-end gap-2 border-t border-slate-100 pt-3 xl:border-t-0 xl:pt-0">
+                        <div class="w-full min-w-0 sm:order-none sm:w-auto sm:flex-1">
+                            <p class="text-[11px] font-medium text-slate-400">نام خدمت</p>
+                            <p class="mt-0.5 truncate text-base font-black leading-6 text-slate-800 sm:text-lg sm:leading-7">
+                                {{ $service->serviceName?->name ?: '-' }}
+                            </p>
+                        </div>
+
+                        <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
                             <button
                                 type="button"
                                 @click.stop
@@ -257,6 +222,52 @@
                                 </svg>
                             </button>
                         </div>
+                    </div>
+
+                    <div class="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+                        <button
+                            type="button"
+                            @click.stop="categoryTitle = @js($service->serviceName?->name ?: 'خدمت'); categories = @js($service->categories->map(fn ($category) => [
+                                'name' => $category->name,
+                                'quantity' => $this->formatQuantityForUnit($category->quantity, (string) $category->unit),
+                                'unit' => $unitOptions[$category->unit] ?? ($category->unit ?? '-'),
+                            ])->values()); categoriesOpen = true"
+                            class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50/80 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
+                            title="مشاهده زیر‌دسته‌ها"
+                        >
+                            <svg class="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7h16M4 12h10M4 17h7"/>
+                            </svg>
+                            <span>{{ $service->categories->count() }} زیردسته</span>
+                        </button>
+
+                        <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50/80 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                            <svg class="h-3.5 w-3.5 shrink-0 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                            </svg>
+                            <span class="font-bold text-slate-700">{{ number_format($service->total_service_value) }}</span>
+                            <span>ریال</span>
+                        </span>
+
+                        @include('livewire.services.partials.delivery-summary-trigger', [
+                            'service' => $service,
+                            'unitOptions' => $unitOptions,
+                            'label' => 'مددکار',
+                            'lazy' => true,
+                            'compact' => true,
+                        ])
+
+                        <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50/80 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                            <svg class="h-3.5 w-3.5 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM12 14a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7Z"/>
+                            </svg>
+                            <span>{{ $creatorName }}</span>
+                            <span class="text-slate-300">|</span>
+                            <svg class="h-3.5 w-3.5 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z"/>
+                            </svg>
+                            <span class="text-slate-500">{{ $createdAt }}</span>
+                        </span>
                     </div>
                 </article>
             @empty
