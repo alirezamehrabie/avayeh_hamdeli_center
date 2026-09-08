@@ -25,6 +25,7 @@
             || $selectedCategory !== 'all'
             || $selectedStatus !== 'all'
             || $selectedType !== 'all'
+            || ($selectedSocialWorker ?? 'all') !== 'all'
             || trim($serviceDateFrom ?? '') !== ''
             || trim($serviceDateTo ?? '') !== '';
     @endphp
@@ -97,6 +98,14 @@
                             <option value="all">همه انواع</option>
                             @foreach($typeDisplayOptions as $typeValue => $typeLabel)
                                 <option value="{{ $typeValue }}">{{ $typeLabel }}</option>
+                            @endforeach
+                        </select>
+
+                        {{-- Social Worker Filter --}}
+                        <select wire:model.live="selectedSocialWorker" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
+                            <option value="all">همه مددکاران</option>
+                            @foreach($socialWorkerOptions ?? [] as $workerOption)
+                                <option value="{{ $workerOption['id'] }}">{{ $workerOption['name'] }}</option>
                             @endforeach
                         </select>
 

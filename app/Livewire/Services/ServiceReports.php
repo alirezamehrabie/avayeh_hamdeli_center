@@ -13,6 +13,7 @@ use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\ServiceDelivery;
 use App\Models\ServiceName;
+use App\Models\SocialWorker;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -47,6 +48,8 @@ class ServiceReports extends Component
     public string $selectedType = 'all';
 
     public string $selectedServiceName = 'all';
+
+    public string $selectedSocialWorker = 'all';
 
     public string $serviceDateFrom = '';
 
@@ -423,6 +426,7 @@ class ServiceReports extends Component
         $this->selectedCategory = 'all';
         $this->selectedStatus = 'all';
         $this->selectedType = 'all';
+        $this->selectedSocialWorker = 'all';
         $this->serviceDateFrom = '';
         $this->serviceDateTo = '';
         $this->resetPage();
@@ -449,6 +453,11 @@ class ServiceReports extends Component
     }
 
     public function updatingSelectedType(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingSelectedSocialWorker(): void
     {
         $this->resetPage();
     }
@@ -582,6 +591,9 @@ class ServiceReports extends Component
         $category = ($this->selectedCategory === 'all') ? null : $this->selectedCategory;
         $type = ($this->selectedType === 'all') ? null : $this->selectedType;
         $serviceName = ($this->selectedServiceName === 'all') ? null : $this->selectedServiceName;
+        $socialWorkerId = ctype_digit($this->selectedSocialWorker) && (int) $this->selectedSocialWorker > 0
+            ? (int) $this->selectedSocialWorker
+            : null;
 
         // The list's «تاریخ» column shows created_at, so the date range filters that column.
         $createdFrom = $this->normalizedDateInput($this->serviceDateFrom);
@@ -601,8 +613,23 @@ class ServiceReports extends Component
         // The services list is only rendered on the overview screen; skip it entirely
         // while a single service (and its deliveries) is being inspected.
         $services = null;
+        $socialWorkerOptions = [];
 
         if ($this->selectedServiceId === null) {
+            // Dropdown of assignable workers for the «مددکار اجتماعی» filter;
+            // includes inactive (non-deleted) workers whose historical
+            // responsibilities must stay reportable.
+            $socialWorkerOptions = SocialWorker::query()
+                ->withoutGlobalScope('active')
+                ->orderBy('first_name')
+                ->orderBy('last_name')
+                ->get(['id', 'first_name', 'last_name'])
+                ->map(fn (SocialWorker $worker): array => [
+                    'id' => $worker->id,
+                    'name' => trim($worker->first_name.' '.$worker->last_name),
+                ])
+                ->all();
+
             $services = Service::query()
                 ->with([
                     'serviceName',
@@ -617,6 +644,11 @@ class ServiceReports extends Component
                 ->when($category, fn ($q) => $q->whereHas('serviceCategory', fn ($q) => $q->where('name', $category)))
                 ->when($type, fn ($q) => $q->where('service_type', $type))
                 ->when($serviceName, fn ($q) => $q->whereHas('serviceName', fn ($q) => $q->where('name', $serviceName)))
+                ->when($socialWorkerId, fn ($q) => $q->where(function ($inner) use ($socialWorkerId) {
+                    $inner
+                        ->whereHas('workerAllocations', fn ($a) => $a->where('social_worker_id', $socialWorkerId))
+                        ->orWhereHas('deliveries', fn ($d) => $d->where('social_worker_id', $socialWorkerId));
+                }))
                 ->when($createdFrom !== null, fn ($q) => $q->whereDate('created_at', '>=', $createdFrom))
                 ->when($createdTo !== null, fn ($q) => $q->whereDate('created_at', '<=', $createdTo))
                 ->when($search !== '', fn ($q) => $q->where(function ($inner) use ($search) {
@@ -645,6 +677,7 @@ class ServiceReports extends Component
             'unitOptions' => Service::unitOptions(),
             'categoryOptions' => $categories,
             'serviceNames' => $serviceNames,
+            'socialWorkerOptions' => $socialWorkerOptions,
             'jalaliDateTime' => fn ($dateTime) => $dateTime ? Jalalian::fromDateTime($dateTime)->format('Y/m/d H:i') : '-',
         ]);
     }
