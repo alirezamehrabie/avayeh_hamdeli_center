@@ -117,6 +117,26 @@ class ServiceReports extends Component
 
     public string $deliveryDateTo = '';
 
+    /**
+     * Delivery-list display setting (see «تنظیمات نمایش» modal). New display
+     * settings join this group: add a property, a validated setter and one
+     * row in the modal body — the list branches on these in the view.
+     *   categorized → per-category accordions with their delivery records
+     *   compact     → recipient section headers only, no category details
+     */
+    public string $deliveryDisplayMode = self::DISPLAY_MODE_CATEGORIZED;
+
+    public const DISPLAY_MODE_CATEGORIZED = 'categorized';
+
+    public const DISPLAY_MODE_COMPACT = 'compact';
+
+    public function setDeliveryDisplayMode(string $mode): void
+    {
+        $this->deliveryDisplayMode = in_array($mode, [self::DISPLAY_MODE_CATEGORIZED, self::DISPLAY_MODE_COMPACT], true)
+            ? $mode
+            : self::DISPLAY_MODE_CATEGORIZED;
+    }
+
     public ?int $editingDeliveryId = null;
 
     public bool $showEditDeliveryModal = false;
@@ -393,6 +413,34 @@ class ServiceReports extends Component
             })
             ->values();
 
+        // Same category slices as receiptItems, but keeping the delivery rows
+        // themselves: drives the per-category accordions of the categorized
+        // display mode. Not serialized to Alpine payloads (view-only).
+        $categorySections = $deliveries
+            ->groupBy(fn ($d) => $d->service_category_id ?: 'none')
+            ->map(function ($categoryDeliveries) {
+                $sample = $categoryDeliveries->first();
+                $unitKey = $sample->serviceCategory?->unit ?: null;
+                $total = $categoryDeliveries->sum(fn ($d) => (float) $d->delivered_quantity);
+                $lastDeliveredAt = $categoryDeliveries
+                    ->map(fn ($d) => $d->delivered_at)
+                    ->filter()
+                    ->sortDesc()
+                    ->first();
+
+                return [
+                    'category' => $sample->serviceCategory?->name ?: '-',
+                    'quantity' => Service::formatQuantityForUnit($total, $unitKey),
+                    'unitLabel' => $unitKey ? (Service::unitOptions()[$unitKey] ?? $unitKey) : '-',
+                    'recordCount' => $categoryDeliveries->count(),
+                    'date' => $lastDeliveredAt
+                        ? Jalalian::fromDateTime($lastDeliveredAt)->format('Y/m/d')
+                        : '-',
+                    'deliveries' => $categoryDeliveries->sortByDesc('delivered_at')->values(),
+                ];
+            })
+            ->values();
+
         $lastDeliveredAt = $deliveries
             ->map(fn ($d) => $d->delivered_at)
             ->filter()
@@ -409,6 +457,7 @@ class ServiceReports extends Component
             'totalQuantity' => $deliveries->sum(fn ($d) => (float) $d->delivered_quantity),
             'unitTotals' => $unitTotals,
             'receiptItems' => $receiptItems,
+            'categorySections' => $categorySections,
             'receiptDate' => $lastDeliveredAt
                 ? Jalalian::fromDateTime($lastDeliveredAt)->format('Y/m/d')
                 : '-',

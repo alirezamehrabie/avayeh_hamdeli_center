@@ -430,24 +430,130 @@
                             </p>
                         </div>
 
-                        <div class="flex flex-col items-stretch gap-3 sm:items-end">
-                            <button
-                                type="button"
-                                wire:click="exportToExcel"
-                                wire:loading.attr="disabled"
-                                wire:target="exportToExcel"
-                                class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500/90 px-4 py-2 text-xs font-bold text-white ring-1 ring-emerald-300/40 backdrop-blur transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                                <svg wire:loading.remove wire:target="exportToExcel" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
-                                </svg>
-                                <svg wire:loading wire:target="exportToExcel" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                                </svg>
-                                <span wire:loading.remove wire:target="exportToExcel">خروجی اکسل</span>
-                                <span wire:loading wire:target="exportToExcel">در حال آماده‌سازی…</span>
-                            </button>
+                        <div
+                            class="flex flex-col items-stretch gap-3 sm:items-end"
+                            x-data="{ displaySettingsOpen: false }"
+                            @keydown.escape.window="displaySettingsOpen = false"
+                        >
+                            <div class="flex items-stretch gap-3">
+                                <button
+                                    type="button"
+                                    wire:click="exportToExcel"
+                                    wire:loading.attr="disabled"
+                                    wire:target="exportToExcel"
+                                    class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500/90 px-4 py-2 text-xs font-bold text-white ring-1 ring-emerald-300/40 backdrop-blur transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
+                                >
+                                    <svg wire:loading.remove wire:target="exportToExcel" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                                    </svg>
+                                    <svg wire:loading wire:target="exportToExcel" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                    </svg>
+                                    <span wire:loading.remove wire:target="exportToExcel">خروجی اکسل</span>
+                                    <span wire:loading wire:target="exportToExcel">در حال آماده‌سازی…</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    @click="displaySettingsOpen = true"
+                                    :aria-expanded="displaySettingsOpen ? 'true' : 'false'"
+                                    aria-haspopup="dialog"
+                                    title="تنظیمات نمایش"
+                                    aria-label="تنظیمات نمایش"
+                                    class="inline-flex shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/10 p-2 text-slate-200 backdrop-blur transition hover:bg-white/20 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/40"
+                                >
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            {{-- «تنظیمات نمایش»: quick modal. Each future setting gets one more @if-style row in the body below. --}}
+                            <template x-teleport="body">
+                                <div
+                                    x-show="displaySettingsOpen"
+                                    x-cloak
+                                    x-transition.opacity
+                                    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4 backdrop-blur-md"
+                                    style="display: none;"
+                                >
+                                    <div
+                                        x-show="displaySettingsOpen"
+                                        x-transition:enter="transition ease-out duration-200"
+                                        x-transition:enter-start="opacity-0 translate-y-3 scale-95"
+                                        x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                                        @click.outside="displaySettingsOpen = false"
+                                        role="dialog"
+                                        aria-modal="true"
+                                        aria-label="تنظیمات نمایش رکوردهای تحویل"
+                                        class="w-full max-w-sm overflow-hidden rounded-[24px] bg-white text-right text-slate-800 shadow-2xl ring-1 ring-slate-900/5"
+                                    >
+                                        <div class="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-5 py-4">
+                                            <div class="flex min-w-0 items-center gap-2.5">
+                                                <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
+                                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    </svg>
+                                                </span>
+                                                <div class="min-w-0">
+                                                    <h3 class="truncate text-sm font-black text-slate-900">تنظیمات نمایش</h3>
+                                                    <p class="mt-0.5 text-[11px] text-slate-500">نحوهٔ نمایش رکوردهای تحویل</p>
+                                                </div>
+                                            </div>
+                                            <button type="button" @click="displaySettingsOpen = false" class="shrink-0 rounded-full border border-slate-200 bg-white p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="بستن">
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 6l12 12M18 6L6 18" />
+                                                </svg>
+                                            </button>
+                                        </div>
+
+                                        <div class="space-y-4 px-5 py-4">
+                                            <div>
+                                                <p class="text-xs font-black text-slate-700">نمایش دسته‌بندی رکوردهای تحویل</p>
+
+                                                <div class="mt-2 grid grid-cols-1 gap-2">
+                                                    <button
+                                                        type="button"
+                                                        wire:click="setDeliveryDisplayMode('categorized')"
+                                                        @click="displaySettingsOpen = false"
+                                                        class="flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-right text-xs font-bold transition {{ $deliveryDisplayMode === 'categorized' ? 'border-indigo-400 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}"
+                                                    >
+                                                        <span>
+                                                            <span class="block">با نمایش دسته‌بندی</span>
+                                                            <span class="mt-0.5 block text-[11px] font-medium text-slate-400">رکوردها داخل آکاردئون هر دسته‌بندی</span>
+                                                        </span>
+                                                        @if($deliveryDisplayMode === 'categorized')
+                                                            <svg class="h-4 w-4 shrink-0 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                        @endif
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        wire:click="setDeliveryDisplayMode('compact')"
+                                                        @click="displaySettingsOpen = false"
+                                                        class="flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-right text-xs font-bold transition {{ $deliveryDisplayMode === 'compact' ? 'border-indigo-400 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}"
+                                                    >
+                                                        <span>
+                                                            <span class="block">بدون نمایش دسته‌بندی</span>
+                                                            <span class="mt-0.5 block text-[11px] font-medium text-slate-400">فقط سرتیتر گیرنده‌ها — نمایش ساده‌تر</span>
+                                                        </span>
+                                                        @if($deliveryDisplayMode === 'compact')
+                                                            <svg class="h-4 w-4 shrink-0 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                        @endif
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
 
                             <div class="grid grid-cols-1 gap-3">
                             <div
@@ -883,143 +989,173 @@
                                 </div>
                             </div>
 
-                            {{-- Automatic layout: table on wide containers, cards on narrow ones --}}
-                            <div class="report-cq">
-                                <div class="rpt-md-table overflow-x-auto">
-                                    <table class="w-full min-w-[760px] text-sm">
-                                        <thead>
-                                        <tr class="border-b border-slate-200 bg-white text-slate-500">
-                                            <th class="px-4 py-3 text-right text-xs font-bold">دسته‌بندی</th>
-                                            <th class="px-4 py-3 text-center text-xs font-bold">مقدار تحویل</th>
-                                            <th class="px-4 py-3 text-center text-xs font-bold">ارزش تحویل</th>
-                                            <th class="px-4 py-3 text-center text-xs font-bold">مددکار</th>
-                                            <th class="px-4 py-3 text-center text-xs font-bold">تاریخ تحویل</th>
-                                            <th class="w-16 px-4 py-3 text-center text-xs font-bold">عملیات</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-slate-100">
-                                        @foreach($group->deliveries as $delivery)
-                                            @php
-                                                $socialWorkerName = $delivery->display_social_worker_name ?: '—';
-                                                $createdDate = $jalaliDateTime($delivery->created_at) ?: '—';
-                                                $deliveredDate = $delivery->delivered_at
-                                                    ? \App\Helpers\Morilog\Jalalian::fromDateTime($delivery->delivered_at)->format('Y/m/d')
-                                                    : '—';
-                                                $updatedDate = $delivery->updated_at && $delivery->created_at
-                                                    && $delivery->updated_at->ne($delivery->created_at)
-                                                        ? $jalaliDateTime($delivery->updated_at)
-                                                        : null;
-                                                $operatorName = trim((string) ($delivery->creator?->full_name ?? $delivery->creator?->name ?? '')) ?: null;
-                                                $updaterName = trim((string) ($delivery->updater?->full_name ?? $delivery->updater?->name ?? '')) ?: null;
-                                                $deliveryUnitKey = $delivery->serviceCategory?->unit;
-                                                $deliveryUnitLabel = $deliveryUnitKey
-                                                    ? ($unitOptions[$deliveryUnitKey] ?? $deliveryUnitKey)
-                                                    : '-';
-                                            @endphp
-                                            <tr class="align-top transition hover:bg-slate-50/80">
-                                                <td class="px-4 py-4 text-slate-700">
-                                                    <p class="font-bold text-slate-900">{{ $delivery->serviceCategory?->name ?: '-' }}</p>
-                                                </td>
-                                                <td class="px-4 py-4 text-center font-bold text-slate-800">
-                                                    {{ \App\Models\Service::formatQuantityForUnit($delivery->delivered_quantity, $deliveryUnitKey) }}
-                                                    {{ $deliveryUnitLabel }}
-                                                </td>
-                                                <td class="px-4 py-4 text-center font-bold text-emerald-600">
-                                                    {{ number_format($delivery->delivered_total_value) }} ریال
-                                                </td>
-                                                <td class="px-4 py-4 text-center">
-                                                    @include('livewire.services.partials.social-worker-popover', [
-                                                        'socialWorkerName' => $socialWorkerName,
-                                                        'deliveredDate' => $deliveredDate,
-                                                        'createdDate' => $createdDate,
-                                                        'updatedDate' => $updatedDate,
-                                                        'operatorName' => $operatorName,
-                                                        'updaterName' => $updaterName,
-                                                    ])
-                                                </td>
-                                                <td class="px-4 py-4 text-center text-slate-700">
-                                                    {{ str_replace(' ', ' - ', $jalaliDateTime($delivery->created_at)) ?: '-' }}
-                                                </td>
-                                                <td class="px-4 py-4 text-center">
-                                                    @include('livewire.services.partials.delivery-actions', ['delivery' => $delivery])
-                                                </td>
-                                            </tr>
-                                            @if($delivery->notes)
-                                                <tr class="bg-slate-50/80">
-                                                    <td colspan="6" class="px-4 pb-3 pt-2 text-xs text-slate-600">
-                                                        <span class="font-bold text-slate-700">توضیحات:</span>
-                                                        {{ $delivery->notes }}
-                                                    </td>
-                                                </tr>
-                                            @endif
-                                        @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
+                            {{-- Body follows the «تنظیمات نمایش» modal: categorized = one accordion per category (compact renders the section header only). --}}
+                            @if($deliveryDisplayMode === 'categorized')
+                                <div class="divide-y divide-slate-100">
+                                    @foreach($group->categorySections as $section)
+                                        <div x-data="{ categoryOpen: false }">
+                                            <button
+                                                type="button"
+                                                @click="categoryOpen = !categoryOpen"
+                                                :aria-expanded="categoryOpen ? 'true' : 'false'"
+                                                class="flex w-full items-center justify-between gap-3 bg-white px-4 py-3 text-right transition hover:bg-slate-50 focus:outline-none focus-visible:bg-slate-50 sm:px-5"
+                                            >
+                                                <div class="flex min-w-0 items-center gap-2.5">
+                                                    <span class="h-2 w-2 shrink-0 rounded-full bg-indigo-400"></span>
+                                                    <span class="truncate text-sm font-extrabold text-slate-900">{{ $section['category'] }}</span>
+                                                    <span class="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600">{{ $section['recordCount'] }} رکورد</span>
+                                                </div>
+                                                <div class="flex shrink-0 items-center gap-3 text-xs">
+                                                    <span class="font-bold text-slate-800">{{ $section['quantity'] }} <span class="font-medium text-slate-400">{{ $section['unitLabel'] }}</span></span>
+                                                    <span class="hidden text-slate-400 sm:inline">{{ $section['date'] }}</span>
+                                                    <svg class="h-4 w-4 text-slate-400 transition-transform" :class="categoryOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                </div>
+                                            </button>
+                                            <div x-show="categoryOpen" x-collapse x-cloak>
+                                                {{-- Automatic layout: table on wide containers, cards on narrow ones --}}
+                                                <div class="report-cq border-t border-slate-100">
+                                                    <div class="rpt-md-table overflow-x-auto">
+                                                        <table class="w-full min-w-[760px] text-sm">
+                                                            <thead>
+                                                            <tr class="border-b border-slate-200 bg-white text-slate-500">
+                                                                <th class="px-4 py-3 text-right text-xs font-bold">دسته‌بندی</th>
+                                                                <th class="px-4 py-3 text-center text-xs font-bold">مقدار تحویل</th>
+                                                                <th class="px-4 py-3 text-center text-xs font-bold">ارزش تحویل</th>
+                                                                <th class="px-4 py-3 text-center text-xs font-bold">مددکار</th>
+                                                                <th class="px-4 py-3 text-center text-xs font-bold">تاریخ تحویل</th>
+                                                                <th class="w-16 px-4 py-3 text-center text-xs font-bold">عملیات</th>
+                                                            </tr>
+                                                            </thead>
+                                                            <tbody class="divide-y divide-slate-100">
+                                                            @foreach($section['deliveries'] as $delivery)
+                                                                @php
+                                                                    $socialWorkerName = $delivery->display_social_worker_name ?: '—';
+                                                                    $createdDate = $jalaliDateTime($delivery->created_at) ?: '—';
+                                                                    $deliveredDate = $delivery->delivered_at
+                                                                        ? \App\Helpers\Morilog\Jalalian::fromDateTime($delivery->delivered_at)->format('Y/m/d')
+                                                                        : '—';
+                                                                    $updatedDate = $delivery->updated_at && $delivery->created_at
+                                                                        && $delivery->updated_at->ne($delivery->created_at)
+                                                                            ? $jalaliDateTime($delivery->updated_at)
+                                                                            : null;
+                                                                    $operatorName = trim((string) ($delivery->creator?->full_name ?? $delivery->creator?->name ?? '')) ?: null;
+                                                                    $updaterName = trim((string) ($delivery->updater?->full_name ?? $delivery->updater?->name ?? '')) ?: null;
+                                                                    $deliveryUnitKey = $delivery->serviceCategory?->unit;
+                                                                    $deliveryUnitLabel = $deliveryUnitKey
+                                                                        ? ($unitOptions[$deliveryUnitKey] ?? $deliveryUnitKey)
+                                                                        : '-';
+                                                                @endphp
+                                                                <tr class="align-top transition hover:bg-slate-50/80">
+                                                                    <td class="px-4 py-4 text-slate-700">
+                                                                        <p class="font-bold text-slate-900">{{ $delivery->serviceCategory?->name ?: '-' }}</p>
+                                                                    </td>
+                                                                    <td class="px-4 py-4 text-center font-bold text-slate-800">
+                                                                        {{ \App\Models\Service::formatQuantityForUnit($delivery->delivered_quantity, $deliveryUnitKey) }}
+                                                                        {{ $deliveryUnitLabel }}
+                                                                    </td>
+                                                                    <td class="px-4 py-4 text-center font-bold text-emerald-600">
+                                                                        {{ number_format($delivery->delivered_total_value) }} ریال
+                                                                    </td>
+                                                                    <td class="px-4 py-4 text-center">
+                                                                        @include('livewire.services.partials.social-worker-popover', [
+                                                                            'socialWorkerName' => $socialWorkerName,
+                                                                            'deliveredDate' => $deliveredDate,
+                                                                            'createdDate' => $createdDate,
+                                                                            'updatedDate' => $updatedDate,
+                                                                            'operatorName' => $operatorName,
+                                                                            'updaterName' => $updaterName,
+                                                                        ])
+                                                                    </td>
+                                                                    <td class="px-4 py-4 text-center text-slate-700">
+                                                                        {{ str_replace(' ', ' - ', $jalaliDateTime($delivery->created_at)) ?: '-' }}
+                                                                    </td>
+                                                                    <td class="px-4 py-4 text-center">
+                                                                        @include('livewire.services.partials.delivery-actions', ['delivery' => $delivery])
+                                                                    </td>
+                                                                </tr>
+                                                                @if($delivery->notes)
+                                                                    <tr class="bg-slate-50/80">
+                                                                        <td colspan="6" class="px-4 pb-3 pt-2 text-xs text-slate-600">
+                                                                            <span class="font-bold text-slate-700">توضیحات:</span>
+                                                                            {{ $delivery->notes }}
+                                                                        </td>
+                                                                    </tr>
+                                                                @endif
+                                                            @endforeach
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
 
-                                <div class="rpt-md-cards space-y-3 px-3 py-3 sm:px-4">
-                                    @foreach($group->deliveries as $delivery)
-                                        @php
-                                            $socialWorkerName = $delivery->display_social_worker_name ?: '—';
-                                            $createdDate = $jalaliDateTime($delivery->created_at) ?: '—';
-                                            $deliveredDate = $delivery->delivered_at
-                                                ? \App\Helpers\Morilog\Jalalian::fromDateTime($delivery->delivered_at)->format('Y/m/d')
-                                                : '—';
-                                            $updatedDate = $delivery->updated_at && $delivery->created_at
-                                                && $delivery->updated_at->ne($delivery->created_at)
-                                                    ? $jalaliDateTime($delivery->updated_at)
-                                                    : null;
-                                            $operatorName = trim((string) ($delivery->creator?->full_name ?? $delivery->creator?->name ?? '')) ?: null;
-                                            $updaterName = trim((string) ($delivery->updater?->full_name ?? $delivery->updater?->name ?? '')) ?: null;
-                                            $deliveryUnitKey = $delivery->serviceCategory?->unit;
-                                            $deliveryUnitLabel = $deliveryUnitKey
-                                                ? ($unitOptions[$deliveryUnitKey] ?? $deliveryUnitKey)
-                                                : '-';
-                                        @endphp
-                                        <article class="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm">
-                                            <div class="flex items-start justify-between gap-3">
-                                                <p class="min-w-0 flex-1 truncate text-sm font-bold text-slate-900">{{ $delivery->serviceCategory?->name ?: '-' }}</p>
-                                                @include('livewire.services.partials.delivery-actions', ['delivery' => $delivery, 'size' => 'md'])
+                                                    <div class="rpt-md-cards space-y-3 px-3 py-3 sm:px-4">
+                                                        @foreach($section['deliveries'] as $delivery)
+                                                            @php
+                                                                $socialWorkerName = $delivery->display_social_worker_name ?: '—';
+                                                                $createdDate = $jalaliDateTime($delivery->created_at) ?: '—';
+                                                                $deliveredDate = $delivery->delivered_at
+                                                                    ? \App\Helpers\Morilog\Jalalian::fromDateTime($delivery->delivered_at)->format('Y/m/d')
+                                                                    : '—';
+                                                                $updatedDate = $delivery->updated_at && $delivery->created_at
+                                                                    && $delivery->updated_at->ne($delivery->created_at)
+                                                                        ? $jalaliDateTime($delivery->updated_at)
+                                                                        : null;
+                                                                $operatorName = trim((string) ($delivery->creator?->full_name ?? $delivery->creator?->name ?? '')) ?: null;
+                                                                $updaterName = trim((string) ($delivery->updater?->full_name ?? $delivery->updater?->name ?? '')) ?: null;
+                                                                $deliveryUnitKey = $delivery->serviceCategory?->unit;
+                                                                $deliveryUnitLabel = $deliveryUnitKey
+                                                                    ? ($unitOptions[$deliveryUnitKey] ?? $deliveryUnitKey)
+                                                                    : '-';
+                                                            @endphp
+                                                            <article class="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm">
+                                                                <div class="flex items-start justify-between gap-3">
+                                                                    <p class="min-w-0 flex-1 truncate text-sm font-bold text-slate-900">{{ $delivery->serviceCategory?->name ?: '-' }}</p>
+                                                                    @include('livewire.services.partials.delivery-actions', ['delivery' => $delivery, 'size' => 'md'])
+                                                                </div>
+
+                                                                <dl class="mt-3 grid grid-cols-2 gap-2 text-xs">
+                                                                    <div class="rounded-xl bg-slate-50 px-3 py-2">
+                                                                        <dt class="text-slate-400">مقدار تحویل</dt>
+                                                                        <dd class="mt-0.5 font-bold text-slate-800">
+                                                                            {{ \App\Models\Service::formatQuantityForUnit($delivery->delivered_quantity, $deliveryUnitKey) }}
+                                                                            {{ $deliveryUnitLabel }}
+                                                                        </dd>
+                                                                    </div>
+                                                                    <div class="rounded-xl bg-emerald-50/70 px-3 py-2">
+                                                                        <dt class="text-emerald-700/70">ارزش تحویل</dt>
+                                                                        <dd class="mt-0.5 font-bold text-emerald-700">{{ number_format($delivery->delivered_total_value) }} ریال</dd>
+                                                                    </div>
+                                                                    <div class="rounded-xl bg-slate-50 px-3 py-2">
+                                                                        <dt class="text-slate-400">تاریخ تحویل</dt>
+                                                                        <dd class="mt-0.5 font-bold text-slate-800">{{ str_replace(' ', ' - ', $jalaliDateTime($delivery->created_at)) ?: '-' }}</dd>
+                                                                    </div>
+                                                                    <div class="flex items-center rounded-xl bg-slate-50 px-3 py-2">
+                                                                        @include('livewire.services.partials.social-worker-popover', [
+                                                                            'socialWorkerName' => $socialWorkerName,
+                                                                            'deliveredDate' => $deliveredDate,
+                                                                            'createdDate' => $createdDate,
+                                                                            'updatedDate' => $updatedDate,
+                                                                            'operatorName' => $operatorName,
+                                                                            'updaterName' => $updaterName,
+                                                                        ])
+                                                                    </div>
+                                                                </dl>
+
+                                                                @if($delivery->notes)
+                                                                    <p class="mt-2 rounded-xl bg-slate-50/80 px-3 py-2 text-xs text-slate-600">
+                                                                        <span class="font-bold text-slate-700">توضیحات:</span>
+                                                                        {{ $delivery->notes }}
+                                                                    </p>
+                                                                @endif
+                                                            </article>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
                                             </div>
-
-                                            <dl class="mt-3 grid grid-cols-2 gap-2 text-xs">
-                                                <div class="rounded-xl bg-slate-50 px-3 py-2">
-                                                    <dt class="text-slate-400">مقدار تحویل</dt>
-                                                    <dd class="mt-0.5 font-bold text-slate-800">
-                                                        {{ \App\Models\Service::formatQuantityForUnit($delivery->delivered_quantity, $deliveryUnitKey) }}
-                                                        {{ $deliveryUnitLabel }}
-                                                    </dd>
-                                                </div>
-                                                <div class="rounded-xl bg-emerald-50/70 px-3 py-2">
-                                                    <dt class="text-emerald-700/70">ارزش تحویل</dt>
-                                                    <dd class="mt-0.5 font-bold text-emerald-700">{{ number_format($delivery->delivered_total_value) }} ریال</dd>
-                                                </div>
-                                                <div class="rounded-xl bg-slate-50 px-3 py-2">
-                                                    <dt class="text-slate-400">تاریخ تحویل</dt>
-                                                    <dd class="mt-0.5 font-bold text-slate-800">{{ str_replace(' ', ' - ', $jalaliDateTime($delivery->created_at)) ?: '-' }}</dd>
-                                                </div>
-                                                <div class="flex items-center rounded-xl bg-slate-50 px-3 py-2">
-                                                    @include('livewire.services.partials.social-worker-popover', [
-                                                        'socialWorkerName' => $socialWorkerName,
-                                                        'deliveredDate' => $deliveredDate,
-                                                        'createdDate' => $createdDate,
-                                                        'updatedDate' => $updatedDate,
-                                                        'operatorName' => $operatorName,
-                                                        'updaterName' => $updaterName,
-                                                    ])
-                                                </div>
-                                            </dl>
-
-                                            @if($delivery->notes)
-                                                <p class="mt-2 rounded-xl bg-slate-50/80 px-3 py-2 text-xs text-slate-600">
-                                                    <span class="font-bold text-slate-700">توضیحات:</span>
-                                                    {{ $delivery->notes }}
-                                                </p>
-                                            @endif
-                                        </article>
+                                        </div>
                                     @endforeach
                                 </div>
-                            </div>
+                            @endif
 
                             @if($hasReceipt)
                                 <template x-teleport="body">
