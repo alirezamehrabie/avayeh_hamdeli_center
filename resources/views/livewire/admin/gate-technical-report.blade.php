@@ -71,8 +71,10 @@
                     </span>
                 </div>
 
+                @include('livewire.admin.partials.gate-list-controls', ['section' => 'pending'])
+
                 @if($pendingTotal === 0)
-                    <p class="px-5 py-8 text-center text-sm text-slate-400">همه مجوزهای ثبت‌شده تحویل تأییدشده دارند.</p>
+                    <p class="px-5 py-8 text-center text-sm text-slate-400">{{ $this->isSectionFiltered('pending') ? 'هیچ موردی با فیلترهای این بخش یافت نشد.' : 'همه مجوزهای ثبت‌شده تحویل تأییدشده دارند.' }}</p>
                 @else
                     <x-gate.collapsible-list :hidden-count="max(0, count($pendingRows) - $collapsedListRows)">
                     <div class="overflow-x-auto">
@@ -141,8 +143,10 @@
                     </span>
                 </div>
 
+                @include('livewire.admin.partials.gate-list-controls', ['section' => 'delivered'])
+
                 @if($deliveredTotal === 0)
-                    <p class="px-5 py-8 text-center text-sm text-slate-400">هنوز هیچ مجوزی در گیت تحویل تأیید نشده است.</p>
+                    <p class="px-5 py-8 text-center text-sm text-slate-400">{{ $this->isSectionFiltered('delivered') ? 'هیچ موردی با فیلترهای این بخش یافت نشد.' : 'هنوز هیچ مجوزی در گیت تحویل تأیید نشده است.' }}</p>
                 @else
                     @include('livewire.admin.partials.gate-assignment-table', [
                         'rows' => $deliveredRows,
@@ -162,12 +166,14 @@
                     <p class="mt-0.5 text-xs text-slate-500">مغایرت‌های وضعیت مجوزها با دفترچه تحویل و با آرشیو لغوها.</p>
                 </div>
 
-                @if($stats['discrepancies'] === 0)
+                @include('livewire.admin.partials.gate-list-controls', ['section' => 'checks'])
+
+                @if($checksFilteredTotal === 0)
                     <div class="flex items-center gap-2 px-5 py-6 text-sm font-bold text-emerald-700">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        هیچ مغایرتی بین سه مرحله گیت یافت نشد.
+                        {{ $this->isSectionFiltered('checks') ? 'مغایرتی با فیلترهای این بخش یافت نشد.' : 'هیچ مغایرتی بین سه مرحله گیت یافت نشد.' }}
                     </div>
                 @else
                     <div class="divide-y divide-slate-100">

@@ -97,6 +97,145 @@ class GateTechnicalReport extends Component
         $this->activeTab = $tab;
     }
 
+    /**
+     * Filterable/sortable sections of the gate-report tab (each list in
+     * section 3 shares the 'checks' controls).
+     */
+    public const CONTROL_SECTIONS = ['pending', 'delivered', 'checks'];
+
+    /**
+     * Sort keys → select labels. Time sorts always run on the record's real
+     * timestamp columns, never on the displayed Jalali string.
+     */
+    public const SORT_OPTIONS = [
+        'newest' => 'جدیدترین زمان ثبت',
+        'oldest' => 'قدیمی‌ترین زمان ثبت',
+        'name_asc' => 'گیرنده: الف ← ی',
+        'name_desc' => 'گیرنده: ی ← الف',
+        'category_asc' => 'دسته‌بندی: الف ← ی',
+        'category_desc' => 'دسته‌بندی: ی ← الف',
+    ];
+
+    /**
+     * Independent filter/sort state per section: recipient LIKE-matched
+     * against the stored name, category filtered by FK, sort key.
+     *
+     * @var array<string, array{recipient: string, category: string, sort: string}>
+     */
+    public array $listControls = [
+        'pending' => ['recipient' => '', 'category' => '', 'sort' => 'newest'],
+        'delivered' => ['recipient' => '', 'category' => '', 'sort' => 'newest'],
+        'checks' => ['recipient' => '', 'category' => '', 'sort' => 'newest'],
+    ];
+
+    /**
+     * Any listControls.<section>.* change returns only that section's
+     * paginators to page 1 (Livewire passes the dot path of what changed).
+     */
+    public function updated(string $property): void
+    {
+        if (str_starts_with($property, 'listControls.')) {
+            $this->resetListPages(explode('.', $property)[1] ?? '');
+        }
+    }
+
+    public function resetListControls(string $section): void
+    {
+        if (! in_array($section, self::CONTROL_SECTIONS, true)) {
+            return;
+        }
+
+        $this->listControls[$section] = ['recipient' => '', 'category' => '', 'sort' => 'newest'];
+        $this->resetListPages($section);
+    }
+
+    public function isSectionFiltered(string $section): bool
+    {
+        $controls = $this->controlsFor($section);
+
+        return $controls['recipient'] !== '' || $controls['category'] !== null || $controls['sort'] !== 'newest';
+    }
+
+    /**
+     * Any control change returns its section's paginators to page 1 —
+     * other sections keep their pages.
+     */
+    protected function resetListPages(string $section): void
+    {
+        $pageNames = match ($section) {
+            'pending' => ['pending'],
+            'delivered' => ['delivered'],
+            'checks' => ['no-ledger', 'ledger-ahead', 'orphans', 'cancelled'],
+            default => [],
+        };
+
+        foreach ($pageNames as $pageName) {
+            $this->resetPage($pageName);
+        }
+    }
+
+    /**
+     * Sanitized controls for a section; anything unknown falls back to the
+     * defaults so downstream queries can trust the returned keys/types.
+     *
+     * @return array{sort: string, recipient: string, category: ?int}
+     */
+    protected function controlsFor(string $section): array
+    {
+        $raw = $this->listControls[$section] ?? [];
+
+        $sort = (string) ($raw['sort'] ?? 'newest');
+        $category = (string) ($raw['category'] ?? '');
+
+        return [
+            'sort' => array_key_exists($sort, self::SORT_OPTIONS) ? $sort : 'newest',
+            'recipient' => mb_substr(trim((string) ($raw['recipient'] ?? '')), 0, 100),
+            'category' => ctype_digit($category) && (int) $category > 0 ? (int) $category : null,
+        ];
+    }
+
+    /**
+     * Shared backend filter/sort applied to one gate-list query.
+     * $timeExpr: SQL expression of the section's real registration moment;
+     * $nameColumn: recipient-name column (JSON path for cancellations).
+     */
+    protected function applyListControls(Builder $query, array $controls, string $timeExpr, string $nameColumn = 'full_name'): void
+    {
+        $table = $query->getModel()->getTable();
+
+        if ($controls['recipient'] !== '') {
+            $query->where($nameColumn, 'like', '%'.addcslashes($controls['recipient'], '\\%_').'%');
+        }
+
+        if ($controls['category'] !== null) {
+            $query->where($table.'.service_category_id', $controls['category']);
+        }
+
+        match ($controls['sort']) {
+            'name_asc', 'name_desc' => $query
+                ->orderBy($nameColumn, $controls['sort'] === 'name_asc' ? 'asc' : 'desc')
+                ->orderBy($table.'.id'),
+            'category_asc', 'category_desc' => $this->orderByCategoryName($query, $table, $controls['sort'] === 'category_asc' ? 'asc' : 'desc'),
+            default => $query
+                ->orderByRaw($timeExpr.' '.($controls['sort'] === 'oldest' ? 'asc' : 'desc'))
+                ->orderBy($table.'.id', $controls['sort'] === 'oldest' ? 'asc' : 'desc'),
+        };
+    }
+
+    /**
+     * Order by the category's name. A correlated subselect is used instead of
+     * a join so none of the (unqualified) columns in the caller's own where
+     * clauses can turn ambiguous, and soft-deleted categories still resolve.
+     */
+    protected function orderByCategoryName(Builder $query, string $table, string $direction): void
+    {
+        $sub = 'select gate_sc_sort.name from service_categories gate_sc_sort'
+            .' where gate_sc_sort.id = '.$table.'.service_category_id';
+
+        $query->orderByRaw('('.$sub.') '.$direction)
+            ->orderBy($table.'.id');
+    }
+
     public function render()
     {
         // Raw aggregates return MAX() as strings while model casts give Carbon
@@ -127,17 +266,23 @@ class GateTechnicalReport extends Component
 
         $authorized = GateEntryAssignment::query()->where('service_id', $this->service->id);
 
-        $pendingTotal = (clone $authorized)->where('status', GateEntryAssignment::STATUS_PENDING)->count();
-        $deliveredStatuses = [GateEntryAssignment::STATUS_DELIVERED, GateEntryAssignment::STATUS_FINALIZED];
-        $deliveredTotal = (clone $authorized)->whereIn('status', $deliveredStatuses)->count();
-        $finalizedTotal = (clone $authorized)->where('status', GateEntryAssignment::STATUS_FINALIZED)->count();
+        $pendingControls = $this->controlsFor('pending');
+        $deliveredControls = $this->controlsFor('delivered');
+        $checksControls = $this->controlsFor('checks');
+        $checksFiltered = $this->isSectionFiltered('checks');
 
-        $pendingRows = (clone $authorized)
+        // Raw (unfiltered) totals — the header stat pills always describe the
+        // whole service, no matter what a section is filtered to.
+        $pendingAll = (clone $authorized)->where('status', GateEntryAssignment::STATUS_PENDING)->count();
+        $deliveredStatuses = [GateEntryAssignment::STATUS_DELIVERED, GateEntryAssignment::STATUS_FINALIZED];
+        $deliveredAll = (clone $authorized)->whereIn('status', $deliveredStatuses)->count();
+        $finalizedAll = (clone $authorized)->where('status', GateEntryAssignment::STATUS_FINALIZED)->count();
+
+        $pendingQuery = (clone $authorized)
             ->where('status', GateEntryAssignment::STATUS_PENDING)
-            ->with($assignmentWith)
-            ->orderByDesc('assigned_at')
-            ->orderByDesc('id')
-            ->paginate(20, ['*'], 'pending');
+            ->with($assignmentWith);
+        $this->applyListControls($pendingQuery, $pendingControls, 'assigned_at');
+        $pendingRows = $pendingQuery->paginate(20, ['*'], 'pending');
 
         // Exit-gate history of the rows on screen (one query): a pending item
         // with a cancellation was delivered once, then cancelled at Exit.
@@ -148,64 +293,78 @@ class GateTechnicalReport extends Component
             ->pluck('gate_entry_assignment_id')
             ->all();
 
-        $deliveredRows = (clone $authorized)
+        $deliveredQuery = (clone $authorized)
             ->whereIn('status', $deliveredStatuses)
-            ->with(array_merge($assignmentWith, ['delivery:id,gate_entry_assignment_id,delivered_at']))
-            ->orderByRaw('CASE WHEN status = ? THEN 0 ELSE 1 END', [GateEntryAssignment::STATUS_FINALIZED])
-            ->orderByDesc('delivered_at')
-            ->orderByDesc('id')
-            ->paginate(20, ['*'], 'delivered');
+            ->with(array_merge($assignmentWith, ['delivery:id,gate_entry_assignment_id,delivered_at']));
+        if ($deliveredControls['sort'] === 'newest') {
+            // Default view keeps exited rows grouped first, then newest delivery.
+            $deliveredQuery->orderByRaw('CASE WHEN status = ? THEN 0 ELSE 1 END', [GateEntryAssignment::STATUS_FINALIZED]);
+        }
+        $this->applyListControls($deliveredQuery, $deliveredControls, 'delivered_at');
+        $deliveredRows = $deliveredQuery->paginate(20, ['*'], 'delivered');
 
         // ── Integrity checks: reconciliation between the three gate stages ──
+        // All four lists share the 'checks' controls. Raw counts feed the
+        // header pills unfiltered; each list's paginator total feeds its own
+        // section badge (counts and paginate are skipped while the underlying
+        // check is empty and no filter is active).
         $orphanCount = $this->orphanDeliveriesQuery()->count();
-        $orphanRows = $orphanCount > 0
-            ? $this->orphanDeliveriesQuery()
-                ->with(['serviceCategory:id,name,unit', 'creator:id,first_name,last_name'])
-                ->orderByDesc('delivered_at')
-                ->paginate(20, ['*'], 'orphans')
+        $orphanQuery = $this->orphanDeliveriesQuery()
+            ->with(['serviceCategory:id,name,unit', 'creator:id,first_name,last_name']);
+        $this->applyListControls($orphanQuery, $checksControls, 'COALESCE(delivered_at, created_at)');
+        $orphanRows = ($orphanCount > 0 || $checksFiltered)
+            ? $orphanQuery->paginate(20, ['*'], 'orphans')
             : null;
 
         $finalizedNoLedgerCount = (clone $authorized)
             ->where('status', GateEntryAssignment::STATUS_FINALIZED)
             ->whereDoesntHave('delivery')
             ->count();
-        $finalizedNoLedgerRows = $finalizedNoLedgerCount > 0
-            ? (clone $authorized)
-                ->where('status', GateEntryAssignment::STATUS_FINALIZED)
-                ->whereDoesntHave('delivery')
-                ->with($assignmentWith)
-                ->orderByDesc('delivered_at')
-                ->paginate(20, ['*'], 'no-ledger')
+        $finalizedNoLedgerQuery = (clone $authorized)
+            ->where('status', GateEntryAssignment::STATUS_FINALIZED)
+            ->whereDoesntHave('delivery')
+            ->with($assignmentWith);
+        $this->applyListControls($finalizedNoLedgerQuery, $checksControls, 'delivered_at');
+        $finalizedNoLedgerRows = ($finalizedNoLedgerCount > 0 || $checksFiltered)
+            ? $finalizedNoLedgerQuery->paginate(20, ['*'], 'no-ledger')
             : null;
 
         $deliveredWithLedgerCount = (clone $authorized)
             ->where('status', GateEntryAssignment::STATUS_DELIVERED)
             ->whereHas('delivery')
             ->count();
-        $deliveredWithLedgerRows = $deliveredWithLedgerCount > 0
-            ? (clone $authorized)
-                ->where('status', GateEntryAssignment::STATUS_DELIVERED)
-                ->whereHas('delivery')
-                ->with(array_merge($assignmentWith, ['delivery:id,gate_entry_assignment_id,delivered_at']))
-                ->orderByDesc('delivered_at')
-                ->paginate(20, ['*'], 'ledger-ahead')
+        $deliveredWithLedgerQuery = (clone $authorized)
+            ->where('status', GateEntryAssignment::STATUS_DELIVERED)
+            ->whereHas('delivery')
+            ->with(array_merge($assignmentWith, ['delivery:id,gate_entry_assignment_id,delivered_at']));
+        $this->applyListControls($deliveredWithLedgerQuery, $checksControls, 'delivered_at');
+        $deliveredWithLedgerRows = ($deliveredWithLedgerCount > 0 || $checksFiltered)
+            ? $deliveredWithLedgerQuery->paginate(20, ['*'], 'ledger-ahead')
             : null;
 
         $cancelledCount = ServiceDeliveryCancellation::query()->where('service_id', $this->service->id)->count();
-        $cancelledRows = $cancelledCount > 0
-            ? ServiceDeliveryCancellation::query()
-                ->where('service_id', $this->service->id)
-                ->with([
-                    'serviceCategory:id,name,unit',
-                    'person:id,person_code,first_name,last_name',
-                    'guardian:id,guardian_code,first_name,last_name',
-                    'canceller:id,first_name,last_name',
-                ])
-                ->orderByDesc('canceled_at')
-                ->paginate(20, ['*'], 'cancelled')
+        $cancelledQuery = ServiceDeliveryCancellation::query()
+            ->where('service_id', $this->service->id)
+            ->with([
+                'serviceCategory:id,name,unit',
+                'person:id,person_code,first_name,last_name',
+                'guardian:id,guardian_code,first_name,last_name',
+                'canceller:id,first_name,last_name',
+            ]);
+        $this->applyListControls($cancelledQuery, $checksControls, 'canceled_at', 'delivery_snapshot->full_name');
+        $cancelledRows = ($cancelledCount > 0 || $checksFiltered)
+            ? $cancelledQuery->paginate(20, ['*'], 'cancelled')
             : null;
 
-        $discrepancyTotal = $orphanCount + $finalizedNoLedgerCount + $deliveredWithLedgerCount;
+        // Per-section totals after filtering; the checks section shows its
+        // discrepancy banner only when the filtered checks come up empty.
+        $pendingTotal = $pendingRows->total();
+        $deliveredTotal = $deliveredRows->total();
+        $orphanShown = $orphanRows?->total() ?? 0;
+        $finalizedNoLedgerShown = $finalizedNoLedgerRows?->total() ?? 0;
+        $deliveredWithLedgerShown = $deliveredWithLedgerRows?->total() ?? 0;
+        $cancelledShown = $cancelledRows?->total() ?? 0;
+        $checksFilteredTotal = $orphanShown + $finalizedNoLedgerShown + $deliveredWithLedgerShown;
 
         return view('livewire.admin.gate-technical-report', [
             'service' => $this->service,
@@ -217,13 +376,20 @@ class GateTechnicalReport extends Component
                 GateEntryAssignment::STATUS_FINALIZED => 'خروج قطعی‌شده',
             ],
             'stats' => [
-                'authorized' => $pendingTotal + $deliveredTotal,
-                'pending' => $pendingTotal,
-                'delivered' => $deliveredTotal,
-                'finalized' => $finalizedTotal,
+                'authorized' => $pendingAll + $deliveredAll,
+                'pending' => $pendingAll,
+                'delivered' => $deliveredAll,
+                'finalized' => $finalizedAll,
                 'cancelled' => $cancelledCount,
-                'discrepancies' => $discrepancyTotal,
+                'discrepancies' => $orphanCount + $finalizedNoLedgerCount + $deliveredWithLedgerCount,
             ],
+            'sortOptions' => self::SORT_OPTIONS,
+            'categoryOptions' => ServiceCategory::query()
+                ->withTrashed()
+                ->where('service_id', $this->service->id)
+                ->orderBy('name')
+                ->pluck('name', 'id'),
+            'checksFilteredTotal' => $checksFilteredTotal,
             'pendingRows' => $pendingRows,
             'pendingTotal' => $pendingTotal,
             'deliveredRows' => $deliveredRows,
@@ -234,7 +400,7 @@ class GateTechnicalReport extends Component
                     'key' => 'finalized-no-ledger',
                     'title' => 'خروج قطعی‌شده بدون رکورد دفترچه تحویل',
                     'hint' => 'وضعیت نهایی ثبت شده اما ردیف ServiceDelivery وجود ندارد (حذف یا شکست ثبت).',
-                    'count' => $finalizedNoLedgerCount,
+                    'count' => $finalizedNoLedgerShown,
                     'rows' => $finalizedNoLedgerRows,
                     'kind' => 'assignment',
                     'showLedger' => false,
@@ -243,7 +409,7 @@ class GateTechnicalReport extends Component
                     'key' => 'delivered-with-ledger',
                     'title' => 'تحویل‌شده با رکورد دفترچه اما خروج قطعی‌نشده',
                     'hint' => 'رکورد دفترچه پیش از نهایی‌سازی گیت خروج ساخته شده؛ وضعیت مجوز باید finalized می‌بود.',
-                    'count' => $deliveredWithLedgerCount,
+                    'count' => $deliveredWithLedgerShown,
                     'rows' => $deliveredWithLedgerRows,
                     'kind' => 'assignment',
                     'showLedger' => true,
@@ -252,13 +418,13 @@ class GateTechnicalReport extends Component
                     'key' => 'orphans',
                     'title' => 'رکوردهای تحویل گیت بدون مجوز Entry',
                     'hint' => 'ردیف دفترچه با کانال گیت که به هیچ مجوز گیت ورودی (حتی حذف‌شده) وصل نیست.',
-                    'count' => $orphanCount,
+                    'count' => $orphanShown,
                     'rows' => $orphanRows,
                     'kind' => 'delivery',
                 ],
             ],
             'cancelledRows' => $cancelledRows,
-            'cancelledCount' => $cancelledCount,
+            'cancelledCount' => $cancelledShown,
             'operatorReports' => null,
             'unitOptions' => [],
             'jalaliDateTime' => $jalaliDateTime,

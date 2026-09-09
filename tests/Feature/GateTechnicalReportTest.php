@@ -44,6 +44,7 @@ class GateTechnicalReportTest extends TestCase
         $this->assertSame(2, substr_count($html, 'x-show="listOpen"'));
         $this->assertStringContainsString('نمایش 2 مورد دیگر', $html);
         $this->assertStringContainsString('bg-gradient-to-t from-white', $html);
+        $this->assertStringContainsString('جستجوی دسته‌بندی…', $html);
     }
 
     public function test_short_gate_lists_render_without_expand_toggle(): void
@@ -62,6 +63,139 @@ class GateTechnicalReportTest extends TestCase
 
         $this->assertStringNotContainsString('x-show="listOpen"', $html);
         $this->assertStringNotContainsString('مورد دیگر', $html);
+    }
+
+    /**
+     * Each gate-report section has independent recipient/category filters and
+     * sort controls; all of them run server-side on real columns (time sorts
+     * use the record's own timestamps, cancellations the snapshot JSON).
+     */
+    public function test_each_gate_section_filters_and_sorts_independently(): void
+    {
+        $user = $this->admin();
+        $this->actingAs($user);
+
+        [$service, $categoryA] = $this->gateFixture();
+        $categoryB = $service->categories()->create([
+            'service_name_id' => $service->service_name_id,
+            'name' => 'Beta Pack '.Str::random(6),
+            'quantity' => 10,
+            'unit' => 'pack',
+            'value' => 500,
+            'sort_id' => 2,
+            'created_by' => $user->id,
+        ]);
+
+        $oldest = $this->assignment($service, $categoryA, GateEntryAssignment::STATUS_PENDING);
+        $oldest->forceFill(['assigned_at' => now()->subDays(5)])->save();
+        $needle = (string) $oldest->person->person_code; // unique full_name suffix
+
+        for ($i = 0; $i < 4; $i++) {
+            $this->assignment($service, $categoryA, GateEntryAssignment::STATUS_PENDING);
+        }
+        $this->assignment($service, $categoryB, GateEntryAssignment::STATUS_PENDING);
+
+        // Delivered + ledger row → "delivered-with-ledger" discrepancy.
+        $ledgerAhead = $this->assignment($service, $categoryA, GateEntryAssignment::STATUS_DELIVERED);
+        ServiceDelivery::query()->create([
+            'service_id' => $service->id,
+            'service_category_id' => $categoryA->id,
+            'person_id' => $ledgerAhead->person_id,
+            'gate_entry_assignment_id' => $ledgerAhead->id,
+            'delivery_channel' => Service::DELIVERY_CHANNEL_GATE,
+            'national_id' => $ledgerAhead->national_id,
+            'full_name' => $ledgerAhead->full_name,
+            'delivered_quantity' => 1,
+            'value_per_unit_snapshot' => 1000,
+            'delivered_total_value' => 1000,
+            'delivered_at' => now(),
+            'created_by' => $user->id,
+        ]);
+
+        // Finalized without a ledger row → first discrepancy.
+        $this->assignment($service, $categoryA, GateEntryAssignment::STATUS_FINALIZED);
+
+        // Orphan gate ledger row → third discrepancy.
+        ServiceDelivery::query()->create([
+            'service_id' => $service->id,
+            'service_category_id' => $categoryA->id,
+            'delivery_channel' => Service::DELIVERY_CHANNEL_GATE,
+            'national_id' => '9998887776',
+            'full_name' => 'Orphan Zed',
+            'delivered_quantity' => 1,
+            'value_per_unit_snapshot' => 1000,
+            'delivered_total_value' => 1000,
+            'delivered_at' => now(),
+            'created_by' => $user->id,
+        ]);
+
+        // Archived Exit cancellation (recipient name lives in the snapshot).
+        ServiceDeliveryCancellation::query()->create([
+            'gate_entry_assignment_id' => $oldest->id,
+            'service_id' => $service->id,
+            'service_category_id' => $categoryA->id,
+            'person_id' => $oldest->person_id,
+            'delivered_quantity' => 1,
+            'delivered_total_value' => 1000,
+            'delivered_at' => now()->toDateString(),
+            'delivery_snapshot' => ['full_name' => 'Cancel Alpha'],
+            'canceled_by' => $user->id,
+            'canceled_at' => now(),
+        ]);
+
+        $component = Livewire::test(GateTechnicalReport::class, ['serviceId' => $service->id]);
+
+        // Baseline: 6 pending (5 + 1), 2 delivered-status, one row per check.
+        $component
+            ->assertViewHas('pendingTotal', 6)
+            ->assertViewHas('deliveredTotal', 2)
+            ->assertViewHas('cancelledCount', 1)
+            ->assertViewHas('stats', fn (array $stats): bool => $stats['discrepancies'] === 3);
+
+        // Section 1 recipient filter — other sections untouched.
+        $component->set('listControls.pending.recipient', $needle)
+            ->assertViewHas('pendingTotal', 1)
+            ->assertViewHas('deliveredTotal', 2)
+            ->assertViewHas('cancelledCount', 1);
+
+        // Section 1 category filter.
+        $component->set('listControls.pending.recipient', '')
+            ->set('listControls.pending.category', (string) $categoryB->id)
+            ->assertViewHas('pendingTotal', 1)
+            ->assertViewHas('checks', fn (array $checks): bool => $checks[0]['count'] === 1 && $checks[2]['count'] === 1);
+
+        // Time sort runs on the real assigned_at column.
+        $component->set('listControls.pending.category', '')
+            ->set('listControls.pending.sort', 'oldest')
+            ->assertViewHas('pendingRows', fn ($rows): bool => $rows->first()->id === $oldest->id);
+
+        // Name sort executes over the whole page.
+        $component->set('listControls.pending.sort', 'name_desc')
+            ->assertViewHas('pendingRows', fn ($rows): bool => $rows->count() === 6);
+        $component->set('listControls.pending.sort', 'newest');
+
+        // Checks-section recipient filter: orphan ledger row and the JSON
+        // snapshot name of the archived cancellation share one toolbar.
+        $component->set('listControls.checks.recipient', 'Orphan')
+            ->assertViewHas('checks', fn (array $checks): bool => $checks[0]['count'] === 0
+                && $checks[1]['count'] === 0
+                && $checks[2]['count'] === 1)
+            ->assertViewHas('cancelledCount', 0)
+            ->assertViewHas('pendingTotal', 6);
+
+        $component->set('listControls.checks.recipient', 'Cancel')
+            ->assertViewHas('cancelledCount', 1)
+            ->assertViewHas('checks', fn (array $checks): bool => $checks[2]['count'] === 0);
+
+        $component->call('resetListControls', 'checks')
+            ->assertViewHas('cancelledCount', 1)
+            ->assertViewHas('checks', fn (array $checks): bool => $checks[0]['count'] === 1
+                && $checks[1]['count'] === 1
+                && $checks[2]['count'] === 1);
+
+        // Section 2 category sort (correlated subselect) executes.
+        $component->set('listControls.delivered.sort', 'category_asc')
+            ->assertViewHas('deliveredRows', fn ($rows): bool => $rows->count() === 2);
     }
 
     public function test_sections_and_integrity_checks_follow_the_gate_workflow(): void    {
