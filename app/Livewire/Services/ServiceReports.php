@@ -9,12 +9,16 @@ use App\Helpers\Morilog\Jalalian;
 use App\Helpers\PersianText;
 use App\Livewire\Services\Concerns\SummarizesServiceDeliveries;
 use App\Models\Guardian;
+use App\Models\NeedLevelType;
+use App\Models\NeedsLevel;
 use App\Models\Person;
 use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\ServiceDelivery;
 use App\Models\ServiceName;
 use App\Models\SocialWorker;
+use App\Models\SupportCoverage;
+use App\Models\SupportOrganization;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -114,6 +118,21 @@ class ServiceReports extends Component
      */
     public string $selectedCoverageSocialWorker = 'all';
 
+    /**
+     * The details-screen «نهاد حمایتی» filter: recipients registered under the
+     * chosen organization at intake (support_coverages.support_organization_id).
+     * The coverage is stored per person — individual deliveries match through the
+     * person, family deliveries through any member of the guardian's household.
+     */
+    public string $selectedSupportOrganization = 'all';
+
+    /**
+     * The details-screen «سطح نیاز» filter: recipients carrying the chosen
+     * need_level_types.id in their needs_levels record at intake. Same
+     * person/family resolution as the support-organization filter above.
+     */
+    public string $selectedNeedLevel = 'all';
+
     public string $deliveryDateFrom = '';
 
     public string $deliveryDateTo = '';
@@ -189,6 +208,32 @@ class ServiceReports extends Component
             $query->where(function ($q) use ($coverageWorkerId) {
                 $q->whereHas('guardian', fn ($g) => $g->where('social_worker_id', $coverageWorkerId))
                     ->orWhereHas('person.guardian', fn ($g) => $g->where('social_worker_id', $coverageWorkerId));
+            });
+        }
+
+        $supportOrganizationId = ctype_digit($this->selectedSupportOrganization) && (int) $this->selectedSupportOrganization > 0
+            ? (int) $this->selectedSupportOrganization
+            : null;
+
+        if ($supportOrganizationId !== null) {
+            // The organization lives on each person's support coverage: individual
+            // deliveries match through the person, family deliveries when any
+            // household member is registered under it. Manual records never match.
+            $query->where(function ($q) use ($supportOrganizationId) {
+                $q->whereHas('person.supportCoverage', fn ($s) => $s->where('support_organization_id', $supportOrganizationId))
+                    ->orWhereHas('guardian.people.supportCoverage', fn ($s) => $s->where('support_organization_id', $supportOrganizationId));
+            });
+        }
+
+        $needLevelId = ctype_digit($this->selectedNeedLevel) && (int) $this->selectedNeedLevel > 0
+            ? (int) $this->selectedNeedLevel
+            : null;
+
+        if ($needLevelId !== null) {
+            // Same person/family resolution as the support-organization filter.
+            $query->where(function ($q) use ($needLevelId) {
+                $q->whereHas('person.needsLevel', fn ($n) => $n->where('need_level_id', $needLevelId))
+                    ->orWhereHas('guardian.people.needsLevel', fn ($n) => $n->where('need_level_id', $needLevelId));
             });
         }
 
@@ -590,6 +635,8 @@ class ServiceReports extends Component
         $this->deliverySearch = '';
         $this->selectedDeliveryEntryType = 'all';
         $this->selectedCoverageSocialWorker = 'all';
+        $this->selectedSupportOrganization = 'all';
+        $this->selectedNeedLevel = 'all';
         $this->deliveryDateFrom = '';
         $this->deliveryDateTo = '';
         $this->resetPage('deliveries');
@@ -612,6 +659,8 @@ class ServiceReports extends Component
         $this->deliverySearch = '';
         $this->selectedDeliveryEntryType = 'all';
         $this->selectedCoverageSocialWorker = 'all';
+        $this->selectedSupportOrganization = 'all';
+        $this->selectedNeedLevel = 'all';
         $this->deliveryDateFrom = '';
         $this->deliveryDateTo = '';
         $this->resetPage('deliveries');
@@ -687,6 +736,16 @@ class ServiceReports extends Component
         $this->resetPage('deliveries');
     }
 
+    public function updatingSelectedSupportOrganization(): void
+    {
+        $this->resetPage('deliveries');
+    }
+
+    public function updatingSelectedNeedLevel(): void
+    {
+        $this->resetPage('deliveries');
+    }
+
     public function updatingDeliveryDateFrom(): void
     {
         $this->resetPage('deliveries');
@@ -702,6 +761,8 @@ class ServiceReports extends Component
         $this->deliverySearch = '';
         $this->selectedDeliveryEntryType = 'all';
         $this->selectedCoverageSocialWorker = 'all';
+        $this->selectedSupportOrganization = 'all';
+        $this->selectedNeedLevel = 'all';
         $this->deliveryDateFrom = '';
         $this->deliveryDateTo = '';
         $this->resetPage('deliveries');
@@ -823,6 +884,8 @@ class ServiceReports extends Component
         $services = null;
         $socialWorkerOptions = [];
         $coverageSocialWorkerOptions = [];
+        $supportOrganizationOptions = [];
+        $needLevelOptions = [];
         $deliveryChannelCards = [];
 
         if ($this->selectedServiceId === null && $deliveryChannel === null) {
@@ -916,6 +979,45 @@ class ServiceReports extends Component
                     'name' => trim($worker->first_name.' '.$worker->last_name),
                 ])
                 ->all();
+
+            // Recipients' people for this service: individuals delivered to
+            // directly, plus every member of households delivered to. Both the
+            // «نهاد حمایتی» and «سطح نیاز» dropdowns list only what those
+            // people actually have registered at intake — no phantom options.
+            $recipientPeople = Person::query()
+                ->where(function ($q) {
+                    $q->whereHas('serviceDeliveries', fn ($d) => $d->where('service_id', $this->selectedServiceId))
+                        ->orWhereHas('guardian.serviceDeliveries', fn ($d) => $d->where('service_id', $this->selectedServiceId));
+                })
+                ->select('id');
+
+            $supportOrganizationOptions = SupportOrganization::query()
+                ->whereIn('id', SupportCoverage::query()
+                    ->whereNotNull('support_organization_id')
+                    ->whereIn('person_id', $recipientPeople)
+                    ->distinct()
+                    ->pluck('support_organization_id'))
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->map(fn (SupportOrganization $org): array => [
+                    'id' => $org->id,
+                    'name' => $org->name,
+                ])
+                ->all();
+
+            $needLevelOptions = NeedLevelType::query()
+                ->whereIn('id', NeedsLevel::query()
+                    ->whereNotNull('need_level_id')
+                    ->whereIn('person_id', $recipientPeople)
+                    ->distinct()
+                    ->pluck('need_level_id'))
+                ->orderBy('severity_order')
+                ->get(['id', 'title'])
+                ->map(fn (NeedLevelType $level): array => [
+                    'id' => $level->id,
+                    'title' => $level->title,
+                ])
+                ->all();
         }
 
         return view('livewire.services.service-reports', [
@@ -932,6 +1034,8 @@ class ServiceReports extends Component
             'serviceNames' => $serviceNames,
             'socialWorkerOptions' => $socialWorkerOptions,
             'coverageSocialWorkerOptions' => $coverageSocialWorkerOptions,
+            'supportOrganizationOptions' => $supportOrganizationOptions,
+            'needLevelOptions' => $needLevelOptions,
             'jalaliDateTime' => fn ($dateTime) => $dateTime ? Jalalian::fromDateTime($dateTime)->format('Y/m/d H:i') : '-',
         ]);
     }

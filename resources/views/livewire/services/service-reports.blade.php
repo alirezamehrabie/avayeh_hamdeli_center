@@ -678,7 +678,7 @@
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
                                                             </svg>
                                                         </span>
-                                                        <p class="text-sm font-medium text-slate-500">{{ (trim($deliverySearch ?? "") !== "" || $selectedDeliveryEntryType !== 'all' || $selectedCoverageSocialWorker !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '') ? "موردی برای فیلترهای فعلی پیدا نشد." : "هنوز هیچ تحویلی برای این خدمت ثبت نشده است." }}</p>
+                                                        <p class="text-sm font-medium text-slate-500">{{ (trim($deliverySearch ?? "") !== "" || $selectedDeliveryEntryType !== 'all' || $selectedCoverageSocialWorker !== 'all' || $selectedSupportOrganization !== 'all' || $selectedNeedLevel !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '') ? "موردی برای فیلترهای فعلی پیدا نشد." : "هنوز هیچ تحویلی برای این خدمت ثبت نشده است." }}</p>
                                                     </div>
                                                 @endforelse
                                             </div>
@@ -768,6 +768,20 @@
                             <option value="manual">ثبت دستی</option>
                             <option value="individual">شخصی (مددجو)</option>
                             <option value="guardian">خانوادگی (سرپرست)</option>
+                        </select>
+
+                        <select wire:model.live="selectedSupportOrganization" aria-label="نهاد حمایتی" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 sm:w-56">
+                            <option value="all">همه نهادها</option>
+                            @foreach($supportOrganizationOptions as $organizationOption)
+                                <option value="{{ $organizationOption['id'] }}">{{ $organizationOption['name'] }}</option>
+                            @endforeach
+                        </select>
+
+                        <select wire:model.live="selectedNeedLevel" aria-label="سطح نیاز" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 sm:w-44">
+                            <option value="all">همه سطوح نیاز</option>
+                            @foreach($needLevelOptions as $needLevelOption)
+                                <option value="{{ $needLevelOption['id'] }}">{{ $needLevelOption['title'] }}</option>
+                            @endforeach
                         </select>
 
                         <div
@@ -902,7 +916,7 @@
                             </span>
                         </div>
 
-                        @if(trim($deliverySearch ?? '') !== '' || $selectedDeliveryEntryType !== 'all' || $selectedCoverageSocialWorker !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '')
+                        @if(trim($deliverySearch ?? '') !== '' || $selectedDeliveryEntryType !== 'all' || $selectedCoverageSocialWorker !== 'all' || $selectedSupportOrganization !== 'all' || $selectedNeedLevel !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '')
                             <button
                                 type="button"
                                 wire:click="clearDeliveryFilters"
@@ -1349,7 +1363,7 @@
                         </section>
                     @empty
                         <div class="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-12 text-center text-slate-500">
-                            {{ (trim($deliverySearch ?? "") !== "" || $selectedDeliveryEntryType !== 'all' || $selectedCoverageSocialWorker !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '') ? "موردی برای فیلترهای فعلی پیدا نشد." : "هنوز هیچ تحویلی برای این خدمت ثبت نشده است." }}
+                            {{ (trim($deliverySearch ?? "") !== "" || $selectedDeliveryEntryType !== 'all' || $selectedCoverageSocialWorker !== 'all' || $selectedSupportOrganization !== 'all' || $selectedNeedLevel !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '') ? "موردی برای فیلترهای فعلی پیدا نشد." : "هنوز هیچ تحویلی برای این خدمت ثبت نشده است." }}
                         </div>
                     @endforelse
 
