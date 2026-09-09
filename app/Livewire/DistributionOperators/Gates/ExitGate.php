@@ -38,6 +38,10 @@ class ExitGate extends AbstractGateComponent
     protected function onSubjectLoaded(): void
     {
         $this->lockExit();
+
+        // Open the mobile exit-items bottom sheet now that a subject is on screen
+        // (same wiring as the Delivery Gate's items sheet).
+        $this->dispatch('exit-gate-subject-loaded');
     }
 
     protected function resetGateSpecificState(): void
@@ -213,6 +217,10 @@ class ExitGate extends AbstractGateComponent
                 'title' => 'خروج تأیید شد',
                 'message' => "{$created} قلم به‌صورت نهایی ثبت و قفل شد.",
             ]);
+
+            // UI-only: the client checklist owns the ticks now (no per-tap round trip), so the
+            // successful finalize tells the sheet to drop its stale selection.
+            $this->dispatch('exit-gate-finalized');
         }
     }
 
