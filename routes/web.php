@@ -5,6 +5,7 @@ use App\Http\Controllers\BeneficiaryCaseRecordAttachmentController;
 use App\Http\Controllers\QrIdentityController;
 use App\Http\Controllers\ServiceCategoryThumbnailController;
 use App\Livewire\Admin\DashboardHome;
+use App\Livewire\Admin\GateTechnicalReport;
 use App\Livewire\Admin\UserAccount;
 use App\Livewire\Auth\Login;
 use App\Livewire\ChildSupporters\Dashboard as ChildSupporterDashboard;
@@ -96,6 +97,10 @@ Route::get('/social-workers/{socialWorker}/edit', EditSocialWorker::class)->midd
 Route::get('/admin/dashboard', DashboardHome::class)
     ->middleware(['auth', 'can:access-admin-panel'])
     ->name('admin.dashboard');
+
+Route::get('/admin/gate-technical-report/{service}', GateTechnicalReport::class)
+    ->middleware(['auth', 'can:full-access'])
+    ->name('admin.gate-technical-report');
 
 Route::get('/admin/people/case-file', DashboardHome::class)
     ->middleware(['auth', 'can:full-access'])

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class GateEntryAssignment extends Model
@@ -73,6 +74,15 @@ class GateEntryAssignment extends Model
     public function deliveredBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'delivered_by');
+    }
+
+    /**
+     * The Exit-Gate ledger row committed for this authorization
+     * (service_deliveries.gate_entry_assignment_id is unique).
+     */
+    public function delivery(): HasOne
+    {
+        return $this->hasOne(ServiceDelivery::class, 'gate_entry_assignment_id');
     }
 
     public function getRecipientNameAttribute(): string

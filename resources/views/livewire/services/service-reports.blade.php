@@ -286,16 +286,29 @@
                             </td>
                             <td class="px-3 py-3 text-right text-slate-500 text-xs">{{ $jalaliDateTime($service->created_at) }}</td>
                             <td class="px-3 py-3 text-center">
-                                <button
-                                    type="button"
-                                    wire:click="openService({{ $service->id }})"
-                                    class="inline-flex items-center gap-1 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-indigo-700"
-                                >
-                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                    </svg>
-                                    جزئیات
-                                </button>
+                                <div class="inline-flex flex-wrap items-center justify-center gap-2">
+                                    <button
+                                        type="button"
+                                        wire:click="openService({{ $service->id }})"
+                                        class="inline-flex items-center gap-1 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-indigo-700"
+                                    >
+                                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                        </svg>
+                                        جزئیات
+                                    </button>
+                                    @if($deliveryChannel === \App\Models\Service::DELIVERY_CHANNEL_GATE)
+                                        <a
+                                            href="{{ route('admin.gate-technical-report', ['service' => $service->id]) }}"
+                                            class="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100"
+                                        >
+                                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                            </svg>
+                                            گزارش فنی
+                                        </a>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -372,16 +385,29 @@
                             </div>
                         </div>
 
-                        <button
-                            type="button"
-                            wire:click="openService({{ $service->id }})"
-                            class="mt-3 inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-3 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-700"
-                        >
-                            لیست تحویل
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                            </svg>
-                        </button>
+                        <div class="mt-3 flex flex-wrap items-center gap-2">
+                            <button
+                                type="button"
+                                wire:click="openService({{ $service->id }})"
+                                class="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-3 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-700"
+                            >
+                                لیست تحویل
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                            @if($deliveryChannel === \App\Models\Service::DELIVERY_CHANNEL_GATE)
+                                <a
+                                    href="{{ route('admin.gate-technical-report', ['service' => $service->id]) }}"
+                                    class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2.5 text-sm font-bold text-indigo-700 transition hover:bg-indigo-100"
+                                >
+                                    گزارش فنی
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                </a>
+                            @endif
+                        </div>
                     </div>
                 @empty
                     <div class="col-span-full rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-4 py-12 text-center text-slate-500">

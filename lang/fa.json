@@ -31,6 +31,9 @@
     "skills_description": "توضیحات مهارت‌ها",
     "profile_photo": "عکس پروفایل",
     "client_case_history" : "شرح حال مددجو",
+    "normalized_full_name": "نام کامل بهینه شده",
+    "normalized_last_name" : "نام خانوادگی بهینه شده",
+    "compact_last_name" : "نام خانوادگی کوتاه شده",
 
 
     "guardian_code": "کد سرپرست",
