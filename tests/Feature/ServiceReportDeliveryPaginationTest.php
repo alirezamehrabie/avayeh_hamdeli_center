@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Livewire\Services\ServiceReports;
 use App\Models\Service;
+use App\Models\ServiceCategory;
 use App\Models\ServiceDelivery;
 use App\Models\ServiceName;
 use App\Models\User;
@@ -39,6 +40,64 @@ class ServiceReportDeliveryPaginationTest extends TestCase
 
         // The modal breakdown aggregates all filtered deliveries, not just the current page.
         $this->assertSame(25, (int) $component->instance()->deliveredCategoryBreakdown->sum('recordCount'));
+    }
+
+    public function test_delivery_list_orders_from_oldest_registration_to_newest(): void
+    {
+        $user = User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_ADMIN,
+            'is_admin' => true,
+            'permissions' => [User::PERMISSION_FULL_ACCESS],
+        ]);
+
+        $this->actingAs($user);
+
+        $service = $this->serviceWithGroups(0, $user);
+        $category = $service->categories()->first();
+
+        // Four recipient groups; group order follows the earliest created_at,
+        // and the pair inside group A stays oldest-first too.
+        $this->record($service, $category, $user, 'D oldest', '9000000001', 5);
+        $this->record($service, $category, $user, 'B', '9000000003', 4);
+        $this->record($service, $category, $user, 'A old', '9000000002', 3);
+        $this->record($service, $category, $user, 'C newest', '9000000004', 2);
+        $this->record($service, $category, $user, 'A new', '9000000002', 1);
+
+        $items = collect(Livewire::test(ServiceReports::class, ['selectedServiceId' => $service->id])
+            ->instance()->deliveryGroups->items());
+
+        $this->assertSame(
+            ['D oldest', 'B', 'A old', 'C newest'],
+            $items->pluck('recipientName')->all()
+        );
+
+        // Group A sits third: its two deliveries must read oldest → newest.
+        $this->assertSame(
+            ['A old', 'A new'],
+            collect($items[2]->deliveries)->pluck('full_name')->all()
+        );
+    }
+
+    private function record(Service $service, ServiceCategory $category, User $user, string $name, string $nationalId, int $hoursAgo): ServiceDelivery
+    {
+        $delivery = ServiceDelivery::query()->create([
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'national_id' => $nationalId,
+            'full_name' => $name,
+            'delivery_channel' => Service::DELIVERY_CHANNEL_HOME,
+            'delivered_quantity' => 1,
+            'value_per_unit_snapshot' => 1000,
+            'delivered_total_value' => 1000,
+            'delivered_at' => now()->toDateString(),
+            'created_by' => $user->id,
+        ]);
+
+        // created_at is guarded on the model: pin it explicitly so the
+        // second-precision timestamps never collide.
+        $delivery->forceFill(['created_at' => now()->subHours($hoursAgo)])->save();
+
+        return $delivery->fresh();
     }
 
     /**

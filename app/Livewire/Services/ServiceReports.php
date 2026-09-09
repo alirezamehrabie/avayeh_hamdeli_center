@@ -247,7 +247,7 @@ class ServiceReports extends Component
                 'creator',
                 'updater',
             ])
-            ->orderByDesc('delivered_at');
+            ->orderBy('created_at');
     }
 
     protected function findServiceDelivery(int $deliveryId): ?ServiceDelivery
@@ -325,11 +325,14 @@ class ServiceReports extends Component
             return new LengthAwarePaginator([], 0, self::DELIVERY_GROUPS_PER_PAGE);
         }
 
+        // Groups rank by their earliest registration moment: oldest entry
+        // first, newest last. Pagination (pageName 'deliveries') keeps the
+        // same order because it runs on this query.
         $groupPage = $this->filteredDeliveryQuery()
-            ->selectRaw($this->recipientGroupKeyExpression().' as group_key, MAX(delivered_at) as last_delivered_at')
+            ->selectRaw($this->recipientGroupKeyExpression().' as group_key, MIN(created_at) as first_recorded_at')
             ->groupBy('group_key')
-            ->orderByDesc('last_delivered_at')
-            ->paginate(self::DELIVERY_GROUPS_PER_PAGE, ['group_key', 'last_delivered_at'], 'deliveries');
+            ->orderBy('first_recorded_at')
+            ->paginate(self::DELIVERY_GROUPS_PER_PAGE, ['group_key', 'first_recorded_at'], 'deliveries');
 
         $keys = collect($groupPage->items())->pluck('group_key');
 
@@ -436,7 +439,7 @@ class ServiceReports extends Component
                     'date' => $lastDeliveredAt
                         ? Jalalian::fromDateTime($lastDeliveredAt)->format('Y/m/d')
                         : '-',
-                    'deliveries' => $categoryDeliveries->sortByDesc('delivered_at')->values(),
+                    'deliveries' => $categoryDeliveries->sortBy('created_at')->values(),
                 ];
             })
             ->values();
