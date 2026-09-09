@@ -1,6 +1,13 @@
 {{-- Gate authorization table (shared by the delivered section and the integrity
      checks). $rows: paginator of GateEntryAssignment with relations loaded;
-     $showLedger: add the Exit ledger time column. --}}
+     $showLedger: add the Exit ledger time column;
+     $collapsedListRows: initial visible row count before the expand toggle. --}}
+@php
+    $visibleLimit = $collapsedListRows ?? PHP_INT_MAX;
+    $hiddenRowCount = max(0, count($rows) - $visibleLimit);
+@endphp
+
+<x-gate.collapsible-list :hidden-count="$hiddenRowCount">
 <div class="overflow-x-auto">
     <table class="w-full min-w-[720px] text-sm">
         <thead>
@@ -18,7 +25,7 @@
         </thead>
         <tbody class="divide-y divide-slate-100">
             @foreach($rows as $assignment)
-                <tr class="align-top transition hover:bg-slate-50/80">
+                <tr class="align-top transition hover:bg-slate-50/80" @if($loop->index >= $visibleLimit) x-show="listOpen" x-cloak x-transition.opacity.duration.300ms @endif>
                     <td class="px-4 py-3">
                         <p class="font-bold text-slate-900">{{ $assignment->recipient_name }}</p>
                         <p class="mt-0.5 text-xs text-slate-500">
@@ -52,3 +59,4 @@
         </tbody>
     </table>
 </div>
+</x-gate.collapsible-list>

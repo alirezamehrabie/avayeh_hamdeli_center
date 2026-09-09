@@ -29,6 +29,13 @@ class GateTechnicalReport extends Component
     public const TAB_OPERATORS = 'operators';
 
     /**
+     * Gate-report lists fetch a full paginator page (20 rows) but render only
+     * this many rows up-front; the rest hides behind the expand toggle
+     * (x-gate.collapsible-list) and opens client-side, without a request.
+     */
+    public const COLLAPSED_LIST_ROWS = 5;
+
+    /**
      * Page tabs. Adding a future tab = one entry here plus a new section in
      * the view; setTab() validates against these keys.
      */
@@ -101,6 +108,7 @@ class GateTechnicalReport extends Component
             return view('livewire.admin.gate-technical-report', [
                 'service' => $this->service,
                 'tabs' => self::TABS,
+                'collapsedListRows' => self::COLLAPSED_LIST_ROWS,
                 'operatorReports' => $this->buildOperatorReports(),
                 'unitOptions' => Service::unitOptions(),
                 'jalaliDateTime' => $jalaliDateTime,
@@ -202,6 +210,7 @@ class GateTechnicalReport extends Component
         return view('livewire.admin.gate-technical-report', [
             'service' => $this->service,
             'tabs' => self::TABS,
+            'collapsedListRows' => self::COLLAPSED_LIST_ROWS,
             'statusLabels' => [
                 GateEntryAssignment::STATUS_PENDING => 'در انتظار تحویل',
                 GateEntryAssignment::STATUS_DELIVERED => 'تحویل‌شده در گیت تحویل',

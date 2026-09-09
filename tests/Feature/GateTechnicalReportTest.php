@@ -22,8 +22,49 @@ class GateTechnicalReportTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_sections_and_integrity_checks_follow_the_gate_workflow(): void
+    /**
+     * Gate-report lists show COLLAPSED_LIST_ROWS rows up-front; the rest of
+     * the current page hides behind an Alpine expand toggle (x-show="listOpen")
+     * with a white fade, without any server round-trip.
+     */
+    public function test_gate_lists_collapse_extra_rows_behind_expand_toggle(): void
     {
+        $this->actingAs($this->admin());
+
+        [$service, $category] = $this->gateFixture();
+
+        for ($i = 0; $i < GateTechnicalReport::COLLAPSED_LIST_ROWS + 2; $i++) {
+            $this->assignment($service, $category, GateEntryAssignment::STATUS_PENDING);
+        }
+
+        $html = Livewire::test(GateTechnicalReport::class, ['serviceId' => $service->id])
+            ->assertOk()
+            ->html();
+
+        $this->assertSame(2, substr_count($html, 'x-show="listOpen"'));
+        $this->assertStringContainsString('نمایش 2 مورد دیگر', $html);
+        $this->assertStringContainsString('bg-gradient-to-t from-white', $html);
+    }
+
+    public function test_short_gate_lists_render_without_expand_toggle(): void
+    {
+        $this->actingAs($this->admin());
+
+        [$service, $category] = $this->gateFixture();
+
+        for ($i = 0; $i < GateTechnicalReport::COLLAPSED_LIST_ROWS; $i++) {
+            $this->assignment($service, $category, GateEntryAssignment::STATUS_PENDING);
+        }
+
+        $html = Livewire::test(GateTechnicalReport::class, ['serviceId' => $service->id])
+            ->assertOk()
+            ->html();
+
+        $this->assertStringNotContainsString('x-show="listOpen"', $html);
+        $this->assertStringNotContainsString('مورد دیگر', $html);
+    }
+
+    public function test_sections_and_integrity_checks_follow_the_gate_workflow(): void    {
         $user = $this->admin();
         $this->actingAs($user);
 

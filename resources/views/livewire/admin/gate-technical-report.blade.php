@@ -62,7 +62,7 @@
                         <p class="mt-0.5 text-xs text-slate-500">دسته‌بندی‌هایی که در گیت ورود مجوز گرفته‌اند اما هنوز در گیت تحویل تأیید نشده‌اند.</p>
                         @if($pendingTotal > 0)
                             <p class="mt-1 text-[11px] font-bold text-slate-400">
-                                نمایش {{ number_format($pendingRows->firstItem() ?? 0) }}–{{ number_format($pendingRows->lastItem() ?? 0) }} از {{ number_format($pendingTotal) }} · صفحهٔ {{ $pendingRows->currentPage() }} از {{ $pendingRows->lastPage() }}
+                                این صفحه: {{ number_format($pendingRows->firstItem() ?? 0) }}–{{ number_format($pendingRows->lastItem() ?? 0) }} از {{ number_format($pendingTotal) }} · صفحهٔ {{ $pendingRows->currentPage() }} از {{ $pendingRows->lastPage() }}
                             </p>
                         @endif
                     </div>
@@ -74,6 +74,7 @@
                 @if($pendingTotal === 0)
                     <p class="px-5 py-8 text-center text-sm text-slate-400">همه مجوزهای ثبت‌شده تحویل تأییدشده دارند.</p>
                 @else
+                    <x-gate.collapsible-list :hidden-count="max(0, count($pendingRows) - $collapsedListRows)">
                     <div class="overflow-x-auto">
                         <table class="w-full min-w-[640px] text-sm">
                             <thead>
@@ -87,7 +88,7 @@
                             </thead>
                             <tbody class="divide-y divide-slate-100">
                                 @foreach($pendingRows as $assignment)
-                                    <tr class="align-top transition hover:bg-slate-50/80">
+                                    <tr class="align-top transition hover:bg-slate-50/80" @if($loop->index >= $collapsedListRows) x-show="listOpen" x-cloak x-transition.opacity.duration.300ms @endif>
                                         <td class="px-4 py-3">
                                             <p class="font-bold text-slate-900">{{ $assignment->recipient_name }}</p>
                                             <p class="mt-0.5 text-xs text-slate-500">
@@ -115,6 +116,7 @@
                             </tbody>
                         </table>
                     </div>
+                    </x-gate.collapsible-list>
 
                     <div class="border-t border-slate-100 px-4 py-3">
                         {{ $pendingRows->onEachSide(1)->links('vendor.livewire.tailwind-mobile-persian', ['scrollTo' => '#pending-section']) }}
@@ -130,7 +132,7 @@
                         <p class="mt-0.5 text-xs text-slate-500">تحویل‌های تأییدشده در گیت تحویل (خروج قطعی‌شده ابتدا فهرست می‌شود)، به‌همراه زمان ثبت در دفترچه خروج.</p>
                         @if($deliveredTotal > 0)
                             <p class="mt-1 text-[11px] font-bold text-slate-400">
-                                نمایش {{ number_format($deliveredRows->firstItem() ?? 0) }}–{{ number_format($deliveredRows->lastItem() ?? 0) }} از {{ number_format($deliveredTotal) }} · صفحهٔ {{ $deliveredRows->currentPage() }} از {{ $deliveredRows->lastPage() }}
+                                این صفحه: {{ number_format($deliveredRows->firstItem() ?? 0) }}–{{ number_format($deliveredRows->lastItem() ?? 0) }} از {{ number_format($deliveredTotal) }} · صفحهٔ {{ $deliveredRows->currentPage() }} از {{ $deliveredRows->lastPage() }}
                             </p>
                         @endif
                     </div>
@@ -180,7 +182,7 @@
                                 </div>
                                 <p class="mt-1 text-xs text-slate-500">{{ $check['hint'] }}</p>
                                 <p class="mt-1 text-[11px] font-bold text-slate-400">
-                                    نمایش {{ number_format($check['rows']->firstItem() ?? 0) }}–{{ number_format($check['rows']->lastItem() ?? 0) }} از {{ number_format($check['count']) }} · صفحهٔ {{ $check['rows']->currentPage() }} از {{ $check['rows']->lastPage() }}
+                                    این صفحه: {{ number_format($check['rows']->firstItem() ?? 0) }}–{{ number_format($check['rows']->lastItem() ?? 0) }} از {{ number_format($check['count']) }} · صفحهٔ {{ $check['rows']->currentPage() }} از {{ $check['rows']->lastPage() }}
                                 </p>
 
                                 @if($check['kind'] === 'assignment')
@@ -194,40 +196,44 @@
                                         {{ $check['rows']->onEachSide(1)->links('vendor.livewire.tailwind-mobile-persian', ['scrollTo' => '#checks-section']) }}
                                     </div>
                                 @else
-                                    <div class="mt-3 overflow-x-auto rounded-xl border border-rose-100">
-                                        <table class="w-full min-w-[560px] text-sm">
-                                            <thead>
-                                                <tr class="border-b border-slate-200 bg-slate-50 text-slate-500">
-                                                    <th class="px-4 py-3 text-right text-xs font-bold">گیرنده</th>
-                                                    <th class="px-4 py-3 text-right text-xs font-bold">دسته‌بندی</th>
-                                                    <th class="px-4 py-3 text-center text-xs font-bold">مقدار تحویل</th>
-                                                    <th class="px-4 py-3 text-center text-xs font-bold">زمان ثبت در دفترچه</th>
-                                                    <th class="px-4 py-3 text-center text-xs font-bold">ثبت‌کننده</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="divide-y divide-slate-100">
-                                                @foreach($check['rows'] as $delivery)
-                                                    <tr class="align-top transition hover:bg-slate-50/80">
-                                                        <td class="px-4 py-3">
-                                                            <p class="font-bold text-slate-900">{{ $delivery->recipient_name }}</p>
-                                                            <p class="mt-0.5 text-xs text-slate-500">{{ $delivery->national_id ?: '—' }}</p>
-                                                        </td>
-                                                        <td class="px-4 py-3 text-slate-700">{{ $delivery->serviceCategory?->name ?: '—' }}</td>
-                                                        <td class="px-4 py-3 text-center font-bold text-slate-800">
-                                                            {{ \App\Models\Service::formatQuantityForUnit($delivery->delivered_quantity, $delivery->serviceCategory?->unit ?: null) }}
-                                                            @php $unitKey = $delivery->serviceCategory?->unit; @endphp
-                                                            @if($unitKey)
-                                                                <span class="text-xs font-medium text-slate-400">{{ (\App\Models\Service::unitOptions()[$unitKey] ?? $unitKey) }}</span>
-                                                            @endif
-                                                        </td>
-                                                        <td class="px-4 py-3 text-center text-xs text-slate-600">{{ $jalaliDateTime($delivery->delivered_at ?? $delivery->created_at) }}</td>
-                                                        <td class="px-4 py-3 text-center text-xs text-slate-600">
-                                                            {{ trim((string) ($delivery->creator?->first_name.' '.$delivery->creator?->last_name)) ?: '—' }}
-                                                        </td>
+                                    <div class="mt-3 rounded-xl border border-rose-100">
+                                        <x-gate.collapsible-list :hidden-count="max(0, count($check['rows']) - $collapsedListRows)">
+                                        <div class="overflow-x-auto">
+                                            <table class="w-full min-w-[560px] text-sm">
+                                                <thead>
+                                                    <tr class="border-b border-slate-200 bg-slate-50 text-slate-500">
+                                                        <th class="px-4 py-3 text-right text-xs font-bold">گیرنده</th>
+                                                        <th class="px-4 py-3 text-right text-xs font-bold">دسته‌بندی</th>
+                                                        <th class="px-4 py-3 text-center text-xs font-bold">مقدار تحویل</th>
+                                                        <th class="px-4 py-3 text-center text-xs font-bold">زمان ثبت در دفترچه</th>
+                                                        <th class="px-4 py-3 text-center text-xs font-bold">ثبت‌کننده</th>
                                                     </tr>
-                                                @endforeach
-                                            </tbody>
-                                        </table>
+                                                </thead>
+                                                <tbody class="divide-y divide-slate-100">
+                                                    @foreach($check['rows'] as $delivery)
+                                                        <tr class="align-top transition hover:bg-slate-50/80" @if($loop->index >= $collapsedListRows) x-show="listOpen" x-cloak x-transition.opacity.duration.300ms @endif>
+                                                            <td class="px-4 py-3">
+                                                                <p class="font-bold text-slate-900">{{ $delivery->recipient_name }}</p>
+                                                                <p class="mt-0.5 text-xs text-slate-500">{{ $delivery->national_id ?: '—' }}</p>
+                                                            </td>
+                                                            <td class="px-4 py-3 text-slate-700">{{ $delivery->serviceCategory?->name ?: '—' }}</td>
+                                                            <td class="px-4 py-3 text-center font-bold text-slate-800">
+                                                                {{ \App\Models\Service::formatQuantityForUnit($delivery->delivered_quantity, $delivery->serviceCategory?->unit ?: null) }}
+                                                                @php $unitKey = $delivery->serviceCategory?->unit; @endphp
+                                                                @if($unitKey)
+                                                                    <span class="text-xs font-medium text-slate-400">{{ (\App\Models\Service::unitOptions()[$unitKey] ?? $unitKey) }}</span>
+                                                                @endif
+                                                            </td>
+                                                            <td class="px-4 py-3 text-center text-xs text-slate-600">{{ $jalaliDateTime($delivery->delivered_at ?? $delivery->created_at) }}</td>
+                                                            <td class="px-4 py-3 text-center text-xs text-slate-600">
+                                                                {{ trim((string) ($delivery->creator?->first_name.' '.$delivery->creator?->last_name)) ?: '—' }}
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        </x-gate.collapsible-list>
                                     </div>
                                     <div class="mt-2">
                                         {{ $check['rows']->onEachSide(1)->links('vendor.livewire.tailwind-mobile-persian', ['scrollTo' => '#checks-section']) }}
@@ -248,10 +254,12 @@
 
                     @if($cancelledCount > 0)
                         <p class="mt-1 text-[11px] font-bold text-slate-400">
-                            نمایش {{ number_format($cancelledRows->firstItem() ?? 0) }}–{{ number_format($cancelledRows->lastItem() ?? 0) }} از {{ number_format($cancelledCount) }} · صفحهٔ {{ $cancelledRows->currentPage() }} از {{ $cancelledRows->lastPage() }}
+                            این صفحه: {{ number_format($cancelledRows->firstItem() ?? 0) }}–{{ number_format($cancelledRows->lastItem() ?? 0) }} از {{ number_format($cancelledCount) }} · صفحهٔ {{ $cancelledRows->currentPage() }} از {{ $cancelledRows->lastPage() }}
                         </p>
 
-                        <div class="mt-3 overflow-x-auto rounded-xl border border-amber-100">
+                        <div class="mt-3 rounded-xl border border-amber-100">
+                            <x-gate.collapsible-list :hidden-count="max(0, count($cancelledRows) - $collapsedListRows)">
+                            <div class="overflow-x-auto">
                             <table class="w-full min-w-[640px] text-sm">
                                 <thead>
                                     <tr class="border-b border-slate-200 bg-slate-50 text-slate-500">
@@ -265,7 +273,7 @@
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
                                     @foreach($cancelledRows as $cancellation)
-                                        <tr class="align-top transition hover:bg-slate-50/80">
+                                        <tr class="align-top transition hover:bg-slate-50/80" @if($loop->index >= $collapsedListRows) x-show="listOpen" x-cloak x-transition.opacity.duration.300ms @endif>
                                             <td class="px-4 py-3">
                                                 <p class="font-bold text-slate-900">{{ trim((string) ($cancellation->person ? $cancellation->person->first_name.' '.$cancellation->person->last_name : ($cancellation->guardian?->full_name ?: data_get($cancellation->delivery_snapshot, 'full_name') ?: '—'))) }}</p>
                                                 <p class="mt-0.5 text-xs text-slate-500">
@@ -289,6 +297,8 @@
                                     @endforeach
                                 </tbody>
                             </table>
+                            </div>
+                            </x-gate.collapsible-list>
                         </div>
                         <div class="mt-2">
                             {{ $cancelledRows->onEachSide(1)->links('vendor.livewire.tailwind-mobile-persian', ['scrollTo' => '#checks-section']) }}
