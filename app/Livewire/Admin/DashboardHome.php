@@ -21,6 +21,7 @@ class DashboardHome extends Component
     private const FULL_ACCESS_SECTIONS = [
         'advanced-service-report',
         'advanced-gate-report',
+        'advanced-gate-technical-report',
         'activity-definition',
         'activity-list',
         'activity-scanner',
@@ -205,6 +206,7 @@ class DashboardHome extends Component
             'child-supporter-sponsor-edit',
             'service-definition',
             'advanced-service-report',
+            'advanced-gate-technical-report',
             'beneficiary-case-file',
         ], true);
     }
@@ -271,6 +273,7 @@ class DashboardHome extends Component
                 'advanced-supervisor-report',
                 'advanced-social-worker-report',
                 'advanced-gate-report',
+                'advanced-gate-technical-report',
                 'system-settings-user-definition',
                 'system-settings-user-list',
                 'service-definition',

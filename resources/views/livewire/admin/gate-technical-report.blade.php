@@ -1,17 +1,18 @@
-<div class="min-h-screen bg-slate-100/70 pb-16">
+<div class="pb-6">
     {{-- Header --}}
-    <div class="bg-gradient-to-l from-slate-900 via-slate-800 to-indigo-900 px-4 py-8 text-white sm:px-8">
-        <div class="mx-auto max-w-6xl">
-            <a
-                href="{{ route('admin.dashboard', ['section' => 'advanced-service-report', 'channel' => 'gate', 'id' => $service->id]) }}"
+    <div class="overflow-hidden rounded-[28px] border border-slate-200 bg-gradient-to-l from-slate-900 via-slate-800 to-indigo-900 px-5 py-6 text-white shadow-sm sm:px-7">
+        <div>
+            <button
+                type="button"
+                wire:click="backToServiceReport"
                 class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold text-white transition hover:bg-white/20"
             >
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
                 بازگشت به گزارش خدمات
-            </a>
-            <h1 class="mt-3 text-2xl font-extrabold">{{ $service->serviceName?->name ?: $service->name }}</h1>
+            </button>
+            <h1 class="mt-3 text-xl font-extrabold sm:text-2xl">{{ $service->serviceName?->name ?: $service->name }}</h1>
             <p class="mt-2 text-sm text-slate-200">{{ $service->code }} · گزارش فنی ایستگاه توزیع</p>
 
             @if($activeTab === \App\Livewire\Admin\GateTechnicalReport::TAB_GATE)
@@ -37,7 +38,7 @@
     </div>
 
     {{-- Tabs (tab 2 will join this bar via GateTechnicalReport::TABS) --}}
-    <div class="mx-auto mt-6 max-w-6xl px-4 sm:px-8">
+    <div class="mt-5">
         <div class="flex items-center gap-2 border-b border-slate-200">
             @foreach($tabs as $tabKey => $tabLabel)
                 <button
@@ -52,7 +53,7 @@
     </div>
 
     @if($activeTab === \App\Livewire\Admin\GateTechnicalReport::TAB_GATE)
-        <div class="mx-auto mt-6 max-w-6xl space-y-6 px-4 sm:px-8">
+        <div class="mt-5 space-y-6">
             {{-- Section 1: authorized at Entry, not delivered at Delivery --}}
             <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" id="pending-section">
                 <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-5 py-4">
@@ -299,7 +300,7 @@
     @endif
 
     @if($activeTab === \App\Livewire\Admin\GateTechnicalReport::TAB_OPERATORS && $operatorReports !== null)
-        <div class="mx-auto mt-6 max-w-6xl space-y-6 px-4 sm:px-8">
+        <div class="mt-5 space-y-6">
             {{-- Summary strip --}}
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 @foreach($operatorReports as $report)

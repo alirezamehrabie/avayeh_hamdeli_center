@@ -492,6 +492,13 @@
                         <livewire:admin.gate-report :key="'advanced-gate-report'" />
                         @break
 
+                    @case('advanced-gate-technical-report')
+                        <livewire:admin.gate-technical-report
+                            :service-id="$sectionContextId"
+                            :key="'advanced-gate-technical-report-'.($sectionContextId ?? 'none')"
+                        />
+                        @break
+
                     @case('service-definition')
                         <livewire:services.service-definition :service-id="$editingServiceId" :key="'service-definition-' . ($editingServiceId ?? 'new')" />
                         @break

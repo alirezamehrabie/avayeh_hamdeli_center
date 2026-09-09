@@ -12,11 +12,14 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-#[Layout('layouts.admin')]
+/**
+ * Rendered as a DashboardHome section (like advanced-service-report):
+ * /admin/dashboard?section=advanced-gate-technical-report&id={service}
+ * The old /admin/gate-technical-report/{service} route redirects here.
+ */
 class GateTechnicalReport extends Component
 {
     use WithPagination;
@@ -34,16 +37,48 @@ class GateTechnicalReport extends Component
         self::TAB_OPERATORS => 'گزارش مسئول گیت',
     ];
 
-    public Service $service;
+    public ?int $serviceId = null;
 
     public string $activeTab = self::TAB_GATE;
 
-    public function mount(Service $service): void
+    protected ?Service $resolvedService = null;
+
+    public function mount(?int $serviceId = null): void
     {
         abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
-        abort_unless((bool) $service->supports_gate_delivery, 404);
 
-        $this->service = $service;
+        $this->serviceId = $serviceId;
+
+        // The section resolves its service up-front: a missing id or a
+        // non-gate service is a broken link, not a page state.
+        abort_unless($this->service !== null, 404);
+    }
+
+    /**
+     * The section's gate service (resolved once per request).
+     */
+    public function getServiceProperty(): ?Service
+    {
+        if ($this->resolvedService !== null) {
+            return $this->resolvedService;
+        }
+
+        if (! $this->serviceId) {
+            return null;
+        }
+
+        return $this->resolvedService = Service::query()
+            ->withTrashed()
+            ->supportsGateDelivery()
+            ->find($this->serviceId);
+    }
+
+    /**
+     * Return to the same service's deliveries inside the services report.
+     */
+    public function backToServiceReport(): void
+    {
+        $this->dispatch('open-dashboard-section', section: 'advanced-service-report', id: $this->serviceId, channel: Service::DELIVERY_CHANNEL_GATE);
     }
 
     public function setTab(string $tab): void
@@ -64,6 +99,7 @@ class GateTechnicalReport extends Component
         // Tab isolation: each tab runs ONLY its own queries.
         if ($this->activeTab === self::TAB_OPERATORS) {
             return view('livewire.admin.gate-technical-report', [
+                'service' => $this->service,
                 'tabs' => self::TABS,
                 'operatorReports' => $this->buildOperatorReports(),
                 'unitOptions' => Service::unitOptions(),
@@ -164,6 +200,7 @@ class GateTechnicalReport extends Component
         $discrepancyTotal = $orphanCount + $finalizedNoLedgerCount + $deliveredWithLedgerCount;
 
         return view('livewire.admin.gate-technical-report', [
+            'service' => $this->service,
             'tabs' => self::TABS,
             'statusLabels' => [
                 GateEntryAssignment::STATUS_PENDING => 'در انتظار تحویل',

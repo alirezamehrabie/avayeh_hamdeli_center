@@ -597,6 +597,15 @@ class ServiceReports extends Component
         $this->dispatch('open-dashboard-section', section: 'advanced-service-report', id: $serviceId, channel: $this->normalizeDeliveryChannel($this->deliveryChannel));
     }
 
+    /**
+     * Open the gate technical report as its own dashboard section
+     * (DashboardHome listens; the old standalone route redirects there too).
+     */
+    public function openGateTechnicalReport(int $serviceId): void
+    {
+        $this->dispatch('open-dashboard-section', section: 'advanced-gate-technical-report', id: $serviceId);
+    }
+
     public function backToServices(): void
     {
         $this->selectedServiceId = null;

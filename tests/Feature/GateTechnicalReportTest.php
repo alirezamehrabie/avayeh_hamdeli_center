@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Livewire\Admin\GateTechnicalReport;
+use App\Livewire\Services\ServiceReports;
 use App\Models\GateEntryAssignment;
 use App\Models\Guardian;
 use App\Models\Person;
@@ -82,7 +83,7 @@ class GateTechnicalReportTest extends TestCase
             'created_by' => $user->id,
         ]);
 
-        Livewire::test(GateTechnicalReport::class, ['service' => $service])
+        Livewire::test(GateTechnicalReport::class, ['serviceId' => $service->id])
             ->assertOk()
             ->assertViewHas('stats', fn (array $stats): bool => $stats['pending'] === 1
                 && $stats['delivered'] === 3
@@ -90,10 +91,12 @@ class GateTechnicalReportTest extends TestCase
                 && $stats['cancelled'] === 1
                 && $stats['discrepancies'] === 2)
             ->assertSee('Orphan Recipient')
-            ->assertSee('سابقه لغو در خروج');
+            ->assertSee('سابقه لغو در خروج')
+            ->call('backToServiceReport')
+            ->assertDispatched('open-dashboard-section', section: 'advanced-service-report', id: $service->id, channel: 'gate');
     }
 
-    public function test_non_gate_services_are_rejected(): void
+    public function test_non_gate_service_and_legacy_route_behaviour(): void
     {
         $user = $this->admin();
         $this->actingAs($user);
@@ -101,8 +104,30 @@ class GateTechnicalReportTest extends TestCase
         $homeOnly = $this->createService(gate: false);
         $gateService = $this->createService(gate: true);
 
-        $this->get(route('admin.gate-technical-report', ['service' => $homeOnly]))->assertNotFound();
-        $this->get(route('admin.gate-technical-report', ['service' => $gateService]))->assertOk();
+        // The dashboard section 404s for a service without gate support.
+        $this->get(route('admin.dashboard', ['section' => 'advanced-gate-technical-report', 'id' => $homeOnly->id]))
+            ->assertNotFound();
+
+        // …and renders inside the dashboard for a gate service.
+        $this->get(route('admin.dashboard', ['section' => 'advanced-gate-technical-report', 'id' => $gateService->id]))
+            ->assertOk()
+            ->assertSee('گزارش فنی ایستگاه توزیع');
+
+        // The legacy standalone route redirects into the dashboard section.
+        $this->get(route('admin.gate-technical-report', ['service' => $gateService->id]))
+            ->assertRedirect(route('admin.dashboard', ['section' => 'advanced-gate-technical-report', 'id' => $gateService->id]));
+    }
+
+    public function test_services_list_button_opens_the_report_section(): void
+    {
+        $user = $this->admin();
+        $this->actingAs($user);
+
+        [$service] = $this->gateFixture();
+
+        Livewire::test(ServiceReports::class)
+            ->call('openGateTechnicalReport', $service->id)
+            ->assertDispatched('open-dashboard-section', section: 'advanced-gate-technical-report', id: $service->id);
     }
 
     public function test_operators_tab_reports_activity_per_gate_operator(): void
@@ -150,7 +175,7 @@ class GateTechnicalReportTest extends TestCase
             'canceled_at' => now(),
         ]);
 
-        Livewire::test(GateTechnicalReport::class, ['service' => $service])
+        Livewire::test(GateTechnicalReport::class, ['serviceId' => $service->id])
             ->call('setTab', 'operators')
             ->assertSet('activeTab', 'operators')
             ->assertViewHas('operatorReports', function (array $reports) use ($entryOp, $idleEntryOp, $deliveryOp, $exitOp, $ghostOp): bool {

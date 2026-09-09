@@ -5,7 +5,6 @@ use App\Http\Controllers\BeneficiaryCaseRecordAttachmentController;
 use App\Http\Controllers\QrIdentityController;
 use App\Http\Controllers\ServiceCategoryThumbnailController;
 use App\Livewire\Admin\DashboardHome;
-use App\Livewire\Admin\GateTechnicalReport;
 use App\Livewire\Admin\UserAccount;
 use App\Livewire\Auth\Login;
 use App\Livewire\ChildSupporters\Dashboard as ChildSupporterDashboard;
@@ -98,7 +97,13 @@ Route::get('/admin/dashboard', DashboardHome::class)
     ->middleware(['auth', 'can:access-admin-panel'])
     ->name('admin.dashboard');
 
-Route::get('/admin/gate-technical-report/{service}', GateTechnicalReport::class)
+Route::get('/admin/gate-technical-report/{service}', function (App\Models\Service $service) {
+    // Constructed directly (not via the redirect() helper, which Livewire
+    // decorates) so the deep link always lands in the dashboard section.
+    return new Illuminate\Http\RedirectResponse(
+        route('admin.dashboard', ['section' => 'advanced-gate-technical-report', 'id' => $service->id])
+    );
+})
     ->middleware(['auth', 'can:full-access'])
     ->name('admin.gate-technical-report');
 

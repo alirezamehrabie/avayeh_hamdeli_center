@@ -298,15 +298,16 @@
                                         جزئیات
                                     </button>
                                     @if($deliveryChannel === \App\Models\Service::DELIVERY_CHANNEL_GATE)
-                                        <a
-                                            href="{{ route('admin.gate-technical-report', ['service' => $service->id]) }}"
+                                        <button
+                                            type="button"
+                                            wire:click="openGateTechnicalReport({{ $service->id }})"
                                             class="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100"
                                         >
                                             <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                             </svg>
                                             گزارش فنی
-                                        </a>
+                                        </button>
                                     @endif
                                 </div>
                             </td>
@@ -397,15 +398,16 @@
                                 </svg>
                             </button>
                             @if($deliveryChannel === \App\Models\Service::DELIVERY_CHANNEL_GATE)
-                                <a
-                                    href="{{ route('admin.gate-technical-report', ['service' => $service->id]) }}"
+                                <button
+                                    type="button"
+                                    wire:click="openGateTechnicalReport({{ $service->id }})"
                                     class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2.5 text-sm font-bold text-indigo-700 transition hover:bg-indigo-100"
                                 >
                                     گزارش فنی
                                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                     </svg>
-                                </a>
+                                </button>
                             @endif
                         </div>
                     </div>
