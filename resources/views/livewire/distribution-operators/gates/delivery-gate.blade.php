@@ -153,9 +153,10 @@
                         autoStart: true,
                         autoResumeAfterSuccess: false,
                     }),
-                    itemsSheetOpen: false,
+                    // itemsSheetOpen + Android-back close handler (see sheetBackGuard in app.js).
+                    ...sheetBackGuard('itemsSheetOpen'),
                 }"
-                x-init="init()"
+                x-init="init(); bindSheetBack()"
                 x-on:id-card-scanner-resume.window="resumeFromWire(); itemsSheetOpen = false"
                 x-on:delivery-gate-subject-loaded.window="itemsSheetOpen = true"
                 x-on:keydown.window.ctrl.enter.prevent="triggerNextScanShortcut()"

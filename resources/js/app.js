@@ -468,6 +468,74 @@ Alpine.data('entryGateCategories', (initialAssigned = []) => ({
     },
 }));
 
+// Gates bottom-sheet back-button guard (entry / delivery / exit share this pattern).
+// While a gate's sheet is open one disposable same-URL history entry is pushed (same
+// trick as the household modal's history-close pattern), so the Android back button
+// pops that entry — closing the sheet — instead of navigating the page away. Closing
+// the sheet from the UI pops the entry itself, so with the sheet closed nothing is
+// left behind in history and browser back behaves normally. Desktop keeps the sheet
+// as a static column, so the entry is only armed on mobile/coarse-pointer devices.
+let gateSheetCtrl = null;
+let gateSheetProp = '';
+let gateSheetPushed = false;
+let gateSheetOwnPop = false;
+
+window.addEventListener('popstate', () => {
+    if (gateSheetOwnPop) {
+        // The pop produced by our own sheet-closing history.back() — swallow it.
+        gateSheetOwnPop = false;
+
+        return;
+    }
+
+    if (gateSheetCtrl && gateSheetPushed) {
+        gateSheetPushed = false;
+        gateSheetCtrl[gateSheetProp] = false;
+    }
+});
+
+Alpine.data('sheetBackGuard', (prop) => ({
+    [prop]: false,
+    bindSheetBack() {
+        if (window.matchMedia && ! window.matchMedia('(max-width: 767px), (pointer: coarse)').matches) {
+            return;
+        }
+
+        if (gateSheetPushed) {
+            // The root Alpine component remounted (e.g. service change) with an entry
+            // still armed by the previous sheet — consume it before wiring the new one.
+            gateSheetPushed = false;
+            gateSheetOwnPop = true;
+
+            try {
+                window.history.back();
+            } catch (error) {
+                gateSheetOwnPop = false;
+            }
+        }
+
+        gateSheetCtrl = this;
+        gateSheetProp = prop;
+
+        this.$watch(prop, (open) => {
+            if (open && !gateSheetPushed) {
+                window.history.pushState({ ...(window.history.state || {}), gateSheet: true }, '', window.location.href);
+                gateSheetPushed = true;
+            } else if (!open && gateSheetPushed) {
+                gateSheetPushed = false;
+                gateSheetOwnPop = true;
+
+                try {
+                    window.history.back();
+                } catch (error) {
+                    // The sheet must still close even if the pushed entry cannot be consumed.
+                    gateSheetOwnPop = false;
+                }
+            }
+        });
+    },
+}));
+
 window.addEventListener('client-card-browser-print', (event) => {
     const { html, title } = event.detail || {};
 
