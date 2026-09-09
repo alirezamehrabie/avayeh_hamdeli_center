@@ -105,6 +105,83 @@ class GateTechnicalReportTest extends TestCase
         $this->get(route('admin.gate-technical-report', ['service' => $gateService]))->assertOk();
     }
 
+    public function test_operators_tab_reports_activity_per_gate_operator(): void
+    {
+        $user = $this->admin();
+        $this->actingAs($user);
+
+        [$service, $category] = $this->gateFixture();
+
+        $entryOp = $this->operator(User::PERMISSION_DISTRIBUTION_INBOUND_GATE, 'entry');
+        $idleEntryOp = $this->operator(User::PERMISSION_DISTRIBUTION_INBOUND_GATE, 'entry-idle');
+        $deliveryOp = $this->operator(User::PERMISSION_DISTRIBUTION_DELIVERY_GATE, 'del');
+        $exitOp = $this->operator(User::PERMISSION_DISTRIBUTION_OUTBOUND_GATE, 'exit');
+        $ghostOp = $this->operator(null, 'ghost');
+
+        $mine1 = $this->assignment($service, $category, GateEntryAssignment::STATUS_PENDING, $entryOp->id);
+        $mine2 = $this->assignment($service, $category, GateEntryAssignment::STATUS_DELIVERED, $entryOp->id, $deliveryOp->id);
+        $ghost = $this->assignment($service, $category, GateEntryAssignment::STATUS_FINALIZED, $ghostOp->id, $deliveryOp->id);
+
+        ServiceDelivery::query()->create([
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'person_id' => $ghost->person_id,
+            'gate_entry_assignment_id' => $ghost->id,
+            'delivery_channel' => Service::DELIVERY_CHANNEL_GATE,
+            'national_id' => $ghost->national_id,
+            'full_name' => $ghost->full_name,
+            'delivered_quantity' => 1,
+            'value_per_unit_snapshot' => 1000,
+            'delivered_total_value' => 1000,
+            'delivered_at' => now(),
+            'created_by' => $exitOp->id,
+        ]);
+
+        ServiceDeliveryCancellation::query()->create([
+            'gate_entry_assignment_id' => $ghost->id,
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'person_id' => $ghost->person_id,
+            'delivered_quantity' => 1,
+            'delivered_total_value' => 1000,
+            'delivered_at' => now()->toDateString(),
+            'delivery_snapshot' => ['full_name' => $ghost->full_name],
+            'canceled_by' => $exitOp->id,
+            'canceled_at' => now(),
+        ]);
+
+        Livewire::test(GateTechnicalReport::class, ['service' => $service])
+            ->call('setTab', 'operators')
+            ->assertSet('activeTab', 'operators')
+            ->assertViewHas('operatorReports', function (array $reports) use ($entryOp, $idleEntryOp, $deliveryOp, $exitOp, $ghostOp): bool {
+                $entry = collect($reports['entry']['operators'])->keyBy('userId');
+                $delivery = collect($reports['delivery']['operators'])->keyBy('userId');
+                $exit = collect($reports['exit']['operators'])->keyBy('userId');
+
+                return $reports['entry']['activeCount'] === 2
+                    && $reports['entry']['idleCount'] === 1
+                    && ($entry[$entryOp->id]['totalRecords'] ?? 0) === 2
+                    && ($entry[$entryOp->id]['authorized'] ?? false) === true
+                    && ($entry[$idleEntryOp->id]['totalRecords'] ?? -1) === 0
+                    && ($entry[$idleEntryOp->id]['authorized'] ?? false) === true
+                    && ($entry[$ghostOp->id]['authorized'] ?? true) === false
+                    && ($delivery[$deliveryOp->id]['totalRecords'] ?? 0) === 2
+                    && ($delivery[$deliveryOp->id]['extraTotal'] ?? 0) === 1
+                    && ($exit[$exitOp->id]['totalRecords'] ?? 0) === 1
+                    && ($exit[$exitOp->id]['cancelledTotal'] ?? 0) === 1;
+            })
+            ->assertSee('بدون مجوز فعلی');
+    }
+
+    private function operator(?string $permission, string $tag): User
+    {
+        return User::factory()->create([
+            'access_level' => User::ACCESS_LEVEL_DISTRIBUTION_OPERATOR,
+            'is_admin' => false,
+            'permissions' => $permission === null ? [] : [$permission],
+        ]);
+    }
+
     private function admin(): User
     {
         return User::factory()->create([
@@ -139,7 +216,7 @@ class GateTechnicalReportTest extends TestCase
      * One assignment per call with a fresh subject (the table enforces a
      * unique service + category + person index).
      */
-    private function assignment(Service $service, ServiceCategory $category, string $status): GateEntryAssignment
+    private function assignment(Service $service, ServiceCategory $category, string $status, ?int $createdBy = null, ?int $deliveredBy = null): GateEntryAssignment
     {
         $nationalId = (string) random_int(1000000000, 9999999999);
 
@@ -168,8 +245,8 @@ class GateTechnicalReportTest extends TestCase
             'status' => $status,
             'assigned_at' => now()->subHours(3),
             'delivered_at' => $status === GateEntryAssignment::STATUS_PENDING ? null : now()->subHour(),
-            'delivered_by' => $status === GateEntryAssignment::STATUS_PENDING ? null : auth()->id(),
-            'created_by' => auth()->id(),
+            'delivered_by' => $status === GateEntryAssignment::STATUS_PENDING ? null : ($deliveredBy ?? auth()->id()),
+            'created_by' => $createdBy ?? auth()->id(),
         ]);
     }
 
