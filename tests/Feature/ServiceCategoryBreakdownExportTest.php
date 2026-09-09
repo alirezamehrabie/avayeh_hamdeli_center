@@ -63,7 +63,7 @@ class ServiceCategoryBreakdownExportTest extends TestCase
         $this->actingAs($user);
 
         Livewire::test(ServiceReports::class, ['selectedServiceId' => $service->id])
-            ->set('deliverySearch', 'روغن')
+            ->set('deliverySearch', '2222222222')
             ->call('exportCategoryBreakdownToExcel');
 
         Excel::assertDownloaded(

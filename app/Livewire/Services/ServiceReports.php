@@ -6,6 +6,7 @@ use App\Exports\ServiceCategoryBreakdownExport;
 use App\Exports\ServiceReportExport;
 use App\Helpers\Morilog\CalendarUtils;
 use App\Helpers\Morilog\Jalalian;
+use App\Helpers\PersianText;
 use App\Livewire\Services\Concerns\SummarizesServiceDeliveries;
 use App\Models\Guardian;
 use App\Models\Person;
@@ -202,21 +203,44 @@ class ServiceReports extends Component
             $query->whereDate('delivered_at', '<=', $dateTo);
         }
 
-        $search = trim($this->deliverySearch);
+        $rawSearch = trim($this->deliverySearch);
 
-        if ($search !== '') {
-            $like = '%'.$search.'%';
+        if ($rawSearch !== '') {
+            // Restricted to the beneficiary identity ONLY: full name, person
+            // code, national id (row-level and linked-person level). Mobile,
+            // notes, guardian/social-worker/creator names are deliberately
+            // NOT searched. Name matching reuses the canonical people-search
+            // algorithm: Arabic→Persian folding, ZWNJ/whitespace collapsing,
+            // space-insensitive (compact) form, prefix + mid-string LIKE,
+            // with LIKE wildcards escaped.
+            $digits = PersianText::digitsOnly($rawSearch);
+            $normalized = Person::normalizeSearchText($rawSearch);
+            $escaped = addcslashes($normalized, '\\%_');
+            $compact = addcslashes(str_replace(' ', '', $normalized), '\\%_');
 
-            $query->where(function ($q) use ($like) {
-                $q->where('full_name', 'like', $like)
-                    ->orWhere('national_id', 'like', $like)
-                    ->orWhere('mobile', 'like', $like)
-                    ->orWhere('notes', 'like', $like)
-                    ->orWhereHas('person', fn ($p) => $p->where('first_name', 'like', $like)->orWhere('last_name', 'like', $like))
-                    ->orWhereHas('guardian', fn ($g) => $g->where('first_name', 'like', $like)->orWhere('last_name', 'like', $like))
-                    ->orWhereHas('socialWorker', fn ($w) => $w->where('first_name', 'like', $like)->orWhere('last_name', 'like', $like))
-                    ->orWhereHas('creator', fn ($c) => $c->where('name', 'like', $like));
-            });
+            if ($digits !== '') {
+                $length = strlen($digits);
+                $nationalMatcher = $length === 10 ? '=' : 'like';
+                $nationalValue = $length === 10 ? $digits : $digits.'%';
+
+                $query->where(function ($q) use ($digits, $nationalMatcher, $nationalValue) {
+                    $q->where('national_id', $nationalMatcher, $nationalValue)
+                        ->orWhereHas('person', fn ($p) => $p
+                            ->where('national_id', $nationalMatcher, $nationalValue)
+                            ->orWhere('person_code', 'like', $digits.'%'));
+                });
+            } elseif ($escaped !== '') {
+                $containsLike = '%'.$escaped.'%';
+
+                $query->where(function ($q) use ($escaped, $compact, $containsLike) {
+                    $q->whereHas('person', fn ($p) => $p
+                        ->where('normalized_full_name', 'like', $escaped.'%')
+                        ->orWhere('compact_full_name', 'like', $compact.'%')
+                        ->when(mb_strlen($escaped) >= 3, fn ($pp) => $pp->orWhere('normalized_full_name', 'like', $containsLike)))
+                        ->orWhere('full_name', 'like', $escaped.'%')
+                        ->when(mb_strlen($escaped) >= 3, fn ($qq) => $qq->orWhere('full_name', 'like', $containsLike));
+                });
+            }
         }
 
         return $query;
