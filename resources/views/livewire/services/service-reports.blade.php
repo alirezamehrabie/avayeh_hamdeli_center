@@ -426,6 +426,17 @@
         @endif
         </div>
     @else
+        {{-- Single source for "how many delivery filters are active": the mobile
+             «فیلترها» badge, both empty states and the desktop clear button all
+             read this instead of re-listing the filter properties. --}}
+        @php
+            $deliveryActiveFilterCount = (trim($deliverySearch ?? '') !== '' ? 1 : 0)
+                + ($selectedDeliveryEntryType !== 'all' ? 1 : 0)
+                + ($selectedCoverageSocialWorker !== 'all' ? 1 : 0)
+                + ($selectedSupportOrganization !== 'all' ? 1 : 0)
+                + ($selectedNeedLevel !== 'all' ? 1 : 0)
+                + (($deliveryDateFrom !== '' || $deliveryDateTo !== '') ? 1 : 0);
+        @endphp
         <div class="space-y-6">
             <div class="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
                 <div class="bg-gradient-to-l from-slate-900 via-indigo-900 to-sky-800 px-6 py-6 text-white">
@@ -678,7 +689,7 @@
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
                                                             </svg>
                                                         </span>
-                                                        <p class="text-sm font-medium text-slate-500">{{ (trim($deliverySearch ?? "") !== "" || $selectedDeliveryEntryType !== 'all' || $selectedCoverageSocialWorker !== 'all' || $selectedSupportOrganization !== 'all' || $selectedNeedLevel !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '') ? "موردی برای فیلترهای فعلی پیدا نشد." : "هنوز هیچ تحویلی برای این خدمت ثبت نشده است." }}</p>
+                                                        <p class="text-sm font-medium text-slate-500">{{ ($deliveryActiveFilterCount > 0) ? "موردی برای فیلترهای فعلی پیدا نشد." : "هنوز هیچ تحویلی برای این خدمت ثبت نشده است." }}</p>
                                                     </div>
                                                 @endforelse
                                             </div>
@@ -749,9 +760,20 @@
                     </div>
                 </div>
 
-                <div class="px-6 py-3">
-                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                        <div class="relative w-full sm:max-w-sm">
+                {{-- Filter toolbar: from lg up one inline wrapping row, exactly like before.
+                     On phones/tablets only the search stays on the main surface and every other
+                     control moves into a bottom sheet opened by «فیلترها» (badge = active
+                     filters) — the same sheet the delivery gates use; the wrapper dissolves at
+                     lg via display:contents so the desktop layout is untouched. --}}
+                <div class="px-4 py-3 sm:px-6">
+                    <div
+                        class="flex flex-wrap items-center gap-2 lg:gap-3"
+                        x-data="{ ...sheetBackGuard('deliveryFiltersOpen') }"
+                        x-init="bindSheetBack()"
+                        @keydown.escape.window="deliveryFiltersOpen = false"
+                    >
+                        {{-- Beneficiary search: always inline, every screen size. --}}
+                        <div class="relative min-w-0 flex-1 lg:w-96 lg:max-w-sm lg:flex-none">
                             <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
@@ -759,155 +781,259 @@
                                 type="text"
                                 wire:model.live.debounce.300ms="deliverySearch"
                                 placeholder="جستجو در تحویل‌ها (نام مددجو، کد مددجو، کد ملی)"
-                                class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                                class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-[15px] text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100 lg:py-2 lg:text-sm"
                             >
                         </div>
 
-                        <select wire:model.live="selectedDeliveryEntryType" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 sm:w-56">
-                            <option value="all">انواع ثبت</option>
-                            <option value="manual">ثبت دستی</option>
-                            <option value="individual">شخصی (مددجو)</option>
-                            <option value="guardian">خانوادگی (سرپرست)</option>
-                        </select>
-
-                        <select wire:model.live="selectedSupportOrganization" aria-label="نهاد حمایتی" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 sm:w-56">
-                            <option value="all">همه نهادها</option>
-                            @foreach($supportOrganizationOptions as $organizationOption)
-                                <option value="{{ $organizationOption['id'] }}">{{ $organizationOption['name'] }}</option>
-                            @endforeach
-                        </select>
-
-                        <select wire:model.live="selectedNeedLevel" aria-label="سطح نیاز" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 sm:w-44">
-                            <option value="all">همه سطوح نیاز</option>
-                            @foreach($needLevelOptions as $needLevelOption)
-                                <option value="{{ $needLevelOption['id'] }}">{{ $needLevelOption['title'] }}</option>
-                            @endforeach
-                        </select>
-
-                        <div
-                            x-data="{
-                                open: false,
-                                query: '',
-                                workers: @js($coverageSocialWorkerOptions),
-                                normalizeSearchText(value) {
-                                    let text = String(value ?? '');
-
-                                    text = text
-                                        .replace(/[يى]/g, 'ی')
-                                        .replace(/ك/g, 'ک')
-                                        .replace(/[ۀة]/g, 'ه')
-                                        .replace(/[آأإٱ]/g, 'ا')
-                                        .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
-                                        .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
-                                    text = text.replace(/[\u200C\u200D\uFEFF\u00A0]/g, ' ');
-
-                                    return text.toLowerCase().replace(/\s+/g, ' ').trim();
-                                },
-                                get filtered() {
-                                    const query = this.normalizeSearchText(this.query);
-
-                                    if (! query) {
-                                        return this.workers.slice(0, 50);
-                                    }
-
-                                    const terms = query.split(' ');
-
-                                    return this.workers
-                                        .filter((worker) => {
-                                            const haystack = this.normalizeSearchText(worker.name).replace(/ /g, '');
-
-                                            return terms.every((term) => haystack.includes(term.replace(/ /g, '')));
-                                        })
-                                        .slice(0, 50);
-                                },
-                                choose(id) {
-                                    this.$wire.set('selectedCoverageSocialWorker', id === null ? 'all' : String(id));
-                                    this.open = false;
-                                    this.query = '';
-                                },
-                            }"
-                            class="relative w-full sm:w-64"
+                        {{-- Sheet trigger (phones/tablets): badge counts the filters in play,
+                             so an active narrowing stays visible while the sheet is parked. --}}
+                        <button
+                            type="button"
+                            @click="deliveryFiltersOpen = true"
+                            :aria-expanded="deliveryFiltersOpen ? 'true' : 'false'"
+                            aria-haspopup="dialog"
+                            class="inline-flex shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-[15px] font-bold text-slate-700 outline-none transition hover:border-slate-300 hover:bg-slate-50 focus:ring-2 focus:ring-indigo-100 lg:hidden"
                         >
-                            <button
-                                type="button"
-                                aria-label="مددکار اجتماعی"
-                                @click="open = !open; if (open) $nextTick(() => $refs.search.focus())"
-                                class="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition hover:border-slate-300 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                            >
-                                <span class="truncate">{{ data_get(collect($coverageSocialWorkerOptions)->firstWhere('id', (int) $selectedCoverageSocialWorker), 'name', 'همه مددکاران اجتماعی') }}</span>
-                                <svg class="h-4 w-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
+                            <svg class="h-[18px] w-[18px] shrink-0 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.252 2.252 0 01-.659 1.597L15.5 13.042v4.517a2.25 2.25 0 01-1.378 2.068l-3 1.16a2.25 2.25 0 01-3.122-2.068V13.042L3.66 7.415a2.252 2.252 0 01-.659-1.597V4.774c0-.54.384-1.006.917-1.096A49.033 49.033 0 0112 3z" />
+                            </svg>
+                            <span>فیلترها</span>
+                            @if($deliveryActiveFilterCount > 0)
+                                <span class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1 text-[11px] font-black leading-none text-white">{{ $deliveryActiveFilterCount }}</span>
+                            @endif
+                        </button>
 
-                            <div
-                                x-show="open"
-                                x-cloak
-                                x-transition
-                                @click.outside="open = false"
-                                class="absolute z-30 mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 shadow-xl"
-                            >
-                                <input
-                                    x-ref="search"
-                                    type="text"
-                                    x-model="query"
-                                    placeholder="جستجوی مددکار اجتماعی…"
-                                    class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
-                                >
+                        {{-- Mobile-only backdrop: tapping it parks the sheet off-screen again. --}}
+                        <div
+                            x-cloak
+                            x-show="deliveryFiltersOpen"
+                            @click="deliveryFiltersOpen = false"
+                            @touchmove.prevent
+                            x-transition:enter="transition-opacity ease-out duration-200"
+                            x-transition:enter-start="opacity-0"
+                            x-transition:enter-end="opacity-100"
+                            x-transition:leave="transition-opacity ease-in duration-150"
+                            x-transition:leave-start="opacity-100"
+                            x-transition:leave-end="opacity-0"
+                            class="fixed inset-0 z-30 bg-slate-950/40 lg:hidden"
+                        ></div>
 
-                                <div class="mt-1 max-h-56 space-y-0.5 overflow-y-auto">
-                                    <button type="button" @click="choose(null)" class="w-full rounded-lg px-3 py-2 text-right text-sm font-bold text-slate-600 transition hover:bg-slate-50">همه مددکاران اجتماعی</button>
-                                    <template x-for="worker in filtered" :key="worker.id">
-                                        <button type="button" @click="choose(worker.id)" x-text="worker.name" class="w-full truncate rounded-lg px-3 py-2 text-right text-sm text-slate-700 transition hover:bg-indigo-50 hover:text-indigo-700"></button>
-                                    </template>
-                                    <p x-show="filtered.length === 0" class="px-3 py-2 text-xs text-slate-400">مددکاری با این جستجو یافت نشد.</p>
+                        {{-- The filter controls. Padding lives on the regions (not the sheet)
+                             so the sticky header/footer can span the full sheet width. --}}
+                        <div
+                            x-cloak
+                            :class="deliveryFiltersOpen ? 'translate-y-0' : 'translate-y-full lg:translate-y-0'"
+                            class="fixed inset-x-0 bottom-0 z-40 flex max-h-[85svh] min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain rounded-t-3xl border-t border-slate-200 bg-white pb-2 shadow-2xl transition-transform duration-300 ease-out lg:contents"
+                        >
+                            {{-- Sheet top chrome: grabber + title + close (mobile only). --}}
+                            <div class="sticky top-0 z-10 bg-white px-4 pb-2 pt-3 lg:hidden">
+                                <div class="mx-auto h-1.5 w-12 rounded-full bg-slate-200"></div>
+                                <div class="mt-3 flex items-center justify-between">
+                                    <button
+                                        type="button"
+                                        @click="deliveryFiltersOpen = false"
+                                        aria-label="بستن فیلترها"
+                                        class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200"
+                                    >
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                    <span class="text-sm font-black text-slate-800">فیلترهای تحویل</span>
+                                    <span class="h-8 w-8 shrink-0"></span>
                                 </div>
+                            </div>
+
+                            <div class="flex flex-col gap-3 px-4 lg:contents">
+                                {{-- Field labels only exist inside the sheet; on desktop the
+                                     controls keep their self-describing default options. --}}
+                                <div class="flex flex-col gap-1 lg:contents">
+                                    <span class="text-xs font-bold text-slate-400 lg:hidden">نوع ثبت</span>
+                                    <select wire:model.live="selectedDeliveryEntryType" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[15px] text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:w-56 lg:py-2 lg:text-sm">
+                                        <option value="all">انواع ثبت</option>
+                                        <option value="manual">ثبت دستی</option>
+                                        <option value="individual">شخصی (مددجو)</option>
+                                        <option value="guardian">خانوادگی (سرپرست)</option>
+                                    </select>
+                                </div>
+
+                                <div class="flex flex-col gap-1 lg:contents">
+                                    <span class="text-xs font-bold text-slate-400 lg:hidden">نهاد حمایتی</span>
+                                    <select wire:model.live="selectedSupportOrganization" aria-label="نهاد حمایتی" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[15px] text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:w-56 lg:py-2 lg:text-sm">
+                                        <option value="all">همه نهادها</option>
+                                        @foreach($supportOrganizationOptions as $organizationOption)
+                                            <option value="{{ $organizationOption['id'] }}">{{ $organizationOption['name'] }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div class="flex flex-col gap-1 lg:contents">
+                                    <span class="text-xs font-bold text-slate-400 lg:hidden">سطح نیاز</span>
+                                    <select wire:model.live="selectedNeedLevel" aria-label="سطح نیاز" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[15px] text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:w-44 lg:py-2 lg:text-sm">
+                                        <option value="all">همه سطوح نیاز</option>
+                                        @foreach($needLevelOptions as $needLevelOption)
+                                            <option value="{{ $needLevelOption['id'] }}">{{ $needLevelOption['title'] }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div class="flex flex-col gap-1 lg:contents">
+                                    <span class="text-xs font-bold text-slate-400 lg:hidden">مددکار اجتماعی</span>
+                                    <div
+                                        x-data="{
+                                            open: false,
+                                            query: '',
+                                            workers: @js($coverageSocialWorkerOptions),
+                                            normalizeSearchText(value) {
+                                                let text = String(value ?? '');
+
+                                                text = text
+                                                    .replace(/[يى]/g, 'ی')
+                                                    .replace(/ك/g, 'ک')
+                                                    .replace(/[ۀة]/g, 'ه')
+                                                    .replace(/[آأإٱ]/g, 'ا')
+                                                    .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
+                                                    .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
+                                                text = text.replace(/[\u200C\u200D\uFEFF\u00A0]/g, ' ');
+
+                                                return text.toLowerCase().replace(/\s+/g, ' ').trim();
+                                            },
+                                            get filtered() {
+                                                const query = this.normalizeSearchText(this.query);
+
+                                                if (! query) {
+                                                    return this.workers.slice(0, 50);
+                                                }
+
+                                                const terms = query.split(' ');
+
+                                                return this.workers
+                                                    .filter((worker) => {
+                                                        const haystack = this.normalizeSearchText(worker.name).replace(/ /g, '');
+
+                                                        return terms.every((term) => haystack.includes(term.replace(/ /g, '')));
+                                                    })
+                                                    .slice(0, 50);
+                                            },
+                                            choose(id) {
+                                                this.$wire.set('selectedCoverageSocialWorker', id === null ? 'all' : String(id));
+                                                this.open = false;
+                                                this.query = '';
+                                            },
+                                        }"
+                                        class="relative w-full lg:w-64"
+                                    >
+                                        <button
+                                            type="button"
+                                            aria-label="مددکار اجتماعی"
+                                            @click="open = !open; if (open) $nextTick(() => $refs.search.focus())"
+                                            class="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[15px] text-slate-700 outline-none transition hover:border-slate-300 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:py-2 lg:text-sm"
+                                        >
+                                            <span class="truncate">{{ data_get(collect($coverageSocialWorkerOptions)->firstWhere('id', (int) $selectedCoverageSocialWorker), 'name', 'همه مددکاران اجتماعی') }}</span>
+                                            <svg class="h-4 w-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </button>
+
+                                        <div
+                                            x-show="open"
+                                            x-cloak
+                                            x-transition
+                                            @click.outside="open = false"
+                                            class="absolute z-30 mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 shadow-xl"
+                                        >
+                                            <input
+                                                x-ref="search"
+                                                type="text"
+                                                x-model="query"
+                                                placeholder="جستجوی مددکار اجتماعی…"
+                                                class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-[15px] text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100 lg:py-2 lg:text-sm"
+                                            >
+
+                                            <div class="mt-1 max-h-56 space-y-0.5 overflow-y-auto">
+                                                <button type="button" @click="choose(null)" class="w-full rounded-lg px-3 py-2.5 text-right text-[15px] font-bold text-slate-600 transition hover:bg-slate-50 lg:py-2 lg:text-sm">همه مددکاران اجتماعی</button>
+                                                <template x-for="worker in filtered" :key="worker.id">
+                                                    <button type="button" @click="choose(worker.id)" x-text="worker.name" class="w-full truncate rounded-lg px-3 py-2.5 text-right text-[15px] text-slate-700 transition hover:bg-indigo-50 hover:text-indigo-700 lg:py-2 lg:text-sm"></button>
+                                                </template>
+                                                <p x-show="filtered.length === 0" class="px-3 py-2 text-xs text-slate-400">مددکاری با این جستجو یافت نشد.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-col gap-1 lg:contents">
+                                    <span class="text-xs font-bold text-slate-400 lg:hidden">بازه تاریخ تحویل</span>
+                                    <div class="grid grid-cols-2 gap-2 lg:contents">
+                                        <div x-data="jalaliDateTimeField($wire.entangle('deliveryDateFrom').live)" class="min-w-0 lg:w-40">
+                                            <input
+                                                type="text"
+                                                x-ref="input"
+                                                x-model="draft"
+                                                x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                                x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                                x-on:jalali-picker-open="handlePickerOpen()"
+                                                x-on:jalali-picker-close="handlePickerClose()"
+                                                x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                                readonly
+                                                inputmode="none"
+                                                autocomplete="off"
+                                                data-jdp-readonly
+                                                data-jdp
+                                                data-jdp-only-date
+                                                placeholder="از تاریخ"
+                                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[15px] font-bold text-slate-600 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:py-2 lg:text-sm"
+                                            >
+                                        </div>
+
+                                        <div x-data="jalaliDateTimeField($wire.entangle('deliveryDateTo').live)" class="min-w-0 lg:w-40">
+                                            <input
+                                                type="text"
+                                                x-ref="input"
+                                                x-model="draft"
+                                                x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                                x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                                x-on:jalali-picker-open="handlePickerOpen()"
+                                                x-on:jalali-picker-close="handlePickerClose()"
+                                                x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                                readonly
+                                                inputmode="none"
+                                                autocomplete="off"
+                                                data-jdp-readonly
+                                                data-jdp
+                                                data-jdp-only-date
+                                                placeholder="تا تاریخ"
+                                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[15px] font-bold text-slate-600 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:py-2 lg:text-sm"
+                                            >
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Sheet footer (mobile only): reset stays reachable while the
+                                 sheet is open, and «مشاهده نتیجه» dismisses it onto the list. --}}
+                            <div class="sticky bottom-0 mt-1 flex items-center gap-2 border-t border-slate-200 bg-white px-4 pt-3 lg:hidden" style="padding-bottom: max(0.75rem, env(safe-area-inset-bottom));">
+                                @if($deliveryActiveFilterCount > 0)
+                                    <button
+                                        type="button"
+                                        wire:click="clearDeliveryFilters"
+                                        class="shrink-0 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[15px] font-bold text-slate-500 outline-none transition hover:bg-slate-50 focus:ring-2 focus:ring-indigo-100"
+                                    >
+                                        پاک کردن
+                                    </button>
+                                @endif
+                                <button
+                                    type="button"
+                                    @click="deliveryFiltersOpen = false"
+                                    class="inline-flex min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-xl bg-indigo-600 px-4 py-2.5 text-[15px] font-black text-white shadow-sm transition hover:bg-indigo-500 active:scale-[0.99]"
+                                >
+                                    مشاهده {{ number_format($deliveryGroups->total()) }} نفر نتیجه
+                                </button>
                             </div>
                         </div>
 
-                        <div x-data="jalaliDateTimeField($wire.entangle('deliveryDateFrom').live)" class="w-full sm:w-40">
-                            <input
-                                type="text"
-                                x-ref="input"
-                                x-model="draft"
-                                x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                                x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                                x-on:jalali-picker-open="handlePickerOpen()"
-                                x-on:jalali-picker-close="handlePickerClose()"
-                                x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                                readonly
-                                inputmode="none"
-                                autocomplete="off"
-                                data-jdp-readonly
-                                data-jdp
-                                data-jdp-only-date
-                                placeholder="از تاریخ"
-                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-600 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                            >
-                        </div>
-
-                        <div x-data="jalaliDateTimeField($wire.entangle('deliveryDateTo').live)" class="w-full sm:w-40">
-                            <input
-                                type="text"
-                                x-ref="input"
-                                x-model="draft"
-                                x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                                x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                                x-on:jalali-picker-open="handlePickerOpen()"
-                                x-on:jalali-picker-close="handlePickerClose()"
-                                x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                                readonly
-                                inputmode="none"
-                                autocomplete="off"
-                                data-jdp-readonly
-                                data-jdp
-                                data-jdp-only-date
-                                placeholder="تا تاریخ"
-                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-600 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                            >
-                        </div>
-
-                        <div class="flex items-center gap-2 sm:mr-auto">
+                        {{-- Result count + clear: inline row companions from lg up; on
+                             phones they live inside the sheet (header badge + footer). --}}
+                        <div class="hidden items-center gap-2 lg:mr-auto lg:flex">
                             <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 ring-1 ring-indigo-100">
                                 <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -916,11 +1042,11 @@
                             </span>
                         </div>
 
-                        @if(trim($deliverySearch ?? '') !== '' || $selectedDeliveryEntryType !== 'all' || $selectedCoverageSocialWorker !== 'all' || $selectedSupportOrganization !== 'all' || $selectedNeedLevel !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '')
+                        @if($deliveryActiveFilterCount > 0)
                             <button
                                 type="button"
                                 wire:click="clearDeliveryFilters"
-                                class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-500 outline-none transition hover:bg-slate-50 focus:ring-2 focus:ring-indigo-100"
+                                class="hidden rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-500 outline-none transition hover:bg-slate-50 focus:ring-2 focus:ring-indigo-100 lg:inline-flex"
                             >
                                 پاک کردن فیلترها
                             </button>
@@ -1363,7 +1489,7 @@
                         </section>
                     @empty
                         <div class="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-12 text-center text-slate-500">
-                            {{ (trim($deliverySearch ?? "") !== "" || $selectedDeliveryEntryType !== 'all' || $selectedCoverageSocialWorker !== 'all' || $selectedSupportOrganization !== 'all' || $selectedNeedLevel !== 'all' || $deliveryDateFrom !== '' || $deliveryDateTo !== '') ? "موردی برای فیلترهای فعلی پیدا نشد." : "هنوز هیچ تحویلی برای این خدمت ثبت نشده است." }}
+                            {{ ($deliveryActiveFilterCount > 0) ? "موردی برای فیلترهای فعلی پیدا نشد." : "هنوز هیچ تحویلی برای این خدمت ثبت نشده است." }}
                         </div>
                     @endforelse
 
