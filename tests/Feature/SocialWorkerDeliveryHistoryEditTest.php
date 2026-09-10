@@ -585,6 +585,86 @@ class SocialWorkerDeliveryHistoryEditTest extends TestCase
         $this->assertSame('2.50', (string) $deliveries->firstWhere('service_category_id', $decimalCategory->id)->delivered_quantity);
     }
 
+    public function test_dashboard_saving_replaces_previous_quantity_for_selected_person(): void
+    {
+        [$user, $worker] = $this->socialWorkerUser();
+        $service = $this->serviceWithCategories();
+        $categories = $service->categories()->orderBy('id')->get();
+
+        foreach ($categories as $category) {
+            $service->workerAllocations()->create([
+                'social_worker_id' => $worker->id,
+                'service_category_id' => $category->id,
+                'allocated_quantity' => 10,
+            ]);
+        }
+
+        $guardian = Guardian::query()->create([
+            'guardian_code' => random_int(100000, 999999),
+            'first_name' => 'Guardian',
+            'last_name' => 'Replace',
+            'national_code' => (string) random_int(1000000000, 9999999999),
+            'guardian_phone_number' => '09120000000',
+            'social_worker_id' => $worker->id,
+            'insurance_status' => false,
+        ]);
+        $person = Person::query()->create([
+            'first_name' => 'Sara',
+            'last_name' => 'Replace',
+            'national_id' => (string) random_int(1000000000, 9999999999),
+            'person_code' => (string) random_int(15000, 99999),
+            'guardian_id' => $guardian->id,
+            'birth_year' => 1390,
+            'birth_month' => 1,
+            'birth_day' => 1,
+        ]);
+
+        $older = $this->delivery($service, $categories[0]->id, $worker, $user, [
+            'delivery_batch_id' => (string) Str::uuid(),
+            'person_id' => $person->id,
+            'national_id' => $person->national_id,
+            'delivered_quantity' => 4,
+            'delivered_total_value' => 4000,
+        ]);
+        $latest = $this->delivery($service, $categories[0]->id, $worker, $user, [
+            'delivery_batch_id' => (string) Str::uuid(),
+            'person_id' => $person->id,
+            'national_id' => $person->national_id,
+            'delivered_quantity' => 2,
+            'delivered_total_value' => 2000,
+        ]);
+
+        $this->actingAs($user);
+
+        Livewire::test(Dashboard::class)
+            ->set('selectedServiceId', $service->id)
+            ->set('recipientEntries.0.national_id', $person->national_id)
+            ->assertSet('recipientEntries.0.person_id', $person->id)
+            ->assertSet('recipientEntries.0.category_quantities.'.$categories[0]->id, '6')
+            ->set('recipientEntries.0.category_quantities.'.$categories[0]->id, '2')
+            ->call('saveDelivery')
+            ->assertHasNoErrors();
+
+        $this->assertSame(2, ServiceDelivery::query()->where('person_id', $person->id)->count());
+        $this->assertSame('2.00', $latest->fresh()->delivered_quantity);
+        $this->assertSame(2000, (int) $latest->fresh()->delivered_total_value);
+        $this->assertSame('0.00', $older->fresh()->delivered_quantity);
+        $this->assertSame(0, (int) $older->fresh()->delivered_total_value);
+
+        Livewire::test(Dashboard::class)
+            ->set('selectedServiceId', $service->id)
+            ->set('recipientEntries.0.national_id', $person->national_id)
+            ->assertSet('recipientEntries.0.category_quantities.'.$categories[0]->id, '2')
+            ->set('recipientEntries.0.category_quantities.'.$categories[0]->id, '0')
+            ->call('saveDelivery')
+            ->assertHasNoErrors();
+
+        $this->assertSame(2, ServiceDelivery::query()->where('person_id', $person->id)->count());
+        $this->assertSame('0.00', $latest->fresh()->delivered_quantity);
+        $this->assertSame('0.00', $older->fresh()->delivered_quantity);
+        $this->assertSame(0.0, (float) $service->fresh()->quantity_delivered);
+    }
+
     private function socialWorkerUser(int $workerCode = 201): array
     {
         $worker = SocialWorker::query()->create([

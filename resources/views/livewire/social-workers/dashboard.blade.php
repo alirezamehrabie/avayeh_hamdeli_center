@@ -37,20 +37,32 @@
                 return total + this.toNumber(entry?.category_quantities?.[categoryId]);
             }, 0);
         },
-        availableForInput(rowIndex, categoryId, remainingStock, remainingAllocation) {
-            const currentQuantity = this.categoryQuantity(rowIndex, categoryId);
-            const otherRowsPending = Math.max(0, this.categoryPending(categoryId) - currentQuantity);
+        availableForInput(rowIndex, categoryId, remainingStock, remainingAllocation, previousQuantity) {
+            const otherRowsPending = Math.max(0, this.categoryPending(categoryId) - this.categoryQuantity(rowIndex, categoryId));
+            const previous = this.toNumber(previousQuantity);
 
+            // Replaced rows already subtracted their old quantity from stock and
+            // allocation, so the previous amount is added back before the freshly
+            // entered value takes its place.
             return Math.max(0, Math.min(
-                this.toNumber(remainingStock),
-                this.toNumber(remainingAllocation) - otherRowsPending
+                this.toNumber(remainingStock) + previous,
+                this.toNumber(remainingAllocation) + previous - otherRowsPending
             ));
         },
-        exceedsRemainingQuota(rowIndex, categoryId, remainingStock, remainingAllocation) {
+        remainingAfterInput(rowIndex, categoryId, remainingStock, remainingAllocation, previousQuantity) {
+            return Math.max(0, this.availableForInput(
+                rowIndex,
+                categoryId,
+                remainingStock,
+                remainingAllocation,
+                previousQuantity
+            ) - this.categoryQuantity(rowIndex, categoryId));
+        },
+        exceedsRemainingQuota(rowIndex, categoryId, remainingStock, remainingAllocation, previousQuantity) {
             const currentQuantity = this.categoryQuantity(rowIndex, categoryId);
 
             return currentQuantity > 0
-                && currentQuantity > this.availableForInput(rowIndex, categoryId, remainingStock, remainingAllocation);
+                && currentQuantity > this.availableForInput(rowIndex, categoryId, remainingStock, remainingAllocation, previousQuantity);
         },
         persianNumber(value) {
             return String(value ?? '').replace(/[0-9.,]/g, (char) => ({
@@ -1337,12 +1349,14 @@
                                                                     $metrics = $categoryMetrics[$category->id] ?? ['remaining_stock' => 0, 'remaining_allocation' => 0];
                                                                     $remainingStock = (float) $metrics['remaining_stock'];
                                                                     $currentQuantity = (float) data_get($entry, 'category_quantities.' . (int) $category->id, 0);
+                                                                    $previousQuantity = (float) data_get($entry, 'previous_quantities.' . (int) $category->id, 0);
                                                                     $pendingCategoryQuantity = collect($recipientEntries)->sum(fn ($entry) => (float) data_get($entry, 'category_quantities.' . (int) $category->id, 0));
                                                                     $otherRowsPendingQuantity = max(0, $pendingCategoryQuantity - $currentQuantity);
                                                                     $availableForCurrentInput = max(0, min(
-                                                                        $remainingStock,
-                                                                        (float) $metrics['remaining_allocation'] - $otherRowsPendingQuantity
+                                                                        $remainingStock + $previousQuantity,
+                                                                        (float) $metrics['remaining_allocation'] + $previousQuantity - $otherRowsPendingQuantity
                                                                     ));
+                                                                    $stockAfterCurrentInput = max(0, $availableForCurrentInput - $currentQuantity);
                                                                     $exceedsRemainingQuota = $currentQuantity > 0 && $currentQuantity > $availableForCurrentInput;
                                                                     $isUnavailable = $remainingStock <= 0;
                                                                     $categoryUsesDecimals = \App\Models\Service::unitUsesDecimalPrecision($category->unit);
@@ -1354,24 +1368,31 @@
                                                                         categoryId: '{{ (int) $category->id }}',
                                                                         remainingStock: {{ json_encode(number_format($remainingStock, 2, '.', '')) }},
                                                                         remainingAllocation: {{ json_encode(number_format((float) $metrics['remaining_allocation'], 2, '.', '')) }},
+                                                                        previousQuantity: {{ json_encode(number_format($previousQuantity, 2, '.', '')) }},
                                                                         decimalUnit: {{ $categoryUsesDecimals ? 'true' : 'false' }},
                                                                         get available() {
-                                                                            return availableForInput(this.rowIndex, this.categoryId, this.remainingStock, this.remainingAllocation);
+                                                                            return availableForInput(this.rowIndex, this.categoryId, this.remainingStock, this.remainingAllocation, this.previousQuantity);
+                                                                        },
+                                                                        get remainingAfter() {
+                                                                            return remainingAfterInput(this.rowIndex, this.categoryId, this.remainingStock, this.remainingAllocation, this.previousQuantity);
                                                                         },
                                                                         get exceeds() {
-                                                                            return exceedsRemainingQuota(this.rowIndex, this.categoryId, this.remainingStock, this.remainingAllocation);
+                                                                            return exceedsRemainingQuota(this.rowIndex, this.categoryId, this.remainingStock, this.remainingAllocation, this.previousQuantity);
                                                                         },
                                                                      }">
                                                                     <div class="min-w-0">
                                                                         <div class="flex min-w-0 flex-wrap items-center gap-1.5">
                                                                             <h4 class="max-w-full truncate text-xs font-bold text-slate-800 sm:text-sm">{{ $category->name }}</h4>
+                                                                            @if($previousQuantity > 0)
+                                                                                <span class="rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[9px] font-bold text-violet-700">مقدار قبلی این شخص: {{ $this->persianNumber(\App\Models\Service::formatQuantityForUnit($previousQuantity, $category->unit)) }}</span>
+                                                                            @endif
                                                                             @if($isUnavailable)
                                                                                 <span class="rounded-full bg-rose-50 px-2 py-0.5 text-[9px] font-bold text-rose-600">ناموجود</span>
                                                                             @endif
                                                                         </div>
                                                                         <p class="mt-1 flex flex-wrap items-center gap-1 text-[10px] font-bold text-slate-400">
-                                                                            <span>باقی‌مانده:</span>
-                                                                            <span x-text="persianNumber(formatQuantity(available, decimalUnit))">{{ $this->persianNumber(\App\Models\Service::formatQuantityForUnit($availableForCurrentInput, $category->unit)) }}</span>
+                                                                            <span>موجودی پس از ثبت:</span>
+                                                                            <span x-text="persianNumber(formatQuantity(remainingAfter, decimalUnit))">{{ $this->persianNumber(\App\Models\Service::formatQuantityForUnit($stockAfterCurrentInput, $category->unit)) }}</span>
                                                                             <span>{{ $unitOptions[$category->unit] ?? $category->unit }}</span>
                                                                         </p>
                                                                     </div>

@@ -402,17 +402,56 @@ class Dashboard extends Component
 
         try {
             DB::transaction(function () use ($service, $validated, $deliveryEntries): void {
+                $allCategoryIds = collect($deliveryEntries)
+                    ->pluck('service_category_id')
+                    ->map(fn ($categoryId) => (int) $categoryId)
+                    ->unique()
+                    ->values()
+                    ->all();
+
+                // Rows this page may rewrite: own worker, home channel, not linked to
+                // gate/attendance records. Registered recipients replace these rows
+                // (the value entered is the final value); unregistered recipients
+                // keep the classic append behavior.
+                $existingRowsByRecipient = ServiceDelivery::query()
+                    ->where('social_worker_id', $this->currentSocialWorkerId())
+                    ->where('service_id', $service->id)
+                    ->whereIn('service_category_id', $allCategoryIds)
+                    ->where(function (Builder $query): void {
+                        $query->whereNull('delivery_channel')
+                            ->orWhere('delivery_channel', Service::DELIVERY_CHANNEL_HOME);
+                    })
+                    ->whereNull('gate_entry_assignment_id')
+                    ->whereNull('activity_attendance_id')
+                    ->lockForUpdate()
+                    ->orderBy('id')
+                    ->get()
+                    ->groupBy(
+                        fn (ServiceDelivery $row): string => ((int) $row->service_category_id)
+                            .'|'.$this->deliveryRecipientKey($row)
+                    );
+
                 $deliveryBatchIds = collect($deliveryEntries)
                     ->pluck('_recipient_index')
                     ->unique()
                     ->mapWithKeys(fn ($index) => [(int) $index => (string) Str::uuid()]);
-                $categoryQuantities = collect($deliveryEntries)
+
+                $activeEntries = collect($this->resolveDeliveryEntryIdentities($deliveryEntries, $service, $existingRowsByRecipient))
+                    ->reject(fn (array $entry): bool => $entry['_skip']);
+
+                $categoryQuantities = $activeEntries
                     ->groupBy(fn (array $entry) => (int) $entry['service_category_id'])
-                    ->map(fn ($entries) => $entries->sum(fn (array $entry) => (float) $entry['quantity']));
+                    ->map(fn (Collection $entries) => $entries->sum(fn (array $entry) => (float) $entry['quantity']));
                 $categoryIds = $categoryQuantities->keys()
                     ->map(fn ($categoryId) => (int) $categoryId)
                     ->values()
                     ->all();
+
+                if ($categoryIds === []) {
+                    throw ValidationException::withMessages([
+                        'recipientEntries' => 'حداقل یک مقدار تحویل معتبر وارد کنید.',
+                    ]);
+                }
 
                 $lockedCategories = ServiceCategory::query()
                     ->where('service_id', $service->id)
@@ -446,12 +485,29 @@ class Dashboard extends Component
                     ->groupBy('service_category_id')
                     ->pluck('delivered_quantity', 'service_category_id');
 
+                $replacedOldByCategory = [];
+                foreach ($activeEntries as $entry) {
+                    $existing = $entry['_existing_rows'];
+
+                    if ($existing->isNotEmpty()) {
+                        $entryCategoryId = (int) $entry['service_category_id'];
+                        $replacedOldByCategory[$entryCategoryId] = ($replacedOldByCategory[$entryCategoryId] ?? 0.0)
+                            + (float) $existing->sum(fn (ServiceDelivery $row) => (float) $row->delivered_quantity);
+                    }
+                }
+
                 foreach ($categoryQuantities as $categoryId => $quantity) {
                     $categoryId = (int) $categoryId;
                     $category = $lockedCategories->get($categoryId);
                     $allocation = $lockedAllocations->get($categoryId);
+                    $replacedOld = $replacedOldByCategory[$categoryId] ?? 0.0;
+
+                    if ((float) $quantity <= 0 && $replacedOld > 0) {
+                        continue;
+                    }
+
                     $allocatedQuantity = (float) ($allocation?->allocated_quantity ?? 0);
-                    $workerDeliveredQuantity = (float) ($workerDeliveredByCategory[$categoryId] ?? 0);
+                    $workerDeliveredQuantity = max(0, (float) ($workerDeliveredByCategory[$categoryId] ?? 0) - $replacedOld);
                     $remainingWorkerAllocation = max(0, $allocatedQuantity - $workerDeliveredQuantity);
 
                     if (! $allocation || (float) $quantity > $remainingWorkerAllocation) {
@@ -460,7 +516,7 @@ class Dashboard extends Component
                         ]);
                     }
 
-                    $deliveredQuantity = (float) ($deliveredByCategory[$categoryId] ?? 0);
+                    $deliveredQuantity = max(0, (float) ($deliveredByCategory[$categoryId] ?? 0) - $replacedOld);
                     $remainingStock = $category ? max(0, (float) $category->quantity - $deliveredQuantity) : 0;
 
                     if (! $category || $remainingStock < (float) $quantity) {
@@ -470,47 +526,52 @@ class Dashboard extends Component
                     }
                 }
 
-                foreach ($deliveryEntries as $entry) {
-                    $personId = null;
-                    $guardianId = null;
-                    $fullName = trim((string) ($entry['full_name'] ?? ''));
-                    $mobile = trim((string) ($entry['mobile'] ?? '')) ?: null;
+                // Replacements first so plain creates see the corrected running totals.
+                $hasCorrections = false;
+                foreach ($activeEntries as $entry) {
+                    $existing = $entry['_existing_rows'];
+
+                    if ($existing->isEmpty()) {
+                        continue;
+                    }
+
+                    $category = $lockedCategories->get((int) $entry['service_category_id']);
+                    $unitValue = (int) ($category?->value ?? 0);
+                    $newQuantity = (float) $entry['quantity'];
+                    $primaryRow = $existing->last();
+
+                    foreach ($existing as $row) {
+                        $rowQuantity = $row->is($primaryRow) ? $newQuantity : 0.0;
+
+                        $row->forceFill([
+                            'delivered_quantity' => $rowQuantity,
+                            'delivered_total_value' => (int) round($rowQuantity * $unitValue),
+                            'updated_by' => auth()->id(),
+                            'corrected_at' => now(),
+                        ])->saveQuietly();
+                    }
+
+                    $hasCorrections = true;
+                }
+
+                foreach ($activeEntries as $entry) {
+                    if ($entry['_existing_rows']->isNotEmpty()) {
+                        continue;
+                    }
+
                     $serviceCategoryId = (int) $entry['service_category_id'];
                     $category = $lockedCategories->get($serviceCategoryId);
                     $deliveryUnitValue = (int) ($category?->value ?? 0);
-
-                    if ($service->service_type === 'family') {
-                        $guardian = Guardian::query()
-                            ->where('social_worker_id', $this->currentSocialWorkerId())
-                            ->where('national_code', trim((string) $entry['national_id']))
-                            ->first();
-
-                        if ($guardian) {
-                            $guardianId = $guardian->id;
-                            $fullName = $guardian->full_name !== '' ? $guardian->full_name : $fullName;
-                            $mobile = $guardian->guardian_phone_number ?: $mobile;
-                        }
-                    } else {
-                        $person = Person::query()
-                            ->where('national_id', trim((string) $entry['national_id']))
-                            ->whereHas('guardian', fn (Builder $query) => $query->where('social_worker_id', $this->currentSocialWorkerId()))
-                            ->first();
-
-                        if ($person) {
-                            $personId = $person->id;
-                            $fullName = trim(($person->first_name ?? '').' '.($person->last_name ?? '')) ?: $fullName;
-                        }
-                    }
 
                     ServiceDelivery::query()->create([
                         'delivery_batch_id' => $deliveryBatchIds[(int) $entry['_recipient_index']],
                         'service_id' => $service->id,
                         'social_worker_id' => $this->currentSocialWorkerId(),
-                        'person_id' => $personId,
-                        'guardian_id' => $guardianId,
+                        'person_id' => $entry['_person_id'],
+                        'guardian_id' => $entry['_guardian_id'],
                         'national_id' => trim((string) $entry['national_id']),
-                        'full_name' => $fullName,
-                        'mobile' => $mobile,
+                        'full_name' => $entry['_full_name'],
+                        'mobile' => $entry['_mobile'],
                         'delivered_quantity' => $entry['quantity'],
                         'service_category_id' => $serviceCategoryId,
                         'value_per_unit_snapshot' => $deliveryUnitValue,
@@ -519,6 +580,13 @@ class Dashboard extends Component
                         'notes' => $validated['notes'] ?: null,
                         'created_by' => auth()->id(),
                     ]);
+                }
+
+                if ($hasCorrections) {
+                    // Fresh instance: the component's memoized service carries
+                    // display-only setAttribute() values that would leak into a
+                    // saveQuietly() write on this connection.
+                    Service::query()->whereKey($service->id)->first()?->refreshDeliveryProgress();
                 }
             });
         } catch (ValidationException $exception) {
@@ -857,9 +925,11 @@ class Dashboard extends Component
 
             foreach (($entry['category_quantities'] ?? []) as $categoryId => $quantity) {
                 $categoryId = (int) $categoryId;
-                $quantity = (float) $quantity;
+                $quantityString = trim((string) $quantity);
 
-                if ($categoryId <= 0 || $quantity <= 0) {
+                // Explicit zeros are kept: they carry the "replace with 0" update
+                // intent. Empty/cleared boxes stay no-ops, as before.
+                if ($categoryId <= 0 || $quantityString === '' || ! is_numeric($quantityString) || (float) $quantityString < 0) {
                     continue;
                 }
 
@@ -869,7 +939,7 @@ class Dashboard extends Component
                     ]);
                 }
 
-                $rowDeliveries[$categoryId] = ($rowDeliveries[$categoryId] ?? 0) + $quantity;
+                $rowDeliveries[$categoryId] = ($rowDeliveries[$categoryId] ?? 0) + (float) $quantityString;
             }
 
             if ($rowDeliveries === [] && filled($entry['service_category_id'] ?? null) && filled($entry['quantity'] ?? null)) {
@@ -961,6 +1031,7 @@ class Dashboard extends Component
             'quantity' => '',
             'service_category_id' => $categoryId,
             'category_quantities' => $categoryId ? [$categoryId => ''] : [],
+            'previous_quantities' => [],
             'is_unregistered' => false,
             'not_found_notice' => '',
             'resolved_name' => '',
@@ -1147,6 +1218,7 @@ class Dashboard extends Component
         $this->recipientEntries[$index]['person_id'] = null;
         $this->recipientEntries[$index]['guardian_id'] = null;
         $this->recipientEntries[$index]['category_quantities'] = [];
+        $this->recipientEntries[$index]['previous_quantities'] = [];
         $this->recipientEntries[$index]['qr_token'] = $qrToken;
     }
 
@@ -1188,12 +1260,85 @@ class Dashboard extends Component
     }
 
     /**
+     * Resolve each entry's recipient identity and the existing replaceable rows
+     * (own worker, home channel, unlinked) for that recipient + category. A
+     * registered person/guardian with existing rows gets an UPDATE: the entered
+     * value becomes the final value. Unregistered recipients keep append behavior.
+     * Entries with no existing rows and a zero quantity are no-ops.
+     *
+     * @param  array<int, array<string, mixed>>  $entries
+     * @return array<int, array<string, mixed>>
+     */
+    protected function resolveDeliveryEntryIdentities(array $entries, Service $service, Collection $existingRowsByRecipient): array
+    {
+        return collect($entries)->map(function (array $entry) use ($service, $existingRowsByRecipient): array {
+            $nationalId = trim((string) ($entry['national_id'] ?? ''));
+            $personId = null;
+            $guardianId = null;
+            $fullName = trim((string) ($entry['full_name'] ?? ''));
+            $mobile = trim((string) ($entry['mobile'] ?? '')) ?: null;
+
+            if ($service->service_type === 'family') {
+                $guardian = Guardian::query()
+                    ->where('social_worker_id', $this->currentSocialWorkerId())
+                    ->where('national_code', $nationalId)
+                    ->first();
+
+                if ($guardian) {
+                    $guardianId = $guardian->id;
+                    $fullName = $guardian->full_name !== '' ? $guardian->full_name : $fullName;
+                    $mobile = $guardian->guardian_phone_number ?: $mobile;
+                }
+            } else {
+                $person = Person::query()
+                    ->where('national_id', $nationalId)
+                    ->whereHas('guardian', fn (Builder $query) => $query->where('social_worker_id', $this->currentSocialWorkerId()))
+                    ->first();
+
+                if ($person) {
+                    $personId = $person->id;
+                    $fullName = trim(($person->first_name ?? '').' '.($person->last_name ?? '')) ?: $fullName;
+                }
+            }
+
+            $identityKey = $personId
+                ? 'person-'.$personId
+                : ($guardianId ? 'guardian-'.$guardianId : null);
+
+            $existingRows = $identityKey !== null
+                ? $existingRowsByRecipient->get(((int) $entry['service_category_id']).'|'.$identityKey, collect())
+                : collect();
+
+            return array_merge($entry, [
+                '_person_id' => $personId,
+                '_guardian_id' => $guardianId,
+                '_full_name' => $fullName,
+                '_mobile' => $mobile,
+                '_existing_rows' => $existingRows,
+                '_skip' => $existingRows->isEmpty() && (float) $entry['quantity'] <= 0,
+            ]);
+        })->all();
+    }
+
+    protected function deliveryRecipientKey(ServiceDelivery $delivery): string
+    {
+        if ($delivery->person_id) {
+            return 'person-'.$delivery->person_id;
+        }
+
+        if ($delivery->guardian_id) {
+            return 'guardian-'.$delivery->guardian_id;
+        }
+
+        return 'national-'.trim((string) ($delivery->national_id ?? ''));
+    }
+
+    /**
      * Prefill each category box with the quantity this recipient already has
-     * registered for the selected service, so the worker sees a previous
-     * registration instead of silently repeating it. The per-recipient value
-     * follows the system's reporting logic: the sum of delivered_quantity
-     * grouped by service_category_id over the recipient's delivery rows
-     * (person_id / guardian_id match), regardless of worker or channel.
+     * registered for the selected service and show it back as "previous". The
+     * row scope matches exactly what saveDelivery may replace: own worker,
+     * home channel, not linked to gate/attendance records — so the value the
+     * worker sees is the value their entered number will replace.
      * The whole map is replaced on purpose so switching persons never
      * carries the previous person's values over.
      */
@@ -1210,20 +1355,29 @@ class Dashboard extends Component
             ->selectRaw('COALESCE(SUM(delivered_quantity), 0) as delivered_quantity')
             ->where('service_id', $service->id)
             ->where($recipientColumn, $recipientId)
+            ->where('social_worker_id', $this->currentSocialWorkerId())
+            ->where(function (Builder $query): void {
+                $query->whereNull('delivery_channel')
+                    ->orWhere('delivery_channel', Service::DELIVERY_CHANNEL_HOME);
+            })
+            ->whereNull('gate_entry_assignment_id')
+            ->whereNull('activity_attendance_id')
             ->groupBy('service_category_id')
             ->pluck('delivered_quantity', 'service_category_id');
 
         $quantities = [];
+        $previous = [];
 
         foreach ($this->assignableCategories as $category) {
             $quantity = (float) ($deliveredByCategory->get((int) $category->id) ?? 0);
+            $formatted = $quantity > 0 ? $this->formatEditableQuantity($quantity) : '';
 
-            $quantities[(int) $category->id] = $quantity > 0
-                ? $this->formatEditableQuantity($quantity)
-                : '';
+            $quantities[(int) $category->id] = $formatted;
+            $previous[(int) $category->id] = $formatted;
         }
 
         $this->recipientEntries[$index]['category_quantities'] = $quantities;
+        $this->recipientEntries[$index]['previous_quantities'] = $previous;
     }
 
     protected function formatEditableQuantity(float $value): string
