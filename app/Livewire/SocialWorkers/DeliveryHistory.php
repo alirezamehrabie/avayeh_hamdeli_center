@@ -7,6 +7,7 @@ use App\Models\Service;
 use App\Models\ServiceCategory;
 use App\Models\ServiceDelivery;
 use App\Models\ServiceWorkerAllocation;
+use App\Traits\InteractsWithNotificationModal;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -14,12 +15,14 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 #[Layout('layouts.social-worker')]
 class DeliveryHistory extends Component
 {
+    use InteractsWithNotificationModal;
     use WithPagination;
 
     public string $activeSection = 'delivery-history';
@@ -288,6 +291,96 @@ class DeliveryHistory extends Component
         $this->editDeliveredAt = '';
         $this->editItems = [];
         $this->resetValidation();
+    }
+
+    public function openZeroCategoryConfirmation(int $deliveryId): void
+    {
+        $anchor = $this->deliveryBatchRows('item-'.$deliveryId)->first();
+
+        abort_if(! $anchor, 404);
+        abort_unless($this->deliveryRowsAreEditable(collect([$anchor])), 403);
+
+        $targets = $this->recipientCategoryRows($anchor);
+        $totalQuantity = $targets->sum(fn (ServiceDelivery $row): float => (float) $row->delivered_quantity);
+        $categoryName = $anchor->serviceCategory?->name ?: '-';
+        $totalLabel = $this->formatQuantityForUnit($totalQuantity, $anchor->serviceCategory?->unit);
+
+        $this->openNotificationModal([
+            'type' => 'warning',
+            'title' => 'صفر کردن مقدار تحویل',
+            'message' => "همه ثبت‌های دسته‌بندی «{$categoryName}» برای «{$anchor->recipient_name}» در این خدمت (مجموعاً {$totalLabel}) به صفر تغییر خواهد کرد. رکورد حفظ می‌شود و فقط مقدار صفر ثبت می‌گردد.",
+            'icon' => 'warning',
+            'buttons' => [
+                [
+                    'label' => 'صفر کردن مقدار',
+                    'action' => 'event',
+                    'event' => 'confirm-zero-delivery-category',
+                    'payload' => ['deliveryId' => $deliveryId],
+                    'variant' => 'danger',
+                ],
+                [
+                    'label' => 'انصراف',
+                    'action' => 'close',
+                    'variant' => 'secondary',
+                ],
+            ],
+        ]);
+    }
+
+    #[On('confirm-zero-delivery-category')]
+    public function zeroDeliveryCategory(int $deliveryId): void
+    {
+        $anchor = $this->deliveryBatchRows('item-'.$deliveryId)->first();
+
+        abort_if(! $anchor, 404);
+        abort_unless($this->deliveryRowsAreEditable(collect([$anchor])), 403);
+
+        DB::transaction(function () use ($anchor): void {
+            $targets = $this->recipientCategoryRows($anchor, true);
+
+            abort_if($targets->isEmpty(), 404);
+
+            foreach ($targets as $row) {
+                $row->forceFill([
+                    'delivered_quantity' => 0,
+                    'delivered_total_value' => 0,
+                    'updated_by' => auth()->id(),
+                    'corrected_at' => now(),
+                ])->saveQuietly();
+            }
+
+            $anchor->service?->refreshDeliveryProgress();
+        });
+
+        $this->deliveryUpdateMessage = 'مقدار تحویل این دسته‌بندی برای گیرنده صفر شد.';
+        $this->dispatch('delivery-history-updated');
+    }
+
+    /**
+     * Editable rows of the same category held by the same recipient (the
+     * person_id / guardian_id / national_id identity used across this page).
+     */
+    protected function recipientCategoryRows(ServiceDelivery $anchor, bool $lockForUpdate = false): Collection
+    {
+        $rows = ServiceDelivery::query()
+            ->with(['serviceCategory', 'person', 'guardian', 'service'])
+            ->where('social_worker_id', $this->currentSocialWorkerId())
+            ->where('service_id', (int) $this->normalizedSelectedServiceId())
+            ->where('service_category_id', (int) $anchor->service_category_id)
+            ->when(
+                $anchor->person_id,
+                fn (Builder $query) => $query->where('person_id', $anchor->person_id),
+                fn (Builder $query) => $anchor->guardian_id
+                    ? $query->where('guardian_id', $anchor->guardian_id)
+                    : $query->whereNull('person_id')->whereNull('guardian_id')->where('national_id', $anchor->national_id)
+            )
+            ->when($lockForUpdate, fn (Builder $query) => $query->lockForUpdate())
+            ->orderBy('id')
+            ->get();
+
+        return $rows->filter(
+            fn (ServiceDelivery $row): bool => $this->deliveryRowsAreEditable(collect([$row]))
+        );
     }
 
     protected function services(int $socialWorkerId)

@@ -241,6 +241,50 @@ class SocialWorkerDeliveryHistoryEditTest extends TestCase
         $this->assertSame('2.00', $second->fresh()->delivered_quantity);
     }
 
+    public function test_trash_confirmation_zeroes_all_category_rows_for_recipient_and_keeps_records(): void
+    {
+        [$user, $worker] = $this->socialWorkerUser();
+        $service = $this->serviceWithCategories();
+        $categories = $service->categories()->orderBy('id')->get();
+
+        foreach ($categories as $category) {
+            $service->workerAllocations()->create([
+                'social_worker_id' => $worker->id,
+                'service_category_id' => $category->id,
+                'allocated_quantity' => 10,
+            ]);
+        }
+
+        $first = $this->delivery($service, $categories[0]->id, $worker, $user, [
+            'delivery_batch_id' => (string) Str::uuid(),
+            'delivered_quantity' => 1,
+        ]);
+        $second = $this->delivery($service, $categories[0]->id, $worker, $user, [
+            'delivery_batch_id' => (string) Str::uuid(),
+            'delivered_quantity' => 2,
+            'delivered_total_value' => 5000,
+        ]);
+        $otherCategory = $this->delivery($service, $categories[1]->id, $worker, $user, [
+            'delivered_quantity' => 3,
+        ]);
+
+        $this->actingAs($user);
+
+        Livewire::test(DeliveryHistory::class)
+            ->set('selectedServiceId', $service->id)
+            ->call('openZeroCategoryConfirmation', $first->id)
+            ->assertDispatched('open-notification-modal')
+            ->call('zeroDeliveryCategory', $first->id)
+            ->assertDispatched('delivery-history-updated');
+
+        $this->assertSame('0.00', $first->fresh()->delivered_quantity);
+        $this->assertSame('0.00', $second->fresh()->delivered_quantity);
+        $this->assertSame(0, (int) $second->fresh()->delivered_total_value);
+        $this->assertNotNull($second->fresh()->corrected_at);
+        $this->assertSame('3.00', $otherCategory->fresh()->delivered_quantity);
+        $this->assertSame(3, ServiceDelivery::query()->count());
+    }
+
     public function test_edit_quantity_accepts_decimals_only_for_decimal_units(): void
     {
         [$user, $worker] = $this->socialWorkerUser();

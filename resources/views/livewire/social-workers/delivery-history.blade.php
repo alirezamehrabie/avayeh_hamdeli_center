@@ -317,7 +317,7 @@
                             <div class="divide-y divide-slate-100">
                                 @foreach($recipientGroup['items'] as $recipientItem)
                                     @php($deliveryItem = $recipientItem['delivery'])
-                                    <div wire:key="delivery-history-item-{{ $deliveryItem->id }}" class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4 sm:py-2.5">
+                                    <div wire:key="delivery-history-item-{{ $deliveryItem->id }}" class="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4 sm:py-2.5">
                                         <span class="min-w-0 truncate text-[11px] font-bold text-slate-700 sm:text-xs">{{ $deliveryItem->serviceCategory?->name ?: '-' }}</span>
                                         <span class="shrink-0 text-[11px] sm:text-xs">
                                             <span class="font-black text-slate-900">{{ $this->formatQuantityForUnit($deliveryItem->delivered_quantity, $deliveryItem->serviceCategory?->unit) }}</span>
@@ -338,6 +338,20 @@
                                             >
                                                 <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                                     <path d="m16.5 4.5 3 3M5 19l3.5-.8L19 7.7a2.1 2.1 0 0 0-3-3L5.5 15.2 5 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                </svg>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                wire:click="openZeroCategoryConfirmation({{ $deliveryItem->id }})"
+                                                wire:loading.attr="disabled"
+                                                wire:target="openZeroCategoryConfirmation({{ $deliveryItem->id }})"
+                                                class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-rose-200 bg-white text-rose-600 shadow-sm transition hover:border-rose-300 hover:bg-rose-50 focus:outline-none focus:ring-4 focus:ring-rose-100 disabled:opacity-50"
+                                                title="صفر کردن مقدار «{{ $deliveryItem->serviceCategory?->name ?: 'این دسته‌بندی' }}» برای این گیرنده"
+                                                aria-label="صفر کردن مقدار «{{ $deliveryItem->serviceCategory?->name ?: 'این دسته‌بندی' }}» برای این گیرنده"
+                                            >
+                                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                    <path d="M6 7h12M10 7V5a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v2m-8 0v11a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                    <path d="M10 11v5M14 11v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                                                 </svg>
                                             </button>
                                         @else
