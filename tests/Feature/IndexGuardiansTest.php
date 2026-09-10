@@ -50,6 +50,49 @@ class IndexGuardiansTest extends TestCase
             });
     }
 
+    public function test_guardian_search_folds_persian_variants_and_ranks_by_relevance(): void
+    {
+        $this->actingAs($this->manager());
+
+        $rows = [
+            [730001, 'حسنی', 'نوری', '2234560001', '09126789011'],
+            [730002, 'علی', 'حسنی', '2234560002', null],
+            [730003, 'رضا', 'احسنی', '2234560003', null],
+            [730004, 'محمدحسین', 'سرلک', '2234560004', null],
+            [730005, 'آرمان', 'کریمی', '2234560005', null],
+            [730006, 'مريم', 'موسوی', '2234560006', null],
+        ];
+
+        foreach ($rows as [$code, $first, $last, $national, $phone]) {
+            Guardian::query()->create([
+                'guardian_code' => $code,
+                'first_name' => $first,
+                'last_name' => $last,
+                'national_code' => $national,
+                'guardian_phone_number' => $phone,
+            ]);
+        }
+
+        $search = function (string $term, string $field = 'all'): array {
+            return Livewire::test(IndexGuardians::class)
+                ->set('searchField', $field)
+                ->set('search', $term)
+                ->instance()
+                ->guardians
+                ->pluck('guardian_code')
+                ->all();
+        };
+
+        $this->assertSame([730001, 730002, 730003], $search('حسنی'));
+        $this->assertSame([730004], $search('محمد حسین'));
+        $this->assertSame([730005], $search('ارمان'));
+        $this->assertSame([730006], $search('مریم موسوی'));
+        $this->assertSame([730003], $search('۲۲۳۴۵۶۰۰۰۳'));
+        $this->assertSame([730001], $search('9126789011'));
+        $this->assertSame([730001], $search('۶۷۸۹۰۱۱', 'mobile'));
+        $this->assertSame([730005], $search('ارمان کریمی', 'full_name'));
+    }
+
     public function test_expanded_guardian_people_loads_only_selected_guardian_people(): void
     {
         $this->actingAs($this->manager());

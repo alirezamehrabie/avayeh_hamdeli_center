@@ -99,8 +99,8 @@
         }
 
         h1 {
-            font-size: 20px;
-            font-weight: 800;
+            font-size: 24px;
+            font-weight: bolder;
             margin-bottom: 8px;
             background: var(--primary-gradient);
             -webkit-background-clip: text;
@@ -244,7 +244,7 @@
 
 <script>
     // تاریخ هدف: شنبه ۲۳ می ۲۰۲۶ ساعت ۰۰:۰۰:۰۰
-    const targetDate = new Date("2026-07-05T19:30:00").getTime();
+    const targetDate = new Date("2026-09-11T16:30:00").getTime();
 
     function toPersianDigits(num) {
         const id = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];

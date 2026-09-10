@@ -13,6 +13,7 @@ use App\Models\QrIdentity;
 use App\Models\Service;
 use App\Models\ServiceEntryField;
 use App\Models\SocialWorker;
+use App\Queries\Guardians\GuardianIndexSearchQuery;
 use App\Queries\People\PeopleIndexSearchQuery;
 use App\Services\QrIdentityService;
 use Illuminate\Database\Eloquent\Builder;
@@ -336,54 +337,17 @@ abstract class AbstractGateComponent extends Component
     }
 
     /**
-     * Household candidates mirroring PeopleIndexSearchQuery's "all" branch on the guardians
-     * table's own normalized/compact search columns, with the same relevance tiers.
+     * Household candidates through the same query + relevance logic as the guardians
+     * admin list (GuardianIndexSearchQuery), so both screens search identically.
      */
     protected function guardianManualCandidates(string $term): Collection
     {
+        $guardianSearch = app(GuardianIndexSearchQuery::class);
+
         $query = Guardian::query()
             ->select(['id', 'first_name', 'last_name', 'guardian_code', 'national_code']);
-
-        if (ctype_digit($term)) {
-            $escaped = addcslashes($term, '\\%_');
-
-            $query->where(function (Builder $searchQuery) use ($escaped): void {
-                $searchQuery->where('guardian_code', 'like', "{$escaped}%")
-                    ->orWhere('national_code', 'like', "{$escaped}%");
-            })->orderByRaw(
-                'CASE WHEN guardian_code = ? THEN 0 WHEN national_code = ? THEN 1 WHEN guardian_code LIKE ? THEN 2 ELSE 3 END',
-                [$term, $term, "{$escaped}%"],
-            );
-        } else {
-            $normalized = Person::normalizeSearchText($term);
-            $escaped = addcslashes($normalized, '\\%_');
-            $compact = addcslashes(str_replace(' ', '', $normalized), '\\%_');
-            $prefix = "{$escaped}%";
-            $compactPrefix = "{$compact}%";
-
-            $query->where(function (Builder $searchQuery) use ($prefix, $compactPrefix, $escaped, $normalized): void {
-                $searchQuery->where('normalized_full_name', 'like', $prefix)
-                    ->orWhere('normalized_first_name', 'like', $prefix)
-                    ->orWhere('normalized_last_name', 'like', $prefix)
-                    ->orWhere('compact_full_name', 'like', $compactPrefix)
-                    ->orWhere('compact_first_name', 'like', $compactPrefix)
-                    ->orWhere('compact_last_name', 'like', $compactPrefix);
-
-                if (mb_strlen($normalized) >= 3) {
-                    $searchQuery->orWhere('normalized_full_name', 'like', "%{$escaped}%");
-                }
-            })->orderByRaw(
-                'CASE
-                    WHEN normalized_full_name LIKE ? THEN 0
-                    WHEN compact_full_name LIKE ? THEN 1
-                    WHEN normalized_first_name LIKE ? THEN 2
-                    WHEN normalized_last_name LIKE ? THEN 3
-                    WHEN normalized_full_name LIKE ? THEN 4
-                    ELSE 5
-                END',
-                [$prefix, $compactPrefix, $prefix, $prefix, "%{$escaped}%"],
-            );
-        }
+        $guardianSearch->applyTo($query, $term, 'all');
+        $guardianSearch->applyRelevanceOrdering($query, $term, 'all');
 
         return $query
             ->orderByDesc('created_at')
