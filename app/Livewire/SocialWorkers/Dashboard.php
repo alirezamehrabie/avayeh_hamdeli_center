@@ -799,7 +799,22 @@ class Dashboard extends Component
                 Rule::in($this->assignableCategories->pluck('id')->all()),
             ],
             'recipientEntries.*.category_quantities' => ['nullable', 'array'],
-            'recipientEntries.*.category_quantities.*' => ['nullable', 'numeric', 'min:0.01'],
+            'recipientEntries.*.category_quantities.*' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (preg_match('/^recipientEntries\.\d+\.category_quantities\.(\d+)$/', $attribute, $matches) !== 1) {
+                        return;
+                    }
+
+                    $category = $this->assignableCategories->firstWhere('id', (int) $matches[1]);
+
+                    if ($category && ! Service::unitUsesDecimalPrecision($category->unit) && fmod((float) $value, 1.0) !== 0.0) {
+                        $fail('برای واحد این دسته‌بندی فقط عدد صحیح مجاز است.');
+                    }
+                },
+            ],
             'deliveredAt' => [
                 'required',
                 'string',

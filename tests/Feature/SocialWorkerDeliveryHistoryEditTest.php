@@ -479,6 +479,68 @@ class SocialWorkerDeliveryHistoryEditTest extends TestCase
         ], $component->instance()->recipientEntries[0]['category_quantities']);
     }
 
+    public function test_dashboard_category_quantities_enforce_unit_decimals_and_accept_zero(): void
+    {
+        [$user, $worker] = $this->socialWorkerUser();
+        $service = $this->serviceWithCategories();
+        $categories = $service->categories()->orderBy('id')->get();
+        $packCategory = $categories[0];
+        $countCategory = $categories[1];
+        $decimalCategory = $service->categories()->create([
+            'service_name_id' => $service->service_name_id,
+            'name' => 'Rice '.Str::random(8),
+            'quantity' => 10,
+            'unit' => 'kilogram',
+            'value' => 1000,
+            'sort_id' => 3,
+            'created_by' => $user->id,
+        ]);
+
+        foreach ($service->categories()->get() as $category) {
+            $service->workerAllocations()->create([
+                'social_worker_id' => $worker->id,
+                'service_category_id' => $category->id,
+                'allocated_quantity' => 10,
+            ]);
+        }
+
+        $this->actingAs($user);
+
+        Livewire::test(Dashboard::class)
+            ->set('selectedServiceId', $service->id)
+            ->set('recipientEntries', [
+                $this->recipientEntry('1111111111', 'Fractional Recipient', [
+                    $packCategory->id => '1.5',
+                    $countCategory->id => 2,
+                ]),
+            ])
+            ->set('deliveredAt', Jalalian::fromDateTime(now())->format('Y/m/d'))
+            ->call('saveDelivery')
+            ->assertHasErrors(['recipientEntries.0.category_quantities.'.$packCategory->id]);
+
+        $this->assertSame(0, ServiceDelivery::query()->count());
+
+        Livewire::test(Dashboard::class)
+            ->set('selectedServiceId', $service->id)
+            ->set('recipientEntries', [
+                $this->recipientEntry('1111111111', 'Zero And Decimal Recipient', [
+                    $packCategory->id => '0',
+                    $countCategory->id => 2,
+                    $decimalCategory->id => '2.5',
+                ]),
+            ])
+            ->set('deliveredAt', Jalalian::fromDateTime(now())->format('Y/m/d'))
+            ->call('saveDelivery')
+            ->assertHasNoErrors();
+
+        $deliveries = ServiceDelivery::query()->orderBy('id')->get();
+
+        $this->assertCount(2, $deliveries);
+        $this->assertNull($deliveries->firstWhere('service_category_id', $packCategory->id));
+        $this->assertSame('2.00', (string) $deliveries->firstWhere('service_category_id', $countCategory->id)->delivered_quantity);
+        $this->assertSame('2.50', (string) $deliveries->firstWhere('service_category_id', $decimalCategory->id)->delivered_quantity);
+    }
+
     private function socialWorkerUser(int $workerCode = 201): array
     {
         $worker = SocialWorker::query()->create([
