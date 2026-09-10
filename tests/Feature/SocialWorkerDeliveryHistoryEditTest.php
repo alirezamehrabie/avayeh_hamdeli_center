@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Helpers\Morilog\Jalalian;
 use App\Livewire\SocialWorkers\Dashboard;
 use App\Livewire\SocialWorkers\DeliveryHistory;
+use App\Models\Guardian;
+use App\Models\Person;
 use App\Models\Service;
 use App\Models\ServiceDelivery;
 use App\Models\ServiceName;
@@ -398,6 +400,83 @@ class SocialWorkerDeliveryHistoryEditTest extends TestCase
             ->assertViewHas('recipientGroups', fn ($groups): bool => $groups->count() === 1
                 && $groups->first()['delivery_groups']->count() === 2
                 && $groups->first()['items']->count() === 2);
+    }
+
+    public function test_recipient_selection_prefills_already_registered_category_quantities(): void
+    {
+        [$user, $worker] = $this->socialWorkerUser();
+        $service = $this->serviceWithCategories();
+        $categories = $service->categories()->orderBy('id')->get();
+
+        foreach ($categories as $category) {
+            $service->workerAllocations()->create([
+                'social_worker_id' => $worker->id,
+                'service_category_id' => $category->id,
+                'allocated_quantity' => 10,
+            ]);
+        }
+
+        $guardian = Guardian::query()->create([
+            'guardian_code' => random_int(100000, 999999),
+            'first_name' => 'Guardian',
+            'last_name' => 'Test',
+            'national_code' => (string) random_int(1000000000, 9999999999),
+            'guardian_phone_number' => '09120000000',
+            'social_worker_id' => $worker->id,
+            'insurance_status' => false,
+        ]);
+        $personWithHistory = Person::query()->create([
+            'first_name' => 'Ali',
+            'last_name' => 'Test',
+            'national_id' => (string) random_int(1000000000, 9999999999),
+            'person_code' => (string) random_int(15000, 99999),
+            'guardian_id' => $guardian->id,
+            'birth_year' => 1390,
+            'birth_month' => 1,
+            'birth_day' => 1,
+        ]);
+        $freshPerson = Person::query()->create([
+            'first_name' => 'Reza',
+            'last_name' => 'Test',
+            'national_id' => (string) random_int(1000000000, 9999999999),
+            'person_code' => (string) random_int(15000, 99999),
+            'guardian_id' => $guardian->id,
+            'birth_year' => 1390,
+            'birth_month' => 1,
+            'birth_day' => 1,
+        ]);
+
+        $this->delivery($service, $categories[0]->id, $worker, $user, [
+            'person_id' => $personWithHistory->id,
+            'national_id' => $personWithHistory->national_id,
+            'delivered_quantity' => 1.5,
+        ]);
+        $this->delivery($service, $categories[0]->id, $worker, $user, [
+            'person_id' => $personWithHistory->id,
+            'national_id' => $personWithHistory->national_id,
+            'delivered_quantity' => 2,
+        ]);
+
+        $this->actingAs($user);
+
+        $component = Livewire::test(Dashboard::class)
+            ->set('selectedServiceId', $service->id)
+            ->set('recipientEntries.0.national_id', $personWithHistory->national_id)
+            ->assertSet('recipientEntries.0.person_id', $personWithHistory->id);
+
+        $this->assertSame([
+            $categories[0]->id => '3.5',
+            $categories[1]->id => '',
+        ], $component->instance()->recipientEntries[0]['category_quantities']);
+
+        $component
+            ->set('recipientEntries.0.national_id', $freshPerson->national_id)
+            ->assertSet('recipientEntries.0.person_id', $freshPerson->id);
+
+        $this->assertSame([
+            $categories[0]->id => '',
+            $categories[1]->id => '',
+        ], $component->instance()->recipientEntries[0]['category_quantities']);
     }
 
     private function socialWorkerUser(int $workerCode = 201): array

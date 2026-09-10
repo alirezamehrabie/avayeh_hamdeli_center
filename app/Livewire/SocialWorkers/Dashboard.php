@@ -1131,6 +1131,7 @@ class Dashboard extends Component
         $this->recipientEntries[$index]['family_members_count'] = null;
         $this->recipientEntries[$index]['person_id'] = null;
         $this->recipientEntries[$index]['guardian_id'] = null;
+        $this->recipientEntries[$index]['category_quantities'] = [];
         $this->recipientEntries[$index]['qr_token'] = $qrToken;
     }
 
@@ -1149,6 +1150,7 @@ class Dashboard extends Component
         $this->recipientEntries[$index]['resolved_meta'] = $meta;
         $this->recipientEntries[$index]['covered_dependents_count'] = (int) ($guardian->children_count ?? $guardian->people_count ?? 0);
         $this->recipientEntries[$index]['family_members_count'] = (int) ($guardian->children_in_house ?? 0);
+        $this->seedExistingCategoryQuantities($index, 'guardian_id', (int) $guardian->id);
     }
 
     protected function fillPersonEntry(int $index, Person $person, string $meta = ''): void
@@ -1167,6 +1169,53 @@ class Dashboard extends Component
         $this->recipientEntries[$index]['resolved_meta'] = $meta;
         $this->recipientEntries[$index]['covered_dependents_count'] = (int) ($guardian?->children_count ?? 0);
         $this->recipientEntries[$index]['family_members_count'] = (int) ($guardian?->children_in_house ?? 0);
+        $this->seedExistingCategoryQuantities($index, 'person_id', (int) $person->id);
+    }
+
+    /**
+     * Prefill each category box with the quantity this recipient already has
+     * registered for the selected service, so the worker sees a previous
+     * registration instead of silently repeating it. The per-recipient value
+     * follows the system's reporting logic: the sum of delivered_quantity
+     * grouped by service_category_id over the recipient's delivery rows
+     * (person_id / guardian_id match), regardless of worker or channel.
+     * The whole map is replaced on purpose so switching persons never
+     * carries the previous person's values over.
+     */
+    protected function seedExistingCategoryQuantities(int $index, string $recipientColumn, int $recipientId): void
+    {
+        $service = $this->selectedService;
+
+        if (! $service) {
+            return;
+        }
+
+        $deliveredByCategory = ServiceDelivery::query()
+            ->select('service_category_id')
+            ->selectRaw('COALESCE(SUM(delivered_quantity), 0) as delivered_quantity')
+            ->where('service_id', $service->id)
+            ->where($recipientColumn, $recipientId)
+            ->groupBy('service_category_id')
+            ->pluck('delivered_quantity', 'service_category_id');
+
+        $quantities = [];
+
+        foreach ($this->assignableCategories as $category) {
+            $quantity = (float) ($deliveredByCategory->get((int) $category->id) ?? 0);
+
+            $quantities[(int) $category->id] = $quantity > 0
+                ? $this->formatEditableQuantity($quantity)
+                : '';
+        }
+
+        $this->recipientEntries[$index]['category_quantities'] = $quantities;
+    }
+
+    protected function formatEditableQuantity(float $value): string
+    {
+        $formatted = number_format($value, 2, '.', '');
+
+        return rtrim(rtrim($formatted, '0'), '.');
     }
 
     protected function recipientQrScanResponse(bool $ok, string $message, string $name = ''): array
