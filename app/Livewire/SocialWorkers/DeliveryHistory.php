@@ -127,14 +127,34 @@ class DeliveryHistory extends Component
         $this->editDeliveryBatch('item-'.$deliveryId);
     }
 
+    public function editDeliveryCategory(int $deliveryId): void
+    {
+        $this->editDeliveryBatch('category-'.$deliveryId);
+    }
+
+    /**
+     * A category-group spans the recipient's whole history for one category
+     * (several batches/dates), so batch atomicity checks do not apply —
+     * every row must simply be individually editable.
+     */
+    protected function batchRowsAreEditable(string $batchKey, Collection $rows): bool
+    {
+        if (str_starts_with($batchKey, 'category-')) {
+            return $rows->isNotEmpty()
+                && $rows->every(fn (ServiceDelivery $row): bool => $this->deliveryRowsAreEditable(collect([$row])));
+        }
+
+        return $this->deliveryRowsAreEditable($rows);
+    }
+
     public function editDeliveryBatch(string $batchKey): void
     {
         $rows = $this->deliveryBatchRows($batchKey);
 
         abort_if($rows->isEmpty(), 404);
-        abort_unless($this->deliveryRowsAreEditable($rows), 403);
+        abort_unless($this->batchRowsAreEditable($batchKey, $rows), 403);
 
-        $recipient = $rows->first();
+        $recipient = $rows->last();
 
         $this->editingDeliveryBatchKey = $batchKey;
         $this->editRecipientName = $recipient->recipient_name;
@@ -143,7 +163,7 @@ class DeliveryHistory extends Component
             ? 'مددجو'
             : ($recipient->guardian_id ? 'سرپرست خانوار' : 'گیرنده ثبت‌نشده');
         $this->editDeliveredAt = $this->formatLastDeliveryDate($recipient->delivered_at);
-        $this->editItems = $rows
+        $items = $rows
             ->map(fn (ServiceDelivery $delivery): array => [
                 'id' => $delivery->id,
                 'category' => $delivery->serviceCategory?->name ?: '-',
@@ -152,8 +172,16 @@ class DeliveryHistory extends Component
                 'decimal' => Service::unitUsesDecimalPrecision($delivery->serviceCategory?->unit),
                 'value_per_unit' => (int) $delivery->value_per_unit_snapshot,
             ])
-            ->values()
-            ->all();
+            ->values();
+
+        if (str_starts_with($batchKey, 'category-')) {
+            $total = (float) $rows->sum(fn (ServiceDelivery $row): float => (float) $row->delivered_quantity);
+            $aggregate = $items->last();
+            $aggregate['quantity'] = $this->formatEditableQuantity($total);
+            $items = collect([$aggregate]);
+        }
+
+        $this->editItems = $items->all();
         $this->deliveryUpdateMessage = '';
         $this->resetValidation();
         $this->showEditDeliveryModal = true;
@@ -187,9 +215,12 @@ class DeliveryHistory extends Component
             $rows = $this->deliveryBatchRows($this->editingDeliveryBatchKey, true);
 
             abort_if($rows->isEmpty(), 404);
-            abort_unless($this->deliveryRowsAreEditable($rows), 403);
+            abort_unless($this->batchRowsAreEditable($this->editingDeliveryBatchKey, $rows), 403);
 
-            $expectedIds = $rows->pluck('id')->map(fn ($id) => (int) $id)->sort()->values();
+            $expectedIds = str_starts_with($this->editingDeliveryBatchKey, 'category-')
+                ? collect([(int) $rows->last()->id])
+                : $rows->pluck('id')->map(fn ($id) => (int) $id);
+            $expectedIds = $expectedIds->sort()->values();
             $submittedIds = $submittedItems->keys()->map(fn ($id) => (int) $id)->sort()->values();
 
             abort_unless($expectedIds->all() === $submittedIds->all(), 422);
@@ -224,7 +255,7 @@ class DeliveryHistory extends Component
 
                 if (! Service::unitUsesDecimalPrecision($category->unit)) {
                     foreach ($categoryRows as $row) {
-                        if (fmod((float) $submittedItems[(int) $row->id], 1.0) !== 0.0) {
+                        if (fmod((float) ($submittedItems[(int) $row->id] ?? 0), 1.0) !== 0.0) {
                             throw ValidationException::withMessages([
                                 'editItems.'.$quantityFieldIndexes[(int) $row->id].'.quantity' => "مقدار «{$category->name}» باید عدد صحیح باشد.",
                             ]);
@@ -233,7 +264,7 @@ class DeliveryHistory extends Component
                 }
 
                 $newBatchQuantity = $categoryRows->sum(
-                    fn (ServiceDelivery $row): float => (float) $submittedItems[(int) $row->id]
+                    fn (ServiceDelivery $row): float => (float) ($submittedItems[(int) $row->id] ?? 0)
                 );
                 $otherDeliveredQuantity = (float) ServiceDelivery::query()
                     ->where('service_id', (int) $rows->first()->service_id)
@@ -263,7 +294,9 @@ class DeliveryHistory extends Component
             }
 
             foreach ($rows as $row) {
-                $quantity = (float) $submittedItems[(int) $row->id];
+                // Category groups save the total once: the latest row carries
+                // the new value, the remaining rows of the group are zeroed.
+                $quantity = (float) ($submittedItems[(int) $row->id] ?? 0);
 
                 $row->forceFill([
                     'delivered_quantity' => $quantity,
@@ -580,15 +613,61 @@ class DeliveryHistory extends Component
                 $items = $groups->flatMap(function (array $group): Collection {
                     return $group['items']->map(fn (ServiceDelivery $delivery): array => [
                         'delivery' => $delivery,
+                        'quantity' => (float) $delivery->delivered_quantity,
                         'can_edit' => in_array((int) $delivery->id, $group['editable_item_ids'], true),
                     ]);
                 })->values();
+
+                // Same category listed several times (one line per batch/date)
+                // collapses into a single row whose quantity is the true total
+                // for this recipient — a display/summary aggregate only; no
+                // delivery record is modified or merged. Non-editable rows
+                // (gate/attendance linked) keep their own line, as before.
+                $totalsByCategory = [];
+                $latestRowByCategory = [];
+
+                foreach ($items as $item) {
+                    if (! $item['can_edit']) {
+                        continue;
+                    }
+
+                    $categoryId = (int) $item['delivery']->service_category_id;
+                    $totalsByCategory[$categoryId] = ($totalsByCategory[$categoryId] ?? 0.0) + (float) $item['quantity'];
+
+                    if (! isset($latestRowByCategory[$categoryId]) || (int) $item['delivery']->id > (int) $latestRowByCategory[$categoryId]->id) {
+                        $latestRowByCategory[$categoryId] = $item['delivery'];
+                    }
+                }
+
+                $aggregatedItems = [];
+                $emittedCategories = [];
+
+                foreach ($items as $item) {
+                    if (! $item['can_edit']) {
+                        $aggregatedItems[] = $item;
+                        continue;
+                    }
+
+                    $categoryId = (int) $item['delivery']->service_category_id;
+
+                    if (isset($emittedCategories[$categoryId])) {
+                        continue;
+                    }
+
+                    $emittedCategories[$categoryId] = true;
+
+                    $aggregatedItems[] = [
+                        'delivery' => $latestRowByCategory[$categoryId],
+                        'quantity' => $totalsByCategory[$categoryId],
+                        'can_edit' => true,
+                    ];
+                }
 
                 return [
                     'recipient_key' => $recipientKey,
                     'recipient' => $groups->first()['recipient'],
                     'delivery_groups' => $groups->values(),
-                    'items' => $items,
+                    'items' => collect($aggregatedItems),
                 ];
             })
             ->values();
@@ -596,6 +675,20 @@ class DeliveryHistory extends Component
 
     protected function deliveryBatchRows(string $batchKey, bool $lockForUpdate = false): Collection
     {
+        if (str_starts_with($batchKey, 'category-')) {
+            $anchor = ServiceDelivery::query()
+                ->where('social_worker_id', $this->currentSocialWorkerId())
+                ->where('service_id', (int) $this->normalizedSelectedServiceId())
+                ->whereKey((int) substr($batchKey, 9))
+                ->first();
+
+            if (! $anchor) {
+                return collect();
+            }
+
+            return $this->recipientCategoryRows($anchor, $lockForUpdate);
+        }
+
         $query = ServiceDelivery::query()
             ->with(['serviceCategory', 'person', 'guardian', 'service'])
             ->where('social_worker_id', $this->currentSocialWorkerId())

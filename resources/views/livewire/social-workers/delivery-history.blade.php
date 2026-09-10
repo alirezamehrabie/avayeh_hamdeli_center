@@ -320,7 +320,7 @@
                                     <div wire:key="delivery-history-item-{{ $deliveryItem->id }}" class="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4 sm:py-2.5">
                                         <span class="min-w-0 truncate text-[11px] font-bold text-slate-700 sm:text-xs">{{ $deliveryItem->serviceCategory?->name ?: '-' }}</span>
                                         <span class="shrink-0 text-[11px] sm:text-xs">
-                                            <span class="font-black text-slate-900">{{ $this->formatQuantityForUnit($deliveryItem->delivered_quantity, $deliveryItem->serviceCategory?->unit) }}</span>
+                                            <span class="font-black text-slate-900">{{ $this->formatQuantityForUnit($recipientItem['quantity'], $deliveryItem->serviceCategory?->unit) }}</span>
                                             @if($deliveryItem->serviceCategory?->unit)
                                                 <span class="mr-0.5 text-[10px] font-medium text-slate-400">{{ $this->formatUnitLabel($deliveryItem->serviceCategory->unit) }}</span>
                                             @endif
@@ -329,9 +329,9 @@
                                         @if($recipientItem['can_edit'])
                                             <button
                                                 type="button"
-                                                wire:click="editDeliveryItem({{ $deliveryItem->id }})"
+                                                wire:click="editDeliveryCategory({{ $deliveryItem->id }})"
                                                 wire:loading.attr="disabled"
-                                                wire:target="editDeliveryItem({{ $deliveryItem->id }})"
+                                                wire:target="editDeliveryCategory({{ $deliveryItem->id }})"
                                                 class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-cyan-200 bg-white text-cyan-700 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50 focus:outline-none focus:ring-4 focus:ring-cyan-100 disabled:opacity-50"
                                                 title="ویرایش {{ $deliveryItem->serviceCategory?->name ?: 'مقدار تحویل' }}"
                                                 aria-label="ویرایش {{ $deliveryItem->serviceCategory?->name ?: 'مقدار تحویل' }}"

@@ -443,7 +443,8 @@ class SocialWorkerDeliveryHistoryEditTest extends TestCase
                 && $groups->every(fn (array $group): bool => str_starts_with($group['batch_key'], 'legacy-')))
             ->assertViewHas('recipientGroups', fn ($groups): bool => $groups->count() === 1
                 && $groups->first()['delivery_groups']->count() === 2
-                && $groups->first()['items']->count() === 2);
+                && $groups->first()['items']->count() === 1
+                && (float) $groups->first()['items'][0]['quantity'] === 2.0);
     }
 
     public function test_recipient_selection_prefills_already_registered_category_quantities(): void
@@ -663,6 +664,63 @@ class SocialWorkerDeliveryHistoryEditTest extends TestCase
         $this->assertSame('0.00', $latest->fresh()->delivered_quantity);
         $this->assertSame('0.00', $older->fresh()->delivered_quantity);
         $this->assertSame(0.0, (float) $service->fresh()->quantity_delivered);
+    }
+
+    public function test_history_aggregates_same_category_rows_per_recipient_and_edit_replaces_total(): void
+    {
+        [$user, $worker] = $this->socialWorkerUser();
+        $service = $this->serviceWithCategories();
+        $categories = $service->categories()->orderBy('id')->get();
+
+        foreach ($categories as $category) {
+            $service->workerAllocations()->create([
+                'social_worker_id' => $worker->id,
+                'service_category_id' => $category->id,
+                'allocated_quantity' => 10,
+            ]);
+        }
+
+        $older = $this->delivery($service, $categories[0]->id, $worker, $user, [
+            'delivery_batch_id' => (string) Str::uuid(),
+            'delivered_quantity' => 3,
+            'delivered_total_value' => 3000,
+        ]);
+        $latest = $this->delivery($service, $categories[0]->id, $worker, $user, [
+            'delivery_batch_id' => (string) Str::uuid(),
+            'delivered_quantity' => 3,
+            'delivered_total_value' => 3000,
+        ]);
+        $otherCategory = $this->delivery($service, $categories[1]->id, $worker, $user, [
+            'delivered_quantity' => 2,
+        ]);
+
+        $this->actingAs($user);
+
+        Livewire::test(DeliveryHistory::class)
+            ->set('selectedServiceId', $service->id)
+            ->assertViewHas('recipientGroups', function ($groups) use ($latest): bool {
+                $items = $groups->first()['items'];
+
+                return $groups->count() === 1
+                    && count($items) === 2
+                    && (int) $items[1]['delivery']->id === (int) $latest->id
+                    && (float) $items[1]['quantity'] === 6.0
+                    && (float) $items[0]['quantity'] === 2.0;
+            })
+            ->call('editDeliveryCategory', $latest->id)
+            ->assertSet('showEditDeliveryModal', true)
+            ->assertCount('editItems', 1)
+            ->assertSet('editItems.0.quantity', '6')
+            ->set('editItems.0.quantity', '4')
+            ->call('saveDeliveryBatch')
+            ->assertHasNoErrors();
+
+        $this->assertSame('4.00', $latest->fresh()->delivered_quantity);
+        $this->assertSame(4000, (int) $latest->fresh()->delivered_total_value);
+        $this->assertSame('0.00', $older->fresh()->delivered_quantity);
+        $this->assertSame(3, ServiceDelivery::query()->count());
+        $this->assertSame(2, ServiceDelivery::query()->where('service_category_id', $categories[0]->id)->count());
+        $this->assertSame('2.00', $otherCategory->fresh()->delivered_quantity);
     }
 
     private function socialWorkerUser(int $workerCode = 201): array
