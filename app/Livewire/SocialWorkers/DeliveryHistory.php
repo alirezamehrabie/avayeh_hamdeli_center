@@ -164,7 +164,7 @@ class DeliveryHistory extends Component
                 'required',
                 'numeric',
                 'decimal:0,2',
-                'min:0.01',
+                'min:0',
                 'max:9999999999.99',
             ],
         ], [], [

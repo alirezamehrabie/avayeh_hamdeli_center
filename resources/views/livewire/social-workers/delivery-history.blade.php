@@ -441,7 +441,7 @@
                                         <input
                                             id="edit-quantity-{{ $item['id'] }}"
                                             type="number"
-                                            min="0.01"
+                                            min="0"
                                             max="9999999999.99"
                                             step="0.01"
                                             inputmode="decimal"
