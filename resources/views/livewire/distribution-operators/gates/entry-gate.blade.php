@@ -219,7 +219,11 @@
                 @endif
             </div>
 
-            {{-- Step 2: Scan + authorize --}}
+            {{-- Step 2: Scan + authorize.
+                 Stacked layout at every width: identity + scanner on top, the authorization panel
+                 (categories + send-permission) below, both full width. The panel is a bottom sheet
+                 below lg (its max-lg:* classes) and a plain inline column from lg up, so the two
+                 column category grid gets the full page width and names read without truncation. --}}
             <div
                 x-data="{
                     ...idCardScanner({
@@ -237,14 +241,15 @@
                 x-on:entry-gate-subject-loaded.window="categoriesSheetOpen = true"
                 x-on:keydown.window.ctrl.enter.prevent="triggerNextScanShortcut()"
                 x-on:keydown.window.meta.enter.prevent="triggerNextScanShortcut()"
-                class="grid gap-5 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] {{ $lastScanResult ? 'pb-24 sm:pb-24 lg:pb-5' : '' }}"
+                class="grid gap-5 p-4 sm:p-5 {{ $lastScanResult ? 'pb-24 sm:pb-24 lg:pb-5' : '' }}"
             >
-                {{-- Left: identity (kept at the top so it stays visible at a glance) + scanner --}}
-                <div class="flex min-h-0 flex-col gap-4">
+                {{-- Scanner column. Desktop (lg+): row 1 = identity | camera side by side; the
+                     trailing controls span both tracks. Below lg every piece stacks as before. --}}
+                <div class="grid min-h-0 gap-4 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                     {{-- Identity card: one dense block (name+badges / codes / worker+demographics)
                          so the scanner keeps the vertical space it needs — same shape as the
                          Delivery Gate. The editable extra-field inputs live in the sheet's form. --}}
-                    <div class="min-h-[5.5rem]">
+                    <div class="min-h-[5.5rem] lg:self-start">
                         {{-- Skeleton while the scan resolves on the server --}}
                         <div
                             wire:loading.flex
@@ -380,7 +385,7 @@
 
                     {{-- Next scan is the operator's most-used action, so it takes the leading slot
                          and the solid primary treatment; re-arming the camera is secondary. --}}
-                    <div class="grid gap-3 sm:grid-cols-2">
+                    <div class="grid gap-3 sm:grid-cols-2 lg:col-span-2">
                         <button
                             type="button"
                             wire:click="resumeScanning"
@@ -405,7 +410,7 @@
                     {{-- Scan feedback (success / duplicate / error) stays a prominent banner; the standing
                          camera guidance is a quiet caption so it doesn't compete with the scanner on mobile. --}}
                     @if(in_array($scanStatus, ['paused', 'scan_error'], true))
-                        <div class="rounded-2xl border px-4 py-3 text-sm font-semibold
+                        <div class="rounded-2xl border px-4 py-3 text-sm font-semibold lg:col-span-2
                             @class([
                                 'border-amber-200 bg-amber-50 text-amber-700' => ($lastScanResult['code_key'] ?? null) === 'duplicate',
                                 'border-emerald-200 bg-emerald-50 text-emerald-700' => ($lastScanResult['code_key'] ?? null) !== 'duplicate',
@@ -414,7 +419,7 @@
                             {{ $scanMessage }}
                         </div>
                     @else
-                        <p class="flex items-center justify-center gap-1.5 px-1 text-center text-xs font-medium leading-5 text-slate-400">
+                        <p class="flex items-center justify-center gap-1.5 px-1 text-center text-xs font-medium leading-5 text-slate-400 lg:col-span-2">
                             @if($scanStatus === 'scanning')
                                 <span class="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-emerald-400"></span>
                             @else
@@ -427,7 +432,7 @@
                     @endif
 
                     {{-- Manual fallback: when the camera fails or a QR is damaged --}}
-                    <div class="rounded-2xl border border-slate-200 bg-white">
+                    <div class="rounded-2xl border border-slate-200 bg-white lg:col-span-2">
                         <button
                             type="button"
                             wire:click="toggleManualSearch"
@@ -503,17 +508,17 @@
                         class="fixed inset-0 z-30 bg-slate-950/40 lg:hidden"
                     ></div>
 
-                    {{-- The authorization panel: a plain column on desktop, a bottom sheet on mobile.
-                         translate-y-full parks it below the viewport while closed; the lg:* classes
-                         reset every sheet property so the desktop grid layout stays untouched. --}}
+                    {{-- The authorization panel: a plain stacked column on desktop, a bottom sheet
+                         below lg. translate-y-full parks the sheet below the viewport while closed;
+                         the max-lg:* classes apply every sheet property only on mobile/tablet. --}}
                     <div
                         x-cloak
-                        :class="categoriesSheetOpen ? 'translate-y-0' : 'translate-y-full lg:translate-y-0'"
-                        class="fixed inset-x-0 bottom-0 z-40 flex max-h-[85svh] min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain rounded-t-3xl border-t border-slate-200 bg-white shadow-2xl transition-transform duration-300 ease-out lg:static lg:z-auto lg:max-h-none lg:translate-y-0 lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none"
+                        :class="categoriesSheetOpen ? 'translate-y-0' : 'max-lg:translate-y-full'"
+                        class="max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-40 max-lg:flex max-lg:max-h-[85svh] max-lg:min-h-0 max-lg:flex-col max-lg:gap-3 max-lg:overflow-y-auto max-lg:overscroll-contain max-lg:rounded-t-3xl max-lg:border-t max-lg:border-slate-200 max-lg:bg-white max-lg:shadow-2xl max-lg:transition-transform max-lg:duration-300 max-lg:ease-out flex min-h-0 flex-col gap-3 transition-transform duration-300 ease-out"
                     >
                         {{-- Fixed sheet top (mobile): grabber + compact identity box. Sticky inside
                              the sheet's scroll area, so it stays pinned while the form scrolls under it. --}}
-                        <div class="sticky top-0 z-10 bg-white px-4 pb-2 pt-3 lg:hidden">
+                        <div class="max-lg:sticky max-lg:top-0 max-lg:z-10 bg-white px-4 pb-2 pt-3 lg:hidden">
                             <div class="mx-auto h-1.5 w-12 rounded-full bg-slate-200"></div>
 
                             @if($lastScanResult)
@@ -585,13 +590,13 @@
                                 <h2 class="text-sm font-extrabold text-slate-800">دسته‌بندی‌های مجاز</h2>
                             </div>
 
-                            <div class="mx-4 flex flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center lg:mx-0">
+                            <div class="mx-0 max-lg:mx-4 flex flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center">
                                 <p class="text-sm font-bold text-slate-600">برای تخصیص دسته‌بندی، ابتدا QR فرد را اسکن کنید.</p>
                             </div>
 
                             {{-- The delivery-method box waits for a subject too, and it keeps its
                                  place ahead of the category checklist. --}}
-                            <div class="mx-4 rounded-2xl border border-slate-200 bg-white p-3 lg:mx-0">
+                            <div class="mx-0 max-lg:mx-4 rounded-2xl border border-slate-200 bg-white p-3">
                                 <h3 class="flex items-center gap-2 text-sm font-extrabold text-slate-800">
                                     <svg class="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                                     نحوه تحویل
@@ -603,7 +608,7 @@
                         @else
                             {{-- Editable extra fields (identity-adjacent data captured at entry). --}}
                             @if($entryFields->isNotEmpty())
-                                <div class="mx-4 rounded-2xl border border-slate-200 bg-white p-3 lg:mx-0">
+                                <div class="mx-0 max-lg:mx-4 rounded-2xl border border-slate-200 bg-white p-3">
                                     <p class="mb-2 text-[11px] font-bold text-slate-500">اطلاعات تکمیلی</p>
                                     <div class="grid gap-2 sm:grid-cols-2">
                                         @foreach($entryFields as $field)
@@ -645,7 +650,7 @@
                             {{-- Delivery method: who physically receives the items (recorded per subject
                                  per service). It gates the confirm action, so it lives in the sheet right
                                  next to «ارسال مجوز و نفر بعدی». --}}
-                            <div class="mx-4 rounded-2xl border p-3 transition-colors lg:mx-0 {{ $isProxyDelivery ? 'border-amber-300 bg-amber-50/50' : 'border-slate-200 bg-white' }}">
+                            <div class="mx-0 max-lg:mx-4 rounded-2xl border p-3 transition-colors {{ $isProxyDelivery ? 'border-amber-300 bg-amber-50/50' : 'border-slate-200 bg-white' }}">
                                 <div class="flex flex-wrap items-center justify-between gap-2">
                                     <h3 class="flex items-center gap-2 text-sm font-extrabold text-slate-800">
                                         <svg class="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
@@ -717,7 +722,7 @@
 
                             {{-- Categories: desktop keeps the classic header row; on mobile the sheet's
                                  identity header already carries context, so the badge row rides sticky. --}}
-                            <div class="mx-4 flex items-center justify-between gap-2 lg:mx-0">
+                            <div class="mx-0 max-lg:mx-4 flex items-center justify-between gap-2">
                                 <h2 class="text-sm font-extrabold text-slate-800">دسته‌بندی‌های خدمت</h2>
                                 <span class="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-600">
                                     <span x-text="assignedCount">{{ count($assignedCategoryIds) }}</span> انتخاب‌شده
@@ -725,12 +730,12 @@
                             </div>
 
                             @if($selectedService->categories->isEmpty())
-                                <div class="mx-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center lg:mx-0">
+                                <div class="mx-0 max-lg:mx-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center">
                                     <p class="text-sm font-bold text-slate-600">برای این خدمت دسته‌بندی‌ای تعریف نشده است.</p>
                                 </div>
 
                                 {{-- Nothing to authorize: advance the queue from the sheet itself. --}}
-                                <div class="sticky bottom-[env(safe-area-inset-bottom)] z-10 mt-1 border-t border-slate-100 bg-white px-4 pb-[calc(1rem_+_env(safe-area-inset-bottom))] pt-3 lg:hidden">
+                                <div class="max-lg:sticky max-lg:bottom-[env(safe-area-inset-bottom)] z-10 mt-1 max-lg:border-t max-lg:border-slate-100 max-lg:bg-white px-4 max-lg:pb-[calc(1rem_+_env(safe-area-inset-bottom))] pt-3 lg:hidden">
                                     <button
                                         type="button"
                                         wire:click="resumeScanning"
@@ -745,7 +750,7 @@
                             @else
                                 {{-- Mobile keeps every row single-line: name truncates and the unit chip
                                      yields to sm and up (same rule as the Delivery Gate rows). --}}
-                                <div class="mx-4 grid gap-2 sm:grid-cols-2 sm:gap-3 lg:mx-0">
+                                <div class="mx-0 max-lg:mx-4 grid gap-2 sm:grid-cols-2 sm:gap-3">
                                     @foreach($selectedService->categories as $category)
                                         @php($isLocked = in_array($category->id, $lockedCategoryIds, true))
                                         @php($cid = (int) $category->id)
@@ -823,7 +828,7 @@
                                      height above the safe area. Ticks are already persisted, so this only
                                      validates the delivery-method declaration and arms the next scan.
                                      On desktop it keeps its plain page-sticky gradient behavior. --}}
-                                <div class="sticky bottom-[env(safe-area-inset-bottom)] z-10 mt-1 border-t border-slate-100 bg-white px-4 pb-[calc(1rem_+_env(safe-area-inset-bottom))] pt-3 lg:bottom-0 lg:border-0 lg:bg-transparent lg:bg-gradient-to-t lg:from-white lg:via-white lg:to-transparent lg:px-1 lg:pb-1">
+                                <div class="max-lg:sticky max-lg:bottom-[env(safe-area-inset-bottom)] z-10 mt-1 border-t border-slate-100 px-4 max-lg:pb-[calc(1rem_+_env(safe-area-inset-bottom))] pb-1 pt-3 max-lg:bg-white lg:bg-gradient-to-t lg:from-white lg:via-white lg:to-transparent">
                                     <button
                                         type="button"
                                         wire:click="confirmPermission"
@@ -890,7 +895,7 @@
                             x-cloak
                             x-show="!categoriesSheetOpen"
                             @click="categoriesSheetOpen = true"
-                            class="fixed inset-x-4 bottom-[calc(1rem_+_env(safe-area-inset-bottom))] z-30 flex items-center justify-between gap-2 rounded-2xl border border-emerald-200 bg-white/95 px-4 py-3 text-sm font-bold text-emerald-700 shadow-lg backdrop-blur transition active:scale-[0.99] lg:hidden"
+                            class="fixed inset-x-4 bottom-[calc(1rem_+_env(safe-area-inset-bottom))] z-30 hidden max-lg:flex items-center justify-between gap-2 rounded-2xl border border-emerald-200 bg-white/95 px-4 py-3 text-sm font-bold text-emerald-700 shadow-lg backdrop-blur transition active:scale-[0.99]"
                         >
                             <span class="flex items-center gap-2">
                                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
