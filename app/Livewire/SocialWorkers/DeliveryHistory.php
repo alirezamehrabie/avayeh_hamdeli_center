@@ -146,6 +146,7 @@ class DeliveryHistory extends Component
                 'category' => $delivery->serviceCategory?->name ?: '-',
                 'unit' => $this->formatUnitLabel($delivery->serviceCategory?->unit),
                 'quantity' => $this->formatEditableQuantity($delivery->delivered_quantity),
+                'decimal' => Service::unitUsesDecimalPrecision($delivery->serviceCategory?->unit),
                 'value_per_unit' => (int) $delivery->value_per_unit_snapshot,
             ])
             ->values()
@@ -174,7 +175,12 @@ class DeliveryHistory extends Component
         $submittedItems = collect($validated['editItems'])
             ->mapWithKeys(fn (array $item): array => [(int) $item['id'] => (float) $item['quantity']]);
 
-        DB::transaction(function () use ($submittedItems): void {
+        $quantityFieldIndexes = [];
+        foreach ($validated['editItems'] as $index => $item) {
+            $quantityFieldIndexes[(int) $item['id']] = (int) $index;
+        }
+
+        DB::transaction(function () use ($submittedItems, $quantityFieldIndexes): void {
             $rows = $this->deliveryBatchRows($this->editingDeliveryBatchKey, true);
 
             abort_if($rows->isEmpty(), 404);
@@ -211,6 +217,16 @@ class DeliveryHistory extends Component
                     throw ValidationException::withMessages([
                         'editItems' => 'یکی از دسته‌بندی‌های این تحویل دیگر در دسترس نیست.',
                     ]);
+                }
+
+                if (! Service::unitUsesDecimalPrecision($category->unit)) {
+                    foreach ($categoryRows as $row) {
+                        if (fmod((float) $submittedItems[(int) $row->id], 1.0) !== 0.0) {
+                            throw ValidationException::withMessages([
+                                'editItems.'.$quantityFieldIndexes[(int) $row->id].'.quantity' => "مقدار «{$category->name}» باید عدد صحیح باشد.",
+                            ]);
+                        }
+                    }
                 }
 
                 $newBatchQuantity = $categoryRows->sum(

@@ -131,7 +131,7 @@ class SocialWorkerDeliveryHistoryEditTest extends TestCase
             ->call('editDeliveryBatch', 'batch-'.$batchId)
             ->assertSet('showEditDeliveryModal', true)
             ->assertSet('editRecipientType', 'گیرنده ثبت‌نشده')
-            ->set('editItems.0.quantity', '3.5')
+            ->set('editItems.0.quantity', '3')
             ->set('editItems.1.quantity', '4')
             ->call('saveDeliveryBatch')
             ->assertHasNoErrors()
@@ -140,8 +140,8 @@ class SocialWorkerDeliveryHistoryEditTest extends TestCase
 
         $this->assertDatabaseHas('service_deliveries', [
             'id' => $first->id,
-            'delivered_quantity' => 3.50,
-            'delivered_total_value' => 3500,
+            'delivered_quantity' => 3.00,
+            'delivered_total_value' => 3000,
             'updated_by' => $user->id,
         ]);
         $this->assertDatabaseHas('service_deliveries', [
@@ -237,6 +237,65 @@ class SocialWorkerDeliveryHistoryEditTest extends TestCase
         $this->assertSame(0, (int) $first->fresh()->delivered_total_value);
         $this->assertNotNull($first->fresh()->corrected_at);
         $this->assertSame('2.00', $second->fresh()->delivered_quantity);
+    }
+
+    public function test_edit_quantity_accepts_decimals_only_for_decimal_units(): void
+    {
+        [$user, $worker] = $this->socialWorkerUser();
+        $service = $this->serviceWithCategories();
+        $packCategory = $service->categories()->orderBy('id')->firstOrFail();
+        $decimalCategory = $service->categories()->create([
+            'service_name_id' => $service->service_name_id,
+            'name' => 'Rice '.Str::random(8),
+            'quantity' => 10,
+            'unit' => 'kilogram',
+            'value' => 1000,
+            'sort_id' => 3,
+            'created_by' => $user->id,
+        ]);
+
+        $service->workerAllocations()->create([
+            'social_worker_id' => $worker->id,
+            'service_category_id' => $packCategory->id,
+            'allocated_quantity' => 10,
+        ]);
+        $service->workerAllocations()->create([
+            'social_worker_id' => $worker->id,
+            'service_category_id' => $decimalCategory->id,
+            'allocated_quantity' => 10,
+        ]);
+
+        $packDelivery = $this->delivery($service, $packCategory->id, $worker, $user, [
+            'national_id' => '1111111111',
+        ]);
+        $decimalDelivery = $this->delivery($service, $decimalCategory->id, $worker, $user, [
+            'national_id' => '2222222222',
+        ]);
+
+        $this->actingAs($user);
+
+        Livewire::test(DeliveryHistory::class)
+            ->set('selectedServiceId', $service->id)
+            ->call('editDeliveryItem', $packDelivery->id)
+            ->assertSet('editItems.0.decimal', false)
+            ->set('editItems.0.quantity', '2.5')
+            ->call('saveDeliveryBatch')
+            ->assertHasErrors(['editItems.0.quantity'])
+            ->assertSet('showEditDeliveryModal', true);
+
+        $this->assertSame('1.00', $packDelivery->fresh()->delivered_quantity);
+        $this->assertNull($packDelivery->fresh()->corrected_at);
+
+        Livewire::test(DeliveryHistory::class)
+            ->set('selectedServiceId', $service->id)
+            ->call('editDeliveryItem', $decimalDelivery->id)
+            ->assertSet('editItems.0.decimal', true)
+            ->set('editItems.0.quantity', '2.5')
+            ->call('saveDeliveryBatch')
+            ->assertHasNoErrors();
+
+        $this->assertSame('2.50', $decimalDelivery->fresh()->delivered_quantity);
+        $this->assertSame(2500, (int) $decimalDelivery->fresh()->delivered_total_value);
     }
 
     public function test_edit_rejects_quantity_above_worker_category_allocation_without_partial_update(): void
