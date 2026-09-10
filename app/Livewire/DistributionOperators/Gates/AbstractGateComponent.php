@@ -2,6 +2,7 @@
 
 namespace App\Livewire\DistributionOperators\Gates;
 
+use App\Helpers\PersianText;
 use App\Models\EducationLevel;
 use App\Models\GateEntryAssignment;
 use App\Models\GateEntryDeliveryRecipient;
@@ -12,6 +13,7 @@ use App\Models\QrIdentity;
 use App\Models\Service;
 use App\Models\ServiceEntryField;
 use App\Models\SocialWorker;
+use App\Queries\People\PeopleIndexSearchQuery;
 use App\Services\QrIdentityService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -294,22 +296,18 @@ abstract class AbstractGateComponent extends Component
             return collect();
         }
 
-        $escaped = addcslashes($search, '\\%_');
-        $digits = preg_replace('/\D+/', '', $search) ?: '';
+        $term = $this->normalizeManualSearchTerm($search);
 
-        $people = Person::query()
-            ->select(['id', 'first_name', 'last_name', 'full_name', 'person_code', 'national_id'])
-            ->where(function (Builder $query) use ($escaped, $digits): void {
-                if ($digits !== '') {
-                    $query->where('person_code', 'like', "{$digits}%")
-                        ->orWhere('national_id', 'like', "{$digits}%");
-                } else {
-                    $query->where('full_name', 'like', "%{$escaped}%")
-                        ->orWhere('first_name', 'like', "%{$escaped}%")
-                        ->orWhere('last_name', 'like', "%{$escaped}%");
-                }
-            })
-            ->orderBy('last_name')
+        $personSearch = app(PeopleIndexSearchQuery::class);
+
+        $personQuery = Person::query()
+            ->select(['id', 'first_name', 'last_name', 'full_name', 'person_code', 'national_id']);
+        $personSearch->applyTo($personQuery, $term, 'all');
+        $personSearch->applyRelevanceOrdering($personQuery, $term, 'all');
+
+        $people = $personQuery
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->limit(6)
             ->get()
             ->map(fn (Person $person): array => [
@@ -321,18 +319,75 @@ abstract class AbstractGateComponent extends Component
                 'national_id' => (string) ($person->national_id ?: '-'),
             ]);
 
-        $guardians = Guardian::query()
-            ->select(['id', 'first_name', 'last_name', 'guardian_code', 'national_code'])
-            ->where(function (Builder $query) use ($escaped, $digits): void {
-                if ($digits !== '') {
-                    $query->where('guardian_code', 'like', "{$digits}%")
-                        ->orWhere('national_code', 'like', "{$digits}%");
-                } else {
-                    $query->where('first_name', 'like', "%{$escaped}%")
-                        ->orWhere('last_name', 'like', "%{$escaped}%");
+        return $people->concat($this->guardianManualCandidates($term))->take(8)->values();
+    }
+
+    /**
+     * Turns the raw box input into the search term List People expects: Persian/Arabic
+     * digits folded to Latin ones, and bare digit-and-separator input treated as a code lookup.
+     */
+    protected function normalizeManualSearchTerm(string $search): string
+    {
+        $digits = PersianText::digitsOnly($search);
+
+        return $digits !== '' && preg_match('/^[\p{N}\s\-().\/]+$/u', $search) === 1
+            ? $digits
+            : PersianText::normalizeDigits($search);
+    }
+
+    /**
+     * Household candidates mirroring PeopleIndexSearchQuery's "all" branch on the guardians
+     * table's own normalized/compact search columns, with the same relevance tiers.
+     */
+    protected function guardianManualCandidates(string $term): Collection
+    {
+        $query = Guardian::query()
+            ->select(['id', 'first_name', 'last_name', 'guardian_code', 'national_code']);
+
+        if (ctype_digit($term)) {
+            $escaped = addcslashes($term, '\\%_');
+
+            $query->where(function (Builder $searchQuery) use ($escaped): void {
+                $searchQuery->where('guardian_code', 'like', "{$escaped}%")
+                    ->orWhere('national_code', 'like', "{$escaped}%");
+            })->orderByRaw(
+                'CASE WHEN guardian_code = ? THEN 0 WHEN national_code = ? THEN 1 WHEN guardian_code LIKE ? THEN 2 ELSE 3 END',
+                [$term, $term, "{$escaped}%"],
+            );
+        } else {
+            $normalized = Person::normalizeSearchText($term);
+            $escaped = addcslashes($normalized, '\\%_');
+            $compact = addcslashes(str_replace(' ', '', $normalized), '\\%_');
+            $prefix = "{$escaped}%";
+            $compactPrefix = "{$compact}%";
+
+            $query->where(function (Builder $searchQuery) use ($prefix, $compactPrefix, $escaped, $normalized): void {
+                $searchQuery->where('normalized_full_name', 'like', $prefix)
+                    ->orWhere('normalized_first_name', 'like', $prefix)
+                    ->orWhere('normalized_last_name', 'like', $prefix)
+                    ->orWhere('compact_full_name', 'like', $compactPrefix)
+                    ->orWhere('compact_first_name', 'like', $compactPrefix)
+                    ->orWhere('compact_last_name', 'like', $compactPrefix);
+
+                if (mb_strlen($normalized) >= 3) {
+                    $searchQuery->orWhere('normalized_full_name', 'like', "%{$escaped}%");
                 }
-            })
-            ->orderBy('last_name')
+            })->orderByRaw(
+                'CASE
+                    WHEN normalized_full_name LIKE ? THEN 0
+                    WHEN compact_full_name LIKE ? THEN 1
+                    WHEN normalized_first_name LIKE ? THEN 2
+                    WHEN normalized_last_name LIKE ? THEN 3
+                    WHEN normalized_full_name LIKE ? THEN 4
+                    ELSE 5
+                END',
+                [$prefix, $compactPrefix, $prefix, $prefix, "%{$escaped}%"],
+            );
+        }
+
+        return $query
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->limit(6)
             ->get()
             ->map(fn (Guardian $guardian): array => [
@@ -343,8 +398,6 @@ abstract class AbstractGateComponent extends Component
                 'code' => (string) ($guardian->guardian_code ?: '-'),
                 'national_id' => (string) ($guardian->national_code ?: '-'),
             ]);
-
-        return $people->concat($guardians)->take(8)->values();
     }
 
     protected function applyPersonScan(Person $person, bool $isDuplicate = false, string $source = 'qr'): void

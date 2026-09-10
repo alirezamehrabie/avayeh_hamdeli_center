@@ -194,7 +194,7 @@ class PeopleIndexSearchQuery
         });
     }
 
-    private function applyRelevanceOrdering(Builder $query, string $search, string $searchField): void
+    public function applyRelevanceOrdering(Builder $query, string $search, string $searchField): void
     {
         $search = $this->normalizeSearchTerm($search);
 

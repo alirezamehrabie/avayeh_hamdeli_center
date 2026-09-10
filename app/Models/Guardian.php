@@ -44,6 +44,12 @@ class Guardian extends Model
         'national_code',
         'first_name',
         'last_name',
+        'normalized_first_name',
+        'normalized_last_name',
+        'normalized_full_name',
+        'compact_first_name',
+        'compact_last_name',
+        'compact_full_name',
 
 
         'guardian_birth_day',
@@ -162,6 +168,36 @@ class Guardian extends Model
 
             return $next;
         });
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $guardian): void {
+            $guardian->syncNormalizedSearchFields();
+        });
+
+        static::updating(function (self $guardian): void {
+            $guardian->syncNormalizedSearchFields();
+        });
+    }
+
+    /**
+     * Keeps the normalized/compact search columns in sync with first/last name,
+     * using the same fold as Person so gate search treats both tables identically.
+     */
+    public function syncNormalizedSearchFields(): void
+    {
+        $firstName = Person::normalizeSearchText($this->first_name);
+        $lastName = Person::normalizeSearchText($this->last_name);
+        $fullName = trim($firstName.' '.$lastName);
+
+        $this->normalized_first_name = $firstName;
+        $this->normalized_last_name = $lastName;
+        $this->normalized_full_name = $fullName;
+
+        $this->compact_first_name = Person::normalizeCompactSearchText($firstName);
+        $this->compact_last_name = Person::normalizeCompactSearchText($lastName);
+        $this->compact_full_name = Person::normalizeCompactSearchText($fullName);
     }
 
     public static function normalizeDivorcedChildAtHome(mixed $value): string

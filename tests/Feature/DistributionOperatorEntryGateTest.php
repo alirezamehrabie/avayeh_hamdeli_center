@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Livewire\DistributionOperators\Gates\EntryGate;
 use App\Models\GateEntryAssignment;
+use App\Models\Guardian;
 use App\Models\Person;
 use App\Models\QrIdentity;
 use App\Models\Service;
@@ -470,6 +471,63 @@ class DistributionOperatorEntryGateTest extends TestCase
             'service_category_id' => $category->id,
             'person_id' => $person->id,
         ]);
+    }
+
+    public function test_manual_search_folds_persian_variants_and_ranks_candidates_by_relevance(): void
+    {
+        [$operator] = $this->operator();
+        $service = $this->makeGateService($operator);
+
+        $fullPrefix = Person::query()->create([
+            'first_name' => 'حسنی', 'last_name' => 'نوری',
+            'national_id' => '3214569801', 'person_code' => '14011',
+        ]);
+        $lastPrefix = Person::query()->create([
+            'first_name' => 'علی', 'last_name' => 'حسنی',
+            'national_id' => '3214569802', 'person_code' => '14012',
+        ]);
+        $containsOnly = Person::query()->create([
+            'first_name' => 'رضا', 'last_name' => 'احسنی',
+            'national_id' => '3214569803', 'person_code' => '14013',
+        ]);
+        $compound = Person::query()->create([
+            'first_name' => 'محمدحسین', 'last_name' => 'سرلک',
+            'national_id' => '3214569804', 'person_code' => '14014',
+        ]);
+        $alef = Person::query()->create([
+            'first_name' => 'آرمان', 'last_name' => 'کریمی',
+            'national_id' => '3214569805', 'person_code' => '14015',
+        ]);
+        $guardian = Guardian::query()->create([
+            'first_name' => 'مريم', 'last_name' => 'موسوی',
+            'national_code' => '3214569806', 'guardian_code' => 940,
+        ]);
+
+        $this->actingAs($operator);
+
+        $candidates = function (string $term) use ($service): array {
+            return Livewire::test(EntryGate::class)
+                ->call('selectService', $service->id)
+                ->set('manualSearch', $term)
+                ->instance()
+                ->manualCandidates
+                ->map(fn (array $candidate): string => $candidate['type'].':'.$candidate['id'])
+                ->all();
+        };
+
+        $person = fn (Person $p): string => QrIdentity::SUBJECT_PERSON.':'.$p->id;
+
+        $this->assertSame(
+            [$person($fullPrefix), $person($lastPrefix), $person($containsOnly)],
+            $candidates('حسنی'),
+        );
+        $this->assertSame([$person($compound)], $candidates('محمد حسین'));
+        $this->assertSame([$person($alef)], $candidates('ارمان'));
+        $this->assertSame(
+            [QrIdentity::SUBJECT_GUARDIAN.':'.$guardian->id],
+            $candidates('مریم موسوی'),
+        );
+        $this->assertSame([$person($containsOnly)], $candidates('۱۴۰۱۳'));
     }
 
     public function test_category_thumbnail_is_rendered_next_to_category_name_in_entry_gate(): void
