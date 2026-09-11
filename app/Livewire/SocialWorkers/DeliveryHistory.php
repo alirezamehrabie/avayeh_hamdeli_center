@@ -163,6 +163,13 @@ class DeliveryHistory extends Component
             ? 'مددجو'
             : ($recipient->guardian_id ? 'سرپرست خانوار' : 'گیرنده ثبت‌نشده');
         $this->editDeliveredAt = $this->formatLastDeliveryDate($recipient->delivered_at);
+
+        // Snapshot of the caps saveDeliveryBatch() enforces, already crediting
+        // the rows being edited (delivered totals exclude them). Computed once
+        // when the modal opens so the UI can update in real time client-side.
+        $stockBases = $this->batchStockRemainingBases($rows);
+        $quotaBases = $this->batchQuotaRemainingBases($rows);
+
         $items = $rows
             ->map(fn (ServiceDelivery $delivery): array => [
                 'id' => $delivery->id,
@@ -171,6 +178,8 @@ class DeliveryHistory extends Component
                 'quantity' => $this->formatEditableQuantity($delivery->delivered_quantity),
                 'decimal' => Service::unitUsesDecimalPrecision($delivery->serviceCategory?->unit),
                 'value_per_unit' => (int) $delivery->value_per_unit_snapshot,
+                'stock_remaining' => $stockBases[(int) $delivery->service_category_id] ?? 0.0,
+                'quota_remaining' => $quotaBases[(int) $delivery->service_category_id] ?? 0.0,
             ])
             ->values();
 
@@ -416,6 +425,72 @@ class DeliveryHistory extends Component
         );
     }
 
+    /**
+     * Category stock still allocatable per category of the batch: the
+     * category total minus deliveries of every other record (mirrors the
+     * inventory check in saveDeliveryBatch()).
+     *
+     * @return array<int, float>
+     */
+    protected function batchStockRemainingBases(Collection $rows): array
+    {
+        $categoryIds = $rows->pluck('service_category_id')->map(fn ($id): int => (int) $id)->unique()->values();
+
+        $totals = ServiceCategory::query()
+            ->where('service_id', (int) $rows->first()->service_id)
+            ->whereIn('id', $categoryIds)
+            ->pluck('quantity', 'id');
+        $otherDelivered = ServiceDelivery::query()
+            ->where('service_id', (int) $rows->first()->service_id)
+            ->whereIn('service_category_id', $categoryIds)
+            ->whereNotIn('id', $rows->pluck('id'))
+            ->groupBy('service_category_id')
+            ->selectRaw('service_category_id, SUM(delivered_quantity) as delivered')
+            ->pluck('delivered', 'service_category_id');
+
+        $bases = [];
+        foreach ($categoryIds as $categoryId) {
+            $bases[$categoryId] = (float) ($totals[$categoryId] ?? 0) - (float) ($otherDelivered[$categoryId] ?? 0);
+        }
+
+        return $bases;
+    }
+
+    /**
+     * The current worker's allocation still unused per category of the batch:
+     * allocated quantity minus this worker's deliveries of every other record
+     * (mirrors the quota check in saveDeliveryBatch()).
+     *
+     * @return array<int, float>
+     */
+    protected function batchQuotaRemainingBases(Collection $rows): array
+    {
+        $categoryIds = $rows->pluck('service_category_id')->map(fn ($id): int => (int) $id)->unique()->values();
+
+        $allocated = ServiceWorkerAllocation::query()
+            ->where('service_id', (int) $rows->first()->service_id)
+            ->where('social_worker_id', $this->currentSocialWorkerId())
+            ->whereIn('service_category_id', $categoryIds)
+            ->groupBy('service_category_id')
+            ->selectRaw('service_category_id, SUM(allocated_quantity) as allocated')
+            ->pluck('allocated', 'service_category_id');
+        $otherWorkerDelivered = ServiceDelivery::query()
+            ->where('service_id', (int) $rows->first()->service_id)
+            ->where('social_worker_id', $this->currentSocialWorkerId())
+            ->whereIn('service_category_id', $categoryIds)
+            ->whereNotIn('id', $rows->pluck('id'))
+            ->groupBy('service_category_id')
+            ->selectRaw('service_category_id, SUM(delivered_quantity) as delivered')
+            ->pluck('delivered', 'service_category_id');
+
+        $bases = [];
+        foreach ($categoryIds as $categoryId) {
+            $bases[$categoryId] = (float) ($allocated[$categoryId] ?? 0) - (float) ($otherWorkerDelivered[$categoryId] ?? 0);
+        }
+
+        return $bases;
+    }
+
     protected function services(int $socialWorkerId)
     {
         return Service::query()
@@ -609,7 +684,7 @@ class DeliveryHistory extends Component
     {
         return $deliveryGroups
             ->groupBy(fn (array $group): string => $this->recipientKey($group['recipient']))
-            ->map(function (Collection $groups, string $recipientKey): array {
+            ->map(function (Collection $groups, string $recipientKey): ?array {
                 $items = $groups->flatMap(function (array $group): Collection {
                     return $group['items']->map(fn (ServiceDelivery $delivery): array => [
                         'delivery' => $delivery,
@@ -644,7 +719,10 @@ class DeliveryHistory extends Component
 
                 foreach ($items as $item) {
                     if (! $item['can_edit']) {
-                        $aggregatedItems[] = $item;
+                        if ((float) $item['quantity'] > 0) {
+                            $aggregatedItems[] = $item;
+                        }
+
                         continue;
                     }
 
@@ -656,11 +734,22 @@ class DeliveryHistory extends Component
 
                     $emittedCategories[$categoryId] = true;
 
+                    // Categories corrected or zeroed to 0 keep their records in
+                    // the database but drop out of the history list; they
+                    // reappear as soon as a positive quantity is saved again.
+                    if ((float) $totalsByCategory[$categoryId] <= 0) {
+                        continue;
+                    }
+
                     $aggregatedItems[] = [
                         'delivery' => $latestRowByCategory[$categoryId],
                         'quantity' => $totalsByCategory[$categoryId],
                         'can_edit' => true,
                     ];
+                }
+
+                if ($aggregatedItems === []) {
+                    return null;
                 }
 
                 return [
@@ -670,6 +759,7 @@ class DeliveryHistory extends Component
                     'items' => collect($aggregatedItems),
                 ];
             })
+            ->filter()
             ->values();
     }
 

@@ -440,7 +440,18 @@
 
                     <div class="space-y-2">
                         @foreach($editItems as $index => $item)
-                            <div wire:key="delivery-edit-item-{{ $item['id'] }}" class="rounded-2xl border border-slate-200 bg-slate-50/70 px-3 py-3 sm:px-4">
+                            <div
+                                wire:key="delivery-edit-item-{{ $item['id'] }}"
+                                x-data="{
+                                    qty: {{ (float) $item['quantity'] }},
+                                    stock: {{ (float) $item['stock_remaining'] }},
+                                    quota: {{ (float) $item['quota_remaining'] }},
+                                    get cap() { return Math.min(this.stock, this.quota); },
+                                    get remaining() { return Math.round((this.cap - this.qty) * 100) / 100; },
+                                    fa(value) { return String(value).replace(/\d/g, (digit) => '۰۱۲۳۴۵۶۷۸۹'[digit]); },
+                                }"
+                                class="rounded-2xl border border-slate-200 bg-slate-50/70 px-3 py-3 sm:px-4"
+                            >
                                 <div class="flex items-center justify-between gap-3">
                                     <div class="min-w-0">
                                         <p class="truncate text-sm font-bold text-slate-800">{{ $item['category'] }}</p>
@@ -460,9 +471,15 @@
                                             step="{{ $item['decimal'] ? '0.01' : '1' }}"
                                             inputmode="{{ $item['decimal'] ? 'decimal' : 'numeric' }}"
                                             wire:model.defer="editItems.{{ $index }}.quantity"
-                                            x-on:input="dirty = true"
+                                            x-on:input="dirty = true; qty = parseFloat($event.target.value) || 0"
                                             class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-center text-sm font-black text-slate-800 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
                                         >
+                                        <p
+                                            class="mt-1 text-center text-[10px] font-bold"
+                                            :class="remaining < 0 ? 'text-rose-600' : 'text-cyan-600'"
+                                            x-bind:title="quota <= stock ? 'بر اساس سهمیه تخصیص‌یافته شما' : 'بر اساس موجودی دسته‌بندی'"
+                                            x-text="remaining < 0 ? 'بیش از مجاز: ' + fa(Math.abs(remaining)) : 'باقی‌مانده: ' + fa(remaining)"
+                                        ></p>
                                     </div>
                                 </div>
                                 @error('editItems.'.$index.'.quantity')

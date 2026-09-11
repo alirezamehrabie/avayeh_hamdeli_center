@@ -795,6 +795,118 @@ class SocialWorkerDeliveryHistoryEditTest extends TestCase
         $this->assertSame('4.00', $existing->fresh()->delivered_quantity);
     }
 
+    public function test_categories_with_zero_final_quantity_are_hidden_from_history_until_quantity_returns(): void
+    {
+        [$user, $worker] = $this->socialWorkerUser();
+        $service = $this->serviceWithCategories();
+        $categories = $service->categories()->orderBy('id')->get();
+
+        foreach ($categories as $category) {
+            $service->workerAllocations()->create([
+                'social_worker_id' => $worker->id,
+                'service_category_id' => $category->id,
+                'allocated_quantity' => 10,
+            ]);
+        }
+
+        $foodLatest = $this->delivery($service, $categories[0]->id, $worker, $user, [
+            'delivery_batch_id' => (string) Str::uuid(),
+            'delivered_quantity' => 2,
+        ]);
+        $this->delivery($service, $categories[0]->id, $worker, $user, [
+            'delivery_batch_id' => (string) Str::uuid(),
+            'delivered_quantity' => 1,
+        ]);
+        $clothing = $this->delivery($service, $categories[1]->id, $worker, $user, [
+            'delivered_quantity' => 3,
+        ]);
+
+        $this->actingAs($user);
+
+        // Trash: zeroing the food category removes its row from the list while
+        // the clothing row stays; records are kept in the database.
+        Livewire::test(DeliveryHistory::class)
+            ->set('selectedServiceId', $service->id)
+            ->call('zeroDeliveryCategory', $foodLatest->id)
+            ->assertDispatched('delivery-history-updated')
+            ->assertViewHas('recipientGroups', function ($groups) use ($clothing): bool {
+                $items = $groups->first()['items'];
+
+                return $groups->count() === 1
+                    && count($items) === 1
+                    && (int) $items[0]['delivery']->id === (int) $clothing->id
+                    && (float) $items[0]['quantity'] === 3.0;
+            });
+
+        // Pencil: correcting the last visible category to 0 drops the whole
+        // recipient card from the history list.
+        Livewire::test(DeliveryHistory::class)
+            ->set('selectedServiceId', $service->id)
+            ->call('editDeliveryCategory', $clothing->id)
+            ->set('editItems.0.quantity', '0')
+            ->call('saveDeliveryBatch')
+            ->assertHasNoErrors()
+            ->assertViewHas('recipientGroups', fn ($groups): bool => $groups->isEmpty());
+
+        $this->assertSame(3, ServiceDelivery::query()->count());
+
+        // A new positive delivery brings the category back on initial load.
+        $this->delivery($service, $categories[1]->id, $worker, $user, [
+            'delivery_batch_id' => (string) Str::uuid(),
+            'delivered_quantity' => 4,
+        ]);
+
+        Livewire::test(DeliveryHistory::class)
+            ->set('selectedServiceId', $service->id)
+            ->assertViewHas('recipientGroups', function ($groups) use ($categories): bool {
+                $items = $groups->first()['items'];
+
+                return $groups->count() === 1
+                    && count($items) === 1
+                    && (int) $items[0]['delivery']->service_category_id === (int) $categories[1]->id
+                    && (float) $items[0]['quantity'] === 4.0;
+            });
+    }
+
+    public function test_edit_modal_exposes_realtime_remaining_bases_crediting_edited_rows(): void
+    {
+        [$user, $worker] = $this->socialWorkerUser();
+        $service = $this->serviceWithCategories();
+        $categories = $service->categories()->orderBy('id')->get();
+
+        $service->workerAllocations()->create([
+            'social_worker_id' => $worker->id,
+            'service_category_id' => $categories[0]->id,
+            'allocated_quantity' => 12,
+        ]);
+
+        $first = $this->delivery($service, $categories[0]->id, $worker, $user, [
+            'delivery_batch_id' => (string) Str::uuid(),
+            'delivered_quantity' => 4,
+        ]);
+        $this->delivery($service, $categories[0]->id, $worker, $user, [
+            'delivery_batch_id' => (string) Str::uuid(),
+            'delivered_quantity' => 2,
+        ]);
+        $this->delivery($service, $categories[0]->id, $worker, $user, [
+            'national_id' => '2222222222',
+            'full_name' => 'Other Recipient',
+            'delivered_quantity' => 3,
+        ]);
+
+        $this->actingAs($user);
+
+        // Stock 10 - 3 (other record) = 7, quota 12 - 3 = 9: the edited rows'
+        // own 6 units are credited, never subtracted twice.
+        Livewire::test(DeliveryHistory::class)
+            ->set('selectedServiceId', $service->id)
+            ->call('editDeliveryCategory', $first->id)
+            ->assertSet('editItems.0.quantity', '6')
+            ->assertSet('editItems.0.stock_remaining', 7.0)
+            ->assertSet('editItems.0.quota_remaining', 9.0)
+            ->assertSee('باقی‌مانده');
+    }
+
     private function socialWorkerUser(int $workerCode = 201): array
     {
         $worker = SocialWorker::query()->create([
