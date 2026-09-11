@@ -297,7 +297,7 @@
                             <div class="divide-y divide-slate-100">
                                 @foreach($recipientGroup['items'] as $recipientItem)
                                     @php($deliveryItem = $recipientItem['delivery'])
-                                    <div wire:key="delivery-history-item-{{ $deliveryItem->id }}" class="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4 sm:py-2.5">
+                                    <div wire:key="delivery-history-item-{{ $deliveryItem->id }}" class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4 sm:py-2.5">
                                         <span class="min-w-0 truncate text-[11px] font-bold text-slate-700 sm:text-xs">{{ $deliveryItem->serviceCategory?->name ?: '-' }}</span>
                                         <span class="shrink-0 text-[11px] sm:text-xs">
                                             <span class="font-black text-slate-900">{{ $this->formatQuantityForUnit($recipientItem['quantity'], $deliveryItem->serviceCategory?->unit) }}</span>
@@ -307,35 +307,37 @@
                                         </span>
 
                                         @if($recipientItem['can_edit'])
-                                            <button
-                                                type="button"
-                                                wire:click="editDeliveryCategory({{ $deliveryItem->id }})"
-                                                wire:loading.attr="disabled"
-                                                wire:target="editDeliveryCategory({{ $deliveryItem->id }})"
-                                                class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-cyan-200 bg-white text-cyan-700 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50 focus:outline-none focus:ring-4 focus:ring-cyan-100 disabled:opacity-50"
-                                                title="ویرایش {{ $deliveryItem->serviceCategory?->name ?: 'مقدار تحویل' }}"
-                                                aria-label="ویرایش {{ $deliveryItem->serviceCategory?->name ?: 'مقدار تحویل' }}"
-                                            >
-                                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                                    <path d="m16.5 4.5 3 3M5 19l3.5-.8L19 7.7a2.1 2.1 0 0 0-3-3L5.5 15.2 5 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                </svg>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                wire:click="openZeroCategoryConfirmation({{ $deliveryItem->id }})"
-                                                wire:loading.attr="disabled"
-                                                wire:target="openZeroCategoryConfirmation({{ $deliveryItem->id }})"
-                                                class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-rose-200 bg-white text-rose-600 shadow-sm transition hover:border-rose-300 hover:bg-rose-50 focus:outline-none focus:ring-4 focus:ring-rose-100 disabled:opacity-50"
-                                                title="صفر کردن مقدار «{{ $deliveryItem->serviceCategory?->name ?: 'این دسته‌بندی' }}» برای این گیرنده"
-                                                aria-label="صفر کردن مقدار «{{ $deliveryItem->serviceCategory?->name ?: 'این دسته‌بندی' }}» برای این گیرنده"
-                                            >
-                                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                                    <path d="M6 7h12M10 7V5a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v2m-8 0v11a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                    <path d="M10 11v5M14 11v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                                </svg>
-                                            </button>
+                                            <div class="flex shrink-0 items-center gap-3">
+                                                <button
+                                                    type="button"
+                                                    wire:click="editDeliveryCategory({{ $deliveryItem->id }})"
+                                                    wire:loading.attr="disabled"
+                                                    wire:target="editDeliveryCategory({{ $deliveryItem->id }})"
+                                                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-cyan-200 bg-white text-cyan-700 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50 focus:outline-none focus:ring-4 focus:ring-cyan-100 disabled:opacity-50 sm:h-9 sm:w-9"
+                                                    title="ویرایش {{ $deliveryItem->serviceCategory?->name ?: 'مقدار تحویل' }}"
+                                                    aria-label="ویرایش {{ $deliveryItem->serviceCategory?->name ?: 'مقدار تحویل' }}"
+                                                >
+                                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                        <path d="m16.5 4.5 3 3M5 19l3.5-.8L19 7.7a2.1 2.1 0 0 0-3-3L5.5 15.2 5 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                    </svg>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    wire:click="openZeroCategoryConfirmation({{ $deliveryItem->id }})"
+                                                    wire:loading.attr="disabled"
+                                                    wire:target="openZeroCategoryConfirmation({{ $deliveryItem->id }})"
+                                                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-rose-200 bg-white text-rose-600 shadow-sm transition hover:border-rose-300 hover:bg-rose-50 focus:outline-none focus:ring-4 focus:ring-rose-100 disabled:opacity-50 sm:h-9 sm:w-9"
+                                                    title="صفر کردن مقدار «{{ $deliveryItem->serviceCategory?->name ?: 'این دسته‌بندی' }}» برای این گیرنده"
+                                                    aria-label="صفر کردن مقدار «{{ $deliveryItem->serviceCategory?->name ?: 'این دسته‌بندی' }}» برای این گیرنده"
+                                                >
+                                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                        <path d="M6 7h12M10 7V5a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v2m-8 0v11a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                        <path d="M10 11v5M14 11v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
                                         @else
-                                            <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-400" title="این رکورد از اینجا قابل ویرایش نیست">
+                                            <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-400 sm:h-9 sm:w-9" title="این رکورد از اینجا قابل ویرایش نیست">
                                                 <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                                     <rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2"/>
                                                     <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -396,7 +398,7 @@
                         <h2 id="delivery-edit-title" class="text-lg font-extrabold text-slate-900">ویرایش مقادیر تحویل</h2>
                         <p class="mt-1 text-xs text-slate-500">فقط مقدار هر دسته‌بندی اصلاح می‌شود؛ گیرنده و تاریخ تحویل ثابت می‌ماند.</p>
                     </div>
-                    <button type="button" x-on:click="closeRequested()" class="shrink-0 rounded-full border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-100" aria-label="بستن">
+                    <button type="button" x-on:click="closeRequested()" class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-100 focus:outline-none focus:ring-4 focus:ring-cyan-100" aria-label="بستن">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
