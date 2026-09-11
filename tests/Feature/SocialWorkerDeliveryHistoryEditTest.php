@@ -907,6 +907,33 @@ class SocialWorkerDeliveryHistoryEditTest extends TestCase
             ->assertSee('باقی‌مانده');
     }
 
+    public function test_visible_back_button_returns_from_service_history_to_service_list(): void
+    {
+        [$user, $worker] = $this->socialWorkerUser();
+        $service = $this->serviceWithCategories();
+
+        $service->workerAllocations()->create([
+            'social_worker_id' => $worker->id,
+            'service_category_id' => $service->categories()->firstOrFail()->id,
+            'allocated_quantity' => 10,
+        ]);
+
+        $this->delivery($service, $service->categories()->firstOrFail()->id, $worker, $user);
+
+        $this->actingAs($user);
+
+        Livewire::test(DeliveryHistory::class)
+            ->set('selectedServiceId', $service->id)
+            ->assertSeeHtml('wire:click="backToServices"')
+            // Exactly one back affordance: the dead hidden block must be gone.
+            ->assertDontSeeHtml('class="hidden"')
+            ->assertSee('بازگشت به خدمات')
+            ->call('backToServices')
+            ->assertSet('selectedServiceId', null)
+            ->assertSee('ابتدا خدمت موردنظر را انتخاب کنید')
+            ->assertDontSee('بازگشت به خدمات');
+    }
+
     private function socialWorkerUser(int $workerCode = 201): array
     {
         $worker = SocialWorker::query()->create([

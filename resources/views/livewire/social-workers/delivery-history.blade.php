@@ -1,20 +1,37 @@
 <div class="space-y-6">
     <div class="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
         <div class="bg-gradient-to-l from-slate-700 via-indigo-600 to-cyan-600 px-6 py-6 text-white">
-            <h1 class="text-2xl font-extrabold">تاریخچه تحویل</h1>
-            @if($selectedService)
-                <p class="mt-2 flex max-w-3xl items-baseline gap-2 truncate">
-                    <span class="text-xs font-medium text-cyan-50/75 sm:text-sm">سوابق تحویل شما:</span>
-                    <span class="text-sm font-extrabold tracking-tight text-white sm:text-lg">{{ $selectedService->serviceName?->name ?: 'خدمت نامشخص' }}</span>
-                    <span class="shrink-0 rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-medium text-cyan-50/60 ring-1 ring-white/10">
-                        {{ $this->persianNumber($selectedService->code) }}
-                    </span>
-                </p>
-            @else
-                <p class="mt-2 max-w-3xl text-sm text-cyan-50/90">
-                    ابتدا خدمت موردنظر را انتخاب کنید تا سوابق تحویل همان خدمت نمایش داده شود.
-                </p>
-            @endif
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div class="min-w-0">
+                    <h1 class="text-2xl font-extrabold">تاریخچه تحویل</h1>
+                    @if($selectedService)
+                        <p class="mt-2 flex max-w-3xl items-baseline gap-2 truncate">
+                            <span class="text-xs font-medium text-cyan-50/75 sm:text-sm">سوابق تحویل شما:</span>
+                            <span class="text-sm font-extrabold tracking-tight text-white sm:text-lg">{{ $selectedService->serviceName?->name ?: 'خدمت نامشخص' }}</span>
+                            <span class="shrink-0 rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-medium text-cyan-50/60 ring-1 ring-white/10">
+                                {{ $this->persianNumber($selectedService->code) }}
+                            </span>
+                        </p>
+                    @else
+                        <p class="mt-2 max-w-3xl text-sm text-cyan-50/90">
+                            ابتدا خدمت موردنظر را انتخاب کنید تا سوابق تحویل همان خدمت نمایش داده شود.
+                        </p>
+                    @endif
+                </div>
+
+                @if($selectedService)
+                    <button
+                        type="button"
+                        wire:click="backToServices"
+                        class="inline-flex shrink-0 self-start items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-xs font-bold text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 sm:px-4"
+                    >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                        بازگشت به خدمات
+                    </button>
+                @endif
+            </div>
         </div>
 
         @if(!$selectedService)
@@ -136,43 +153,6 @@
                                     @endif
                                 @endif
                             </dd>
-                        </div>
-                    </dl>
-                </div>
-            </div>
-
-            <div class="hidden">
-                <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div class="min-w-0">
-                        <button
-                            type="button"
-                            wire:click="backToServices"
-                            class="mb-3 inline-flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-100 sm:rounded-2xl sm:px-4 sm:py-2 sm:text-sm"
-                        >
-                            بازگشت به خدمات
-                        </button>
-                        <h2 class="truncate text-lg font-black text-slate-800 sm:text-xl">{{ $this->persianNumber($selectedService->code) }} - {{ $selectedService->serviceName?->name }}</h2>
-                        <p class="mt-1 truncate text-xs font-medium text-slate-500 sm:text-sm">
-                            {{ $selectedService->serviceCategory?->name ?: '-' }} | {{ \App\Models\Service::TYPE_OPTIONS[$selectedService->service_type] ?? '-' }}
-                        </p>
-                    </div>
-
-                    <dl class="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:min-w-[32rem]">
-                        <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-                            <dt class="text-[10px] font-bold text-slate-400">تعداد</dt>
-                            <dd class="mt-0.5 text-sm font-black text-slate-800">{{ $this->persianNumber(number_format((int) ($selectedService->worker_deliveries_count ?? 0))) }}</dd>
-                        </div>
-                        <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-                            <dt class="text-[10px] font-bold text-slate-400">مقدار</dt>
-                            <dd class="mt-0.5 text-sm font-black text-slate-800">{{ $this->formatQuantity($selectedService->worker_delivered_quantity ?? 0) }}</dd>
-                        </div>
-                        <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-                            <dt class="text-[10px] font-bold text-slate-400">آخرین تحویل</dt>
-                            <dd class="mt-0.5 text-sm font-black text-slate-800">{{ $this->formatLastDeliveryDate($selectedService->worker_last_delivery_at ?? null) }}</dd>
-                        </div>
-                        <div class="rounded-xl border border-emerald-100 bg-emerald-50/70 px-3 py-2">
-                            <dt class="text-[10px] font-bold text-emerald-600/70">ارزش</dt>
-                            <dd class="mt-0.5 truncate text-sm font-black text-emerald-700">{{ $this->formatCurrency($selectedService->worker_delivered_value ?? 0) }}</dd>
                         </div>
                     </dl>
                 </div>
