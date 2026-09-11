@@ -723,6 +723,78 @@ class SocialWorkerDeliveryHistoryEditTest extends TestCase
         $this->assertSame('2.00', $otherCategory->fresh()->delivered_quantity);
     }
 
+    public function test_dashboard_inventory_delta_credits_previous_quantity(): void
+    {
+        [$user, $worker] = $this->socialWorkerUser();
+        $service = $this->serviceWithCategories();
+        $packCategory = $service->categories()->orderBy('id')->firstOrFail();
+
+        $service->workerAllocations()->create([
+            'social_worker_id' => $worker->id,
+            'service_category_id' => $packCategory->id,
+            'allocated_quantity' => 6,
+        ]);
+
+        $guardian = Guardian::query()->create([
+            'guardian_code' => random_int(100000, 999999),
+            'first_name' => 'Guardian',
+            'last_name' => 'Delta',
+            'national_code' => (string) random_int(1000000000, 9999999999),
+            'guardian_phone_number' => '09120000000',
+            'social_worker_id' => $worker->id,
+            'insurance_status' => false,
+        ]);
+        $person = Person::query()->create([
+            'first_name' => 'Mohammad',
+            'last_name' => 'Delta',
+            'national_id' => (string) random_int(1000000000, 9999999999),
+            'person_code' => (string) random_int(15000, 99999),
+            'guardian_id' => $guardian->id,
+            'birth_year' => 1390,
+            'birth_month' => 1,
+            'birth_day' => 1,
+        ]);
+        $existing = $this->delivery($service, $packCategory->id, $worker, $user, [
+            'person_id' => $person->id,
+            'national_id' => $person->national_id,
+            'delivered_quantity' => 4,
+        ]);
+
+        $this->actingAs($user);
+
+        $field = 'recipientEntries.0.category_quantities.'.$packCategory->id;
+
+        $component = Livewire::test(Dashboard::class)
+            ->set('selectedServiceId', $service->id)
+            ->set('recipientEntries.0.national_id', $person->national_id)
+            ->assertSet($field, '4');
+
+        // Seeded value equals the previous one: net consumption is zero.
+        $this->assertSame(0.0, $component->instance()->categoryDelta((int) $packCategory->id));
+
+        $component->set($field, '6');
+        $this->assertSame(2.0, $component->instance()->categoryDelta((int) $packCategory->id));
+
+        $component->set($field, '1');
+        $this->assertSame(-3.0, $component->instance()->categoryDelta((int) $packCategory->id));
+
+        // Over the adjusted ceiling (remaining 2 + replaced old 4 = 6): rejected.
+        $component->set($field, '7');
+        $component->call('saveDelivery')->assertHasErrors(['recipientEntries']);
+        $this->assertSame('4.00', $existing->fresh()->delivered_quantity);
+
+        // Re-selecting the person and saving the unchanged seeded 4 is a valid
+        // replacement even though the plain allocation remaining is only 2.
+        Livewire::test(Dashboard::class)
+            ->set('selectedServiceId', $service->id)
+            ->set('recipientEntries.0.national_id', $person->national_id)
+            ->call('saveDelivery')
+            ->assertHasNoErrors();
+
+        $this->assertSame(1, ServiceDelivery::query()->where('person_id', $person->id)->count());
+        $this->assertSame('4.00', $existing->fresh()->delivered_quantity);
+    }
+
     private function socialWorkerUser(int $workerCode = 201): array
     {
         $worker = SocialWorker::query()->create([

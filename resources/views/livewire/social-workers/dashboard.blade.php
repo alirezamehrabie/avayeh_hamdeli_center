@@ -37,26 +37,32 @@
                 return total + this.toNumber(entry?.category_quantities?.[categoryId]);
             }, 0);
         },
+        categoryPendingDelta(categoryId) {
+            return Object.values(this.quotaEntries ?? {}).reduce((total, entry) => {
+                return total
+                    + this.toNumber(entry?.category_quantities?.[categoryId])
+                    - this.toNumber(entry?.previous_quantities?.[categoryId]);
+            }, 0);
+        },
         availableForInput(rowIndex, categoryId, remainingStock, remainingAllocation, previousQuantity) {
-            const otherRowsPending = Math.max(0, this.categoryPending(categoryId) - this.categoryQuantity(rowIndex, categoryId));
             const previous = this.toNumber(previousQuantity);
+            const currentDelta = this.categoryQuantity(rowIndex, categoryId) - previous;
+            const otherRowsDelta = this.categoryPendingDelta(categoryId) - currentDelta;
 
-            // Replaced rows already subtracted their old quantity from stock and
-            // allocation, so the previous amount is added back before the freshly
-            // entered value takes its place.
+            // A replaced row only consumes the difference from its previous
+            // amount; decreases free capacity back. Mirrors the server check.
             return Math.max(0, Math.min(
-                this.toNumber(remainingStock) + previous,
-                this.toNumber(remainingAllocation) + previous - otherRowsPending
+                this.toNumber(remainingStock) + previous - otherRowsDelta,
+                this.toNumber(remainingAllocation) + previous - otherRowsDelta
             ));
         },
-        remainingAfterInput(rowIndex, categoryId, remainingStock, remainingAllocation, previousQuantity) {
-            return Math.max(0, this.availableForInput(
-                rowIndex,
-                categoryId,
-                remainingStock,
-                remainingAllocation,
-                previousQuantity
-            ) - this.categoryQuantity(rowIndex, categoryId));
+        remainingAfterInput(rowIndex, categoryId, remainingStock, remainingAllocation) {
+            const delta = this.categoryPendingDelta(categoryId);
+
+            return Math.max(0, Math.min(
+                this.toNumber(remainingStock) - delta,
+                this.toNumber(remainingAllocation) - delta
+            ));
         },
         exceedsRemainingQuota(rowIndex, categoryId, remainingStock, remainingAllocation, previousQuantity) {
             const currentQuantity = this.categoryQuantity(rowIndex, categoryId);
@@ -1350,13 +1356,20 @@
                                                                     $remainingStock = (float) $metrics['remaining_stock'];
                                                                     $currentQuantity = (float) data_get($entry, 'category_quantities.' . (int) $category->id, 0);
                                                                     $previousQuantity = (float) data_get($entry, 'previous_quantities.' . (int) $category->id, 0);
-                                                                    $pendingCategoryQuantity = collect($recipientEntries)->sum(fn ($entry) => (float) data_get($entry, 'category_quantities.' . (int) $category->id, 0));
-                                                                    $otherRowsPendingQuantity = max(0, $pendingCategoryQuantity - $currentQuantity);
+                                                                    // Net-consumption delta: a row replacing a previous amount only
+                                                                    // consumes the difference, so edited values are never double-charged.
+                                                                    $categoryPendingDelta = $this->categoryDelta((int) $category->id);
+                                                                    $currentDelta = $currentQuantity - $previousQuantity;
+                                                                    $otherRowsDelta = $categoryPendingDelta - $currentDelta;
+                                                                    $remainingAllocation = (float) $metrics['remaining_allocation'];
                                                                     $availableForCurrentInput = max(0, min(
-                                                                        $remainingStock + $previousQuantity,
-                                                                        (float) $metrics['remaining_allocation'] + $previousQuantity - $otherRowsPendingQuantity
+                                                                        $remainingStock + $previousQuantity - $otherRowsDelta,
+                                                                        $remainingAllocation + $previousQuantity - $otherRowsDelta
                                                                     ));
-                                                                    $stockAfterCurrentInput = max(0, $availableForCurrentInput - $currentQuantity);
+                                                                    $stockAfterCurrentInput = max(0, min(
+                                                                        $remainingStock - $categoryPendingDelta,
+                                                                        $remainingAllocation - $categoryPendingDelta
+                                                                    ));
                                                                     $exceedsRemainingQuota = $currentQuantity > 0 && $currentQuantity > $availableForCurrentInput;
                                                                     $isUnavailable = $remainingStock <= 0;
                                                                     $categoryUsesDecimals = \App\Models\Service::unitUsesDecimalPrecision($category->unit);
@@ -1894,22 +1907,22 @@
                                 ->values();
                             $totalCategoryCount = $categoryReviewTotals->count();
 
-                            // Live remaining quota per category = allocation left minus what is
-                            // pending in the current form, capped by remaining stock. Kept visible
-                            // while quantities are entered so over-allocation is caught early.
+                            // Live remaining quota per category = allocation left minus the
+                            // NET new consumption of the form (entered minus the previous
+                            // amounts being replaced), capped by remaining stock — the same
+                            // constraint saveDelivery enforces server-side.
                             // Decimal units (e.g. کیلوگرم) keep two decimals; discrete units
                             // (e.g. عدد، بسته، پرس) drop trailing zeros, to avoid visual noise.
                             $formatQuota = fn (float $value): string => round($value, 2) == round($value)
                                 ? number_format($value, 0)
                                 : number_format($value, 2);
                             $quotaStripCategories = $assignableCategories
-                                ->map(function ($category) use ($recipientEntries, $categoryMetrics, $unitOptions) {
+                                ->map(function ($category) use ($categoryMetrics) {
                                     $metrics = $categoryMetrics[$category->id] ?? ['remaining_stock' => 0, 'remaining_allocation' => 0];
-                                    $pending = collect($recipientEntries)
-                                        ->sum(fn ($entry) => (float) data_get($entry, 'category_quantities.' . (int) $category->id, 0));
+                                    $pending = $this->categoryDelta((int) $category->id);
                                     $baseRemaining = max(0, (float) $metrics['remaining_allocation']);
                                     $liveRemaining = max(0, min(
-                                        (float) $metrics['remaining_stock'],
+                                        (float) $metrics['remaining_stock'] - $pending,
                                         (float) $metrics['remaining_allocation'] - $pending
                                     ));
                                     $state = match (true) {
@@ -1928,8 +1941,10 @@
                                     ];
                                 })
                                 ->values();
-                            $overallPending = collect($recipientEntries)
-                                ->sum(fn ($entry) => collect($entry['category_quantities'] ?? [])->sum(fn ($quantity) => (float) $quantity));
+                            $overallPending = collect($recipientEntries)->sum(
+                                fn ($entry) => collect($entry['category_quantities'] ?? [])->sum(fn ($quantity) => (float) $quantity)
+                                    - collect($entry['previous_quantities'] ?? [])->sum(fn ($quantity) => (float) $quantity)
+                            );
                             $overallLiveRemaining = max(0, (float) ($selectedServiceTotals['remaining'] ?? 0) - $overallPending);
                             $overallLiveRemainingDisplay = $formatQuota($overallLiveRemaining);
                         @endphp

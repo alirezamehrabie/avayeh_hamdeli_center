@@ -1022,6 +1022,25 @@ class Dashboard extends Component
         return (int) auth()->user()->social_worker_id;
     }
 
+    /**
+     * Net new consumption of a category across all recipient rows of the form:
+     * entered quantities minus the previous amounts they will replace. A row
+     * keeping its seeded value contributes 0; a decrease frees capacity back.
+     * Mirrors saveDelivery's per-category check (entered ≤ cap + replaced old)
+     * so the displayed stock always matches what the server will accept.
+     */
+    public function categoryDelta(int $categoryId): float
+    {
+        $delta = 0.0;
+
+        foreach ($this->recipientEntries as $entry) {
+            $delta += (float) data_get($entry, 'category_quantities.'.$categoryId, 0)
+                - (float) data_get($entry, 'previous_quantities.'.$categoryId, 0);
+        }
+
+        return $delta;
+    }
+
     protected function blankEntry(?int $categoryId = null): array
     {
         return [
