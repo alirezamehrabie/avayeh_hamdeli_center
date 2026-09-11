@@ -1375,7 +1375,7 @@
                                                                     $categoryUsesDecimals = \App\Models\Service::unitUsesDecimalPrecision($category->unit);
                                                                 @endphp
 
-                                                                <div class="grid grid-cols-[minmax(0,1fr)_7.25rem] items-center gap-x-2.5 gap-y-1 border-b border-slate-200 bg-white px-3 py-2.5 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_8.5rem]"
+                                                                <div class="grid grid-cols-1 items-start gap-x-2.5 gap-y-2 border-b border-slate-200 bg-white px-3 py-2.5 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_8.5rem] sm:items-center"
                                                                      x-data="{
                                                                         rowIndex: {{ (int) $index }},
                                                                         categoryId: '{{ (int) $category->id }}',

@@ -1,4 +1,4 @@
-<div class="space-y-6">
+<div>
     <div class="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
         <div class="bg-gradient-to-l from-slate-700 via-indigo-600 to-cyan-600 px-6 py-6 text-white">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -385,13 +385,15 @@
             }"
             x-on:keydown.escape.window="closeRequested()"
             x-on:click.self="closeRequested()"
+            x-on:wheel.self.prevent="null"
+            x-on:touchmove.self.prevent="null"
             class="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6"
         >
             <div
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="delivery-edit-title"
-                class="max-h-[95vh] w-full overflow-y-auto rounded-t-[28px] bg-white shadow-2xl sm:max-w-xl sm:rounded-[28px]"
+                class="max-h-[92dvh] w-full overflow-y-auto overscroll-contain rounded-t-[28px] bg-white shadow-2xl sm:max-w-xl sm:rounded-[28px]"
             >
                 <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
                     <div class="min-w-0">
