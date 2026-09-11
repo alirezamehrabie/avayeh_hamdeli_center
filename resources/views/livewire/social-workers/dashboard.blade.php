@@ -1375,7 +1375,7 @@
                                                                     $categoryUsesDecimals = \App\Models\Service::unitUsesDecimalPrecision($category->unit);
                                                                 @endphp
 
-                                                                <div class="grid grid-cols-[minmax(0,1fr)_7.5rem] items-center gap-2 border-b border-slate-200 bg-white px-3 py-2.5 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_9rem]"
+                                                                <div class="grid grid-cols-[minmax(0,1fr)_7.25rem] items-center gap-x-2.5 gap-y-1 border-b border-slate-200 bg-white px-3 py-2.5 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_8.5rem]"
                                                                      x-data="{
                                                                         rowIndex: {{ (int) $index }},
                                                                         categoryId: '{{ (int) $category->id }}',
@@ -1394,19 +1394,20 @@
                                                                         },
                                                                      }">
                                                                     <div class="min-w-0">
-                                                                        <div class="flex min-w-0 flex-wrap items-center gap-1.5">
-                                                                            <h4 class="max-w-full truncate text-xs font-bold text-slate-800 sm:text-sm">{{ $category->name }}</h4>
-                                                                            @if($previousQuantity > 0)
-                                                                                <span class="rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[9px] font-bold text-violet-700">مقدار قبلی این شخص: {{ $this->persianNumber(\App\Models\Service::formatQuantityForUnit($previousQuantity, $category->unit)) }}</span>
-                                                                            @endif
+                                                                        <div class="flex min-w-0 items-center gap-1.5">
+                                                                            <h4 class="min-w-0 truncate text-xs font-extrabold text-slate-800 sm:text-sm">{{ $category->name }}</h4>
+                                                                            <span class="shrink-0 text-[10px] font-bold text-slate-400">{{ $unitOptions[$category->unit] ?? $category->unit }}</span>
                                                                             @if($isUnavailable)
-                                                                                <span class="rounded-full bg-rose-50 px-2 py-0.5 text-[9px] font-bold text-rose-600">ناموجود</span>
+                                                                                <span class="shrink-0 rounded-full bg-rose-50 px-2 py-0.5 text-[9px] font-bold text-rose-600">ناموجود</span>
                                                                             @endif
                                                                         </div>
-                                                                        <p class="mt-1 flex flex-wrap items-center gap-1 text-[10px] font-bold text-slate-400">
+                                                                        <p class="mt-1 text-[10px] font-bold leading-4 text-slate-400">
+                                                                            @if($previousQuantity > 0)
+                                                                                <span>مقدار قبلی: <span class="text-slate-600">{{ $this->persianNumber(\App\Models\Service::formatQuantityForUnit($previousQuantity, $category->unit)) }}</span></span>
+                                                                                <span aria-hidden="true" class="text-slate-300"> • </span>
+                                                                            @endif
                                                                             <span>موجودی پس از ثبت:</span>
-                                                                            <span x-text="persianNumber(formatQuantity(remainingAfter, decimalUnit))">{{ $this->persianNumber(\App\Models\Service::formatQuantityForUnit($stockAfterCurrentInput, $category->unit)) }}</span>
-                                                                            <span>{{ $unitOptions[$category->unit] ?? $category->unit }}</span>
+                                                                            <span x-text="persianNumber(formatQuantity(remainingAfter, decimalUnit))" class="text-slate-600">{{ $this->persianNumber(\App\Models\Service::formatQuantityForUnit($stockAfterCurrentInput, $category->unit)) }}</span>
                                                                         </p>
                                                                     </div>
 
@@ -1423,16 +1424,17 @@
                                                                                wire:model.live.debounce.300ms="recipientEntries.{{ $index }}.category_quantities.{{ $category->id }}"
                                                                                x-on:input="setCategoryQuantity(rowIndex, categoryId, $event.target.value)"
                                                                                @disabled(!$this->selectedService || ($isUnavailable && $currentQuantity <= 0))
-                                                                               class="h-11 w-full rounded-xl border bg-slate-50 px-2.5 text-center text-sm font-black text-slate-800 transition placeholder:text-slate-300 focus:bg-white focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                                                                               class="h-11 w-full rounded-xl border bg-slate-50 px-2 text-center text-base font-black text-slate-800 transition placeholder:text-slate-300 focus:bg-white focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
                                                                                x-bind:class="exceeds
                                                                                     ? 'border-rose-300 bg-rose-50 text-rose-700 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10'
                                                                                     : 'border-slate-200 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10'"
                                                                                placeholder="۰">
-                                                                        <p x-cloak x-show="exceeds" class="mt-1.5 text-[10px] font-bold text-rose-600">
-                                                                                بیشتر از سهمیۀ مجاز
-                                                                        </p>
-                                                                        @error('recipientEntries.' . $index . '.category_quantities.' . $category->id) <p class="mt-1 rounded-lg bg-rose-50 px-2 py-1.5 text-[11px] font-bold text-rose-700">{{ $message }}</p> @enderror
                                                                     </div>
+
+                                                                    <p x-cloak x-show="exceeds" class="col-span-full text-[10px] font-bold text-rose-600">
+                                                                            بیشتر از سهمیۀ مجاز
+                                                                    </p>
+                                                                    @error('recipientEntries.' . $index . '.category_quantities.' . $category->id) <p class="col-span-full rounded-lg bg-rose-50 px-2 py-1.5 text-[11px] font-bold text-rose-700">{{ $message }}</p> @enderror
                                                                 </div>
                                                             @empty
                                                                 <div class="bg-amber-50 px-3 py-3 text-xs font-bold text-amber-700">

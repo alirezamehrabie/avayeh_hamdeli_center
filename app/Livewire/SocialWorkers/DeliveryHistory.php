@@ -350,7 +350,7 @@ class DeliveryHistory extends Component
         $this->openNotificationModal([
             'type' => 'warning',
             'title' => 'صفر کردن مقدار تحویل',
-            'message' => "همه ثبت‌های دسته‌بندی «{$categoryName}» برای «{$anchor->recipient_name}» در این خدمت (مجموعاً {$totalLabel}) به صفر تغییر خواهد کرد. رکورد حفظ می‌شود و فقط مقدار صفر ثبت می‌گردد.",
+            'message' => "همه ثبت‌های دسته‌بندی «{$categoryName}» برای «{$anchor->recipient_name}» در این خدمت (مجموعاً {$totalLabel}) به صفر تغییر خواهد کرد.",
             'icon' => 'warning',
             'buttons' => [
                 [
