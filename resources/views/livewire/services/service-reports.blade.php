@@ -20,14 +20,17 @@
             'completed' => 'bg-green-100 text-green-700',
         ];
 
-        $hasServiceFilters = trim($search ?? '') !== ''
-            || $selectedServiceName !== 'all'
-            || $selectedCategory !== 'all'
-            || $selectedStatus !== 'all'
-            || $selectedType !== 'all'
-            || ($selectedSocialWorker ?? 'all') !== 'all'
-            || trim($serviceDateFrom ?? '') !== ''
-            || trim($serviceDateTo ?? '') !== '';
+        // Single source for "how many service filters are active": the mobile
+        // «فیلترها» badge, the sheet footer and the desktop clear button all read this.
+        $serviceActiveFilterCount = (trim($search ?? '') !== '' ? 1 : 0)
+            + ($selectedServiceName !== 'all' ? 1 : 0)
+            + ($selectedCategory !== 'all' ? 1 : 0)
+            + ($selectedStatus !== 'all' ? 1 : 0)
+            + ($selectedType !== 'all' ? 1 : 0)
+            + (($selectedSocialWorker ?? 'all') !== 'all' ? 1 : 0)
+            + ((trim($serviceDateFrom ?? '') !== '' || trim($serviceDateTo ?? '') !== '') ? 1 : 0);
+
+        $hasServiceFilters = $serviceActiveFilterCount > 0;
     @endphp
 
     @if(! $selectedService && ! $deliveryChannel)
@@ -108,11 +111,20 @@
                 </div>
             </div>
 
-            {{-- Search Bar + Quick Filters --}}
+            {{-- Filter toolbar: mirrors the delivery-details toolbar. The search stays
+                 inline at every size; on phones/tablets every other control moves into a
+                 bottom sheet opened by «فیلترها» (badge = active filters) and the sheet
+                 wrapper dissolves at lg via display:contents so the desktop row is
+                 untouched. --}}
             <div class="border-b border-slate-200 px-4 py-3 sm:px-6">
-                <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                    {{-- Search Input --}}
-                    <div class="relative w-full sm:max-w-md">
+                <div
+                    class="flex flex-wrap items-center gap-2 lg:gap-3"
+                    x-data="{ ...sheetBackGuard('serviceFiltersOpen') }"
+                    x-init="bindSheetBack()"
+                    @keydown.escape.window="serviceFiltersOpen = false"
+                >
+                    {{-- Search: always inline, every screen size. --}}
+                    <div class="relative min-w-0 flex-1 lg:w-96 lg:max-w-sm lg:flex-none">
                         <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
@@ -120,108 +132,202 @@
                             type="text"
                             wire:model.live.debounce.300ms="search"
                             placeholder="جستجوی سراسری"
-                            class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                            class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-[15px] text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100 lg:py-2 lg:text-sm"
                         >
                     </div>
 
-                    {{-- Quick Filters --}}
-                    <div class="flex flex-wrap items-center gap-2">
-                        {{-- Service Name Filter --}}
-                        <select wire:model.live="selectedServiceName" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
-                            <option value="all">همه خدمات</option>
-                            @foreach($serviceNames as $sname)
-                                <option value="{{ $sname }}">{{ $sname }}</option>
-                            @endforeach
-                        </select>
+                    {{-- Sheet trigger (phones/tablets): badge counts the active filters,
+                         so a narrowing stays visible while the sheet is parked. --}}
+                    <button
+                        type="button"
+                        @click="serviceFiltersOpen = true"
+                        :aria-expanded="serviceFiltersOpen ? 'true' : 'false'"
+                        aria-haspopup="dialog"
+                        class="inline-flex shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-[15px] font-bold text-slate-700 outline-none transition hover:border-slate-300 hover:bg-slate-50 focus:ring-2 focus:ring-indigo-100 lg:hidden"
+                    >
+                        <svg class="h-[18px] w-[18px] shrink-0 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.252 2.252 0 01-.659 1.597L15.5 13.042v4.517a2.25 2.25 0 01-1.378 2.068l-3 1.16a2.25 2.25 0 01-3.122-2.068V13.042L3.66 7.415a2.252 2.252 0 01-.659-1.597V4.774c0-.54.384-1.006.917-1.096A49.033 49.033 0 0112 3z" />
+                        </svg>
+                        <span>فیلترها</span>
+                        @if($serviceActiveFilterCount > 0)
+                            <span class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1 text-[11px] font-black leading-none text-white">{{ $serviceActiveFilterCount }}</span>
+                        @endif
+                    </button>
 
+                    {{-- Mobile-only backdrop: tapping it parks the sheet off-screen again. --}}
+                    <div
+                        x-cloak
+                        x-show="serviceFiltersOpen"
+                        @click="serviceFiltersOpen = false"
+                        @touchmove.prevent
+                        x-transition:enter="transition-opacity ease-out duration-200"
+                        x-transition:enter-start="opacity-0"
+                        x-transition:enter-end="opacity-100"
+                        x-transition:leave="transition-opacity ease-in duration-150"
+                        x-transition:leave-start="opacity-100"
+                        x-transition:leave-end="opacity-0"
+                        class="fixed inset-0 z-30 bg-slate-950/40 lg:hidden"
+                    ></div>
 
-                        {{-- Category Filter --}}
-                        <select wire:model.live="selectedCategory" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
-                            <option value="all">همه دسته‌ها</option>
-                            @foreach($categoryOptions as $cat)
-                                <option value="{{ $cat }}">{{ $cat }}</option>
-                            @endforeach
-                        </select>
-
-                        {{-- Status Filter --}}
-                        <select wire:model.live="selectedStatus" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
-                            <option value="all">همه وضعیت‌ها</option>
-                            <option value="completed">تکمیل شده</option>
-                            <option value="in_distribution">در حال توزیع</option>
-                            <option value="approved">تأیید شده</option>
-                            <option value="draft">پیش نویس</option>
-                        </select>
-
-                        {{-- Type Filter --}}
-                        <select wire:model.live="selectedType" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
-                            <option value="all">همه انواع</option>
-                            @foreach($typeDisplayOptions as $typeValue => $typeLabel)
-                                <option value="{{ $typeValue }}">{{ $typeLabel }}</option>
-                            @endforeach
-                        </select>
-
-                        {{-- Social Worker Filter --}}
-                        <select wire:model.live="selectedSocialWorker" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
-                            <option value="all">همه مددکاران</option>
-                            @foreach($socialWorkerOptions ?? [] as $workerOption)
-                                <option value="{{ $workerOption['id'] }}">{{ $workerOption['name'] }}</option>
-                            @endforeach
-                        </select>
-
-                        {{-- Creation Date Range Filter (تاریخ ثبت) --}}
-                        <div x-data="jalaliDateTimeField($wire.entangle('serviceDateFrom').live)" class="w-full sm:w-36">
-                            <input
-                                type="text"
-                                x-ref="input"
-                                x-model="draft"
-                                x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                                x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                                x-on:jalali-picker-open="handlePickerOpen()"
-                                x-on:jalali-picker-close="handlePickerClose()"
-                                x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                                readonly
-                                inputmode="none"
-                                autocomplete="off"
-                                data-jdp-readonly
-                                data-jdp
-                                data-jdp-only-date
-                                placeholder="از تاریخ ثبت"
-                                class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                            >
+                    {{-- The filter controls. Padding lives on the regions (not the sheet)
+                         so the sticky header/footer can span the full sheet width. --}}
+                    <div
+                        x-cloak
+                        :class="serviceFiltersOpen ? 'translate-y-0' : 'translate-y-full lg:translate-y-0'"
+                        class="fixed inset-x-0 bottom-0 z-40 flex max-h-[85svh] min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain rounded-t-3xl border-t border-slate-200 bg-white pb-2 shadow-2xl transition-transform duration-300 ease-out lg:contents"
+                    >
+                        {{-- Sheet top chrome: grabber + title + close (mobile only). --}}
+                        <div class="sticky top-0 z-10 bg-white px-4 pb-2 pt-3 lg:hidden">
+                            <div class="mx-auto h-1.5 w-12 rounded-full bg-slate-200"></div>
+                            <div class="mt-3 flex items-center justify-between">
+                                <button
+                                    type="button"
+                                    @click="serviceFiltersOpen = false"
+                                    aria-label="بستن فیلترها"
+                                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200"
+                                >
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                                <span class="text-sm font-black text-slate-800">فیلترهای خدمات</span>
+                                <span class="h-10 w-10 shrink-0"></span>
+                            </div>
                         </div>
 
-                        <div x-data="jalaliDateTimeField($wire.entangle('serviceDateTo').live)" class="w-full sm:w-36">
-                            <input
-                                type="text"
-                                x-ref="input"
-                                x-model="draft"
-                                x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                                x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                                x-on:jalali-picker-open="handlePickerOpen()"
-                                x-on:jalali-picker-close="handlePickerClose()"
-                                x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
-                                readonly
-                                inputmode="none"
-                                autocomplete="off"
-                                data-jdp-readonly
-                                data-jdp
-                                data-jdp-only-date
-                                placeholder="تا تاریخ ثبت"
-                                class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                            >
+                        <div class="flex flex-col gap-3 px-4 lg:contents">
+                            {{-- Field labels only exist inside the sheet; on desktop the
+                                 controls keep their self-describing default options. --}}
+                            <div class="flex flex-col gap-1 lg:contents">
+                                <span class="text-xs font-bold text-slate-400 lg:hidden">نام خدمت</span>
+                                <select wire:model.live="selectedServiceName" class="w-full rounded-xl border px-3 py-2.5 text-[15px] outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:w-56 lg:py-2 lg:text-sm {{ $selectedServiceName !== 'all' ? 'border-indigo-300 bg-indigo-50/70 font-bold text-indigo-800' : 'border-slate-200 bg-white text-slate-700' }}">
+                                    <option value="all">همه خدمات</option>
+                                    @foreach($serviceNames as $sname)
+                                        <option value="{{ $sname }}">{{ $sname }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="flex flex-col gap-1 lg:contents">
+                                <span class="text-xs font-bold text-slate-400 lg:hidden">دسته‌بندی</span>
+                                <select wire:model.live="selectedCategory" class="w-full rounded-xl border px-3 py-2.5 text-[15px] outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:w-44 lg:py-2 lg:text-sm {{ $selectedCategory !== 'all' ? 'border-indigo-300 bg-indigo-50/70 font-bold text-indigo-800' : 'border-slate-200 bg-white text-slate-700' }}">
+                                    <option value="all">همه دسته‌ها</option>
+                                    @foreach($categoryOptions as $cat)
+                                        <option value="{{ $cat }}">{{ $cat }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="flex flex-col gap-1 lg:contents">
+                                <span class="text-xs font-bold text-slate-400 lg:hidden">وضعیت</span>
+                                <select wire:model.live="selectedStatus" class="w-full rounded-xl border px-3 py-2.5 text-[15px] outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:w-40 lg:py-2 lg:text-sm {{ $selectedStatus !== 'all' ? 'border-indigo-300 bg-indigo-50/70 font-bold text-indigo-800' : 'border-slate-200 bg-white text-slate-700' }}">
+                                    <option value="all">همه وضعیت‌ها</option>
+                                    <option value="completed">تکمیل شده</option>
+                                    <option value="in_distribution">در حال توزیع</option>
+                                    <option value="approved">تأیید شده</option>
+                                    <option value="draft">پیش نویس</option>
+                                </select>
+                            </div>
+
+                            <div class="flex flex-col gap-1 lg:contents">
+                                <span class="text-xs font-bold text-slate-400 lg:hidden">نوع خدمت</span>
+                                <select wire:model.live="selectedType" class="w-full rounded-xl border px-3 py-2.5 text-[15px] outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:w-40 lg:py-2 lg:text-sm {{ $selectedType !== 'all' ? 'border-indigo-300 bg-indigo-50/70 font-bold text-indigo-800' : 'border-slate-200 bg-white text-slate-700' }}">
+                                    <option value="all">همه انواع</option>
+                                    @foreach($typeDisplayOptions as $typeValue => $typeLabel)
+                                        <option value="{{ $typeValue }}">{{ $typeLabel }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="flex flex-col gap-1 lg:contents">
+                                <span class="text-xs font-bold text-slate-400 lg:hidden">مددکار اجتماعی</span>
+                                <select wire:model.live="selectedSocialWorker" class="w-full rounded-xl border px-3 py-2.5 text-[15px] outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:w-44 lg:py-2 lg:text-sm {{ ($selectedSocialWorker ?? 'all') !== 'all' ? 'border-indigo-300 bg-indigo-50/70 font-bold text-indigo-800' : 'border-slate-200 bg-white text-slate-700' }}">
+                                    <option value="all">همه مددکاران</option>
+                                    @foreach($socialWorkerOptions ?? [] as $workerOption)
+                                        <option value="{{ $workerOption['id'] }}">{{ $workerOption['name'] }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="flex flex-col gap-1 lg:contents">
+                                <span class="text-xs font-bold text-slate-400 lg:hidden">بازه تاریخ ثبت</span>
+                                <div class="grid grid-cols-2 gap-2 lg:contents">
+                                    <div x-data="jalaliDateTimeField($wire.entangle('serviceDateFrom').live)" class="min-w-0 lg:w-40">
+                                        <input
+                                            type="text"
+                                            x-ref="input"
+                                            x-model="draft"
+                                            x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                            x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                            x-on:jalali-picker-open="handlePickerOpen()"
+                                            x-on:jalali-picker-close="handlePickerClose()"
+                                            x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                            readonly
+                                            inputmode="none"
+                                            autocomplete="off"
+                                            data-jdp-readonly
+                                            data-jdp
+                                            data-jdp-only-date
+                                            placeholder="از تاریخ ثبت"
+                                            class="w-full rounded-xl border px-3 py-2.5 text-[15px] font-bold outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:py-2 lg:text-sm {{ trim($serviceDateFrom ?? '') !== '' ? 'border-indigo-300 bg-indigo-50/70 text-indigo-800' : 'border-slate-200 bg-white text-slate-600' }}"
+                                        >
+                                    </div>
+
+                                    <div x-data="jalaliDateTimeField($wire.entangle('serviceDateTo').live)" class="min-w-0 lg:w-40">
+                                        <input
+                                            type="text"
+                                            x-ref="input"
+                                            x-model="draft"
+                                            x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                            x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                            x-on:jalali-picker-open="handlePickerOpen()"
+                                            x-on:jalali-picker-close="handlePickerClose()"
+                                            x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                            readonly
+                                            inputmode="none"
+                                            autocomplete="off"
+                                            data-jdp-readonly
+                                            data-jdp
+                                            data-jdp-only-date
+                                            placeholder="تا تاریخ ثبت"
+                                            class="w-full rounded-xl border px-3 py-2.5 text-[15px] font-bold outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:py-2 lg:text-sm {{ trim($serviceDateTo ?? '') !== '' ? 'border-indigo-300 bg-indigo-50/70 text-indigo-800' : 'border-slate-200 bg-white text-slate-600' }}"
+                                        >
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        @if($hasServiceFilters)
+                        {{-- Sheet footer (mobile only): reset stays reachable while the
+                             sheet is open, and the count button dismisses it onto the list. --}}
+                        <div class="sticky bottom-0 mt-1 flex items-center gap-2 border-t border-slate-200 bg-white px-4 pt-3 lg:hidden" style="padding-bottom: max(0.75rem, env(safe-area-inset-bottom));">
+                            @if($serviceActiveFilterCount > 0)
+                                <button
+                                    type="button"
+                                    wire:click="clearServiceFilters"
+                                    class="shrink-0 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[15px] font-bold text-slate-500 outline-none transition hover:bg-slate-50 focus:ring-2 focus:ring-indigo-100"
+                                >
+                                    پاک کردن
+                                </button>
+                            @endif
                             <button
                                 type="button"
-                                wire:click="clearServiceFilters"
-                                class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-500 outline-none transition hover:bg-slate-50 focus:ring-2 focus:ring-indigo-100"
+                                @click="serviceFiltersOpen = false"
+                                class="inline-flex min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-xl bg-indigo-600 px-4 py-2.5 text-[15px] font-black text-white shadow-sm transition hover:bg-indigo-500 active:scale-[0.99]"
                             >
-                                پاک کردن فیلترها
+                                مشاهده {{ number_format($services->total()) }} نتیجه
                             </button>
-                        @endif
-
+                        </div>
                     </div>
+
+                    @if($hasServiceFilters)
+                        <button
+                            type="button"
+                            wire:click="clearServiceFilters"
+                            class="hidden rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-500 outline-none transition hover:bg-slate-50 focus:ring-2 focus:ring-indigo-100 lg:inline-flex"
+                        >
+                            پاک کردن فیلترها
+                        </button>
+                    @endif
                 </div>
             </div>
 
@@ -833,14 +939,14 @@
                                         type="button"
                                         @click="deliveryFiltersOpen = false"
                                         aria-label="بستن فیلترها"
-                                        class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200"
+                                        class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200"
                                     >
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                         </svg>
                                     </button>
                                     <span class="text-sm font-black text-slate-800">فیلترهای تحویل</span>
-                                    <span class="h-8 w-8 shrink-0"></span>
+                                    <span class="h-10 w-10 shrink-0"></span>
                                 </div>
                             </div>
 
@@ -849,7 +955,7 @@
                                      controls keep their self-describing default options. --}}
                                 <div class="flex flex-col gap-1 lg:contents">
                                     <span class="text-xs font-bold text-slate-400 lg:hidden">نوع ثبت</span>
-                                    <select wire:model.live="selectedDeliveryEntryType" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[15px] text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:w-56 lg:py-2 lg:text-sm">
+                                    <select wire:model.live="selectedDeliveryEntryType" class="w-full rounded-xl border px-3 py-2.5 text-[15px] outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:w-56 lg:py-2 lg:text-sm {{ $selectedDeliveryEntryType !== 'all' ? 'border-indigo-300 bg-indigo-50/70 font-bold text-indigo-800' : 'border-slate-200 bg-white text-slate-700' }}">
                                         <option value="all">انواع ثبت</option>
                                         <option value="manual">ثبت دستی</option>
                                         <option value="individual">شخصی (مددجو)</option>
@@ -859,7 +965,7 @@
 
                                 <div class="flex flex-col gap-1 lg:contents">
                                     <span class="text-xs font-bold text-slate-400 lg:hidden">نهاد حمایتی</span>
-                                    <select wire:model.live="selectedSupportOrganization" aria-label="نهاد حمایتی" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[15px] text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:w-56 lg:py-2 lg:text-sm">
+                                    <select wire:model.live="selectedSupportOrganization" aria-label="نهاد حمایتی" class="w-full rounded-xl border px-3 py-2.5 text-[15px] outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:w-56 lg:py-2 lg:text-sm {{ $selectedSupportOrganization !== 'all' ? 'border-indigo-300 bg-indigo-50/70 font-bold text-indigo-800' : 'border-slate-200 bg-white text-slate-700' }}">
                                         <option value="all">همه نهادها</option>
                                         @foreach($supportOrganizationOptions as $organizationOption)
                                             <option value="{{ $organizationOption['id'] }}">{{ $organizationOption['name'] }}</option>
@@ -869,7 +975,7 @@
 
                                 <div class="flex flex-col gap-1 lg:contents">
                                     <span class="text-xs font-bold text-slate-400 lg:hidden">سطح نیاز</span>
-                                    <select wire:model.live="selectedNeedLevel" aria-label="سطح نیاز" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[15px] text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:w-44 lg:py-2 lg:text-sm">
+                                    <select wire:model.live="selectedNeedLevel" aria-label="سطح نیاز" class="w-full rounded-xl border px-3 py-2.5 text-[15px] outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:w-44 lg:py-2 lg:text-sm {{ $selectedNeedLevel !== 'all' ? 'border-indigo-300 bg-indigo-50/70 font-bold text-indigo-800' : 'border-slate-200 bg-white text-slate-700' }}">
                                         <option value="all">همه سطوح نیاز</option>
                                         @foreach($needLevelOptions as $needLevelOption)
                                             <option value="{{ $needLevelOption['id'] }}">{{ $needLevelOption['title'] }}</option>
@@ -927,7 +1033,7 @@
                                             type="button"
                                             aria-label="مددکار اجتماعی"
                                             @click="open = !open; if (open) $nextTick(() => $refs.search.focus())"
-                                            class="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[15px] text-slate-700 outline-none transition hover:border-slate-300 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:py-2 lg:text-sm"
+                                            class="flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-[15px] outline-none transition hover:border-slate-300 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:py-2 lg:text-sm {{ $selectedCoverageSocialWorker !== 'all' ? 'border-indigo-300 bg-indigo-50/70 font-bold text-indigo-800' : 'border-slate-200 bg-white text-slate-700' }}"
                                         >
                                             <span class="truncate">{{ data_get(collect($coverageSocialWorkerOptions)->firstWhere('id', (int) $selectedCoverageSocialWorker), 'name', 'همه مددکاران اجتماعی') }}</span>
                                             <svg class="h-4 w-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -980,8 +1086,8 @@
                                                 data-jdp-readonly
                                                 data-jdp
                                                 data-jdp-only-date
-                                                placeholder="از تاریخ"
-                                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[15px] font-bold text-slate-600 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:py-2 lg:text-sm"
+                                            placeholder="از تاریخ"
+                                            class="w-full rounded-xl border px-3 py-2.5 text-[15px] font-bold outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:py-2 lg:text-sm {{ trim($deliveryDateFrom ?? '') !== '' ? 'border-indigo-300 bg-indigo-50/70 text-indigo-800' : 'border-slate-200 bg-white text-slate-600' }}"
                                             >
                                         </div>
 
@@ -1001,8 +1107,8 @@
                                                 data-jdp-readonly
                                                 data-jdp
                                                 data-jdp-only-date
-                                                placeholder="تا تاریخ"
-                                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[15px] font-bold text-slate-600 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:py-2 lg:text-sm"
+                                            placeholder="تا تاریخ"
+                                            class="w-full rounded-xl border px-3 py-2.5 text-[15px] font-bold outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 lg:py-2 lg:text-sm {{ trim($deliveryDateTo ?? '') !== '' ? 'border-indigo-300 bg-indigo-50/70 text-indigo-800' : 'border-slate-200 bg-white text-slate-600' }}"
                                             >
                                         </div>
                                     </div>
