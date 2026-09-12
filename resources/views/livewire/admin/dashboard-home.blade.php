@@ -729,10 +729,6 @@
                                     icon="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                             </div>
 
-                            @php
-                                $maxBirthMonthCount = max(1, $birthMonthChart->max('count') ?? 1);
-                            @endphp
-
                             <div class="mt-4 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm">
                                 <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                                     <div>
@@ -849,30 +845,92 @@
                             @endphp
 
                             <div class="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
-                                <div class="xl:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                                    <div class="flex items-center justify-between mb-5">
-                                        <h2 class="text-lg font-semibold text-gray-800">تعداد مددجویان بر اساس ماه تولد</h2>
-                                        <span class="text-xs text-gray-500">فروردین تا اسفند</span>
-                                    </div>
+                                <div class="xl:col-span-2 overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+                                    @php
+                                        $birthMonthMax = max(1, (int) $birthMonthChart->max('count'));
+                                        $birthMonthPeakMonth = $birthMonthTotal > 0 ? ($birthMonthChart->sortByDesc('count')->first()['month'] ?? null) : null;
+                                    @endphp
 
-                                    <div class="rounded-xl border border-indigo-100 bg-indigo-50/30 p-4">
-                                        <div class="h-72 flex items-end gap-1 md:gap-2 pb-2 overflow-x-auto xl:overflow-x-hidden">
-                                        @foreach($birthMonthChart as $monthData)
-                                            @php
-                                                $heightPercentage = round(($monthData['count'] / $maxBirthMonthCount) * 100, 2);
-                                            @endphp
-                                                <div class="min-w-[44px] xl:min-w-0 xl:flex-1 flex flex-col items-center justify-end h-full">
-                                                    <p class="mb-2 text-xs font-bold text-indigo-700">{{ number_format($monthData['count']) }}</p>
-                                                    <div
-                                                        class="w-8 md:w-9 xl:w-full rounded-t-md bg-gradient-to-t from-indigo-600 via-indigo-500 to-indigo-400 shadow-[0_10px_24px_-18px_rgba(99,102,241,0.45)] transition-all duration-300"
-                                                        style="height: {{ max($heightPercentage, $monthData['count'] > 0 ? 4 : 0) }}%;"
-                                                        title="{{ $monthData['count'] }} نفر"
-                                                    ></div>
-                                                    <p class="mt-2 text-[11px] text-gray-700 text-center whitespace-nowrap">{{ $monthData['label'] }}</p>
-                                                </div>
-                                        @endforeach
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="flex items-center gap-3">
+                                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100/80 text-indigo-600 ring-1 ring-indigo-200/60">
+                                                <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/>
+                                                </svg>
+                                            </span>
+                                            <div>
+                                                <h2 class="text-sm font-bold text-slate-800 sm:text-base">تعداد مددجویان بر اساس ماه تولد</h2>
+                                                <p class="mt-0.5 text-[11px] text-slate-400">توزیع تولدها در ۱۲ ماه شمسی</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex shrink-0 flex-col items-end gap-1">
+                                            <span class="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-bold tabular-nums text-indigo-700 ring-1 ring-indigo-100">
+                                                {{ number_format($birthMonthTotal) }} مددجو با ماه تولد
+                                            </span>
+                                            @if($birthMonthUnknown > 0)
+                                                <span class="text-[10px] font-medium text-slate-400">+ {{ number_format($birthMonthUnknown) }} بدون ثبت ماه تولد</span>
+                                            @endif
                                         </div>
                                     </div>
+
+                                    @if($birthMonthTotal === 0)
+                                        <div class="mt-4 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
+                                            <p class="text-sm font-medium text-slate-500">هنوز مددجویی با ماه تولد ثبت‌شده وجود ندارد.</p>
+                                            <p class="mt-1 text-xs text-slate-400">با تکمیل تاریخ تولد در پرونده‌ها، این نمودار فعال می‌شود.</p>
+                                        </div>
+                                    @else
+                                        {{-- نمودار ستونی (دسکتاپ): ماه اوج با گرادیان پررنگ‌تر و تولتیپ سهم در هاور --}}
+                                        <div class="mt-5 hidden md:block">
+                                            <div class="relative flex h-60 items-end gap-2 rounded-t-xl border-b-2 border-slate-200 bg-gradient-to-b from-slate-50/80 to-white px-4">
+                                                <div class="pointer-events-none absolute inset-x-4 inset-y-0 flex flex-col justify-between" aria-hidden="true">
+                                                    <span class="border-t border-dashed border-slate-200"></span>
+                                                    <span class="border-t border-dashed border-slate-200"></span>
+                                                    <span class="border-t border-dashed border-slate-200"></span>
+                                                </div>
+                                                @foreach($birthMonthChart as $monthData)
+                                                    @php
+                                                        $isPeakMonth = $monthData['month'] === $birthMonthPeakMonth;
+                                                        $monthShare = $birthMonthTotal > 0 ? (int) round($monthData['count'] * 100 / $birthMonthTotal) : 0;
+                                                        $barHeight = $monthData['count'] > 0 ? max(5, (int) round($monthData['count'] * 100 / $birthMonthMax)) : 2;
+                                                    @endphp
+                                                    <div class="group/bar relative flex h-full min-w-0 flex-1 cursor-default flex-col items-center justify-end">
+                                                        <div class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-800 px-2 py-1 text-[10px] font-bold text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/bar:opacity-100">
+                                                            {{ number_format($monthData['count']) }} نفر — {{ $monthShare }}٪
+                                                        </div>
+                                                        <p class="mb-1.5 text-[11px] font-bold tabular-nums {{ $isPeakMonth ? 'text-indigo-700' : ($monthData['count'] > 0 ? 'text-slate-500' : 'text-slate-300') }}">{{ number_format($monthData['count']) }}</p>
+                                                        <div
+                                                            class="w-full max-w-[34px] rounded-t-lg transition-all duration-300 {{ $isPeakMonth ? 'bg-gradient-to-t from-indigo-700 via-indigo-500 to-indigo-300 shadow-[0_-8px_18px_-12px_rgba(79,70,229,0.65)]' : 'bg-gradient-to-t from-indigo-400/90 via-indigo-300/70 to-indigo-200/50 group-hover/bar:from-indigo-600 group-hover/bar:via-indigo-500 group-hover/bar:to-indigo-300' }}"
+                                                            style="height: {{ $barHeight }}%;"
+                                                        ></div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                            <div class="mt-2 flex gap-2 px-4">
+                                                @foreach($birthMonthChart as $monthData)
+                                                    <div class="flex min-w-0 flex-1 justify-center">
+                                                        <span class="truncate text-[10px] {{ $monthData['month'] === $birthMonthPeakMonth ? 'font-bold text-indigo-700' : 'font-medium text-slate-500' }}">{{ $monthData['label'] }}</span>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+
+                                        {{-- لیست افقی (موبایل): بدون اسکرول افقی، خوانا در ۳۶۰px --}}
+                                        <div class="mt-4 space-y-2 md:hidden">
+                                            @foreach($birthMonthChart as $monthData)
+                                                @php
+                                                    $isPeakMonth = $monthData['month'] === $birthMonthPeakMonth;
+                                                    $lineWidth = $monthData['count'] > 0 ? max(10, (int) round($monthData['count'] * 100 / $birthMonthMax)) : 0;
+                                                @endphp
+                                                <div class="flex items-center gap-2">
+                                                    <span class="w-14 shrink-0 text-[11px] {{ $isPeakMonth ? 'font-bold text-indigo-700' : 'font-medium text-slate-500' }}">{{ $monthData['label'] }}</span>
+                                                    <div class="h-5 flex-1 overflow-hidden rounded-lg bg-slate-100">
+                                                        <div class="h-full rounded-lg {{ $isPeakMonth ? 'bg-gradient-to-l from-indigo-700 to-indigo-400' : 'bg-gradient-to-l from-indigo-400/80 to-indigo-300/60' }}" style="width: {{ $lineWidth }}%;"></div>
+                                                    </div>
+                                                    <span class="w-9 shrink-0 text-end text-[11px] font-bold tabular-nums {{ $monthData['count'] > 0 ? 'text-slate-700' : 'text-slate-300' }}">{{ number_format($monthData['count']) }}</span>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 </div>
 
                                 <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">

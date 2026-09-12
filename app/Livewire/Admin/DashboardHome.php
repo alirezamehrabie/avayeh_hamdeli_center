@@ -358,8 +358,13 @@ class DashboardHome extends Component
     {
         $isOverview = $this->activeSection === 'overview';
         $birthMonthChart = collect();
+        $totalPeople = 0;
+        $birthMonthTotal = 0;
+        $birthMonthUnknown = 0;
 
         if ($isOverview) {
+            $totalPeople = Person::count();
+
             $monthCounts = Person::query()
                 ->selectRaw('birth_month, COUNT(*) as total')
                 ->whereBetween('birth_month', [1, 12])
@@ -375,6 +380,9 @@ class DashboardHome extends Component
                     ];
                 })
                 ->values();
+
+            $birthMonthTotal = (int) $monthCounts->sum();
+            $birthMonthUnknown = max(0, $totalPeople - $birthMonthTotal);
         }
 
         $reminders = $isOverview
@@ -385,7 +393,7 @@ class DashboardHome extends Component
             : collect();
 
         return view('livewire.admin.dashboard-home', [
-            'totalPeople' => $isOverview ? Person::count() : 0,
+            'totalPeople' => $totalPeople,
             'totalCenterMembers' => $isOverview ? (int) Guardian::query()->sum('children_in_house') : 0,
             'totalSocialWorkers' => $isOverview ? SocialWorker::count() : 0,
             'maleCount' => $isOverview ? Person::where('gender', 'male')->count() : 0,
@@ -398,6 +406,8 @@ class DashboardHome extends Component
                 ? Person::with(['guardian.socialWorker'])->latest()->take(8)->get()
                 : collect(),
             'birthMonthChart' => $birthMonthChart,
+            'birthMonthTotal' => $birthMonthTotal,
+            'birthMonthUnknown' => $birthMonthUnknown,
             'reminders' => $reminders,
             'editingPerson' => $this->editingPersonId ? Person::find($this->editingPersonId) : null,
             'editingSocialWorker' => $this->editingSocialWorkerId ? SocialWorker::find($this->editingSocialWorkerId) : null,
