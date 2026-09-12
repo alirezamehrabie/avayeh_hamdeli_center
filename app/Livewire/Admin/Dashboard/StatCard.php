@@ -9,8 +9,9 @@ class StatCard extends Component
     public $title;
     public $value;
     public $suffix = '';
+    public $caption = '';
     public $icon;
-    public $color; // مثلا: blue, green, red, yellow
+    public $color; // مثلا: indigo, sky, emerald, violet
     public array $badges = [];
 
     public function render()

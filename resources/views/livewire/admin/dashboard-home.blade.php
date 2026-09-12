@@ -684,19 +684,28 @@
 
                     @default
                         <div>
-                            <h1 class="text-2xl font-bold text-gray-800 mb-6">خلاصه وضعیت مرکز نیکوکاری</h1>
+                            {{-- سربرگ بخش نمای کلی: هماهنگ با نوار رنگی کارت‌های آمار و میان‌برها --}}
+                            <div class="mb-3 flex items-center gap-2.5 sm:mb-4">
+                                <span class="h-7 w-1 shrink-0 rounded-full bg-gradient-to-b from-indigo-500 via-indigo-400 to-indigo-200 sm:h-8" aria-hidden="true"></span>
+                                <h1 class="min-w-0 truncate text-base font-extrabold tracking-tight text-slate-800 sm:text-lg">خلاصه وضعیت مرکز نیکوکاری</h1>
+                                <span class="ms-auto hidden shrink-0 text-[11px] font-medium text-slate-400 sm:block">نمای کلی پرونده‌ها و نیروی انسانی</span>
+                            </div>
 
-                            <div class="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
+                            <div class="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 lg:gap-4">
                                 <livewire:admin.dashboard.stat-card
                                     title="کل اعضای مرکز"
-                                    :value="$totalCenterMembers . ' نفر '"
-                                    color="blue"
-                                    icon="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    caption="آمار تجمیعی"
+                                    :value="$totalCenterMembers"
+                                    suffix="نفر"
+                                    color="indigo"
+                                    icon="M2.25 12l8.954-8.955c.44-.44 1.152-.44 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75"/>
 
                                 <livewire:admin.dashboard.stat-card
                                     title="کودک"
-                                    :value="$totalPeople . ' نفر '"
-                                    color="blue"
+                                    caption="مددجویان"
+                                    :value="$totalPeople"
+                                    suffix="نفر"
+                                    color="sky"
                                     :badges="[
                                         ['label' => 'دختر', 'value' => $femaleCount, 'color' => 'rose'],
                                         ['label' => 'پسر', 'value' => $maleCount, 'color' => 'sky'],
@@ -705,14 +714,18 @@
 
                                 <livewire:admin.dashboard.stat-card
                                     title="سرپرست فعال"
-                                    :value="$guardianCount  . ' خانوار '"
-                                    color="blue"
+                                    caption="خانوار تحت پوشش"
+                                    :value="$guardianCount"
+                                    suffix="خانوار"
+                                    color="emerald"
                                     icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
 
                                 <livewire:admin.dashboard.stat-card
                                     title="مددکار فعال"
-                                    :value="$totalSocialWorkers  . ' نفر '"
-                                    color="blue"
+                                    caption="مشغول به خدمت"
+                                    :value="$totalSocialWorkers"
+                                    suffix="نفر"
+                                    color="violet"
                                     icon="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                             </div>
 
