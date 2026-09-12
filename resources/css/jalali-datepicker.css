@@ -1,0 +1,390 @@
+/*
+ * Jalali datepicker theme (@majidh1/jalalidatepicker)
+ * ----------------------------------------------------
+ * Visual-only restyle of the picker popup so it matches the site design
+ * system (emerald accent, slate neutrals, rounded-2xl, iransans).
+ * Imported in app.js AFTER the library's own stylesheet so these rules
+ * win the cascade; no markup, option, or behavior changes.
+ */
+
+/* ── Popup frame ─────────────────────────────────────────────────────────── */
+jdp-container {
+    min-width: 320px;
+    max-width: 320px;
+    padding: 0.75rem;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    box-shadow:
+        0 10px 15px -3px rgb(15 23 42 / 0.08),
+        0 4px 6px -4px rgb(15 23 42 / 0.06);
+}
+
+/* ── Header: month & year pills ──────────────────────────────────────────── */
+jdp-container .jdp-years,
+jdp-container .jdp-months {
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.25rem;
+    margin: 0 0 0.5rem;
+    padding: 0.25rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    color: #1e293b;
+    fill: #334155;
+}
+
+jdp-container .jdp-months {
+    width: 52%;
+}
+
+jdp-container .jdp-years {
+    width: 44%;
+    /* RTL: years sits on the right; this opens the gap between the two pills */
+    margin-inline-end: 4%;
+}
+
+jdp-container .jdp-year,
+jdp-container .jdp-month {
+    font-weight: 700;
+}
+
+jdp-container .jdp-year select,
+jdp-container .jdp-month select {
+    border-radius: 0.5rem;
+    padding: 0.25rem 0.125rem;
+    background: transparent;
+    color: inherit;
+    font-weight: 700;
+    font-size: 0.95rem;
+    transition: background-color 0.15s ease;
+}
+
+jdp-container .jdp-year select:hover,
+jdp-container .jdp-month select:hover {
+    background: #e2e8f0;
+}
+
+jdp-container .jdp-year:hover,
+jdp-container .jdp-month:hover {
+    filter: none;
+}
+
+/* Prev / next month & year arrows */
+jdp-container .jdp-icon-plus,
+jdp-container .jdp-icon-minus {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    background: #fff;
+    color: #64748b;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+jdp-container .jdp-icon-plus svg,
+jdp-container .jdp-icon-minus svg {
+    width: 1rem;
+    height: 1rem;
+    padding: 0;
+}
+
+jdp-container .jdp-icon-plus:hover,
+jdp-container .jdp-icon-minus:hover {
+    background: #ecfdf5;
+    border-color: #6ee7b7;
+    color: #047857;
+}
+
+jdp-container .jdp-icon-plus:active,
+jdp-container .jdp-icon-minus:active {
+    background: #d1fae5;
+}
+
+jdp-container .jdp-icon-plus.not-in-range,
+jdp-container .jdp-icon-minus.not-in-range {
+    background: #f8fafc;
+    border-color: #f1f5f9;
+}
+
+jdp-container .jdp-icon-plus.not-in-range:hover,
+jdp-container .jdp-icon-minus.not-in-range:hover {
+    background: #f8fafc;
+    border-color: #f1f5f9;
+    color: #64748b;
+}
+
+/* ── Weekday names ───────────────────────────────────────────────────────── */
+jdp-container .jdp-days {
+    padding: 0.25rem 0 0;
+}
+
+jdp-container .jdp-day-name {
+    height: 2rem;
+    line-height: 2rem;
+    margin: 0 0 0.25rem;
+    background: none;
+    border-radius: 0;
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+jdp-container .jdp-day-name.last-week,
+jdp-container .jdp-day-name.holly-day {
+    color: #e11d48;
+}
+
+/* ── Day cells ───────────────────────────────────────────────────────────── */
+jdp-container .jdp-day {
+    height: 2.5rem;
+    line-height: 2.5rem;
+    margin: 1px 0;
+    border: 1px solid transparent;
+    border-radius: 0.75rem;
+    color: #334155;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+jdp-container .jdp-day:not(.disabled-day) {
+    border-radius: 0.75rem;
+    transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+jdp-container .jdp-day:not(.disabled-day):hover {
+    background: #f1f5f9;
+    transform: none;
+    z-index: auto;
+}
+
+jdp-container .jdp-day:not(.disabled-day):focus-visible {
+    outline: 2px solid #34d399;
+    outline-offset: -2px;
+}
+
+/* Today — quiet emerald ring, distinct from the solid selected fill */
+jdp-container .jdp-day.today {
+    border-color: #6ee7b7;
+    background: #ecfdf5;
+    color: #047857;
+    font-weight: 700;
+}
+
+jdp-container .jdp-day.today:not(.disabled-day):hover {
+    background: #d1fae5;
+}
+
+/* Selected — site primary (emerald), matches the trigger's focus accent */
+jdp-container .jdp-day.selected {
+    background-color: #059669 !important;
+    border-color: #059669 !important;
+    color: #fff !important;
+    font-weight: 700;
+    box-shadow: 0 4px 10px -3px rgb(5 150 105 / 0.5);
+}
+
+jdp-container .jdp-day.selected:not(.disabled-day):hover {
+    background-color: #047857 !important;
+    border-color: #047857 !important;
+}
+
+/* Fridays & holidays — softer rose instead of the library's red */
+jdp-container .jdp-day.last-week,
+jdp-container .jdp-day.holly-day {
+    color: #e11d48;
+}
+
+jdp-container .jdp-day.last-week.selected,
+jdp-container .jdp-day.holly-day.selected {
+    color: #fff !important;
+}
+
+jdp-container .jdp-day.not-in-month {
+    opacity: 0.25;
+}
+
+jdp-container .jdp-day.disabled-day {
+    opacity: 0.35;
+    color: #94a3b8;
+}
+
+/* ── Time selects ────────────────────────────────────────────────────────── */
+jdp-container .jdp-time-container {
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.25rem 0;
+    border-top: 1px dashed #e2e8f0;
+}
+
+jdp-container .jdp-time-container .jdp-time select {
+    padding: 0.4rem 0.75rem 0.4rem 0.5rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.625rem;
+    color: #1e293b;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+jdp-container .jdp-time-container .jdp-time select:hover {
+    background: #f1f5f9;
+}
+
+jdp-container .jdp-time-container .jdp-time select:focus {
+    border-color: #6ee7b7;
+    background: #fff;
+    outline: none;
+    box-shadow: 0 0 0 3px rgb(209 250 229 / 0.8);
+}
+
+jdp-container .jdp-time-container .jdp-time:after {
+    color: #94a3b8;
+    font-size: 1.15rem;
+    font-weight: 700;
+    right: -0.6rem;
+}
+
+/* ── Footer buttons ──────────────────────────────────────────────────────── */
+jdp-container .jdp-footer {
+    gap: 0.375rem;
+    margin-top: 0.5rem;
+    padding: 0.625rem 0 0;
+    border-top: 1px solid #f1f5f9;
+}
+
+jdp-container .jdp-btn-today,
+jdp-container .jdp-btn-empty,
+jdp-container .jdp-btn-close {
+    min-height: 2.25rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.25;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+jdp-container .jdp-btn-today {
+    background: #059669;
+    color: #fff;
+}
+
+jdp-container .jdp-btn-today:hover {
+    background: #047857;
+}
+
+jdp-container .jdp-btn-empty,
+jdp-container .jdp-btn-close {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+}
+
+jdp-container .jdp-btn-empty:hover,
+jdp-container .jdp-btn-close:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #1e293b;
+}
+
+jdp-container .jdp-btn-today.disabled-btn,
+jdp-container .jdp-btn-empty.disabled-btn,
+jdp-container .jdp-btn-close.disabled-btn {
+    opacity: 0.45;
+}
+
+/* Injected «تأیید» confirm button (Bootstrap .btn-primary) — align with footer */
+jdp-container .jdp-footer .btn-primary {
+    min-height: 2.25rem;
+    padding: 0.4rem 0.85rem;
+    border: 1px solid #059669;
+    border-radius: 0.75rem;
+    background: #059669;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.25;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+jdp-container .jdp-footer .btn-primary:hover,
+jdp-container .jdp-footer .btn-primary:focus {
+    background: #047857;
+    border-color: #047857;
+    color: #fff;
+    box-shadow: 0 0 0 3px rgb(209 250 229 / 0.8);
+}
+
+/* ── Mobile (library bottom-sheet breakpoint) ────────────────────────────── */
+jdp-overlay {
+    background-color: rgb(15 23 42 / 0.4);
+}
+
+@media only screen and (max-width: 481px) {
+    /* Full-bleed sheet: the global scrollbar-gutter reserves ~15px of the
+       viewport, so 100% would leave a strip of overlay beside the sheet.
+       Pin to the viewport edges instead of the library's centered placement. */
+    jdp-overlay {
+        width: 100vw;
+    }
+
+    jdp-container {
+        left: 0 !important;
+        transform: none !important;
+        width: 100vw !important;
+        max-width: 100vw;
+        min-width: 0;
+        padding: 0.75rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom));
+        border: 0;
+        border-radius: 1.25rem 1.25rem 0 0;
+        box-shadow: 0 -12px 32px -8px rgb(15 23 42 / 0.25);
+    }
+
+    /* Bottom-sheet grabber */
+    jdp-container::before {
+        content: "";
+        display: block;
+        width: 2.5rem;
+        height: 0.25rem;
+        margin: 0 auto 0.5rem;
+        border-radius: 9999px;
+        background: #e2e8f0;
+    }
+
+    jdp-container .jdp-day {
+        height: 2.75rem;
+        line-height: 2.75rem;
+        margin: 2px 0;
+        font-size: 0.95rem;
+    }
+
+    jdp-container .jdp-day-name {
+        height: 2.25rem;
+        line-height: 2.25rem;
+    }
+
+    jdp-container .jdp-icon-plus,
+    jdp-container .jdp-icon-minus {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+
+    jdp-container .jdp-footer {
+        margin: 0.5rem 0 0;
+    }
+
+    jdp-container .jdp-btn-today,
+    jdp-container .jdp-btn-empty,
+    jdp-container .jdp-btn-close,
+    jdp-container .jdp-footer .btn-primary {
+        min-height: 2.75rem;
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+    }
+}

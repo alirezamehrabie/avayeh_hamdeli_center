@@ -2,6 +2,7 @@ import './bootstrap';
 import 'bootstrap/dist/js/bootstrap.min.js';
 import * as bootstrap from 'bootstrap';
 import '@majidh1/jalalidatepicker/dist/jalalidatepicker.min.css';
+import '../css/jalali-datepicker.css';
 import '@majidh1/jalalidatepicker';
 import { attendanceResultBanner, createAttendanceResultBannerState } from './attendance-result-banner';
 import { deliveryReceipt } from './delivery-receipt';
