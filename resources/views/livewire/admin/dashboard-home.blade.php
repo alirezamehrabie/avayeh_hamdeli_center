@@ -729,113 +729,141 @@
                                     icon="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                             </div>
 
-                            <div class="mt-4 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm">
-                                <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                                    <div>
-                                        <p class="text-xs font-semibold tracking-[0.16em] text-slate-400">دسترسی سریع</p>
-                                    </div>
+                            <div class="mt-4 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-5">
+                                @php
+                                    /**
+                                     * پالت رنگ میان‌برها به‌صورت رشته‌های کامل و ثابت نوشته شده است تا
+                                     * Tailwind آن‌ها را در بیلد اسکن کند (هماهنگ با پالت کارت‌های آمار).
+                                     */
+                                    $shortcutPalettes = [
+                                        'sky' => [
+                                            'wash' => 'bg-gradient-to-bl from-sky-50/80 via-white to-white',
+                                            'bar' => 'bg-gradient-to-b from-sky-500 via-sky-400 to-sky-200',
+                                            'icon' => 'bg-sky-100/80 text-sky-600 ring-sky-200/60',
+                                            'hover' => 'hover:ring-sky-200 focus:ring-sky-100',
+                                            'hoverText' => 'group-hover:text-sky-700',
+                                        ],
+                                        'cyan' => [
+                                            'wash' => 'bg-gradient-to-bl from-cyan-50/80 via-white to-white',
+                                            'bar' => 'bg-gradient-to-b from-cyan-500 via-cyan-400 to-cyan-200',
+                                            'icon' => 'bg-cyan-100/80 text-cyan-600 ring-cyan-200/60',
+                                            'hover' => 'hover:ring-cyan-200 focus:ring-cyan-100',
+                                            'hoverText' => 'group-hover:text-cyan-700',
+                                        ],
+                                        'amber' => [
+                                            'wash' => 'bg-gradient-to-bl from-amber-50/80 via-white to-white',
+                                            'bar' => 'bg-gradient-to-b from-amber-500 via-amber-400 to-amber-200',
+                                            'icon' => 'bg-amber-100/80 text-amber-600 ring-amber-200/60',
+                                            'hover' => 'hover:ring-amber-200 focus:ring-amber-100',
+                                            'hoverText' => 'group-hover:text-amber-700',
+                                        ],
+                                        'rose' => [
+                                            'wash' => 'bg-gradient-to-bl from-rose-50/80 via-white to-white',
+                                            'bar' => 'bg-gradient-to-b from-rose-500 via-rose-400 to-rose-200',
+                                            'icon' => 'bg-rose-100/80 text-rose-600 ring-rose-200/60',
+                                            'hover' => 'hover:ring-rose-200 focus:ring-rose-100',
+                                            'hoverText' => 'group-hover:text-rose-700',
+                                        ],
+                                        'emerald' => [
+                                            'wash' => 'bg-gradient-to-bl from-emerald-50/80 via-white to-white',
+                                            'bar' => 'bg-gradient-to-b from-emerald-500 via-emerald-400 to-emerald-200',
+                                            'icon' => 'bg-emerald-100/80 text-emerald-600 ring-emerald-200/60',
+                                            'hover' => 'hover:ring-emerald-200 focus:ring-emerald-100',
+                                            'hoverText' => 'group-hover:text-emerald-700',
+                                        ],
+                                        'indigo' => [
+                                            'wash' => 'bg-gradient-to-bl from-indigo-50/80 via-white to-white',
+                                            'bar' => 'bg-gradient-to-b from-indigo-500 via-indigo-400 to-indigo-200',
+                                            'icon' => 'bg-indigo-100/80 text-indigo-600 ring-indigo-200/60',
+                                            'hover' => 'hover:ring-indigo-200 focus:ring-indigo-100',
+                                            'hoverText' => 'group-hover:text-indigo-700',
+                                        ],
+                                    ];
+
+                                    $quickAccessShortcuts = [
+                                        [
+                                            'label' => 'ثبت مددجو',
+                                            'caption' => 'ثبت سریع',
+                                            'section' => 'people-fast-create',
+                                            'color' => 'sky',
+                                            'gate' => null,
+                                            'icon' => 'M12 4v16m8-8H4',
+                                        ],
+                                        [
+                                            'label' => 'تحویل خدمت',
+                                            'caption' => 'عملیات روزانه',
+                                            'section' => 'service-delivery',
+                                            'color' => 'cyan',
+                                            'gate' => null,
+                                            'icon' => 'M4 7h16M7 12h10M9 17h6',
+                                        ],
+                                        [
+                                            'label' => 'ثبت فعالیت',
+                                            'caption' => 'تعریف برنامه',
+                                            'section' => 'activity-definition',
+                                            'color' => 'amber',
+                                            'gate' => 'full-access',
+                                            'icon' => 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
+                                        ],
+                                        [
+                                            'label' => 'ثبت حامی',
+                                            'caption' => 'حامی کودک',
+                                            'section' => 'child-supporter-sponsor-registration',
+                                            'color' => 'rose',
+                                            'gate' => 'full-access',
+                                            'icon' => 'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z',
+                                        ],
+                                        [
+                                            'label' => 'اسکن کارت',
+                                            'caption' => 'شناسایی سریع',
+                                            'section' => 'special-features-id-card-scanner',
+                                            'color' => 'emerald',
+                                            'gate' => null,
+                                            'icon' => 'M4 7V6a2 2 0 012-2h1M20 7V6a2 2 0 00-2-2h-1M4 17v1a2 2 0 002 2h1M20 17v1a2 2 0 01-2 2h-1M7 12h10',
+                                        ],
+                                        [
+                                            'label' => 'گزارش پیشرفته',
+                                            'caption' => 'تحلیل مددجویان',
+                                            'section' => 'advanced-beneficiary-report',
+                                            'color' => 'indigo',
+                                            'gate' => null,
+                                            'icon' => 'M9 17v-6m4 6V7m4 10v-3M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z',
+                                        ],
+                                    ];
+                                @endphp
+
+                                {{-- سربرگ: هماهنگ با الگوی نوار رنگی سربرگ بخش‌ها --}}
+                                <div class="flex items-center gap-2.5">
+                                    <span class="h-6 w-1 shrink-0 rounded-full bg-gradient-to-b from-indigo-500 via-indigo-400 to-indigo-200" aria-hidden="true"></span>
+                                    <h2 class="text-sm font-bold text-slate-800 sm:text-base">دسترسی سریع</h2>
+                                    <span class="ms-auto hidden shrink-0 text-[11px] font-medium text-slate-400 sm:block">میان‌برهای عملیاتی روزانه</span>
                                 </div>
 
-                                <div class="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
-                                    <button
-                                        type="button"
-                                        wire:click="selectSection('people-fast-create')"
-                                        class="group inline-flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-right transition duration-200 hover:border-sky-200 hover:bg-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-100"
-                                    >
-                                        <span>
-                                            <span class="block text-sm font-semibold text-slate-800">ثبت مددجو</span>
-                                            <span class="mt-1 block text-[11px] text-slate-500">ثبت سریع</span>
-                                        </span>
-                                        <span class="mr-3 rounded-lg bg-sky-100 p-2 text-sky-700 transition group-hover:bg-sky-200">
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v16m8-8H4"></path>
-                                            </svg>
-                                        </span>
-                                    </button>
+                                <div class="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6 sm:gap-3">
+                                    @foreach($quickAccessShortcuts as $shortcut)
+                                        @if(empty($shortcut['gate']) || auth()->user()->can($shortcut['gate']))
+                                            @php $palette = $shortcutPalettes[$shortcut['color']]; @endphp
+                                            <button
+                                                type="button"
+                                                wire:click="selectSection('{{ $shortcut['section'] }}')"
+                                                aria-label="{{ $shortcut['label'] }} — {{ $shortcut['caption'] }}"
+                                                class="group relative flex h-full items-center gap-2.5 overflow-hidden rounded-2xl p-3 text-right shadow-sm ring-1 ring-slate-200/70 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 {{ $palette['wash'] }} {{ $palette['hover'] }}"
+                                            >
+                                                {{-- نوار رنگی عمودی ابتدای کارت (سمت راست در RTL) --}}
+                                                <span class="absolute inset-y-0 right-0 w-1 {{ $palette['bar'] }}" aria-hidden="true"></span>
 
-                                    <button
-                                        type="button"
-                                        wire:click="selectSection('service-delivery')"
-                                        class="group inline-flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-right transition duration-200 hover:border-cyan-200 hover:bg-cyan-50 focus:outline-none focus:ring-4 focus:ring-cyan-100"
-                                    >
-                                        <span>
-                                            <span class="block text-sm font-semibold text-slate-800">تحویل خدمت</span>
-                                            <span class="mt-1 block text-[11px] text-slate-500">عملیات روزانه</span>
-                                        </span>
-                                        <span class="mr-3 rounded-lg bg-cyan-100 p-2 text-cyan-700 transition group-hover:bg-cyan-200">
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7h16M7 12h10M9 17h6"></path>
-                                            </svg>
-                                        </span>
-                                    </button>
-
-                                    @can('full-access')
-                                    <button
-                                        type="button"
-                                        wire:click="selectSection('activity-definition')"
-                                        class="group inline-flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-right transition duration-200 hover:border-amber-200 hover:bg-amber-50 focus:outline-none focus:ring-4 focus:ring-amber-100"
-                                    >
-                                        <span>
-                                            <span class="block text-sm font-semibold text-slate-800">ثبت فعالیت</span>
-                                            <span class="mt-1 block text-[11px] text-slate-500">تعریف برنامه</span>
-                                        </span>
-                                        <span class="mr-3 rounded-lg bg-amber-100 p-2 text-amber-700 transition group-hover:bg-amber-200">
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                            </svg>
-                                        </span>
-                                    </button>
-                                    @endcan
-
-                                    @can('full-access')
-                                    <button
-                                        type="button"
-                                        wire:click="selectSection('child-supporter-sponsor-registration')"
-                                        class="group inline-flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-right transition duration-200 hover:border-rose-200 hover:bg-rose-50 focus:outline-none focus:ring-4 focus:ring-rose-100"
-                                    >
-                                        <span>
-                                            <span class="block text-sm font-semibold text-slate-800">ثبت حامی</span>
-                                            <span class="mt-1 block text-[11px] text-slate-500">حامی کودک</span>
-                                        </span>
-                                        <span class="mr-3 rounded-lg bg-rose-100 p-2 text-rose-700 transition group-hover:bg-rose-200">
-                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                                            </svg>
-                                        </span>
-                                    </button>
-                                    @endcan
-
-                                    <button
-                                        type="button"
-                                        wire:click="selectSection('special-features-id-card-scanner')"
-                                        class="group inline-flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-right transition duration-200 hover:border-emerald-200 hover:bg-emerald-50 focus:outline-none focus:ring-4 focus:ring-emerald-100"
-                                    >
-                                        <span>
-                                            <span class="block text-sm font-semibold text-slate-800">اسکن کارت</span>
-                                            <span class="mt-1 block text-[11px] text-slate-500">شناسایی سریع</span>
-                                        </span>
-                                        <span class="mr-3 rounded-lg bg-emerald-100 p-2 text-emerald-700 transition group-hover:bg-emerald-200">
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7V6a2 2 0 012-2h1M20 7V6a2 2 0 00-2-2h-1M4 17v1a2 2 0 002 2h1M20 17v1a2 2 0 01-2 2h-1M7 12h10"></path>
-                                            </svg>
-                                        </span>
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        wire:click="selectSection('advanced-beneficiary-report')"
-                                        class="group inline-flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-right transition duration-200 hover:border-indigo-200 hover:bg-indigo-50 focus:outline-none focus:ring-4 focus:ring-indigo-100"
-                                    >
-                                        <span>
-                                            <span class="block text-sm font-semibold text-slate-800">گزارش پیشرفته</span>
-                                            <span class="mt-1 block text-[11px] text-slate-500">تحلیل مددجویان</span>
-                                        </span>
-                                        <span class="mr-3 rounded-lg bg-indigo-100 p-2 text-indigo-700 transition group-hover:bg-indigo-200">
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 17v-6m4 6V7m4 10v-3M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                                            </svg>
-                                        </span>
-                                    </button>
+                                                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ring-1 transition-transform duration-300 group-hover:scale-105 {{ $palette['icon'] }}">
+                                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="{{ $shortcut['icon'] }}"></path>
+                                                    </svg>
+                                                </span>
+                                                <span class="min-w-0 flex-1">
+                                                    <span class="block truncate text-xs font-bold text-slate-800 transition-colors duration-300 sm:text-sm {{ $palette['hoverText'] }}">{{ $shortcut['label'] }}</span>
+                                                    <span class="mt-0.5 block truncate text-[10px] font-medium text-slate-400 sm:text-[11px]">{{ $shortcut['caption'] }}</span>
+                                                </span>
+                                            </button>
+                                        @endif
+                                    @endforeach
                                 </div>
                             </div>
 
