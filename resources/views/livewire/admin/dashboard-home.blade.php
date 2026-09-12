@@ -137,6 +137,12 @@
         style="display: none;"
     ></div>
 
+    @php
+        $openReminders = $reminders->where('is_done', false);
+        $doneReminders = $reminders->where('is_done', true);
+        $reminderProgressPercent = $reminders->isEmpty() ? 0 : (int) round($doneReminders->count() * 100 / $reminders->count());
+    @endphp
+
     <aside
         x-show="reminderDrawerOpen"
         x-transition:enter="transition ease-out duration-250"
@@ -150,16 +156,23 @@
         class="fixed inset-y-0 left-0 z-50 flex w-full max-w-md flex-col border-r border-slate-200 bg-white shadow-2xl"
         style="display: none;"
     >
-        <div class="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
-            <div>
-                <p class="text-xs font-semibold tracking-[0.16em] text-slate-400">فضای شخصی</p>
-                <h2 class="mt-1 text-lg font-semibold text-slate-800">یادآوری‌های من</h2>
-                <p class="mt-1 text-sm text-slate-500">مدیریت کارهای شخصی بدون شلوغ‌کردن داشبورد اصلی</p>
+        {{-- سربرگ: هماهنگ با چیپ آیکون کارت «یادآوری‌ها» در نمای کلی --}}
+        <div class="flex items-center justify-between gap-4 border-b border-slate-100 px-5 py-4">
+            <div class="flex min-w-0 items-center gap-3">
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100/80 text-amber-600 ring-1 ring-amber-200/60">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9a6 6 0 00-12 0v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>
+                    </svg>
+                </span>
+                <div class="min-w-0">
+                    <p class="text-xs font-semibold tracking-[0.16em] text-slate-400">فضای شخصی</p>
+                    <h2 class="mt-0.5 truncate text-lg font-bold text-slate-800">یادآوری‌های من</h2>
+                </div>
             </div>
             <button
                 type="button"
                 @click="closeReminderDrawer()"
-                class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-100"
+                class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-100"
                 aria-label="بستن یادآوری‌ها"
             >
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -169,15 +182,28 @@
         </div>
 
         <div class="flex-1 overflow-y-auto px-5 py-4">
-            <form wire:submit.prevent="addReminder" class="space-y-3">
+            @if($reminders->isNotEmpty())
+                {{-- نوار پیشرفت: درصد کارهای انجام‌شده --}}
+                <div class="mb-4 rounded-2xl bg-slate-50/80 p-3 ring-1 ring-slate-200/60">
+                    <div class="flex items-center justify-between gap-2 text-[11px]">
+                        <span class="font-semibold text-slate-500">پیشرفت کارها</span>
+                        <span class="font-bold tabular-nums text-emerald-600">{{ number_format($doneReminders->count()) }} از {{ number_format($reminders->count()) }} انجام شده</span>
+                    </div>
+                    <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-200/70" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $reminderProgressPercent }}">
+                        <div class="h-full rounded-full bg-gradient-to-l from-emerald-500 to-emerald-400 transition-all duration-500" style="width: {{ $reminderProgressPercent }}%;"></div>
+                    </div>
+                </div>
+            @endif
+
+            <form wire:submit.prevent="addReminder" class="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-3.5">
                 <div>
                     <label for="dashboard-reminder-title" class="mb-1 block text-xs font-semibold text-slate-500">متن یادآوری</label>
                     <input
                         id="dashboard-reminder-title"
                         type="text"
                         wire:model.defer="newReminderTitle"
-                        class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:ring focus:ring-indigo-100"
-                        placeholder="یادآوری جدید ثبت کنید..."
+                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 transition focus:border-indigo-300 focus:bg-white focus:ring focus:ring-indigo-100"
+                        placeholder="مثلاً: پیگیری پرونده خانوار ..."
                     >
                     @error('newReminderTitle')
                         <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -189,59 +215,66 @@
                     <select
                         id="dashboard-reminder-category"
                         wire:model.defer="newReminderCategory"
-                        class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:ring focus:ring-indigo-100"
+                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 transition focus:border-indigo-300 focus:bg-white focus:ring focus:ring-indigo-100"
                     >
-                        <option value="today_tasks">کارهای امروز</option>
-                        <option value="pending_approvals">موارد در انتظار تایید</option>
-                        <option value="contract_deadlines">سررسید قراردادها</option>
-                        <option value="required_reports">گزارش‌های مورد نیاز</option>
+                        @foreach($reminderCategories as $categoryKey => $categoryLabel)
+                            <option value="{{ $categoryKey }}">{{ $categoryLabel }}</option>
+                        @endforeach
                     </select>
                 </div>
 
                 <button
                     type="submit"
-                    class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                    class="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100"
                 >
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
+                    </svg>
                     افزودن یادآوری
                 </button>
             </form>
 
-            <div class="mt-6 space-y-2">
-                @forelse($reminders as $reminder)
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
-                        <div class="flex items-start justify-between gap-3">
-                            <button type="button" wire:click="toggleReminder({{ $reminder->id }})" class="flex-1 text-right">
-                                <p class="text-sm font-medium {{ $reminder->is_done ? 'text-slate-400 line-through' : 'text-slate-700' }}">
-                                    {{ $reminder->title }}
-                                </p>
-                                <p class="mt-1 text-[11px] {{ $reminder->is_done ? 'text-slate-400' : 'text-indigo-600' }}">
-                                    {{
-                                        match($reminder->category) {
-                                            'today_tasks' => 'کارهای امروز',
-                                            'pending_approvals' => 'در انتظار تایید',
-                                            'contract_deadlines' => 'سررسید قرارداد',
-                                            'required_reports' => 'گزارش مورد نیاز',
-                                        }
-                                    }}
-                                </p>
-                            </button>
+            {{-- لیست: بازها اول و سپس انجام‌شده‌ها (مرتب‌سازی از سمت کامپوننت) --}}
+            <div class="mt-5">
+                <div class="flex items-center justify-between gap-2">
+                    <p class="text-xs font-bold text-slate-600">یادآوری‌های باز</p>
+                    @if($openReminders->isNotEmpty())
+                        <span class="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold tabular-nums text-amber-700 ring-1 ring-amber-100">{{ number_format($openReminders->count()) }} مورد</span>
+                    @endif
+                </div>
 
-                            <div class="flex items-center gap-2">
-                                <span class="rounded-full px-2 py-1 text-[10px] font-semibold {{ $reminder->is_done ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">
-                                    {{ $reminder->is_done ? 'انجام شد' : 'باز' }}
-                                </span>
-                                <button type="button" wire:click="deleteReminder({{ $reminder->id }})" class="text-xs font-medium text-red-500 transition hover:text-red-700">
-                                    حذف
-                                </button>
+                <div class="mt-2 space-y-2">
+                    @forelse($openReminders as $reminder)
+                        @include('livewire.admin.dashboard.partials.reminder-row', ['reminder' => $reminder])
+                    @empty
+                        @if($reminders->isEmpty())
+                            <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center">
+                                <p class="text-sm font-semibold text-slate-500">هنوز یادآوری شخصی ثبت نکرده‌اید</p>
+                                <p class="mt-1 text-xs text-slate-400">با فرم بالا اولین یادآوری خود را اضافه کنید.</p>
                             </div>
-                        </div>
-                    </div>
-                @empty
-                    <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-center text-sm text-slate-500">
-                        هنوز یادآوری شخصی ثبت نشده است.
-                    </div>
-                @endforelse
+                        @else
+                            <div class="rounded-2xl border border-dashed border-emerald-200 bg-emerald-50/50 p-6 text-center">
+                                <p class="text-sm font-semibold text-emerald-700">همۀ یادآوری‌هایتان انجام شده است</p>
+                                <p class="mt-1 text-xs text-emerald-600/80">آفرین! می‌توانید یادآوری جدید اضافه کنید.</p>
+                            </div>
+                        @endif
+                    @endforelse
+                </div>
             </div>
+
+            @if($doneReminders->isNotEmpty())
+                <div class="mt-6">
+                    <div class="flex items-center justify-between gap-2">
+                        <p class="text-xs font-bold text-slate-600">انجام‌شده‌ها</p>
+                        <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold tabular-nums text-emerald-700 ring-1 ring-emerald-100">{{ number_format($doneReminders->count()) }} مورد</span>
+                    </div>
+                    <div class="mt-2 space-y-2">
+                        @foreach($doneReminders as $reminder)
+                            @include('livewire.admin.dashboard.partials.reminder-row', ['reminder' => $reminder])
+                        @endforeach
+                    </div>
+                </div>
+            @endif
         </div>
     </aside>
 
@@ -867,11 +900,6 @@
                                 </div>
                             </div>
 
-                            @php
-                                $pendingReminderCount = $reminders->where('is_done', false)->count();
-                                $completedReminderCount = $reminders->where('is_done', true)->count();
-                            @endphp
-
                             <div class="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
                                 <div class="xl:col-span-2 overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
                                     @php
@@ -961,37 +989,70 @@
                                     @endif
                                 </div>
 
-                                <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                                    <div class="flex items-start justify-between gap-3">
-                                        <div>
-                                            <p class="text-[11px] font-semibold tracking-[0.14em] text-slate-400">فضای شخصی</p>
-                                            <h2 class="mt-1 text-sm font-semibold text-slate-800">یادآوری‌ها</h2>
+                                <div class="flex flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+                                    <div class="flex items-center gap-3">
+                                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100/80 text-amber-600 ring-1 ring-amber-200/60">
+                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9a6 6 0 00-12 0v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>
+                                            </svg>
+                                        </span>
+                                        <div class="min-w-0 flex-1">
+                                            <h2 class="truncate text-sm font-bold text-slate-800 sm:text-base">یادآوری‌ها</h2>
+                                            <p class="mt-0.5 truncate text-[11px] text-slate-400">فضای شخصی — کارهای روزمرۀ شما</p>
                                         </div>
-
                                         <button
                                             type="button"
                                             x-ref="reminderToggle"
                                             @click="openReminderDrawer()"
-                                            class="inline-flex h-9 items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-3 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                                            class="inline-flex h-9 shrink-0 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-3 text-xs font-bold text-amber-700 transition hover:bg-amber-100 focus:outline-none focus:ring-4 focus:ring-amber-100"
                                         >
                                             مدیریت
                                         </button>
                                     </div>
 
                                     <div class="mt-4 grid grid-cols-2 gap-2">
-                                        <div class="rounded-xl bg-amber-50 px-3 py-2">
-                                            <p class="text-[11px] text-amber-700">باز</p>
-                                            <p class="mt-1 text-base font-semibold text-slate-800">{{ number_format($pendingReminderCount) }}</p>
+                                        <div class="rounded-xl bg-amber-50/80 px-3 py-2.5 ring-1 ring-amber-100">
+                                            <p class="flex items-center gap-1.5 text-[11px] font-medium text-amber-700">
+                                                <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" aria-hidden="true"></span>
+                                                باز
+                                            </p>
+                                            <p class="mt-1 text-xl font-bold leading-none tabular-nums text-slate-800">{{ number_format($openReminders->count()) }}</p>
                                         </div>
-                                        <div class="rounded-xl bg-emerald-50 px-3 py-2">
-                                            <p class="text-[11px] text-emerald-700">انجام‌شده</p>
-                                            <p class="mt-1 text-base font-semibold text-slate-800">{{ number_format($completedReminderCount) }}</p>
+                                        <div class="rounded-xl bg-emerald-50/80 px-3 py-2.5 ring-1 ring-emerald-100">
+                                            <p class="flex items-center gap-1.5 text-[11px] font-medium text-emerald-700">
+                                                <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" aria-hidden="true"></span>
+                                                انجام‌شده
+                                            </p>
+                                            <p class="mt-1 text-xl font-bold leading-none tabular-nums text-slate-800">{{ number_format($doneReminders->count()) }}</p>
                                         </div>
                                     </div>
 
-                                    <p class="mt-4 text-xs leading-6 text-slate-500">
-                                        یادآوری‌های شخصی از بدنه اصلی داشبورد جدا شده‌اند تا صفحه خلوت بماند.
-                                    </p>
+                                    {{-- پیش‌نمایش سه یادآوری باز: امکان تیک‌زدن مستقیم بدون باز‌کردن پنل --}}
+                                    <div class="mt-4 flex-1 space-y-2">
+                                        @forelse($openReminders->take(3) as $reminder)
+                                            <div class="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-slate-50/70 px-2.5 py-2 transition hover:border-amber-200 hover:bg-amber-50/50">
+                                                <button
+                                                    type="button"
+                                                    wire:click="toggleReminder({{ $reminder->id }})"
+                                                    aria-label="انجام شد: {{ $reminder->title }}"
+                                                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full focus:outline-none focus:ring-4 focus:ring-amber-100"
+                                                >
+                                                    <span class="h-4 w-4 rounded-full border-2 border-amber-400 bg-white transition hover:border-amber-500"></span>
+                                                </button>
+                                                <p class="min-w-0 flex-1 truncate text-xs font-semibold text-slate-700">{{ $reminder->title }}</p>
+                                                <span class="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-medium text-slate-500 ring-1 ring-slate-200/70">{{ $reminderCategories[$reminder->category] ?? $reminder->category }}</span>
+                                            </div>
+                                        @empty
+                                            <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50/70 p-5 text-center">
+                                                <p class="text-xs font-semibold text-slate-500">{{ $reminders->isEmpty() ? 'هنوز یادآوری شخصی ثبت نکرده‌اید' : 'همۀ یادآوری‌هایتان انجام شده است' }}</p>
+                                                <p class="mt-1 text-[11px] text-slate-400">با دکمۀ «مدیریت» یادآوری جدید اضافه کنید.</p>
+                                            </div>
+                                        @endforelse
+
+                                        @if($openReminders->count() > 3)
+                                            <p class="text-center text-[11px] font-medium text-slate-400">و {{ number_format($openReminders->count() - 3) }} مورد دیگر در «مدیریت یادآوری‌ها»</p>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
 

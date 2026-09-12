@@ -320,7 +320,7 @@ class DashboardHome extends Component
 
         $validated = $this->validate([
             'newReminderTitle' => ['required', 'string', 'max:255'],
-            'newReminderCategory' => ['required', 'in:today_tasks,pending_approvals,contract_deadlines,required_reports'],
+            'newReminderCategory' => ['required', 'in:'.implode(',', array_keys(DashboardReminder::$categories))],
         ]);
 
         DashboardReminder::create([
@@ -388,6 +388,7 @@ class DashboardHome extends Component
         $reminders = $isOverview
             ? DashboardReminder::query()
                 ->where('user_id', auth()->id())
+                ->orderBy('is_done')
                 ->latest()
                 ->get()
             : collect();
@@ -409,6 +410,7 @@ class DashboardHome extends Component
             'birthMonthTotal' => $birthMonthTotal,
             'birthMonthUnknown' => $birthMonthUnknown,
             'reminders' => $reminders,
+            'reminderCategories' => DashboardReminder::$categories,
             'editingPerson' => $this->editingPersonId ? Person::find($this->editingPersonId) : null,
             'editingSocialWorker' => $this->editingSocialWorkerId ? SocialWorker::find($this->editingSocialWorkerId) : null,
             'editingGuardian' => $this->editingGuardianId ? Guardian::find($this->editingGuardianId) : null,
