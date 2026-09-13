@@ -7,19 +7,18 @@
             $peopleCountLabel = method_exists($people, 'total') ? number_format($people->total()) . ' مددجو' : 'نتایج جستجو';
         @endphp
 
-        <div class="rounded-2xl border bg-gradient-to-br from-white via-rose-50/30 to-white p-3 shadow-sm sm:p-5" style="border-color: #f5d0e1;">
+        {{-- هویت رنگی بخش: rose (مددجو) --}}
+        <div class="rounded-2xl border border-rose-100/80 bg-gradient-to-br from-white via-rose-50/40 to-white p-3 shadow-sm sm:p-5">
             <div class="mb-3 flex flex-col gap-3 sm:mb-5 lg:flex-row lg:items-center lg:justify-between">
                 <div class="flex min-w-0 items-center gap-3">
-                    <div class="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow-sm sm:flex"
-                         style="background: linear-gradient(to left, #9D174D, #BE185D);">
-                        <i class="fa fa-users text-base"></i>
+                    <div class="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-l from-rose-700 to-pink-700 text-white shadow-sm sm:flex">
+                        <i class="bi bi-people-fill text-base"></i>
                     </div>
 
                     <div class="min-w-0">
                         <div class="flex flex-wrap items-center gap-2">
                             <h1 class="text-lg font-extrabold text-slate-800 sm:text-xl lg:text-2xl">لیست مددجویان</h1>
-                            <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-extrabold"
-                                  style="border-color: #f3d2df; color: #9D174D; background-color: #fff7fb;">
+                            <span class="inline-flex items-center whitespace-nowrap rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700 ring-1 ring-rose-100">
                                 {{ $peopleCountLabel }}
                             </span>
                         </div>
@@ -30,25 +29,23 @@
                 @can('people-register')
                     <div class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end">
                         <a  href="{{ route('admin.dashboard', ['section' => 'people-fast-create']) }}"
-                           class="inline-flex min-h-10 items-center justify-center rounded-xl px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 sm:px-4 sm:text-sm"
-                           style="background: linear-gradient(to left, #9D174D, #BE185D); --tw-ring-color: rgb(244 114 182 / 0.25);">
-                            <i class="fa fa-bolt ml-2 text-xs sm:text-sm"></i>
+                           class="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-xl bg-gradient-to-l from-rose-700 to-pink-700 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-rose-200 sm:px-4 sm:text-sm">
+                            <i class="bi bi-lightning-charge-fill ml-1.5 text-xs sm:text-sm"></i>
                             ثبت سریع
                         </a>
 
                         <a href="{{ route('admin.dashboard', ['section' => 'person-create']) }}"
-                           class="inline-flex min-h-10 items-center justify-center rounded-xl border px-3 py-2 text-xs font-bold shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 sm:px-4 sm:text-sm"
-                           style="border-color: #f3d2df; color: #9D174D; background-color: #fff7fb; --tw-ring-color: rgb(244 114 182 / 0.18);">
-                            <i class="fa fa-user-plus ml-2 text-xs sm:text-sm"></i>
+                           class="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-rose-100 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-rose-100 sm:px-4 sm:text-sm">
+                            <i class="bi bi-person-plus-fill ml-1.5 text-xs sm:text-sm"></i>
                             ثبت کامل
                         </a>
                     </div>
                 @endcan
             </div>
 
-            <div class="mb-4 rounded-2xl border bg-white/80 p-2.5 sm:mb-5 sm:p-4" style="border-color: #f5d0e1;">
+            <div class="mb-4 rounded-2xl border border-rose-100/80 bg-white/80 p-2.5 sm:mb-5 sm:p-4">
                 <div class="flex items-center justify-between gap-3">
-                    <label for="beneficiary-search" class="text-sm font-semibold text-slate-700">جستجوی سریع</label>
+                    <label for="beneficiary-search" class="text-sm font-bold text-slate-700">جستجوی سریع</label>
                     @if($hasSearch)
                         <button
                             type="button"
@@ -71,8 +68,7 @@
                             id="beneficiary-search"
                             type="text"
                             wire:model.live.debounce.800ms="search"
-                            class="w-full rounded-xl border bg-white py-2.5 pr-9 pl-4 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:outline-none focus:ring-4 sm:rounded-2xl sm:py-3"
-                            style="border-color: #f5d0e1;"
+                            class="w-full rounded-xl border border-rose-200/70 bg-white py-2.5 pr-9 pl-4 text-sm text-slate-700 shadow-sm transition placeholder:text-slate-400 focus:border-rose-300 focus:outline-none focus:ring-4 focus:ring-rose-100 sm:rounded-2xl sm:py-3"
                             placeholder="نام، کد ملی یا کد مددجو..."
                         >
                     </div>
@@ -85,35 +81,25 @@
                             class="min-w-0 flex-1 bg-transparent text-xs font-bold text-slate-700 focus:outline-none"
                             aria-label="معیار جستجو"
                         >
-                            <option value="all">همه فیلدها</option>
-                            <option value="person_code">کد مددجو</option>
-                            <option value="full_name">نام و نام خانوادگی</option>
-                            <option value="first_name">نام</option>
-                            <option value="last_name">نام خانوادگی</option>
-                            <option value="national_id">کد ملی</option>
-                            <option value="mother_national_id">کد ملی مادر</option>
-                            <option value="father_national_id">کد ملی پدر</option>
+                            @foreach(\App\Queries\People\PeopleIndexSearchQuery::$fieldLabels as $fieldKey => $fieldLabel)
+                                <option value="{{ $fieldKey }}">{{ $fieldLabel }}</option>
+                            @endforeach
                         </select>
                     </div>
 
                     <div class="hidden md:grid md:grid-cols-[minmax(180px,240px)_1fr] md:gap-3">
                         <select
                             wire:model.change="searchField"
-                            class="w-full rounded-2xl border bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition focus:outline-none focus:ring-4"
-                            style="border-color: #f5d0e1;"
+                            class="w-full rounded-2xl border border-rose-200/70 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm transition focus:border-rose-300 focus:outline-none focus:ring-4 focus:ring-rose-100"
                             aria-label="معیار جستجو"
                         >
-                            <option value="all">همه فیلدها</option>
-                            <option value="person_code">کد مددجو</option>
-                            <option value="full_name">نام و نام خانوادگی</option>
-                            <option value="first_name">نام</option>
-                            <option value="last_name">نام خانوادگی</option>
-                            <option value="national_id">کد ملی</option>
-                            <option value="mother_national_id">کد ملی مادر</option>
-                            <option value="father_national_id">کد ملی پدر</option>
+                            @foreach(\App\Queries\People\PeopleIndexSearchQuery::$fieldLabels as $fieldKey => $fieldLabel)
+                                <option value="{{ $fieldKey }}">{{ $fieldLabel }}</option>
+                            @endforeach
                         </select>
 
-                        <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-500">
+                        <div class="flex items-center gap-2 rounded-2xl border border-dashed border-rose-200/70 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-rose-800/80">
+                            <i class="bi bi-info-circle shrink-0 text-base text-rose-400"></i>
                             برای سرعت بیشتر، جستجو با کد ملی یا کد مددجو دقیق‌تر است.
                         </div>
                     </div>
@@ -216,7 +202,7 @@
                                     wire:click="showRegistrationTracking({{ $person->id }})"
                                     wire:loading.attr="disabled"
                                     wire:target="showRegistrationTracking({{ $person->id }})"
-                                    class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-cyan-100 bg-white text-cyan-700 transition hover:border-cyan-200 hover:bg-cyan-50 focus:outline-none focus:ring-2 focus:ring-cyan-100 disabled:opacity-60"
+                                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-100 bg-white text-cyan-700 transition hover:border-cyan-200 hover:bg-cyan-50 focus:outline-none focus:ring-4 focus:ring-cyan-100 disabled:opacity-60"
                                     aria-label="رهگیری ثبت"
                                 >
                                     <i class="bi bi-file-earmark-check text-sm"></i>
@@ -227,7 +213,7 @@
                                     wire:click="showPersonInfo({{ $person->id }})"
                                     wire:loading.attr="disabled"
                                     wire:target="showPersonInfo({{ $person->id }})"
-                                    class="inline-flex min-h-8 flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-200 disabled:opacity-60"
+                                    class="inline-flex min-h-10 flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100 focus:outline-none focus:ring-4 focus:ring-slate-200 disabled:opacity-60"
                                 >
                                     مشاهده
                                     </button>
@@ -269,7 +255,7 @@
                                         >
                                             <button
                                                 type="button"
-                                                class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200"
+                                                class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-200"
                                                 aria-label="اقدامات بیشتر"
                                                 aria-haspopup="dialog"
                                                 :aria-expanded="open.toString()"
@@ -369,24 +355,24 @@
                 <div class="hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100 md:block">
                     <div class="overflow-x-auto">
                         <table class="min-w-full border-collapse text-sm">
-                            <thead class="text-white" style="background: linear-gradient(to left, #9D174D, #be185d);">
+                            <thead class="bg-gradient-to-l from-rose-700 to-pink-700 text-white">
                                 <tr>
-                                    <th class="px-5 py-4 text-center font-bold">ردیف</th>
-                                    <th class="px-5 py-4 text-center font-bold">کد مددجو</th>
-                                    <th class="px-5 py-4 text-right font-bold">نام و نام خانوادگی</th>
-                                    <th class="px-5 py-4 text-center font-bold">کد ملی</th>
-                                    <th class="px-5 py-4 text-center font-bold">تاریخ تولد</th>
-                                    <th class="px-5 py-4 text-center font-bold">عملیات</th>
+                                    <th class="whitespace-nowrap px-5 py-4 text-center font-bold">ردیف</th>
+                                    <th class="whitespace-nowrap px-5 py-4 text-center font-bold">کد مددجو</th>
+                                    <th class="whitespace-nowrap px-5 py-4 text-right font-bold">نام و نام خانوادگی</th>
+                                    <th class="whitespace-nowrap px-5 py-4 text-center font-bold">کد ملی</th>
+                                    <th class="whitespace-nowrap px-5 py-4 text-center font-bold">تاریخ تولد</th>
+                                    <th class="whitespace-nowrap px-5 py-4 text-center font-bold">عملیات</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
                                 @foreach($people as $person)
                                     <tr wire:key="person-row-{{ $person->id }}" wire:click="showPersonInfo({{ $person->id }})" class="cursor-pointer transition hover:bg-rose-50/70">
-                                        <td class="px-5 py-4 text-center font-light text-slate-700">{{ $people->firstItem() + $loop->index }}</td>
-                                        <td class="px-5 py-4 text-center font-medium text-slate-700">{{ $person->person_code }}</td>
-                                        <td class="px-5 py-4 text-right font-light text-slate-800">{{ $person->full_name }}</td>
-                                        <td class="px-5 py-4 text-center font-light text-slate-700">{{ $person->national_id }}</td>
-                                        <td class="px-5 py-4 text-center font-light text-slate-700">{{ $person->birth_date ?? 'نامشخص' }}</td>
+                                        <td class="px-5 py-4 text-center text-xs tabular-nums text-slate-400">{{ $people->firstItem() + $loop->index }}</td>
+                                        <td class="px-5 py-4 text-center font-mono text-xs tabular-nums text-slate-600">{{ $person->person_code }}</td>
+                                        <td class="px-5 py-4 text-right font-bold text-slate-800">{{ $person->full_name ?: 'بدون نام' }}</td>
+                                        <td class="px-5 py-4 text-center font-mono text-xs tabular-nums text-slate-600">{{ $person->national_id ?: '-' }}</td>
+                                        <td class="whitespace-nowrap px-5 py-4 text-center text-xs tabular-nums text-slate-600">{{ $person->birth_date ?? 'نامشخص' }}</td>
                                         <td class="px-5 py-4 text-center">
                                             <div class="flex items-center justify-center gap-2 whitespace-nowrap">
                                                 @can('people-edit')

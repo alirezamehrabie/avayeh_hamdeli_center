@@ -9,6 +9,22 @@ use Illuminate\Database\Eloquent\Builder;
 
 class PeopleIndexSearchQuery
 {
+    /**
+     * معیارهای جستجو
+     * کلید: مقدار searchField (مطابق match() داخل همین کلاس)
+     * مقدار: برچسب فارسی (منبع یکتای گزینه‌های سلکت در ویوها)
+     */
+    public static array $fieldLabels = [
+        'all' => 'همه فیلدها',
+        'person_code' => 'کد مددجو',
+        'full_name' => 'نام و نام خانوادگی',
+        'first_name' => 'نام',
+        'last_name' => 'نام خانوادگی',
+        'national_id' => 'کد ملی',
+        'mother_national_id' => 'کد ملی مادر',
+        'father_national_id' => 'کد ملی پدر',
+    ];
+
     public function paginate(string $search = '', string $searchField = 'all', int $perPage = 20): LengthAwarePaginator|Paginator
     {
         $query = Person::query()
