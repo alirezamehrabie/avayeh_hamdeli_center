@@ -1056,22 +1056,29 @@
                                 </div>
                             </div>
 
-                            <div class="mt-8 overflow-hidden rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-                                <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                                    <div>
-                                        <h2 class="text-lg font-semibold text-gray-800">آخرین مددجویان ثبت شده</h2>
-                                        <p class="mt-1 text-sm text-gray-500">نمایی سریع از ثبت‌های جدید برای بررسی، تکمیل پرونده و ارجاع به بخش جزئیات.</p>
+                            <div class="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+                                {{-- سربرگ: الگوی نوار رنگی بخش‌ها؛ هویت رنگی sky هماهنگ با کارت آمار «کودک» --}}
+                                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div class="flex min-w-0 items-center gap-2.5">
+                                        <span class="h-7 w-1 shrink-0 rounded-full bg-gradient-to-b from-sky-500 via-sky-400 to-sky-200" aria-hidden="true"></span>
+                                        <div class="min-w-0">
+                                            <h2 class="truncate text-sm font-bold text-slate-800 sm:text-base">آخرین مددجویان ثبت‌شده</h2>
+                                            <p class="mt-0.5 truncate text-[11px] text-slate-400">بررسی سریع ۸ پروندۀ اخیر برای تکمیل و پیگیری مددکار</p>
+                                        </div>
                                     </div>
                                     <button
                                         type="button"
                                         wire:click="selectSection('people-list')"
-                                        class="inline-flex items-center justify-center rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                                        class="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-sky-200 bg-sky-50 px-3.5 text-xs font-bold text-sky-700 transition hover:bg-sky-100 focus:outline-none focus:ring-4 focus:ring-sky-100"
                                     >
                                         مشاهده همه مددجویان
+                                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+                                        </svg>
                                     </button>
                                 </div>
 
-                                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                                <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                                     @forelse($latestPeople as $person)
                                         @php
                                             $socialWorker = $person->guardian?->socialWorker;
@@ -1079,66 +1086,75 @@
                                                 ? trim(implode(' ', array_filter([$socialWorker->first_name, $socialWorker->last_name])))
                                                 : null;
                                             $personFullName = trim(implode(' ', array_filter([$person->first_name, $person->last_name])));
+                                            $personDisplayTitle = $personFullName !== '' ? $personFullName : 'مددجوی بدون نام';
                                         @endphp
+                                        <button
+                                            type="button"
+                                            wire:click="selectSection('person-edit', {{ $person->id }})"
+                                            aria-label="مشاهده پروندۀ {{ $personDisplayTitle }}"
+                                            class="group relative flex h-full flex-col overflow-hidden rounded-2xl bg-gradient-to-bl from-sky-50/70 via-white to-white p-4 text-right shadow-sm ring-1 ring-slate-200/70 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:ring-sky-200 focus:outline-none focus:ring-4 focus:ring-sky-100"
+                                        >
+                                            {{-- نوار رنگی عمودی ابتدای کارت (سمت راست در RTL) --}}
+                                            <span class="absolute inset-y-0 right-0 w-1 bg-gradient-to-b from-sky-500 via-sky-400 to-sky-200" aria-hidden="true"></span>
 
-                                        <article class="group flex h-full flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50/70 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:bg-white hover:shadow-md">
-                                            <div>
-                                                <div class="flex items-start justify-between gap-3">
-                                                    <div class="min-w-0">
-                                                        <h3 class="truncate text-sm font-semibold text-slate-800 sm:text-base">
-                                                            {{ $personFullName !== '' ? $personFullName : 'مددجوی بدون نام' }}
-                                                        </h3>
-                                                        <p class="mt-1 text-[11px] text-slate-400">
-                                                            ثبت جدید مددجو
-                                                        </p>
-                                                    </div>
-                                                    <span class="inline-flex shrink-0 items-center rounded-full bg-indigo-50 px-2 py-1 text-[10px] font-semibold text-indigo-700">
-                                                        {{ $person->person_code ?? '-' }}
-                                                    </span>
-                                                </div>
-
-                                                <div class="mt-3 flex flex-wrap gap-2">
-                                                    <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
-                                                        خانوار {{ $person->guardian?->guardian_code ?? '-' }}
-                                                    </span>
-                                                    <span class="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold {{ $socialWorkerName ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700' }}">
-                                                        {{ $socialWorkerName ?: 'بدون مددکار' }}
-                                                    </span>
-                                                </div>
-
-                                                <dl class="mt-4 space-y-2">
-                                                    <div class="flex items-center justify-between gap-3 text-xs">
-                                                        <dt class="text-slate-400">کد ملی</dt>
-                                                        <dd class="truncate font-mono text-slate-700">{{ $person->national_id ?: '-' }}</dd>
-                                                    </div>
-                                                    <div class="flex items-center justify-between gap-3 text-xs">
-                                                        <dt class="text-slate-400">نام پدر</dt>
-                                                        <dd class="truncate text-slate-700">{{ $person->father_name ?: '-' }}</dd>
-                                                    </div>
-                                                    <div class="flex items-center justify-between gap-3 text-xs">
-                                                        <dt class="text-slate-400">جنسیت</dt>
-                                                        <dd class="text-slate-700">{{ $person->gender_label ?: '-' }}</dd>
-                                                    </div>
-                                                </dl>
-                                            </div>
-
-                                            <div class="mt-4 flex items-center justify-between border-t border-slate-200/80 pt-3">
-                                                <span class="text-[11px] font-medium {{ $socialWorkerName ? 'text-emerald-600' : 'text-amber-600' }}">
-                                                    {{ $socialWorkerName ? 'ارجاع شده' : 'نیازمند پیگیری' }}
+                                            <span class="flex items-start gap-2.5">
+                                                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-100/80 text-sky-600 ring-1 ring-sky-200/60 transition-transform duration-300 group-hover:scale-105">
+                                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.9 17.9 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/>
+                                                    </svg>
                                                 </span>
-                                                <button
-                                                    type="button"
-                                                    wire:click="selectSection('person-edit', {{ $person->id }})"
-                                                    class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-100"
-                                                >
-                                                    مشاهده پرونده
-                                                </button>
-                                            </div>
-                                        </article>
+                                                <span class="min-w-0 flex-1">
+                                                    <span class="block truncate text-sm font-bold text-slate-800 transition-colors duration-300 group-hover:text-sky-700">{{ $personDisplayTitle }}</span>
+                                                    <span class="mt-0.5 block truncate text-[10px] font-medium text-slate-400">کد {{ $person->person_code ?? '-' }}</span>
+                                                </span>
+                                            </span>
+
+                                            {{-- چیپ‌های خنثی: خوانا روی هر پس‌زمینه‌ای، هماهنگ با بَج کارت‌های آمار --}}
+                                            <span class="mt-3 flex flex-wrap gap-1.5">
+                                                <span class="inline-flex items-center gap-1.5 rounded-lg bg-white/90 px-2 py-1 text-[10px] font-medium text-slate-500 shadow-sm ring-1 ring-slate-200/70">
+                                                    <span class="h-1.5 w-1.5 shrink-0 rounded-full {{ $person->gender === 'female' ? 'bg-rose-400' : 'bg-sky-400' }}" aria-hidden="true"></span>
+                                                    {{ $person->gender_label ?: 'نامشخص' }}
+                                                </span>
+                                                @if($person->age !== null)
+                                                    <span class="inline-flex items-center rounded-lg bg-white/90 px-2 py-1 text-[10px] font-medium text-slate-500 shadow-sm ring-1 ring-slate-200/70">
+                                                        {{ number_format($person->age) }} ساله
+                                                    </span>
+                                                @endif
+                                                <span class="inline-flex items-center rounded-lg bg-white/90 px-2 py-1 text-[10px] font-medium text-slate-500 shadow-sm ring-1 ring-slate-200/70">
+                                                    خانوار {{ $person->guardian?->guardian_code ?? '-' }}
+                                                </span>
+                                            </span>
+
+                                            {{-- اطلاعات تشخیص هویت --}}
+                                            <span class="mt-3 block space-y-1.5 border-t border-slate-200/60 pt-3 text-[11px]">
+                                                <span class="flex items-center justify-between gap-2">
+                                                    <span class="shrink-0 text-slate-400">کد ملی</span>
+                                                    <span class="truncate font-mono text-slate-700">{{ $person->national_id ?: '-' }}</span>
+                                                </span>
+                                                <span class="flex items-center justify-between gap-2">
+                                                    <span class="shrink-0 text-slate-400">نام پدر</span>
+                                                    <span class="truncate text-slate-700">{{ $person->father_name ?: '-' }}</span>
+                                                </span>
+                                            </span>
+
+                                            {{-- فوتر: وضعیت پیگیری + راهنمای ورود به پرونده --}}
+                                            <span class="mt-auto flex items-center justify-between gap-2 border-t border-slate-200/60 pt-3">
+                                                <span class="inline-flex min-w-0 items-center gap-1.5 text-[11px] font-bold {{ $socialWorkerName ? 'text-emerald-600' : 'text-amber-600' }}">
+                                                    <span class="h-1.5 w-1.5 shrink-0 rounded-full {{ $socialWorkerName ? 'bg-emerald-400' : 'bg-amber-400' }}" aria-hidden="true"></span>
+                                                    <span class="truncate">{{ $socialWorkerName ? 'مددکار: '.$socialWorkerName : 'نیازمند پیگیری' }}</span>
+                                                </span>
+                                                <span class="inline-flex shrink-0 items-center gap-1 text-[11px] font-bold text-sky-700">
+                                                    پرونده
+                                                    <svg class="h-3.5 w-3.5 transition-transform duration-300 group-hover:-translate-x-0.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+                                                    </svg>
+                                                </span>
+                                            </span>
+                                        </button>
                                     @empty
-                                        <div class="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-8 text-center sm:col-span-2 xl:col-span-4">
-                                            <p class="text-sm font-medium text-gray-500">هنوز مددجویی ثبت نشده است.</p>
-                                            <p class="mt-1 text-xs text-gray-400">پس از ثبت اولین پرونده، آخرین ثبت‌ها در این بخش نمایش داده می‌شوند.</p>
+                                        <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center sm:col-span-2 xl:col-span-4">
+                                            <p class="text-sm font-semibold text-slate-500">هنوز مددجویی ثبت نشده است.</p>
+                                            <p class="mt-1 text-xs text-slate-400">پس از ثبت اولین پرونده، آخرین ثبت‌ها در این بخش نمایش داده می‌شوند.</p>
                                         </div>
                                     @endforelse
                                 </div>
