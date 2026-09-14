@@ -3,10 +3,15 @@
 namespace App\Livewire\Admin;
 
 use AllowDynamicProperties;
+use App\Models\AttendanceSheetEntry;
 use App\Models\DashboardReminder;
 use App\Models\District;
+use App\Models\GateEntryAssignment;
 use App\Models\Guardian;
 use App\Models\Person;
+use App\Models\Service;
+use App\Models\ServiceCategory;
+use App\Models\ServiceDelivery;
 use App\Models\SocialWorker;
 use App\Models\SponsorProfile;
 use Livewire\Attributes\Layout;
@@ -354,6 +359,146 @@ class DashboardHome extends Component
             ->delete();
     }
 
+    /**
+     * سنجه‌های زندۀ بخش «نبض عملیات مرکز» در نمای کلی.
+     * هر کارت به یکی از بخش‌های full-access لینک می‌شود، بنابراین شمارش‌ها
+     * فقط برای کاربری انجام می‌شود که مقصد را باز করতে می‌تواند.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function buildOpsPulse(): array
+    {
+        if (! auth()->user()?->can('full-access')) {
+            return [];
+        }
+
+        $pendingAuthorizations = GateEntryAssignment::query()
+            ->where('status', GateEntryAssignment::STATUS_PENDING)
+            ->count();
+
+        $deliveriesToday = ServiceDelivery::query()
+            ->whereDate('delivered_at', today())
+            ->count();
+
+        $deliveriesYesterday = ServiceDelivery::query()
+            ->whereDate('delivered_at', today()->subDay())
+            ->count();
+
+        [$stockOut, $stockLow] = $this->stockAlertCounts();
+
+        // الگوی «حاضر» همان presentQuery مانیتور حضور است: چک‌این بدون چک‌اوت، شیت زنده.
+        $presentNow = AttendanceSheetEntry::query()
+            ->whereNotNull('checked_in_at')
+            ->whereNull('checked_out_at')
+            ->whereHas('sheet')
+            ->count();
+
+        $stockAttention = $stockOut + $stockLow;
+
+        return [
+            [
+                'label' => 'ورودهای مجازِ تحویل‌نشده',
+                'caption' => 'مجوزهای صادرشده در گیت ورود',
+                'value' => $pendingAuthorizations,
+                'unit' => 'مجوز',
+                'color' => 'rose',
+                'section' => 'advanced-gate-report',
+                'icon' => 'M12 6v6l4 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z',
+                'tone' => $pendingAuthorizations > 0 ? 'alert' : 'ok',
+                'status' => $pendingAuthorizations > 0 ? 'نیازمند پیگیری' : 'بدون معوقه',
+                'badges' => [],
+            ],
+            [
+                'label' => 'تحویل‌های خدمت امروز',
+                'caption' => 'رکوردهای تحویل ثبت‌شدۀ امروز',
+                'value' => $deliveriesToday,
+                'unit' => 'رکورد',
+                'color' => 'cyan',
+                'section' => 'advanced-service-report',
+                'icon' => 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4',
+                'tone' => 'neutral',
+                'status' => 'گزارش کامل تحویل‌ها',
+                'badges' => [
+                    ['label' => 'دیروز', 'value' => $deliveriesYesterday, 'dot' => 'slate'],
+                ],
+            ],
+            [
+                'label' => 'هشدار موجودی خدمات',
+                'caption' => 'دسته‌های خدمات در حال توزیع',
+                'value' => $stockAttention,
+                'unit' => 'دسته',
+                'color' => 'amber',
+                'section' => 'service-list',
+                'icon' => 'M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z',
+                'tone' => $stockAttention > 0 ? 'alert' : 'ok',
+                'status' => $stockAttention > 0 ? 'بررسی موجودی' : 'موجودی پایدار',
+                'badges' => $stockAttention > 0 ? [
+                    ['label' => 'تمام‌شده', 'value' => $stockOut, 'dot' => 'rose'],
+                    ['label' => 'نزدیک اتمام', 'value' => $stockLow, 'dot' => 'amber'],
+                ] : [],
+            ],
+            [
+                'label' => 'حاضران همین حالا',
+                'caption' => 'مددجویان بدون ثبت خروج',
+                'value' => $presentNow,
+                'unit' => 'نفر',
+                'color' => 'violet',
+                'section' => 'social-worker-attendance-monitor',
+                'icon' => 'M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm4.5 0c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z',
+                'tone' => 'live',
+                'status' => 'پایش زنده',
+                'live' => true,
+                'badges' => [],
+            ],
+        ];
+    }
+
+    /**
+     * شمارش دسته‌های خدماتِ «در حال توزیع» که موجودی‌شان تمام شده یا
+     * به زیر ۱۰٪ رسیده است. مجموع تحویل‌ها با یک کوئری گروهی (الگوی
+     * معیار داشبورد مددکار) محاسبه می‌شود تا نمای کلی N+1 نزند.
+     *
+     * @return array{0: int, 1: int} [تعداد تمام‌شده, تعداد نزدیک اتمام]
+     */
+    private function stockAlertCounts(): array
+    {
+        $serviceIds = Service::query()
+            ->where('status', 'in_distribution')
+            ->pluck('id');
+
+        $categories = $serviceIds->isEmpty()
+            ? collect()
+            : ServiceCategory::query()
+                ->whereIn('service_id', $serviceIds)
+                ->get(['id', 'quantity']);
+
+        if ($categories->isEmpty()) {
+            return [0, 0];
+        }
+
+        $delivered = ServiceDelivery::query()
+            ->selectRaw('service_category_id, COALESCE(SUM(delivered_quantity), 0) as delivered_quantity')
+            ->whereIn('service_category_id', $categories->pluck('id'))
+            ->groupBy('service_category_id')
+            ->pluck('delivered_quantity', 'service_category_id');
+
+        $out = 0;
+        $low = 0;
+
+        foreach ($categories as $category) {
+            $quantity = (float) $category->quantity;
+            $remaining = $quantity - (float) ($delivered[$category->id] ?? 0);
+
+            if ($remaining <= 0) {
+                $out++;
+            } elseif ($quantity > 0 && ($remaining / $quantity) <= 0.1) {
+                $low++;
+            }
+        }
+
+        return [$out, $low];
+    }
+
     public function render()
     {
         $isOverview = $this->activeSection === 'overview';
@@ -411,6 +556,7 @@ class DashboardHome extends Component
             'birthMonthUnknown' => $birthMonthUnknown,
             'reminders' => $reminders,
             'reminderCategories' => DashboardReminder::$categories,
+            'opsPulse' => $isOverview ? $this->buildOpsPulse() : [],
             'editingPerson' => $this->editingPersonId ? Person::find($this->editingPersonId) : null,
             'editingSocialWorker' => $this->editingSocialWorkerId ? SocialWorker::find($this->editingSocialWorkerId) : null,
             'editingGuardian' => $this->editingGuardianId ? Guardian::find($this->editingGuardianId) : null,

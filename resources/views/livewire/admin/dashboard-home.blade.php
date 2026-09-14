@@ -1056,6 +1056,145 @@
                                 </div>
                             </div>
 
+                            {{-- نبض عملیات مرکز: سنجه‌های زنده توزیع، موجودی و حضور (فقط full-access) --}}
+                            @if (! empty($opsPulse))
+                                @php
+                                    /**
+                                     * پالت رنگ کارت‌های نبض به‌صورت رشته‌های کامل و ثابت نوشته شده است تا
+                                     * Tailwind آن‌ها را در بیلد اسکن کند (الگوی پالت دسترسی سریع).
+                                     * هویت رنگی: rose=معوقه، cyan=تحویل، amber=موجودی، violet=حضور.
+                                     */
+                                    $pulsePalettes = [
+                                        'rose' => [
+                                            'wash' => 'bg-gradient-to-bl from-rose-50/70 via-white to-white',
+                                            'bar' => 'bg-gradient-to-b from-rose-500 via-rose-400 to-rose-200',
+                                            'icon' => 'bg-rose-100/80 text-rose-600 ring-rose-200/60',
+                                            'hover' => 'hover:ring-rose-200 focus:ring-rose-100',
+                                            'hoverText' => 'group-hover:text-rose-700',
+                                            'link' => 'text-rose-700',
+                                        ],
+                                        'cyan' => [
+                                            'wash' => 'bg-gradient-to-bl from-cyan-50/70 via-white to-white',
+                                            'bar' => 'bg-gradient-to-b from-cyan-500 via-cyan-400 to-cyan-200',
+                                            'icon' => 'bg-cyan-100/80 text-cyan-600 ring-cyan-200/60',
+                                            'hover' => 'hover:ring-cyan-200 focus:ring-cyan-100',
+                                            'hoverText' => 'group-hover:text-cyan-700',
+                                            'link' => 'text-cyan-700',
+                                        ],
+                                        'amber' => [
+                                            'wash' => 'bg-gradient-to-bl from-amber-50/70 via-white to-white',
+                                            'bar' => 'bg-gradient-to-b from-amber-500 via-amber-400 to-amber-200',
+                                            'icon' => 'bg-amber-100/80 text-amber-600 ring-amber-200/60',
+                                            'hover' => 'hover:ring-amber-200 focus:ring-amber-100',
+                                            'hoverText' => 'group-hover:text-amber-700',
+                                            'link' => 'text-amber-700',
+                                        ],
+                                        'violet' => [
+                                            'wash' => 'bg-gradient-to-bl from-violet-50/70 via-white to-white',
+                                            'bar' => 'bg-gradient-to-b from-violet-500 via-violet-400 to-violet-200',
+                                            'icon' => 'bg-violet-100/80 text-violet-600 ring-violet-200/60',
+                                            'hover' => 'hover:ring-violet-200 focus:ring-violet-100',
+                                            'hoverText' => 'group-hover:text-violet-700',
+                                            'link' => 'text-violet-700',
+                                        ],
+                                    ];
+
+                                    /**
+                                     * چیپ وضعیت فوتر کارت: alert برای سنجه‌های نیازمند اقدام،
+                                     * ok برای وضعیت پایدار، live برای سنجۀ زنده حاضران.
+                                     */
+                                    $pulseTones = [
+                                        'alert' => 'bg-rose-50 text-rose-700 ring-rose-200/70',
+                                        'ok' => 'bg-emerald-50 text-emerald-700 ring-emerald-200/70',
+                                        'neutral' => 'bg-slate-100 text-slate-600 ring-slate-200/70',
+                                        'live' => 'bg-emerald-50 text-emerald-700 ring-emerald-200/70',
+                                    ];
+                                @endphp
+
+                                <div class="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+                                    {{-- سربرگ: الگوی نوار رنگی بخش‌ها؛ هویت rose چون محور این بخش «توجه لازم» است --}}
+                                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                        <div class="flex min-w-0 items-center gap-2.5">
+                                            <span class="h-7 w-1 shrink-0 rounded-full bg-gradient-to-b from-rose-500 via-rose-400 to-rose-200" aria-hidden="true"></span>
+                                            <div class="min-w-0">
+                                                <h2 class="truncate text-sm font-bold text-slate-800 sm:text-base">نبض عملیات مرکز</h2>
+                                                <p class="mt-0.5 truncate text-[11px] text-slate-400">سنجه‌های لحظه‌ای توزیع، موجودی و حضور</p>
+                                            </div>
+                                        </div>
+                                        <span class="hidden shrink-0 text-[11px] font-medium text-slate-400 sm:block">با لمس هر کارت، بخش مرتبط باز می‌شود</span>
+                                    </div>
+
+                                    <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                                        @foreach ($opsPulse as $pulseItem)
+                                            @php $pulse = $pulsePalettes[$pulseItem['color']]; @endphp
+                                            <button
+                                                type="button"
+                                                wire:click="selectSection('{{ $pulseItem['section'] }}')"
+                                                aria-label="{{ $pulseItem['label'] }} — {{ number_format($pulseItem['value']) }} {{ $pulseItem['unit'] }} — ورود به بخش مرتبط"
+                                                class="group relative flex h-full flex-col overflow-hidden rounded-2xl p-4 text-right shadow-sm ring-1 ring-slate-200/70 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-4 {{ $pulse['wash'] }} {{ $pulse['hover'] }}"
+                                            >
+                                                {{-- نوار رنگی عمودی ابتدای کارت (سمت راست در RTL) --}}
+                                                <span class="absolute inset-y-0 right-0 w-1 {{ $pulse['bar'] }}" aria-hidden="true"></span>
+
+                                                <span class="flex items-start gap-2.5">
+                                                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ring-1 transition-transform duration-300 group-hover:scale-105 {{ $pulse['icon'] }}">
+                                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="{{ $pulseItem['icon'] }}"></path>
+                                                        </svg>
+                                                    </span>
+                                                    <span class="min-w-0 flex-1">
+                                                        <span class="block text-xs font-bold leading-snug text-slate-700 transition-colors duration-300 {{ $pulse['hoverText'] }}">{{ $pulseItem['label'] }}</span>
+                                                        <span class="mt-0.5 block truncate text-[10px] font-medium text-slate-400">{{ $pulseItem['caption'] }}</span>
+                                                    </span>
+                                                </span>
+
+                                                {{-- مقدار اصلی: الگوی عدد درشت tabular با واحد کوچک --}}
+                                                <span class="mt-3.5 flex items-end justify-between gap-2">
+                                                    <span class="whitespace-nowrap text-[26px] font-extrabold leading-none tracking-tight tabular-nums text-slate-900">{{ number_format($pulseItem['value']) }}</span>
+                                                    <span class="pb-1 text-[10px] font-medium text-slate-400">{{ $pulseItem['unit'] }}</span>
+                                                </span>
+
+                                                {{-- چیپ‌های خنثی ریزجزئیات: خوانا روی هر پس‌زمینه‌ای، هماهنگ با بَج کارت‌های آمار --}}
+                                                @if (! empty($pulseItem['badges']))
+                                                    <span class="mt-2.5 flex flex-wrap gap-1.5">
+                                                        @foreach ($pulseItem['badges'] as $badge)
+                                                            @php
+                                                                $badgeDot = match ($badge['dot'] ?? 'slate') {
+                                                                    'rose' => 'bg-rose-400',
+                                                                    'amber' => 'bg-amber-400',
+                                                                    default => 'bg-slate-300',
+                                                                };
+                                                            @endphp
+                                                            <span class="inline-flex items-center gap-1.5 rounded-lg bg-white/90 px-2 py-1 text-[10px] font-medium text-slate-500 shadow-sm ring-1 ring-slate-200/70">
+                                                                <span class="h-1.5 w-1.5 shrink-0 rounded-full {{ $badgeDot }}" aria-hidden="true"></span>
+                                                                <span>{{ $badge['label'] }}</span>
+                                                                <span class="font-bold tabular-nums text-slate-800">{{ number_format($badge['value']) }}</span>
+                                                            </span>
+                                                        @endforeach
+                                                    </span>
+                                                @endif
+
+                                                {{-- فوتر: چیپ وضعیت + راهنمای ورود به بخش --}}
+                                                <span class="mt-auto flex items-center justify-between gap-2 border-t border-slate-200/60 pt-3">
+                                                    <span class="inline-flex min-w-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 {{ $pulseTones[$pulseItem['tone']] }}">
+                                                        @if ($pulseItem['live'] ?? false)
+                                                            <span class="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-emerald-400" aria-hidden="true"></span>
+                                                        @endif
+                                                        <span class="truncate">{{ $pulseItem['status'] }}</span>
+                                                    </span>
+                                                    <span class="inline-flex shrink-0 items-center gap-1 text-[11px] font-bold {{ $pulse['link'] }}">
+                                                        مشاهده
+                                                        <svg class="h-3.5 w-3.5 transition-transform duration-300 group-hover:-translate-x-0.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+                                                        </svg>
+                                                    </span>
+                                                </span>
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
                             <div class="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
                                 {{-- سربرگ: الگوی نوار رنگی بخش‌ها؛ هویت رنگی sky هماهنگ با کارت آمار «کودک» --}}
                                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
