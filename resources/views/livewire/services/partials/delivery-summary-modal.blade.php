@@ -1,8 +1,16 @@
+{{-- Overlay مستقیماً زیر ریشهٔ space-y قرار می‌گیرد؛ margin-top آن (۱۶px) المان fixed را به پایین
+     هل می‌داد و نوار روشنی بالای صفحه جا می‌انداخت → !mt-0. عرض w-screen (۱۰۰vw) نوار خالیِ
+     gutter کنار viewport را هم می‌پوشاند. wheel/touchmove خارج از پنلِ اسکرول (data-modal-scroll)
+     prevent می‌شود تا صفحهٔ پشت مودال حرکت نکند؛ overscroll-contain از زنجیره‌شدن اسکرول پنل
+     به ستون بیرون جلوگیری می‌کند. --}}
 <div
     x-show="workersOpen"
     x-cloak
     x-transition.opacity
-    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 py-6 backdrop-blur-md"
+    @keydown.escape.window="workersOpen = false"
+    @wheel="$event.target.closest('[data-modal-scroll]') || $event.preventDefault()"
+    @touchmove="$event.target.closest('[data-modal-scroll]') || $event.preventDefault()"
+    class="fixed inset-y-0 left-0 z-50 !mt-0 flex w-screen items-center justify-center bg-slate-950/40 px-4 py-6 backdrop-blur-sm"
     style="display: none;"
 >
     <div
@@ -26,7 +34,7 @@
             </button>
         </div>
 
-        <div class="max-h-[78vh] overflow-y-auto px-4 py-5 sm:px-6">
+        <div data-modal-scroll class="max-h-[78vh] overflow-y-auto overscroll-contain px-4 py-5 sm:px-6">
             <template x-if="workersSummary?.workers?.length">
                 <div class="grid gap-4 lg:grid-cols-2">
                     <template x-for="worker in workersSummary.workers" :key="worker.id">

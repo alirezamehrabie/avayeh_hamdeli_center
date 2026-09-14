@@ -369,7 +369,10 @@
     <div
         x-show="detailsOpen"
         x-cloak
-        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 px-4"
+        @keydown.escape.window="detailsOpen = false"
+        @wheel="$event.target.closest('[data-modal-scroll]') || $event.preventDefault()"
+        @touchmove="$event.target.closest('[data-modal-scroll]') || $event.preventDefault()"
+        class="fixed inset-y-0 left-0 z-50 !mt-0 flex w-screen items-center justify-center bg-slate-900/30 px-4"
         style="display: none;"
     >
         <div @click.outside="detailsOpen = false" class="w-full max-w-3xl rounded-[28px] border border-slate-200 bg-white shadow-2xl shadow-slate-900/10">
@@ -389,7 +392,7 @@
                 </button>
             </div>
 
-            <div class="max-h-[78vh] overflow-y-auto px-4 py-4 sm:px-5">
+            <div data-modal-scroll class="max-h-[78vh] overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
                 <div class="grid gap-3 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
                     <div class="space-y-3">
                         <div class="grid gap-2 sm:grid-cols-2">
