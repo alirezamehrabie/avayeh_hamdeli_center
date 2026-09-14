@@ -1,10 +1,10 @@
 <div
     x-data="{
-        detailsOpen: false,
-        details: null,
-        categoriesOpen: false,
+        ...sheetBackGuard('categoriesOpen'),
         categories: [],
         categoryTitle: '',
+        detailsOpen: false,
+        details: null,
         workersOpen: false,
         workersSummary: null,
         openDetails(payload) {
@@ -16,6 +16,7 @@
             this.workersOpen = true;
         }
     }"
+    x-init="bindSheetBack()"
     x-on:service-workers-loaded.window="openWorkers($event.detail.summary)"
     class="space-y-4"
     dir="rtl"
@@ -284,50 +285,82 @@
         </div>
     </div>
 
+    {{-- Subcategories: bottom sheet on phones (same overlay/back behavior as the gate and
+         filter sheets), centered dialog on desktop. sheetBackGuard parks the sheet off-screen
+         when Android Back is pressed. --}}
     <div
-        x-show="categoriesOpen"
         x-cloak
-        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 px-4"
-        style="display: none;"
+        x-show="categoriesOpen"
+        @click="categoriesOpen = false"
+        @touchmove.prevent
+        x-transition:enter="transition-opacity ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition-opacity ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        class="fixed inset-0 z-50 !mt-0 bg-slate-950/40"
+    ></div>
+
+    <div
+        x-cloak
+        @keydown.escape.window="categoriesOpen = false"
+        :class="categoriesOpen
+            ? 'translate-y-0 lg:scale-100 lg:opacity-100'
+            : 'translate-y-full lg:translate-y-0 lg:scale-95 lg:opacity-0 lg:pointer-events-none'"
+        class="fixed inset-x-0 bottom-0 z-50 flex max-h-[85svh] min-h-0 flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl transition duration-300 ease-out lg:inset-0 lg:!m-auto lg:h-fit lg:w-full lg:max-w-lg lg:rounded-[28px] lg:border lg:border-slate-200/80"
     >
-        <div @click.outside="categoriesOpen = false" class="w-full max-w-xl rounded-[28px] border border-slate-200 bg-white shadow-2xl">
-            <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+        <div class="flex-none bg-gradient-to-l from-slate-50 via-white to-cyan-50 px-4 pb-3.5 pt-3 sm:px-5">
+            <div class="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-200 lg:hidden"></div>
+            <div class="flex items-center justify-between gap-3">
                 <div class="min-w-0">
-                    <h3 class="text-lg font-black text-slate-800">زیر‌دسته‌های خدمت</h3>
-                    <p class="mt-1 truncate text-sm text-slate-500" x-text="categoryTitle"></p>
+                    <div class="flex items-center gap-2">
+                        <h3 class="shrink-0 text-base font-black text-slate-900 sm:text-lg">زیر‌دسته‌های خدمت</h3>
+                        <span class="shrink-0 rounded-full bg-cyan-100 px-2.5 py-0.5 text-[11px] font-black text-cyan-800 ring-1 ring-cyan-200" x-text="`${categories.length} زیردسته`"></span>
+                    </div>
+                    <p class="mt-1 truncate text-sm font-semibold text-slate-500" x-text="categoryTitle"></p>
                 </div>
-                <button type="button" @click="categoriesOpen = false" class="rounded-full border border-slate-200 p-2 text-slate-400 transition hover:text-slate-700" aria-label="بستن">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 6l12 12M18 6L6 18"/>
+                <button
+                    type="button"
+                    @click="categoriesOpen = false"
+                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-slate-400 ring-1 ring-slate-200 transition hover:bg-slate-50 hover:text-slate-700"
+                    aria-label="بستن"
+                >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>
             </div>
+        </div>
 
-            <div class="max-h-[70vh] overflow-y-auto px-5 py-5">
-                <template x-if="categories.length">
-                    <div class="space-y-3">
-                        <template x-for="(category, index) in categories" :key="`${category.name}-${index}`">
-                            <div class="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                                <div class="min-w-0">
-                                    <p class="text-xs text-slate-400">نام دسته</p>
-                                    <p class="mt-1 truncate text-sm font-bold text-slate-800" x-text="category.name"></p>
-                                </div>
-                                <div class="flex items-center gap-2 self-start rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 sm:self-center">
-                                    <span x-text="category.quantity"></span>
-                                    <span class="text-slate-300">|</span>
-                                    <span x-text="category.unit"></span>
-                                </div>
+        <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6">
+            <template x-if="categories.length">
+                <ul class="divide-y divide-slate-100">
+                    <template x-for="(category, index) in categories" :key="`${category.name}-${index}`">
+                        <li class="flex min-h-12 items-center justify-between gap-3 px-4 py-2.5 sm:px-5">
+                            <div class="flex min-w-0 items-center gap-3">
+                                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600 ring-1 ring-sky-100">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.698 1.786.576 2.334-.068l3.652-4.33a1.73 1.73 0 0 0 .12-2.081L11.66 3.66A1.73 1.73 0 0 0 10.35 3.08Z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M6 6h.008v.008H6V6Z"/>
+                                    </svg>
+                                </span>
+                                <p class="truncate text-sm font-bold text-slate-800 sm:text-[15px]" x-text="category.name"></p>
                             </div>
-                        </template>
-                    </div>
-                </template>
+                            <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-slate-100/80 px-3 py-1.5 text-xs ring-1 ring-slate-200/80">
+                                <span class="font-black text-slate-800" x-text="category.quantity"></span>
+                                <span class="font-semibold text-slate-500" x-text="category.unit"></span>
+                            </span>
+                        </li>
+                    </template>
+                </ul>
+            </template>
 
-                <template x-if="!categories.length">
-                    <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
-                        زیر‌دسته‌ای برای این خدمت ثبت نشده است.
-                    </div>
-                </template>
-            </div>
+            <template x-if="!categories.length">
+                <div class="px-4 py-10 text-center">
+                    <p class="text-sm font-bold text-slate-600">زیر‌دسته‌ای برای این خدمت ثبت نشده است.</p>
+                </div>
+            </template>
         </div>
     </div>
 
