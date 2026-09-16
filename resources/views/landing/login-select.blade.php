@@ -55,72 +55,81 @@
         </div>
 
         <!-- کارت‌های انتخاب -->
-        <div class="mt-10 grid grid-cols-1 gap-6 sm:mt-14 md:grid-cols-3" data-reveal>
+        <div class="mt-8 grid grid-cols-3 gap-2.5 sm:mt-14 sm:gap-6" data-reveal>
             <!-- ورود پرسنل -->
             <a
                 href="{{ route('login') }}"
-                class="group relative flex flex-col items-center rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-xl shadow-slate-900/5 transition duration-300 hover:-translate-y-1 hover:border-[#1572A1]/40 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#1572A1]/20"
+                class="group relative flex flex-col items-center overflow-hidden rounded-2xl border-2 border-[#1572A1] bg-[linear-gradient(155deg,#1572A1_0%,#2E97CC_55%,#36A9DF_100%)] p-3 pt-7 text-center shadow-xl shadow-[#1572A1]/30 transition duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-[#1572A1]/45 focus:outline-none focus-visible:ring-4 focus-visible:ring-white/40 sm:rounded-3xl sm:p-8"
             >
+                <span class="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full bg-white/15 blur-2xl" aria-hidden="true"></span>
+
                 <span
-                    class="flex h-16 w-16 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#4d56a3_0%,#1572A1_58%,#A4184B_135%)] text-white shadow-lg shadow-[#5964AE]/25 transition duration-300 group-hover:scale-105"
+                    class="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-white shadow-lg shadow-[#0b4d75]/25 backdrop-blur transition duration-300 group-hover:scale-105 sm:h-16 sm:w-16 sm:rounded-2xl"
                 >
-                    <i class="bi bi-person-badge text-2xl" aria-hidden="true"></i>
+                    <i class="bi bi-person-badge text-lg sm:text-2xl" aria-hidden="true"></i>
                 </span>
 
-                <h2 class="mt-5 text-lg font-black text-slate-900">ورود پرسنل</h2>
-                <p class="mt-2 text-sm leading-relaxed text-slate-500">مدیران، مددکاران اجتماعی و اپراتورهای مرکز</p>
+                <h2 class="relative mt-3 min-h-[2.1rem] text-xs font-black leading-tight text-white sm:mt-5 sm:min-h-0 sm:text-lg">ورود پرسنل</h2>
+                <p class="relative mt-2 hidden text-sm leading-relaxed text-blue-50/90 sm:block">مدیران، مددکاران اجتماعی و اپراتورهای مرکز</p>
 
-                <span
-                    class="mt-6 inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#1572A1]/10 px-5 text-sm font-extrabold text-[#1572A1]"
-                >
+                <span class="relative mt-4 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#1572A1] shadow-lg shadow-[#0b4d75]/25 sm:hidden">
+                    <i class="bi bi-arrow-left text-sm" aria-hidden="true"></i>
+                </span>
+                <span class="relative mt-6 hidden min-h-11 items-center gap-2 rounded-xl bg-white px-5 text-sm font-extrabold text-[#1572A1] shadow-lg shadow-[#0b4d75]/15 sm:inline-flex">
                     ورود به پنل
                     <i class="bi bi-arrow-left" aria-hidden="true"></i>
                 </span>
             </a>
 
-            <!-- ورود اعضا (به‌زودی) -->
+            <!-- ورود اعضا -->
             <button
                 type="button"
-                disabled
                 aria-disabled="true"
-                class="relative flex cursor-not-allowed flex-col items-center rounded-3xl border border-dashed border-slate-300 bg-white/60 p-8 text-center opacity-75"
+                class="group relative flex flex-col items-center overflow-hidden rounded-2xl border-2 border-[#5964AE] bg-[linear-gradient(155deg,#5964AE_0%,#6B5FC9_55%,#7C6BD8_100%)] p-3 pt-7 text-center shadow-xl shadow-[#5964AE]/30 transition duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-[#5964AE]/45 focus:outline-none focus-visible:ring-4 focus-visible:ring-white/40 sm:rounded-3xl sm:p-8"
             >
-                <span class="absolute right-4 top-4 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-700">
-                    به‌زودی
+                <span class="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full bg-white/15 blur-2xl" aria-hidden="true"></span>
+
+                <span
+                    class="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-white shadow-lg shadow-[#3b3f6e]/25 backdrop-blur transition duration-300 group-hover:scale-105 sm:h-16 sm:w-16 sm:rounded-2xl"
+                >
+                    <i class="bi bi-people text-lg sm:text-2xl" aria-hidden="true"></i>
                 </span>
 
-                <span class="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5964AE]/10 text-[#5964AE]/70">
-                    <i class="bi bi-people text-2xl" aria-hidden="true"></i>
+                <h2 class="relative mt-3 min-h-[2.1rem] text-xs font-black leading-tight text-white sm:mt-5 sm:min-h-0 sm:text-lg">ورود اعضا</h2>
+                <p class="relative mt-2 hidden text-sm leading-relaxed text-indigo-50/90 sm:block">خانواده‌های تحت پوشش مرکز</p>
+
+                <span class="relative mt-4 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#5964AE] shadow-lg shadow-[#3b3f6e]/25 sm:hidden">
+                    <i class="bi bi-arrow-left text-sm" aria-hidden="true"></i>
                 </span>
-
-                <h2 class="mt-5 text-lg font-black text-slate-900">ورود اعضا</h2>
-                <p class="mt-2 text-sm leading-relaxed text-slate-500">خانواده‌های تحت پوشش مرکز</p>
-
-                <span class="mt-6 inline-flex min-h-11 items-center gap-2 rounded-xl bg-slate-100 px-5 text-sm font-extrabold text-slate-400">
-                    در دسترس نیست
+                <span class="relative mt-6 hidden min-h-11 items-center gap-2 rounded-xl bg-white px-5 text-sm font-extrabold text-[#5964AE] shadow-lg shadow-[#3b3f6e]/15 sm:inline-flex">
+                    ورود به پنل
+                    <i class="bi bi-arrow-left" aria-hidden="true"></i>
                 </span>
             </button>
 
-            <!-- ورود حامی (به‌زودی) -->
+            <!-- ورود حامی -->
             <button
                 type="button"
-                disabled
                 aria-disabled="true"
-                class="relative flex cursor-not-allowed flex-col items-center rounded-3xl border border-dashed border-slate-300 bg-white/60 p-8 text-center opacity-75"
+                class="group relative flex flex-col items-center overflow-hidden rounded-2xl border-2 border-[#A4184B] bg-[linear-gradient(155deg,#A4184B_0%,#C0205A_55%,#E11D74_100%)] p-3 pt-7 text-center shadow-xl shadow-[#A4184B]/30 transition duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-[#A4184B]/45 focus:outline-none focus-visible:ring-4 focus-visible:ring-white/40 sm:rounded-3xl sm:p-8"
             >
-                <span class="absolute right-4 top-4 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-700">
-                    به‌زودی
+                <span class="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full bg-white/15 blur-2xl" aria-hidden="true"></span>
+
+                <span
+                    class="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-white shadow-lg shadow-[#780f33]/25 backdrop-blur transition duration-300 group-hover:scale-105 sm:h-16 sm:w-16 sm:rounded-2xl"
+                >
+                    <i class="bi bi-heart text-lg sm:text-2xl" aria-hidden="true"></i>
                 </span>
 
-                <span class="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#A4184B]/10 text-[#A4184B]/70">
-                    <i class="bi bi-heart text-2xl" aria-hidden="true"></i>
+                <h2 class="relative mt-3 min-h-[2.1rem] text-xs font-black leading-tight text-white sm:mt-5 sm:min-h-0 sm:text-lg">ورود حامی</h2>
+                <p class="relative mt-2 hidden text-sm leading-relaxed text-rose-50/90 sm:block">حامیان کودکان و اعضای هیئت‌مدیره</p>
+
+                <span class="relative mt-4 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#A4184B] shadow-lg shadow-[#780f33]/25 sm:hidden">
+                    <i class="bi bi-arrow-left text-sm" aria-hidden="true"></i>
                 </span>
-
-                <h2 class="mt-5 text-lg font-black text-slate-900">ورود حامی</h2>
-                <p class="mt-2 text-sm leading-relaxed text-slate-500">حامیان کودکان و اعضای هیئت‌مدیره</p>
-
-                <span class="mt-6 inline-flex min-h-11 items-center gap-2 rounded-xl bg-slate-100 px-5 text-sm font-extrabold text-slate-400">
-                    در دسترس نیست
+                <span class="relative mt-6 hidden min-h-11 items-center gap-2 rounded-xl bg-white px-5 text-sm font-extrabold text-[#A4184B] shadow-lg shadow-[#780f33]/15 sm:inline-flex">
+                    ورود به پنل
+                    <i class="bi bi-arrow-left" aria-hidden="true"></i>
                 </span>
             </button>
         </div>
