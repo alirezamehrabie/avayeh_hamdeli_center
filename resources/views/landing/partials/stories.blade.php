@@ -11,14 +11,14 @@
             </h2>
         </div>
 
-        <div
-            class="mt-12 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 [scrollbar-width:thin]"
-            x-data="{ active: 0 }"
-            @scroll.capture.passive="$el.querySelectorAll('.story-card').forEach((c,i)=>{ const r=c.getBoundingClientRect(); if(r.left>=0 && r.right<=window.innerWidth+16) active=i; })"
-            role="region"
-            aria-label="قصه‌های همدلی"
-            aria-roledescription="کاروسل"
-        >
+        <div x-data="{ active: 0 }">
+            <div
+                class="mt-12 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 [scrollbar-width:thin]"
+                @scroll.capture.passive="$el.querySelectorAll('.story-card').forEach((c,i)=>{ const r=c.getBoundingClientRect(); if(r.left>=0 && r.right<=window.innerWidth+16) active=i; })"
+                role="region"
+                aria-label="قصه‌های همدلی"
+                aria-roledescription="کاروسل"
+            >
             @php
                 $stories = [
                     ['quote' => 'با تغذیه‌ی سالم، نمره‌هایم بهتر شد و دوباره به مدرسه انگیزه گرفتم.', 'name' => 'به نام خودم', 'role' => 'کودک تحت پوشش', 'emoji' => '✏️'],
@@ -44,15 +44,16 @@
             @endforeach
         </div>
 
-        <!-- نقاط پیمایش -->
-        <div class="mt-5 flex justify-center gap-2">
-            @foreach($stories as $index => $story)
-                <span
-                    class="h-2 rounded-full transition-all duration-300"
-                    :class="active === {{ $index }} ? 'w-6 bg-[#5964AE]' : 'w-2 bg-slate-300'"
-                    aria-hidden="true"
-                ></span>
-            @endforeach
+            <!-- نقاط پیمایش -->
+            <div class="mt-5 flex justify-center gap-2">
+                @foreach($stories as $index => $story)
+                    <span
+                        class="h-2 rounded-full transition-all duration-300"
+                        :class="active === {{ $index }} ? 'w-6 bg-[#5964AE]' : 'w-2 bg-slate-300'"
+                        aria-hidden="true"
+                    ></span>
+                @endforeach
+            </div>
         </div>
     </div>
 </section>

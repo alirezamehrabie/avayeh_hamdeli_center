@@ -57,11 +57,11 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-// پیش‌نمایش صفحه‌ی عمومی (لندینگ) — موقتاً فقط برای مدیران با دسترسی کامل
-// پس از تأیید طراحی، این صفحه به روت اصلی منتقل و دسترسی عموم می‌شود.
-Route::view('/landing', 'landing.index')
-    ->middleware(['auth', 'can:full-access'])
-    ->name('landing.preview');
+// صفحه عمومی لندینگ — در دسترس همه (مهمان و کاربر وارد‌شده)
+Route::view('/landing', 'landing.index')->name('landing.preview');
+
+// صفحه انتخاب نوع ورود (عمومی) — مسیر ارتباطی با صفحه لندینگ
+Route::view('/login-select', 'landing.login-select')->name('login.select');
 
 Route::get('/qr/r/{token}', [QrIdentityController::class, 'resolve'])
     ->middleware(['auth'])

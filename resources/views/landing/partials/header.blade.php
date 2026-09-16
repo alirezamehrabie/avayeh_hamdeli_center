@@ -70,12 +70,11 @@
                 همدلی کنید
             </a>
             <a
-                href="{{ route('login') }}"
+                href="{{ route('login.select') }}"
                 class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-[#1572A1]/40 hover:text-[#1572A1] sm:min-h-0"
             >
                 <i class="bi bi-box-arrow-in-left" aria-hidden="true"></i>
-                <span class="hidden sm:inline">ورود پرسنل</span>
-                <span class="sm:hidden">ورود</span>
+                ورود
             </a>
         </div>
     </div>
