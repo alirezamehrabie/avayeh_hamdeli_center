@@ -41,12 +41,93 @@
 <body
     x-data="{
         mobileNavOpen: false,
+        mobileNavHistoryPushed: false,
+        mobileNavClosingFromPopstate: false,
+        mobileNavPopstateHandler: null,
+        mobileNavScrollLock: null,
+        mobileNavEnableHistoryClose: false,
         floatingBarVisible: false,
         revealHeights: new Set(),
         init() {
+            this.initMobileNav();
             this.initFloatingBar();
             this.initReveal();
             this.initCounter();
+        },
+        initMobileNav() {
+            // دکمه Back گوشی فقط روی موبایل/لمسی history می‌خواند تا تاریخچه دسکتاپ آلوده نشود.
+            this.mobileNavEnableHistoryClose = window.matchMedia('(max-width: 1023px), (pointer: coarse)').matches;
+            window.addEventListener('resize', () => {
+                if (this.mobileNavOpen && window.matchMedia('(min-width: 1024px)').matches) {
+                    this.closeMobileNav();
+                }
+            });
+        },
+        openMobileNav() {
+            if (this.mobileNavOpen) return;
+            this.mobileNavOpen = true;
+            this.lockMobileNavScroll();
+            this.pushMobileNavHistory();
+            this.$nextTick(() => this.$refs.mobileNavClose?.focus({ preventScroll: true }));
+        },
+        closeMobileNav(skipHistoryBack = false) {
+            if (! this.mobileNavOpen) return;
+
+            if (this.mobileNavHistoryPushed && ! this.mobileNavClosingFromPopstate && ! skipHistoryBack) {
+                this.mobileNavHistoryPushed = false;
+                try {
+                    window.history.back();
+                } catch (error) {
+                    // کشو حتی اگر ورودی history قابل مصرف نباشد بسته می‌شود.
+                }
+            }
+
+            this.mobileNavOpen = false;
+            this.mobileNavClosingFromPopstate = false;
+            this.teardownMobileNavHistory();
+            this.unlockMobileNavScroll();
+        },
+        pushMobileNavHistory() {
+            if (! this.mobileNavEnableHistoryClose || ! window.history?.pushState) return;
+
+            window.history.pushState({ ...(window.history.state || {}), landingNav: true }, '', window.location.href);
+            this.mobileNavHistoryPushed = true;
+
+            this.mobileNavPopstateHandler = () => {
+                if (! this.mobileNavHistoryPushed || ! this.mobileNavOpen) return;
+                // فشردن Back: منو بسته می‌شود و خروج ناگهانی از صفحه گرفته نمی‌شود.
+                this.mobileNavClosingFromPopstate = true;
+                this.closeMobileNav(true);
+            };
+
+            window.addEventListener('popstate', this.mobileNavPopstateHandler);
+        },
+        teardownMobileNavHistory() {
+            if (! this.mobileNavPopstateHandler) return;
+            window.removeEventListener('popstate', this.mobileNavPopstateHandler);
+            this.mobileNavPopstateHandler = null;
+        },
+        lockMobileNavScroll() {
+            if (this.mobileNavScrollLock) return;
+            // html تنها ظرف اسکرول این صفحه است، پس قفل روی همان اعمال می‌شود.
+            const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+            this.mobileNavScrollLock = {
+                scrollY: window.scrollY,
+                htmlOverflow: document.documentElement.style.overflow,
+                bodyPaddingRight: document.body.style.paddingRight,
+            };
+            document.documentElement.style.overflow = 'hidden';
+            if (scrollbarWidth > 0) {
+                document.body.style.paddingRight = `${scrollbarWidth}px`;
+            }
+        },
+        unlockMobileNavScroll() {
+            if (! this.mobileNavScrollLock) return;
+            const lock = this.mobileNavScrollLock;
+            document.documentElement.style.overflow = lock.htmlOverflow;
+            document.body.style.paddingRight = lock.bodyPaddingRight;
+            window.scrollTo(0, lock.scrollY);
+            this.mobileNavScrollLock = null;
         },
         initFloatingBar() {
             const heroEnd = document.getElementById('hero')?.getBoundingClientRect().bottom ?? 600;
