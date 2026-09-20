@@ -9,7 +9,8 @@
     $layoutKey = $listLayout ? 'list' : 'grid';
 @endphp
 
-<div class="{{ $listLayout ? 'space-y-2' : 'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5' }}">
+<div role="radiogroup" aria-label="سطح نیاز"
+     class="{{ $listLayout ? 'space-y-2' : 'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5' }}">
     @foreach($levels as $level)
         @php $tone = $levelTones[$level->code] ?? $levelTones['C']; @endphp
         @php $isSelected = $needLevelId !== null && (int) $needLevelId === $level->id; @endphp

@@ -21,6 +21,8 @@ class EditField extends Component
 
     public ?string $needLevelId = null;
 
+    public ?string $initialNeedLevelId = null;
+
     public ?string $flashMessage = null;
 
     public function mount(): void
@@ -42,6 +44,7 @@ class EditField extends Component
         $this->needLevelId = $person->needsLevel?->need_level_id !== null
             ? (string) $person->needsLevel->need_level_id
             : null;
+        $this->initialNeedLevelId = $this->needLevelId;
         $this->flashMessage = null;
 
         // شیت پایین «سطح نیاز» در موبایل بلافاصله پس از انتخاب مددجو باز می‌شود.
@@ -52,8 +55,11 @@ class EditField extends Component
     {
         $this->selectedPersonId = null;
         $this->needLevelId = null;
+        $this->initialNeedLevelId = null;
         $this->search = '';
         $this->flashMessage = null;
+
+        $this->dispatch('focus-person-search');
     }
 
     public function backToFields(): void
@@ -84,6 +90,7 @@ class EditField extends Component
         // بازگشت خودکار به حالت جستجو برای ثبت مددجوی بعدی.
         $this->selectedPersonId = null;
         $this->needLevelId = null;
+        $this->initialNeedLevelId = null;
         $this->search = '';
         $this->dispatch('close-need-level-sheet');
         $this->dispatch('focus-person-search');
@@ -101,8 +108,21 @@ class EditField extends Component
                 'guardian.insuranceType:id,name',
                 'supportCoverage:id,person_id,support_organization_id,other_organization_name',
                 'supportCoverage.organization:id,name,slug',
+                'needsLevel:id,person_id,need_level_id',
+                'needsLevel.levelType:id,code,title',
             ])
             ->find($this->selectedPersonId);
+    }
+
+    /**
+     * انتخاب سطح معتبر و متفاوت از مقدار ذخیره‌شده؛ دکمه ثبت تا این شرط برقرار
+     * نشود غیرفعال می‌ماند تا ثبت بی‌معنا یا ثبت «بی‌تغییری» ممکن نشود.
+     */
+    private function canSaveNeedLevel(): bool
+    {
+        return $this->selectedPersonId !== null
+            && $this->needLevelId !== null
+            && $this->needLevelId !== $this->initialNeedLevelId;
     }
 
     /**
@@ -123,15 +143,28 @@ class EditField extends Component
 
         $peopleSearch->applyTo($query, $search);
 
-        return $query->limit(10)->get();
+        // یکی بیشتر از ظرفیت نمایش، تا مشخص شود نتایج بیشتری وجود دارد.
+        return $query->limit(11)->get();
     }
 
     public function render()
     {
+        $hits = $this->selectedPersonId === null ? $this->searchResults() : collect();
+
         return view('livewire.people.edit-field', [
             'person' => $this->selectedPerson(),
-            'searchResults' => $this->selectedPersonId === null ? $this->searchResults() : collect(),
+            'searchResults' => $hits->take(10),
+            'searchTruncated' => $hits->count() > 10,
+            'searchTooShort' => $this->selectedPersonId === null && $this->searchNeedsMoreInput(),
+            'canSave' => $this->canSaveNeedLevel(),
             'levels' => NeedLevelType::query()->orderByDesc('severity_order')->get(),
         ]);
+    }
+
+    private function searchNeedsMoreInput(): bool
+    {
+        $peopleSearch = app(PeopleIndexSearchQuery::class);
+
+        return $peopleSearch->needsMoreInput($peopleSearch->normalizeSearchTerm(trim($this->search)), 'all');
     }
 }
