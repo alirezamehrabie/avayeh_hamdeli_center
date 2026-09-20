@@ -41,6 +41,9 @@ class EditField extends Component
             ? (string) $person->needsLevel->need_level_id
             : null;
         $this->flashMessage = null;
+
+        // شیت پایین «سطح نیاز» در موبایل بلافاصله پس از انتخاب مددجو باز می‌شود.
+        $this->dispatch('open-need-level-sheet');
     }
 
     public function resetSelection(): void
