@@ -2,11 +2,11 @@
     // طیف رنگ از «پایین» (سرد/آرام) به «بحرانی» (گرم/هشدار) — کلاس‌ها کامل و ثابت
     // نوشته شده‌اند تا Tailwind آن‌ها را در بیلد حذف نکند.
     $levelTones = [
-        'E' => ['strip' => 'bg-emerald-400', 'dot' => 'bg-emerald-500', 'pill' => 'bg-emerald-600', 'active' => 'peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:ring-emerald-300', 'caption' => 'کمترین اولویت رسیدگی'],
-        'D' => ['strip' => 'bg-lime-400', 'dot' => 'bg-lime-500', 'pill' => 'bg-lime-600', 'active' => 'peer-checked:border-lime-500 peer-checked:bg-lime-50 peer-checked:ring-lime-300', 'caption' => 'اولویت پایین'],
-        'C' => ['strip' => 'bg-amber-400', 'dot' => 'bg-amber-500', 'pill' => 'bg-amber-600', 'active' => 'peer-checked:border-amber-500 peer-checked:bg-amber-50 peer-checked:ring-amber-300', 'caption' => 'اولویت متوسط'],
-        'B' => ['strip' => 'bg-orange-500', 'dot' => 'bg-orange-500', 'pill' => 'bg-orange-600', 'active' => 'peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:ring-orange-300', 'caption' => 'اولویت بالا'],
-        'A' => ['strip' => 'bg-rose-500', 'dot' => 'bg-rose-600', 'pill' => 'bg-rose-700', 'active' => 'peer-checked:border-rose-600 peer-checked:bg-rose-50 peer-checked:ring-rose-300', 'caption' => 'وضعیت بحرانی و فوری'],
+        'E' => ['strip' => 'bg-gradient-to-l from-emerald-400/80 to-emerald-200/30', 'dot' => 'bg-gradient-to-br from-emerald-400 to-emerald-600', 'glass' => 'bg-emerald-50/30', 'selected' => 'peer-checked:border-emerald-400/70 peer-checked:bg-emerald-50/70 peer-checked:ring-emerald-300/40 peer-checked:shadow-emerald-200/35', 'pill' => 'bg-emerald-600', 'caption' => 'کمترین اولویت رسیدگی'],
+        'D' => ['strip' => 'bg-gradient-to-l from-lime-400/80 to-lime-200/30', 'dot' => 'bg-gradient-to-br from-lime-400 to-lime-600', 'glass' => 'bg-lime-50/30', 'selected' => 'peer-checked:border-lime-400/70 peer-checked:bg-lime-50/70 peer-checked:ring-lime-300/40 peer-checked:shadow-lime-200/35', 'pill' => 'bg-lime-600', 'caption' => 'اولویت پایین'],
+        'C' => ['strip' => 'bg-gradient-to-l from-amber-400/80 to-amber-200/30', 'dot' => 'bg-gradient-to-br from-amber-400 to-amber-600', 'glass' => 'bg-amber-50/30', 'selected' => 'peer-checked:border-amber-400/70 peer-checked:bg-amber-50/70 peer-checked:ring-amber-300/40 peer-checked:shadow-amber-200/35', 'pill' => 'bg-amber-600', 'caption' => 'اولویت متوسط'],
+        'B' => ['strip' => 'bg-gradient-to-l from-orange-500/80 to-orange-300/30', 'dot' => 'bg-gradient-to-br from-orange-400 to-orange-600', 'glass' => 'bg-orange-50/30', 'selected' => 'peer-checked:border-orange-400/70 peer-checked:bg-orange-50/70 peer-checked:ring-orange-300/40 peer-checked:shadow-orange-200/35', 'pill' => 'bg-orange-600', 'caption' => 'اولویت بالا'],
+        'A' => ['strip' => 'bg-gradient-to-l from-rose-500/80 to-rose-300/30', 'dot' => 'bg-gradient-to-br from-rose-500 to-rose-700', 'glass' => 'bg-rose-50/30', 'selected' => 'peer-checked:border-rose-500/70 peer-checked:bg-rose-50/70 peer-checked:ring-rose-300/40 peer-checked:shadow-rose-200/35', 'pill' => 'bg-rose-700', 'caption' => 'وضعیت بحرانی و فوری'],
     ];
 @endphp
 
@@ -127,39 +127,42 @@
             </div>
             <p class="text-sm text-gray-500 mb-5">مقدار «سطح نیاز» برای «{{ $person->full_name }}» را از طیف پایین تا بحرانی انتخاب کنید:</p>
 
-            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                @foreach($levels as $level)
-                    @php $tone = $levelTones[$level->code] ?? $levelTones['C']; @endphp
-                    @php $isSelected = $needLevelId !== null && (int) $needLevelId === $level->id; @endphp
-                    <label class="relative block cursor-pointer">
-                        {{-- وضعیت انتخاب با CSS خالص (peer-checked) نمایش داده می‌شود تا بازخورد آنی باشد و به round-trip سرور وابسته نباشد --}}
-                        <input type="radio" name="need_level_id" value="{{ $level->id }}" class="peer sr-only"
-                               wire:model.live="needLevelId" @checked($isSelected)/>
+            <div class="bg-white">
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                    @foreach($levels as $level)
+                        @php $tone = $levelTones[$level->code] ?? $levelTones['C']; @endphp
+                        @php $isSelected = $needLevelId !== null && (int) $needLevelId === $level->id; @endphp
+                        <label class="relative block cursor-pointer">
+                            {{-- وضعیت انتخاب با CSS خالص (peer-checked) نمایش داده می‌شود تا بازخورد آنی باشد و به round-trip سرور وابسته نباشد --}}
+                            <input type="radio" name="need_level_id" value="{{ $level->id }}" class="peer sr-only"
+                                   wire:model.live="needLevelId" @checked($isSelected)/>
 
-                        <div class="relative h-full overflow-hidden rounded-xl border-2 border-gray-200 bg-white shadow-sm ring-2 ring-offset-2 ring-transparent transition-all duration-150
-                            hover:-translate-y-0.5 hover:shadow-md hover:border-gray-300
-                            peer-checked:shadow-md peer-checked:-translate-y-0.5 peer-checked:scale-[1.02] {{ $tone['active'] }}
-                            peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-indigo-500">
-                            <span class="absolute inset-x-0 top-0 h-1.5 {{ $tone['strip'] }}" aria-hidden="true"></span>
+                            <div class="relative h-full overflow-hidden rounded-2xl border border-white/70 shadow-sm shadow-slate-400/10 ring-1 ring-white/40 backdrop-blur-md transition-all duration-200
+                                {{ $tone['glass'] }}
+                                hover:-translate-y-1 hover:bg-white/60 hover:shadow-md
+                                peer-checked:-translate-y-1 peer-checked:scale-[1.03] peer-checked:shadow-md peer-checked:ring-4 {{ $tone['selected'] }}
+                                peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-indigo-500">
+                                <span class="absolute inset-x-0 top-0 h-1.5 {{ $tone['strip'] }}" aria-hidden="true"></span>
 
-                            <div class="flex flex-col items-center px-3 pb-10 pt-6 text-center">
-                                <span class="mb-2 flex h-10 w-10 items-center justify-center rounded-full text-sm font-black text-white shadow-sm {{ $tone['dot'] }}">
-                                    {{ $level->code }}
-                                </span>
-                                <span class="text-sm font-extrabold text-gray-800">{{ $level->title }}</span>
-                                <span class="mt-1 text-[11px] font-medium text-gray-500">{{ $tone['caption'] }}</span>
+                                <div class="flex flex-col items-center px-3 pb-10 pt-6 text-center">
+                                    <span class="mb-2 flex h-11 w-11 items-center justify-center rounded-full text-sm font-black text-white shadow-md ring-2 ring-white/60 {{ $tone['dot'] }}">
+                                        {{ $level->code }}
+                                    </span>
+                                    <span class="text-sm font-extrabold text-gray-800">{{ $level->title }}</span>
+                                    <span class="mt-1 text-[11px] font-medium text-gray-500">{{ $tone['caption'] }}</span>
+                                </div>
                             </div>
-                        </div>
 
-                        {{-- برچسب «انتخاب‌شده» باید خواهرِ مستقیم input باشد تا peer-checked روی آن اعمال شود --}}
-                        <span class="pointer-events-none absolute inset-x-0 bottom-2 z-10 mx-auto hidden h-6 w-max items-center justify-center gap-1.5 rounded-full px-3 text-[11px] font-extrabold text-white shadow-sm peer-checked:inline-flex {{ $tone['pill'] }}">
-                            <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            انتخاب‌شده
-                        </span>
-                    </label>
-                @endforeach
+                            {{-- برچسب «انتخاب‌شده» باید خواهرِ مستقیم input باشد تا peer-checked روی آن اعمال شود --}}
+                            <span class="pointer-events-none absolute inset-x-0 bottom-2 z-10 mx-auto hidden h-6 w-max items-center justify-center gap-1.5 rounded-full px-3 text-[11px] font-extrabold text-white shadow-md ring-1 ring-white/50 peer-checked:inline-flex {{ $tone['pill'] }}">
+                                <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                انتخاب‌شده
+                            </span>
+                        </label>
+                    @endforeach
+                </div>
             </div>
 
             @error('needLevelId')
