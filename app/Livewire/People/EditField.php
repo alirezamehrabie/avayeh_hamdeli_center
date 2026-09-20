@@ -73,9 +73,18 @@ class EditField extends Component
 
     private function selectedPerson(): ?Person
     {
-        return $this->selectedPersonId
-            ? Person::query()->find($this->selectedPersonId)
-            : null;
+        if ($this->selectedPersonId === null) {
+            return null;
+        }
+
+        return Person::query()
+            ->with([
+                'guardian:id,insurance_status,insurance_type_id',
+                'guardian.insuranceType:id,name',
+                'supportCoverage:id,person_id,support_organization_id,other_organization_name',
+                'supportCoverage.organization:id,name,slug',
+            ])
+            ->find($this->selectedPersonId);
     }
 
     /**

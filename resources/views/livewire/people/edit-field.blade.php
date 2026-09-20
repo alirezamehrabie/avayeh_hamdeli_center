@@ -17,18 +17,53 @@
         <p class="text-sm text-gray-500 mb-5">برای ویرایش یک فیلد، ابتدا مددجو را با کد ملی، کد مددجویی یا نام و نام خانوادگی پیدا و انتخاب کنید.</p>
 
         @if($person)
-            <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-100 bg-indigo-50/60 px-5 py-4">
-                <div class="flex items-center gap-3">
-                    <div class="flex h-11 w-11 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+            @php
+                $guardian = $person->guardian;
+                $insuranceName = ($guardian?->insurance_status && $guardian?->insuranceType?->name)
+                    ? $guardian->insuranceType->name
+                    : null;
+
+                $coverage = $person->supportCoverage;
+                $coverageOrg = $coverage?->organization;
+                $coverageName = match (true) {
+                    $coverage === null => null,
+                    $coverageOrg?->slug === 'other' => $coverage->other_organization_name ?: ($coverageOrg?->name ?? null),
+                    default => $coverageOrg?->name ?? null,
+                };
+            @endphp
+            <div class="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-indigo-100 bg-indigo-50/60 px-5 py-4">
+                <div class="flex items-start gap-3">
+                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
                         <i class="fa fa-user"></i>
                     </div>
                     <div>
-                        <p class="font-bold text-gray-800">{{ $person->full_name }}</p>
+                        <p class="font-bold text-gray-800">
+                            {{ $person->full_name }}
+                            @if($person->father_name)
+                                <span class="mr-1 text-xs font-medium text-gray-500">(نام پدر: {{ $person->father_name }})</span>
+                            @endif
+                        </p>
                         <p class="text-xs text-gray-500">
                             کد مددجویی: {{ $person->person_code ?? '—' }}
                             <span class="mx-2 text-gray-300">|</span>
                             کد ملی: {{ $person->national_id ?? '—' }}
                         </p>
+                        @if($insuranceName || $coverageName)
+                            <div class="mt-2 flex flex-wrap items-center gap-2">
+                                @if($insuranceName)
+                                    <span class="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-700">
+                                        <i class="fa fa-shield"></i>
+                                        بیمه: {{ $insuranceName }}
+                                    </span>
+                                @endif
+                                @if($coverageName)
+                                    <span class="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-[11px] font-semibold text-violet-700">
+                                        <i class="fa fa-building"></i>
+                                        تحت پوشش: {{ $coverageName }}
+                                    </span>
+                                @endif
+                            </div>
+                        @endif
                     </div>
                 </div>
                 <button type="button" wire:click="resetSelection"
