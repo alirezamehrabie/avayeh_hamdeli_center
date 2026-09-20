@@ -7,6 +7,7 @@ use App\Http\Controllers\ServiceCategoryThumbnailController;
 use App\Livewire\Admin\DashboardHome;
 use App\Livewire\Admin\UserAccount;
 use App\Livewire\Auth\Login;
+use App\Livewire\Auth\MemberLogin;
 use App\Livewire\ChildSupporters\Dashboard as ChildSupporterDashboard;
 use App\Livewire\ChildSupporters\SponsorList;
 use App\Livewire\ChildSupporters\SponsorRegistration;
@@ -22,6 +23,7 @@ use App\Livewire\DistributionOperators\UserAccount as DistributionOperatorUserAc
 use App\Livewire\Guardians\DeletedGuardians;
 use App\Livewire\Guardians\EditGuardian;
 use App\Livewire\Guardians\IndexGuardians;
+use App\Livewire\Members\Dashboard as MemberDashboard;
 use App\Livewire\People\AdvancedFilterBuilder;
 use App\Livewire\People\CreatePerson;
 use App\Livewire\People\DeletedPeople;
@@ -62,6 +64,21 @@ Route::view('/landing', 'landing.index')->name('landing.preview');
 
 // صفحه انتخاب نوع ورود (عمومی) — مسیر ارتباطی با صفحه لندینگ
 Route::view('/login-select', 'landing.login-select')->name('login.select');
+
+// مسیر ورود اعضا (مددجویان) با گارد مجزای member
+Route::get('/member-login', MemberLogin::class)->name('member.login');
+
+Route::middleware('member.auth')->group(function () {
+    Route::get('/member-panel', MemberDashboard::class)->name('member.dashboard');
+
+    Route::post('/member-logout', function () {
+        auth()->guard('member')->logout();
+        request()->session()->invalidate();
+        request()->session()->regenerateToken();
+
+        return redirect()->route('member.login');
+    })->name('member.logout');
+});
 
 Route::get('/qr/r/{token}', [QrIdentityController::class, 'resolve'])
     ->middleware(['auth'])

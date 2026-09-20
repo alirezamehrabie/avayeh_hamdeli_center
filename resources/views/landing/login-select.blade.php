@@ -82,9 +82,8 @@
             </a>
 
             <!-- ورود اعضا -->
-            <button
-                type="button"
-                aria-disabled="true"
+            <a
+                href="{{ route('member.login') }}"
                 class="group relative flex flex-col items-center overflow-hidden rounded-2xl border-2 border-[#5964AE] bg-[linear-gradient(155deg,#5964AE_0%,#6B5FC9_55%,#7C6BD8_100%)] p-3 pt-7 text-center shadow-xl shadow-[#5964AE]/30 transition duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-[#5964AE]/45 focus:outline-none focus-visible:ring-4 focus-visible:ring-white/40 sm:rounded-3xl sm:p-8"
             >
                 <span class="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full bg-white/15 blur-2xl" aria-hidden="true"></span>
@@ -105,7 +104,7 @@
                     ورود به پنل
                     <i class="bi bi-arrow-left" aria-hidden="true"></i>
                 </span>
-            </button>
+            </a>
 
             <!-- ورود حامی -->
             <button

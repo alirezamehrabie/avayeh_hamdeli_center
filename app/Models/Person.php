@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Helpers\Morilog\Jalalian;
 use App\Models\Concerns\InvalidatesIncompleteCasesQueueCache;
 use App\Traits\HasJalaliBirthDate;
+use Illuminate\Auth\Authenticatable;
+use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -15,9 +17,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Request;
 
-class Person extends Model
+class Person extends Model implements AuthenticatableContract
 {
-    use HasFactory, HasJalaliBirthDate, InvalidatesIncompleteCasesQueueCache, SoftDeletes;
+    use Authenticatable, HasFactory, HasJalaliBirthDate, InvalidatesIncompleteCasesQueueCache, SoftDeletes;
 
     /**
      * لیست ماه‌های شمسی

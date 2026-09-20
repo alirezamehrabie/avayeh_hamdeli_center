@@ -42,6 +42,12 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // گارد ورود اعضا (مددجویان تحت پوشش)
+        'member' => [
+            'driver' => 'session',
+            'provider' => 'people',
+        ],
     ],
 
     /*
@@ -65,6 +71,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', App\Models\User::class),
+        ],
+
+        'people' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Person::class,
         ],
 
         // 'users' => [

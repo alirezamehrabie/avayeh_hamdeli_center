@@ -18,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->append(\App\Http\Middleware\AddSecurityHeaders::class);
 
+        $middleware->alias([
+            'member.auth' => \App\Http\Middleware\EnsureMemberIsAuthenticated::class,
+        ]);
+
         $middleware->trustProxies(
             at: env('TRUSTED_PROXIES'),
             headers: Request::HEADER_X_FORWARDED_FOR
