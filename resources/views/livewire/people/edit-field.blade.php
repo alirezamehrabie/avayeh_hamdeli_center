@@ -13,7 +13,8 @@
 <div class="space-y-4"
      x-data="{ needSheetOpen: false }"
      x-on:open-need-level-sheet.window="needSheetOpen = true"
-     x-on:close-need-level-sheet.window="needSheetOpen = false">
+     x-on:close-need-level-sheet.window="needSheetOpen = false"
+     x-on:focus-person-search.window="$nextTick(() => $refs.personSearch && $refs.personSearch.focus())">
     {{-- ═══ انتخاب مددجو ═══ --}}
     <div class="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100">
         <h1 class="text-xl sm:text-2xl font-bold text-gray-800 mb-1">ویرایش فیلد</h1>
@@ -33,12 +34,15 @@
                     $coverageOrg?->slug === 'other' => $coverage->other_organization_name ?: ($coverageOrg?->name ?? null),
                     default => $coverageOrg?->name ?? null,
                 };
+
+                $personPhoto = $person->profile_photo
+                    ? asset($person->profile_photo)
+                    : asset('images/no-image-profile.png?v=2');
             @endphp
             <div class="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-indigo-100 bg-indigo-50/60 px-3.5 py-3 sm:px-5 sm:py-4">
                 <div class="flex items-start gap-3">
-                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
-                        <i class="fa fa-user"></i>
-                    </div>
+                    <img src="{{ $personPhoto }}" alt="تصویر مددجو"
+                         class="h-11 w-11 shrink-0 rounded-full bg-indigo-100 object-cover shadow-sm ring-2 ring-white"/>
                     <div>
                         <p class="font-bold text-gray-800">
                             {{ $person->full_name }}
@@ -87,7 +91,7 @@
                 <span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-gray-400">
                     <i class="fa fa-search"></i>
                 </span>
-                <input type="text" wire:model.live.debounce.300ms="search" autocomplete="off"
+                <input type="text" x-ref="personSearch" wire:model.live.debounce.300ms="search" autocomplete="off"
                        placeholder="کد ملی، کد مددجویی یا نام و نام خانوادگی…"
                        class="w-full rounded-xl border border-gray-200 bg-gray-50 py-3 pr-11 pl-4 text-sm focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100 focus:outline-none transition"/>
             </div>
@@ -176,23 +180,34 @@
                 <div class="shrink-0 border-b border-gray-100 bg-white/95 px-4 pb-3 pt-2 backdrop-blur">
                     <div class="mx-auto mb-2 h-1.5 w-12 rounded-full bg-gray-300" aria-hidden="true"></div>
                     <div class="flex items-start justify-between gap-2">
-                        <div class="min-w-0">
-                            <p class="truncate text-sm font-extrabold text-gray-800">
-                                {{ $person->full_name }}
-                                @if($person->father_name)
-                                    <span class="text-[11px] font-medium text-gray-500">(نام پدر: {{ $person->father_name }})</span>
+                        <div class="flex min-w-0 items-center gap-2.5">
+                            <img src="{{ $personPhoto }}" alt="تصویر مددجو"
+                                 class="h-11 w-11 shrink-0 rounded-full bg-gray-100 object-cover shadow-sm ring-2 ring-indigo-100"/>
+                            <div class="min-w-0">
+                                <p class="truncate text-sm font-extrabold text-gray-800">
+                                    {{ $person->full_name }}
+                                    @if($person->father_name)
+                                        <span class="text-[11px] font-medium text-gray-500">(نام پدر: {{ $person->father_name }})</span>
+                                    @endif
+                                </p>
+                                <p class="mt-0.5 truncate text-[11px] text-gray-500">
+                                    کد مددجویی: {{ $person->person_code ?? '—' }}
+                                    <span class="mx-1 text-gray-300">·</span>کد ملی: {{ $person->national_id ?? '—' }}
+                                </p>
+                                @if($insuranceName || $coverageName)
+                                    <p class="mt-0.5 truncate text-[11px] text-gray-500">
+                                        @if($insuranceName)
+                                            <span class="font-semibold text-sky-700">بیمه: {{ $insuranceName }}</span>
+                                        @endif
+                                        @if($insuranceName && $coverageName)
+                                            <span class="mx-1 text-gray-300">·</span>
+                                        @endif
+                                        @if($coverageName)
+                                            <span class="font-semibold text-violet-700">تحت پوشش: {{ $coverageName }}</span>
+                                        @endif
+                                    </p>
                                 @endif
-                            </p>
-                            <p class="mt-0.5 truncate text-[11px] text-gray-500">
-                                کد مددجویی: {{ $person->person_code ?? '—' }}
-                                <span class="mx-1 text-gray-300">·</span>کد ملی: {{ $person->national_id ?? '—' }}
-                                @if($insuranceName)
-                                    <span class="mx-1 text-gray-300">·</span>بیمه: {{ $insuranceName }}
-                                @endif
-                                @if($coverageName)
-                                    <span class="mx-1 text-gray-300">·</span>تحت پوشش: {{ $coverageName }}
-                                @endif
-                            </p>
+                            </div>
                         </div>
                         <button type="button" @click="needSheetOpen = false"
                                 class="-mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition active:scale-95"

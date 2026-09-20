@@ -71,7 +71,14 @@ class EditField extends Component
             ['need_level_id' => (int) $validated['needLevelId']],
         );
 
-        $this->flashMessage = 'سطح نیاز برای «'.$person->full_name.'» با موفقیت ذخیره شد.';
+        $this->flashMessage = 'سطح نیاز برای «'.$person->full_name.'» با موفقیت ذخیره شد؛ صفحه برای مددجوی بعدی آماده است.';
+
+        // بازگشت خودکار به حالت جستجو برای ثبت مددجوی بعدی.
+        $this->selectedPersonId = null;
+        $this->needLevelId = null;
+        $this->search = '';
+        $this->dispatch('close-need-level-sheet');
+        $this->dispatch('focus-person-search');
     }
 
     private function selectedPerson(): ?Person
