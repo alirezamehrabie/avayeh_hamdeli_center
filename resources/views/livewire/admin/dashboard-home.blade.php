@@ -342,6 +342,10 @@
                         <livewire:people.beneficiary-case-file :person-id="$caseFilePersonId" :key="'beneficiary-case-file-'.($caseFilePersonId ?? 'search')" />
                         @break
 
+                    @case('people-edit-field')
+                        <livewire:people.edit-field :embedded="true" :key="'people-edit-field'" />
+                        @break
+
                     @case('person-create')
                         <livewire:people.create-person mode="create" :embedded="true" :key="'person-create'" />
                         @break
