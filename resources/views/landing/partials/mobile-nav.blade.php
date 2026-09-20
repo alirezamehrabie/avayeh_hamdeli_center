@@ -84,12 +84,12 @@
             همدلی کنید
         </a>
         <a
-            href="{{ route('login.select') }}"
+            href="{{ $loginEntryUrl }}"
             @click="closeMobileNav(true)"
             class="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 transition hover:border-[#1572A1]/40 hover:text-[#1572A1]"
         >
             <i class="bi bi-box-arrow-in-left" aria-hidden="true"></i>
-            ورود
+            {{ $loginEntryLabel }}
         </a>
     </div>
 </aside>

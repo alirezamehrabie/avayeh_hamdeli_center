@@ -21,10 +21,10 @@ class MemberLogin extends Component
 
     public string $personCode = '';
 
-    public function mount(): void
+    public function mount()
     {
         if (Auth::guard('member')->check()) {
-            redirect()->route('member.dashboard');
+            return redirect()->route('member.dashboard');
         }
     }
 

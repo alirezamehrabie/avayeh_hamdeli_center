@@ -37,6 +37,7 @@ use App\Livewire\SocialWorkers\DeliveryHistory as SocialWorkerDeliveryHistory;
 use App\Livewire\SocialWorkers\EditSocialWorker;
 use App\Livewire\SocialWorkers\IndexSocialWorkers;
 use App\Livewire\SocialWorkers\UserAccount as SocialWorkerUserAccount;
+use App\Services\LoginRedirector;
 use Illuminate\Support\Facades\Route;
 
 // مسیر لاگین با استفاده از کامپوننت Livewire
@@ -62,8 +63,14 @@ Route::get('/', function () {
 // صفحه عمومی لندینگ — در دسترس همه (مهمان و کاربر وارد‌شده)
 Route::view('/landing', 'landing.index')->name('landing.preview');
 
-// صفحه انتخاب نوع ورود (عمومی) — مسیر ارتباطی با صفحه لندینگ
-Route::view('/login-select', 'landing.login-select')->name('login.select');
+// صفحه انتخاب نوع ورود — فقط برای مهمان؛ کاربر وارد‌شده مستقیم به پنل خود می‌رود
+Route::get('/login-select', function () {
+    if ($panelUrl = app(LoginRedirector::class)->currentPanelUrl()) {
+        return redirect()->to($panelUrl);
+    }
+
+    return view('landing.login-select');
+})->name('login.select');
 
 // مسیر ورود اعضا (مددجویان) با گارد مجزای member
 Route::get('/member-login', MemberLogin::class)->name('member.login');

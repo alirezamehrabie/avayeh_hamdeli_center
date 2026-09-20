@@ -11,6 +11,11 @@
             ['href' => '#help', 'label' => 'کمک شما', 'icon' => 'bi-heart'],
             ['href' => '#contact', 'label' => 'تماس', 'icon' => 'bi-telephone'],
         ];
+
+        // کاربر وارد‌شده به صفحه انتخاب نوع ورود نمی‌رود؛ مستقیم به پنل خود هدایت می‌شود.
+        $currentPanelUrl = app(App\Services\LoginRedirector::class)->currentPanelUrl();
+        $loginEntryUrl = $currentPanelUrl ?? route('login.select');
+        $loginEntryLabel = $currentPanelUrl ? 'پنل کاربری' : 'ورود';
     @endphp
     @include('landing.partials.header')
     @include('landing.partials.slider')

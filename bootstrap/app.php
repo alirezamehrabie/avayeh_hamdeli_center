@@ -22,6 +22,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'member.auth' => \App\Http\Middleware\EnsureMemberIsAuthenticated::class,
         ]);
 
+        // کاربر وارد‌شده نباید صفحات ورود (مهمان) را ببیند؛ مستقیم به پنل خود می‌رود.
+        $middleware->redirectUsersTo(fn () => app(LoginRedirector::class)->currentPanelUrl());
+
         $middleware->trustProxies(
             at: env('TRUSTED_PROXIES'),
             headers: Request::HEADER_X_FORWARDED_FOR

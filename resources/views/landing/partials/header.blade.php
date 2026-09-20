@@ -70,11 +70,11 @@
                 همدلی کنید
             </a>
             <a
-                href="{{ route('login.select') }}"
+                href="{{ $loginEntryUrl }}"
                 class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-[#1572A1]/40 hover:text-[#1572A1] sm:min-h-0"
             >
                 <i class="bi bi-box-arrow-in-left" aria-hidden="true"></i>
-                ورود
+                {{ $loginEntryLabel }}
             </a>
         </div>
     </div>
