@@ -35,8 +35,6 @@ class DashboardHome extends Component
         'child-supporter-sponsor-edit',
         'child-supporter-sponsor-list',
         'people-incomplete-cases',
-        'people-edit-field',
-        'people-edit-field-need-level',
         'beneficiary-case-file',
         'special-features-print-client-card',
     ];
@@ -249,6 +247,9 @@ class DashboardHome extends Component
 
         if ($user?->can('people-edit')) {
             $validSections[] = 'person-edit';
+            // «ویرایش فیلد» بر پایۀ همان مجوز ویرایش مددجو باز است، نه دسترسی کامل.
+            $validSections[] = 'people-edit-field';
+            $validSections[] = 'people-edit-field-need-level';
         }
 
         if ($user?->can('people-delete')) {

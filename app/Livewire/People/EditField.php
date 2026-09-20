@@ -27,7 +27,7 @@ class EditField extends Component
 
     public function mount(): void
     {
-        abort_unless(auth()->user()?->can('full-access'), 403);
+        abort_unless(auth()->user()?->can('people-edit'), 403);
     }
 
     public function updatedSearch(): void

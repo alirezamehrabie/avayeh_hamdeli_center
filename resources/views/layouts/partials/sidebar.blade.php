@@ -99,7 +99,7 @@
                 ['section' => 'people-fast-create', 'label' => 'ثبت سریع مددجو', 'icon' => 'fa fa-bolt', 'visible' => $user?->can('people-register')],
                 ['section' => 'people-block-list', 'label' => 'مددجویان غیرفعال', 'icon' => 'fa fa-ban', 'visible' => $user?->can('people-delete')],
                 ['section' => 'beneficiary-case-file', 'label' => 'پرونده مددجو', 'icon' => 'fa fa-folder-open', 'visible' => $user?->can('full-access')],
-                ['section' => 'people-edit-field', 'label' => 'ویرایش فیلد', 'icon' => 'fa fa-pencil-square-o', 'active' => ['people-edit-field', 'people-edit-field-need-level'], 'visible' => $user?->can('full-access')],
+                ['section' => 'people-edit-field', 'label' => 'ویرایش فیلد تکی', 'icon' => 'fa fa-pencil-square-o', 'active' => ['people-edit-field', 'people-edit-field-need-level'], 'visible' => $user?->can('people-edit')],
             ],
             'social-workers' => [
                 ['section' => 'social-workers-list', 'label' => 'لیست مددکاران', 'active' => ['social-workers-list', 'social-worker-edit']],
