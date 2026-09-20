@@ -11,23 +11,23 @@
 
     <div class="relative z-10 mx-auto max-w-5xl">
         <!-- نوار بالا: بازگشت + برند -->
-        <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center justify-between gap-2 sm:gap-4">
             <a
                 href="{{ route('landing.preview') }}"
-                class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white/80 px-4 py-2.5 text-sm font-bold text-slate-700 backdrop-blur transition hover:border-[#1572A1]/40 hover:text-[#1572A1] sm:min-h-0"
+                class="inline-flex min-h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-xs font-bold text-slate-700 backdrop-blur transition hover:border-[#1572A1]/40 hover:text-[#1572A1] sm:min-h-0 sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm"
             >
                 <i class="bi bi-arrow-right" aria-hidden="true"></i>
                 بازگشت به خانه
             </a>
-            <a href="{{ route('landing.preview') }}" class="flex items-center gap-2.5" aria-label="آوای همدلی">
+            <a href="{{ route('landing.preview') }}" class="flex min-w-0 items-center gap-2 sm:gap-2.5" aria-label="آوای همدلی">
                 <img
                     src="{{ asset('images/logo-sm.png') }}"
                     alt="لوگوی آوای همدلی"
-                    class="h-9 w-9 rounded-xl object-cover shadow-sm sm:h-10 sm:w-10"
+                    class="h-8 w-8 shrink-0 rounded-lg object-cover shadow-sm sm:h-10 sm:w-10 sm:rounded-xl"
                 >
-                <span class="hidden min-w-0 sm:block">
-                    <span class="block truncate text-sm font-black text-slate-900">آوای همدلی</span>
-                    <span class="block truncate text-[10px] leading-4 text-slate-500">مرکز نیکوکاری تخصصی کودکان</span>
+                <span class="min-w-0">
+                    <span class="block truncate text-xs font-black leading-5 text-slate-900 sm:text-sm sm:leading-5">آوای همدلی</span>
+                    <span class="block truncate text-[9px] leading-3.5 text-slate-500 sm:text-[10px] sm:leading-4">مرکز نیکوکاری تخصصی کودکان</span>
                 </span>
             </a>
         </div>

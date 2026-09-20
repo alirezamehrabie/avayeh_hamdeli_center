@@ -29,7 +29,7 @@
     x-transition:leave="transition ease-in duration-200"
     x-transition:leave-start="translate-x-0"
     x-transition:leave-end="translate-x-full"
-    class="fixed inset-y-0 right-0 z-50 flex max-w-xs w-80 flex-col overflow-y-auto bg-white shadow-2xl lg:hidden"
+    class="fixed inset-y-0 right-0 z-50 flex w-80 max-w-[85vw] flex-col overflow-y-auto bg-white shadow-2xl lg:hidden"
 >
     <!-- سربرگ کشو -->
     <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">

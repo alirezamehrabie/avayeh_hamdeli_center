@@ -16,9 +16,9 @@
     class="fixed inset-x-0 top-0 z-40 transition-all duration-300"
     :class="scrolled ? 'bg-white/90 shadow-sm backdrop-blur-md' : 'bg-white/60 backdrop-blur-sm'"
 >
-    <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+    <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-3 sm:gap-4 sm:px-6">
         <!-- گروه راست (در RTL): همبرگر + برند -->
-        <div class="flex min-w-0 items-center gap-2">
+        <div class="flex min-w-0 items-center gap-1.5 sm:gap-2">
             <!-- دکمه همبرگر -->
             <button
                 type="button"
@@ -26,26 +26,26 @@
                 :aria-expanded="mobileNavOpen.toString()"
                 aria-controls="mobile-nav"
                 aria-label="باز و بسته کردن منو"
-                class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition hover:border-[#1572A1]/40 hover:text-[#1572A1] lg:hidden"
+                class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition hover:border-[#1572A1]/40 hover:text-[#1572A1] sm:h-11 sm:w-11 lg:hidden"
             >
-                <svg x-show="!mobileNavOpen" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <svg x-show="!mobileNavOpen" class="h-5 w-5 sm:h-6 sm:w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                     <path d="M4 6h16M4 12h16M4 18h16"></path>
                 </svg>
-                <svg x-show="mobileNavOpen" x-cloak class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <svg x-show="mobileNavOpen" x-cloak class="h-5 w-5 sm:h-6 sm:w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                     <path d="M6 6l12 12M18 6L6 18"></path>
                 </svg>
             </button>
 
             <!-- برند -->
-            <a href="#top" class="flex min-w-0 items-center gap-2.5" aria-label="آوای همدلی">
+            <a href="#top" class="flex min-w-0 items-center gap-2 sm:gap-2.5" aria-label="آوای همدلی">
                 <img
                     src="{{ asset('images/logo-sm.png') }}"
                     alt="لوگوی آوای همدلی"
-                    class="h-9 w-9 shrink-0 rounded-xl object-cover shadow-sm sm:h-10 sm:w-10"
+                    class="h-8 w-8 shrink-0 rounded-lg object-cover shadow-sm sm:h-10 sm:w-10 sm:rounded-xl"
                 >
                 <span class="min-w-0">
-                    <span class="block truncate text-sm font-black text-slate-900 sm:text-base">آوای همدلی</span>
-                    <span class="block truncate text-[10px] leading-4 text-slate-500 sm:text-[11px]">مرکز نیکوکاری تخصصی کودکان</span>
+                    <span class="block truncate text-xs font-black leading-5 text-slate-900 sm:text-base sm:leading-6">آوای همدلی</span>
+                    <span class="block truncate text-[9px] leading-3.5 text-slate-500 sm:text-[11px] sm:leading-4">مرکز نیکوکاری تخصصی کودکان</span>
                 </span>
             </a>
         </div>
@@ -61,7 +61,7 @@
         </nav>
 
         <!-- اقدامات -->
-        <div class="flex items-center gap-2">
+        <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <a
                 href="#help"
                 class="hidden items-center gap-2 rounded-xl bg-[linear-gradient(135deg,#4d56a3_0%,#1572A1_60%,#A4184B_135%)] px-5 py-2.5 text-sm font-extrabold text-white shadow-md shadow-[#5964AE]/20 transition hover:shadow-lg hover:shadow-[#1572A1]/25 active:translate-y-px sm:inline-flex"
@@ -71,7 +71,7 @@
             </a>
             <a
                 href="{{ $loginEntryUrl }}"
-                class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-[#1572A1]/40 hover:text-[#1572A1] sm:min-h-0"
+                class="inline-flex min-h-10 items-center gap-1.5 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs font-bold text-slate-700 transition hover:border-[#1572A1]/40 hover:text-[#1572A1] sm:min-h-0 sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm"
             >
                 <i class="bi bi-box-arrow-in-left" aria-hidden="true"></i>
                 {{ $loginEntryLabel }}
