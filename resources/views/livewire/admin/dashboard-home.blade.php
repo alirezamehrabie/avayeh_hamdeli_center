@@ -343,7 +343,11 @@
                         @break
 
                     @case('people-edit-field')
-                        <livewire:people.edit-field :embedded="true" :key="'people-edit-field'" />
+                        <livewire:people.edit-field-index :key="'people-edit-field'" />
+                        @break
+
+                    @case('people-edit-field-need-level')
+                        <livewire:people.edit-field :embedded="true" editor-title="ویرایش سطح نیازمندی" :key="'people-edit-field-need-level'" />
                         @break
 
                     @case('person-create')

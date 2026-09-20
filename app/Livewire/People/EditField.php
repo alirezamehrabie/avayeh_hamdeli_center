@@ -17,6 +17,8 @@ class EditField extends Component
 
     public ?int $selectedPersonId = null;
 
+    public string $editorTitle = '';
+
     public ?string $needLevelId = null;
 
     public ?string $flashMessage = null;
@@ -52,6 +54,12 @@ class EditField extends Component
         $this->needLevelId = null;
         $this->search = '';
         $this->flashMessage = null;
+    }
+
+    public function backToFields(): void
+    {
+        $this->resetSelection();
+        $this->dispatch('open-dashboard-section', section: 'people-edit-field');
     }
 
     public function save(): void

@@ -36,6 +36,7 @@ class DashboardHome extends Component
         'child-supporter-sponsor-list',
         'people-incomplete-cases',
         'people-edit-field',
+        'people-edit-field-need-level',
         'beneficiary-case-file',
         'special-features-print-client-card',
     ];
@@ -264,6 +265,7 @@ class DashboardHome extends Component
                 $validSections,
                 'people-incomplete-cases',
                 'people-edit-field',
+                'people-edit-field-need-level',
                 'beneficiary-case-file',
                 'social-workers-list',
                 'social-workers-block-list',

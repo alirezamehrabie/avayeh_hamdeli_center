@@ -17,7 +17,16 @@
      x-on:focus-person-search.window="$nextTick(() => $refs.personSearch && $refs.personSearch.focus())">
     {{-- ═══ انتخاب مددجو ═══ --}}
     <div class="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100">
-        <h1 class="text-xl sm:text-2xl font-bold text-gray-800 mb-1">ویرایش فیلد</h1>
+        <div class="mb-1 flex flex-wrap items-center justify-between gap-2">
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-800">{{ $editorTitle !== '' ? $editorTitle : 'ویرایش فیلد' }}</h1>
+            @if($editorTitle !== '')
+                <button type="button" wire:click="backToFields"
+                        class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50">
+                    <i class="bi bi-grid"></i>
+                    فهرست فیلدها
+                </button>
+            @endif
+        </div>
         <p class="text-sm text-gray-500 mb-5">برای ویرایش یک فیلد، ابتدا مددجو را با کد ملی، کد مددجویی یا نام و نام خانوادگی پیدا و انتخاب کنید.</p>
 
         @if($person)
