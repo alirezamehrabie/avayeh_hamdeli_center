@@ -2,9 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\GuardianRelationType;
-use App\Models\ResidenceStatusType;
-use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -36,6 +33,8 @@ class DatabaseSeeder extends Seeder
             BankSeeder::class,
             HarmTypeSeeder::class,
             AdminUserSeeder::class,
+            LandingBannerSeeder::class,
+            LandingServiceCardSeeder::class,
         ]);
     }
 }
