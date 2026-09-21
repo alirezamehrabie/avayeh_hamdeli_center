@@ -10,6 +10,7 @@
     aria-label="خدمات مرکز آوای همدلی"
     x-data="{
         rails: [],
+        kickoff: null,
         timer: null,
         hovered: false,
         userActive: false,
@@ -33,16 +34,22 @@
             });
 
             if (! this.motionOk) return;
-            this.timer = setInterval(() => this.advance(), 4200);
+            // اولین حرکت 0.8 ثانیه پس از لود صفحه انجام می‌شود
+            this.kickoff = setTimeout(() => this.startTicker(), 800);
             document.addEventListener('visibilitychange', () => {
-                clearInterval(this.timer);
-                if (document.hidden || ! this.motionOk) return;
-                this.timer = setInterval(() => this.advance(), 4200);
+                if (! document.hidden && this.motionOk) this.startTicker();
             });
+        },
+        firstRail() {
+            return this.rails[0];
+        },
+        startTicker() {
+            clearInterval(this.timer);
+            this.timer = setInterval(() => this.advance(), 4200);
         },
         advance() {
             if (this.hovered || this.userActive || document.hidden) return;
-            const isRtl = getComputedStyle(this.rails[0]).direction === 'rtl';
+            const isRtl = getComputedStyle(this.firstRail()).direction === 'rtl';
 
             this.rails.forEach((rail) => {
                 const max = rail.scrollWidth - rail.clientWidth;
@@ -67,36 +74,64 @@
             <span class="h-px w-8 bg-gradient-to-r from-transparent to-[#1572A1]/50 sm:w-16" aria-hidden="true"></span>
         </div>
 
-        <div class="mt-4 space-y-2.5 sm:mt-6 sm:space-y-3" data-reveal>
+        <div class="mt-2 space-y-2.5 sm:mt-9 sm:space-y-3" data-reveal>
             @foreach($serviceRows as $row)
-                <ul
-                    data-rail
-                    tabindex="0"
-                    aria-label="{{ $row['label'] }}"
-                    class="flex snap-x snap-mandatory gap-2 overflow-x-auto scroll-smooth px-0.5 pb-1 [scrollbar-width:none] [mask-image:linear-gradient(to_right,transparent,#000_4%,#000_96%,transparent)] [&::-webkit-scrollbar]:hidden sm:gap-2.5 lg:gap-4"
+                <div
+                    x-data="{
+                        thumb: 100,
+                        offset: 0,
+                        measure(rail) {
+                            const max = rail.scrollWidth - rail.clientWidth;
+                            if (max <= 1) { this.thumb = 100; this.offset = 0; return; }
+                            this.thumb = Math.max(10, (rail.clientWidth / rail.scrollWidth) * 100);
+                            this.offset = (Math.abs(rail.scrollLeft) / max) * (100 - this.thumb);
+                        },
+                    }"
+                    x-init="$nextTick(() => {
+                        measure($refs.rail);
+                        $watch('$el.offsetHeight', () => measure($refs.rail));
+                        const onResize = () => measure($refs.rail);
+                        window.addEventListener('resize', onResize);
+                        $cleanup(() => window.removeEventListener('resize', onResize));
+                    })"
                 >
-                    @foreach($row['items'] as $service)
-                        <li class="w-[30%] max-w-[110px] shrink-0 snap-center sm:w-[21%] lg:w-[150px] lg:max-w-[150px]">
-                            <article
-                                class="group flex h-full min-h-[126px] flex-col items-center justify-center gap-1.5 rounded-2xl bg-white p-1.5 shadow-[0_1px_3px_rgba(15,23,42,0.05)] transition duration-500 ease-out hover:-translate-y-0.5 hover:shadow-[0_4px_14px_rgba(89,100,174,0.10)] sm:min-h-[146px] sm:gap-2 sm:p-2"
-                            >
-                                <div class="w-full overflow-hidden rounded-[1.75rem] bg-slate-50 sm:rounded-[2.5rem]">
-                                    <img
-                                        src="{{ $service['image'] }}"
-                                        alt=""
-                                        aria-hidden="true"
-                                        loading="lazy"
-                                        decoding="async"
-                                        class="h-[86px] w-full object-cover transition duration-700 ease-out group-hover:scale-[1.05] sm:h-[100px]"
-                                    >
-                                </div>
-                                <h3 class="w-full truncate px-1 pb-1 text-center text-[11px] font-bold leading-5 text-slate-900 sm:text-xs" title="{{ $service['title'] }}">
-                                    {{ $service['title'] }}
-                                </h3>
-                            </article>
-                        </li>
-                    @endforeach
-                </ul>
+                    <ul
+                        data-rail
+                        x-ref="rail"
+                        tabindex="0"
+                        aria-label="{{ $row['label'] }}"
+                        @scroll="measure($el)"
+                        class="flex cursor-grab snap-x snap-mandatory gap-2 overflow-x-auto scroll-smooth px-0.5 pb-1 [scrollbar-width:none] [mask-image:linear-gradient(to_right,transparent,#000_4%,#000_96%,transparent)] active:cursor-grabbing [&::-webkit-scrollbar]:hidden sm:gap-2.5 lg:gap-4"
+                    >
+                        @foreach($row['items'] as $service)
+                            <li class="w-[30%] max-w-[110px] shrink-0 snap-center sm:w-[21%] lg:w-[150px] lg:max-w-[150px]">
+                                <article
+                                    class="group flex h-full flex-col items-center justify-center gap-1.5 rounded-2xl bg-white p-1.5 shadow-[0_1px_3px_rgba(15,23,42,0.05)] transition duration-500 ease-out hover:-translate-y-0.5 hover:shadow-[0_4px_14px_rgba(89,100,174,0.10)] sm:gap-2 sm:p-2"
+                                >
+                                    <div class="aspect-square w-full overflow-hidden rounded-[1.75rem] bg-slate-50 sm:rounded-[2.5rem]">
+                                        <img
+                                            src="{{ $service['image'] }}"
+                                            alt=""
+                                            aria-hidden="true"
+                                            loading="lazy"
+                                            decoding="async"
+                                            class="h-full w-full object-cover transition duration-700 ease-out group-hover:scale-[1.05]"
+                                        >
+                                    </div>
+                                    <h3 class="w-full truncate px-1 pb-1 text-center text-[11px] font-bold leading-5 text-slate-900 sm:text-xs" title="{{ $service['title'] }}">
+                                        {{ $service['title'] }}
+                                    </h3>
+                                </article>
+                            </li>
+                        @endforeach
+                    </ul>
+                    <div class="mx-auto mt-1.5 flex h-[3px] w-16 overflow-hidden rounded-full bg-slate-200/80" aria-hidden="true">
+                        <div
+                            class="h-full rounded-full bg-[#1572A1]/50 transition-[margin,width] duration-300 ease-out"
+                            :style="`width: ${thumb}%; margin-inline-start: ${offset}%`"
+                        ></div>
+                    </div>
+                </div>
             @endforeach
         </div>
     </div>
