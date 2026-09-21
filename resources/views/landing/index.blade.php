@@ -20,6 +20,7 @@
     @include('landing.partials.header')
     @include('landing.partials.slider')
     @include('landing.partials.services')
+    @include('landing.partials.magazine')
     @include('landing.partials.hero')
     @include('landing.partials.trust')
     @include('landing.partials.about')
