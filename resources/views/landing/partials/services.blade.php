@@ -1,28 +1,6 @@
 @php
-    // ردیف اول رگال خدمات
-    $servicesRowOne = [
-        ['image' => 'images/landing/services/01-hezine-tahsil.png', 'title' => 'هزینه تحصیل'],
-        ['image' => 'images/landing/services/02-behdasht-darman.png', 'title' => 'بهداشت و درمان'],
-        ['image' => 'images/landing/services/03-nan-mehrabani.png', 'title' => 'نان مهربانی'],
-        ['image' => 'images/landing/services/04-sarparasti-ettaam.png', 'title' => 'سرپرستی ایتام'],
-        ['image' => 'images/landing/services/05-pooshak.png', 'title' => 'پوشاک'],
-        ['image' => 'images/landing/services/06-pack-arzaq.png', 'title' => 'پک ارزاق'],
-    ];
-
-    // ردیف دوم رگال خدمات
-    $servicesRowTwo = [
-        ['image' => 'images/landing/services/07-shir-khoshk.png', 'title' => 'شیر خشک'],
-        ['image' => 'images/landing/services/08-sofreh-om-ol-banin.png', 'title' => 'سفره ام‌البنین (س)'],
-        ['image' => 'images/landing/services/09-aqiqe.png', 'title' => 'عقیقه'],
-        ['image' => 'images/landing/services/10-kala-daste-dom.png', 'title' => 'اهدای کالای دست دوم'],
-        ['image' => 'images/landing/services/11-mashaghel-hamdeli.png', 'title' => 'مشاغل همدلی'],
-        ['image' => 'images/landing/services/12-eftekharat-hamdeli.png', 'title' => 'افتخارات همدلی'],
-    ];
-
-    $serviceRows = [
-        ['label' => 'رگال خدمات، ردیف یک', 'items' => $servicesRowOne],
-        ['label' => 'رگال خدمات، ردیف دو', 'items' => $servicesRowTwo],
-    ];
+    // کارت‌های فعال از دیتابیس (کش‌شده) خوانده می‌شوند؛ در نبود داده، نمونه‌های پیش‌فرض نمایش داده می‌شوند.
+    $serviceRows = \App\Support\Landing\LandingContent::serviceRows();
 @endphp
 
 <!-- بخش خدمات: دو رگال کارت عمودی -->
@@ -104,7 +82,7 @@
                             >
                                 <div class="w-full overflow-hidden rounded-[1.75rem] bg-slate-50 sm:rounded-[2.5rem]">
                                     <img
-                                        src="{{ asset($service['image']) }}"
+                                        src="{{ $service['image'] }}"
                                         alt=""
                                         aria-hidden="true"
                                         loading="lazy"

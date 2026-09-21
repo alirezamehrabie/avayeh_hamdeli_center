@@ -1,22 +1,6 @@
 @php
-    $slides = [
-        [
-            'image' => 'images/landing/slide-1.jpg',
-            'alt' => 'کودکان تحت پوشش در مسیر آموزش و یادگیری',
-        ],
-        [
-            'image' => 'images/landing/slide-2.jpg',
-            'alt' => 'تغذیه سالم و بسته‌های غذایی کودکان',
-        ],
-        [
-            'image' => 'images/landing/slide-3.jpg',
-            'alt' => 'حمایت و پناه از کودکان بی‌سرپرست',
-        ],
-        [
-            'image' => 'images/landing/slide-4.jpg',
-            'alt' => 'بازی و شادی کودکان در مرکز',
-        ],
-    ];
+    // اسلایدهای فعال از دیتابیس (کش‌شده) خوانده می‌شوند؛ در نبود داده، نمونه‌های پیش‌فرض نمایش داده می‌شوند.
+    $slides = \App\Support\Landing\LandingContent::banners();
 @endphp
 
 <!-- بنر اسلایدی تصاویر مرکز -->
@@ -88,15 +72,29 @@
                     aria-label="{{ $slide['alt'] }}"
                     :aria-hidden="active === {{ $index }} ? 'false' : 'true'"
                 >
-                    <img
-                        src="{{ asset($slide['image']) }}"
-                        alt="{{ $slide['alt'] }}"
-                        class="h-full w-full object-cover"
-                        loading="{{ $index === 0 ? 'eager' : 'lazy' }}"
-                        fetchpriority="{{ $index === 0 ? 'high' : 'low' }}"
-                        decoding="async"
-                        draggable="false"
-                    >
+                    @if($slide['link'])
+                        <a href="{{ $slide['link'] }}" class="block h-full w-full" aria-label="باز کردن لینک: {{ $slide['alt'] }}">
+                            <img
+                                src="{{ $slide['image'] }}"
+                                alt="{{ $slide['alt'] }}"
+                                class="h-full w-full object-cover"
+                                loading="{{ $index === 0 ? 'eager' : 'lazy' }}"
+                                fetchpriority="{{ $index === 0 ? 'high' : 'low' }}"
+                                decoding="async"
+                                draggable="false"
+                            >
+                        </a>
+                    @else
+                        <img
+                            src="{{ $slide['image'] }}"
+                            alt="{{ $slide['alt'] }}"
+                            class="h-full w-full object-cover"
+                            loading="{{ $index === 0 ? 'eager' : 'lazy' }}"
+                            fetchpriority="{{ $index === 0 ? 'high' : 'low' }}"
+                            decoding="async"
+                            draggable="false"
+                        >
+                    @endif
                 </div>
             @endforeach
 

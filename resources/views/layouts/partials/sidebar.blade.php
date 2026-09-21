@@ -474,39 +474,6 @@
                 </div>
             </div>
 
-            @can('full-access')
-                <div>
-                    <button type="button" @click="openMenu = openMenu === 'landing' ? '' : 'landing'"
-                            class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $landingOpen ? 'bg-indigo-700' : '' }}">
-                        <div class="flex items-center">
-                            <svg class="w-5 h-5 ml-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="2" y="4" width="20" height="13" rx="2"></rect>
-                            <path d="M8 21h8"></path>
-                            <path d="M12 17v4"></path>
-                            <path d="M6 13l3.5-3.5 2.5 2.5L15.5 9l2.5 2.5"></path>
-                            </svg>
-                            <span>مدیریت لندینگ</span>
-                        </div>
-                        <svg :class="openMenu === 'landing' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform"
-                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </button>
-                    <div x-show="openMenu === 'landing'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
-                        @foreach($dashboardMenuItems['landing'] as $item)
-                            @continue(array_key_exists('visible', $item) && ! $item['visible'])
-                            <x-sidebar.dashboard-section-button
-                                :section="$item['section']"
-                                :active="$isActive($item['active'] ?? $item['section'])"
-                            >
-                                {{ $item['label'] }}
-                            </x-sidebar.dashboard-section-button>
-                        @endforeach
-                    </div>
-                </div>
-            @endcan
-
             @can('manage-notifications')
                 <div>
                     <button type="button" @click="openMenu = openMenu === 'notifications' ? '' : 'notifications'"
@@ -650,6 +617,39 @@
                     @endforeach
                 </div>
             </div>
+
+            @can('full-access')
+                <div>
+                    <button type="button" @click="openMenu = openMenu === 'landing' ? '' : 'landing'"
+                            class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $landingOpen ? 'bg-indigo-700' : '' }}">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 ml-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="4" width="20" height="13" rx="2"></rect>
+                            <path d="M8 21h8"></path>
+                            <path d="M12 17v4"></path>
+                            <path d="M6 13l3.5-3.5 2.5 2.5L15.5 9l2.5 2.5"></path>
+                            </svg>
+                            <span class="text-sm whitespace-nowrap">مدیریت لندینگ</span>
+                        </div>
+                        <svg :class="openMenu === 'landing' ? 'rotate-180' : ''" class="w-4 h-4 shrink-0 transition-transform"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <div x-show="openMenu === 'landing'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
+                        @foreach($dashboardMenuItems['landing'] as $item)
+                            @continue(array_key_exists('visible', $item) && ! $item['visible'])
+                            <x-sidebar.dashboard-section-button
+                                :section="$item['section']"
+                                :active="$isActive($item['active'] ?? $item['section'])"
+                            >
+                                {{ $item['label'] }}
+                            </x-sidebar.dashboard-section-button>
+                        @endforeach
+                    </div>
+                </div>
+            @endcan
         @else
             @can('full-access')
                 <div>

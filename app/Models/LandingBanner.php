@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Landing\LandingContent;
 use App\Support\Landing\LandingMediaUrl;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -29,6 +30,14 @@ class LandingBanner extends Model
             if (blank($banner->sort_id)) {
                 $banner->sort_id = (int) static::query()->max('sort_id') + 1;
             }
+        });
+
+        // هر تغییر در بنرها باید کش بخش عمومی لندینگ را باطل کند.
+        static::saved(function (): void {
+            LandingContent::flush();
+        });
+        static::deleted(function (): void {
+            LandingContent::flush();
         });
     }
 
