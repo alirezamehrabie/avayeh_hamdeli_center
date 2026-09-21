@@ -99,15 +99,5 @@
                 </ul>
             @endforeach
         </div>
-
-        <p class="mt-6 text-center sm:mt-8">
-            <a
-                href="#help"
-                class="inline-flex min-h-12 items-center gap-2 rounded-2xl border-2 border-[#5964AE]/20 bg-[#5964AE]/5 px-6 py-3 text-sm font-bold text-[#5964AE] transition hover:border-[#5964AE]/40 hover:bg-[#5964AE]/10 sm:min-h-14 sm:px-8 sm:py-4 sm:text-base"
-            >
-                حمایت از این خدمات
-                <i class="bi bi-arrow-left" aria-hidden="true"></i>
-            </a>
-        </p>
     </div>
 </section>
