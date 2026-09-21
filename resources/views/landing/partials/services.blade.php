@@ -83,11 +83,10 @@
     }"
 >
     <div class="mx-auto max-w-6xl px-4 sm:px-6">
-        <div class="text-center" data-reveal>
-            <span class="inline-flex items-center gap-2 rounded-full bg-[#36A9DF]/10 px-3.5 py-1 text-[11px] font-bold text-[#1572A1]">
-                <i class="bi bi-grid-1x2-fill" aria-hidden="true"></i>
-                خدمات ما
-            </span>
+        <div class="flex items-center justify-center gap-2 sm:gap-3" data-reveal>
+            <span class="h-px w-8 bg-gradient-to-l from-transparent to-[#1572A1]/50 sm:w-16" aria-hidden="true"></span>
+            <p class="text-sm font-bold text-[#1572A1] sm:text-base">خدمات ما</p>
+            <span class="h-px w-8 bg-gradient-to-r from-transparent to-[#1572A1]/50 sm:w-16" aria-hidden="true"></span>
         </div>
 
         <div class="mt-4 space-y-2.5 sm:mt-6 sm:space-y-3" data-reveal>

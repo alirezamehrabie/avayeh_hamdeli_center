@@ -77,7 +77,7 @@
     @keydown.right.prevent="prev()"
     tabindex="0"
 >
-    <div class="mx-auto max-w-7xl overflow-hidden rounded-2xl shadow-lg shadow-slate-900/10 ring-1 ring-slate-900/5 sm:rounded-3xl">
+    <div class="mx-auto max-w-7xl overflow-hidden rounded-2xl ring-1 ring-slate-900/5 sm:rounded-3xl">
         <div class="relative h-44 w-full touch-pan-y select-none sm:h-[320px] lg:h-[400px]">
             @foreach($slides as $index => $slide)
                 <div
@@ -119,18 +119,18 @@
             </button>
 
             <!-- نشانگرها -->
-            <div class="absolute inset-x-0 bottom-2 z-30 flex items-center justify-center gap-1.5">
+            <div class="absolute inset-x-0 bottom-1 z-30 flex items-center justify-center gap-0.5 sm:bottom-2 sm:gap-1">
                 @foreach($slides as $index => $slide)
                     <button
                         type="button"
                         @click="go({{ $index }})"
                         aria-label="نمایش اسلاید {{ $index + 1 }}"
                         :aria-current="active === {{ $index }} ? 'true' : 'false'"
-                        class="flex h-9 w-6 items-center justify-center"
+                        class="flex h-7 w-5 items-center justify-center sm:h-8 sm:w-6"
                     >
                         <span
-                            class="h-2 rounded-full transition-all duration-500"
-                            :class="active === {{ $index }} ? 'w-6 bg-white shadow-sm' : 'w-2 bg-white/55 hover:bg-white/80'"
+                            class="h-1.5 rounded-full transition-all duration-500 sm:h-2"
+                            :class="active === {{ $index }} ? 'w-3 bg-white/95 sm:w-5' : 'w-1.5 bg-white/45 hover:bg-white/75'"
                             aria-hidden="true"
                         ></span>
                     </button>
