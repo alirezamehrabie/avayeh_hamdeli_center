@@ -3,24 +3,34 @@
 namespace App\Livewire\Admin\Landing;
 
 use App\Models\LandingServiceCard;
+use App\Support\Images\OptimizedImageStorage;
 use App\Support\Landing\LandingImageCatalog;
 use App\Traits\InteractsWithLandingOrdering;
 use App\Traits\InteractsWithNotificationModal;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 #[Layout('layouts.admin')]
 class ManageServiceCards extends Component
 {
     use InteractsWithLandingOrdering;
     use InteractsWithNotificationModal;
+    use WithFileUploads;
+
+    public const UPLOAD_DIRECTORY = 'landing/services';
 
     public bool $embedded = false;
 
     public ?int $editingCardId = null;
 
     public bool $showCreateForm = false;
+
+    public string $imageMode = 'existing';
+
+    public ?UploadedFile $imageUpload = null;
 
     public string $imagePath = '';
 
@@ -47,7 +57,12 @@ class ManageServiceCards extends Component
         $card = LandingServiceCard::query()->findOrFail($cardId);
 
         $this->editingCardId = $card->id;
-        $this->imagePath = (string) $card->image_path;
+        $this->imageMode = 'existing';
+        // کارت‌های آپلودی در کاتالوغ فایل نیستند؛ انتخاب را خالی می‌گذاریم تا
+        // کاربر صریحاً فایل موجود یا آپلود جدید را برگزیند.
+        $this->imagePath = str_starts_with((string) $card->image_path, LandingImageCatalog::ROOT.'/')
+            ? (string) $card->image_path
+            : '';
         $this->title = (string) $card->title;
         $this->railRow = (int) $card->rail_row;
         $this->showCreateForm = false;
@@ -58,41 +73,75 @@ class ManageServiceCards extends Component
         $this->resetForm();
     }
 
+    public function updatedImageMode(): void
+    {
+        $this->imageUpload = null;
+        $this->resetErrorBag();
+    }
+
     public function save(): void
     {
         $this->guard();
 
-        $validated = $this->validate([
-            'imagePath' => [
-                'required',
-                'string',
-                Rule::unique('landing_service_cards', 'image_path')->ignore($this->editingCardId),
-            ],
+        $this->validate([
+            'imageMode' => ['required', Rule::in(['existing', 'upload'])],
             'title' => ['required', 'string', 'max:255'],
             'railRow' => ['required', Rule::in(LandingServiceCard::RAIL_ROWS)],
         ], [], [
-            'imagePath' => 'تصویر کارت',
+            'imageMode' => 'منبع تصویر',
             'title' => 'عنوان کارت',
             'railRow' => 'ردیف رگال',
         ]);
 
-        $imagePath = $this->normalizeImagePath($validated['imagePath']);
+        if ($this->imageMode === 'upload') {
+            $this->validate([
+                'imageUpload' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:6144'],
+            ], [], [
+                'imageUpload' => 'فایل تصویر',
+            ]);
 
-        if (! $imagePath || ! LandingImageCatalog::exists($imagePath)) {
-            $this->addError('imagePath', 'تصویر انتخاب‌شده در دسترس نیست.');
+            try {
+                $imagePath = app(OptimizedImageStorage::class)->storeWebp(
+                    $this->imageUpload,
+                    self::UPLOAD_DIRECTORY,
+                    'public',
+                    'card',
+                );
+            } catch (\Throwable) {
+                $this->openSystemErrorModal('تصویر انتخاب‌شده قابل پردازش نبود. لطفاً فایل دیگری را امتحان کنید.');
 
-            return;
+                return;
+            }
+        } else {
+            $validated = $this->validate([
+                'imagePath' => [
+                    'required',
+                    'string',
+                    Rule::unique('landing_service_cards', 'image_path')->ignore($this->editingCardId),
+                ],
+            ], [], [
+                'imagePath' => 'تصویر کارت',
+            ]);
+
+            $imagePath = $this->normalizeImagePath($validated['imagePath']);
+
+            if (! $imagePath || ! LandingImageCatalog::exists($imagePath)) {
+                $this->addError('imagePath', 'تصویر انتخاب‌شده در دسترس نیست.');
+
+                return;
+            }
         }
 
         $isNew = ! $this->editingCardId;
         $previousRailRow = $isNew ? null : (int) LandingServiceCard::query()->whereKey($this->editingCardId)->value('rail_row');
-        $newRailRow = (int) $validated['railRow'];
+        $newRailRow = (int) $this->railRow;
 
+        // فایل قدیمی عمداً روی دیسک می‌ماند؛ در محیط واقعی حذف خودکار قابل بازگشت نیست.
         $card = LandingServiceCard::query()->updateOrCreate(
             ['id' => $this->editingCardId],
             [
                 'image_path' => $imagePath,
-                'title' => trim($validated['title']),
+                'title' => trim($this->title),
                 'rail_row' => $newRailRow,
                 'created_by' => $isNew ? auth()->id() : LandingServiceCard::query()->whereKey($this->editingCardId)->value('created_by'),
             ]
@@ -142,6 +191,8 @@ class ManageServiceCards extends Component
     {
         $this->editingCardId = null;
         $this->showCreateForm = false;
+        $this->imageMode = 'existing';
+        $this->imageUpload = null;
         $this->imagePath = '';
         $this->title = '';
         $this->railRow = 1;

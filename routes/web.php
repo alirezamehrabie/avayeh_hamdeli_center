@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ActivityCheckInController;
 use App\Http\Controllers\BeneficiaryCaseRecordAttachmentController;
+use App\Http\Controllers\LandingMediaController;
 use App\Http\Controllers\QrIdentityController;
 use App\Http\Controllers\ServiceCategoryThumbnailController;
 use App\Livewire\Admin\DashboardHome;
@@ -62,6 +63,11 @@ Route::get('/', function () {
 
 // صفحه عمومی لندینگ — در دسترس همه (مهمان و کاربر وارد‌شده)
 Route::view('/landing', 'landing.index')->name('landing.preview');
+
+// تصاویر آپلودی لندینگ — عمومی (مهمان‌ها هم لندینگ می‌بینند)، بدون احراز هویت
+Route::get('/landing-media/{path}', [LandingMediaController::class, 'show'])
+    ->where('path', LandingMediaController::PATH_PATTERN)
+    ->name('landing.media.show');
 
 // صفحه انتخاب نوع ورود — فقط برای مهمان؛ کاربر وارد‌شده مستقیم به پنل خود می‌رود
 Route::get('/login-select', function () {

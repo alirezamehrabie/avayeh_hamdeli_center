@@ -30,6 +30,27 @@ class OptimizedImageStorage
         return $path;
     }
 
+    /**
+     * Same optimization ladder as store(), but encoded as WebP with the alpha
+     * channel preserved, which landing cards and banners need for transparency.
+     */
+    public function storeWebp(UploadedFile $file, string $directory, string $disk = 'public', string $filenamePrefix = 'image'): string
+    {
+        $image = $this->createImageResource($file);
+        $image = $this->applyExifOrientation($file, $image);
+
+        $optimizedBinary = $this->encodeOptimizedWebp($image);
+        imagedestroy($image);
+
+        $path = trim($directory, '/').'/'.$filenamePrefix.'-'.Str::uuid()->toString().'.webp';
+
+        if (! Storage::disk($disk)->put($path, $optimizedBinary, ['visibility' => 'public'])) {
+            throw new RuntimeException('Failed to store optimized image.');
+        }
+
+        return $path;
+    }
+
     public function delete(?string $path, string $disk = 'public'): void
     {
         if (blank($path)) {
@@ -106,7 +127,38 @@ class OptimizedImageStorage
         return $bestBinary;
     }
 
-    protected function resizeToCanvas(\GdImage $image): \GdImage
+    protected function encodeOptimizedWebp(\GdImage $image): string
+    {
+        $canvas = $this->resizeToCanvas($image, true);
+        $qualities = [82, 78, 74, 70, 66, 62];
+        $bestBinary = null;
+
+        foreach ($qualities as $quality) {
+            ob_start();
+            imagewebp($canvas, null, $quality);
+            $binary = (string) ob_get_clean();
+
+            if ($binary === '') {
+                continue;
+            }
+
+            $bestBinary = $binary;
+
+            if (strlen($binary) <= self::TARGET_MAX_BYTES) {
+                break;
+            }
+        }
+
+        imagedestroy($canvas);
+
+        if ($bestBinary === null) {
+            throw new RuntimeException('Failed to encode optimized webp image.');
+        }
+
+        return $bestBinary;
+    }
+
+    protected function resizeToCanvas(\GdImage $image, bool $preserveAlpha = false): \GdImage
     {
         $sourceWidth = imagesx($image);
         $sourceHeight = imagesy($image);
@@ -130,9 +182,20 @@ class OptimizedImageStorage
             throw new RuntimeException('Failed to prepare image canvas.');
         }
 
-        $white = imagecolorallocate($canvas, 255, 255, 255);
-        imagefill($canvas, 0, 0, $white);
+        if ($preserveAlpha) {
+            imagealphablending($canvas, false);
+            imagesavealpha($canvas, true);
+            imagefill($canvas, 0, 0, imagecolorallocatealpha($canvas, 0, 0, 0, 127));
+        } else {
+            $white = imagecolorallocate($canvas, 255, 255, 255);
+            imagefill($canvas, 0, 0, $white);
+        }
+
         imagecopyresampled($canvas, $image, 0, 0, 0, 0, $targetWidth, $targetHeight, $sourceWidth, $sourceHeight);
+
+        if ($preserveAlpha) {
+            imagealphablending($canvas, true);
+        }
 
         return $canvas;
     }

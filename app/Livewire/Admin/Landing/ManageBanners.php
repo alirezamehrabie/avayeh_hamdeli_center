@@ -3,24 +3,34 @@
 namespace App\Livewire\Admin\Landing;
 
 use App\Models\LandingBanner;
+use App\Support\Images\OptimizedImageStorage;
 use App\Support\Landing\LandingImageCatalog;
 use App\Traits\InteractsWithLandingOrdering;
 use App\Traits\InteractsWithNotificationModal;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 #[Layout('layouts.admin')]
 class ManageBanners extends Component
 {
     use InteractsWithLandingOrdering;
     use InteractsWithNotificationModal;
+    use WithFileUploads;
+
+    public const UPLOAD_DIRECTORY = 'landing/banners';
 
     public bool $embedded = false;
 
     public ?int $editingBannerId = null;
 
     public bool $showCreateForm = false;
+
+    public string $imageMode = 'existing';
+
+    public ?UploadedFile $imageUpload = null;
 
     public string $imagePath = '';
 
@@ -47,7 +57,12 @@ class ManageBanners extends Component
         $banner = LandingBanner::query()->findOrFail($bannerId);
 
         $this->editingBannerId = $banner->id;
-        $this->imagePath = (string) $banner->image_path;
+        $this->imageMode = 'existing';
+        // بنرهای آپلودی در کاتالوغ فایل نیستند؛ انتخاب را خالی می‌گذاریم تا
+        // کاربر صریحاً فایل موجود یا آپلود جدید را برگزیند.
+        $this->imagePath = str_starts_with((string) $banner->image_path, LandingImageCatalog::ROOT.'/')
+            ? (string) $banner->image_path
+            : '';
         $this->altText = (string) $banner->alt_text;
         $this->linkUrl = (string) ($banner->link_url ?? '');
         $this->showCreateForm = false;
@@ -58,38 +73,72 @@ class ManageBanners extends Component
         $this->resetForm();
     }
 
+    public function updatedImageMode(): void
+    {
+        $this->imageUpload = null;
+        $this->resetErrorBag();
+    }
+
     public function save(): void
     {
         $this->guard();
 
-        $validated = $this->validate([
-            'imagePath' => [
-                'required',
-                'string',
-                Rule::unique('landing_banners', 'image_path')->ignore($this->editingBannerId),
-            ],
+        $this->validate([
+            'imageMode' => ['required', Rule::in(['existing', 'upload'])],
             'altText' => ['required', 'string', 'max:255'],
             'linkUrl' => ['nullable', 'url', 'max:255'],
         ], [], [
-            'imagePath' => 'تصویر بنر',
+            'imageMode' => 'منبع تصویر',
             'altText' => 'متن جایگزین',
             'linkUrl' => 'لینک',
         ]);
 
-        $imagePath = $this->normalizeImagePath($validated['imagePath']);
+        if ($this->imageMode === 'upload') {
+            $this->validate([
+                'imageUpload' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:6144'],
+            ], [], [
+                'imageUpload' => 'فایل تصویر',
+            ]);
 
-        if (! $imagePath || ! LandingImageCatalog::exists($imagePath)) {
-            $this->addError('imagePath', 'تصویر انتخاب‌شده در دسترس نیست.');
+            try {
+                $imagePath = app(OptimizedImageStorage::class)->storeWebp(
+                    $this->imageUpload,
+                    self::UPLOAD_DIRECTORY,
+                    'public',
+                    'banner',
+                );
+            } catch (\Throwable) {
+                $this->openSystemErrorModal('تصویر انتخاب‌شده قابل پردازش نبود. لطفاً فایل دیگری را امتحان کنید.');
 
-            return;
+                return;
+            }
+        } else {
+            $validated = $this->validate([
+                'imagePath' => [
+                    'required',
+                    'string',
+                    Rule::unique('landing_banners', 'image_path')->ignore($this->editingBannerId),
+                ],
+            ], [], [
+                'imagePath' => 'تصویر بنر',
+            ]);
+
+            $imagePath = $this->normalizeImagePath($validated['imagePath']);
+
+            if (! $imagePath || ! LandingImageCatalog::exists($imagePath)) {
+                $this->addError('imagePath', 'تصویر انتخاب‌شده در دسترس نیست.');
+
+                return;
+            }
         }
 
+        // فایل قدیمی عمداً روی دیسک می‌ماند؛ در محیط واقعی حذف خودکار قابل بازگشت نیست.
         LandingBanner::query()->updateOrCreate(
             ['id' => $this->editingBannerId],
             [
                 'image_path' => $imagePath,
-                'alt_text' => trim($validated['altText']),
-                'link_url' => filled($validated['linkUrl']) ? trim($validated['linkUrl']) : null,
+                'alt_text' => trim($this->altText),
+                'link_url' => filled($this->linkUrl) ? trim($this->linkUrl) : null,
                 'created_by' => $this->editingBannerId
                     ? LandingBanner::query()->whereKey($this->editingBannerId)->value('created_by')
                     : auth()->id(),
@@ -134,6 +183,8 @@ class ManageBanners extends Component
     {
         $this->editingBannerId = null;
         $this->showCreateForm = false;
+        $this->imageMode = 'existing';
+        $this->imageUpload = null;
         $this->imagePath = '';
         $this->altText = '';
         $this->linkUrl = '';

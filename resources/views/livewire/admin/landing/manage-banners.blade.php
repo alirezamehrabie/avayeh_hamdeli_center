@@ -31,21 +31,53 @@
             </h3>
 
             <form wire:submit="save" class="grid gap-4 sm:grid-cols-2">
-                <div>
-                    <label for="banner-image-path" class="mb-1 block text-sm font-bold text-gray-700">تصویر بنر</label>
-                    <select id="banner-image-path" wire:model="imagePath" class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        <option value="">— انتخاب تصویر —</option>
-                        @foreach($availableImages as $image)
-                            <option value="{{ $image }}">{{ $image }}</option>
-                        @endforeach
-                    </select>
-                    @error('imagePath')
-                        <p class="mt-1 text-xs font-semibold text-red-600">{{ $message }}</p>
-                    @enderror
-                    @if($imagePath && \App\Support\Landing\LandingImageCatalog::exists($imagePath))
-                        <img src="{{ asset($imagePath) }}" alt="پیش‌نمایش" class="mt-3 h-24 w-40 rounded-lg border border-gray-100 object-cover" loading="lazy">
-                    @endif
+                <div class="sm:col-span-2">
+                    <span class="mb-1 block text-sm font-bold text-gray-700">منبع تصویر</span>
+                    <div class="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1">
+                        <button type="button" wire:click="$set('imageMode', 'existing')"
+                                class="rounded-md px-4 py-1.5 text-sm font-bold transition {{ $imageMode === 'existing' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700' }}">
+                            فایل‌های موجود
+                        </button>
+                        <button type="button" wire:click="$set('imageMode', 'upload')"
+                                class="rounded-md px-4 py-1.5 text-sm font-bold transition {{ $imageMode === 'upload' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700' }}">
+                            آپلود تصویر جدید
+                        </button>
+                    </div>
                 </div>
+
+                @if($imageMode === 'existing')
+                    <div>
+                        <label for="banner-image-path" class="mb-1 block text-sm font-bold text-gray-700">تصویر بنر</label>
+                        <select id="banner-image-path" wire:model="imagePath" class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="">— انتخاب تصویر —</option>
+                            @foreach($availableImages as $image)
+                                <option value="{{ $image }}">{{ $image }}</option>
+                            @endforeach
+                        </select>
+                        @error('imagePath')
+                            <p class="mt-1 text-xs font-semibold text-red-600">{{ $message }}</p>
+                        @enderror
+                        @if($imagePath && \App\Support\Landing\LandingImageCatalog::exists($imagePath))
+                            <img src="{{ asset($imagePath) }}" alt="پیش‌نمایش" class="mt-3 h-24 w-40 rounded-lg border border-gray-100 object-cover" loading="lazy">
+                        @endif
+                    </div>
+                @else
+                    <div>
+                        <label for="banner-image-upload" class="mb-1 block text-sm font-bold text-gray-700">فایل تصویر</label>
+                        <input type="file" id="banner-image-upload" wire:model="imageUpload" accept=".jpg,.jpeg,.png,.webp"
+                               class="block w-full text-sm text-gray-700 file:ml-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-bold file:text-indigo-700 hover:file:bg-indigo-100">
+                        @error('imageUpload')
+                            <p class="mt-1 text-xs font-semibold text-red-600">{{ $message }}</p>
+                        @enderror
+                        <p class="mt-1 text-xs text-gray-500">JPG، PNG یا WebP — حداکثر ۶ مگابایت؛ خروجی WebP بهینه‌سازی‌شده (سقف ۵۱۲KB و ابعاد ۱۶۰۰px، با حفظ شفافیت) ذخیره می‌شود.</p>
+                        @if($imageUpload && method_exists($imageUpload, 'temporaryUrl'))
+                            @php $uploadPreviewUrl = null; try { $uploadPreviewUrl = $imageUpload->temporaryUrl(); } catch (\Throwable) { $uploadPreviewUrl = null; } @endphp
+                            @if($uploadPreviewUrl)
+                                <img src="{{ $uploadPreviewUrl }}" alt="پیش‌نمایش آپلود" class="mt-3 h-24 w-40 rounded-lg border border-gray-100 object-cover">
+                            @endif
+                        @endif
+                    </div>
+                @endif
 
                 <div class="space-y-4">
                     <div>

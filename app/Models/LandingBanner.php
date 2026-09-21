@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Landing\LandingMediaUrl;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -47,15 +48,11 @@ class LandingBanner extends Model
     }
 
     /**
-     * Public URL for the banner image. Landing assets are served straight from
-     * /public (guest-facing), unlike authenticated /media streams.
+     * Public URL for the banner image, covering both repo-shipped files under
+     * public/images/landing and admin uploads streamed from the public disk.
      */
     public function getImageUrlAttribute(): ?string
     {
-        if (blank($this->image_path)) {
-            return null;
-        }
-
-        return asset(ltrim(str_replace('\\', '/', $this->image_path), '/'));
+        return LandingMediaUrl::for($this->image_path);
     }
 }
