@@ -8,26 +8,40 @@
     <div class="mx-auto max-w-6xl px-4 sm:px-6">
         <a
             href="{{ $magazineUrl }}"
-            class="group block overflow-hidden rounded-2xl bg-[linear-gradient(140deg,#f2f9fd_0%,#ffffff_46%,#fdf2f6_100%)] shadow-[0_2px_10px_rgba(89,100,174,0.08)] ring-1 ring-slate-100 transition duration-500 ease-out hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(89,100,174,0.16)] hover:ring-[#5964AE]/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1572A1] sm:rounded-3xl"
-            aria-label="ورود به مجلۀ همدلی"
+            class="group relative block overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.05)] transition duration-500 ease-out hover:-translate-y-0.5 hover:border-[#5964AE]/25 hover:shadow-[0_10px_28px_rgba(89,100,174,0.12)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1572A1] sm:rounded-[1.75rem]"
         >
-            <div class="flex flex-row items-center gap-3 px-3 py-3 text-right sm:gap-6 sm:px-8 sm:py-9">
-                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#1572A1_0%,#5964AE_55%,#A4184B_130%)] text-white shadow-md shadow-[#5964AE]/25 sm:h-20 sm:w-20 sm:rounded-[1.75rem]">
-                    <i class="bi bi-journal-bookmark-fill text-lg sm:text-3xl" aria-hidden="true"></i>
+            <!-- عطف مجله -->
+            <span class="absolute inset-y-0 right-0 w-[3px] bg-[linear-gradient(180deg,#36A9DF_0%,#5964AE_55%,#A4184B_100%)] sm:w-1.5" aria-hidden="true"></span>
+
+            <div class="flex flex-row items-center gap-3 py-3 pl-4 pr-5 sm:gap-6 sm:py-7 sm:pl-8 sm:pr-10">
+                <!-- کاشی نشان -->
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-[1.15rem] bg-[#1572A1]/8 text-[#1572A1] ring-1 ring-inset ring-[#1572A1]/12 transition duration-500 ease-out group-hover:bg-[#1572A1]/12 sm:h-16 sm:w-16 sm:rounded-[1.6rem] lg:h-[4.5rem] lg:w-[4.5rem]">
+                    <svg viewBox="0 0 24 24" class="h-[1.55rem] w-[1.55rem] sm:h-9 sm:w-9 lg:h-10 lg:w-10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M6.8 3h10.4A2.8 2.8 0 0 1 20 5.8v12.4A2.8 2.8 0 0 1 17.2 21H6.8A2.8 2.8 0 0 1 4 18.2V5.8A2.8 2.8 0 0 1 6.8 3Z"/>
+                        <path d="M6.8 8.4h10.4"/>
+                        <path d="M6.8 12.8h10.4M6.8 16.8h6.4"/>
+                        <circle cx="17.1" cy="16.8" r="1.1" fill="currentColor" stroke="none"/>
+                    </svg>
                 </span>
 
-                <span id="magazine-title" class="min-w-0 flex-1">
-                    <span class="mt-0.5 block truncate text-base font-black leading-6 text-slate-900 sm:mt-0 sm:text-2xl lg:text-3xl">
+                <span class="min-w-0 flex-1">
+                    <h2 id="magazine-title" class="truncate text-base font-black leading-6 text-slate-900 transition-colors duration-300 group-hover:text-[#1572A1] sm:text-2xl sm:leading-9 lg:text-[1.75rem]" title="مجلۀ همدلی">
                         مجلۀ همدلی
-                    </span>
-                    <span class="mt-0.5 block truncate text-[11px] leading-5 text-slate-500 sm:mt-2 sm:text-sm sm:leading-7">
-                        روایت‌ها، گزارش‌ها و نوشته‌های کودکان؛ هر شماره یک خواندنی.
-                    </span>
+                    </h2>
+                    <p class="mt-0.5 flex items-center gap-1.5 text-[11px] leading-5 text-slate-500 sm:mt-1.5 sm:text-sm sm:leading-6">
+                        <span class="hidden shrink-0 font-bold text-[#5964AE] sm:inline">نشریۀ مرکز</span>
+                        <span class="hidden h-3 w-px shrink-0 bg-slate-200 sm:inline" aria-hidden="true"></span>
+                        <span class="truncate">روایت‌ها، گزارش‌ها و نوشته‌های کودکان</span>
+                    </p>
                 </span>
 
-                <span class="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#4d56a3_0%,#1572A1_58%,#A4184B_135%)] text-white shadow-md shadow-[#5964AE]/25 transition duration-300 group-hover:shadow-lg group-hover:shadow-[#1572A1]/30 max-sm:h-9 max-sm:w-11 max-sm:rounded-xl sm:min-h-12 sm:px-6 sm:py-3">
-                    <span class="hidden text-sm font-extrabold sm:inline sm:text-base">مشاهده مجله</span>
-                    <i class="bi bi-chevron-left text-lg sm:transition sm:duration-300 group-hover:-translate-x-1" aria-hidden="true"></i>
+                <!-- دکورۀ ورود -->
+                <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[1.15rem] bg-[#1572A1] text-white shadow-sm shadow-[#1572A1]/30 transition duration-300 group-hover:bg-[#12628b] group-hover:shadow-md group-hover:shadow-[#1572A1]/35 sm:h-auto sm:w-auto sm:min-h-12 sm:rounded-2xl sm:px-6 sm:py-3">
+                    <span class="hidden text-sm font-extrabold leading-5 sm:inline">مشاهدۀ مجله</span>
+                    <svg viewBox="0 0 24 24" class="h-4 w-4 shrink-0 sm:h-[18px] sm:w-[18px]" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M19 12H5.4"/>
+                        <path d="m11.4 5.6-6 6.4 6 6.4"/>
+                    </svg>
                 </span>
             </div>
         </a>

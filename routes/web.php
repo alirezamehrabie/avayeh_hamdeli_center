@@ -64,6 +64,9 @@ Route::get('/', function () {
 // صفحه عمومی لندینگ — در دسترس همه (مهمان و کاربر وارد‌شده)
 Route::view('/landing', 'landing.index')->name('landing.preview');
 
+// صفحۀ مجلۀ همدلی — عمومی
+Route::view('/magazine', 'magazine.index')->name('magazine.index');
+
 // تصاویر آپلودی لندینگ — عمومی (مهمان‌ها هم لندینگ می‌بینند)، بدون احراز هویت
 Route::get('/landing-media/{path}', [LandingMediaController::class, 'show'])
     ->where('path', LandingMediaController::PATH_PATTERN)
