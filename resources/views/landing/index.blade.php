@@ -6,7 +6,7 @@
         $navLinks = [
             ['href' => '#services', 'label' => 'خدمات', 'icon' => 'bi-grid'],
             ['href' => '#about', 'label' => 'درباره ما', 'icon' => 'bi-info-circle'],
-            ['href' => '#impact', 'label' => 'عددهای ما', 'icon' => 'bi-bar-chart-line'],
+            ['href' => '#impact', 'label' => 'آمار همدلی', 'icon' => 'bi-bar-chart-line'],
             ['href' => '#stories', 'label' => 'قصه‌ها', 'icon' => 'bi-chat-heart'],
             ['href' => '#help', 'label' => 'کمک شما', 'icon' => 'bi-heart'],
             ['href' => '#contact', 'label' => 'تماس', 'icon' => 'bi-telephone'],
