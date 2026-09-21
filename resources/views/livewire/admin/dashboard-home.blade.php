@@ -679,6 +679,14 @@
                         <livewire:admin.notifications.notification-center :key="'notifications-center'" />
                         @break
 
+                    @case('landing-banners')
+                        <livewire:admin.landing.manage-banners :embedded="true" :key="'landing-banners'" />
+                        @break
+
+                    @case('landing-service-cards')
+                        <livewire:admin.landing.manage-service-cards :embedded="true" :key="'landing-service-cards'" />
+                        @break
+
                     @case('notifications-settings')
                         <livewire:admin.notifications.notification-settings :key="'notifications-settings'" />
                         @break

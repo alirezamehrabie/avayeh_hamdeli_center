@@ -180,6 +180,15 @@ Route::get('/admin/reports/services', DashboardHome::class)
     ->middleware(['auth', 'can:full-access'])
     ->name('admin.service-reports');
 
+// مدیریت آیتم‌های صفحه لندینگ (بنرها و کارت‌های رگالی) — همان الگوی DashboardHome با پارامتر section
+Route::get('/admin/landing/banners', DashboardHome::class)
+    ->middleware(['auth', 'can:full-access'])
+    ->name('admin.landing.banners');
+
+Route::get('/admin/landing/service-cards', DashboardHome::class)
+    ->middleware(['auth', 'can:full-access'])
+    ->name('admin.landing.service-cards');
+
 Route::get('/admin/activities/activity-definition', DashboardHome::class)
     ->middleware(['auth', 'can:full-access'])
     ->name('admin.activity-definition');

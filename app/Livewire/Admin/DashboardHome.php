@@ -107,6 +107,10 @@ class DashboardHome extends Component
             $this->activeSection = 'service-delivery-beneficiary';
         } elseif (! request()->has('section') && request()->routeIs('admin.service-reports')) {
             $this->activeSection = 'advanced-service-report';
+        } elseif (! request()->has('section') && request()->routeIs('admin.landing.banners')) {
+            $this->activeSection = 'landing-banners';
+        } elseif (! request()->has('section') && request()->routeIs('admin.landing.service-cards')) {
+            $this->activeSection = 'landing-service-cards';
         } elseif (! request()->has('section') && request()->routeIs('admin.activity-definition')) {
             $this->activeSection = 'activity-definition';
         } elseif (! request()->has('section') && request()->routeIs('admin.activity-list')) {
@@ -300,6 +304,8 @@ class DashboardHome extends Component
                 'child-supporter-sponsor-registration',
                 'child-supporter-sponsor-edit',
                 'child-supporter-sponsor-list',
+                'landing-banners',
+                'landing-service-cards',
                 'special-features-id-card-scanner',
                 'special-features-print-client-card'
             );
