@@ -130,5 +130,22 @@
                 </div>
             @endforeach
         </div>
+
+        {{-- دکمه مینیمال مشاهده همه خدمات --}}
+        <div class="mt-6 flex justify-center sm:mt-8" data-reveal>
+            <a
+                href="{{ route('landing.services') }}"
+                class="group inline-flex items-center gap-2.5 rounded-full border border-slate-200/90 bg-white/90 px-5 py-2.5 text-xs font-semibold text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#1572A1]/40 hover:bg-slate-50/80 hover:text-[#1572A1] hover:shadow-[0_4px_12px_rgba(21,114,161,0.12)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1572A1] active:translate-y-0 active:scale-[0.98] sm:px-6 sm:py-3 sm:text-sm"
+                aria-label="مشاهده همه خدمات (View All Services)"
+            >
+                <span class="flex items-center gap-1.5">
+                    <span>مشاهده همه خدمات</span>
+                    <span class="text-[10px] font-normal text-slate-400 transition-colors group-hover:text-[#1572A1]/70 sm:text-xs">/ راه های مهربانی</span>
+                </span>
+                <svg class="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M19 12H5" /><path d="m12 19-7-7 7-7" />
+                </svg>
+            </a>
+        </div>
     </div>
 </section>

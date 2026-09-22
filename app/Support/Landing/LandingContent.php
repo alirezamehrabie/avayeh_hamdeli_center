@@ -79,6 +79,20 @@ class LandingContent
         return $rows !== [] ? $rows : self::fallbackServiceRows();
     }
 
+    /**
+     * All active services flattened for the services list view.
+     *
+     * @return array<int, array{image: string, title: string}>
+     */
+    public static function services(): array
+    {
+        return collect(self::serviceRows())
+            ->pluck('items')
+            ->flatten(1)
+            ->values()
+            ->all();
+    }
+
     public static function flush(): void
     {
         Cache::forget(self::BANNERS_CACHE_KEY);

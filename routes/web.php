@@ -65,6 +65,13 @@ Route::get('/', function () {
 // صفحه عمومی لندینگ — در دسترس همه (مهمان و کاربر وارد‌شده)
 Route::view('/landing', 'landing.index')->name('landing.preview');
 
+// صفحۀ لیست تمامی خدمات — عمومی
+Route::get('/services', function () {
+    return view('landing.services', [
+        'services' => \App\Support\Landing\LandingContent::services(),
+    ]);
+})->name('landing.services');
+
 // صفحۀ مجلۀ همدلی — عمومی
 Route::view('/magazine', 'magazine.index')->name('magazine.index');
 
