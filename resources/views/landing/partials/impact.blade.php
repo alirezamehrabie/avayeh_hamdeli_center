@@ -52,7 +52,7 @@
         <x-landing.section-title id="impact-title" heading="آمار همدلی" />
 
         <!-- نشانگر زنده شفافیت و آمار به‌روز مرکز -->
-        <div class="mt-2.5 flex items-center justify-center sm:mt-3">
+        <div class="mt-3 flex items-center justify-center sm:mt-3">
             <div class="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-slate-50/80 px-2.5 py-0.5 text-[10px] font-medium text-slate-600 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)] backdrop-blur-sm sm:px-3 sm:py-1 sm:text-[11px]">
                 <span class="relative flex h-1.5 w-1.5 shrink-0">
                     <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
