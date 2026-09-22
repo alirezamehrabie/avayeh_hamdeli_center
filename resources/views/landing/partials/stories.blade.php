@@ -1,6 +1,21 @@
 <!-- بخش قصه‌های همدلی: طراحی بهینه موبایل‌فرست با اسکرول لمسی ارگونومیک -->
 <section id="stories" class="landing-section relative overflow-hidden bg-[#f8fbff] py-10 sm:py-16" aria-labelledby="stories-title">
     <div class="mx-auto max-w-6xl px-4 sm:px-6">
+        <!-- بنر تصویری سینمایی پیش‌درآمد قصه‌های همدلی -->
+        <div data-reveal class="mb-8 sm:mb-12">
+            <div class="relative mx-auto overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-2 shadow-[0_20px_50px_-15px_rgba(15,23,42,0.07)] sm:rounded-[2.5rem] sm:p-2.5">
+                <div class="relative aspect-[16/9] w-full overflow-hidden rounded-[1.4rem] sm:aspect-[2.2/1] sm:rounded-[2rem]">
+                    <img
+                        src="{{ asset('images/landing/image-2.webp') }}"
+                        alt="کودکان شاد در حال خواندن کتاب قصه در مرکز آوای همدلی"
+                        class="h-full w-full object-cover object-[center_35%] transition-transform duration-700 ease-out hover:scale-[1.02]"
+                        loading="lazy"
+                    >
+                    <div class="pointer-events-none absolute inset-0 rounded-[1.4rem] ring-1 ring-inset ring-black/5 sm:rounded-[2rem]" aria-hidden="true"></div>
+                </div>
+            </div>
+        </div>
+
         <div data-reveal class="flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-right">
             <x-landing.section-title id="stories-title" heading="قصه‌های همدلی" />
         </div>
