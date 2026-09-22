@@ -87,7 +87,7 @@
                             data-counter
                             data-target="{{ $stat['value'] }}"
                             style="color: {{ $stat['color'] }}"
-                            class="block text-lg font-bold leading-7 sm:text-3xl sm:leading-10"
+                            class="block text-lg font-black leading-7 sm:text-3xl sm:leading-10"
                         >۰</span>
                         <span style="color: {{ $stat['color'] }}; opacity: .4;" class="text-sm font-black sm:text-xl" aria-hidden="true">+</span>
                     </span>

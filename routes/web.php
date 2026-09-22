@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ActivityCheckInController;
 use App\Http\Controllers\BeneficiaryCaseRecordAttachmentController;
+use App\Http\Controllers\DevotionalTextController;
 use App\Http\Controllers\LandingMediaController;
 use App\Http\Controllers\QrIdentityController;
 use App\Http\Controllers\ServiceCategoryThumbnailController;
@@ -70,18 +71,12 @@ Route::view('/magazine', 'magazine.index')->name('magazine.index');
 // بخش «ارتباط با خدا» مجله — عمومی
 Route::view('/magazine/spiritual', 'magazine.spiritual')->name('magazine.spiritual');
 
-// متن کامل زیارت عاشورا — متن از resources/text/Ashura.txt خوانده می‌شود
-Route::get('/magazine/ziyarat-ashura', function () {
-    $raw = trim(file_get_contents(resource_path('text/Ashura.txt')));
+// صفحات متن زیارات و ادعیه — متن از فایلِ متناظر در resources/text خوانده می‌شود
+Route::get('/magazine/ziyarat-ashura', fn () => app(DevotionalTextController::class)->show('Ashura.txt', 'زیارت عاشورا', 'متن کامل و معتبر زیارت امام حسین علیه‌السلام'))
+    ->name('magazine.ziyarat-ashura');
 
-    // پاراگراف‌بندی روی خطوط خالی؛ شماره‌های پانوشت انتهای پاراگراف‌ها حذف می‌شوند
-    $paragraphs = array_values(array_filter(array_map(
-        fn (string $p): string => preg_replace('/\s+\d+\s*$/u', '', trim($p)),
-        preg_split('/\n\s*\n/', $raw) ?: []
-    ), fn (string $p): bool => $p !== ''));
-
-    return view('magazine.ziyarat-ashura', ['paragraphs' => $paragraphs]);
-})->name('magazine.ziyarat-ashura');
+Route::get('/magazine/tavassol', fn () => app(DevotionalTextController::class)->show('Tavasol.txt', 'دعای توسل', 'متن کامل و معتبر دعای توسل به ائمه اطهار علیهم‌السلام'))
+    ->name('magazine.tavassol');
 
 // تصاویر آپلودی لندینگ — عمومی (مهمان‌ها هم لندینگ می‌بینند)، بدون احراز هویت
 Route::get('/landing-media/{path}', [LandingMediaController::class, 'show'])
