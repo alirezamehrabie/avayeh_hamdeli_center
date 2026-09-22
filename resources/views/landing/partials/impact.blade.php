@@ -65,7 +65,7 @@
                 ];
             @endphp
             @foreach($stats as $stat)
-                <div class="rounded-2xl bg-white px-1 py-3 text-center shadow-[0_2px_10px_rgba(56,83,140,0.06)] ring-1 ring-slate-100 sm:px-3 sm:py-5">
+                <div class="rounded-2xl bg-white px-1 py-3 text-center shadow-[0_2px_10px_rgba(56,83,140,0.06)] ring-1 ring-slate-100 sm:px-3 sm:py-5" style="background-image: radial-gradient(110% 60% at 50% 0%, {{ $stat['color'] }}14, {{ $stat['color'] }}05 45%, transparent 72%);">
                     <span class="flex items-baseline justify-center gap-0.5">
                         <span
                             data-counter
