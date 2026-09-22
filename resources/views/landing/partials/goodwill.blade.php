@@ -48,7 +48,7 @@
 @endphp
 
 <!-- بخش حال خوش همدلی: روایت حالِ خوبِ خیرین در یک رگال افقی -->
-<section id="goodwill" class="landing-section bg-white pb-14 pt-10 sm:pb-16 sm:pt-12" aria-labelledby="goodwill-title">
+<section id="goodwill" class="landing-section bg-white pb-14 pt-4 sm:pb-16 sm:pt-12" aria-labelledby="goodwill-title">
     <div class="mx-auto max-w-6xl px-4 sm:px-6">
         <div data-reveal>
             <x-landing.section-title id="goodwill-title" heading="حال خوشِ همدلی" />

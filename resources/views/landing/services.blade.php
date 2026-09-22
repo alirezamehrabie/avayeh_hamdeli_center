@@ -216,7 +216,5 @@
             </div>
         </div>
     </main>
-
-    {{-- پابرگ سایت --}}
-    @include('landing.partials.footer')
 @endsection
+

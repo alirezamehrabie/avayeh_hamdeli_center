@@ -83,4 +83,14 @@ class LandingServicesTest extends TestCase
         $response->assertSee('خدمت تست اختصاصی آوای همدلی');
         $response->assertSee('images/landing/services/custom-test-service.png');
     }
+
+    public function test_services_page_does_not_display_site_footer(): void
+    {
+        $response = $this->get('/services');
+
+        $response->assertOk();
+        $response->assertDontSee('id="site-footer"', false);
+        $response->assertDontSee('ورود پرسنل و مدیران');
+    }
 }
+
