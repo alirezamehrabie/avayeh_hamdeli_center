@@ -38,7 +38,7 @@
 
 <!-- بخش مجلۀ همدلی: کارت افقی و کلیک‌پذیر به عنوان نقطه ورود -->
 <section id="magazine" class="landing-section bg-white pb-8 pt-0 sm:pb-16" aria-labelledby="magazine-title">
-    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+    <div class="mx-auto max-w-6xl px-3 sm:px-6">
         <a
             href="{{ $magazineUrl }}"
             class="group relative block overflow-hidden rounded-2xl shadow-[0_6px_24px_rgba(56,83,140,0.30)] transition duration-500 ease-out hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(56,83,140,0.40)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#38538C] sm:rounded-[1.75rem]"

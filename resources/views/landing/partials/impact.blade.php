@@ -84,4 +84,15 @@
             @endforeach
         </div>
     </div>
+
+    <!-- جداکننده بصری بین آمار و بخش بعدی -->
+    <div class="relative mx-auto mt-8 max-w-5xl select-none overflow-hidden rounded-3xl sm:mt-12" data-reveal oncontextmenu="return false">
+        <div
+            class="h-32 w-full bg-cover bg-center sm:h-40 lg:h-56"
+            role="img"
+            aria-label=""
+            style="background-image: url('{{ asset('images/landing/image-1.webp') }}');"
+        ></div>
+        <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" aria-hidden="true"></div>
+    </div>
 </section>
