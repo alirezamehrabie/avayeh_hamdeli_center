@@ -103,6 +103,7 @@
                 advance() {
                     if (this.hovered || this.userActive || document.hidden) return;
                     const rail = this.$refs.rail;
+                    if (! rail) return;
                     const max = rail.scrollWidth - rail.clientWidth;
                     if (max <= 4) return;
 
@@ -112,7 +113,9 @@
                     const step = first ? first.getBoundingClientRect().width + gap : 280;
                     // در RTL مقدار scrollLeft منفی است؛ پیشرفت را همیشه مثبت می‌خوانیم
                     const progress = Math.abs(rail.scrollLeft);
-                    const next = progress + step >= max ? 0 : progress + step;
+
+                    const isAtEnd = progress >= max - Math.max(8, step * 0.4);
+                    const next = isAtEnd ? 0 : Math.min(progress + step, max);
 
                     rail.scrollTo({ left: isRtl ? -next : next, behavior: 'smooth' });
                 },

@@ -49,7 +49,9 @@
         },
         advance() {
             if (this.hovered || this.userActive || document.hidden) return;
-            const isRtl = getComputedStyle(this.firstRail()).direction === 'rtl';
+            const firstRail = this.firstRail();
+            if (! firstRail) return;
+            const isRtl = getComputedStyle(firstRail).direction === 'rtl';
 
             this.rails.forEach((rail) => {
                 const max = rail.scrollWidth - rail.clientWidth;
@@ -60,7 +62,11 @@
                 const step = first ? first.getBoundingClientRect().width + gap : 160;
                 // در RTL مقدار scrollLeft منفی است؛ پیشرفت را همیشه مثبت می‌خوانیم
                 const progress = Math.abs(rail.scrollLeft);
-                const next = progress + step >= max ? 0 : progress + step;
+
+                // اگر به انتهای رگال (کارت آخر) رسیده‌ایم، به ابتدا بازگردد؛
+                // در غیر این صورت تا سقف max پیش می‌رود تا کارت ششم کامل نمایش داده شود
+                const isAtEnd = progress >= max - Math.max(8, step * 0.4);
+                const next = isAtEnd ? 0 : Math.min(progress + step, max);
 
                 rail.scrollTo({ left: isRtl ? -next : next, behavior: 'smooth' });
             });
