@@ -27,7 +27,7 @@
                 const wake = () => {
                     this.userActive = true;
                     clearTimeout(this.idleTimer);
-                    this.idleTimer = setTimeout(() => { this.userActive = false; }, 4000);
+                    this.idleTimer = setTimeout(() => { this.userActive = false; }, 2000);
                 };
                 rail.addEventListener('pointerdown', wake);
                 rail.addEventListener('wheel', wake, { passive: true });
@@ -35,7 +35,7 @@
 
             if (! this.motionOk) return;
             // اولین حرکت 0.8 ثانیه پس از لود صفحه انجام می‌شود
-            this.kickoff = setTimeout(() => this.startTicker(), 800);
+            this.kickoff = setTimeout(() => this.startTicker(), 100);
             document.addEventListener('visibilitychange', () => {
                 if (! document.hidden && this.motionOk) this.startTicker();
             });
@@ -45,7 +45,7 @@
         },
         startTicker() {
             clearInterval(this.timer);
-            this.timer = setInterval(() => this.advance(), 4200);
+            this.timer = setInterval(() => this.advance(), 4000);
         },
         advance() {
             if (this.hovered || this.userActive || document.hidden) return;
