@@ -44,26 +44,30 @@
         <div class="relative z-10 mt-4 grid grid-cols-3 gap-2 sm:mt-7 sm:gap-4">
             @php
                 $stats = [
-                    ['value' => $coveredMembers, 'label' => 'تحت پوشش', 'caption' => 'کل اعضای مرکز'],
-                    ['value' => $households, 'label' => 'خانوار', 'caption' => 'سرپرستان خانوار'],
-                    ['value' => $students, 'label' => 'محصل', 'caption' => 'در حال تحصیل'],
-                    ['value' => $birthdaysThisMonth, 'label' => 'متولدین '.$currentMonthName, 'caption' => 'زادروز این ماه'],
-                    ['value' => $serviceDeliveries, 'label' => 'خدمات', 'caption' => 'میانگین '.$toFa(number_format($avgServicesPerHousehold, 1)).''],
-                    ['value' => $activeSocialWorkers, 'label' => 'مددکار فعال', 'caption' => 'فعال در مرکز'],
+                    ['value' => $coveredMembers, 'label' => 'تحت پوشش', 'caption' => 'کل اعضای مرکز', 'color' => '#1572A1'],
+                    ['value' => $households, 'label' => 'خانوار', 'caption' => 'سرپرستان خانوار', 'color' => '#38538C'],
+                    ['value' => $students, 'label' => 'محصل', 'caption' => 'در حال تحصیل', 'color' => '#36A9DF'],
+                    ['value' => $birthdaysThisMonth, 'label' => 'متولدین '.$currentMonthName, 'caption' => 'زادروز این ماه', 'color' => '#A4184B'],
+                    ['value' => $serviceDeliveries, 'label' => 'خدمات', 'caption' => 'میانگین '.$toFa(number_format($avgServicesPerHousehold, 1)).'', 'color' => '#5964AE'],
+                    ['value' => $activeSocialWorkers, 'label' => 'مددکار فعال', 'caption' => 'فعال در مرکز', 'color' => '#D4205F'],
                 ];
             @endphp
             @foreach($stats as $stat)
-                <div class="rounded-2xl bg-white/70 px-1 py-3 text-center shadow-[0_2px_10px_rgba(56,83,140,0.06)] ring-1 ring-white/70 backdrop-blur-md sm:px-3 sm:py-5">
+                <div class="rounded-2xl bg-white/70 px-1 py-3 text-center shadow-[0_2px_10px_rgba(56,83,140,0.06)] ring-1 ring-white/70 backdrop-blur-md transition duration-300 hover:bg-white/90 sm:px-3 sm:py-5">
                     <span class="flex items-baseline justify-center gap-0.5">
                         <span
                             data-counter
                             data-target="{{ $stat['value'] }}"
-                            class="block text-lg font-black leading-7 text-[#38538C] sm:text-3xl sm:leading-10"
+                            style="color: {{ $stat['color'] }}"
+                            class="block text-lg font-black leading-7 sm:text-3xl sm:leading-10"
                         >۰</span>
-                        <span class="text-sm font-black text-[#38538C]/35 sm:text-xl" aria-hidden="true">+</span>
+                        <span style="color: {{ $stat['color'] }}; opacity: .4;" class="text-sm font-black sm:text-xl" aria-hidden="true">+</span>
                     </span>
-                    <span class="mt-0.5 block text-[10px] font-bold leading-4 text-slate-700 sm:mt-1.5 sm:text-sm">{{ $stat['label'] }}</span>
-                    <span class="mt-0.5 block text-[9px] leading-4 text-slate-400 sm:mt-1 sm:text-[11px] sm:leading-5">{{ $stat['caption'] }}</span>
+                    <span class="mt-0.5 block text-[10px] font-bold leading-4 text-slate-600 sm:mt-1.5 sm:text-sm">{{ $stat['label'] }}</span>
+                    <span class="mt-0.5 flex items-center justify-center gap-1 text-[9px] leading-4 text-slate-400 sm:mt-1 sm:text-[11px] sm:leading-5">
+                        <span class="h-1 w-1 shrink-0 rounded-full sm:block" style="background-color: {{ $stat['color'] }}" aria-hidden="true"></span>
+                        <span class="truncate">{{ $stat['caption'] }}</span>
+                    </span>
                 </div>
             @endforeach
         </div>
