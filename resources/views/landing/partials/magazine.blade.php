@@ -47,7 +47,7 @@
             <!-- نور سبکی که هر چند ثانیه روی کارت برق می‌زند -->
             <span class="magazine-shine" aria-hidden="true"></span>
 
-            <div class="relative z-10 flex flex-row items-center gap-3 py-3 pl-4 pr-5 text-white sm:gap-6 sm:py-7 sm:pl-8 sm:pr-10">
+            <div class="relative z-10 flex flex-row items-center gap-3.5 py-3.5 pl-4 pr-5 text-white sm:gap-6 sm:py-5.5 sm:pl-8 sm:pr-10">
                 <!-- کاشی نشان -->
                 <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-[1.15rem] bg-white/15 text-white sm:h-16 sm:w-16 sm:rounded-[1.6rem] lg:h-[4.5rem] lg:w-[4.5rem]">
                     <svg viewBox="0 0 24 24" class="h-[1.65rem] w-[1.65rem] sm:h-9 sm:w-9 lg:h-10 lg:w-10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -62,11 +62,17 @@
                     <h2 id="magazine-title" class="truncate text-base font-black leading-6 text-white sm:text-2xl sm:leading-9 lg:text-[1.75rem]">
                         مجلۀ همدلی
                     </h2>
-                    <p class="mt-0.5 flex items-center gap-1.5 text-[11px] leading-5 text-white/85 sm:mt-1.5 sm:text-sm sm:leading-6">
+                    <p class="mt-0.5 flex items-center gap-1.5 text-[11px] leading-5 text-white/85 sm:mt-1 sm:text-sm sm:leading-6">
                         <span class="hidden shrink-0 font-bold text-white sm:inline">نشریۀ مرکز</span>
                         <span class="hidden h-3 w-px shrink-0 bg-white/40 sm:inline" aria-hidden="true"></span>
                         <span class="truncate">روایت‌ها، گزارش‌ها و نوشته‌های کودکان</span>
                     </p>
+                    <!-- ردیف نشان‌های بخش‌های مجله -->
+                    <div class="mt-1.5 flex flex-wrap items-center gap-1 sm:mt-2 sm:gap-1.5">
+                        <span class="inline-flex items-center rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-medium leading-4 text-white/90 ring-1 ring-inset ring-white/20 transition-colors duration-200 group-hover:bg-white/20 sm:px-2.5 sm:text-[11px]">اخبار</span>
+                        <span class="inline-flex items-center rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-medium leading-4 text-white/90 ring-1 ring-inset ring-white/20 transition-colors duration-200 group-hover:bg-white/20 sm:px-2.5 sm:text-[11px]">گزارشات</span>
+                        <span class="inline-flex items-center rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-medium leading-4 text-white/90 ring-1 ring-inset ring-white/20 transition-colors duration-200 group-hover:bg-white/20 sm:px-2.5 sm:text-[11px]">مقالات</span>
+                    </div>
                 </span>
 
                 <!-- دکورۀ ورود -->
