@@ -1,17 +1,8 @@
 <!-- بخش کمک شما (قلب صفحه) -->
 <section id="help" class="landing-section bg-white pb-16 sm:pb-24" aria-labelledby="help-title">
     <div class="mx-auto max-w-6xl px-4 sm:px-6">
-        <div class="text-center" data-reveal>
-            <span class="inline-flex items-center gap-2 rounded-full bg-[#D4205F]/10 px-4 py-1.5 text-xs font-bold text-[#A4184B]">
-                <i class="bi bi-hand-thumbs-up-fill" aria-hidden="true"></i>
-                کمک شما
-            </span>
-            <h2 id="help-title" class="mt-4 text-2xl font-black text-slate-900 sm:text-3xl lg:text-4xl">
-                با شما، امید بیشتر می‌شود
-            </h2>
-            <p class="mx-auto mt-3 max-w-xl text-base leading-7 text-slate-600">
-                هر راهی برای همدلی، ارزش یک لبخند را دارد.
-            </p>
+        <div data-reveal>
+            <x-landing.section-title id="help-title" heading="کمک شما" />
         </div>
 
         <div class="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-3">

@@ -4,16 +4,7 @@
         <div class="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
             <!-- اطلاعات تماس -->
             <div data-reveal>
-                <span class="inline-flex items-center gap-2 rounded-full bg-[#36A9DF]/10 px-4 py-1.5 text-xs font-bold text-[#1572A1]">
-                    <i class="bi bi-telephone-fill" aria-hidden="true"></i>
-                    تماس با ما
-                </span>
-                <h2 id="contact-title" class="mt-4 text-2xl font-black text-slate-900 sm:text-3xl lg:text-4xl">
-                    در تماس باشیم
-                </h2>
-                <p class="mt-3 max-w-md text-base leading-8 text-slate-600">
-                    برای همدلی، سؤال یا دریافت اطلاعات بیشتر، از راه‌های زیر با ما در ارتباط باشید.
-                </p>
+                <x-landing.section-title id="contact-title" heading="تماس با ما" />
 
                 <ul class="mt-8 space-y-3">
                     @php

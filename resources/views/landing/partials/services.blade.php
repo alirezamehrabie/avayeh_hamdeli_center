@@ -6,7 +6,7 @@
 <!-- بخش خدمات: دو رگال کارت عمودی -->
 <section
     id="services"
-    class="landing-section bg-white pb-12 pt-2 sm:pb-16 sm:pt-3"
+    class="landing-section bg-white pb-8 pt-4 sm:pb-8 sm:pt-14"
     aria-label="خدمات مرکز آوای همدلی"
     x-data="{
         rails: [],
@@ -68,13 +68,9 @@
     }"
 >
     <div class="mx-auto max-w-6xl px-4 sm:px-6">
-        <div class="flex items-center justify-center gap-2 sm:gap-3" data-reveal>
-            <span class="h-px w-8 bg-gradient-to-l from-transparent to-[#1572A1]/50 sm:w-16" aria-hidden="true"></span>
-            <p class="text-sm font-bold text-[#1572A1] sm:text-base">خدمات ما</p>
-            <span class="h-px w-8 bg-gradient-to-r from-transparent to-[#1572A1]/50 sm:w-16" aria-hidden="true"></span>
-        </div>
+        <x-landing.section-title data-reveal heading="خدمات ما" />
 
-        <div class="mt-2 space-y-2.5 sm:mt-9 sm:space-y-3" data-reveal>
+        <div class="mt-6 space-y-2.5 sm:mt-9 sm:space-y-3" data-reveal>
             @foreach($serviceRows as $row)
                 <div
                     x-data="{

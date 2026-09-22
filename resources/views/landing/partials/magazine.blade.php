@@ -41,8 +41,8 @@
     <div class="mx-auto max-w-6xl px-4 sm:px-6">
         <a
             href="{{ $magazineUrl }}"
-            class="group relative block overflow-hidden rounded-2xl shadow-[0_6px_24px_rgba(21,114,161,0.28)] transition duration-500 ease-out hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(21,114,161,0.38)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1572A1] sm:rounded-[1.75rem]"
-            style="background: linear-gradient(112deg, #1572A1 0%, #249CCB 55%, #4FB9E8 100%);"
+            class="group relative block overflow-hidden rounded-2xl shadow-[0_6px_24px_rgba(56,83,140,0.30)] transition duration-500 ease-out hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(56,83,140,0.40)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#38538C] sm:rounded-[1.75rem]"
+            style="background: linear-gradient(112deg, #38538C 0%, #1572A1 55%, #36A9DF 100%);"
         >
             <!-- نور سبکی که هر چند ثانیه روی کارت برق می‌زند -->
             <span class="magazine-shine" aria-hidden="true"></span>
@@ -70,7 +70,7 @@
                 </span>
 
                 <!-- دکورۀ ورود -->
-                <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-[#1572A1] shadow-sm transition duration-300 group-hover:bg-sky-50 sm:h-auto sm:w-auto sm:min-h-12 sm:rounded-2xl sm:px-6 sm:py-3">
+                <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-[#38538C] shadow-sm transition duration-300 group-hover:bg-slate-50 sm:h-auto sm:w-auto sm:min-h-12 sm:rounded-2xl sm:px-6 sm:py-3">
                     <span class="hidden text-sm font-extrabold leading-5 sm:inline">مشاهدۀ مجله</span>
                     <svg viewBox="0 0 24 24" class="h-4 w-4 shrink-0 sm:h-[18px] sm:w-[18px]" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M19 12H5.4"/>

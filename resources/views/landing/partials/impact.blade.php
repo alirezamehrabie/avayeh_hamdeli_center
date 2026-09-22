@@ -48,35 +48,19 @@
 
 <!-- بخش آمار همدلی: شمارش‌های زنده و واقعی مرکز -->
 <section id="impact" class="landing-section px-3 pb-8 pt-2 sm:px-6 sm:pb-14 sm:pt-10" aria-labelledby="impact-title">
-    <div class="mx-auto max-w-5xl px-1" data-reveal>
-        <div class="flex items-center justify-center gap-2 sm:gap-3">
-            <span class="h-px w-8 bg-gradient-to-l from-transparent to-[#1572A1]/50 sm:w-16" aria-hidden="true"></span>
-            <h2 id="impact-title" class="text-sm font-bold text-[#1572A1] sm:text-base">آمار همدلی</h2>
-            <span class="h-px w-8 bg-gradient-to-r from-transparent to-[#1572A1]/50 sm:w-16" aria-hidden="true"></span>
-        </div>
+    <div class="mx-auto max-w-5xl" data-reveal>
+        <x-landing.section-title id="impact-title" heading="آمار همدلی" />
     </div>
 
-    <div
-        class="relative mx-auto mt-3 max-w-5xl overflow-hidden rounded-[1.75rem] px-3 py-6 shadow-[0_10px_40px_rgba(56,83,140,0.08)] ring-1 ring-white sm:mt-7 sm:px-8 sm:py-9"
-        style="background: linear-gradient(160deg, #FFFFFF 0%, #F6F7FA 55%, #EFF1F6 100%);"
-    >
-        <!-- هالۀ نقره‌ای بسیار لایت؛ بدون فیلتر blur -->
-        <span
-            class="pointer-events-none absolute inset-0"
-            style="background:
-                radial-gradient(circle at 50% 0%, rgba(148,163,184,0.10), transparent 55%),
-                radial-gradient(circle at 8% 100%, rgba(89,100,174,0.06), transparent 45%);"
-            aria-hidden="true"
-        ></span>
-
-        <div class="relative z-10 grid grid-cols-3 gap-2 sm:gap-4">
+    <div class="mx-auto mt-4 max-w-5xl">
+        <div class="grid grid-cols-3 gap-2 sm:gap-4">
             @php
                 $stats = [
                     ['value' => $coveredMembers, 'label' => 'تحت پوشش', 'caption' => 'کل اعضای مرکز', 'color' => '#1572A1'],
                     ['value' => $households, 'label' => 'خانوار', 'caption' => 'سرپرستان خانوار', 'color' => '#38538C'],
                     ['value' => $students, 'label' => 'محصل', 'caption' => 'در حال تحصیل', 'color' => '#36A9DF'],
                     ['value' => $birthdaysThisMonth, 'label' => 'متولدین '.$currentMonthName, 'caption' => 'زادروز این ماه', 'color' => '#A4184B'],
-                    ['value' => $serviceDeliveries, 'label' => 'خدمات', 'caption' => 'میانگین '.$toFa(number_format($avgServicesPerHousehold, 1)).'', 'color' => '#5964AE'],
+                    ['value' => $serviceDeliveries, 'label' => 'خدمات', 'caption' => 'تحویل‌شده', 'color' => '#5964AE'],
                     ['value' => $activeSocialWorkers, 'label' => 'مددکار فعال', 'caption' => 'فعال در مرکز', 'color' => '#D4205F'],
                 ];
             @endphp

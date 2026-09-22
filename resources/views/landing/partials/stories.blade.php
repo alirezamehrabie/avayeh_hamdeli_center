@@ -1,14 +1,8 @@
 <!-- بخش قصه‌ها -->
 <section id="stories" class="landing-section bg-[#f8fbff] py-16 sm:py-24" aria-labelledby="stories-title">
     <div class="mx-auto max-w-6xl px-4 sm:px-6">
-        <div class="text-center" data-reveal>
-            <span class="inline-flex items-center gap-2 rounded-full bg-[#D4205F]/10 px-4 py-1.5 text-xs font-bold text-[#A4184B]">
-                <i class="bi bi-chat-heart-fill" aria-hidden="true"></i>
-                قصه‌های همدلی
-            </span>
-            <h2 id="stories-title" class="mt-4 text-2xl font-black text-slate-900 sm:text-3xl lg:text-4xl">
-                روایت کوچک‌ترین تغییرها
-            </h2>
+        <div data-reveal>
+            <x-landing.section-title id="stories-title" heading="قصه‌های همدلی" />
         </div>
 
         <div x-data="{ active: 0 }">

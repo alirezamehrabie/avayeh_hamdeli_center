@@ -24,13 +24,7 @@
 
             <!-- متن -->
             <div class="order-1 lg:order-2" data-reveal>
-                <span class="inline-flex items-center gap-2 rounded-full bg-[#5964AE]/10 px-4 py-1.5 text-xs font-bold text-[#5964AE]">
-                    <i class="bi bi-star-fill" aria-hidden="true"></i>
-                    درباره ما
-                </span>
-                <h2 id="about-title" class="mt-4 text-2xl font-black leading-snug text-slate-900 sm:text-3xl lg:text-4xl">
-                    جایی که هر کودک، دیده می‌شود
-                </h2>
+                <x-landing.section-title id="about-title" heading="درباره ما" />
                 <p class="mt-5 text-base leading-8 text-slate-600 sm:text-lg">
                     «آوای همدلی» خانه‌ی محلیِ کودکانِ بی‌سرپرست و آسیب‌دیده است؛ خانه‌ای که در آن هیچ بچه‌ای بی‌پناه نمی‌ماند. ما باور داریم هر کودک، فارغ از هر شرایطی، شایسته‌ی آموزش، غذای گرم، لباس و عشق است. اینجا بچه‌ها را به حال خودشان رها نمی‌کنیم؛ کنارشان می‌ایستیم تا خودشان بال دربیاورند و روی پای خودشان بایستند. «آوای همدلی» با همراهیِ شما، جایی است که کودکیِ هیچ بچه‌ای از دست نمی‌رود.
                 </p>
