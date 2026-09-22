@@ -76,7 +76,7 @@
     <!-- اقدامات -->
     <div class="space-y-2 border-t border-slate-100 px-5 py-5">
         <a
-            href="#help"
+            href="#contact"
             @click="closeMobileNav(true)"
             class="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#4d56a3_0%,#1572A1_60%,#A4184B_135%)] px-5 text-sm font-extrabold text-white shadow-md shadow-[#5964AE]/20 transition active:translate-y-px"
         >

@@ -63,7 +63,7 @@
         <!-- اقدامات -->
         <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <a
-                href="#help"
+                href="#contact"
                 class="hidden items-center gap-2 rounded-xl bg-[linear-gradient(135deg,#4d56a3_0%,#1572A1_60%,#A4184B_135%)] px-5 py-2.5 text-sm font-extrabold text-white shadow-md shadow-[#5964AE]/20 transition hover:shadow-lg hover:shadow-[#1572A1]/25 active:translate-y-px sm:inline-flex"
             >
                 <i class="bi bi-heart-fill" aria-hidden="true"></i>

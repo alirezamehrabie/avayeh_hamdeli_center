@@ -31,7 +31,7 @@
             <nav aria-label="دسترسی سریع">
                 <h3 class="text-sm font-black text-white/90">دسترسی سریع</h3>
                 <ul class="mt-4 space-y-2.5">
-                    @foreach([['#about','درباره ما'],['#services','خدمات'],['#impact','آمار همدلی'],['#stories','قصه‌های همدلی'],['#help','کمک شما']] as $link)
+                    @foreach([['#about','درباره ما'],['#services','خدمات'],['#impact','آمار همدلی'],['#stories','قصه‌های همدلی'],['#contact','تماس با ما']] as $link)
                         <li>
                             <a href="{{ $link[0] }}" class="inline-flex items-center gap-2 text-sm text-white/70 transition hover:text-white">
                                 <i class="bi bi-chevron-left text-xs" aria-hidden="true"></i>

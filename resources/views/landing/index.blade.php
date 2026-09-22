@@ -5,10 +5,9 @@
         // منبع واحد لینک‌های ناوبری: هم دسکتاپ و هم کشوی موبایل
         $navLinks = [
             ['href' => '#services', 'label' => 'خدمات', 'icon' => 'bi-grid'],
-            ['href' => '#about', 'label' => 'درباره ما', 'icon' => 'bi-info-circle'],
             ['href' => '#impact', 'label' => 'آمار همدلی', 'icon' => 'bi-bar-chart-line'],
             ['href' => '#stories', 'label' => 'قصه‌ها', 'icon' => 'bi-chat-heart'],
-            ['href' => '#help', 'label' => 'کمک شما', 'icon' => 'bi-heart'],
+            ['href' => '#about', 'label' => 'درباره ما', 'icon' => 'bi-info-circle'],
             ['href' => '#contact', 'label' => 'تماس', 'icon' => 'bi-telephone'],
         ];
 
@@ -25,9 +24,7 @@
     @include('landing.partials.goodwill')
     @include('landing.partials.trust')
     @include('landing.partials.stories')
-    @include('landing.partials.hero')
     @include('landing.partials.about')
-    @include('landing.partials.help')
     @include('landing.partials.contact')
     @include('landing.partials.footer')
     @include('landing.partials.bottom-bar')

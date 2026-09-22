@@ -9,7 +9,7 @@
 >
     <div class="mx-auto flex max-w-md items-center gap-3">
         <a
-            href="#help"
+            href="#contact"
             class="flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-xl bg-[linear-gradient(135deg,#4d56a3_0%,#1572A1_58%,#A4184B_135%)] px-4 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-[#5964AE]/25 active:translate-y-px"
         >
             <i class="bi bi-heart-fill" aria-hidden="true"></i>
