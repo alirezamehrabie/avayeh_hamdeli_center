@@ -38,7 +38,7 @@
             [
                 'title' => 'ارتباط با خدا',
                 'subtitle' => 'روایت دل‌ها',
-                'href' => '#',
+                'href' => route('magazine.spiritual'),
                 'color' => '#0e7a55',
                 'icon' => 'spiritual',
             ],

@@ -67,6 +67,22 @@ Route::view('/landing', 'landing.index')->name('landing.preview');
 // صفحۀ مجلۀ همدلی — عمومی
 Route::view('/magazine', 'magazine.index')->name('magazine.index');
 
+// بخش «ارتباط با خدا» مجله — عمومی
+Route::view('/magazine/spiritual', 'magazine.spiritual')->name('magazine.spiritual');
+
+// متن کامل زیارت عاشورا — متن از resources/text/Ashura.txt خوانده می‌شود
+Route::get('/magazine/ziyarat-ashura', function () {
+    $raw = trim(file_get_contents(resource_path('text/Ashura.txt')));
+
+    // پاراگراف‌بندی روی خطوط خالی؛ شماره‌های پانوشت انتهای پاراگراف‌ها حذف می‌شوند
+    $paragraphs = array_values(array_filter(array_map(
+        fn (string $p): string => preg_replace('/\s+\d+\s*$/u', '', trim($p)),
+        preg_split('/\n\s*\n/', $raw) ?: []
+    ), fn (string $p): bool => $p !== ''));
+
+    return view('magazine.ziyarat-ashura', ['paragraphs' => $paragraphs]);
+})->name('magazine.ziyarat-ashura');
+
 // تصاویر آپلودی لندینگ — عمومی (مهمان‌ها هم لندینگ می‌بینند)، بدون احراز هویت
 Route::get('/landing-media/{path}', [LandingMediaController::class, 'show'])
     ->where('path', LandingMediaController::PATH_PATTERN)

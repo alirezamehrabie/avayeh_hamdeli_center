@@ -98,6 +98,18 @@
     font-family: 'iransans', sans-serif;
 }
 
+@font-face {
+    font-family: 'AmiriQuran';
+    src: url('../fonts/Amiri/AmiriQuran-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+.font-quran {
+    font-family: 'AmiriQuran', 'iransans', serif;
+}
+
 html {
     scrollbar-gutter: stable;
 }
