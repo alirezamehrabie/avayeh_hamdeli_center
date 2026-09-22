@@ -28,6 +28,23 @@ class LandingServicesTest extends TestCase
         $response->assertSee(route('landing.services'));
     }
 
+    public function test_landing_page_displays_charity_and_child_aid_sentence(): void
+    {
+        $response = $this->get('/landing');
+
+        $response->assertOk();
+        $response->assertSee('آوای همدلی؛ همراهی مهربان برای یاری کودکان نیازمند');
+    }
+
+    public function test_landing_page_displays_magazine_section_title(): void
+    {
+        $response = $this->get('/landing');
+
+        $response->assertOk();
+        $response->assertSee('نشریۀ آوا');
+        $response->assertSee('id="magazine-title"', false);
+    }
+
     public function test_services_page_is_accessible_and_renders_list_view_with_services_and_images(): void
     {
         $services = LandingContent::services();

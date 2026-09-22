@@ -37,11 +37,15 @@
 @endonce
 
 <!-- بخش مجلۀ همدلی: کارت افقی و کلیک‌پذیر به عنوان نقطه ورود -->
-<section id="magazine" class="landing-section bg-white pb-8 pt-0 sm:pb-16" aria-labelledby="magazine-title">
+<section id="magazine" class="landing-section bg-white pb-8 pt-4 sm:pb-16 sm:pt-6" aria-labelledby="magazine-title">
     <div class="mx-auto max-w-6xl px-3 sm:px-6">
+        <div data-reveal>
+            <x-landing.section-title id="magazine-title" heading="نشریۀ آوا" />
+        </div>
+
         <a
             href="{{ $magazineUrl }}"
-            class="group relative block overflow-hidden rounded-2xl shadow-[0_6px_24px_rgba(56,83,140,0.30)] transition duration-500 ease-out hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(56,83,140,0.40)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#38538C] sm:rounded-[1.75rem]"
+            class="group relative mt-6 block overflow-hidden rounded-2xl shadow-[0_6px_24px_rgba(56,83,140,0.30)] transition duration-500 ease-out hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(56,83,140,0.40)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#38538C] sm:mt-8 sm:rounded-[1.75rem]"
             style="background: linear-gradient(112deg, #38538C 0%, #1572A1 55%, #36A9DF 100%);"
         >
             <!-- نور سبکی که هر چند ثانیه روی کارت برق می‌زند -->

@@ -95,4 +95,118 @@
         ></div>
         <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" aria-hidden="true"></div>
     </div>
+
+    <!-- جمله‌ی انگیزشی مرکز و یاری کودکان با جلوه تایپ نرم و مدرن -->
+    <div
+        class="relative mx-auto mt-4 max-w-3xl px-2 text-center sm:mt-6"
+        data-reveal
+        x-data="{
+            text: 'آوای همدلی؛ همراهی مهربان برای یاری کودکان نیازمند',
+            displayed: '',
+            showCursor: true,
+            isTyping: false,
+            started: false,
+            init() {
+                if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                    this.displayed = this.text;
+                    this.showCursor = false;
+                    return;
+                }
+
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach((entry) => {
+                        if (entry.isIntersecting && !this.started) {
+                            this.started = true;
+                            observer.disconnect();
+                            setTimeout(() => this.type(), 350);
+                        }
+                    });
+                }, { threshold: 0.2 });
+
+                observer.observe(this.$el);
+            },
+            type() {
+                let i = 0;
+                const chars = Array.from(this.text);
+                this.isTyping = true;
+                const step = () => {
+                    if (i < chars.length) {
+                        this.displayed += chars[i];
+                        const char = chars[i];
+                        i++;
+                        let delay = 46;
+                        if (char === '؛' || char === '،') {
+                            this.isTyping = false;
+                            delay = 180;
+                        } else if (char === ' ') {
+                            delay = 62;
+                        } else {
+                            this.isTyping = true;
+                        }
+                        setTimeout(step, delay);
+                    } else {
+                        this.isTyping = false;
+                        setTimeout(() => {
+                            this.showCursor = false;
+                        }, 2200);
+                    }
+                };
+                step();
+            }
+        }"
+    >
+        <span class="sr-only">آوای همدلی؛ همراهی مهربان برای یاری کودکان نیازمند</span>
+        <p
+            class="flex items-center justify-center whitespace-nowrap text-center text-[11px] font-normal tracking-wide text-slate-500/90 min-[380px]:text-xs sm:text-sm md:text-[15px]"
+            aria-hidden="true"
+        >
+            <span x-text="displayed"></span>
+            <span
+                class="modern-cursor ms-1.5 inline-block h-3.5 w-0.5 rounded-full bg-slate-400 sm:h-4 sm:w-0.5"
+                :class="{
+                    'is-typing': isTyping,
+                    'is-idle': !isTyping && showCursor,
+                    'is-hidden': !showCursor
+                }"
+            ></span>
+        </p>
+    </div>
 </section>
+
+@once
+    <style>
+        @keyframes modern-cursor-breath {
+            0%, 100% {
+                opacity: 0.85;
+                transform: scaleY(1);
+            }
+            50% {
+                opacity: 0.15;
+                transform: scaleY(0.85);
+            }
+        }
+        .modern-cursor {
+            box-shadow: 0 0 6px rgba(148, 163, 184, 0.45);
+            transform-origin: center;
+            will-change: opacity, transform;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .modern-cursor.is-typing {
+            opacity: 0.85;
+            transform: scaleY(1);
+            animation: none;
+        }
+        .modern-cursor.is-idle {
+            animation: modern-cursor-breath 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+        .modern-cursor.is-hidden {
+            opacity: 0 !important;
+            transform: scaleY(0.6);
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .modern-cursor { display: none !important; }
+        }
+    </style>
+@endonce
+
