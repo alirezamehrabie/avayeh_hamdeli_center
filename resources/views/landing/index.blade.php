@@ -22,6 +22,7 @@
     @include('landing.partials.services')
     @include('landing.partials.magazine')
     @include('landing.partials.impact')
+    @include('landing.partials.goodwill')
     @include('landing.partials.hero')
     @include('landing.partials.trust')
     @include('landing.partials.about')
