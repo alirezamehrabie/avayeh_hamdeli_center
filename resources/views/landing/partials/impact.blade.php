@@ -139,128 +139,43 @@
     </div>
 
 
-    <!-- جداکننده بصری بین آمار و بخش بعدی -->
-    <div class="relative mx-auto mt-8 max-w-5xl select-none overflow-hidden rounded-3xl sm:mt-12" data-reveal oncontextmenu="return false">
-        <div
-            class="h-32 w-full bg-cover bg-center sm:h-40 lg:h-56"
-            role="img"
-            aria-label=""
-            style="background-image: url('{{ asset('images/landing/image-1.webp') }}');"
-        ></div>
-        <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" aria-hidden="true"></div>
-    </div>
+    <!-- بنر سینمایی اثرگذاری و شعار محوری مرکز -->
+    <figure class="relative mx-auto mt-8 max-w-5xl overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-900 shadow-xl shadow-slate-900/10 sm:mt-12 sm:rounded-3xl" data-reveal>
+        <div class="relative aspect-[16/8] w-full overflow-hidden sm:aspect-[2.4/1]">
+            <img
+                src="{{ asset('images/landing/image-1.webp') }}"
+                alt="یاری کودکان نیازمند در مرکز آوای همدلی"
+                loading="lazy"
+                decoding="async"
+                width="1280"
+                height="533"
+                class="h-full w-full object-cover object-[center_35%] transition-transform duration-700 ease-out hover:scale-[1.02]"
+            >
 
-    <!-- جمله‌ی انگیزشی مرکز و یاری کودکان با جلوه تایپ نرم و مدرن -->
-    <div
-        class="relative mx-auto mt-4 max-w-3xl px-2 text-center sm:mt-6"
-        data-reveal
-        x-data="{
-            text: 'آوای همدلی؛ همراهی مهربان برای یاری کودکان نیازمند',
-            displayed: '',
-            showCursor: true,
-            isTyping: false,
-            started: false,
-            init() {
-                if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-                    this.displayed = this.text;
-                    this.showCursor = false;
-                    return;
-                }
+            <!-- لایه سایه‌روشن سینمایی برای خوانایی اعلای متن -->
+            <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/45 to-slate-900/25" aria-hidden="true"></div>
 
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach((entry) => {
-                        if (entry.isIntersecting && !this.started) {
-                            this.started = true;
-                            observer.disconnect();
-                            setTimeout(() => this.type(), 350);
-                        }
-                    });
-                }, { threshold: 0.2 });
+            <!-- هاله نور دکوراتیو آبی برند -->
+            <div class="pointer-events-none absolute -bottom-16 left-1/2 h-36 w-80 -translate-x-1/2 rounded-full bg-[#1572A1]/35 blur-3xl" aria-hidden="true"></div>
 
-                observer.observe(this.$el);
-            },
-            type() {
-                let i = 0;
-                const chars = Array.from(this.text);
-                this.isTyping = true;
-                const step = () => {
-                    if (i < chars.length) {
-                        this.displayed += chars[i];
-                        const char = chars[i];
-                        i++;
-                        let delay = 46;
-                        if (char === '؛' || char === '،') {
-                            this.isTyping = false;
-                            delay = 180;
-                        } else if (char === ' ') {
-                            delay = 62;
-                        } else {
-                            this.isTyping = true;
-                        }
-                        setTimeout(step, delay);
-                    } else {
-                        this.isTyping = false;
-                        setTimeout(() => {
-                            this.showCursor = false;
-                        }, 2200);
-                    }
-                };
-                step();
-            }
-        }"
-    >
-        <span class="sr-only">آوای همدلی؛ همراهی مهربان برای یاری کودکان نیازمند</span>
-        <p
-            class="flex items-center justify-center whitespace-nowrap text-center text-[11px] font-normal tracking-wide text-slate-500/90 min-[380px]:text-xs sm:text-sm md:text-[15px]"
-            aria-hidden="true"
-        >
-            <span x-text="displayed"></span>
-            <span
-                class="modern-cursor ms-1.5 inline-block h-3.5 w-0.5 rounded-full bg-slate-400 sm:h-4 sm:w-0.5"
-                :class="{
-                    'is-typing': isTyping,
-                    'is-idle': !isTyping && showCursor,
-                    'is-hidden': !showCursor
-                }"
-            ></span>
-        </p>
-    </div>
+            <!-- محتوای شعار روی تصویر -->
+            <figcaption class="absolute inset-0 flex flex-col items-center justify-end p-4 text-center sm:p-7 md:p-9">
+                <!-- بج محتوایی بالای شعار -->
+                <div class="mb-2 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-0.5 text-[10px] font-semibold text-white/95 backdrop-blur-md ring-1 ring-inset ring-white/20 sm:mb-3 sm:px-3 sm:py-1 sm:text-xs">
+                    <svg viewBox="0 0 24 24" class="h-3 w-3 text-cyan-300 sm:h-3.5 sm:w-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                    </svg>
+                    <span>آوای همدلی</span>
+                </div>
+
+                <!-- متن شعار انگیزشی با خوانایی بی‌نقص -->
+                <blockquote class="max-w-2xl px-2">
+                    <p class="text-sm font-black leading-relaxed text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] sm:text-lg sm:leading-8 md:text-xl lg:text-2xl">
+                        همراهی مهربان برای یاری کودکان نیازمند
+                    </p>
+                </blockquote>
+            </figcaption>
+        </div>
+    </figure>
 </section>
-
-@once
-    <style>
-        @keyframes modern-cursor-breath {
-            0%, 100% {
-                opacity: 0.85;
-                transform: scaleY(1);
-            }
-            50% {
-                opacity: 0.15;
-                transform: scaleY(0.85);
-            }
-        }
-        .modern-cursor {
-            box-shadow: 0 0 6px rgba(148, 163, 184, 0.45);
-            transform-origin: center;
-            will-change: opacity, transform;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-        }
-        .modern-cursor.is-typing {
-            opacity: 0.85;
-            transform: scaleY(1);
-            animation: none;
-        }
-        .modern-cursor.is-idle {
-            animation: modern-cursor-breath 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-        }
-        .modern-cursor.is-hidden {
-            opacity: 0 !important;
-            transform: scaleY(0.6);
-            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        @media (prefers-reduced-motion: reduce) {
-            .modern-cursor { display: none !important; }
-        }
-    </style>
-@endonce
 
