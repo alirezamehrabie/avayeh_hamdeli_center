@@ -27,6 +27,5 @@
     @include('landing.partials.about')
     @include('landing.partials.contact')
     @include('landing.partials.footer')
-    @include('landing.partials.bottom-bar')
     @include('landing.partials.mobile-nav')
 @endsection

@@ -46,11 +46,9 @@
         mobileNavPopstateHandler: null,
         mobileNavScrollLock: null,
         mobileNavEnableHistoryClose: false,
-        floatingBarVisible: false,
         revealHeights: new Set(),
         init() {
             this.initMobileNav();
-            this.initFloatingBar();
             this.initReveal();
             this.initCounter();
         },
@@ -128,40 +126,6 @@
             document.body.style.paddingRight = lock.bodyPaddingRight;
             window.scrollTo(0, lock.scrollY);
             this.mobileNavScrollLock = null;
-        },
-        initFloatingBar() {
-            const footer = document.getElementById('site-footer');
-            let pastTop = false;
-            let footerIntersecting = false;
-
-            const updateVisibility = () => {
-                this.floatingBarVisible = pastTop && !footerIntersecting;
-            };
-
-            if (footer) {
-                const footerObserver = new IntersectionObserver((entries) => {
-                    footerIntersecting = entries[0].isIntersecting;
-                    updateVisibility();
-                }, { threshold: 0 });
-                footerObserver.observe(footer);
-            }
-
-            let ticking = false;
-            const onScroll = () => {
-                if (!ticking) {
-                    window.requestAnimationFrame(() => {
-                        const currentPastTop = window.scrollY > 400;
-                        if (currentPastTop !== pastTop) {
-                            pastTop = currentPastTop;
-                            updateVisibility();
-                        }
-                        ticking = false;
-                    });
-                    ticking = true;
-                }
-            };
-            window.addEventListener('scroll', onScroll, { passive: true });
-            onScroll();
         },
         initReveal() {
             const els = document.querySelectorAll('[data-reveal]');
