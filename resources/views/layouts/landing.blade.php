@@ -145,16 +145,18 @@
         },
         initCounter() {
             const counters = document.querySelectorAll('[data-counter]');
+            if (!counters.length) return;
             const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (prefersReduced) return;
             const io = new IntersectionObserver((entries) => {
                 entries.forEach((entry) => {
                     if (!entry.isIntersecting) return;
                     const el = entry.target;
                     io.unobserve(el);
-                    if (prefersReduced) { el.textContent = el.dataset.target; return; }
                     const target = parseFloat(el.dataset.target);
+                    if (isNaN(target) || target <= 0) return;
                     const suffix = el.dataset.suffix ?? '';
-                    const dur = 1400;
+                    const dur = 1200;
                     const start = performance.now();
                     const tick = (now) => {
                         const p = Math.min((now - start) / dur, 1);
@@ -162,9 +164,10 @@
                         el.textContent = Math.round(target * eased).toLocaleString('fa-IR') + suffix;
                         if (p < 1) requestAnimationFrame(tick);
                     };
+                    el.textContent = (0).toLocaleString('fa-IR') + suffix;
                     requestAnimationFrame(tick);
                 });
-            }, { threshold: 0.5 });
+            }, { threshold: 0.15 });
             counters.forEach((c) => io.observe(c));
         }
     }"

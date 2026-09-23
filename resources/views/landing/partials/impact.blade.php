@@ -64,20 +64,20 @@
     </div>
 
     <div class="mx-auto mt-3.5 max-w-5xl sm:mt-4" data-reveal>
-        <div class="grid grid-cols-3 gap-2 sm:gap-3.5 lg:gap-4.5">
+        <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3.5 lg:gap-4.5">
             @php
                 $stats = [
                     ['value' => $coveredMembers, 'label' => 'تحت پوشش', 'caption' => 'کل اعضای مرکز', 'color' => '#1572A1', 'rgb' => '21, 114, 161', 'icon' => 'bi-people-fill'],
                     ['value' => $households, 'label' => 'خانوار', 'caption' => 'سرپرستان خانوار', 'color' => '#38538C', 'rgb' => '56, 83, 140', 'icon' => 'bi-house-heart-fill'],
-                    ['value' => $students, 'label' => 'محصل', 'caption' => 'در حال تحصیل', 'color' => '#36A9DF', 'rgb' => '54, 169, 223', 'icon' => 'bi-mortarboard-fill'],
-                    ['value' => $birthdaysThisMonth, 'label' => 'متولدین '.$currentMonthName, 'caption' => 'زادروز این ماه', 'color' => '#A4184B', 'rgb' => '164, 24, 75', 'icon' => 'bi-gift-fill'],
-                    ['value' => $serviceDeliveries, 'label' => 'خدمات', 'caption' => 'تحویل‌شده', 'color' => '#5964AE', 'rgb' => '89, 100, 174', 'icon' => 'bi-box2-heart-fill'],
-                    ['value' => $activeSocialWorkers, 'label' => 'مددکار فعال', 'caption' => 'فعال در مرکز', 'color' => '#D4205F', 'rgb' => '212, 32, 95', 'icon' => 'bi-person-heart'],
+                    ['value' => $students, 'label' => 'محصل', 'caption' => 'در حال تحصیل', 'color' => '#0284c7', 'rgb' => '2, 132, 199', 'icon' => 'bi-mortarboard-fill'],
+                    ['value' => $birthdaysThisMonth, 'label' => 'متولدین '.$currentMonthName, 'caption' => 'زادروز این ماه', 'color' => '#be185d', 'rgb' => '190, 24, 93', 'icon' => 'bi-gift-fill'],
+                    ['value' => $serviceDeliveries, 'label' => 'خدمات', 'caption' => 'تحویل‌شده', 'color' => '#4f46e5', 'rgb' => '79, 70, 229', 'icon' => 'bi-box2-heart-fill'],
+                    ['value' => $activeSocialWorkers, 'label' => 'مددکار فعال', 'caption' => 'فعال در مرکز', 'color' => '#0d9488', 'rgb' => '13, 148, 136', 'icon' => 'bi-person-heart'],
                 ];
             @endphp
             @foreach($stats as $stat)
                 <div
-                    class="group relative flex min-w-0 flex-col items-center justify-between overflow-hidden rounded-2xl border border-slate-100/90 bg-white/95 px-2 py-3 text-center shadow-[0_1px_3px_rgba(15,23,42,0.03),0_4px_12px_rgba(56,83,140,0.03)] ring-1 ring-inset ring-white/80 backdrop-blur-sm transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1.5 hover:border-slate-200 hover:shadow-[0_16px_32px_-8px_rgba(var(--stat-rgb),0.18)] active:scale-[0.98] sm:rounded-3xl sm:px-4 sm:py-5"
+                    class="group relative flex min-w-0 select-none flex-col items-center justify-between overflow-hidden rounded-2xl border border-slate-100/90 bg-white/95 px-3 py-3.5 text-center shadow-[0_1px_3px_rgba(15,23,42,0.03),0_4px_12px_rgba(56,83,140,0.03)] ring-1 ring-inset ring-white/80 backdrop-blur-sm transition-all duration-300 ease-out hover:border-slate-200 hover:shadow-[0_8px_20px_-6px_rgba(var(--stat-rgb),0.12)] sm:rounded-3xl sm:px-4 sm:py-5"
                     style="--stat-rgb: {{ $stat['rgb'] }};"
                 >
                     <!-- هاله نوری محاطی (Ambient Radial Glow) بسیار ظریف هنگام هاور -->
@@ -97,20 +97,20 @@
                     <!-- کانتینر آیکون اسکوئیرکل شناور و نرم بدون سایه با mb استاندارد -->
                     <div class="relative z-10 mb-2 sm:mb-2.5">
                         <span
-                            class="relative flex h-8 w-8 items-center justify-center rounded-xl ring-1 ring-black/[0.04] transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:scale-110 group-hover:-rotate-3 sm:h-10 sm:w-10 sm:rounded-2xl"
+                            class="relative flex h-8 w-8 items-center justify-center rounded-xl ring-1 ring-black/[0.04] transition-transform duration-300 ease-out group-hover:scale-105 sm:h-10 sm:w-10 sm:rounded-2xl"
                             style="background: linear-gradient(135deg, rgba({{ $stat['rgb'] }}, 0.14) 0%, rgba({{ $stat['rgb'] }}, 0.05) 100%); color: {{ $stat['color'] }};"
                         >
-                            <i class="bi {{ $stat['icon'] }} text-xs transition-transform duration-300 group-hover:scale-105 sm:text-sm" aria-hidden="true"></i>
+                            <i class="bi {{ $stat['icon'] }} text-xs transition-transform duration-300 sm:text-sm" aria-hidden="true"></i>
                         </span>
                     </div>
 
                     <!-- عدد شمارنده زنده مجسمه‌گون با ارقام جمع‌تر -->
-                    <div class="relative z-10 flex items-baseline justify-center gap-0.5">
+                    <div class="relative z-10 flex items-baseline justify-center gap-0.5" dir="ltr" aria-label="{{ $toFa(number_format($stat['value'])) }} {{ $stat['label'] }}">
                         <span
                             data-counter
                             data-target="{{ $stat['value'] }}"
                             class="block text-lg font-bold leading-none tracking-[-0.05em] text-slate-800 tabular-nums min-[380px]:text-xl sm:text-2xl sm:tracking-[-0.06em] lg:text-3xl"
-                        >۰</span>
+                        >{{ $toFa(number_format($stat['value'])) }}</span>
                         <span
                             class="text-[10px] font-bold sm:text-xs lg:text-sm"
                             style="color: {{ $stat['color'] }}"
@@ -121,13 +121,13 @@
                     <!-- عنوان اصلی و زیرعنوان ساختاریافته -->
                     <div class="relative z-10 mt-1.5 w-full min-w-0 px-0.5 sm:mt-2">
                         <span
-                            class="block truncate text-[11px] font-extrabold leading-5 text-slate-800 transition-colors duration-200 group-hover:text-slate-900 sm:text-xs lg:text-sm"
+                            class="block text-xs font-extrabold leading-5 text-slate-800 transition-colors duration-200 group-hover:text-slate-900 sm:text-xs lg:text-sm"
                             title="{{ $stat['label'] }}"
                         >
                             {{ $stat['label'] }}
                         </span>
                         <span
-                            class="mt-0.5 block truncate text-[9px] font-medium leading-4 text-slate-400 group-hover:text-slate-500 sm:text-[10px] lg:text-xs"
+                            class="mt-0.5 block text-[11px] font-medium leading-4 text-slate-400 group-hover:text-slate-500 sm:text-xs"
                             title="{{ $stat['caption'] }}"
                         >
                             {{ $stat['caption'] }}
