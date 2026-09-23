@@ -41,8 +41,11 @@ class LandingServicesTest extends TestCase
         $response = $this->get('/landing');
 
         $response->assertOk();
-        $response->assertSee('نشریۀ آوا');
+        $response->assertSee('مجلۀ همدلی');
         $response->assertSee('id="magazine-title"', false);
+        $this->assertSame(1, substr_count($response->getContent(), 'id="magazine-title"'));
+        $response->assertSee('id="magazine-card-title"', false);
+        $response->assertSee('aria-labelledby="magazine-card-title"', false);
     }
 
     public function test_services_page_is_accessible_and_renders_list_view_with_services_and_images(): void
@@ -93,4 +96,3 @@ class LandingServicesTest extends TestCase
         $response->assertDontSee('ورود پرسنل و مدیران');
     }
 }
-
