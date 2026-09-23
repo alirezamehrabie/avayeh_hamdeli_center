@@ -85,6 +85,9 @@ Route::get('/magazine/ziyarat-ashura', fn () => app(DevotionalTextController::cl
 Route::get('/magazine/tavassol', fn () => app(DevotionalTextController::class)->show('Tavasol.txt', 'دعای توسل', 'متن کامل و معتبر دعای توسل به ائمه اطهار علیهم‌السلام'))
     ->name('magazine.tavassol');
 
+Route::get('/magazine/ahd', fn () => app(DevotionalTextController::class)->show('ahd.txt', 'دعای عهد', 'متن کامل و معتبر دعای عهد با امام زمان (عج)'))
+    ->name('magazine.ahd');
+
 // تصاویر آپلودی لندینگ — عمومی (مهمان‌ها هم لندینگ می‌بینند)، بدون احراز هویت
 Route::get('/landing-media/{path}', [LandingMediaController::class, 'show'])
     ->where('path', LandingMediaController::PATH_PATTERN)

@@ -19,11 +19,18 @@
                 'href' => route('magazine.tavassol'),
                 'icon' => 'tawassul',
             ],
+            [
+                'title' => 'دعای عهد',
+                'subtitle' => 'تجدید بیعت با امام زمان (عج)',
+                'href' => route('magazine.ahd'),
+                'icon' => 'ahd',
+            ],
         ];
 
         $icons = [
             'shrine' => '<path d="M12 2v1.7"/><path d="M12 3.7c2.7 1.7 4.1 3.8 4.1 6.1H7.9c0-2.3 1.4-4.4 4.1-6.1Z"/><path d="M7.9 9.8h8.2"/><path d="M9.3 9.8V20M14.7 9.8V20"/><path d="M12.6 20v-2.4a.9.9 0 0 0-1.2-.9 1.4 1.4 0 0 0-.9.9V20"/><path d="M4.8 20h14.4"/>',
             'tawassul' => '<path d="M12 3.4c2.2 2.3 3.4 5 3.4 7.8 0 2-.9 4-2.5 5.6a1.2 1.2 0 0 1-1.8 0C9.5 15.2 8.6 13.2 8.6 11.2c0-2.8 1.2-5.5 3.4-7.8Z"/><path d="M12 6.8v9"/><path d="m9.5 17.8-.7 2.6M14.5 17.8l.7 2.6"/>',
+            'ahd' => '<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M5.64 5.64l1.41 1.41M16.95 16.95l1.41 1.41M3 12h2M19 12h2M5.64 18.36l1.41-1.41M16.95 7.05l1.41-1.41"/>',
         ];
     @endphp
 
@@ -46,7 +53,7 @@
             </p>
 
             <!-- آیتم‌های بخش -->
-            <div class="mt-4 grid grid-cols-1 gap-2.5 sm:mt-9 sm:grid-cols-2 sm:gap-4">
+            <div class="mt-4 grid grid-cols-1 gap-2.5 sm:mt-9 sm:grid-cols-2 lg:grid-cols-3 sm:gap-4">
                 @foreach($items as $item)
                     <a
                         href="{{ $item['href'] }}"

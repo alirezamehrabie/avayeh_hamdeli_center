@@ -165,13 +165,13 @@
                     <svg viewBox="0 0 24 24" class="h-3 w-3 text-cyan-300 sm:h-3.5 sm:w-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
                     </svg>
-                    <span>عهد همدلی</span>
+                    <span>آوای همدلی</span>
                 </div>
 
                 <!-- متن شعار انگیزشی با خوانایی بی‌نقص -->
                 <blockquote class="max-w-2xl px-2">
                     <p class="text-sm font-black leading-relaxed text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] sm:text-lg sm:leading-8 md:text-xl lg:text-2xl">
-                        آوای همدلی؛ همراهی مهربان برای یاری کودکان نیازمند
+                        همراهی مهربان برای یاری کودکان نیازمند
                     </p>
                 </blockquote>
             </figcaption>
