@@ -64,7 +64,7 @@
     </div>
 
     <div class="mx-auto mt-3.5 max-w-5xl sm:mt-4" data-reveal>
-        <div class="grid grid-cols-2 gap-2.5 min-[460px]:grid-cols-3 sm:gap-3.5 lg:grid-cols-6 lg:gap-4">
+        <div class="grid grid-cols-3 gap-2 sm:gap-3.5 lg:gap-4.5">
             @php
                 $stats = [
                     ['value' => $coveredMembers, 'label' => 'تحت پوشش', 'caption' => 'کل اعضای مرکز', 'color' => '#1572A1', 'rgb' => '21, 114, 161', 'icon' => 'bi-people-fill'],
@@ -77,7 +77,7 @@
             @endphp
             @foreach($stats as $stat)
                 <div
-                    class="group relative flex min-w-0 flex-col items-center justify-between overflow-hidden rounded-2xl border border-slate-100/90 bg-white/95 px-2 py-3 text-center shadow-[0_1px_3px_rgba(15,23,42,0.03),0_4px_12px_rgba(56,83,140,0.03)] ring-1 ring-inset ring-white/80 backdrop-blur-sm transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1.5 hover:border-slate-200 hover:shadow-[0_16px_32px_-8px_rgba(var(--stat-rgb),0.18)] active:scale-[0.98] sm:rounded-3xl sm:px-3 sm:py-4.5"
+                    class="group relative flex min-w-0 flex-col items-center justify-between overflow-hidden rounded-2xl border border-slate-100/90 bg-white/95 px-2 py-3 text-center shadow-[0_1px_3px_rgba(15,23,42,0.03),0_4px_12px_rgba(56,83,140,0.03)] ring-1 ring-inset ring-white/80 backdrop-blur-sm transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1.5 hover:border-slate-200 hover:shadow-[0_16px_32px_-8px_rgba(var(--stat-rgb),0.18)] active:scale-[0.98] sm:rounded-3xl sm:px-4 sm:py-5"
                     style="--stat-rgb: {{ $stat['rgb'] }};"
                 >
                     <!-- هاله نوری محاطی (Ambient Radial Glow) بسیار ظریف هنگام هاور -->
@@ -109,10 +109,10 @@
                         <span
                             data-counter
                             data-target="{{ $stat['value'] }}"
-                            class="block text-lg font-black leading-none tracking-[-0.05em] text-slate-800 tabular-nums min-[380px]:text-xl sm:text-2xl sm:tracking-[-0.06em] lg:text-[1.7rem]"
+                            class="block text-lg font-bold leading-none tracking-[-0.05em] text-slate-800 tabular-nums min-[380px]:text-xl sm:text-2xl sm:tracking-[-0.06em] lg:text-3xl"
                         >۰</span>
                         <span
-                            class="text-[10px] font-black sm:text-xs"
+                            class="text-[10px] font-bold sm:text-xs lg:text-sm"
                             style="color: {{ $stat['color'] }}"
                             aria-hidden="true"
                         >+</span>
@@ -121,13 +121,13 @@
                     <!-- عنوان اصلی و زیرعنوان ساختاریافته -->
                     <div class="relative z-10 mt-1.5 w-full min-w-0 px-0.5 sm:mt-2">
                         <span
-                            class="block truncate text-[11px] font-extrabold leading-5 text-slate-800 transition-colors duration-200 group-hover:text-slate-900 sm:text-xs"
+                            class="block truncate text-[11px] font-extrabold leading-5 text-slate-800 transition-colors duration-200 group-hover:text-slate-900 sm:text-xs lg:text-sm"
                             title="{{ $stat['label'] }}"
                         >
                             {{ $stat['label'] }}
                         </span>
                         <span
-                            class="mt-0.5 block truncate text-[9px] font-medium leading-4 text-slate-400 group-hover:text-slate-500 sm:text-[10px]"
+                            class="mt-0.5 block truncate text-[9px] font-medium leading-4 text-slate-400 group-hover:text-slate-500 sm:text-[10px] lg:text-xs"
                             title="{{ $stat['caption'] }}"
                         >
                             {{ $stat['caption'] }}
