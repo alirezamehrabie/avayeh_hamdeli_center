@@ -288,8 +288,8 @@
                                     <div
                                         data-service-category-index="{{ $index }}"
                                         x-data="{
-                                            quantity: @entangle('categories.' . $index . '.quantity').live,
-                                            value: @entangle('categories.' . $index . '.value').live,
+                                            quantity: @entangle('categories.' . $index . '.quantity'),
+                                            value: @entangle('categories.' . $index . '.value'),
                                             numberValue(raw) {
                                                 const value = Number.parseFloat(String(raw ?? '').replace(/,/g, ''));
 
@@ -335,16 +335,16 @@
                                                 <div
                                                     x-data="{
                                                         open: false,
-                                                        selectedServiceNameId: @entangle('selectedServiceNameId').live,
-                                                        categoryName: @entangle('categories.' . $index . '.name').live,
-                                                        categories: @entangle('categories').live,
+                                                        selectedServiceNameId: @entangle('selectedServiceNameId'),
+                                                        categoryName: @entangle('categories.' . $index . '.name'),
+                                                        categories: @entangle('categories'),
                                                         currentIndex: {{ $index }},
                                                         categoryTemplates: @js($categoryTemplates->map(fn ($template) => [
                                                             'id' => $template->id,
                                                             'serviceNameId' => $template->service_name_id,
                                                             'name' => $template->name,
                                                         ])->values()),
-                                                        filterText: @entangle('categories.' . $index . '.name').live,
+                                                        filterText: @js($category['name'] ?? ''),
                                                         get filteredCategoryTemplates() {
                                                             const serviceNameId = Number(this.selectedServiceNameId);
                                                             const query = this.filterText.trim().toLowerCase();
@@ -461,7 +461,7 @@
                                                         open: false,
                                                         dropUp: false,
                                                         menuMaxHeight: 224,
-                                                        unit: @entangle('categories.' . $index . '.unit').live,
+                                                        unit: @entangle('categories.' . $index . '.unit'),
                                                         unitOptions: @js($unitOptions),
                                                         get options() {
                                                             return Object.entries(this.unitOptions).map(([value, label]) => ({ value, label }));
