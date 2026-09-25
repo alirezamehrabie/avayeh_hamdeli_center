@@ -17,25 +17,8 @@
     :class="scrolled ? 'bg-white/90 shadow-sm backdrop-blur-md' : 'bg-white/60 backdrop-blur-sm'"
 >
     <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-3 sm:gap-4 sm:px-6">
-        <!-- گروه راست (در RTL): همبرگر + برند -->
+        <!-- گروه راست (لبه آغازین RTL): برند -->
         <div class="flex min-w-0 items-center gap-1.5 sm:gap-2">
-            <!-- دکمه همبرگر -->
-            <button
-                type="button"
-                @click="mobileNavOpen ? closeMobileNav() : openMobileNav()"
-                :aria-expanded="mobileNavOpen.toString()"
-                aria-controls="mobile-nav"
-                aria-label="باز و بسته کردن منو"
-                class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition hover:border-[#1572A1]/40 hover:text-[#1572A1] sm:h-11 sm:w-11 lg:hidden"
-            >
-                <svg x-show="!mobileNavOpen" class="h-5 w-5 sm:h-6 sm:w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <path d="M4 6h16M4 12h16M4 18h16"></path>
-                </svg>
-                <svg x-show="mobileNavOpen" x-cloak class="h-5 w-5 sm:h-6 sm:w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <path d="M6 6l12 12M18 6L6 18"></path>
-                </svg>
-            </button>
-
             <!-- برند -->
             <a href="#top" class="flex min-w-0 items-center gap-2 sm:gap-2.5" aria-label="آوای همدلی">
                 <img
@@ -60,7 +43,7 @@
             @endforeach
         </nav>
 
-        <!-- اقدامات -->
+        <!-- اقدامات و منو (لبه انتهایی RTL) -->
         <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <a
                 href="#contact"
@@ -76,6 +59,22 @@
                 <i class="bi bi-box-arrow-in-left" aria-hidden="true"></i>
                 {{ $loginEntryLabel }}
             </a>
+            <!-- دکمه همبرگر: در گوشه انتهایی (چپ در RTL) و هم‌سو با لبه ورود کشو -->
+            <button
+                type="button"
+                @click="mobileNavOpen ? closeMobileNav() : openMobileNav()"
+                :aria-expanded="mobileNavOpen.toString()"
+                aria-controls="mobile-nav"
+                aria-label="باز و بسته کردن منو"
+                class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition hover:border-[#1572A1]/40 hover:text-[#1572A1] sm:h-11 sm:w-11 lg:hidden"
+            >
+                <svg x-show="!mobileNavOpen" class="h-5 w-5 sm:h-6 sm:w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+                <svg x-show="mobileNavOpen" x-cloak class="h-5 w-5 sm:h-6 sm:w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M6 6l12 12M18 6L6 18"></path>
+                </svg>
+            </button>
         </div>
     </div>
 
