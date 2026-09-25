@@ -1,7 +1,49 @@
 <div
     x-data="{
         categoryImagesOpen: false,
+        categoryRows: @js(collect($categories)->map(fn ($cat, $idx) => [
+            'index' => $idx,
+            'quantity' => (float) ($cat['quantity'] ?? 0),
+            'value' => (int) preg_replace('/\D+/', '', (string) ($cat['value'] ?? 0)),
+        ])->values()),
+        updateCategoryRow(index, quantity, value) {
+            const numQty = Number.parseFloat(String(quantity ?? '').replace(/,/g, ''));
+            const numVal = Number.parseInt(String(value ?? '').replace(/\D+/g, ''), 10);
+            const idx = Number(index);
+            const found = this.categoryRows.find(r => r.index === idx);
+            if (found) {
+                found.quantity = Number.isFinite(numQty) ? numQty : 0;
+                found.value = Number.isFinite(numVal) ? numVal : 0;
+            } else {
+                this.categoryRows.push({
+                    index: idx,
+                    quantity: Number.isFinite(numQty) ? numQty : 0,
+                    value: Number.isFinite(numVal) ? numVal : 0,
+                });
+            }
+        },
+        get totalQuantity() {
+            return this.categoryRows.reduce((sum, r) => sum + (r.quantity || 0), 0);
+        },
+        get formattedTotalQuantity() {
+            return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(this.totalQuantity);
+        },
+        get totalServiceValue() {
+            return this.categoryRows.reduce((sum, r) => sum + ((r.quantity || 0) * (r.value || 0)), 0);
+        },
+        get formattedTotalServiceValue() {
+            return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Math.round(this.totalServiceValue));
+        },
+        get averageUnitValue() {
+            if (this.categoryRows.length === 0) return 0;
+            const sumVal = this.categoryRows.reduce((sum, r) => sum + (r.value || 0), 0);
+            return Math.round(sumVal / this.categoryRows.length);
+        },
+        get formattedAverageUnitValue() {
+            return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(this.averageUnitValue);
+        }
     }"
+    x-on:category-row-updated.window="updateCategoryRow($event.detail.index, $event.detail.quantity, $event.detail.value)"
     class="mx-auto max-w-[1680px] space-y-6 px-0 2xl:max-w-[1760px]"
 >
     <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
@@ -30,11 +72,11 @@
                     @endif
                     <span class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white/95 backdrop-blur">
                         <span class="text-xs text-cyan-100">تعداد کل</span>
-                        <span class="font-semibold">{{ number_format($this->totalQuantity, 2) }}</span>
+                        <span class="font-semibold" x-text="formattedTotalQuantity">{{ number_format($this->totalQuantity, 2) }}</span>
                     </span>
                     <span class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white/95 backdrop-blur">
                         <span class="text-xs text-cyan-100">ارزش کل</span>
-                        <span class="font-semibold">{{ number_format($this->totalServiceValue) }} ریال</span>
+                        <span class="font-semibold"><span x-text="formattedTotalServiceValue">{{ number_format($this->totalServiceValue) }}</span> ریال</span>
                     </span>
                 </div>
             </div>
@@ -305,6 +347,14 @@
 
                                                 event.target.value = formatted;
                                                 this.value = formatted;
+                                                this.notifyAmounts();
+                                            },
+                                            notifyAmounts() {
+                                                this.$dispatch('category-row-updated', {
+                                                    index: {{ $index }},
+                                                    quantity: this.quantity,
+                                                    value: this.value
+                                                });
                                             },
                                             get lineTotal() {
                                                 return this.numberValue(this.quantity) * this.numberValue(this.value);
@@ -451,7 +501,7 @@
                                             </div>
                                             <div>
                                                 <label class="mb-2 block text-sm font-bold text-slate-700">تعداد / مقدار</label>
-                                                <input type="number" min="0.01" step="0.01" x-model="quantity" class="h-[50px] w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 transition focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100" placeholder="0">
+                                                <input type="number" min="0.01" step="0.01" x-model="quantity" x-on:input="notifyAmounts()" class="h-[50px] w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 transition focus:border-cyan-300 focus:outline-none focus:ring-4 focus:ring-cyan-100" placeholder="0">
                                                 @error("categories.$index.quantity") <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                                             </div>
                                             <div>
@@ -1070,15 +1120,15 @@
                             <div class="mt-4 divide-y divide-slate-100 rounded-xl border border-slate-100 bg-slate-50/70">
                                 <div class="flex items-center justify-between gap-4 px-3 py-2.5">
                                     <span class="text-xs font-medium text-slate-500">جمع مقدار دسته‌ها</span>
-                                    <span class="text-sm font-black text-slate-800">{{ number_format($this->totalQuantity, 2) }}</span>
+                                    <span class="text-sm font-black text-slate-800" x-text="formattedTotalQuantity">{{ number_format($this->totalQuantity, 2) }}</span>
                                 </div>
                                 <div class="flex items-center justify-between gap-4 px-3 py-2.5">
                                     <span class="text-xs font-medium text-slate-500">ارزش کل</span>
-                                    <span class="text-sm font-black text-teal-700">{{ number_format($this->totalServiceValue) }} ریال</span>
+                                    <span class="text-sm font-black text-teal-700"><span x-text="formattedTotalServiceValue">{{ number_format($this->totalServiceValue) }}</span> ریال</span>
                                 </div>
                                 <div class="flex items-center justify-between gap-4 px-3 py-2.5">
                                     <span class="text-xs font-medium text-slate-500">میانگین ارزش واحد</span>
-                                    <span class="text-sm font-bold text-slate-700">{{ number_format((int) $averageUnitValue) }} ریال</span>
+                                    <span class="text-sm font-bold text-slate-700"><span x-text="formattedAverageUnitValue">{{ number_format((int) $averageUnitValue) }}</span> ریال</span>
                                 </div>
                             </div>
 
