@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -44,6 +45,8 @@ class ServiceDefinition extends Component
     public ?int $serviceId = null;
 
     public ?int $editingServiceId = null;
+
+    public ?string $serviceCode = null;
 
     public ?int $selectedServiceNameId = null;
 
@@ -326,6 +329,7 @@ class ServiceDefinition extends Component
             ->findOrFail($serviceId);
 
         $this->editingServiceId = $service->id;
+        $this->serviceCode = $service->code;
         $this->selectedServiceNameId = $service->service_name_id;
         $this->serviceName = $service->name;
         $this->serviceType = $service->service_type;
@@ -369,27 +373,55 @@ class ServiceDefinition extends Component
         $this->resetValidation();
     }
 
-    public function getPreviewServiceCodeProperty(): string
+    #[Computed]
+    public function previewServiceCode(): string
     {
-        return $this->editingServiceId
-            ? (string) Service::query()->whereKey($this->editingServiceId)->value('code')
-            : Service::generateNextCode();
+        if ($this->editingServiceId) {
+            return (string) ($this->serviceCode ?: Service::query()->whereKey($this->editingServiceId)->value('code'));
+        }
+
+        return Service::generateNextCode();
     }
 
-    public function getTotalServiceValueProperty(): int
+    public function getPreviewServiceCodeProperty(): string
+    {
+        return $this->previewServiceCode();
+    }
+
+    #[Computed]
+    public function totalServiceValue(): int
     {
         return $this->calculateTotalServiceValue();
     }
 
-    public function getTotalQuantityProperty(): float
+    public function getTotalServiceValueProperty(): int
+    {
+        return $this->totalServiceValue();
+    }
+
+    #[Computed]
+    public function totalQuantity(): float
     {
         return collect($this->categories)->sum(fn (array $category) => (float) ($category['quantity'] ?? 0));
     }
 
+    public function getTotalQuantityProperty(): float
+    {
+        return $this->totalQuantity();
+    }
+
+    /**
+     * In-memory cache for disk existence checks during request lifecycle.
+     *
+     * @var array<string, bool>
+     */
+    protected array $imageExistenceCache = [];
+
     /**
      * @return array<int, array{id: int, name: string, image_url: ?string, is_available: bool}>
      */
-    public function getCategoryImagePreviewsProperty(): array
+    #[Computed]
+    public function categoryImagePreviews(): array
     {
         return collect($this->categories)
             ->map(function (array $category): ?array {
@@ -400,7 +432,7 @@ class ServiceDefinition extends Component
                     return null;
                 }
 
-                $isAvailable = Storage::disk('public')->exists($imagePath);
+                $isAvailable = $this->imageExistenceCache[$imagePath] ??= Storage::disk('public')->exists($imagePath);
 
                 return [
                     'id' => $categoryId,
@@ -414,16 +446,45 @@ class ServiceDefinition extends Component
             ->all();
     }
 
+    public function getCategoryImagePreviewsProperty(): array
+    {
+        return $this->categoryImagePreviews();
+    }
+
+    #[Computed]
+    public function districts()
+    {
+        return District::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']);
+    }
+
+    #[Computed]
+    public function serviceNames()
+    {
+        return ServiceName::query()->ordered()->get(['id', 'name']);
+    }
+
+    #[Computed]
+    public function categoryTemplatesLookup()
+    {
+        return ServiceCategoryTemplate::query()
+            ->ordered()
+            ->get(['id', 'service_name_id', 'name']);
+    }
+
+    #[Computed]
+    public function unitOptionsLookup()
+    {
+        return Service::unitOptions();
+    }
+
     public function render()
     {
         return view('livewire.services.service-definition', [
-            'districts' => District::query()->orderBy('sort_order')->orderBy('name')->get(),
-            'serviceNames' => ServiceName::query()->ordered()->get(['id', 'name']),
-            'categoryTemplates' => ServiceCategoryTemplate::query()
-                ->ordered()
-                ->get(['id', 'service_name_id', 'name']),
+            'districts' => $this->districts(),
+            'serviceNames' => $this->serviceNames(),
+            'categoryTemplates' => $this->categoryTemplatesLookup(),
             'typeOptions' => Service::TYPE_OPTIONS,
-            'unitOptions' => Service::unitOptions(),
+            'unitOptions' => $this->unitOptionsLookup(),
             'statusOptions' => Service::STATUS_OPTIONS,
             'priorityOptions' => Service::PRIORITY_OPTIONS,
         ]);
@@ -550,6 +611,7 @@ class ServiceDefinition extends Component
     {
         $this->reset([
             'editingServiceId',
+            'serviceCode',
             'selectedServiceNameId',
             'serviceName',
             'serviceType',
@@ -566,6 +628,8 @@ class ServiceDefinition extends Component
             'categoryImagePathsById',
             'categoryImageRemovals',
         ]);
+
+        $this->imageExistenceCache = [];
 
         $this->serviceType = 'individual';
         $this->supportsGateDelivery = false;

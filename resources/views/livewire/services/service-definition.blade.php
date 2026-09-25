@@ -1,6 +1,20 @@
 <div
     x-data="{
         categoryImagesOpen: false,
+        selectedServiceNameId: @entangle('selectedServiceNameId'),
+        categories: @entangle('categories'),
+        categoryTemplates: @js($categoryTemplates->map(fn ($template) => [
+            'id' => $template->id,
+            'serviceNameId' => $template->service_name_id,
+            'name' => $template->name,
+        ])->values()),
+        unitOptions: @js($unitOptions),
+        usedCategoryNames: @js(collect($categories)->map(fn ($cat) => mb_strtolower(trim($cat['name'] ?? '')))->filter()->values()),
+        rebuildUsedNames() {
+            this.usedCategoryNames = this.categories
+                .map(c => (c.name || '').trim().toLowerCase())
+                .filter(Boolean);
+        },
         categoryRows: @js(collect($categories)->map(fn ($cat, $idx) => [
             'index' => $idx,
             'quantity' => (float) ($cat['quantity'] ?? 0),
@@ -44,6 +58,7 @@
         }
     }"
     x-on:category-row-updated.window="updateCategoryRow($event.detail.index, $event.detail.quantity, $event.detail.value)"
+    x-on:category-name-changed.window="rebuildUsedNames()"
     class="mx-auto max-w-[1680px] space-y-6 px-0 2xl:max-w-[1760px]"
 >
     <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
@@ -120,13 +135,13 @@
                                         x-data="{
                                             open: false,
                                             activeIndex: -1,
-                                            selectedId: @entangle('selectedServiceNameId').live,
-                                            serviceName: @entangle('serviceName').live,
+                                            selectedId: @entangle('selectedServiceNameId'),
+                                            serviceName: @entangle('serviceName'),
                                             serviceNames: @js($serviceNames->map(fn ($serviceName) => [
                                                 'id' => $serviceName->id,
                                                 'name' => $serviceName->name,
                                             ])->values()),
-                                            filterText: @entangle('serviceName').live,
+                                            filterText: @js($serviceName ?? ''),
                                             get filteredServiceNames() {
                                                 const query = this.filterText.trim().toLowerCase();
 
@@ -222,7 +237,7 @@
                                     <div
                                         x-data="{
                                             open: false,
-                                            serviceType: @entangle('serviceType').live,
+                                            serviceType: @entangle('serviceType'),
                                             typeOptions: @js($typeOptions),
                                             get options() {
                                                 return Object.entries(this.typeOptions).map(([value, label]) => ({ value, label }));
@@ -385,15 +400,8 @@
                                                 <div
                                                     x-data="{
                                                         open: false,
-                                                        selectedServiceNameId: @entangle('selectedServiceNameId'),
                                                         categoryName: @entangle('categories.' . $index . '.name'),
-                                                        categories: @entangle('categories'),
                                                         currentIndex: {{ $index }},
-                                                        categoryTemplates: @js($categoryTemplates->map(fn ($template) => [
-                                                            'id' => $template->id,
-                                                            'serviceNameId' => $template->service_name_id,
-                                                            'name' => $template->name,
-                                                        ])->values()),
                                                         filterText: @js($category['name'] ?? ''),
                                                         get filteredCategoryTemplates() {
                                                             const serviceNameId = Number(this.selectedServiceNameId);
@@ -403,16 +411,13 @@
                                                                 return [];
                                                             }
 
+                                                            const myName = (this.categoryName || '').trim().toLowerCase();
+
                                                             return this.categoryTemplates.filter((item) => {
                                                                 const belongsToSelectedService = Number(item.serviceNameId) === serviceNameId;
                                                                 const matchesQuery = !query || item.name.toLowerCase().includes(query);
-                                                                const alreadySelected = this.categories.some((category, index) => {
-                                                                    if (Number(index) === Number(this.currentIndex)) {
-                                                                        return false;
-                                                                    }
-
-                                                                    return (category.name || '').trim().toLowerCase() === item.name.trim().toLowerCase();
-                                                                });
+                                                                const itemNameLower = item.name.trim().toLowerCase();
+                                                                const alreadySelected = itemNameLower !== myName && this.usedCategoryNames.includes(itemNameLower);
 
                                                                 return belongsToSelectedService && matchesQuery && !alreadySelected;
                                                             });
@@ -421,11 +426,13 @@
                                                             this.categoryName = item.name;
                                                             this.filterText = item.name;
                                                             this.open = false;
+                                                            this.$dispatch('category-name-changed');
                                                         },
                                                         clearCategoryName() {
                                                             this.categoryName = '';
                                                             this.filterText = '';
                                                             this.open = false;
+                                                            this.$dispatch('category-name-changed');
                                                         }
                                                     }"
                                                     x-on:click.outside="open = false"
@@ -512,7 +519,6 @@
                                                         dropUp: false,
                                                         menuMaxHeight: 224,
                                                         unit: @entangle('categories.' . $index . '.unit'),
-                                                        unitOptions: @js($unitOptions),
                                                         get options() {
                                                             return Object.entries(this.unitOptions).map(([value, label]) => ({ value, label }));
                                                         },
@@ -749,7 +755,7 @@
                                     <div
                                         x-data="{
                                             open: false,
-                                            selectedDistrictId: @entangle('serviceDistrictId').live,
+                                            selectedDistrictId: @entangle('serviceDistrictId'),
                                             filterText: '',
                                             districts: @js($districts->map(fn ($district) => [
                                                 'id' => $district->id,
@@ -886,7 +892,7 @@
                                         <div
                                             x-data="{
                                                 open: false,
-                                                priority: @entangle('priority').live,
+                                                priority: @entangle('priority'),
                                                 priorityOptions: @js($priorityOptions),
                                                 get options() {
                                                     return Object.entries(this.priorityOptions).map(([value, label]) => ({ value, label }));
@@ -954,7 +960,7 @@
                                         <div
                                             x-data="{
                                                 open: false,
-                                                status: @entangle('status').live,
+                                                status: @entangle('status'),
                                                 statusOptions: @js($statusOptions),
                                                 get options() {
                                                     return Object.entries(this.statusOptions).map(([value, label]) => ({ value, label }));
