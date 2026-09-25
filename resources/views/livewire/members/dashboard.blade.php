@@ -45,6 +45,21 @@
             </div>
         </section>
 
+        {{-- ارتباط با مدیریت --}}
+        <a href="{{ route('member.messages') }}"
+           class="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-[linear-gradient(140deg,#3f4a8f_0%,#5964AE_55%,#7C6BD8_125%)] px-4 py-4 text-white shadow-lg shadow-[#5964AE]/25 transition hover:opacity-95 sm:mt-4 sm:px-6">
+            <div class="flex items-center gap-3">
+                <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/25 sm:h-12 sm:w-12">
+                    <i class="bi bi-chat-dots text-xl" aria-hidden="true"></i>
+                </span>
+                <div>
+                    <h2 class="text-sm font-black sm:text-base">ارتباط با مدیریت</h2>
+                    <p class="mt-0.5 text-[11px] font-medium text-white/85 sm:text-xs">ارسال پیام و مشاهده پاسخ مدیریت مرکز</p>
+                </div>
+            </div>
+            <i class="bi bi-arrow-left shrink-0 text-lg" aria-hidden="true"></i>
+        </a>
+
         {{-- راهنمای اولیه --}}
         <section class="mt-3 flex items-center justify-center gap-2 rounded-xl border border-dashed border-[#5964AE]/30 bg-[#f1f1fb]/60 px-3 py-2.5 text-center sm:mt-4 sm:gap-3 sm:px-6 sm:py-4">
             <i class="bi bi-stars shrink-0 text-lg text-[#5964AE] sm:text-2xl" aria-hidden="true"></i>

@@ -61,6 +61,7 @@
         $specialFeaturesOpen = $dashboardMode ? $isActive(['special-features-id-card-scanner', 'special-features-print-client-card']) : false;
         $landingOpen = $dashboardMode ? $isActive(['landing-banners', 'landing-service-cards']) : false;
         $notificationsOpen = $dashboardMode ? $isActive(['notifications-center', 'notifications-settings']) : false;
+        $messagesOpen = $dashboardMode ? $isActive(['messages-inbox']) : false;
         $userManagementOpen = $dashboardMode ? $isActive(['system-settings-user-definition', 'system-settings-user-list']) : request()->routeIs('admin.user-definition') || request()->routeIs('admin.user-management') || request()->routeIs('admin.user-list');
         $systemSettingsOpen = $dashboardMode ? $isActive(['system-settings-user-account']) : request()->routeIs('admin.user-account');
         $dashboardReportsLinkActive = ! $dashboardMode && request()->routeIs('admin.dashboard') && request()->query('section') && in_array(request()->query('section'), ['advanced-reports', 'advanced-operator-report'], true);
@@ -84,6 +85,8 @@
             $defaultOpenMenu = 'landing';
         } elseif ($notificationsOpen) {
             $defaultOpenMenu = 'notifications';
+        } elseif ($messagesOpen) {
+            $defaultOpenMenu = 'messages';
         } elseif ($userManagementOpen) {
             $defaultOpenMenu = 'user-management';
         } elseif ($systemSettingsOpen) {
@@ -137,6 +140,9 @@
             'notifications' => [
                 ['section' => 'notifications-center', 'label' => 'مرکز اعلان‌ها', 'badge' => $unreadNotificationsCount],
                 ['section' => 'notifications-settings', 'label' => 'تنظیمات اعلان‌ها'],
+            ],
+            'messages' => [
+                ['section' => 'messages-inbox', 'label' => 'صندوق پیام‌ها'],
             ],
             'reports' => [
                 ['section' => 'advanced-beneficiary-report', 'label' => 'گزارش مددجویان', 'visible' => $user?->can('full-access')],
@@ -503,6 +509,37 @@
                                 :section="$item['section']"
                                 :active="$isActive($item['active'] ?? $item['section'])"
                                 :badge="$item['badge'] ?? null"
+                            >
+                                {{ $item['label'] }}
+                            </x-sidebar.dashboard-section-button>
+                        @endforeach
+                    </div>
+                </div>
+            @endcan
+
+            @can('manage-messages')
+                <div>
+                    <button type="button" @click="openMenu = openMenu === 'messages' ? '' : 'messages'"
+                            class="flex items-center justify-between w-full px-4 py-2.5 rounded-lg hover:bg-indigo-800 {{ $messagesOpen ? 'bg-indigo-700' : '' }}">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 ml-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                <path d="M8 10h8m-8 4h5"/>
+                            </svg>
+                            <span>پیام‌ها</span>
+                            <livewire:admin.messages.message-badge />
+                        </div>
+                        <svg :class="openMenu === 'messages' ? 'rotate-180' : ''" class="w-4 h-4 transition-transform"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <div x-show="openMenu === 'messages'" x-collapse.duration.250ms class="mt-2 mr-8 space-y-1">
+                        @foreach($dashboardMenuItems['messages'] as $item)
+                            <x-sidebar.dashboard-section-button
+                                :section="$item['section']"
+                                :active="$isActive($item['active'] ?? $item['section'])"
                             >
                                 {{ $item['label'] }}
                             </x-sidebar.dashboard-section-button>

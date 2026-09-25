@@ -16,6 +16,7 @@ use App\Models\GuardianRelationType;
 use App\Models\HarmType;
 use App\Models\InsuranceType;
 use App\Models\JobType;
+use App\Models\Message;
 use App\Models\NeedLevelType;
 use App\Models\Occupation;
 use App\Models\Person;
@@ -83,6 +84,7 @@ class AppServiceProvider extends ServiceProvider
             'support_organization' => SupportOrganization::class,
             'service' => Service::class,
             'user' => User::class,
+            'message' => Message::class,
         ]);
 
         Gate::define('manage-people', function (User $user) {
@@ -112,6 +114,11 @@ class AppServiceProvider extends ServiceProvider
 
         // مدیریت و مشاهده اعلان‌های داشبورد مدیریت
         Gate::define('manage-notifications', function (User $user) {
+            return $user->isManager();
+        });
+
+        // مدیریت و پاسخ‌دهی پیام‌های دریافتی از اعضا و حامی‌ها
+        Gate::define('manage-messages', function (User $user) {
             return $user->isManager();
         });
 

@@ -23,6 +23,8 @@ class NotificationEventRegistry
 
     public const EVENT_SERVICE_RESTORED = 'service.restored';
 
+    public const EVENT_MESSAGE_RECEIVED = 'message.received';
+
     public const TARGET_ALL = 'all';
 
     public const TARGET_ROLES = 'roles';
@@ -97,6 +99,15 @@ class NotificationEventRegistry
                 'group' => 'خدمات',
                 'supports_targeting' => false,
                 'targetable_roles' => [],
+            ],
+            self::EVENT_MESSAGE_RECEIVED => [
+                'label' => 'پیام جدید از اعضا و حامی‌ها',
+                'description' => 'هنگام دریافت پیام جدید از پنل اعضا یا حامیان کودک اعلان دریافت کنید.',
+                'group' => 'پیام‌ها',
+                'supports_targeting' => true,
+                'targetable_roles' => [
+                    User::ACCESS_LEVEL_CHILD_SUPPORTER,
+                ],
             ],
         ];
     }

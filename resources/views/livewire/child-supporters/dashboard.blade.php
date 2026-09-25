@@ -14,12 +14,13 @@
     </div>
 
     <div class="mt-6 grid gap-4 lg:grid-cols-2">
-        <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center">
-            <h2 class="text-base font-bold text-slate-800">داشبورد اولیه فعال است</h2>
-            <p class="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
-                قابلیت‌های اختصاصی این نقش در مرحله بعد به این فضای جداگانه اضافه می‌شود.
+        <a href="{{ route('child-supporter.messages') }}" class="flex min-h-40 flex-col justify-center rounded-2xl border border-indigo-100 bg-indigo-50 px-5 py-6 transition hover:border-indigo-200 hover:bg-indigo-100">
+            <span class="text-xs font-semibold text-indigo-600">ارتباطات</span>
+            <h2 class="mt-2 text-base font-bold text-slate-900">ارتباط با مدیریت</h2>
+            <p class="mt-2 text-sm leading-6 text-slate-600">
+                ارسال پیام به مدیریت مرکز، پیوست تصویر و پیگیری پاسخ‌ها در گفتگوها.
             </p>
-        </div>
+        </a>
 
         <a href="{{ route('child-supporter.user-account') }}" class="flex min-h-40 flex-col justify-center rounded-2xl border border-indigo-100 bg-indigo-50 px-5 py-6 transition hover:border-indigo-200 hover:bg-indigo-100">
             <span class="text-xs font-semibold text-indigo-600">تنظیمات سیستم</span>

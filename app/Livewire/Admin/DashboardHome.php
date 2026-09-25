@@ -107,6 +107,8 @@ class DashboardHome extends Component
             $this->activeSection = 'service-delivery-beneficiary';
         } elseif (! request()->has('section') && request()->routeIs('admin.service-reports')) {
             $this->activeSection = 'advanced-service-report';
+        } elseif (! request()->has('section') && request()->routeIs('admin.messages')) {
+            $this->activeSection = 'messages-inbox';
         } elseif (! request()->has('section') && request()->routeIs('admin.landing.banners')) {
             $this->activeSection = 'landing-banners';
         } elseif (! request()->has('section') && request()->routeIs('admin.landing.service-cards')) {
@@ -314,6 +316,10 @@ class DashboardHome extends Component
         if ($user?->can('manage-notifications')) {
             $validSections[] = 'notifications-center';
             $validSections[] = 'notifications-settings';
+        }
+
+        if ($user?->can('manage-messages')) {
+            $validSections[] = 'messages-inbox';
         }
 
         if (! in_array($this->activeSection, $validSections, true)) {

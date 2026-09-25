@@ -691,6 +691,10 @@
                         <livewire:admin.notifications.notification-settings :key="'notifications-settings'" />
                         @break
 
+                    @case('messages-inbox')
+                        <livewire:admin.messages.message-inbox :key="'messages-inbox'" />
+                        @break
+
                     @case('system-settings-user-definition')
                         <livewire:admin.user-management :key="'system-settings-user-definition'" />
                         @break

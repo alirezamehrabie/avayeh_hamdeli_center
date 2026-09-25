@@ -37,6 +37,7 @@
 
     @php
         $isDashboardActive = request()->routeIs('child-supporter.dashboard');
+        $isContactManagementActive = request()->routeIs('child-supporter.messages');
         $isUserAccountActive = request()->routeIs('child-supporter.user-account');
         $isSystemSettingsActive = $isUserAccountActive;
     @endphp
@@ -47,6 +48,15 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M3 12l9-8 9 8-2 1.75V20a1 1 0 01-1 1h-4v-6h-4v6H6a1 1 0 01-1-1v-6.25L3 12z"/>
             </svg>
             <span :class="nav && 'opacity-60'">پیشخوان</span>
+            <x-sidebar.loading-dots x-show="nav" x-cloak class="mr-auto text-indigo-200" />
+        </a>
+
+        <a href="{{ route('child-supporter.messages') }}" x-data="{ nav: false }" @click="nav = true" @pageshow.window="if ($event.persisted) nav = false" class="flex items-center rounded-lg px-4 py-2.5 transition-all duration-200 {{ $isContactManagementActive ? 'bg-indigo-700 text-white shadow-sm' : 'text-indigo-100 hover:bg-indigo-800 hover:text-white' }}">
+            <svg class="ml-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M8 10h8m-8 4h5"/>
+            </svg>
+            <span :class="nav && 'opacity-60'">ارتباط با مدیریت</span>
             <x-sidebar.loading-dots x-show="nav" x-cloak class="mr-auto text-indigo-200" />
         </a>
 

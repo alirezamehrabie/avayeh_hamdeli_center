@@ -4,12 +4,14 @@ use App\Http\Controllers\ActivityCheckInController;
 use App\Http\Controllers\BeneficiaryCaseRecordAttachmentController;
 use App\Http\Controllers\DevotionalTextController;
 use App\Http\Controllers\LandingMediaController;
+use App\Http\Controllers\Messages\DownloadMessageAttachment;
 use App\Http\Controllers\QrIdentityController;
 use App\Http\Controllers\ServiceCategoryThumbnailController;
 use App\Livewire\Admin\DashboardHome;
 use App\Livewire\Admin\UserAccount;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\MemberLogin;
+use App\Livewire\ChildSupporters\ContactManagement as ChildSupporterContactManagement;
 use App\Livewire\ChildSupporters\Dashboard as ChildSupporterDashboard;
 use App\Livewire\ChildSupporters\SponsorList;
 use App\Livewire\ChildSupporters\SponsorRegistration;
@@ -25,6 +27,7 @@ use App\Livewire\DistributionOperators\UserAccount as DistributionOperatorUserAc
 use App\Livewire\Guardians\DeletedGuardians;
 use App\Livewire\Guardians\EditGuardian;
 use App\Livewire\Guardians\IndexGuardians;
+use App\Livewire\Members\ContactManagement as MemberContactManagement;
 use App\Livewire\Members\Dashboard as MemberDashboard;
 use App\Livewire\People\AdvancedFilterBuilder;
 use App\Livewire\People\CreatePerson;
@@ -108,6 +111,8 @@ Route::get('/member-login', MemberLogin::class)->name('member.login');
 Route::middleware('member.auth')->group(function () {
     Route::get('/member-panel', MemberDashboard::class)->name('member.dashboard');
 
+    Route::get('/member-panel/contact-management', MemberContactManagement::class)->name('member.messages');
+
     Route::post('/member-logout', function () {
         auth()->guard('member')->logout();
         request()->session()->invalidate();
@@ -150,6 +155,13 @@ Route::get('/social-workers/{socialWorker}/edit', EditSocialWorker::class)->midd
 Route::get('/admin/dashboard', DashboardHome::class)
     ->middleware(['auth', 'can:access-admin-panel'])
     ->name('admin.dashboard');
+
+Route::get('/admin/messages', DashboardHome::class)
+    ->middleware(['auth', 'can:manage-messages'])
+    ->name('admin.messages');
+
+Route::get('/messages/attachments/{attachment}', DownloadMessageAttachment::class)
+    ->name('messages.attachments.download');
 
 Route::get('/admin/gate-technical-report/{service}', function (App\Models\Service $service) {
     // Constructed directly (not via the redirect() helper, which Livewire
@@ -318,6 +330,10 @@ Route::get('/distribution-operator/system-settings/user-account', DistributionOp
 Route::get('/child-supporter/dashboard', ChildSupporterDashboard::class)
     ->middleware(['auth', 'can:access-child-supporter-panel'])
     ->name('child-supporter.dashboard');
+
+Route::get('/child-supporter/contact-management', ChildSupporterContactManagement::class)
+    ->middleware(['auth', 'can:access-child-supporter-panel'])
+    ->name('child-supporter.messages');
 
 Route::get('/admin/special-features/print-client-card', DashboardHome::class)
     ->middleware(['auth', 'can:full-access'])
