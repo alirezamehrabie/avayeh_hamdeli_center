@@ -8,9 +8,22 @@ import { attendanceResultBanner, createAttendanceResultBannerState } from './att
 import { deliveryReceipt } from './delivery-receipt';
 import './connection-status';
 import { Livewire, Alpine } from '../../vendor/livewire/livewire/dist/livewire.esm';
+import collapse from '@alpinejs/collapse';
 
 window.Alpine = Alpine;
 window.bootstrap = bootstrap;
+
+/**
+ * پلاگین Collapse آلماین: دستور x-collapse را فعال می‌کند و بدون آن
+ * زیرمنوهای سایدبار، فیلترهای تاشو و بخش‌های آکاردئونی بدون انیمیشن باز/بسته
+ * می‌شوند (مدیفایر duration هم نادیده گرفته می‌شود).
+ *
+ * ثبت باید پیش از start شدن Alpine انجام شود. راه‌اندازی Alpine توسط Livewire
+ * انجام می‌شود و هر دو در همین ماژول defer شده‌اند، پس ثبت در سطح ماژول امن است.
+ * نسخه پلاگین عمداً دقیقاً هم‌تراز نسخه هسته (3.15.2) قفل شده است، چون پلاگین از
+ * API داخلی Alpine (directive/setStyles/transition) استفاده می‌کند.
+ */
+Alpine.plugin(collapse);
 
 let qrScannerDependencies = null;
 
