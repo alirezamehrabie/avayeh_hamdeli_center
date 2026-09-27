@@ -143,7 +143,6 @@
                         'creator' => $service->creator?->full_name ?: $service->creator?->name ?: '-',
                         'description' => $service->description ?: 'توضیحی ثبت نشده است.',
                         'status_notes' => $service->status_notes ?: 'یادداشتی ثبت نشده است.',
-                        'workers_count' => $service->uniqueSocialWorkersCount(),
                         'created_at' => $service->created_at ? \App\Helpers\Morilog\Jalalian::fromDateTime($service->created_at)->format('Y/m/d') : '-',
                         'categories' => $service->categories->map(fn ($category) => [
                             'name' => $category->name,
@@ -397,7 +396,6 @@
                     <div class="space-y-3">
                         <div class="grid gap-2 sm:grid-cols-2">
                             <div class="rounded-2xl border border-sky-100 bg-sky-50/70 px-3 py-2.5"><p class="text-[11px] text-sky-700/70">نوع</p><p class="mt-1 text-sm font-bold text-slate-800" x-text="details?.type"></p></div>
-                            <div class="rounded-2xl border border-emerald-100 bg-emerald-50/60 px-3 py-2.5"><p class="text-[11px] text-emerald-700/70">تعداد مددکار</p><p class="mt-1 text-sm font-bold text-slate-800" x-text="details?.workers_count"></p></div>
                             <div class="rounded-2xl border border-amber-100 bg-amber-50/60 px-3 py-2.5"><p class="text-[11px] text-amber-800/70">مقدار کل</p><p class="mt-1 text-sm font-bold text-slate-800" x-text="details?.quantity"></p></div>
                             <div class="rounded-2xl border border-rose-100 bg-rose-50/60 px-3 py-2.5"><p class="text-[11px] text-rose-700/70">ارزش کل</p><p class="mt-1 text-sm font-bold text-slate-800" x-text="details?.value"></p></div>
                             <div class="rounded-2xl border border-slate-200 bg-slate-50/80 px-3 py-2.5"><p class="text-[11px] text-slate-500">منطقه</p><p class="mt-1 text-sm font-bold text-slate-800" x-text="details?.district"></p></div>
