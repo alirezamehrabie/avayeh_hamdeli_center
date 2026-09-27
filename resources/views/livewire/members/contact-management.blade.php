@@ -1,7 +1,6 @@
 <div
     dir="rtl"
     class="relative min-h-[100svh] overflow-hidden bg-[#f8fbff]"
-    style="margin-inline: calc(50% - 50vw); width: 100vw;"
 >
     <div class="pointer-events-none absolute -right-28 top-[-7rem] h-72 w-72 rounded-full bg-[#5964AE]/22 blur-3xl sm:h-96 sm:w-96"></div>
     <div class="pointer-events-none absolute -left-24 bottom-[-6rem] h-64 w-64 rounded-full bg-[#7C6BD8]/18 blur-3xl sm:h-80 sm:w-80"></div>
@@ -52,11 +51,13 @@
                     </button>
                 </div>
 
-                <div class="max-h-[26rem] space-y-3 overflow-y-auto px-4 py-4 sm:px-6">
+                <div wire:key="member-chat-{{ $selectedThread->id }}-{{ $selectedThread->messages->count() }}"
+                     x-init="$nextTick(() => $el.scrollTop = $el.scrollHeight)"
+                     class="max-h-[26rem] space-y-3 overflow-y-auto px-4 py-4 sm:px-6">
                     @foreach($selectedThread->messages as $message)
                         <div class="flex {{ $message->is_from_staff ? 'justify-start' : 'justify-end' }}">
-                            <div class="max-w-[85%] rounded-2xl px-4 py-3 shadow-sm {{ $message->is_from_staff ? 'rounded-bl-sm bg-[#5964AE] text-white' : 'rounded-br-sm bg-slate-100 text-slate-800' }}">
-                                <div class="mb-1 flex items-center gap-2 text-[10px] {{ $message->is_from_staff ? 'text-indigo-100' : 'text-slate-500' }} sm:text-[11px]">
+                            <div class="max-w-[85%] rounded-2xl px-4 py-3 shadow-sm {{ $message->is_from_staff ? 'rounded-bl-sm bg-[linear-gradient(140deg,#0b4d75_0%,#1572A1_70%)] text-white' : 'rounded-br-sm bg-slate-100 text-slate-800' }}">
+                                <div class="mb-1 flex items-center gap-2 text-[10px] {{ $message->is_from_staff ? 'text-sky-100' : 'text-slate-500' }} sm:text-[11px]">
                                     <span class="font-bold">{{ $message->is_from_staff ? 'پاسخ مدیریت' : 'شما' }}</span>
                                     <span dir="ltr">{{ \App\Helpers\Morilog\Jalalian::fromDateTime($message->created_at)->format('Y/m/d - H:i') }}</span>
                                 </div>
@@ -88,21 +89,27 @@
                             <label for="member-reply-body" class="block text-xs font-bold text-slate-600">پاسخ شما</label>
                             <textarea id="member-reply-body" wire:model="replyBody" rows="3"
                                       placeholder="متن پاسخ خود را بنویسید..."
-                                      class="w-full rounded-xl border-slate-200 text-xs focus:border-[#5964AE] focus:ring-[#5964AE]/30 sm:text-sm"></textarea>
+                                      class="w-full rounded-xl border-slate-200 text-xs focus:border-[#1572A1] focus:ring-[#1572A1]/30 sm:text-sm"></textarea>
                             @error('replyBody')
                                 <p class="text-[11px] font-bold text-rose-600">{{ $message }}</p>
                             @enderror
 
                             <div>
-                                <label class="mb-1 block text-xs font-bold text-slate-600">پیوست تصویر (حداکثر ۳ عکس)</label>
+                                <label class="mb-1 block text-xs font-bold text-slate-600">پیوست تصویر (حداکثر ۳ عکس، هر عکس تا ۲ مگابایت)</label>
                                 <input type="file" wire:model="replyPhotos" accept=".jpg,.jpeg,.png,.webp" multiple
-                                       class="block w-full text-xs text-slate-600 file:ml-3 file:rounded-lg file:border-0 file:bg-[#f1f1fb] file:px-3 file:py-2 file:text-xs file:font-bold file:text-[#5964AE]">
+                                       class="block w-full text-xs text-slate-600 file:ml-3 file:rounded-lg file:border-0 file:bg-[#e7f2f9] file:px-3 file:py-2 file:text-xs file:font-bold file:text-[#0b4d75]">
+                                @if(count($replyPhotos) > 0)
+                                    <p class="mt-1 text-[11px] font-bold text-[#1572A1]">
+                                        <i class="bi bi-image" aria-hidden="true"></i>
+                                        {{ \App\Helpers\Morilog\CalendarUtils::convertNumbers((string) count($replyPhotos)) }} عکس انتخاب شد
+                                    </p>
+                                @endif
                                 @error('replyPhotos')<p class="mt-1 text-[11px] font-bold text-rose-600">{{ $message }}</p>@enderror
                                 @error('replyPhotos.*')<p class="mt-1 text-[11px] font-bold text-rose-600">{{ $message }}</p>@enderror
                             </div>
 
                             <button type="submit"
-                                    class="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-[#5964AE] px-5 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#4a55a0] focus:outline-none focus:ring-4 focus:ring-[#5964AE]/25 sm:text-sm"
+                                    class="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-[#1572A1] px-5 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#0f5d83] focus:outline-none focus:ring-4 focus:ring-[#1572A1]/25 sm:text-sm"
                                     wire:loading.attr="disabled" wire:target="sendReply">
                                 <span wire:loading.remove wire:target="sendReply"><i class="bi bi-send" aria-hidden="true"></i> ارسال پاسخ</span>
                                 <span wire:loading wire:target="sendReply">در حال ارسال…</span>
@@ -117,32 +124,39 @@
                 @if($showNewForm)
                     <div class="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-6">
                         <h2 class="text-sm font-black text-slate-900 sm:text-base">ارسال پیام جدید</h2>
+                        <p class="mt-1 text-[11px] font-medium leading-5 text-slate-500 sm:text-xs">پیام شما مستقیم برای مدیریت مرکز ارسال می‌شود و پاسخ در همین صفحه نمایش داده می‌شود.</p>
                         <form wire:submit="createThread" class="mt-4 space-y-3">
                             <div>
                                 <label for="member-subject" class="mb-1 block text-xs font-bold text-slate-600">موضوع</label>
                                 <input id="member-subject" type="text" wire:model="newSubject" placeholder="موضوع پیام را بنویسید..."
-                                       class="w-full rounded-xl border-slate-200 text-xs focus:border-[#5964AE] focus:ring-[#5964AE]/30 sm:text-sm">
+                                       class="w-full rounded-xl border-slate-200 text-xs focus:border-[#1572A1] focus:ring-[#1572A1]/30 sm:text-sm">
                                 @error('newSubject')<p class="mt-1 text-[11px] font-bold text-rose-600">{{ $message }}</p>@enderror
                             </div>
 
                             <div>
                                 <label for="member-body" class="mb-1 block text-xs font-bold text-slate-600">متن پیام</label>
                                 <textarea id="member-body" wire:model="newBody" rows="5" placeholder="پیام خود را برای مدیریت مرکز بنویسید..."
-                                          class="w-full rounded-xl border-slate-200 text-xs focus:border-[#5964AE] focus:ring-[#5964AE]/30 sm:text-sm"></textarea>
+                                          class="w-full rounded-xl border-slate-200 text-xs focus:border-[#1572A1] focus:ring-[#1572A1]/30 sm:text-sm"></textarea>
                                 @error('newBody')<p class="mt-1 text-[11px] font-bold text-rose-600">{{ $message }}</p>@enderror
                             </div>
 
                             <div>
                                 <label class="mb-1 block text-xs font-bold text-slate-600">پیوست تصویر (حداکثر ۳ عکس، هر عکس تا ۲ مگابایت)</label>
                                 <input type="file" wire:model="newPhotos" accept=".jpg,.jpeg,.png,.webp" multiple
-                                       class="block w-full text-xs text-slate-600 file:ml-3 file:rounded-lg file:border-0 file:bg-[#f1f1fb] file:px-3 file:py-2 file:text-xs file:font-bold file:text-[#5964AE]">
+                                       class="block w-full text-xs text-slate-600 file:ml-3 file:rounded-lg file:border-0 file:bg-[#e7f2f9] file:px-3 file:py-2 file:text-xs file:font-bold file:text-[#0b4d75]">
+                                @if(count($newPhotos) > 0)
+                                    <p class="mt-1 text-[11px] font-bold text-[#1572A1]">
+                                        <i class="bi bi-image" aria-hidden="true"></i>
+                                        {{ \App\Helpers\Morilog\CalendarUtils::convertNumbers((string) count($newPhotos)) }} عکس انتخاب شد
+                                    </p>
+                                @endif
                                 @error('newPhotos')<p class="mt-1 text-[11px] font-bold text-rose-600">{{ $message }}</p>@enderror
                                 @error('newPhotos.*')<p class="mt-1 text-[11px] font-bold text-rose-600">{{ $message }}</p>@enderror
                             </div>
 
                             <div class="flex flex-wrap items-center gap-2 pt-1">
                                 <button type="submit"
-                                        class="inline-flex min-h-[46px] flex-1 items-center justify-center gap-2 rounded-xl bg-[#5964AE] px-5 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#4a55a0] focus:outline-none focus:ring-4 focus:ring-[#5964AE]/25 sm:text-sm"
+                                        class="inline-flex min-h-[46px] flex-1 items-center justify-center gap-2 rounded-xl bg-[#1572A1] px-5 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#0f5d83] focus:outline-none focus:ring-4 focus:ring-[#1572A1]/25 sm:text-sm"
                                         wire:loading.attr="disabled" wire:target="createThread">
                                     <span wire:loading.remove wire:target="createThread"><i class="bi bi-send" aria-hidden="true"></i> ارسال پیام</span>
                                     <span wire:loading wire:target="createThread">در حال ارسال…</span>
@@ -156,7 +170,7 @@
                     </div>
                 @else
                     <button type="button" wire:click="$set('showNewForm', true)"
-                            class="flex min-h-[56px] w-full items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(140deg,#3f4a8f_0%,#5964AE_55%,#7C6BD8_125%)] px-5 text-sm font-extrabold text-white shadow-lg shadow-[#5964AE]/25 transition hover:opacity-95">
+                            class="flex min-h-[56px] w-full items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#0b4d75_0%,#1572A1_55%,#36A9DF_135%)] px-5 text-sm font-extrabold text-white shadow-lg shadow-[#1572A1]/30 ring-1 ring-[#1572A1]/40 transition hover:opacity-95 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#36A9DF]/50">
                         <i class="bi bi-plus-circle text-lg" aria-hidden="true"></i>
                         ارسال پیام جدید به مدیریت
                     </button>
@@ -168,7 +182,7 @@
                 <h2 class="px-1 text-xs font-black text-slate-500 sm:text-sm">گفتگوهای من</h2>
                 @forelse($threads as $thread)
                     <button type="button" wire:click="openThread({{ $thread->id }})"
-                            class="block w-full rounded-2xl border border-slate-200/80 bg-white px-4 py-3 text-right shadow-sm transition hover:border-[#5964AE]/40 hover:bg-[#f1f1fb]/60">
+                            class="block w-full rounded-2xl border border-slate-200/80 bg-white px-4 py-3 text-right shadow-sm transition hover:border-[#1572A1]/40 hover:bg-[#eef6fb]/60">
                         <div class="flex items-center justify-between gap-3">
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-center gap-2">
@@ -188,8 +202,8 @@
                         </div>
                     </button>
                 @empty
-                    <div class="rounded-2xl border border-dashed border-[#5964AE]/30 bg-[#f1f1fb]/60 px-4 py-8 text-center">
-                        <i class="bi bi-chat-square-text text-2xl text-[#5964AE]" aria-hidden="true"></i>
+                    <div class="rounded-2xl border border-dashed border-[#1572A1]/30 bg-[#eef6fb]/60 px-4 py-8 text-center">
+                        <i class="bi bi-chat-square-text text-2xl text-[#1572A1]" aria-hidden="true"></i>
                         <p class="mt-2 text-[11px] font-bold text-slate-600 sm:text-xs">هنوز گفتگویی ندارید. برای ارتباط با مدیریت، پیام جدیدی ارسال کنید.</p>
                     </div>
                 @endforelse
