@@ -320,6 +320,17 @@ class SocialWorkerPerformanceEvaluator
             ->whereIn('service_social_worker.social_worker_id', $workerIds)
             ->join('services', 'services.id', '=', 'service_social_worker.service_id')
             ->whereNull('services.deleted_at')
+            ->where(function (\Illuminate\Database\Query\Builder $query): void {
+                $query->where('service_social_worker.allocated_quantity', '>', 0)
+                    ->orWhereExists(function (\Illuminate\Database\Query\Builder $sub): void {
+                        $sub->select(DB::raw(1))
+                            ->from('service_deliveries')
+                            ->whereNull('deleted_at')
+                            ->whereColumn('social_worker_id', 'service_social_worker.social_worker_id')
+                            ->whereColumn('service_id', 'service_social_worker.service_id')
+                            ->whereColumn('service_category_id', 'service_social_worker.service_category_id');
+                    });
+            })
             ->select([
                 'service_social_worker.social_worker_id',
                 'service_social_worker.service_id',

@@ -198,6 +198,74 @@ class SocialWorkerPerformanceEvaluationTest extends TestCase
             ->assertDontSee('امتیاز کل عملکرد');
     }
 
+    public function test_zero_quantity_allocations_without_deliveries_are_ignored(): void
+    {
+        $user = $this->adminUser();
+        $worker = $this->worker(9111, 'ZeroAlloc');
+
+        [$service, $category1] = $this->serviceWithCategory($user);
+        $category2 = $service->categories()->create([
+            'service_name_id' => $service->service_name_id,
+            'name' => 'Zero Category',
+            'quantity' => 100,
+            'unit' => 'pack',
+            'value' => 1000,
+            'sort_id' => 2,
+            'created_by' => $user->id,
+        ]);
+
+        $assignedAt = Carbon::now()->subDays(20);
+
+        // Category 1 has real allocation and fast delivery
+        $this->allocate($service, $category1, $worker, 10, $assignedAt);
+        $this->delivery($user, $service, $category1, $worker, 10, '2026-08-01', $assignedAt->copy()->addHours(2));
+
+        // Category 2 has 0 allocation and no deliveries (placeholder allocation)
+        $this->allocate($service, $category2, $worker, 0, $assignedAt);
+
+        $evaluator = app(SocialWorkerPerformanceEvaluator::class);
+        $performance = $evaluator->evaluate($worker);
+
+        $this->assertTrue($performance['has_data']);
+        $this->assertSame(100.0, $performance['metrics']['response']['score']);
+        $this->assertSame(100.0, $performance['metrics']['coverage']['score']);
+        $this->assertSame(0, $performance['metrics']['response']['stats']['pending_overdue']);
+        $this->assertEmpty($performance['open_allocations']);
+    }
+
+    public function test_zero_quantity_categories_are_excluded_from_service_workers_summary(): void
+    {
+        $user = $this->adminUser();
+        $worker = $this->worker(9112, 'SummaryWorker');
+
+        [$service, $category1] = $this->serviceWithCategory($user);
+        $category2 = $service->categories()->create([
+            'service_name_id' => $service->service_name_id,
+            'name' => 'Zero Category',
+            'quantity' => 100,
+            'unit' => 'pack',
+            'value' => 1000,
+            'sort_id' => 2,
+            'created_by' => $user->id,
+        ]);
+
+        $assignedAt = Carbon::now()->subDays(5);
+        $this->allocate($service, $category1, $worker, 10, $assignedAt);
+        $this->allocate($service, $category2, $worker, 0, $assignedAt);
+
+        $component = new class
+        {
+            use \App\Livewire\Services\Concerns\SummarizesServiceDeliveries;
+        };
+
+        $summary = $component->socialWorkerSummary($service->fresh(['workerAllocations.socialWorker', 'categories', 'deliveries']), Service::unitOptions());
+
+        $workerData = collect($summary['workers'])->firstWhere('id', $worker->id);
+        $this->assertNotNull($workerData);
+        $this->assertCount(1, $workerData['categories']);
+        $this->assertSame($category1->name, $workerData['categories'][0]['name']);
+    }
+
     private function bucketCount(array $performance, string $bucketKey): int
     {
         return (int) collect($performance['response_distribution'])

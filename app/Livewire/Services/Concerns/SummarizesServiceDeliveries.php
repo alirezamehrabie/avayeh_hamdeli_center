@@ -28,14 +28,20 @@ trait SummarizesServiceDeliveries
             'code' => $service->code,
             'workers' => $service->workerAllocations
                 ->groupBy('social_worker_id')
-                ->map(function (Collection $allocations, int|string $workerId) use ($deliveries, $categories, $unitOptions): array {
+                ->map(function (Collection $allocations, int|string $workerId) use ($deliveries, $categories, $unitOptions): ?array {
                     $worker = $allocations->first()?->socialWorker;
                     $workerDeliveries = $deliveries->where('social_worker_id', (int) $workerId);
                     $totalAllocated = (float) $allocations->sum(fn ($allocation) => (float) $allocation->allocated_quantity);
                     $totalDelivered = (float) $workerDeliveries->sum(fn ($delivery) => (float) $delivery->delivered_quantity);
+
+                    if ($totalAllocated <= 0 && $totalDelivered <= 0) {
+                        return null;
+                    }
+
                     $progress = $totalAllocated > 0 ? min(100, round(($totalDelivered / $totalAllocated) * 100, 1)) : 0;
 
                     $categoryIds = $allocations
+                        ->where('allocated_quantity', '>', 0)
                         ->pluck('service_category_id')
                         ->merge($workerDeliveries->pluck('service_category_id'))
                         ->filter()
@@ -77,6 +83,7 @@ trait SummarizesServiceDeliveries
                         'recipients' => $this->recipientSummary($workerDeliveries),
                     ];
                 })
+                ->filter()
                 ->sortBy('name')
                 ->values(),
         ];
