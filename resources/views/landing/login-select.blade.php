@@ -27,6 +27,25 @@
             width: 3.5rem;
         }
     }
+
+    @media (min-width: 1024px) {
+        .icon-tile {
+            height: 4rem;
+            width: 4rem;
+            border-radius: 1.25rem;
+        }
+    }
+
+    /* سایه‌های برند — کلاس‌های shadow-* بوت‌استرپ !important دارند و روی دسکتاپ
+       نسخه‌های sm:/lg: تیلویند را خنثی می‌کنند؛ به همین دلیل از کلاس سفارشی استفاده می‌شود. */
+    .glow-blue  { --glow: rgba(21, 114, 161, 0.30); --glow-strong: rgba(21, 114, 161, 0.45); }
+    .glow-green { --glow: rgba(14, 122, 85, 0.30);  --glow-strong: rgba(14, 122, 85, 0.45); }
+    .glow-pink  { --glow: rgba(212, 32, 95, 0.28);  --glow-strong: rgba(212, 32, 95, 0.40); }
+    .card-glow  { box-shadow: 0 10px 15px -3px var(--glow), 0 4px 6px -4px var(--glow); }
+    .card-glow-lift:hover { box-shadow: 0 20px 25px -5px var(--glow-strong), 0 8px 10px -6px var(--glow-strong); }
+    .tile-glow  { box-shadow: 0 8px 12px -4px var(--glow); }
+    .pill-glow  { box-shadow: 0 6px 10px -3px var(--glow); }
+
 </style>
 
 <!-- صفحه انتخاب نوع ورود -->
@@ -42,7 +61,7 @@
     <!-- نقش هندسی خاتم روی کل صفحه -->
     <div class="khatam-sky pointer-events-none absolute inset-0 opacity-[0.05]" aria-hidden="true"></div>
 
-    <div class="relative z-10 mx-auto flex w-full max-w-5xl flex-1 flex-col">
+    <div class="relative z-10 mx-auto flex w-full max-w-5xl flex-1 flex-col lg:max-w-6xl">
         <!-- نوار بالا: بازگشت + برند -->
         <div class="flex items-center justify-between gap-2 sm:gap-4">
             <a
@@ -80,13 +99,13 @@
             </div>
 
             <span
-                class="mt-3 inline-flex items-center gap-2 rounded-full border border-[#1572A1]/25 bg-white/70 px-4 py-1.5 text-xs font-bold text-[#1572A1] backdrop-blur sm:mt-5"
+                class="mt-[1rem] inline-flex items-center gap-2 rounded-full border border-[#1572A1]/25 bg-white/70 px-4 py-1.5 text-xs font-bold text-[#1572A1] backdrop-blur sm:mt-5"
             >
                 <span class="h-2 w-2 rotate-45 bg-[#5964AE]" aria-hidden="true"></span>
                 ورود به حساب کاربری
             </span>
 
-            <h1 class="mt-5 hidden text-2xl font-black leading-[1.4] text-slate-900 sm:block sm:text-4xl sm:leading-[1.35]">
+            <h1 class="mt-[1.25rem] hidden text-2xl font-black leading-[1.4] text-slate-900 sm:block sm:text-4xl sm:leading-[1.35] lg:text-5xl">
                 نوع
                 <span class="bg-gradient-to-l from-[#1572A1] via-[#5964AE] to-[#A4184B] bg-clip-text text-transparent">
                     ورود
@@ -94,33 +113,33 @@
                 خود را انتخاب کنید
             </h1>
 
-            <p class="mx-auto mt-4 hidden max-w-xl text-sm leading-7 text-slate-600 sm:block sm:text-base sm:leading-8">
+            <p class="mx-auto mt-[1rem] hidden max-w-xl text-sm leading-7 text-slate-600 sm:block sm:text-base sm:leading-8">
                 برای ادامه، مشخص کنید که به‌عنوان کدام بخش از خانوادهٔ آوای همدلی می‌خواهید وارد شوید.
             </p>
         </div>
 
         <!-- کارت‌های fill رنگی: موبایل لیست عمودی، دسکتاپ سه‌ستونه -->
-        <div class="mt-3 grid grid-cols-1 gap-3 sm:mt-10 sm:grid-cols-3 sm:gap-5 lg:gap-6" data-reveal>
+        <div class="mt-[1rem] grid grid-cols-1 gap-3 sm:mt-10 sm:grid-cols-3 sm:gap-5 lg:gap-6" data-reveal>
             <!-- ورود پرسنل -->
             <a
                 href="{{ route('login') }}"
-                class="group relative flex flex-row items-center gap-4 overflow-hidden rounded-2xl border-2 border-[#1572A1] bg-[linear-gradient(155deg,#0f5a80_0%,#1572A1_55%,#36A9DF_100%)] p-4 text-right shadow-lg shadow-[#1572A1]/30 transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-[#1572A1]/45 focus:outline-none focus-visible:ring-4 focus-visible:ring-white/40 sm:flex-col sm:gap-0 sm:rounded-3xl sm:p-8 sm:text-center"
+                class="group glow-blue card-glow card-glow-lift relative flex items-center gap-6 overflow-hidden rounded-2xl border-2 border-[#1572A1] bg-[linear-gradient(155deg,#0f5a80_0%,#1572A1_55%,#36A9DF_100%)] p-6 text-right transition duration-300 hover:-translate-y-1 focus:outline-none focus-visible:ring-4 focus-visible:ring-white/40 sm:flex-col sm:gap-0 sm:rounded-3xl sm:p-8 sm:text-center lg:p-10"
             >
                 <span class="pointer-events-none absolute -left-8 -top-10 h-28 w-28 rounded-full bg-white/12 blur-2xl" aria-hidden="true"></span>
 
-                <span class="icon-tile relative bg-white text-[#1572A1] shadow-lg shadow-[#0b4d75]/25 ring-1 ring-black/5 transition duration-300 group-hover:-rotate-6 group-hover:scale-105">
-                    <i class="bi bi-person-badge-fill text-2xl" aria-hidden="true"></i>
+                <span class="icon-tile tile-glow glow-blue relative bg-white text-[#1572A1] ring-1 ring-black/5 transition duration-300 group-hover:-rotate-6 group-hover:scale-105">
+                    <i class="bi bi-person-badge-fill text-2xl lg:text-3xl" aria-hidden="true"></i>
                 </span>
 
                 <span class="relative min-w-0 flex-1 sm:mt-5">
-                    <h2 class="truncate text-lg font-black leading-8 text-white sm:text-xl">ورود پرسنل</h2>
-                    <p class="mt-0.5 truncate text-[11px] leading-5 text-sky-50/90 sm:mt-2 sm:text-sm sm:leading-relaxed">مدیران، مددکاران و اپراتورهای مرکز</p>
+                    <h2 class="truncate text-lg font-black leading-8 text-white sm:whitespace-normal sm:text-xl">ورود پرسنل</h2>
+                    <p class="mt-0.5 truncate text-[11px] leading-5 text-sky-50/90 sm:mt-2 sm:whitespace-normal sm:text-sm sm:leading-relaxed">مدیران، مددکاران و اپراتورهای مرکز</p>
                 </span>
 
                 <span class="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/95 text-[#1572A1] shadow-md transition group-hover:bg-white sm:hidden">
                     <i class="bi bi-arrow-left text-sm" aria-hidden="true"></i>
                 </span>
-                <span class="relative mt-6 hidden min-h-11 items-center gap-2 rounded-xl bg-white px-5 text-sm font-extrabold text-[#1572A1] shadow-lg shadow-[#0b4d75]/15 transition group-hover:gap-3 sm:inline-flex">
+                <span class="relative mt-6 hidden min-h-11 items-center gap-2 rounded-xl bg-white px-[1.25rem] text-sm font-extrabold text-[#1572A1] pill-glow glow-blue transition group-hover:gap-3 sm:inline-flex">
                     ورود به پنل
                     <i class="bi bi-arrow-left" aria-hidden="true"></i>
                 </span>
@@ -129,23 +148,23 @@
             <!-- ورود اعضا -->
             <a
                 href="{{ route('member.login') }}"
-                class="group relative flex flex-row items-center gap-4 overflow-hidden rounded-2xl border-2 border-[#0e7a55] bg-[linear-gradient(155deg,#0b5d46_0%,#0e7a55_55%,#1fa06f_100%)] p-4 text-right shadow-lg shadow-[#0e7a55]/30 transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-[#0e7a55]/45 focus:outline-none focus-visible:ring-4 focus-visible:ring-white/40 sm:flex-col sm:gap-0 sm:rounded-3xl sm:p-8 sm:text-center"
+                class="group glow-green card-glow card-glow-lift relative flex items-center gap-6 overflow-hidden rounded-2xl border-2 border-[#0e7a55] bg-[linear-gradient(155deg,#0b5d46_0%,#0e7a55_55%,#1fa06f_100%)] p-6 text-right transition duration-300 hover:-translate-y-1 focus:outline-none focus-visible:ring-4 focus-visible:ring-white/40 sm:flex-col sm:gap-0 sm:rounded-3xl sm:p-8 sm:text-center lg:p-10"
             >
                 <span class="pointer-events-none absolute -left-8 -top-10 h-28 w-28 rounded-full bg-white/12 blur-2xl" aria-hidden="true"></span>
 
-                <span class="icon-tile relative bg-white text-[#0e7a55] shadow-lg shadow-[#08402f]/25 ring-1 ring-black/5 transition duration-300 group-hover:-rotate-6 group-hover:scale-105">
-                    <i class="bi bi-people-fill text-2xl" aria-hidden="true"></i>
+                <span class="icon-tile tile-glow glow-green relative bg-white text-[#0e7a55] ring-1 ring-black/5 transition duration-300 group-hover:-rotate-6 group-hover:scale-105">
+                    <i class="bi bi-people-fill text-2xl lg:text-3xl" aria-hidden="true"></i>
                 </span>
 
                 <span class="relative min-w-0 flex-1 sm:mt-5">
-                    <h2 class="truncate text-lg font-black leading-8 text-white sm:text-xl">ورود اعضا</h2>
-                    <p class="mt-0.5 truncate text-[11px] leading-5 text-emerald-50/90 sm:mt-2 sm:text-sm sm:leading-relaxed">خانواده‌های تحت پوشش مرکز</p>
+                    <h2 class="truncate text-lg font-black leading-8 text-white sm:whitespace-normal sm:text-xl">ورود اعضا</h2>
+                    <p class="mt-0.5 truncate text-[11px] leading-5 text-emerald-50/90 sm:mt-2 sm:whitespace-normal sm:text-sm sm:leading-relaxed">خانواده‌های تحت پوشش مرکز</p>
                 </span>
 
                 <span class="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/95 text-[#0e7a55] shadow-md transition group-hover:bg-white sm:hidden">
                     <i class="bi bi-arrow-left text-sm" aria-hidden="true"></i>
                 </span>
-                <span class="relative mt-6 hidden min-h-11 items-center gap-2 rounded-xl bg-white px-5 text-sm font-extrabold text-[#0e7a55] shadow-lg shadow-[#08402f]/15 transition group-hover:gap-3 sm:inline-flex">
+                <span class="relative mt-6 hidden min-h-11 items-center gap-2 rounded-xl bg-white px-[1.25rem] text-sm font-extrabold text-[#0e7a55] pill-glow glow-green transition group-hover:gap-3 sm:inline-flex">
                     ورود به پنل
                     <i class="bi bi-arrow-left" aria-hidden="true"></i>
                 </span>
@@ -155,7 +174,7 @@
             <button
                 type="button"
                 aria-disabled="true"
-                class="group relative flex cursor-not-allowed flex-row items-center gap-4 overflow-hidden rounded-2xl border-2 border-[#b01a51] bg-[linear-gradient(155deg,#b01a51_0%,#D4205F_55%,#f0558f_100%)] p-4 text-right opacity-95 shadow-lg shadow-[#D4205F]/25 sm:flex-col sm:gap-0 sm:rounded-3xl sm:p-8 sm:text-center"
+                class="group glow-pink card-glow relative flex cursor-not-allowed items-center gap-6 overflow-hidden rounded-2xl border-2 border-[#b01a51] bg-[linear-gradient(155deg,#b01a51_0%,#D4205F_55%,#f0558f_100%)] p-6 text-right opacity-95 sm:flex-col sm:gap-0 sm:rounded-3xl sm:p-8 sm:text-center lg:p-10"
             >
                 <span class="pointer-events-none absolute -left-8 -top-10 h-28 w-28 rounded-full bg-white/12 blur-2xl" aria-hidden="true"></span>
 
@@ -164,8 +183,8 @@
                     به‌زودی
                 </span>
 
-                <span class="icon-tile relative bg-white/95 text-[#D4205F] shadow-lg shadow-[#8d1244]/20 ring-1 ring-black/5">
-                    <i class="bi bi-heart-fill text-2xl" aria-hidden="true"></i>
+                <span class="icon-tile tile-glow glow-pink relative bg-white/95 text-[#D4205F] ring-1 ring-black/5">
+                    <i class="bi bi-heart-fill text-2xl lg:text-3xl" aria-hidden="true"></i>
                 </span>
 
                 <span class="relative min-w-0 flex-1 sm:mt-5">
@@ -179,7 +198,7 @@
                 <span class="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/85 text-[#D4205F] shadow-md sm:hidden">
                     <i class="bi bi-hourglass-split text-sm" aria-hidden="true"></i>
                 </span>
-                <span class="relative mt-6 hidden min-h-11 items-center gap-2 rounded-xl bg-white/85 px-5 text-sm font-extrabold text-[#D4205F] shadow-lg shadow-[#8d1244]/15 sm:inline-flex">
+                <span class="relative mt-6 hidden min-h-11 items-center gap-2 rounded-xl bg-white/85 px-[1.25rem] text-sm font-extrabold text-[#D4205F] pill-glow glow-pink sm:inline-flex">
                     به‌زودی
                     <i class="bi bi-hourglass-split" aria-hidden="true"></i>
                 </span>
