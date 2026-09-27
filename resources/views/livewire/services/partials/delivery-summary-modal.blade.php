@@ -2,7 +2,7 @@
      subcategories sheet on this page), centered dialog on desktop. The backdrop blocks wheel
      and touch scrolling so the page behind stays put; the sheet body owns one scroll region
      and the recipients list gets its own inner scroll (overscroll-contain) so the sheet never
-     grows past its max height. Each worker is an accordion row (first one opens automatically)
+     grows past its max height. Each worker is an accordion row (collapsed by default)
      to keep the whole list compact. --}}
 <div
     x-cloak
@@ -65,7 +65,7 @@
         data-modal-scroll
         class="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[max(1.25rem,env(safe-area-inset-bottom))]"
         x-data="{ openWorker: null }"
-        x-init="$watch('workersOpen', (open) => { if (open) openWorker = workersSummary?.workers?.[0]?.id ?? null; })"
+        x-init="$watch('workersOpen', (open) => { if (open) openWorker = null; })"
     >
         <template x-if="workersSummary?.workers?.length">
             <div class="divide-y divide-slate-100">
