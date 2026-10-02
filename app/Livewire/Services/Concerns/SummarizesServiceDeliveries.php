@@ -107,23 +107,67 @@ trait SummarizesServiceDeliveries
             })
             ->map(function (Collection $recipientDeliveries): array {
                 $first = $recipientDeliveries->first();
+                $isGuardian = (bool) (! $first->person && $first->guardian);
                 $type = $first->person
                     ? 'مددجو'
                     : ($first->guardian ? 'سرپرست خانوار' : 'ثبت دستی');
 
-                $personId = $first->person_id;
-                if (! $personId && $first->guardian) {
-                    $personId = $first->guardian->people->first()?->id;
+                $people = [];
+
+                if ($first->person) {
+                    $person = $first->person;
+                    $name = trim($person->first_name.' '.$person->last_name);
+                    $people[] = [
+                        'id' => (int) $person->id,
+                        'name' => $name !== '' ? $name : ($first->recipient_name ?: '-'),
+                        'national_id' => (string) ($person->national_id ?: '-'),
+                        'person_code' => (string) ($person->person_code ?: '-'),
+                    ];
+                } elseif ($first->guardian) {
+                    $guardianPeople = $first->guardian->people ?? collect();
+                    $people = $guardianPeople->map(function ($person): array {
+                        $name = trim($person->first_name.' '.$person->last_name);
+
+                        return [
+                            'id' => (int) $person->id,
+                            'name' => $name !== '' ? $name : ($person->person_code ?: '-'),
+                            'national_id' => (string) ($person->national_id ?: '-'),
+                            'person_code' => (string) ($person->person_code ?: '-'),
+                        ];
+                    })->values()->all();
                 }
 
-                if (! $personId && $first->recipient_national_id && $first->recipient_national_id !== '-') {
-                    $personId = \App\Models\Person::query()
-                        ->where('national_id', $first->recipient_national_id)
-                        ->value('id');
+                if (empty($people) && $first->person_id) {
+                    $people[] = [
+                        'id' => (int) $first->person_id,
+                        'name' => $first->recipient_name ?: '-',
+                        'national_id' => $first->recipient_national_id ?: '-',
+                        'person_code' => '-',
+                    ];
                 }
+
+                if (empty($people) && $first->recipient_national_id && $first->recipient_national_id !== '-') {
+                    $matchedPerson = \App\Models\Person::query()
+                        ->where('national_id', $first->recipient_national_id)
+                        ->first(['id', 'first_name', 'last_name', 'national_id', 'person_code']);
+
+                    if ($matchedPerson) {
+                        $name = trim($matchedPerson->first_name.' '.$matchedPerson->last_name);
+                        $people[] = [
+                            'id' => (int) $matchedPerson->id,
+                            'name' => $name !== '' ? $name : ($matchedPerson->person_code ?: '-'),
+                            'national_id' => (string) ($matchedPerson->national_id ?: '-'),
+                            'person_code' => (string) ($matchedPerson->person_code ?: '-'),
+                        ];
+                    }
+                }
+
+                $primaryPersonId = ! empty($people) ? $people[0]['id'] : null;
 
                 return [
-                    'person_id' => $personId ? (int) $personId : null,
+                    'person_id' => $primaryPersonId,
+                    'is_guardian' => $isGuardian,
+                    'people' => $people,
                     'name' => $first->recipient_name ?: '-',
                     'national_id' => $first->recipient_national_id ?: '-',
                     'type' => $type,

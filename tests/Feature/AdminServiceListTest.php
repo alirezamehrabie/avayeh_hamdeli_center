@@ -110,6 +110,43 @@ class AdminServiceListTest extends TestCase
             });
     }
 
+    public function test_worker_summary_for_guardian_recipient_lists_all_guardian_beneficiaries(): void
+    {
+        $this->actingAs($this->manager());
+
+        $target = $this->serviceWithDelivery('SN-70260', 'خدمت سرپرست', withWorker: true);
+        $delivery = $target->deliveries()->first();
+        $guardian = $delivery->guardian;
+
+        $secondPerson = Person::query()->create([
+            'first_name' => 'فرزند',
+            'last_name' => 'دوم',
+            'national_id' => '9988776655',
+            'person_code' => '98765',
+            'guardian_id' => $guardian->id,
+            'birth_year' => 1395,
+            'birth_month' => 2,
+            'birth_day' => 15,
+        ]);
+
+        $delivery->update([
+            'person_id' => null,
+            'full_name' => 'سرپرست تست',
+            'national_id' => $guardian->national_code,
+        ]);
+
+        Livewire::test(ServiceList::class)
+            ->call('showWorkerSummary', $target->id)
+            ->assertDispatched('service-workers-loaded', function (string $name, array $params) use ($secondPerson): bool {
+                $recipient = $params['summary']['workers'][0]['recipients'][0] ?? null;
+
+                return $recipient !== null
+                    && $recipient['is_guardian'] === true
+                    && count($recipient['people']) === 2
+                    && collect($recipient['people'])->pluck('id')->contains($secondPerson->id);
+            });
+    }
+
     public function test_search_and_status_filter_reset_pagination_to_first_page(): void
     {
         $this->actingAs($this->manager());
