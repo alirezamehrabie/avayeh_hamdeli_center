@@ -53,7 +53,7 @@ class ServiceList extends Component
                 'categories' => fn ($query) => $query->ordered(),
                 'workerAllocations.socialWorker',
                 'deliveries.person.guardian',
-                'deliveries.guardian',
+                'deliveries.guardian.people',
             ])
             ->findOrFail($serviceId);
 

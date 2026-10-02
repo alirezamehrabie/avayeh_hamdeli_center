@@ -91,6 +91,25 @@ class AdminServiceListTest extends TestCase
         $this->assertStringContainsString((string) $target->id, $deliveryQueries[array_key_first($deliveryQueries)]['query'] ?? '');
     }
 
+    public function test_worker_summary_includes_person_id_for_recipients(): void
+    {
+        $this->actingAs($this->manager());
+
+        $target = $this->serviceWithDelivery('SN-70250', 'خدمت پرونده', withWorker: true);
+        $delivery = $target->deliveries()->first();
+        $expectedPersonId = $delivery->person_id;
+
+        Livewire::test(ServiceList::class)
+            ->call('showWorkerSummary', $target->id)
+            ->assertDispatched('service-workers-loaded', function (string $name, array $params) use ($expectedPersonId): bool {
+                $recipient = $params['summary']['workers'][0]['recipients'][0] ?? null;
+
+                return $recipient !== null
+                    && $recipient['person_id'] === $expectedPersonId
+                    && $recipient['name'] === 'گیرنده تست';
+            });
+    }
+
     public function test_search_and_status_filter_reset_pagination_to_first_page(): void
     {
         $this->actingAs($this->manager());

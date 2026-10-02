@@ -111,7 +111,19 @@ trait SummarizesServiceDeliveries
                     ? 'مددجو'
                     : ($first->guardian ? 'سرپرست خانوار' : 'ثبت دستی');
 
+                $personId = $first->person_id;
+                if (! $personId && $first->guardian) {
+                    $personId = $first->guardian->people->first()?->id;
+                }
+
+                if (! $personId && $first->recipient_national_id && $first->recipient_national_id !== '-') {
+                    $personId = \App\Models\Person::query()
+                        ->where('national_id', $first->recipient_national_id)
+                        ->value('id');
+                }
+
                 return [
+                    'person_id' => $personId ? (int) $personId : null,
                     'name' => $first->recipient_name ?: '-',
                     'national_id' => $first->recipient_national_id ?: '-',
                     'type' => $type,
