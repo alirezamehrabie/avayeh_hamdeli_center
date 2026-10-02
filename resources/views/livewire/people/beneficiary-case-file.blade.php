@@ -21,9 +21,10 @@
                 <button
                     type="button"
                     wire:click="clearSelection"
-                    class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100"
+                    class="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100"
                 >
-                    انتخاب مددجوی دیگر
+                    <i class="bi bi-person-x text-base"></i>
+                    <span>انتخاب مددجوی دیگر</span>
                 </button>
             @endif
         </div>
@@ -324,167 +325,391 @@
             </p>
         </section>
     @else
-        <section class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-            <div class="space-y-4">
-                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                        <div>
-                            <h2 class="text-lg font-black text-slate-900">{{ $selectedPerson->full_name ?: trim($selectedPerson->first_name.' '.$selectedPerson->last_name) }}</h2>
-                            <p class="mt-1 text-sm text-slate-500">کد مددجو: {{ $selectedPerson->person_code ?: '-' }}</p>
-                        </div>
-                        <div class="flex flex-wrap items-center gap-2">
-                            <button
-                                type="button"
-                                wire:click="exportToExcel"
-                                wire:loading.attr="disabled"
-                                wire:target="exportToExcel"
-                                class="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                                <i wire:loading.remove wire:target="exportToExcel" class="bi bi-file-earmark-excel"></i>
-                                <i wire:loading wire:target="exportToExcel" class="bi bi-arrow-repeat animate-spin"></i>
-                                <span wire:loading.remove wire:target="exportToExcel">خروجی اکسل آخرین رکوردها</span>
-                                <span wire:loading wire:target="exportToExcel">در حال آماده‌سازی…</span>
-                            </button>
-                            <span class="inline-flex w-fit rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
-                                {{ $selectedPerson->created_at ? 'عضویت از '.$this->formatDate($selectedPerson->created_at) : 'تاریخ عضویت ثبت نشده' }}
-                            </span>
+        <div
+            x-data="{
+                mobileTab: 'timeline'
+            }"
+            x-init="$watch('$wire.editingCaseRecordId', id => { if(id) mobileTab = 'record'; })"
+            class="space-y-4"
+        >
+            {{-- کارت مشخصات اصلی مددجو --}}
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div class="min-w-0">
+                        <h2 class="text-lg font-black text-slate-900 sm:text-xl truncate">
+                            {{ $selectedPerson->full_name ?: trim($selectedPerson->first_name.' '.$selectedPerson->last_name) }}
+                        </h2>
+                        <div class="mt-1 flex flex-wrap items-center gap-2 text-xs sm:text-sm text-slate-500">
+                            <span>کد مددجو: <strong class="font-bold text-slate-700">{{ $selectedPerson->person_code ?: '-' }}</strong></span>
+                            <span class="text-slate-300">|</span>
+                            <span>{{ $selectedPerson->created_at ? 'عضویت از '.$this->formatDate($selectedPerson->created_at) : 'تاریخ عضویت ثبت نشده' }}</span>
                         </div>
                     </div>
 
-                    <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                        <div class="rounded-xl bg-slate-50 p-3">
-                            <p class="text-xs font-bold text-slate-400">کد ملی</p>
-                            <p class="mt-1 text-sm font-bold text-slate-800">{{ $selectedPerson->national_id ?: '-' }}</p>
-                        </div>
-                        <div class="rounded-xl bg-slate-50 p-3">
-                            <p class="text-xs font-bold text-slate-400">سن</p>
-                            <p class="mt-1 text-sm font-bold text-slate-800">{{ $selectedPerson->age ? $selectedPerson->age.' سال' : '-' }}</p>
-                        </div>
-                        <div class="rounded-xl bg-slate-50 p-3">
-                            <p class="text-xs font-bold text-slate-400">سرپرست</p>
-                            <p class="mt-1 text-sm font-bold text-slate-800">{{ $selectedPerson->guardian?->full_name ?: '-' }}</p>
-                        </div>
-                        <div class="rounded-xl bg-slate-50 p-3">
-                            <p class="text-xs font-bold text-slate-400">مددکار</p>
-                            <p class="mt-1 text-sm font-bold text-slate-800">{{ $selectedPerson->guardian?->socialWorker ? trim($selectedPerson->guardian->socialWorker->first_name.' '.$selectedPerson->guardian->socialWorker->last_name) : '-' }}</p>
-                        </div>
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+                        <button
+                            type="button"
+                            wire:click="exportToExcel"
+                            wire:loading.attr="disabled"
+                            wire:target="exportToExcel"
+                            class="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            <i wire:loading.remove wire:target="exportToExcel" class="bi bi-file-earmark-excel"></i>
+                            <i wire:loading wire:target="exportToExcel" class="bi bi-arrow-repeat animate-spin"></i>
+                            <span wire:loading.remove wire:target="exportToExcel">خروجی اکسل آخرین رکوردها</span>
+                            <span wire:loading wire:target="exportToExcel">در حال آماده‌سازی…</span>
+                        </button>
                     </div>
                 </div>
 
-                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                            <h2 class="text-base font-black text-slate-900">خط زمانی پرونده</h2>
-                            <p class="mt-1 text-sm text-slate-500">آخرین رکوردهای خدمات تحویل‌شده، حضورهای ثبت‌شده و رکوردهای دستی</p>
-                        </div>
-                        <span class="text-xs font-bold text-slate-400">{{ number_format($timeline->count()) }} رخداد پرونده</span>
+                <div class="mt-4 grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
+                    <div class="rounded-xl bg-slate-50 p-2.5 sm:p-3">
+                        <p class="text-[11px] font-bold text-slate-400 sm:text-xs">کد ملی</p>
+                        <p class="mt-0.5 sm:mt-1 text-xs sm:text-sm font-bold text-slate-800">{{ $selectedPerson->national_id ?: '-' }}</p>
                     </div>
-
-                    @if($timeline->isEmpty())
-                        <div class="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">
-                            برای این مددجو هنوز خدمت یا فعالیتی در دفتر فعلی ثبت نشده است.
-                        </div>
-                    @else
-                        <div class="mt-4 overflow-hidden rounded-2xl border border-slate-200">
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-slate-200 text-sm">
-                                    <thead class="bg-slate-50 text-xs font-black text-slate-500">
-                                        <tr>
-                                            <th class="px-4 py-3 text-right">تاریخ</th>
-                                            <th class="px-4 py-3 text-right">نوع</th>
-                                            <th class="px-4 py-3 text-right">عنوان</th>
-                                            <th class="px-4 py-3 text-right">مقدار/روش</th>
-                                            <th class="px-4 py-3 text-right">ارزش/فاکتور</th>
-                                            <th class="px-4 py-3 text-center">عملیات</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-slate-100 bg-white">
-                                        @foreach($timeline as $row)
-                                            @if($row['type'] === 'service-group')
-                                                <tr class="bg-emerald-50/60">
-                                                    <td class="whitespace-nowrap px-4 py-3 text-slate-600">{{ $this->formatDate($row['date']) }}</td>
-                                                    <td class="px-4 py-3">
-                                                        <span class="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">{{ $row['badge'] }}</span>
-                                                    </td>
-                                                    <td class="px-4 py-3">
-                                                        <p class="font-black text-slate-900">{{ $row['title'] }}</p>
-                                                        <p class="mt-1 text-xs text-slate-500">{{ $row['subtitle'] }}</p>
-                                                        @if(! empty($row['details']))
-                                                            <div class="mt-2">
-                                                                <x-details-popover :details="$row['details']" popover-title="جزئیات خدمت" />
-                                                            </div>
-                                                        @endif
-                                                    </td>
-                                                    <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700">{{ $row['quantity'] }}</td>
-                                                    <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700">{{ $row['value'] }}</td>
-                                                    <td class="px-4 py-3 text-center text-xs font-bold text-emerald-700">{{ number_format($row['children']->count()) }} دسته</td>
-                                                </tr>
-                                                @foreach($row['children'] as $child)
-                                                    <tr class="bg-emerald-50/20">
-                                                        <td class="px-4 py-3"></td>
-                                                        <td class="px-4 py-3 text-xs font-bold text-emerald-700">جزئیات</td>
-                                                        <td class="px-4 py-3 pr-8">
-                                                            <p class="font-bold text-slate-800">{{ $child['category'] }}</p>
-                                                            @if(! empty($child['details']))
-                                                                <div class="mt-2">
-                                                                    <x-details-popover :details="$child['details']" popover-title="جزئیات تحویل" />
-                                                                </div>
-                                                            @endif
-                                                        </td>
-                                                        <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700">{{ $child['quantity'] }}</td>
-                                                        <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700">{{ $child['value'] }}</td>
-                                                        <td class="px-4 py-3"></td>
-                                                    </tr>
-                                                @endforeach
-                                            @else
-                                                <tr>
-                                                    <td class="whitespace-nowrap px-4 py-3 text-slate-600">{{ $this->formatDate($row['date']) }}</td>
-                                                    <td class="px-4 py-3">
-                                                        <span @class([
-                                                            'inline-flex rounded-full px-2.5 py-1 text-xs font-bold',
-                                                            'bg-cyan-50 text-cyan-700' => $row['type'] === 'activity',
-                                                            'bg-violet-50 text-violet-700' => $row['type'] === 'manual',
-                                                        ])>{{ $row['badge'] }}</span>
-                                                    </td>
-                                                    <td class="px-4 py-3">
-                                                        <p class="font-bold text-slate-800">{{ $row['title'] }}</p>
-                                                        @if($row['subtitle']) <p class="mt-1 text-xs text-slate-500">{{ $row['subtitle'] }}</p> @endif
-                                                        @if(! empty($row['details']))
-                                                            <div class="mt-2">
-                                                                <x-details-popover :details="$row['details']" :popover-title="$row['type'] === 'activity' ? 'جزئیات فعالیت' : 'جزئیات رکورد'" />
-                                                            </div>
-                                                        @endif
-                                                        @if(($row['attachments'] ?? collect())->isNotEmpty())
-                                                            <div class="mt-2 flex flex-wrap gap-1.5">
-                                                                @foreach($row['attachments'] as $attachment)
-                                                                    <a href="{{ $attachment->url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 rounded-lg border border-violet-100 bg-violet-50 px-2 py-1 text-[11px] font-bold text-violet-700 transition hover:bg-violet-100">
-                                                                        <i class="bi bi-paperclip"></i><span>{{ $attachment->original_name }}</span>
-                                                                        @if($attachment->size_label) <span class="font-semibold text-violet-400">({{ $attachment->size_label }})</span> @endif
-                                                                    </a>
-                                                                @endforeach
-                                                            </div>
-                                                        @endif
-                                                    </td>
-                                                    <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700">{{ $row['quantity'] }}</td>
-                                                    <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700">{{ $row['value'] }}</td>
-                                                    <td class="px-4 py-3 text-center">
-                                                        @if($row['type'] === 'manual' && ! empty($row['record_id']))
-                                                            <button type="button" wire:click="startEditingCaseRecord({{ $row['record_id'] }})" class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-violet-200 bg-violet-50 text-violet-700 transition hover:bg-violet-100 focus:outline-none focus:ring-4 focus:ring-violet-100" aria-label="ویرایش رکورد" title="ویرایش رکورد"><i class="bi bi-pencil-square text-sm"></i></button>
-                                                        @endif
-                                                    </td>
-                                                </tr>
-                                            @endif
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    @endif
+                    <div class="rounded-xl bg-slate-50 p-2.5 sm:p-3">
+                        <p class="text-[11px] font-bold text-slate-400 sm:text-xs">سن</p>
+                        <p class="mt-0.5 sm:mt-1 text-xs sm:text-sm font-bold text-slate-800">{{ $selectedPerson->age ? $selectedPerson->age.' سال' : '-' }}</p>
+                    </div>
+                    <div class="rounded-xl bg-slate-50 p-2.5 sm:p-3">
+                        <p class="text-[11px] font-bold text-slate-400 sm:text-xs">سرپرست</p>
+                        <p class="mt-0.5 sm:mt-1 text-xs sm:text-sm font-bold text-slate-800 truncate" title="{{ $selectedPerson->guardian?->full_name }}">{{ $selectedPerson->guardian?->full_name ?: '-' }}</p>
+                    </div>
+                    <div class="rounded-xl bg-slate-50 p-2.5 sm:p-3">
+                        <p class="text-[11px] font-bold text-slate-400 sm:text-xs">مددکار</p>
+                        <p class="mt-0.5 sm:mt-1 text-xs sm:text-sm font-bold text-slate-800 truncate" title="{{ $selectedPerson->guardian?->socialWorker ? trim($selectedPerson->guardian->socialWorker->first_name.' '.$selectedPerson->guardian->socialWorker->last_name) : '' }}">{{ $selectedPerson->guardian?->socialWorker ? trim($selectedPerson->guardian->socialWorker->first_name.' '.$selectedPerson->guardian->socialWorker->last_name) : '-' }}</p>
+                    </div>
                 </div>
             </div>
 
+            {{-- ناوبری تب‌های ریسپانسیو در موبایل و تبلت --}}
+            <div class="rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm xl:hidden" role="tablist" aria-label="بخش‌های پرونده">
+                <div class="grid grid-cols-4 gap-1">
+                    <button
+                        type="button"
+                        role="tab"
+                        :aria-selected="mobileTab === 'timeline'"
+                        @click="mobileTab = 'timeline'"
+                        :class="mobileTab === 'timeline' ? 'bg-indigo-600 text-white shadow-sm font-black' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 font-bold'"
+                        class="flex flex-col items-center justify-center gap-1 rounded-xl py-2 px-1 text-center transition min-h-[54px]"
+                    >
+                        <div class="relative flex items-center justify-center">
+                            <i class="bi bi-clock-history text-base"></i>
+                            @if($timeline->isNotEmpty())
+                                <span
+                                    :class="mobileTab === 'timeline' ? 'bg-white text-indigo-700' : 'bg-indigo-600 text-white'"
+                                    class="absolute -top-1 -right-3 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-black"
+                                >
+                                    {{ $timeline->count() > 99 ? '99+' : $timeline->count() }}
+                                </span>
+                            @endif
+                        </div>
+                        <span class="text-[11px] leading-tight">خط زمانی</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        role="tab"
+                        :aria-selected="mobileTab === 'record'"
+                        @click="mobileTab = 'record'"
+                        :class="mobileTab === 'record' ? 'bg-indigo-600 text-white shadow-sm font-black' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 font-bold'"
+                        class="flex flex-col items-center justify-center gap-1 rounded-xl py-2 px-1 text-center transition min-h-[54px]"
+                    >
+                        <div class="relative flex items-center justify-center">
+                            <i :class="$wire.editingCaseRecordId ? 'bi bi-pencil-square' : 'bi bi-plus-circle'" class="text-base"></i>
+                            <template x-if="$wire.editingCaseRecordId">
+                                <span class="absolute -top-1 -right-2 inline-flex h-2 w-2 rounded-full bg-amber-400 ring-2 ring-white"></span>
+                            </template>
+                        </div>
+                        <span class="text-[11px] leading-tight" x-text="$wire.editingCaseRecordId ? 'ویرایش رکورد' : 'ثبت رکورد'">ثبت رکورد</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        role="tab"
+                        :aria-selected="mobileTab === 'summary'"
+                        @click="mobileTab = 'summary'"
+                        :class="mobileTab === 'summary' ? 'bg-indigo-600 text-white shadow-sm font-black' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 font-bold'"
+                        class="flex flex-col items-center justify-center gap-1 rounded-xl py-2 px-1 text-center transition min-h-[54px]"
+                    >
+                        <div class="flex items-center justify-center">
+                            <i class="bi bi-pie-chart text-base"></i>
+                        </div>
+                        <span class="text-[11px] leading-tight">خلاصه پرونده</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        role="tab"
+                        :aria-selected="mobileTab === 'ai'"
+                        @click="mobileTab = 'ai'"
+                        :class="mobileTab === 'ai' ? 'bg-indigo-600 text-white shadow-sm font-black' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 font-bold'"
+                        class="flex flex-col items-center justify-center gap-1 rounded-xl py-2 px-1 text-center transition min-h-[54px]"
+                    >
+                        <div class="relative flex items-center justify-center">
+                            <i class="bi bi-stars text-base"></i>
+                            @if($aiCaseSummary)
+                                <span class="absolute -top-0.5 -right-2 inline-flex h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-white"></span>
+                            @endif
+                        </div>
+                        <span class="text-[11px] leading-tight">دستیار هوشمند</span>
+                    </button>
+                </div>
+            </div>
+
+            <section class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+                <div class="space-y-4">
+                    <div :class="mobileTab === 'timeline' ? 'block' : 'hidden xl:block'" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <h2 class="text-base font-black text-slate-900">خط زمانی پرونده</h2>
+                                <p class="mt-1 text-xs sm:text-sm text-slate-500">آخرین رکوردهای خدمات تحویل‌شده، حضورهای ثبت‌شده و رکوردهای دستی</p>
+                            </div>
+                            <div class="flex items-center justify-between sm:justify-end gap-2">
+                                <button
+                                    type="button"
+                                    @click="mobileTab = 'record'"
+                                    class="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100 xl:hidden"
+                                >
+                                    <i class="bi bi-plus-lg"></i>
+                                    <span>ثبت رکورد جدید</span>
+                                </button>
+                                <span class="text-xs font-bold text-slate-400">آخرین {{ number_format($timeline->count()) }} رکورد</span>
+                            </div>
+                        </div>
+
+                        @if($timeline->isEmpty())
+                            <div class="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">
+                                برای این مددجو هنوز خدمت یا فعالیتی در دفتر فعلی ثبت نشده است.
+                            </div>
+                        @else
+                            {{-- نسخه دسکتاپ و تبلت: جدول کامل با اسکرول افقی در صورت نیاز --}}
+                            <div class="mt-4 hidden md:block overflow-hidden rounded-2xl border border-slate-200">
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                                        <thead class="bg-slate-50 text-xs font-black text-slate-500">
+                                            <tr>
+                                                <th class="px-4 py-3 text-right">تاریخ</th>
+                                                <th class="px-4 py-3 text-right">نوع</th>
+                                                <th class="px-4 py-3 text-right">عنوان</th>
+                                                <th class="px-4 py-3 text-right">مقدار/روش</th>
+                                                <th class="px-4 py-3 text-right">ارزش/فاکتور</th>
+                                                <th class="px-4 py-3 text-center">عملیات</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-100 bg-white">
+                                            @foreach($timeline as $row)
+                                                @if($row['type'] === 'service-group')
+                                                    <tr class="bg-emerald-50/60">
+                                                        <td class="whitespace-nowrap px-4 py-3 text-slate-600">{{ $this->formatDate($row['date']) }}</td>
+                                                        <td class="px-4 py-3">
+                                                            <span class="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">{{ $row['badge'] }}</span>
+                                                        </td>
+                                                        <td class="px-4 py-3">
+                                                            <p class="font-black text-slate-900">{{ $row['title'] }}</p>
+                                                            <p class="mt-1 text-xs text-slate-500">{{ $row['subtitle'] }}</p>
+                                                            @if(! empty($row['details']))
+                                                                <div class="mt-2">
+                                                                    <x-details-popover :details="$row['details']" popover-title="جزئیات خدمت" />
+                                                                </div>
+                                                            @endif
+                                                        </td>
+                                                        <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700">{{ $row['quantity'] }}</td>
+                                                        <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700">{{ $row['value'] }}</td>
+                                                        <td class="px-4 py-3 text-center text-xs font-bold text-emerald-700">{{ number_format($row['children']->count()) }} دسته</td>
+                                                    </tr>
+                                                    @foreach($row['children'] as $child)
+                                                        <tr class="bg-emerald-50/20">
+                                                            <td class="px-4 py-3"></td>
+                                                            <td class="px-4 py-3 text-xs font-bold text-emerald-700">جزئیات</td>
+                                                            <td class="px-4 py-3 pr-8">
+                                                                <p class="font-bold text-slate-800">{{ $child['category'] }}</p>
+                                                                @if(! empty($child['details']))
+                                                                    <div class="mt-2">
+                                                                        <x-details-popover :details="$child['details']" popover-title="جزئیات تحویل" />
+                                                                    </div>
+                                                                @endif
+                                                            </td>
+                                                            <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700">{{ $child['quantity'] }}</td>
+                                                            <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700">{{ $child['value'] }}</td>
+                                                            <td class="px-4 py-3"></td>
+                                                        </tr>
+                                                    @endforeach
+                                                @else
+                                                    <tr>
+                                                        <td class="whitespace-nowrap px-4 py-3 text-slate-600">{{ $this->formatDate($row['date']) }}</td>
+                                                        <td class="px-4 py-3">
+                                                            <span @class([
+                                                                'inline-flex rounded-full px-2.5 py-1 text-xs font-bold',
+                                                                'bg-cyan-50 text-cyan-700' => $row['type'] === 'activity',
+                                                                'bg-violet-50 text-violet-700' => $row['type'] === 'manual',
+                                                            ])>{{ $row['badge'] }}</span>
+                                                        </td>
+                                                        <td class="px-4 py-3">
+                                                            <p class="font-bold text-slate-800">{{ $row['title'] }}</p>
+                                                            @if($row['subtitle']) <p class="mt-1 text-xs text-slate-500">{{ $row['subtitle'] }}</p> @endif
+                                                            @if(! empty($row['details']))
+                                                                <div class="mt-2">
+                                                                    <x-details-popover :details="$row['details']" :popover-title="$row['type'] === 'activity' ? 'جزئیات فعالیت' : 'جزئیات رکورد'" />
+                                                                </div>
+                                                            @endif
+                                                            @if(($row['attachments'] ?? collect())->isNotEmpty())
+                                                                <div class="mt-2 flex flex-wrap gap-1.5">
+                                                                    @foreach($row['attachments'] as $attachment)
+                                                                        <a href="{{ $attachment->url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 rounded-lg border border-violet-100 bg-violet-50 px-2 py-1 text-[11px] font-bold text-violet-700 transition hover:bg-violet-100">
+                                                                            <i class="bi bi-paperclip"></i><span>{{ $attachment->original_name }}</span>
+                                                                            @if($attachment->size_label) <span class="font-semibold text-violet-400">({{ $attachment->size_label }})</span> @endif
+                                                                        </a>
+                                                                    @endforeach
+                                                                </div>
+                                                            @endif
+                                                        </td>
+                                                        <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700">{{ $row['quantity'] }}</td>
+                                                        <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700">{{ $row['value'] }}</td>
+                                                        <td class="px-4 py-3 text-center">
+                                                            @if($row['type'] === 'manual' && ! empty($row['record_id']))
+                                                                <button type="button" wire:click="startEditingCaseRecord({{ $row['record_id'] }})" @click="mobileTab = 'record'" class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-violet-200 bg-violet-50 text-violet-700 transition hover:bg-violet-100 focus:outline-none focus:ring-4 focus:ring-violet-100" aria-label="ویرایش رکورد" title="ویرایش رکورد"><i class="bi bi-pencil-square text-sm"></i></button>
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                @endif
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {{-- نسخه موبایل: کارت‌های خط زمانی خوانا و واکنش‌گرا بدون اسکرول افقی --}}
+                            <div class="mt-4 space-y-3 md:hidden">
+                                @foreach($timeline as $row)
+                                    @if($row['type'] === 'service-group')
+                                        <div class="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-3.5 space-y-3 shadow-xs">
+                                            <div class="flex items-start justify-between gap-2">
+                                                <span class="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-black text-emerald-800">
+                                                    {{ $row['badge'] }}
+                                                </span>
+                                                <span class="text-xs font-semibold text-slate-500">{{ $this->formatDate($row['date']) }}</span>
+                                            </div>
+
+                                            <div>
+                                                <h3 class="font-black text-slate-900 text-sm leading-6">{{ $row['title'] }}</h3>
+                                                @if($row['subtitle'])
+                                                    <p class="mt-1 text-xs text-slate-500">{{ $row['subtitle'] }}</p>
+                                                @endif
+                                                @if(! empty($row['details']))
+                                                    <div class="mt-2">
+                                                        <x-details-popover :details="$row['details']" popover-title="جزئیات خدمت" />
+                                                    </div>
+                                                @endif
+                                            </div>
+
+                                            <div class="grid grid-cols-2 gap-2 rounded-xl bg-white p-2.5 text-xs border border-emerald-100/70">
+                                                <div>
+                                                    <span class="block text-[10px] font-bold text-slate-400">مقدار / روش:</span>
+                                                    <span class="mt-0.5 block font-bold text-slate-700">{{ $row['quantity'] }}</span>
+                                                </div>
+                                                <div>
+                                                    <span class="block text-[10px] font-bold text-slate-400">ارزش / فاکتور:</span>
+                                                    <span class="mt-0.5 block font-bold text-slate-700">{{ $row['value'] }}</span>
+                                                </div>
+                                            </div>
+
+                                            @if($row['children']->isNotEmpty())
+                                                <div class="border-t border-emerald-200/60 pt-2.5 space-y-2">
+                                                    <p class="text-[11px] font-black text-emerald-800 flex items-center gap-1.5">
+                                                        <i class="bi bi-box-seam"></i>
+                                                        <span>اقلام بسته ({{ number_format($row['children']->count()) }} قلم):</span>
+                                                    </p>
+                                                    @foreach($row['children'] as $child)
+                                                        <div class="rounded-xl bg-white p-2.5 text-xs border border-emerald-100 space-y-1.5">
+                                                            <div class="flex items-start justify-between gap-2">
+                                                                <span class="font-bold text-slate-800">{{ $child['category'] }}</span>
+                                                                @if(! empty($child['details']))
+                                                                    <x-details-popover :details="$child['details']" popover-title="جزئیات تحویل" />
+                                                                @endif
+                                                            </div>
+                                                            <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+                                                                <span>مقدار: <strong class="text-slate-700">{{ $child['quantity'] }}</strong></span>
+                                                                <span>ارزش: <strong class="text-slate-700">{{ $child['value'] }}</strong></span>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @else
+                                        <div @class([
+                                            'rounded-2xl border p-3.5 space-y-3 shadow-xs',
+                                            'border-cyan-200 bg-cyan-50/30' => $row['type'] === 'activity',
+                                            'border-violet-200 bg-violet-50/30' => $row['type'] === 'manual',
+                                        ])>
+                                            <div class="flex items-start justify-between gap-2">
+                                                <span @class([
+                                                    'inline-flex rounded-full px-2.5 py-1 text-xs font-black',
+                                                    'bg-cyan-100 text-cyan-800' => $row['type'] === 'activity',
+                                                    'bg-violet-100 text-violet-800' => $row['type'] === 'manual',
+                                                ])>
+                                                    {{ $row['badge'] }}
+                                                </span>
+                                                <span class="text-xs font-semibold text-slate-500">{{ $this->formatDate($row['date']) }}</span>
+                                            </div>
+
+                                            <div>
+                                                <h3 class="font-black text-slate-900 text-sm leading-6">{{ $row['title'] }}</h3>
+                                                @if($row['subtitle'])
+                                                    <p class="mt-1 text-xs text-slate-500">{{ $row['subtitle'] }}</p>
+                                                @endif
+                                                @if(! empty($row['details']))
+                                                    <div class="mt-2">
+                                                        <x-details-popover :details="$row['details']" :popover-title="$row['type'] === 'activity' ? 'جزئیات فعالیت' : 'جزئیات رکورد'" />
+                                                    </div>
+                                                @endif
+                                                @if(($row['attachments'] ?? collect())->isNotEmpty())
+                                                    <div class="mt-2 flex flex-wrap gap-1.5">
+                                                        @foreach($row['attachments'] as $attachment)
+                                                            <a href="{{ $attachment->url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 rounded-lg border border-violet-200 bg-white px-2 py-1 text-[11px] font-bold text-violet-700 transition hover:bg-violet-50">
+                                                                <i class="bi bi-paperclip"></i>
+                                                                <span class="max-w-[140px] truncate">{{ $attachment->original_name }}</span>
+                                                                @if($attachment->size_label) <span class="font-semibold text-violet-400">({{ $attachment->size_label }})</span> @endif
+                                                            </a>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
+                                            </div>
+
+                                            <div class="flex items-center justify-between rounded-xl bg-white p-2.5 text-xs border border-slate-100">
+                                                <div class="flex items-center gap-3">
+                                                    <div>
+                                                        <span class="text-[10px] font-bold text-slate-400">مقدار:</span>
+                                                        <span class="font-bold text-slate-700 mr-1">{{ $row['quantity'] }}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span class="text-[10px] font-bold text-slate-400">ارزش:</span>
+                                                        <span class="font-bold text-slate-700 mr-1">{{ $row['value'] }}</span>
+                                                    </div>
+                                                </div>
+                                                @if($row['type'] === 'manual' && ! empty($row['record_id']))
+                                                    <button
+                                                        type="button"
+                                                        wire:click="startEditingCaseRecord({{ $row['record_id'] }})"
+                                                        @click="mobileTab = 'record'"
+                                                        class="inline-flex items-center gap-1.5 rounded-lg border border-violet-300 bg-violet-50 px-2.5 py-1 text-xs font-black text-violet-700 transition hover:bg-violet-100"
+                                                    >
+                                                        <i class="bi bi-pencil-square"></i>
+                                                        <span>ویرایش</span>
+                                                    </button>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endif
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
             <aside class="space-y-4">
-                <section class="rounded-2xl border border-indigo-200 bg-white p-4 shadow-sm" aria-labelledby="ai-case-assistant-title">
+                <section :class="mobileTab === 'ai' ? 'block' : 'hidden xl:block'" class="rounded-2xl border border-indigo-200 bg-white p-4 shadow-sm" aria-labelledby="ai-case-assistant-title">
                     <div class="flex items-start justify-between gap-3">
                         <div>
                             <p class="text-[11px] font-bold text-indigo-500">دستیار هوشمند</p>
@@ -582,6 +807,7 @@
                 </section>
 
                 <section
+                    :class="mobileTab === 'ai' ? 'block' : 'hidden xl:block'"
                     class="rounded-2xl border border-emerald-200 bg-white p-4 shadow-sm"
                     aria-labelledby="ai-follow-up-message-title"
                     x-data="{
@@ -758,30 +984,33 @@
                     </p>
                 </section>
 
-                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <h2 class="text-base font-black text-slate-900">خلاصه پرونده</h2>
-                    <div class="mt-4 space-y-2">
-                        <div class="flex items-center justify-between rounded-xl bg-emerald-50 px-3 py-2">
+                <div :class="mobileTab === 'summary' ? 'block' : 'hidden xl:block'" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-base font-black text-slate-900">خلاصه پرونده</h2>
+                        <span class="text-xs font-bold text-slate-400 xl:hidden">آمار کلی</span>
+                    </div>
+                    <div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-1">
+                        <div class="flex items-center justify-between rounded-xl bg-emerald-50 px-3 py-2.5">
                             <span class="text-xs font-bold text-emerald-700">خدمات مستقیم مددجو</span>
                             <span class="text-sm font-black text-emerald-900">{{ number_format($caseFileTotals['direct_services_count']) }}</span>
                         </div>
-                        <div class="flex items-center justify-between rounded-xl bg-teal-50 px-3 py-2">
+                        <div class="flex items-center justify-between rounded-xl bg-teal-50 px-3 py-2.5">
                             <span class="text-xs font-bold text-teal-700">خدمات خانوار/سرپرست</span>
                             <span class="text-sm font-black text-teal-900">{{ number_format($caseFileTotals['family_services_count']) }}</span>
                         </div>
-                        <div class="flex items-center justify-between rounded-xl bg-cyan-50 px-3 py-2">
+                        <div class="flex items-center justify-between rounded-xl bg-cyan-50 px-3 py-2.5">
                             <span class="text-xs font-bold text-cyan-700">حضور در فعالیت‌ها</span>
                             <span class="text-sm font-black text-cyan-900">{{ number_format($caseFileTotals['activity_attendances_count']) }}</span>
                         </div>
-                        <div class="flex items-center justify-between rounded-xl bg-amber-50 px-3 py-2">
+                        <div class="flex items-center justify-between rounded-xl bg-amber-50 px-3 py-2.5">
                             <span class="text-xs font-bold text-amber-700">ارزش مستقیم + دستی</span>
                             <span class="text-sm font-black text-amber-900">{{ number_format($caseFileTotals['direct_services_value'] + $caseFileTotals['manual_records_amount']) }} ریال</span>
                         </div>
-                        <div class="flex items-center justify-between rounded-xl bg-orange-50 px-3 py-2">
+                        <div class="flex items-center justify-between rounded-xl bg-orange-50 px-3 py-2.5">
                             <span class="text-xs font-bold text-orange-700">ارزش خانوار/سرپرست</span>
                             <span class="text-sm font-black text-orange-900">{{ number_format($caseFileTotals['family_services_value']) }} ریال</span>
                         </div>
-                        <div class="flex items-center justify-between rounded-xl bg-violet-50 px-3 py-2">
+                        <div class="flex items-center justify-between rounded-xl bg-violet-50 px-3 py-2.5">
                             <span class="text-xs font-bold text-violet-700">رکوردهای دستی</span>
                             <span class="text-sm font-black text-violet-900">{{ number_format($caseFileTotals['manual_records_count']) }}</span>
                         </div>
@@ -789,7 +1018,7 @@
                 </div>
 
                 @if($editingCaseRecordId)
-                    <form wire:submit.prevent="updateCaseRecord" class="rounded-2xl border border-violet-200 bg-violet-50/40 p-4 shadow-sm">
+                    <form :class="mobileTab === 'record' ? 'block' : 'hidden xl:block'" wire:submit.prevent="updateCaseRecord" class="rounded-2xl border border-violet-200 bg-violet-50/40 p-4 shadow-sm">
                         <div class="flex items-start justify-between gap-3">
                             <div>
                                 <h2 class="text-base font-black text-slate-900">ویرایش رکورد دستی</h2>
@@ -798,6 +1027,7 @@
                             <button
                                 type="button"
                                 wire:click="cancelEditingCaseRecord"
+                                @click="mobileTab = 'timeline'"
                                 class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100"
                             >
                                 بستن
@@ -1025,6 +1255,7 @@
                                 <button
                                     type="button"
                                     wire:click="cancelEditingCaseRecord"
+                                    @click="mobileTab = 'timeline'"
                                     class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100"
                                 >
                                     انصراف
@@ -1034,7 +1265,7 @@
                     </form>
                 @endif
 
-                <form wire:submit.prevent="saveCaseRecord" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <form :class="mobileTab === 'record' ? 'block' : 'hidden xl:block'" wire:submit.prevent="saveCaseRecord" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <h2 class="text-base font-black text-slate-900">ثبت رکورد پرونده</h2>
                     <p class="mt-1 text-xs leading-5 text-slate-500">برای مواردی که در چرخه خدمات، گیت یا فعالیت ثبت نشده‌اند.</p>
 
@@ -1180,7 +1411,7 @@
                     </div>
                 </form>
 
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div :class="mobileTab === 'record' ? 'block' : 'hidden xl:block'" class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <h2 class="text-sm font-black text-slate-800">یادداشت پیوست‌ها</h2>
                     <p class="mt-2 text-xs leading-6 text-slate-500">
                         پیوست‌های رکورد دستی پس از ثبت، فقط از مسیر مجاز پرونده مددجو قابل مشاهده هستند. هر رکورد می‌تواند حداکثر ۵ فایل تصویر یا PDF تا سقف ۴ مگابایت برای هر فایل داشته باشد.
@@ -1188,5 +1419,6 @@
                 </div>
             </aside>
         </section>
-    @endif
+    </div>
+@endif
 </div>
