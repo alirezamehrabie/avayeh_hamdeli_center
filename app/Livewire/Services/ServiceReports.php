@@ -157,6 +157,76 @@ class ServiceReports extends Component
             : self::DISPLAY_MODE_CATEGORIZED;
     }
 
+    /**
+     * Available columns for the service report Excel export.
+     */
+    public const EXPORT_COLUMNS = [
+        'recipient_name' => 'نام گیرنده',
+        'entry_type' => 'نوع ثبت در خدمت',
+        'recipient_national_id' => 'کد ملی',
+        'recipient_code' => 'کد مددجو/خانوار',
+        'mobile' => 'موبایل',
+        'need_level' => 'سطح نیاز مددجو',
+        'support_organization' => 'نهاد حمایتی',
+        'delivery_channel' => 'شیوه تحویل',
+        'service_category' => 'دسته‌بندی خدمت',
+        'delivered_quantity' => 'مقدار تحویل',
+        'unit' => 'واحد',
+        'delivered_total_value' => 'ارزش تحویل (ریال)',
+        'social_worker' => 'مددکار',
+        'delivered_at' => 'تاریخ تحویل',
+        'notes' => 'توضیحات',
+        'created_at' => 'تاریخ ثبت سیستم',
+        'creator' => 'کاربر ثبت‌کننده',
+    ];
+
+    /**
+     * Default selected columns for the Excel export.
+     */
+    public const DEFAULT_EXPORT_COLUMNS = [
+        'recipient_name',
+        'entry_type',
+        'recipient_national_id',
+        'recipient_code',
+        'mobile',
+        'need_level',
+        'service_category',
+        'delivered_quantity',
+        'unit',
+        'delivered_total_value',
+        'social_worker',
+        'delivered_at',
+        'notes',
+    ];
+
+    /**
+     * @var array<string>
+     */
+    public array $exportColumns = [];
+
+    public function updatedExportColumns(): void
+    {
+        session()->put('service_report_export_columns', $this->exportColumns);
+    }
+
+    public function selectAllExportColumns(): void
+    {
+        $this->exportColumns = array_keys(self::EXPORT_COLUMNS);
+        session()->put('service_report_export_columns', $this->exportColumns);
+    }
+
+    public function deselectAllExportColumns(): void
+    {
+        $this->exportColumns = [];
+        session()->put('service_report_export_columns', $this->exportColumns);
+    }
+
+    public function resetDefaultExportColumns(): void
+    {
+        $this->exportColumns = self::DEFAULT_EXPORT_COLUMNS;
+        session()->put('service_report_export_columns', $this->exportColumns);
+    }
+
     public ?int $editingDeliveryId = null;
 
     public bool $showEditDeliveryModal = false;
@@ -311,7 +381,11 @@ class ServiceReports extends Component
             ->with([
                 'serviceCategory',
                 'person.guardian.socialWorker',
+                'person.needsLevel.levelType',
+                'person.supportCoverage.organization',
                 'guardian.socialWorker',
+                'guardian.people.needsLevel.levelType',
+                'guardian.people.supportCoverage.organization',
                 'socialWorker',
                 'creator',
                 'updater',
@@ -585,6 +659,22 @@ class ServiceReports extends Component
 
         $this->selectedServiceId = $selectedServiceId;
         $this->deliveryChannel = $this->normalizeDeliveryChannel($deliveryChannel);
+        $this->initExportColumns();
+    }
+
+    protected function initExportColumns(): void
+    {
+        $saved = session()->get('service_report_export_columns');
+        if (is_array($saved) && ! empty($saved)) {
+            $valid = array_values(array_intersect(array_keys(self::EXPORT_COLUMNS), $saved));
+            if (! empty($valid)) {
+                $this->exportColumns = $valid;
+
+                return;
+            }
+        }
+
+        $this->exportColumns = self::DEFAULT_EXPORT_COLUMNS;
     }
 
     protected function normalizeDeliveryChannel(?string $channel): ?string
@@ -780,6 +870,12 @@ class ServiceReports extends Component
             return null;
         }
 
+        if (empty($this->exportColumns)) {
+            session()->flash('error', 'حداقل یک ستون را برای خروجی اکسل انتخاب کنید.');
+
+            return null;
+        }
+
         $grouped = $this->groupedDeliveries;
         $rowCount = $grouped->sum(fn ($group) => $group->deliveries->count());
 
@@ -800,7 +896,7 @@ class ServiceReports extends Component
         $serviceName = $service->serviceName?->name ?: 'خدمت';
         $filename = 'گزارش-خدمت-'.$serviceName.'-'.Jalalian::now()->format('Y-m-d').'.xlsx';
 
-        $export = new ServiceReportExport($service, $grouped, Service::unitOptions());
+        $export = new ServiceReportExport($service, $grouped, Service::unitOptions(), $this->exportColumns);
 
         return \Maatwebsite\Excel\Facades\Excel::download($export, $filename);
     }

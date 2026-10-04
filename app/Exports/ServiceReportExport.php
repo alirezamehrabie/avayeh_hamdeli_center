@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Helpers\Morilog\Jalalian;
+use App\Livewire\Services\ServiceReports;
 use App\Models\Service;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromArray;
@@ -22,36 +23,52 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
  * logic is never duplicated between the on-screen report and the exported file.
  * Each grouped recipient (person / guardian / manual) is expanded into one row
  * per delivered category, mirroring the grouped structure shown in the UI.
+ *
+ * Supports dynamic column selection configured via the ServiceReports settings modal.
  */
-class ServiceReportExport implements FromArray, ShouldAutoSize, WithHeadings, WithTitle, WithEvents
+class ServiceReportExport implements FromArray, ShouldAutoSize, WithEvents, WithHeadings, WithTitle
 {
+    /**
+     * @var array<string>
+     */
+    protected array $selectedColumns;
+
     /**
      * @param  Collection  $groupedDeliveries  Output of ServiceReports::getGroupedDeliveriesProperty()
      * @param  array<string, string>  $unitOptions  Map of unit key => Persian label
+     * @param  array<string>|null  $selectedColumns  Keys of columns to export
      */
     public function __construct(
         protected Service $service,
         protected Collection $groupedDeliveries,
         protected array $unitOptions = [],
+        ?array $selectedColumns = null,
     ) {
+        $available = array_keys(ServiceReports::EXPORT_COLUMNS);
+
+        if ($selectedColumns === null || empty($selectedColumns)) {
+            $this->selectedColumns = ServiceReports::DEFAULT_EXPORT_COLUMNS;
+        } else {
+            // Support legacy column key 'recipient_type' by mapping it to 'entry_type' if needed
+            $mapped = array_map(fn ($c) => $c === 'recipient_type' ? 'entry_type' : $c, $selectedColumns);
+            $selectedLookup = array_flip($mapped);
+            $this->selectedColumns = array_values(array_filter(
+                $available,
+                fn ($col) => isset($selectedLookup[$col])
+            ));
+
+            if (empty($this->selectedColumns)) {
+                $this->selectedColumns = ServiceReports::DEFAULT_EXPORT_COLUMNS;
+            }
+        }
     }
 
     public function headings(): array
     {
-        return [
-            'نام گیرنده',
-            'نوع گیرنده',
-            'کد ملی',
-            'کد مددجو/خانوار',
-            'موبایل',
-            'دسته‌بندی خدمت',
-            'مقدار تحویل',
-            'واحد',
-            'ارزش تحویل (ریال)',
-            'مددکار',
-            'تاریخ تحویل',
-            'توضیحات',
-        ];
+        return array_map(
+            fn ($col) => ServiceReports::EXPORT_COLUMNS[$col] ?? $col,
+            $this->selectedColumns
+        );
     }
 
     public function array(): array
@@ -63,32 +80,115 @@ class ServiceReportExport implements FromArray, ShouldAutoSize, WithHeadings, Wi
             $guardianCode = $group->guardian?->guardian_code;
             $recipientCode = $personCode ?: ($guardianCode ?: '-');
 
+            $entryType = $this->formatEntryType($group);
+            $needLevel = $this->resolveNeedLevel($group);
+            $supportOrg = $this->resolveSupportOrganization($group);
+
             foreach ($group->deliveries as $delivery) {
                 $unitKey = $delivery->serviceCategory?->unit;
                 $unitLabel = $unitKey
                     ? ($this->unitOptions[$unitKey] ?? $unitKey)
                     : '-';
 
-                $rows[] = [
-                    $group->recipientName ?: '-',
-                    $group->recipientType,
-                    (string) ($group->recipientNationalId ?: '-'),
-                    (string) $recipientCode,
-                    (string) ($group->mobile ?: '-'),
-                    $delivery->serviceCategory?->name ?: '-',
-                    number_format((float) $delivery->delivered_quantity, 2),
-                    $unitLabel,
-                    number_format((int) $delivery->delivered_total_value),
-                    $delivery->display_social_worker_name ?: '-',
-                    $delivery->delivered_at
+                $channel = $delivery->delivery_channel ?: ($this->service->delivery_channel ?? null);
+                $channelLabel = $channel ? (Service::DELIVERY_CHANNEL_OPTIONS[$channel] ?? $channel) : '-';
+
+                $values = [
+                    'recipient_name' => (string) ($group->recipientName ?: '-'),
+                    'entry_type' => $entryType,
+                    'recipient_type' => $entryType,
+                    'recipient_national_id' => (string) ($group->recipientNationalId ?: '-'),
+                    'recipient_code' => (string) $recipientCode,
+                    'mobile' => (string) ($group->mobile ?: '-'),
+                    'need_level' => $needLevel,
+                    'support_organization' => $supportOrg,
+                    'delivery_channel' => $channelLabel,
+                    'service_category' => (string) ($delivery->serviceCategory?->name ?: '-'),
+                    'delivered_quantity' => number_format((float) $delivery->delivered_quantity, 2),
+                    'unit' => $unitLabel,
+                    'delivered_total_value' => number_format((int) $delivery->delivered_total_value),
+                    'social_worker' => (string) ($delivery->display_social_worker_name ?: '-'),
+                    'delivered_at' => $delivery->delivered_at
                         ? Jalalian::fromDateTime($delivery->delivered_at)->format('Y/m/d')
                         : ($delivery->created_at ? Jalalian::fromDateTime($delivery->created_at)->format('Y/m/d') : '-'),
-                    $delivery->notes ?: '-',
+                    'notes' => (string) ($delivery->notes ?: '-'),
+                    'created_at' => $delivery->created_at
+                        ? Jalalian::fromDateTime($delivery->created_at)->format('Y/m/d')
+                        : '-',
+                    'creator' => (string) ($delivery->creator?->name ?: '-'),
                 ];
+
+                $row = [];
+                foreach ($this->selectedColumns as $col) {
+                    $row[] = $values[$col] ?? '-';
+                }
+
+                $rows[] = $row;
             }
         }
 
         return $rows;
+    }
+
+    protected function formatEntryType(object $group): string
+    {
+        if ($group->person) {
+            return 'شخصی (مددجو)';
+        }
+        if ($group->guardian) {
+            return 'خانوادگی (سرپرست)';
+        }
+
+        return 'ثبت دستی';
+    }
+
+    protected function resolveNeedLevel(object $group): string
+    {
+        if ($group->person) {
+            return $group->person->needsLevel?->levelType?->title ?: '-';
+        }
+
+        if ($group->guardian) {
+            $people = $group->guardian->relationLoaded('people')
+                ? $group->guardian->people
+                : $group->guardian->people()->with(['needsLevel.levelType'])->get();
+
+            $levels = $people
+                ->map(fn ($p) => $p->needsLevel?->levelType?->title)
+                ->filter()
+                ->unique()
+                ->values();
+
+            return $levels->isNotEmpty() ? $levels->implode('، ') : '-';
+        }
+
+        return '-';
+    }
+
+    protected function resolveSupportOrganization(object $group): string
+    {
+        if ($group->person) {
+            $orgName = $group->person->supportCoverage?->organization?->name
+                ?: $group->person->supportCoverage?->other_organization_name;
+
+            return $orgName ?: '-';
+        }
+
+        if ($group->guardian) {
+            $people = $group->guardian->relationLoaded('people')
+                ? $group->guardian->people
+                : $group->guardian->people()->with(['supportCoverage.organization'])->get();
+
+            $orgs = $people
+                ->map(fn ($p) => $p->supportCoverage?->organization?->name ?: $p->supportCoverage?->other_organization_name)
+                ->filter()
+                ->unique()
+                ->values();
+
+            return $orgs->isNotEmpty() ? $orgs->implode('، ') : '-';
+        }
+
+        return '-';
     }
 
     public function title(): string

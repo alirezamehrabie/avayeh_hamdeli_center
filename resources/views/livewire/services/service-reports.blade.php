@@ -577,7 +577,7 @@
 
                         <div
                             class="flex flex-col items-stretch gap-3 sm:items-end"
-                            x-data="{ displaySettingsOpen: false }"
+                            x-data="{ displaySettingsOpen: false, settingsTab: 'export_columns' }"
                             @keydown.escape.window="displaySettingsOpen = false"
                         >
                             <div class="flex items-stretch gap-3">
@@ -604,8 +604,8 @@
                                     @click="displaySettingsOpen = true"
                                     :aria-expanded="displaySettingsOpen ? 'true' : 'false'"
                                     aria-haspopup="dialog"
-                                    title="تنظیمات نمایش"
-                                    aria-label="تنظیمات نمایش"
+                                    title="تنظیمات خروجی و نمایش"
+                                    aria-label="تنظیمات خروجی و نمایش"
                                     class="inline-flex shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/10 p-2 text-slate-200 backdrop-blur transition hover:bg-white/20 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/40"
                                 >
                                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -615,13 +615,13 @@
                                 </button>
                             </div>
 
-                            {{-- «تنظیمات نمایش»: quick modal. Each future setting gets one more @if-style row in the body below. --}}
+                            {{-- «تنظیمات»: Excel export columns & display settings modal --}}
                             <template x-teleport="body">
                                 <div
                                     x-show="displaySettingsOpen"
                                     x-cloak
                                     x-transition.opacity
-                                    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4 backdrop-blur-md"
+                                    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-md"
                                     style="display: none;"
                                 >
                                     <div
@@ -632,8 +632,8 @@
                                         @click.outside="displaySettingsOpen = false"
                                         role="dialog"
                                         aria-modal="true"
-                                        aria-label="تنظیمات نمایش رکوردهای تحویل"
-                                        class="w-full max-w-sm overflow-hidden rounded-[24px] bg-white text-right text-slate-800 shadow-2xl ring-1 ring-slate-900/5"
+                                        aria-label="تنظیمات گزارش و ستون‌های خروجی"
+                                        class="w-full max-w-lg overflow-hidden rounded-[24px] bg-white text-right text-slate-800 shadow-2xl ring-1 ring-slate-900/5"
                                     >
                                         <div class="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-5 py-4">
                                             <div class="flex min-w-0 items-center gap-2.5">
@@ -644,8 +644,8 @@
                                                     </svg>
                                                 </span>
                                                 <div class="min-w-0">
-                                                    <h3 class="truncate text-sm font-black text-slate-900">تنظیمات نمایش</h3>
-                                                    <p class="mt-0.5 text-[11px] text-slate-500">نحوهٔ نمایش رکوردهای تحویل</p>
+                                                    <h3 class="truncate text-sm font-black text-slate-900">تنظیمات گزارش</h3>
+                                                    <p class="mt-0.5 text-[11px] text-slate-500">مدیریت ستون‌های خروجی اکسل و نحوه نمایش</p>
                                                 </div>
                                             </div>
                                             <button type="button" @click="displaySettingsOpen = false" class="shrink-0 rounded-full border border-slate-200 bg-white p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="بستن">
@@ -655,44 +655,143 @@
                                             </button>
                                         </div>
 
-                                        <div class="space-y-4 px-5 py-4">
-                                            <div>
-                                                <p class="text-xs font-black text-slate-700">نمایش دسته‌بندی رکوردهای تحویل</p>
+                                        {{-- Tabs Header --}}
+                                        <div class="flex border-b border-slate-200 bg-slate-100/70 p-1 text-xs">
+                                            <button
+                                                type="button"
+                                                @click="settingsTab = 'export_columns'"
+                                                :class="settingsTab === 'export_columns' ? 'bg-white text-indigo-700 font-bold shadow-sm' : 'text-slate-600 hover:text-slate-900 font-medium'"
+                                                class="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 px-3 transition"
+                                            >
+                                                <svg class="h-4 w-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                                <span>ستون‌های خروجی اکسل</span>
+                                                <span class="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-black tabular-nums text-indigo-700 ring-1 ring-indigo-200">
+                                                    {{ count($exportColumns) }}
+                                                </span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                @click="settingsTab = 'display'"
+                                                :class="settingsTab === 'display' ? 'bg-white text-indigo-700 font-bold shadow-sm' : 'text-slate-600 hover:text-slate-900 font-medium'"
+                                                class="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 px-3 transition"
+                                            >
+                                                <svg class="h-4 w-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+                                                </svg>
+                                                <span>تنظیمات نمایش</span>
+                                            </button>
+                                        </div>
 
-                                                <div class="mt-2 grid grid-cols-1 gap-2">
+                                        <div class="px-5 py-4">
+                                            {{-- Tab 1: Export Columns --}}
+                                            <div x-show="settingsTab === 'export_columns'" class="space-y-3">
+                                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                                    <p class="text-xs font-bold text-slate-700">انتخاب ستون‌های فایل اکسل</p>
+                                                    <div class="flex items-center gap-1.5 text-[11px]">
+                                                        <button
+                                                            type="button"
+                                                            wire:click="selectAllExportColumns"
+                                                            class="rounded-lg px-2 py-1 font-bold text-indigo-600 transition hover:bg-indigo-50"
+                                                        >
+                                                            انتخاب همه
+                                                        </button>
+                                                        <span class="text-slate-300">|</span>
+                                                        <button
+                                                            type="button"
+                                                            wire:click="deselectAllExportColumns"
+                                                            class="rounded-lg px-2 py-1 font-bold text-slate-500 transition hover:bg-slate-100"
+                                                        >
+                                                            حذف همه
+                                                        </button>
+                                                        <span class="text-slate-300">|</span>
+                                                        <button
+                                                            type="button"
+                                                            wire:click="resetDefaultExportColumns"
+                                                            class="rounded-lg px-2 py-1 font-bold text-slate-500 transition hover:bg-slate-100"
+                                                        >
+                                                            پیش‌فرض
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <div class="grid max-h-72 grid-cols-1 gap-2 overflow-y-auto p-0.5 sm:grid-cols-2">
+                                                    @foreach(\App\Livewire\Services\ServiceReports::EXPORT_COLUMNS as $colKey => $colLabel)
+                                                        <label
+                                                            class="flex cursor-pointer items-center gap-2.5 rounded-xl border p-2.5 transition select-none {{ in_array($colKey, $exportColumns, true) ? 'border-indigo-200 bg-indigo-50/50 text-indigo-900 font-bold' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300' }}"
+                                                        >
+                                                            <input
+                                                                type="checkbox"
+                                                                value="{{ $colKey }}"
+                                                                wire:model.live="exportColumns"
+                                                                class="h-4 w-4 rounded border-slate-300 text-indigo-600 transition focus:ring-indigo-500"
+                                                            >
+                                                            <span class="text-xs">{{ $colLabel }}</span>
+                                                        </label>
+                                                    @endforeach
+                                                </div>
+
+                                                @if(empty($exportColumns))
+                                                    <p class="rounded-xl bg-amber-50 p-2.5 text-center text-xs font-bold text-amber-700 ring-1 ring-amber-200">
+                                                        حداقل یک ستون باید برای خروجی اکسل انتخاب شده باشد.
+                                                    </p>
+                                                @endif
+
+                                                <div class="flex items-center justify-between border-t border-slate-100 pt-3">
+                                                    <span class="text-[11px] text-slate-500">
+                                                        {{ count($exportColumns) }} از {{ count(\App\Livewire\Services\ServiceReports::EXPORT_COLUMNS) }} ستون فعال
+                                                    </span>
                                                     <button
                                                         type="button"
-                                                        wire:click="setDeliveryDisplayMode('categorized')"
                                                         @click="displaySettingsOpen = false"
-                                                        class="flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-right text-xs font-bold transition {{ $deliveryDisplayMode === 'categorized' ? 'border-indigo-400 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}"
+                                                        class="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-indigo-700"
                                                     >
-                                                        <span>
-                                                            <span class="block">با نمایش دسته‌بندی</span>
-                                                            <span class="mt-0.5 block text-[11px] font-medium text-slate-400">رکوردها داخل آکاردئون هر دسته‌بندی</span>
-                                                        </span>
-                                                        @if($deliveryDisplayMode === 'categorized')
-                                                            <svg class="h-4 w-4 shrink-0 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-                                                            </svg>
-                                                        @endif
+                                                        تایید و بستن
                                                     </button>
+                                                </div>
+                                            </div>
 
-                                                    <button
-                                                        type="button"
-                                                        wire:click="setDeliveryDisplayMode('compact')"
-                                                        @click="displaySettingsOpen = false"
-                                                        class="flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-right text-xs font-bold transition {{ $deliveryDisplayMode === 'compact' ? 'border-indigo-400 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}"
-                                                    >
-                                                        <span>
-                                                            <span class="block">بدون نمایش دسته‌بندی</span>
-                                                            <span class="mt-0.5 block text-[11px] font-medium text-slate-400">فقط سرتیتر گیرنده‌ها — نمایش ساده‌تر</span>
-                                                        </span>
-                                                        @if($deliveryDisplayMode === 'compact')
-                                                            <svg class="h-4 w-4 shrink-0 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-                                                            </svg>
-                                                        @endif
-                                                    </button>
+                                            {{-- Tab 2: Display Mode --}}
+                                            <div x-show="settingsTab === 'display'" style="display: none;" class="space-y-4">
+                                                <div>
+                                                    <p class="text-xs font-black text-slate-700">نمایش دسته‌بندی رکوردهای تحویل</p>
+
+                                                    <div class="mt-2 grid grid-cols-1 gap-2">
+                                                        <button
+                                                            type="button"
+                                                            wire:click="setDeliveryDisplayMode('categorized')"
+                                                            @click="displaySettingsOpen = false"
+                                                            class="flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-right text-xs font-bold transition {{ $deliveryDisplayMode === 'categorized' ? 'border-indigo-400 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}"
+                                                        >
+                                                            <span>
+                                                                <span class="block">با نمایش دسته‌بندی</span>
+                                                                <span class="mt-0.5 block text-[11px] font-medium text-slate-400">رکوردها داخل آکاردئون هر دسته‌بندی</span>
+                                                            </span>
+                                                            @if($deliveryDisplayMode === 'categorized')
+                                                                <svg class="h-4 w-4 shrink-0 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                                                </svg>
+                                                            @endif
+                                                        </button>
+
+                                                        <button
+                                                            type="button"
+                                                            wire:click="setDeliveryDisplayMode('compact')"
+                                                            @click="displaySettingsOpen = false"
+                                                            class="flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-right text-xs font-bold transition {{ $deliveryDisplayMode === 'compact' ? 'border-indigo-400 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}"
+                                                        >
+                                                            <span>
+                                                                <span class="block">بدون نمایش دسته‌بندی</span>
+                                                                <span class="mt-0.5 block text-[11px] font-medium text-slate-400">فقط سرتیتر گیرنده‌ها — نمایش ساده‌تر</span>
+                                                            </span>
+                                                            @if($deliveryDisplayMode === 'compact')
+                                                                <svg class="h-4 w-4 shrink-0 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                                                </svg>
+                                                            @endif
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
