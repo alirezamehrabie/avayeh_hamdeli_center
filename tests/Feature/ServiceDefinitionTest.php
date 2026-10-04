@@ -1368,4 +1368,34 @@ class ServiceDefinitionTest extends TestCase
             'qr_token' => '',
         ];
     }
+
+    public function test_service_definition_accepts_persian_digits_for_distribution_dates(): void
+    {
+        $this->actingAs($this->manager());
+
+        Livewire::test(ServiceDefinition::class)
+            ->set('serviceName', 'Persian Date Distribution Service')
+            ->set('serviceType', 'individual')
+            ->set('distributionStartDate', '۱۴۰۵/۰۳/۲۰')
+            ->set('distributionEndDate', '۱۴۰۵/۰۳/۲۵')
+            ->set('status', 'draft')
+            ->set('categories', [
+                [
+                    'id' => null,
+                    'code' => '',
+                    'name' => 'Package',
+                    'quantity' => '1',
+                    'unit' => 'pack',
+                    'value' => '1000',
+                ],
+            ])
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $service = Service::query()->where('name', 'Persian Date Distribution Service')->firstOrFail();
+
+        $this->assertNotNull($service->distribution_start_date);
+        $this->assertNotNull($service->distribution_end_date);
+        $this->assertTrue($service->distribution_end_date->isAfter($service->distribution_start_date));
+    }
 }

@@ -864,26 +864,80 @@
                                 </div>
                                 <div class="grid gap-3 sm:grid-cols-2">
                                     <div>
-                                        <label class="mb-2 block text-sm font-bold text-slate-700">شروع توزیع</label>
-                                        <input
-                                            type="text"
-                                            wire:model.blur="distributionStartDate"
-                                            inputmode="numeric"
-                                            dir="ltr"
-                                            placeholder="1405/03/23"
-                                            class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
-                                        >
+                                        <label class="mb-2 block text-sm font-bold text-slate-700">شروع توزیع <span class="text-rose-500">*</span></label>
+                                        <div x-data="jalaliDateTimeField($wire.entangle('distributionStartDate').live)" class="relative">
+                                            <input
+                                                type="text"
+                                                x-ref="input"
+                                                x-model="draft"
+                                                x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                                x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                                x-on:jalali-picker-open="handlePickerOpen()"
+                                                x-on:jalali-picker-close="handlePickerClose()"
+                                                x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                                readonly
+                                                inputmode="none"
+                                                autocomplete="off"
+                                                data-jdp-readonly
+                                                data-jdp
+                                                data-jdp-only-date
+                                                placeholder="1405/03/23"
+                                                class="w-full cursor-pointer rounded-2xl border border-slate-300 bg-white px-4 py-3 pl-11 text-left text-sm text-slate-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100"
+                                            >
+                                            <button
+                                                type="button"
+                                                x-on:click.prevent="window.jalaliDatepicker?.show($refs.input)"
+                                                class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400 hover:text-slate-600 focus:outline-none"
+                                                title="انتخاب تاریخ از تقویم"
+                                            >
+                                                <i class="bi bi-calendar3 text-base"></i>
+                                            </button>
+                                        </div>
+                                        @error('distributionStartDate') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                                     </div>
                                     <div>
                                         <label class="mb-2 block text-sm font-bold text-slate-700">پایان توزیع</label>
-                                        <input
-                                            type="text"
-                                            wire:model.blur="distributionEndDate"
-                                            inputmode="numeric"
-                                            dir="ltr"
-                                            placeholder="1405/03/30"
-                                            class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
-                                        >
+                                        <div x-data="jalaliDateTimeField($wire.entangle('distributionEndDate').live)" class="relative">
+                                            <input
+                                                type="text"
+                                                x-ref="input"
+                                                x-model="draft"
+                                                x-on:change="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                                x-on:blur="syncFromInput(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                                x-on:jalali-picker-open="handlePickerOpen()"
+                                                x-on:jalali-picker-close="handlePickerClose()"
+                                                x-on:jalali-picker-confirm="confirm(); draft = (draft || '').split(' ')[0]; committedValue = draft; $refs.input.value = draft; model = draft"
+                                                readonly
+                                                inputmode="none"
+                                                autocomplete="off"
+                                                data-jdp-readonly
+                                                data-jdp
+                                                data-jdp-only-date
+                                                placeholder="1405/03/30"
+                                                class="w-full cursor-pointer rounded-2xl border border-slate-300 bg-white px-4 py-3 pl-14 text-left text-sm text-slate-700 outline-none transition focus:border-violet-300 focus:ring-4 focus:ring-violet-100"
+                                            >
+                                            <div class="absolute inset-y-0 left-0 flex items-center gap-1.5 pl-3">
+                                                <template x-if="draft">
+                                                    <button
+                                                        type="button"
+                                                        x-on:click.prevent="draft = ''; committedValue = ''; model = ''; if ($refs.input) { $refs.input.value = ''; }"
+                                                        class="text-slate-400 transition hover:text-rose-500 focus:outline-none"
+                                                        title="پاک کردن تاریخ"
+                                                    >
+                                                        <i class="bi bi-x-circle text-base"></i>
+                                                    </button>
+                                                </template>
+                                                <button
+                                                    type="button"
+                                                    x-on:click.prevent="window.jalaliDatepicker?.show($refs.input)"
+                                                    class="text-slate-400 transition hover:text-slate-600 focus:outline-none"
+                                                    title="انتخاب تاریخ از تقویم"
+                                                >
+                                                    <i class="bi bi-calendar3 text-base"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        @error('distributionEndDate') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
                                     </div>
                                 </div>
                                 <div class="grid gap-3 sm:grid-cols-2">

@@ -535,11 +535,14 @@ class ServiceDefinition extends Component
                         return;
                     }
 
+                    $startDateNorm = CalendarUtils::convertNumbers(trim((string) $this->distributionStartDate), true);
+                    $endDateNorm = CalendarUtils::convertNumbers(trim((string) $value), true);
+
                     if (
                         filled($this->distributionStartDate)
                         && $this->isValidJalaliDate((string) $this->distributionStartDate)
-                        && Jalalian::fromFormat('Y/m/d', trim((string) $value))
-                            ->lessThan(Jalalian::fromFormat('Y/m/d', trim((string) $this->distributionStartDate)))
+                        && Jalalian::fromFormat('Y/m/d', $endDateNorm)
+                            ->lessThan(Jalalian::fromFormat('Y/m/d', $startDateNorm))
                     ) {
                         $fail('تاریخ پایان توزیع باید برابر یا بعد از تاریخ شروع توزیع باشد.');
                     }
@@ -782,9 +785,24 @@ class ServiceDefinition extends Component
             : number_format($number, 2, '.', '');
     }
 
+    public function updatedDistributionStartDate($value): void
+    {
+        if (is_string($value) && filled($value)) {
+            $this->distributionStartDate = CalendarUtils::convertNumbers(trim($value), true);
+        }
+    }
+
+    public function updatedDistributionEndDate($value): void
+    {
+        if (is_string($value) && filled($value)) {
+            $this->distributionEndDate = CalendarUtils::convertNumbers(trim($value), true);
+        }
+    }
+
     protected function isValidJalaliDate(string $date): bool
     {
-        $parts = explode('/', trim($date));
+        $date = CalendarUtils::convertNumbers(trim($date), true);
+        $parts = explode('/', $date);
 
         if (count($parts) !== 3) {
             return false;
@@ -797,6 +815,8 @@ class ServiceDefinition extends Component
 
     protected function jalaliToGregorian(string $date): string
     {
-        return Jalalian::fromFormat('Y/m/d', trim($date))->toCarbon()->toDateString();
+        $date = CalendarUtils::convertNumbers(trim($date), true);
+
+        return Jalalian::fromFormat('Y/m/d', $date)->toCarbon()->toDateString();
     }
 }

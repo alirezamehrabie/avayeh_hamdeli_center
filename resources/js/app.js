@@ -1650,7 +1650,7 @@ const dispatchJalaliPickerEvent = (input, eventName) => {
 };
 
 const ensureJalaliConfirmButton = () => {
-    const container = document.querySelector('.jdp-container');
+    const container = document.querySelector('jdp-container, .jdp-container');
     const footer = container?.querySelector('.jdp-footer');
 
     if (!footer || footer.querySelector('[data-jdp-confirm-btn]')) {
