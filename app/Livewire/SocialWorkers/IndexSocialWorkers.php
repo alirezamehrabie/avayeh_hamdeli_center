@@ -3,14 +3,14 @@
 namespace App\Livewire\SocialWorkers;
 
 use AllowDynamicProperties;
-use Livewire\Attributes\Layout;
-use Livewire\Attributes\On;
-use Livewire\Component;
-use Livewire\WithPagination;
 use App\Models\SocialWorker;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
+use Livewire\Component;
+use Livewire\WithPagination;
 
 #[AllowDynamicProperties]
 #[Layout('layouts.app')]
@@ -19,14 +19,23 @@ class IndexSocialWorkers extends Component
     use WithPagination;
 
     public string $search = '';
+
     public string $searchField = 'all';
+
     public bool $embedded = false;
+
     public ?int $expandedSocialWorkerId = null;
+
     public array $coveredCountsByWorker = [];
+
     public ?int $cachedDetailsWorkerId = null;
+
     public array $coveredDetailsForExpandedWorker = [];
+
     public array $guardiansForExpandedWorker = [];
+
     public int $visibleGuardianLimit = 10;
+
     public int $visibleCoveredDetailLimit = 20;
 
     public function updatingSearch(): void
@@ -55,6 +64,13 @@ class IndexSocialWorkers extends Component
         $this->expandedSocialWorkerId = null;
         $this->clearExpandedWorkerCache();
         $this->resetPage();
+    }
+
+    public function refreshData(): void
+    {
+        $this->clearExpandedWorkerCache();
+        $this->coveredCountsByWorker = [];
+        $this->dispatch('social-workers-toast', message: 'اطلاعات لیست مددکاران به‌روزرسانی شد.');
     }
 
     public function createSocialWorker(): void
@@ -103,6 +119,7 @@ class IndexSocialWorkers extends Component
         if ($this->expandedSocialWorkerId === $socialWorkerId) {
             $this->expandedSocialWorkerId = null;
             $this->clearExpandedWorkerCache();
+
             return;
         }
 
@@ -303,7 +320,7 @@ class IndexSocialWorkers extends Component
 
     public function getCoveredCountForWorker(SocialWorker $socialWorker): int
     {
-        if (!array_key_exists($socialWorker->id, $this->coveredCountsByWorker)) {
+        if (! array_key_exists($socialWorker->id, $this->coveredCountsByWorker)) {
             $this->coveredCountsByWorker[$socialWorker->id] = (int) $socialWorker->covered_people_count;
         }
 
@@ -314,6 +331,7 @@ class IndexSocialWorkers extends Component
     {
         return view('livewire.social-workers.index-social-workers', [
             'totalSocialWorkers' => SocialWorker::count(),
+            'totalAssignedHouseholds' => \App\Models\Guardian::whereNotNull('social_worker_id')->count(),
         ]);
     }
 }
