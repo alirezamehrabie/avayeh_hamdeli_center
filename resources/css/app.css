@@ -123,6 +123,25 @@ body {
     display: none !important;
 }
 
+/*
+ * جلوگیری از انتخاب شدن و قرار گرفتن مکان‌نمای متنی (Text Caret) روی آیکون‌ها و المان‌های گرافیکی
+ */
+i.bi,
+[class^="bi-"],
+[class*=" bi-"],
+svg {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/*
+ * المان‌های تعاملی Livewire و Alpine به طور پیش‌فرض پوینتر دست (pointer) داشته باشند
+ */
+[wire\:click]:not(input):not(textarea):not(select):not([disabled]):not(.cursor-not-allowed),
+[x-on\:click]:not(input):not(textarea):not(select):not([disabled]):not(.cursor-not-allowed) {
+    cursor: pointer;
+}
+
 .qr-scanner-reader,
 .qr-scanner-reader > div,
 .qr-scanner-reader [id$="__dashboard"],
