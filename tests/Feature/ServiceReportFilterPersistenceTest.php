@@ -3,8 +3,11 @@
 namespace Tests\Feature;
 
 use App\Livewire\Services\ServiceReports;
+use App\Models\Guardian;
 use App\Models\Service;
+use App\Models\ServiceDelivery;
 use App\Models\ServiceName;
+use App\Models\SocialWorker;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -111,6 +114,86 @@ class ServiceReportFilterPersistenceTest extends TestCase
             ->assertSet('search', 'HomeSearch')
             ->call('selectDeliveryChannel', Service::DELIVERY_CHANNEL_GATE)
             ->assertSet('search', 'GateSearch');
+    }
+
+    public function test_selected_social_worker_in_service_list_is_matched_in_details_view(): void
+    {
+        $user = $this->adminUser();
+        $this->actingAs($user);
+
+        $worker1 = SocialWorker::query()->create([
+            'worker_code' => 501,
+            'first_name' => 'Sara',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+
+        $worker2 = SocialWorker::query()->create([
+            'worker_code' => 502,
+            'first_name' => 'Ali',
+            'last_name' => 'Worker',
+            'is_active' => true,
+        ]);
+
+        $service = $this->createServiceWithCategory($user, 'Delivered Service', [Service::DELIVERY_CHANNEL_HOME]);
+        $category = $service->categories()->first();
+
+        $guardian1 = Guardian::query()->create([
+            'guardian_code' => 1001,
+            'national_code' => '1111111111',
+            'first_name' => 'Household',
+            'last_name' => 'WorkerOne',
+            'social_worker_id' => $worker1->id,
+        ]);
+
+        $guardian2 = Guardian::query()->create([
+            'guardian_code' => 1002,
+            'national_code' => '2222222222',
+            'first_name' => 'Household',
+            'last_name' => 'WorkerTwo',
+            'social_worker_id' => $worker2->id,
+        ]);
+
+        ServiceDelivery::query()->create([
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'delivery_channel' => Service::DELIVERY_CHANNEL_HOME,
+            'guardian_id' => $guardian1->id,
+            'national_id' => $guardian1->national_code,
+            'full_name' => 'Recipient One',
+            'delivered_quantity' => 1,
+            'value_per_unit_snapshot' => 500,
+            'delivered_total_value' => 500,
+            'delivered_at' => now()->toDateString(),
+            'created_by' => $user->id,
+        ]);
+
+        ServiceDelivery::query()->create([
+            'service_id' => $service->id,
+            'service_category_id' => $category->id,
+            'delivery_channel' => Service::DELIVERY_CHANNEL_HOME,
+            'guardian_id' => $guardian2->id,
+            'national_id' => $guardian2->national_code,
+            'full_name' => 'Recipient Two',
+            'delivered_quantity' => 1,
+            'value_per_unit_snapshot' => 500,
+            'delivered_total_value' => 500,
+            'delivered_at' => now()->toDateString(),
+            'created_by' => $user->id,
+        ]);
+
+        Livewire::test(ServiceReports::class)
+            ->call('selectDeliveryChannel', Service::DELIVERY_CHANNEL_HOME)
+            ->set('selectedSocialWorker', (string) $worker1->id)
+            ->call('openService', $service->id)
+            ->assertSet('selectedServiceId', $service->id)
+            ->assertSet('selectedSocialWorker', (string) $worker1->id)
+            ->assertSet('selectedCoverageSocialWorker', (string) $worker1->id)
+            ->assertViewHas('deliveryGroups', fn ($groups): bool => $groups->total() === 1
+                && collect($groups->items())->first()->recipientName === 'Recipient One')
+            ->call('backToServices')
+            ->assertSet('selectedServiceId', null)
+            ->assertSet('selectedSocialWorker', (string) $worker1->id);
     }
 
     private function adminUser(): User

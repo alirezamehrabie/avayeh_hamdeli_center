@@ -664,6 +664,10 @@ class ServiceReports extends Component
         $this->deliveryChannel = $this->normalizeDeliveryChannel($deliveryChannel);
         $this->initExportColumns();
         $this->restoreServiceFilters();
+
+        if ($this->selectedServiceId !== null && $this->selectedSocialWorker !== 'all' && ctype_digit($this->selectedSocialWorker)) {
+            $this->selectedCoverageSocialWorker = $this->selectedSocialWorker;
+        }
     }
 
     #[On('open-dashboard-section')]
@@ -776,7 +780,9 @@ class ServiceReports extends Component
         $this->selectedServiceId = $serviceId;
         $this->deliverySearch = '';
         $this->selectedDeliveryEntryType = 'all';
-        $this->selectedCoverageSocialWorker = 'all';
+        $this->selectedCoverageSocialWorker = ($this->selectedSocialWorker !== 'all' && ctype_digit($this->selectedSocialWorker))
+            ? $this->selectedSocialWorker
+            : 'all';
         $this->selectedSupportOrganization = 'all';
         $this->selectedNeedLevel = 'all';
         $this->deliveryDateFrom = '';
@@ -1206,6 +1212,10 @@ class ServiceReports extends Component
                 })
                 ->distinct()
                 ->pluck('social_worker_id');
+
+            if (ctype_digit($this->selectedCoverageSocialWorker) && (int) $this->selectedCoverageSocialWorker > 0) {
+                $coverageWorkerIds = $coverageWorkerIds->push((int) $this->selectedCoverageSocialWorker)->unique();
+            }
 
             $coverageSocialWorkerOptions = SocialWorker::query()
                 ->withoutGlobalScope('active')
