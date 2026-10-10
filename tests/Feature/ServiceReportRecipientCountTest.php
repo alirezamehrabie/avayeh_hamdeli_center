@@ -110,6 +110,8 @@ class ServiceReportRecipientCountTest extends TestCase
             'service_id' => $service->id,
             'service_category_id' => $category->id,
             'delivery_channel' => Service::DELIVERY_CHANNEL_HOME,
+            'national_id' => '0000000000',
+            'full_name' => 'Recipient',
             'delivered_quantity' => 1,
             'value_per_unit_snapshot' => 1000,
             'delivered_total_value' => 1000,

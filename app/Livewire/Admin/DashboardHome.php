@@ -66,9 +66,8 @@ class DashboardHome extends Component
 
     /**
      * Delivery method picked on the advanced-service-report landing screen.
-     * Held here because opening a service remounts the child component via
-     * its :key; the URL copy keeps the filtered list alive across remounts,
-     * refreshes and browser back/forward.
+     * Stored in URL so direct links, browser refresh and back/forward retain
+     * the chosen channel context.
      */
     #[Url(as: 'channel', history: true)]
     public ?string $serviceReportChannel = null;
@@ -157,6 +156,9 @@ class DashboardHome extends Component
     public function updatedSectionContextId(): void
     {
         $this->syncSectionContext();
+        if ($this->activeSection === 'advanced-service-report') {
+            $this->dispatch('open-dashboard-section', section: 'advanced-service-report', id: $this->serviceReportServiceId, channel: $this->serviceReportChannel);
+        }
     }
 
     public function updatedActivityContextId(): void

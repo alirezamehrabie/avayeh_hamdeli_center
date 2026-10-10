@@ -513,7 +513,7 @@
                         <livewire:services.service-reports
                             :selected-service-id="$serviceReportServiceId"
                             :delivery-channel="$serviceReportChannel"
-                            :key="'advanced-service-report-'.($serviceReportServiceId ?? 'list').'-'.($serviceReportChannel ?? 'pick')"
+                            :key="'advanced-service-report-'.($serviceReportChannel ?? 'pick')"
                         />
                         @break
 

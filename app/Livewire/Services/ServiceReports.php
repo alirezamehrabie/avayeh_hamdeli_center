@@ -25,6 +25,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -89,6 +90,8 @@ class ServiceReports extends Component
      * services list query never runs.
      */
     public ?string $deliveryChannel = null;
+
+    protected bool $isRestoringOrResetting = false;
 
     public string $search = '';
 
@@ -660,6 +663,36 @@ class ServiceReports extends Component
         $this->selectedServiceId = $selectedServiceId;
         $this->deliveryChannel = $this->normalizeDeliveryChannel($deliveryChannel);
         $this->initExportColumns();
+        $this->restoreServiceFilters();
+    }
+
+    #[On('open-dashboard-section')]
+    public function handleOpenDashboardSection(string $section, ?int $id = null, ?string $channel = null): void
+    {
+        if ($section !== 'advanced-service-report') {
+            return;
+        }
+
+        if ($channel !== null) {
+            $normalizedChannel = $this->normalizeDeliveryChannel($channel);
+            if ($normalizedChannel !== null && $normalizedChannel !== $this->deliveryChannel) {
+                $this->persistServiceFilters();
+                $this->deliveryChannel = $normalizedChannel;
+                $this->isRestoringOrResetting = true;
+                try {
+                    $this->resetServiceFiltersToDefaults();
+                    $this->restoreServiceFilters();
+                } finally {
+                    $this->isRestoringOrResetting = false;
+                }
+            }
+        }
+
+        if ($id !== null && $id !== $this->selectedServiceId) {
+            $this->openService($id);
+        } elseif ($id === null && $this->selectedServiceId !== null) {
+            $this->backToServices();
+        }
     }
 
     protected function initExportColumns(): void
@@ -692,19 +725,38 @@ class ServiceReports extends Component
             return;
         }
 
+        $this->persistServiceFilters();
+
         $this->deliveryChannel = $channel;
         $this->selectedServiceId = null;
-        $this->clearServiceFilters();
+
+        $this->isRestoringOrResetting = true;
+        try {
+            $this->resetServiceFiltersToDefaults();
+            $this->restoreServiceFilters();
+        } finally {
+            $this->isRestoringOrResetting = false;
+        }
+
         $this->dispatch('open-dashboard-section', section: 'advanced-service-report', channel: $channel);
     }
 
     public function backToChannelSelection(): void
     {
+        $this->persistServiceFilters();
+
         $this->deliveryChannel = null;
         $this->selectedServiceId = null;
-        $this->clearServiceFilters();
-        $this->resetPage('deliveries');
-        $this->closeEditDeliveryModal();
+
+        $this->isRestoringOrResetting = true;
+        try {
+            $this->resetServiceFiltersToDefaults();
+            $this->resetPage('deliveries');
+            $this->closeEditDeliveryModal();
+        } finally {
+            $this->isRestoringOrResetting = false;
+        }
+
         $this->dispatch('open-dashboard-section', section: 'advanced-service-report');
     }
 
@@ -760,6 +812,12 @@ class ServiceReports extends Component
 
     public function clearServiceFilters(): void
     {
+        $this->resetServiceFiltersToDefaults();
+        $this->forgetPersistedServiceFilters();
+    }
+
+    public function resetServiceFiltersToDefaults(): void
+    {
         $this->search = '';
         $this->selectedServiceName = 'all';
         $this->selectedCategory = 'all';
@@ -769,6 +827,91 @@ class ServiceReports extends Component
         $this->serviceDateFrom = '';
         $this->serviceDateTo = '';
         $this->resetPage();
+    }
+
+    public function updated($propertyName): void
+    {
+        if ($this->isRestoringOrResetting) {
+            return;
+        }
+
+        if (in_array($propertyName, [
+            'search',
+            'selectedServiceName',
+            'selectedCategory',
+            'selectedStatus',
+            'selectedType',
+            'selectedSocialWorker',
+            'serviceDateFrom',
+            'serviceDateTo',
+        ], true)) {
+            $this->persistServiceFilters();
+        }
+    }
+
+    public function updatedPage(): void
+    {
+        if ($this->isRestoringOrResetting) {
+            return;
+        }
+
+        $this->persistServiceFilters();
+    }
+
+    protected function persistServiceFilters(): void
+    {
+        if (! $this->deliveryChannel) {
+            return;
+        }
+
+        session()->put("service_report_filters_{$this->deliveryChannel}", [
+            'search' => $this->search,
+            'selectedServiceName' => $this->selectedServiceName,
+            'selectedCategory' => $this->selectedCategory,
+            'selectedStatus' => $this->selectedStatus,
+            'selectedType' => $this->selectedType,
+            'selectedSocialWorker' => $this->selectedSocialWorker,
+            'serviceDateFrom' => $this->serviceDateFrom,
+            'serviceDateTo' => $this->serviceDateTo,
+            'page' => $this->getPage(),
+        ]);
+    }
+
+    protected function restoreServiceFilters(): void
+    {
+        if (! $this->deliveryChannel) {
+            return;
+        }
+
+        $saved = session()->get("service_report_filters_{$this->deliveryChannel}");
+        if (! is_array($saved)) {
+            return;
+        }
+
+        $this->isRestoringOrResetting = true;
+        try {
+            $this->search = isset($saved['search']) && is_string($saved['search']) ? $saved['search'] : '';
+            $this->selectedServiceName = isset($saved['selectedServiceName']) && is_string($saved['selectedServiceName']) ? $saved['selectedServiceName'] : 'all';
+            $this->selectedCategory = isset($saved['selectedCategory']) && is_string($saved['selectedCategory']) ? $saved['selectedCategory'] : 'all';
+            $this->selectedStatus = isset($saved['selectedStatus']) && is_string($saved['selectedStatus']) ? $saved['selectedStatus'] : 'all';
+            $this->selectedType = isset($saved['selectedType']) && is_string($saved['selectedType']) ? $saved['selectedType'] : 'all';
+            $this->selectedSocialWorker = isset($saved['selectedSocialWorker']) && is_string($saved['selectedSocialWorker']) ? $saved['selectedSocialWorker'] : 'all';
+            $this->serviceDateFrom = isset($saved['serviceDateFrom']) && is_string($saved['serviceDateFrom']) ? $saved['serviceDateFrom'] : '';
+            $this->serviceDateTo = isset($saved['serviceDateTo']) && is_string($saved['serviceDateTo']) ? $saved['serviceDateTo'] : '';
+
+            if (! empty($saved['page']) && (int) $saved['page'] > 1) {
+                $this->setPage((int) $saved['page']);
+            }
+        } finally {
+            $this->isRestoringOrResetting = false;
+        }
+    }
+
+    protected function forgetPersistedServiceFilters(): void
+    {
+        if ($this->deliveryChannel) {
+            session()->forget("service_report_filters_{$this->deliveryChannel}");
+        }
     }
 
     public function updatingSearch(): void
@@ -1123,6 +1266,7 @@ class ServiceReports extends Component
             'deliveryChannelCards' => $deliveryChannelCards,
             'selectedService' => $this->selectedService,
             'deliveryGroups' => $this->deliveryGroups,
+            'deliveryRecipientCount' => $this->deliveryRecipientCount,
             'statusOptions' => Service::STATUS_OPTIONS,
             'typeDisplayOptions' => Service::typeDisplayOptions(),
             'unitOptions' => Service::unitOptions(),
