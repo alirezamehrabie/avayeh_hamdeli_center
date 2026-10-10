@@ -34,9 +34,19 @@ class ServiceReports extends Component
     use SummarizesServiceDeliveries;
     use WithPagination;
 
+    public const MIN_PER_PAGE = 5;
+
+    public const MAX_PER_PAGE = 150;
+
+    public const DEFAULT_PER_PAGE = 20;
+
     protected const SERVICES_PER_PAGE = 20;
 
     protected const DELIVERY_GROUPS_PER_PAGE = 20;
+
+    public int $perPage = self::DEFAULT_PER_PAGE;
+
+    public int $deliveryPerPage = self::DEFAULT_PER_PAGE;
 
     /**
      * Delivery-method landing cards shown before the services list. Adding a
@@ -468,7 +478,7 @@ class ServiceReports extends Component
     public function getDeliveryGroupsProperty()
     {
         if (! $this->selectedServiceId) {
-            return new LengthAwarePaginator([], 0, self::DELIVERY_GROUPS_PER_PAGE);
+            return new LengthAwarePaginator([], 0, $this->deliveryPerPage);
         }
 
         // Groups rank by their earliest registration moment: oldest entry
@@ -478,7 +488,7 @@ class ServiceReports extends Component
             ->selectRaw($this->recipientGroupKeyExpression().' as group_key, MIN(created_at) as first_recorded_at')
             ->groupBy('group_key')
             ->orderBy('first_recorded_at')
-            ->paginate(self::DELIVERY_GROUPS_PER_PAGE, ['group_key', 'first_recorded_at'], 'deliveries');
+            ->paginate($this->deliveryPerPage, ['group_key', 'first_recorded_at'], 'deliveries');
 
         $keys = collect($groupPage->items())->pluck('group_key');
 
@@ -801,6 +811,28 @@ class ServiceReports extends Component
         $this->dispatch('open-dashboard-section', section: 'advanced-gate-technical-report', id: $serviceId);
     }
 
+    /**
+     * Worker/recipients summaries are computed for the clicked service only
+     * and streamed to the Alpine modal via an event, instead of being baked
+     * into every list row (which serialized the full delivery history of every service).
+     */
+    public function showWorkerSummary(int $serviceId): void
+    {
+        abort_unless(auth()->check() && auth()->user()->can('full-access'), 403);
+
+        $service = Service::query()
+            ->with([
+                'serviceName',
+                'categories' => fn ($query) => $query->ordered(),
+                'workerAllocations.socialWorker',
+                'deliveries.person.guardian',
+                'deliveries.guardian',
+            ])
+            ->findOrFail($serviceId);
+
+        $this->dispatch('service-workers-loaded', summary: $this->socialWorkerSummary($service, Service::unitOptions()));
+    }
+
     public function backToServices(): void
     {
         $this->selectedServiceId = null;
@@ -832,7 +864,39 @@ class ServiceReports extends Component
         $this->selectedSocialWorker = 'all';
         $this->serviceDateFrom = '';
         $this->serviceDateTo = '';
+        $this->perPage = self::DEFAULT_PER_PAGE;
         $this->resetPage();
+    }
+
+    public function updatedPerPage($value): void
+    {
+        if ($this->isRestoringOrResetting) {
+            return;
+        }
+
+        $val = (int) $value;
+        if ($val < self::MIN_PER_PAGE) {
+            $val = self::MIN_PER_PAGE;
+        } elseif ($val > self::MAX_PER_PAGE) {
+            $val = self::MAX_PER_PAGE;
+        }
+
+        $this->perPage = $val;
+        $this->resetPage();
+        $this->persistServiceFilters();
+    }
+
+    public function updatedDeliveryPerPage($value): void
+    {
+        $val = (int) $value;
+        if ($val < self::MIN_PER_PAGE) {
+            $val = self::MIN_PER_PAGE;
+        } elseif ($val > self::MAX_PER_PAGE) {
+            $val = self::MAX_PER_PAGE;
+        }
+
+        $this->deliveryPerPage = $val;
+        $this->resetPage('deliveries');
     }
 
     public function updated($propertyName): void
@@ -880,6 +944,7 @@ class ServiceReports extends Component
             'serviceDateFrom' => $this->serviceDateFrom,
             'serviceDateTo' => $this->serviceDateTo,
             'page' => $this->getPage(),
+            'perPage' => $this->perPage,
         ]);
     }
 
@@ -904,6 +969,12 @@ class ServiceReports extends Component
             $this->selectedSocialWorker = isset($saved['selectedSocialWorker']) && is_string($saved['selectedSocialWorker']) ? $saved['selectedSocialWorker'] : 'all';
             $this->serviceDateFrom = isset($saved['serviceDateFrom']) && is_string($saved['serviceDateFrom']) ? $saved['serviceDateFrom'] : '';
             $this->serviceDateTo = isset($saved['serviceDateTo']) && is_string($saved['serviceDateTo']) ? $saved['serviceDateTo'] : '';
+
+            if (! empty($saved['perPage']) && (int) $saved['perPage'] >= self::MIN_PER_PAGE && (int) $saved['perPage'] <= self::MAX_PER_PAGE) {
+                $this->perPage = (int) $saved['perPage'];
+            } else {
+                $this->perPage = self::DEFAULT_PER_PAGE;
+            }
 
             if (! empty($saved['page']) && (int) $saved['page'] > 1) {
                 $this->setPage((int) $saved['page']);
@@ -1169,9 +1240,6 @@ class ServiceReports extends Component
                     'categories' => fn ($query) => $query->ordered(),
                     'socialWorkers',
                     'creator',
-                    'workerAllocations.socialWorker',
-                    'deliveries.person.guardian',
-                    'deliveries.guardian',
                 ])
                 ->when($status, fn ($q) => $q->where('status', $status))
                 ->when($category, fn ($q) => $q->whereHas('serviceCategory', fn ($q) => $q->where('name', $category)))
@@ -1198,7 +1266,7 @@ class ServiceReports extends Component
                             ->orWhere('last_name', 'like', '%'.$search.'%'));
                 }))
                 ->latest()
-                ->paginate(self::SERVICES_PER_PAGE);
+                ->paginate($this->perPage);
         } elseif ($this->selectedServiceId !== null) {
             // «مددکار اجتماعی» dropdown: workers assigned to guardians who have
             // a delivery in this service — directly (family) or through their

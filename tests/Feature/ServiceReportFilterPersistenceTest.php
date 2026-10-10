@@ -196,6 +196,44 @@ class ServiceReportFilterPersistenceTest extends TestCase
             ->assertSet('selectedSocialWorker', (string) $worker1->id);
     }
 
+    public function test_custom_per_page_can_be_set_and_persists_within_bounds(): void
+    {
+        $user = $this->adminUser();
+        $this->actingAs($user);
+
+        $this->createServiceWithCategory($user, 'Service A', [Service::DELIVERY_CHANNEL_HOME]);
+
+        Livewire::test(ServiceReports::class)
+            ->call('selectDeliveryChannel', Service::DELIVERY_CHANNEL_HOME)
+            ->assertSet('perPage', ServiceReports::DEFAULT_PER_PAGE)
+            ->set('perPage', 60)
+            ->assertSet('perPage', 60)
+            ->set('perPage', 2)
+            ->assertSet('perPage', ServiceReports::MIN_PER_PAGE)
+            ->set('perPage', 300)
+            ->assertSet('perPage', ServiceReports::MAX_PER_PAGE)
+            ->set('perPage', 50);
+
+        // Remount to verify persistence in session
+        Livewire::test(ServiceReports::class, [
+            'deliveryChannel' => Service::DELIVERY_CHANNEL_HOME,
+        ])
+            ->assertSet('perPage', 50);
+    }
+
+    public function test_show_worker_summary_dispatches_event_with_summary(): void
+    {
+        $user = $this->adminUser();
+        $this->actingAs($user);
+
+        $service = $this->createServiceWithCategory($user, 'Lazy Service', [Service::DELIVERY_CHANNEL_HOME]);
+
+        Livewire::test(ServiceReports::class)
+            ->call('selectDeliveryChannel', Service::DELIVERY_CHANNEL_HOME)
+            ->call('showWorkerSummary', $service->id)
+            ->assertDispatched('service-workers-loaded');
+    }
+
     private function adminUser(): User
     {
         return User::factory()->create([

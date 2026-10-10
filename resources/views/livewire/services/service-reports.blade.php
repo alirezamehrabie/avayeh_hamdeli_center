@@ -10,6 +10,7 @@
             this.workersOpen = true;
         },
     }"
+    x-on:service-workers-loaded.window="openWorkers($event.detail.summary)"
     class="space-y-6"
 >
     @php
@@ -382,6 +383,7 @@
                                     'label' => 'وضعیت',
                                     'minimal' => true,
                                     'compact' => true,
+                                    'lazy' => true,
                                 ])
                             </td>
                             <td class="px-3 py-3 text-right text-slate-600 text-xs">{{ $creatorName }}</td>
@@ -479,6 +481,7 @@
                                         'label' => 'وضعیت',
                                         'minimal' => true,
                                         'compact' => true,
+                                        'lazy' => true,
                                     ])
                                 </div>
                                 <div class="flex items-center justify-between gap-3">
@@ -525,9 +528,53 @@
             </div>
         </div>
 
-        @if($services->hasPages())
-            <div class="border-t border-slate-200 px-4 py-3 sm:px-6">
-                {{ $services->onEachSide(1)->links('vendor.livewire.tailwind-mobile-persian', ['scrollTo' => '#service-report-list']) }}
+        @if($services && $services->total() > 0)
+            <div wire:loading.class="opacity-60 pointer-events-none" wire:target="perPage, setPage, previousPage, nextPage" class="border-t border-slate-200 px-4 py-3 sm:px-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 transition-opacity duration-200">
+                <div class="flex flex-wrap items-center gap-3 text-xs text-slate-600">
+                    <div>
+                        <span>نمایش</span>
+                        <span class="font-bold text-slate-900">{{ $services->firstItem() }}</span>
+                        <span>تا</span>
+                        <span class="font-bold text-slate-900">{{ $services->lastItem() }}</span>
+                        <span>از</span>
+                        <span class="font-bold text-slate-900">{{ $services->total() }}</span>
+                        <span>خدمت</span>
+                    </div>
+
+                    <div class="h-4 w-px bg-slate-200 hidden sm:block"></div>
+
+                    <div class="flex items-center gap-1.5">
+                        <label for="services-per-page-input" class="text-slate-500 whitespace-nowrap">تعداد در صفحه:</label>
+                        <input
+                            id="services-per-page-input"
+                            type="number"
+                            min="{{ \App\Livewire\Services\ServiceReports::MIN_PER_PAGE }}"
+                            max="{{ \App\Livewire\Services\ServiceReports::MAX_PER_PAGE }}"
+                            wire:model.blur="perPage"
+                            wire:keydown.enter.prevent="$el.blur()"
+                            wire:change="$el.blur()"
+                            class="w-16 rounded-xl border border-slate-300 bg-white px-2 py-1 text-center text-xs font-semibold text-slate-800 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            title="حداقل {{ \App\Livewire\Services\ServiceReports::MIN_PER_PAGE }} و حداکثر {{ \App\Livewire\Services\ServiceReports::MAX_PER_PAGE }} (با زدن Enter یا کلیک اعمال می‌شود)"
+                        />
+                        <div class="flex items-center gap-1">
+                            @foreach([20, 50, 100] as $preset)
+                                <button
+                                    type="button"
+                                    wire:click="$set('perPage', {{ $preset }})"
+                                    class="rounded-lg px-2 py-1 text-[11px] font-medium transition {{ $perPage === $preset ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}"
+                                >
+                                    {{ $preset }}
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+
+                @if($services->hasPages())
+                    <div class="flex justify-center md:justify-end">
+                        {{ $services->onEachSide(1)->links('vendor.livewire.tailwind-mobile-persian', ['scrollTo' => '#service-report-list', 'hideSummary' => true]) }}
+                    </div>
+                @endif
             </div>
         @endif
         </div>
@@ -1698,9 +1745,53 @@
                         </div>
                     @endforelse
 
-                    @if($deliveryGroups->hasPages())
-                        <div class="pt-2">
-                            {{ $deliveryGroups->onEachSide(1)->links('vendor.livewire.tailwind-mobile-persian', ['scrollTo' => '#delivery-groups-list']) }}
+                    @if($deliveryGroups && $deliveryGroups->total() > 0)
+                        <div wire:loading.class="opacity-60 pointer-events-none" wire:target="deliveryPerPage, setPage, previousPage, nextPage" class="mt-4 border-t border-slate-200/80 pt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4 transition-opacity duration-200">
+                            <div class="flex flex-wrap items-center gap-3 text-xs text-slate-600">
+                                <div>
+                                    <span>نمایش</span>
+                                    <span class="font-bold text-slate-900">{{ $deliveryGroups->firstItem() }}</span>
+                                    <span>تا</span>
+                                    <span class="font-bold text-slate-900">{{ $deliveryGroups->lastItem() }}</span>
+                                    <span>از</span>
+                                    <span class="font-bold text-slate-900">{{ $deliveryGroups->total() }}</span>
+                                    <span>مورد تحویل</span>
+                                </div>
+
+                                <div class="h-4 w-px bg-slate-200 hidden sm:block"></div>
+
+                                <div class="flex items-center gap-1.5">
+                                    <label for="deliveries-per-page-input" class="text-slate-500 whitespace-nowrap">تعداد در صفحه:</label>
+                                    <input
+                                        id="deliveries-per-page-input"
+                                        type="number"
+                                        min="{{ \App\Livewire\Services\ServiceReports::MIN_PER_PAGE }}"
+                                        max="{{ \App\Livewire\Services\ServiceReports::MAX_PER_PAGE }}"
+                                        wire:model.blur="deliveryPerPage"
+                                        wire:keydown.enter.prevent="$el.blur()"
+                                        wire:change="$el.blur()"
+                                        class="w-16 rounded-xl border border-slate-300 bg-white px-2 py-1 text-center text-xs font-semibold text-slate-800 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                        title="حداقل {{ \App\Livewire\Services\ServiceReports::MIN_PER_PAGE }} و حداکثر {{ \App\Livewire\Services\ServiceReports::MAX_PER_PAGE }} (با زدن Enter یا کلیک اعمال می‌شود)"
+                                    />
+                                    <div class="flex items-center gap-1">
+                                        @foreach([20, 50, 100] as $preset)
+                                            <button
+                                                type="button"
+                                                wire:click="$set('deliveryPerPage', {{ $preset }})"
+                                                class="rounded-lg px-2 py-1 text-[11px] font-medium transition {{ $deliveryPerPage === $preset ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}"
+                                            >
+                                                {{ $preset }}
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if($deliveryGroups->hasPages())
+                                <div class="flex justify-center md:justify-end">
+                                    {{ $deliveryGroups->onEachSide(1)->links('vendor.livewire.tailwind-mobile-persian', ['scrollTo' => '#delivery-groups-list', 'hideSummary' => true]) }}
+                                </div>
+                            @endif
                         </div>
                     @endif
                 </div>

@@ -39,27 +39,29 @@ $scrollIntoViewJsSnippet = ($scrollTo !== false)
                 </span>
             </div>
 
-            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                    <p class="text-sm text-gray-700 leading-5 dark:text-gray-400">
-                        @if ($paginator->firstItem())
-                            <span>نمایش</span>
-                            <span class="font-medium">{{ $paginator->firstItem() }}</span>
-                            <span>تا</span>
-                            <span class="font-medium">{{ $paginator->lastItem() }}</span>
-                            {{-- Simple paginators (simplePaginate) have no total(); only show it when available. --}}
-                            @if (method_exists($paginator, 'total'))
-                                <span>از</span>
-                                <span class="font-medium">{{ $paginator->total() }}</span>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center {{ ($hideSummary ?? false) ? 'sm:justify-end' : 'sm:justify-between' }}">
+                @if (! ($hideSummary ?? false))
+                    <div>
+                        <p class="text-sm text-gray-700 leading-5 dark:text-gray-400">
+                            @if ($paginator->firstItem())
+                                <span>نمایش</span>
+                                <span class="font-medium">{{ $paginator->firstItem() }}</span>
+                                <span>تا</span>
+                                <span class="font-medium">{{ $paginator->lastItem() }}</span>
+                                {{-- Simple paginators (simplePaginate) have no total(); only show it when available. --}}
+                                @if (method_exists($paginator, 'total'))
+                                    <span>از</span>
+                                    <span class="font-medium">{{ $paginator->total() }}</span>
+                                @endif
+                                <span>مورد</span>
+                            @else
+                                <span>نمایش</span>
+                                <span class="font-medium">{{ $paginator->count() }}</span>
+                                <span>مورد</span>
                             @endif
-                            <span>مورد</span>
-                        @else
-                            <span>نمایش</span>
-                            <span class="font-medium">{{ $paginator->count() }}</span>
-                            <span>مورد</span>
-                        @endif
-                    </p>
-                </div>
+                        </p>
+                    </div>
+                @endif
 
                 <div>
                     <span class="relative z-0 inline-flex rtl:flex-row-reverse rounded-md shadow-sm">
