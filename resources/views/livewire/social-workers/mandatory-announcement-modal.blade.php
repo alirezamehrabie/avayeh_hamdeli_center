@@ -1,4 +1,4 @@
-<div>
+<div @if(! $hasPending) wire:poll.60s="refreshPending" @endif>
     @if($hasPending)
         <div
             wire:key="mandatory-announcement-overlay-{{ $announcementId }}"
