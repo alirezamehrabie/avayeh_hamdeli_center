@@ -542,6 +542,38 @@ class IndexGuardiansTest extends TestCase
         );
     }
 
+    public function test_clicking_guardian_person_opens_person_details_modal(): void
+    {
+        $this->actingAs($this->manager());
+
+        $guardian = Guardian::query()->create([
+            'guardian_code' => 740001,
+            'first_name' => 'Sara',
+            'last_name' => 'Guardian',
+        ]);
+
+        $person = Person::query()->create([
+            'guardian_id' => $guardian->id,
+            'person_code' => 'P740001',
+            'national_id' => '2234567899',
+            'first_name' => 'Omid',
+            'last_name' => 'Child',
+        ]);
+
+        Livewire::test(IndexGuardians::class)
+            ->call('toggleGuardian', $guardian->id)
+            ->assertSet('expandedGuardianId', $guardian->id)
+            ->assertSee('Omid')
+            ->assertSee('P740001')
+            ->call('showPersonInfo', $person->id)
+            ->assertSet('showPersonModal', true)
+            ->assertSet('selectedPersonId', $person->id)
+            ->assertSee('پرونده مددجو')
+            ->call('closePersonModal')
+            ->assertSet('showPersonModal', false)
+            ->assertSet('selectedPersonId', null);
+    }
+
     private function manager(): User
     {
         return User::factory()->create([

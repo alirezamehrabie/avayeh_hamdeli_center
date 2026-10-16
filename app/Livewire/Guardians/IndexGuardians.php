@@ -3,12 +3,14 @@
 namespace App\Livewire\Guardians;
 
 use App\Models\Guardian;
+use App\Models\Person;
 use App\Queries\Guardians\DeletingGuardianDetailsQuery;
 use App\Queries\Guardians\ExpandedGuardianPeopleQuery;
 use App\Queries\Guardians\GuardianHouseholdStatsQuery;
 use App\Queries\Guardians\GuardianIndexSearchQuery;
 use App\Queries\Guardians\GuardianListSummaryQuery;
 use App\Queries\Guardians\SelectedGuardianDetailsQuery;
+use App\Queries\People\SelectedPersonDetailsQuery;
 use App\Services\Guardians\RefreshGuardianStats;
 use App\Services\Guardians\SoftDeleteGuardianFamily;
 use Illuminate\Support\Collection;
@@ -31,6 +33,10 @@ class IndexGuardians extends Component
     public string $searchField = 'all';
 
     public ?int $selectedGuardianId = null;
+
+    public ?int $selectedPersonId = null;
+
+    public bool $showPersonModal = false;
 
     public bool $showHouseholdModal = false;
 
@@ -198,6 +204,39 @@ class IndexGuardians extends Component
     {
         session()->flash('success', $message);
         $this->dispatch('guardians-list-toast', message: $message);
+    }
+
+    public function showPersonInfo(int $personId): void
+    {
+        $this->selectedPersonId = $personId;
+        $this->showPersonModal = true;
+    }
+
+    public function closePersonModal(): void
+    {
+        $this->showPersonModal = false;
+        $this->selectedPersonId = null;
+    }
+
+    public function getSelectedPersonProperty(): ?Person
+    {
+        return app(SelectedPersonDetailsQuery::class)->find($this->selectedPersonId);
+    }
+
+    public function editPerson(Person $person): mixed
+    {
+        abort_unless(auth()->check() && auth()->user()->can('people-edit'), 403);
+
+        if ($this->embedded) {
+            $this->dispatch('open-dashboard-section', section: 'person-edit', id: $person->id);
+
+            return null;
+        }
+
+        return redirect()->route('people.form', [
+            'mode' => 'edit',
+            'person' => $person->id,
+        ]);
     }
 
     public function getSelectedGuardianProperty(): ?Guardian

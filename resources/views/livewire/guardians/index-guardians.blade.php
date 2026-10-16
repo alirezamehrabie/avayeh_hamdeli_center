@@ -342,17 +342,31 @@
 
                                 <div class="space-y-2">
                                     @forelse($this->expandedGuardianPeople as $person)
-                                        <div class="rounded-xl border border-slate-100 bg-white px-3 py-2">
+                                        <button
+                                            type="button"
+                                            wire:key="expanded-person-mobile-{{ $person->id }}"
+                                            wire:click="showPersonInfo({{ $person->id }})"
+                                            wire:loading.attr="disabled"
+                                            wire:target="showPersonInfo({{ $person->id }})"
+                                            class="block w-full text-right rounded-xl border border-slate-100 bg-white p-3 transition hover:border-amber-200 hover:bg-amber-50/40 focus:outline-none focus:ring-2 focus:ring-amber-200 cursor-pointer shadow-sm group"
+                                            title="مشاهده پرونده مددجو"
+                                        >
                                             <div class="flex items-start justify-between gap-3">
-                                                <p class="min-w-0 truncate text-xs font-extrabold text-slate-800">{{ $person->full_name ?: 'بدون نام' }}</p>
+                                                <p class="min-w-0 truncate text-xs font-extrabold text-slate-800 group-hover:text-amber-800">{{ $person->full_name ?: 'بدون نام' }}</p>
                                                 <span class="shrink-0 rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-600" dir="ltr">{{ $person->person_code ?: '-' }}</span>
                                             </div>
                                             <div class="mt-2 grid grid-cols-2 gap-2 text-[10px] font-bold text-slate-500">
                                                 <span class="truncate rounded-lg bg-slate-50 px-2 py-1" dir="ltr">{{ $person->national_id ?: '-' }}</span>
                                                 <span class="truncate rounded-lg bg-slate-50 px-2 py-1">{{ $person->birth_date ?? 'نامشخص' }}</span>
                                             </div>
-                                            <p class="mt-2 truncate text-[10px] font-bold text-slate-500">نام پدر: {{ $person->father_name ?? '-' }}</p>
-                                        </div>
+                                            <div class="mt-2 flex items-center justify-between text-[10px] font-bold text-slate-500">
+                                                <span class="truncate">نام پدر: {{ $person->father_name ?? '-' }}</span>
+                                                <span class="inline-flex items-center gap-1 font-bold text-amber-700">
+                                                    <span>مشاهده پرونده</span>
+                                                    <i class="bi bi-chevron-left text-[10px]"></i>
+                                                </span>
+                                            </div>
+                                        </button>
                                     @empty
                                         <p class="rounded-xl bg-white px-3 py-4 text-center text-xs font-bold text-slate-500">
                                             مددجویی برای این سرپرست ثبت نشده است.
@@ -492,24 +506,42 @@
                                                     <tr>
                                                         <th class="px-4 py-3 text-center font-bold">کد مددجو</th>
                                                         <th class="px-4 py-3 text-center font-bold">کد ملی مددجو</th>
-                                                        <th class="px-4 py-3 text-right font-bold">نام و نام خانوادگی
-                                                        </th>
+                                                        <th class="px-4 py-3 text-right font-bold">نام و نام خانوادگی</th>
                                                         <th class="px-4 py-3 text-right font-bold">نام پدر</th>
                                                         <th class="px-4 py-3 text-center font-bold">تاریخ تولد</th>
+                                                        <th class="px-4 py-3 text-center font-bold">عملیات</th>
                                                     </tr>
                                                     </thead>
                                                     <tbody class="divide-y divide-slate-100">
                                                     @forelse($this->expandedGuardianPeople as $person)
-                                                        <tr class="transition hover:bg-slate-50">
+                                                        <tr
+                                                            wire:key="expanded-person-row-{{ $person->id }}"
+                                                            wire:click="showPersonInfo({{ $person->id }})"
+                                                            class="cursor-pointer transition hover:bg-amber-50/70 group"
+                                                            title="مشاهده پرونده مددجو"
+                                                        >
                                                             <td class="px-4 py-3 text-center font-medium text-slate-700">{{ $person->person_code }}</td>
                                                             <td class="px-4 py-3 text-center text-slate-600">{{ $person->national_id }}</td>
-                                                            <td class="px-4 py-3 text-right text-slate-700">{{ $person->full_name }}</td>
+                                                            <td class="px-4 py-3 text-right font-bold text-slate-800 group-hover:text-amber-800">{{ $person->full_name }}</td>
                                                             <td class="px-4 py-3 text-right text-slate-600">{{ $person->father_name ?? '-' }}</td>
                                                             <td class="px-4 py-3 text-center text-slate-600">{{ $person->birth_date ?? 'نامشخص' }}</td>
+                                                            <td class="px-4 py-3 text-center">
+                                                                <button
+                                                                    type="button"
+                                                                    wire:click.stop="showPersonInfo({{ $person->id }})"
+                                                                    wire:loading.attr="disabled"
+                                                                    wire:target="showPersonInfo({{ $person->id }})"
+                                                                    class="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-800 transition hover:bg-amber-100 group-hover:border-amber-300"
+                                                                    title="مشاهده پرونده مددجو"
+                                                                >
+                                                                    <i class="bi bi-eye text-xs"></i>
+                                                                    <span>مشاهده پرونده</span>
+                                                                </button>
+                                                            </td>
                                                         </tr>
                                                     @empty
                                                         <tr>
-                                                            <td colspan="5"
+                                                            <td colspan="6"
                                                                 class="px-4 py-6 text-center text-slate-500">مددجویی
                                                                 برای این سرپرست ثبت نشده است.
                                                             </td>
@@ -818,4 +850,6 @@
             </div>
         </div>
     @endif
+
+    @include('livewire.people.partials.person-details-modal')
 </div>
