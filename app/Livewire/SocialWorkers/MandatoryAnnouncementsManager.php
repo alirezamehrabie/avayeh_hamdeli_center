@@ -4,6 +4,7 @@ namespace App\Livewire\SocialWorkers;
 
 use AllowDynamicProperties;
 use App\Helpers\Morilog\Jalalian;
+use App\Helpers\PersianNumber;
 use App\Models\MandatoryAnnouncement;
 use App\Models\MandatoryAnnouncementRecipient;
 use App\Models\SocialWorker;
@@ -248,9 +249,11 @@ class MandatoryAnnouncementsManager extends Component
         }
 
         try {
-            return Jalalian::fromCarbon($date)->format($format);
+            $formatted = Jalalian::fromDateTime($date)->format($format);
+
+            return PersianNumber::convert($formatted);
         } catch (\Throwable) {
-            return (string) $date;
+            return '—';
         }
     }
 

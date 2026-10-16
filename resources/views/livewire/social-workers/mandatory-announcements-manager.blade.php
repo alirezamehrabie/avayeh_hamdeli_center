@@ -232,10 +232,10 @@
                                             type="button"
                                             wire:click="openAuditModal({{ $announcement->id }})"
                                             class="inline-flex items-center gap-1.5 rounded-xl border border-cyan-200 bg-cyan-50 px-3.5 py-2 text-xs font-bold text-cyan-800 transition hover:bg-cyan-100"
-                                            title="مشاهده فهرست مددکاران، زمان دقیق تایید و ردپای IP"
+                                            title="مشاهده فهرست مددکاران، زمان دقیق تایید و مشخصات اتصال"
                                         >
                                             <i class="fa fa-shield-alt text-cyan-600"></i>
-                                            <span>رهگیری و لاگ مشاهده (Audit Log)</span>
+                                            <span>رهگیری و وضعیت مشاهده</span>
                                         </button>
 
                                         <button
@@ -542,7 +542,7 @@
         </div>
     @endif
 
-    {{-- مودال Audit Log (ردپای مشاهده و تاییدیه مخاطبان) --}}
+    {{-- مودال رهگیری و وضعیت مشاهده مخاطبان --}}
     @if ($showAuditModal && $auditAnnouncement)
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
             {{-- بک‌دراپ تاریک --}}
@@ -561,7 +561,7 @@
                                 {{ $auditAnnouncement->priorityLabel() }}
                             </span>
                             <h3 class="text-base font-extrabold text-slate-800 sm:text-lg">
-                                گزارش و ردپای مشاهده (Audit Log)
+                                گزارش و ردپای تایید پیام
                             </h3>
                         </div>
                         <p class="mt-1 text-xs text-slate-500 font-bold">
@@ -671,8 +671,8 @@
                                         <i class="fa fa-calendar-check text-emerald-600"></i>
                                         تایید در: {{ $this->formatJalaliDate($recipient->read_at, 'Y/m/d - H:i:s') }}
                                     </span>
-                                    <div class="text-[10px] text-slate-400 font-mono mt-0.5" dir="ltr">
-                                        IP: {{ $recipient->ip_address ?? '127.0.0.1' }}
+                                    <div class="text-[10px] text-slate-500 font-medium mt-0.5">
+                                        نشانی شبکه: <span dir="ltr" class="font-mono">{{ $recipient->ip_address ?? '—' }}</span>
                                     </div>
                                 @else
                                     <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">

@@ -3,6 +3,7 @@
 namespace App\Livewire\SocialWorkers;
 
 use App\Helpers\Morilog\Jalalian;
+use App\Helpers\PersianNumber;
 use App\Models\MandatoryAnnouncement;
 use App\Queries\Announcements\PendingMandatoryAnnouncementQuery;
 use App\Services\Announcements\AcknowledgeMandatoryAnnouncementService;
@@ -70,9 +71,10 @@ class MandatoryAnnouncementModal extends Component
             ?: 'مدیریت مرکز آوای همدلی';
 
         try {
-            $this->createdAtJalali = Jalalian::fromCarbon($announcement->created_at)->format('Y/m/d - H:i');
+            $formatted = Jalalian::fromDateTime($announcement->created_at)->format('Y/m/d - H:i');
+            $this->createdAtJalali = PersianNumber::convert($formatted);
         } catch (\Throwable $e) {
-            $this->createdAtJalali = (string) $announcement->created_at;
+            $this->createdAtJalali = '';
         }
 
         $this->hasPending = true;

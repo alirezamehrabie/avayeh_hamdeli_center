@@ -97,7 +97,7 @@ class PersianNumber
             $part = implode(' و ', $groupParts);
 
             if ($scales[$scaleIndex] !== '') {
-                $part .= ' ' . $scales[$scaleIndex];
+                $part .= ' '.$scales[$scaleIndex];
             }
 
             array_unshift($parts, $part);
@@ -112,12 +112,28 @@ class PersianNumber
         $toman = intdiv($rialAmount, 10);
         $remainingRial = $rialAmount % 10;
 
-        $text = self::toWords($toman) . ' تومان';
+        $text = self::toWords($toman).' تومان';
 
         if ($remainingRial > 0) {
-            $text .= ' و ' . self::toWords($remainingRial) . ' ریال';
+            $text .= ' و '.self::toWords($remainingRial).' ریال';
         }
 
         return $text;
+    }
+
+    public static function convert(mixed $value): string
+    {
+        return strtr((string) $value, [
+            '0' => '۰',
+            '1' => '۱',
+            '2' => '۲',
+            '3' => '۳',
+            '4' => '۴',
+            '5' => '۵',
+            '6' => '۶',
+            '7' => '۷',
+            '8' => '۸',
+            '9' => '۹',
+        ]);
     }
 }

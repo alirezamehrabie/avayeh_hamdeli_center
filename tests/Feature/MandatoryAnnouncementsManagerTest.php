@@ -224,7 +224,7 @@ class MandatoryAnnouncementsManagerTest extends TestCase
             ->assertSet('showAuditModal', true)
             ->assertSee('سعید رضایی')
             ->assertSee('192.168.1.100')
-            ->assertSee('گزارش و ردپای مشاهده (Audit Log)');
+            ->assertSee('گزارش و ردپای تایید پیام');
     }
 
     public function test_admin_can_delete_announcement(): void
