@@ -70,6 +70,8 @@
 
     <x-notification-modal />
 
+    <livewire:social-workers.mandatory-announcement-modal />
+
     @livewireScriptConfig
     <x-connection-indicator />
 
